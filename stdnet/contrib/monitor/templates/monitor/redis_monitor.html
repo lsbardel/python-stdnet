@@ -1,0 +1,21 @@
+<table>
+<tbody>{% for data in info1 %}
+<tr><td>{{ data.name }}</td><td>{{ data.value }}</td></tr>{% endfor %}{% for data in info2 %}
+<tr><td>{{ data.name }}</td><td>{{ data.value }}</td></tr>{% endfor %}
+</tbody>
+</table>{% if model_info %}
+<table>
+<tbody>
+<thead>
+<tr>{% for h in model_header %}
+<th>{{ h }}</th>{% endfor %}
+</tr>
+</thead>
+<tbody>{% for info in model_info %}
+<tr>{% for v in info %}
+<td>{{ v }}</td>{% endfor %}
+</tr>{% endfor %}
+</tbody>
+</table>{% endif %}
+
+

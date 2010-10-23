@@ -6,14 +6,14 @@
 
 --
 
-**An object relational mapper fro remote data structures.**
+**An object relational mapper for remote data structures.**
 
 The data is owned by different, configurable back-end databases and it is accessed using a
 light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 
-The source code is hosted at `google code`__ while
+The source code is hosted at `github`__ while
 Documentation__ and Downloads__ are available via PyPi.
 
-__ http://code.google.com/p/python-stdnet/
+__ http://github.com/lsbardel/python-stdnet
 __ http://packages.python.org/python-stdnet/
 __ http://pypi.python.org/pypi/python-stdnet/
 
@@ -143,7 +143,13 @@ And play with the API::
 
 	>>> f = Fund(name="pluto,description="The super pluto fund",ccy="EUR").save()
 	Fund: pluto
-	
+
+Kudos
+=============
+* Redis_ simply because this library uses its awesome features.
+* Django_ for inspiration and the :mod:`stdnet.dispatch` module.
+
+
 Licence
 =============
 This software is licensed under the New BSD_ License. See the LICENSE

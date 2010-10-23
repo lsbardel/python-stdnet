@@ -2,6 +2,8 @@ import sys
 import copy
 from itertools import izip
 from fields import Field, AutoField
+
+from stdnet.orm import signals
 from stdnet.exceptions import *
 from query import UnregisteredManager 
 
@@ -163,6 +165,7 @@ class StdNetType(type):
         objects = getattr(new_class,'objects',None)
         if objects is None:
             new_class.objects = UnregisteredManager(new_class)
+        signals.class_prepared.send(sender=new_class)
         return new_class
     
 

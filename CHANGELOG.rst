@@ -2,6 +2,7 @@ Ver. 0.4 - Development
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.
+* Added :mod:`stdnet.dispatch` from django_.
 * Added :class:`stdnet.orm.AtomField` subclasses. 
 * Before adding elements to a :class:`stdnet.orm.MultiField` the object needs to be saved, i.e. it needs to have a valid id.
 * Made clear that :class:`stdnet.orm.StdModel` classes are mapped to :class:`stdnet.HashTable`
@@ -52,3 +53,4 @@ Ver. 0.2.0  - 2010 Jun 21
 
 
 .. _djpcms: http://djpcms.com
+.. _django: http://www.djangoproject.com/

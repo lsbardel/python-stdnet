@@ -41,7 +41,7 @@ or ``pip``::
 
 Version Check
 ======================
-To know whech version you have installed::
+To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
@@ -147,7 +147,7 @@ And play with the API::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* Django_ for inspiration and the :mod:`stdnet.dispatch` module.
+* Django_ for inspiration and the ``dispatch`` module.
 
 
 Licence

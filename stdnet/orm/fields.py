@@ -320,7 +320,6 @@ is set to ``False``.'''
 
 class ForeignKey(Field, RelatedObject):
     '''A field defining a one-to-many objects relationship.
-The StdNet equivalent to `django ForeignKey <http://docs.djangoproject.com/en/dev/ref/models/fields/#foreignkey>`_.
 Requires a positional argument: the class to which the model is related.
 To create a recursive relationship, an object that has a many-to-one relationship with itself,
 use::
@@ -331,7 +330,7 @@ It accepts **related_name** as extra argument. It is the name to use for the rel
 back to self. For example::
 
     class Folder(orm.StdModel):
-        name = orm.AtomField()
+        name = orm.SymobolField()
     
     class File(orm.StdModel):
         folder = orm.ForeignKey(Folder, related_name = 'files')
@@ -344,7 +343,6 @@ back to self. For example::
                                relmanager = RelatedManager,
                                related_name = related_name)
         self.__value_obj = _novalue
-        self.index = True
     
     def set_value(self, name, obj, value):
         value = super(ForeignKey,self).set_value(name,obj,value)

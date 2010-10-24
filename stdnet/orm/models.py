@@ -88,7 +88,7 @@ otherwise a ``ModelNotRegistered`` exception will be raised.'''
         data = []
         indexes = []
         for field in meta.fields:
-            name = field.name
+            name = field.attname
             value = getattr(self,name,None)
             serializable = field.serialize(value)
             if serializable is None and field.required:

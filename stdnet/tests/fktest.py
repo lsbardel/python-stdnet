@@ -24,6 +24,14 @@ class TestSelfForeignKey(TestCase):
     def unregister(self):
         self.orm.unregister(Node)
     
+    def testRelatedCache(self):
+        for n in Node.objects.all():
+            pcache = n._meta.dfields['parent'].get_cache_name()
+            self.assertFalse(hasattr(n,pcache))
+            p = n.parent
+            if p:
+                self.assertEqual(getattr(n,pcache),p)
+                
     def testSelfRelated(self):
         root = Node.objects.filter(parent = None)
         self.assertEqual(len(root),1)

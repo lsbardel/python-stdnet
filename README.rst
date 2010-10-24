@@ -147,7 +147,7 @@ And play with the API::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* Django_ for inspiration and the ``dispatch`` module.
+* Django_ for inspiration, the ``dispatch`` module and the ``ForeignKey`` implementation.
 
 
 Licence

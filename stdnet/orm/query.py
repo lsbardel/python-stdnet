@@ -207,24 +207,27 @@ class Manager(object):
     
 class RelatedManager(Manager):
     
-    def __init__(self, related, fieldname):
-        self.related    = related
+    def __init__(self, related, fieldname, obj = None):
+        self.to         = related
         self.fieldname  = fieldname
-        self.obj        = None
+        self.obj        = obj
+    
+    def __get__(self, instance, instance_type=None):
+        return self.__class__(self.to,self.fieldname,instance)
+    
+    def get_related_object(self, id):
+        return self.to.objects.get(id = id)
         
     def filter(self, **kwargs):
         if self.obj:
-            kwargs[self.fieldname] = self.obj.id
-            return QuerySet(self.related._meta, kwargs)
+            kwargs[self.fieldname] = self.obj
+            return QuerySet(self.to._meta, kwargs)
             #meta = self.related._meta
             #id   = meta.basekey(self.fieldname,self.obj.id)
             #data = meta.cursor.unordered_set(id)
             #hash = meta.cursor.hash(meta.basekey())
             #return hash.mget(data)
     
-    def __deepcopy__(self, memodict):
-        # We only copy here
-        return copy(self)
 
     
 class UnregisteredManager(object):

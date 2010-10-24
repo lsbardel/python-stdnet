@@ -86,9 +86,7 @@ class TestDateModel(orm.StdModel):
 # Create the model for testing.
 class Node(orm.StdModel):
     parent = orm.ForeignKey('self', required = False, related_name = 'children')
-    def __init__(self, weight = 1.0, **kwargs):
-        super(Node,self).__init__(**kwargs)
-        self.weight = weight
+    weight = orm.FloatField()
     
     def __str__(self):
         return '%s' % self.weight

@@ -4,7 +4,7 @@ import time
 from datetime import date, datetime
 
 from query import RelatedManager
-from related import RelatedObject
+from related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from stdnet.exceptions import *
 from stdnet.utils import timestamp2date, date2timestamp
 
@@ -126,35 +126,24 @@ function users should never call.'''
         if self.name:
             raise FieldError('Field %s is already registered with a model' % self)
         self.name  = name
+        self.attname =self.get_attname()
         self.model = model
         self.meta  = model._meta
         self.meta.dfields[name] = self
         if name is not 'id':
             self.meta.fields.append(self)
     
-    def get_full_value(self):
-        '''Return the expanded value of the field. For standard fields this is the
-same as the field value, while for more complex fields, such as :class:`ForeignKey`, it
-get extra data from the database. This function is called by the model when accessing
-fields values.'''
-        return self._value
+    def get_attname(self):
+        return self.name
+    
+    def get_cache_name(self):
+        return '_%s_cache' % self.name
     
     def serialize(self, value):
         '''Called by the :func:'stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It return s a serializable representation of *value*.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         return value
-    
-    def isvalid(self):
-        '''Return ``True`` if Field is valid otherwise raise a ``FieldError`` exception.'''
-        name    = self.name
-        obj     = self.obj
-        value   = self.serialize()
-        if value is None and self.required:
-            raise FieldError('Field %s for %s has no value' % (name,obj))
-        if self.primary_key:
-            setattr(obj,name,value)
-        return True
     
     def add(self, *args, **kwargs):
         raise NotImplementedError("Cannot add to field")
@@ -342,32 +331,18 @@ back to self. For example::
                                model,
                                relmanager = RelatedManager,
                                related_name = related_name)
-        self.__value_obj = _novalue
     
-    def set_value(self, name, obj, value):
-        value = super(ForeignKey,self).set_value(name,obj,value)
-        if isinstance(value,self.model):
-            self.__value_obj = value
-            self._value = value.id
+    def get_attname(self):
+        return '%s_id' % self.name
     
-    def get_full_value(self):
-        v = self.__value_obj
-        if isinstance(v,NoValue):
-            if self._value:
-                meta    = self.model._meta
-                hash    = meta.cursor.hash(meta.basekey())
-                v       = hash.get(self._value)
-            else:
-                v = None
-            self.__value_obj = v
-        return v
+    def register_with_model(self, name, model):
+        super(ForeignKey,self).register_with_model(name, model)
+        setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
+        self.register_with_related_model()
     
-    def get_value(self, value):
-        if isinstance(value,self.model):
+    def serialize(self, value):
+        try:
             return value.id
-        else:
+        except:
             return value
-    
-    def hash(self, value):
-        return self.get_value(value)
     

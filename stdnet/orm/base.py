@@ -53,7 +53,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 '''
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
-                 app_label = None, **kwargs):
+                 app_label = '', **kwargs):
         self.abstract  = abstract
         self.keyprefix = keyprefix
         self.model     = model
@@ -134,7 +134,7 @@ the model table'''
         obj = self.maker()
         setattr(obj,'id',id)
         for field,value in izip(self.fields,data):
-            setattr(obj,field.name,field.to_python(value))
+            setattr(obj,field.attname,field.to_python(value))
         return obj
 
 
@@ -156,12 +156,14 @@ class StdNetType(type):
             kwargs   = meta_options(**meta.__dict__)
         else:
             kwargs   = {}
-        meta = Metaclass(new_class,fields,**kwargs)
-        if getattr(meta, 'app_label', None) is None:
-            # Figure out the app_label a-la django
+        if kwargs.pop('app_label',None) is None:
             model_module = sys.modules[new_class.__module__]
-            setattr(meta,'app_label',model_module.__name__.split('.')[-2])
-            
+            try:
+                app_label = model_module.__name__.split('.')[-2]
+            except:
+                app_label = ''
+        
+        meta = Metaclass(new_class,fields,app_label=app_label,**kwargs)            
         objects = getattr(new_class,'objects',None)
         if objects is None:
             new_class.objects = UnregisteredManager(new_class)

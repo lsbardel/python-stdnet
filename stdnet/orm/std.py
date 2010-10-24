@@ -73,7 +73,6 @@ class MultiField(Field):
         self.index       = False
         self.unique      = False
         self.primary_key = False
-        self._structure  = None
         self.pickler     = pickler
         self.converter   = converter
         
@@ -87,10 +86,8 @@ class MultiField(Field):
         return FieldForObject(self,instance)
         
     def get_structure(self):
-        if not self._structure:
-            pipe = pipelines(self.get_pipeline(),self.meta.timeout)
-            self._structure = getattr(self.meta.cursor,pipe.method,None)
-        return self._structure
+        pipe = pipelines(self.get_pipeline(),self.meta.timeout)
+        return getattr(self.meta.cursor,pipe.method,None)
         
     def serialize(self, value):
         return None

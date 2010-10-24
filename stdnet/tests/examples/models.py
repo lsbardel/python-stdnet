@@ -7,6 +7,8 @@ class SimpleModel(orm.StdModel):
     code = orm.SymbolField(unique = True)
     
 
+#####################################################################
+#    FINANCE APPLICATION
 class Base(orm.StdModel):
     name = orm.SymbolField(unique = True)
     ccy  = orm.SymbolField()
@@ -30,8 +32,7 @@ class Position(orm.StdModel):
     instrument = orm.ForeignKey(Instrument, related_name = 'positions')
     fund       = orm.ForeignKey(Fund)
     dt         = orm.DateField()
-    size       = orm.FloatField()
-    price      = orm.FloatField()
+    size       = orm.FloatField(default = 1)
     
     def __str__(self):
         return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)

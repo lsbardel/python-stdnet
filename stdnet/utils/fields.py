@@ -1,16 +1,4 @@
 
-
-class ModelFieldPickler(object):
-    
-    def __init__(self, model):
-        self.model = model
-        self.get   = model.objects.get
-        
-    def loads(self, s):
-        return self.get(id = s)
-    
-    def dumps(self, obj):
-        return obj.id
     
 
 class listPipeline(object):

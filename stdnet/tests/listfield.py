@@ -15,6 +15,9 @@ class TestLListField(TestCase):
     def setUp(self):
         self.orm.register(SimpleList)
         
+    def unregister(self):
+        self.orm.unregister(SimpleList)
+        
     def testPushBackPopBack(self):
         li = SimpleList()
         self.assertEqual(li.id,None)

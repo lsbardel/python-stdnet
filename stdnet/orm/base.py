@@ -11,7 +11,7 @@ def get_fields(bases, attrs):
     fields = {}
     for base in bases:
         if hasattr(base, '_meta'):
-            fields.update(copy.deepcopy(base._meta.fields))
+            fields.update(copy.deepcopy(base._meta.dfields))
     
     for name,field in attrs.items():
         if isinstance(field,Field):
@@ -59,29 +59,29 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.model     = model
         self.app_label = app_label
         self.name      = model.__name__.lower()
-        self.fields    = []
+        self.fields      = []
+        self.multifields = []
         self.dfields   = {}
         self.timeout   = 0
         self.related   = {}
         self.maker     = lambda : model.__new__(model)
         model._meta    = self
         
-        if not abstract:
-            try:
-                pk = fields['id']
-            except:
-                pk = AutoField(primary_key = True)
-            pk.register_with_model('id',model)
-            self.pk = pk
-            if not self.pk.primary_key:
-                raise FieldError("Primary key must be named id")
-            
-            for name,field in fields.iteritems():
-                if name == 'id':
-                    continue
-                field.register_with_model(name,model)
-                if field.primary_key:
-                    raise FieldError("Primary key already available %s." % name)
+        try:
+            pk = fields['id']
+        except:
+            pk = AutoField(primary_key = True)
+        pk.register_with_model('id',model)
+        self.pk = pk
+        if not self.pk.primary_key:
+            raise FieldError("Primary key must be named id")
+        
+        for name,field in fields.iteritems():
+            if name == 'id':
+                continue
+            field.register_with_model(name,model)
+            if field.primary_key:
+                raise FieldError("Primary key already available %s." % name)
             
         self.cursor = None
         self.keys  = None
@@ -123,18 +123,14 @@ the model table'''
             raise ModelNotRegistered('%s not registered. Call orm.register(model_class) to solve the problem.' % self)
         return self.cursor.hash(self.basekey(),self.timeout)
     
-    def related_objects(self):
-        objs = []
-        for rel in self.related.itervalues():
-            objs.extend(rel.all())
-        return objs
-    
     def make(self, id, data):
         '''Create a model instance from server data'''
         obj = self.maker()
         setattr(obj,'id',id)
         for field,value in izip(self.fields,data):
             setattr(obj,field.attname,field.to_python(value))
+        for field in self.multifields:
+            setattr(obj,field.attname,field)
         return obj
 
 

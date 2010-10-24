@@ -2,7 +2,41 @@ from fields import Field, RelatedObject, _novalue
 
 from stdnet.exceptions import *
 from stdnet import pipelines
-from stdnet.utils import ModelFieldPickler
+from stdnet.orm.related import add_lazy_relation, _register_container_model
+
+
+class FieldForObject(object):
+    
+    def __init__(self,field,instance):
+        self.instance = instance
+        self.timeout  = instance._meta.timeout
+        self.field = field
+        self.pickler = field.pickler
+        self.converter = field.converter
+        self._data = None
+        
+    def __iter__(self):
+        return self.st().__iter__()
+    
+    def st(self):
+        cache_name = self.field.get_cache_name()
+        try:
+            val = getattr(self.instance, cache_name)
+        except AttributeError:
+            objid = self.instance.id
+            if not objid:
+                raise FieldError('Object not saved. cannot access %s' % self)
+            id = self.instance._meta.basekey('id',objid,self.field.name)
+            st = self.field.get_structure()
+            val =  st(id,
+                      timeout = self.timeout,
+                      pickler = self.pickler,
+                      converter = self.converter)
+            setattr(self.instance,cache_name,val)
+        return val
+            
+    def __getattr__(self,name):
+        return getattr(self.st(),name)
 
 
 class MultiField(Field):
@@ -35,42 +69,30 @@ class MultiField(Field):
         self.model       = model
         super(MultiField,self).__init__(required = False,
                                         **kwargs)
+        self.relmodel    = model
         self.index       = False
         self.unique      = False
         self.primary_key = False
+        self._structure  = None
         self.pickler     = pickler
         self.converter   = converter
         
-    def register_with_model(self, name, related):
-        if not self.model:
-            return
-        if self.model == 'self':
-            self.model = related
+    def register_with_model(self, name, model):
+        super(MultiField,self).register_with_model(name, model)
+        self.model._meta.multifields.append(self)
+        if self.relmodel:
+            add_lazy_relation(self,self.relmodel,_register_container_model)
         
-    def get_full_value(self):
-        meta  = self.meta
-        objid = self.obj.id
-        if not objid:
-            raise FieldError('Object not saved. cannot access %s %s' % (self.__class__.__name__,self.name))
-        id = meta.basekey('id',self.obj.id,self.name)
-        return self.structure(id,
-                              timeout = meta.timeout,
-                              pickler = self.pickler,
-                              converter = self.converter)
-    
-    def _set_value(self, name, obj, value):
-        v = super(MultiField,self)._set_value(name, obj, value)
-        self.set_structure()
-        return v
+    def for_object(self, instance):
+        return FieldForObject(self,instance)
         
-    def set_structure(self):
-        meta = self.meta
-        pipe = pipelines(self.get_pipeline(),meta.timeout)
-        self.structure = getattr(meta.cursor,pipe.method,None)
-        if self.model and not self.pickler:
-            self.pickler = ModelFieldPickler(self.model)
-    
-    def serialize(self):
+    def get_structure(self):
+        if not self._structure:
+            pipe = pipelines(self.get_pipeline(),self.meta.timeout)
+            self._structure = getattr(self.meta.cursor,pipe.method,None)
+        return self._structure
+        
+    def serialize(self, value):
         return None
         
     def save_index(self, commit, value):

@@ -30,6 +30,8 @@ the :attr:`StdModel._meta` attribute.
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for this function" % kwargs.keys()[0])
+        for field in self._meta.multifields:
+            setattr(self,field.attname,field.for_object(self))
         
     def __repr__(self):
         return '%s: %s' % (self.__class__.__name__,self)
@@ -115,18 +117,28 @@ otherwise a ``ModelNotRegistered`` exception will be raised.'''
         else:
             return False
         
-    def delete(self):
+    def delete(self, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
 ``StdNetException`` exception will raise.'''
+        if dlist is None:
+            dlist = []
         meta = self._meta
         if not self.id:
             raise StdNetException('Cannot delete object. It was never saved.')
         # Gather related objects to delete
-        objs = meta.related_objects()
+        objs = self.related_objects()
         T = 0
         for obj in objs:
-            T += obj.delete()
-        return T + meta.cursor.delete_object(self)
+            T += obj.delete(dlist)
+        return T + meta.cursor.delete_object(self, dlist)
+    
+    def related_objects(self):
+        '''Collect or related objects'''
+        objs = []
+        for rel in self._meta.related:
+            rmanager = getattr(self,rel)
+            objs.extend(rmanager.all())
+        return objs
     
     def todict(self):
         odict = self.__dict__.copy()

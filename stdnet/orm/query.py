@@ -170,11 +170,11 @@ fetching objects.'''
             self._seq = list(self)
         return self._seq
     
-    def delete(self):
+    def delete(self, dlist = None):
         '''Delete all the element in the queryset'''
         T = 0
         for el in self:
-            T += el.delete()
+            T += el.delete(dlist)
         return T
     
 
@@ -207,16 +207,20 @@ class Manager(object):
     
 class RelatedManager(Manager):
     
-    def __init__(self, related, fieldname, obj = None):
+    def __init__(self, model, related, fieldname, obj = None):
+        self.model      = model
         self.to         = related
         self.fieldname  = fieldname
         self.obj        = obj
     
+    def __str__(self):
+        return '%s to %s' % (self.model._meta,self.to._meta)
+    
     def __get__(self, instance, instance_type=None):
-        return self.__class__(self.to,self.fieldname,instance)
+        return self.__class__(self.model,self.to,self.fieldname,instance)
     
     def get_related_object(self, id):
-        return self.to.objects.get(id = id)
+        return self.model.objects.get(id = id)
         
     def filter(self, **kwargs):
         if self.obj:

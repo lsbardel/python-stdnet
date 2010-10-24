@@ -6,6 +6,18 @@ pending_lookups = {}
 RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 
 
+class ModelFieldPickler(object):
+    
+    def __init__(self, model):
+        self.model = model
+        
+    def loads(self, s):
+        return self.model.objects.get(id = s)
+    
+    def dumps(self, obj):
+        return obj.id
+    
+
 def add_lazy_relation(field, relation, operation):
     '''Adapted from django. Adds a lookup on ``cls`` when a related field is defined using a string.'''
     # Check for recursive relations
@@ -69,10 +81,9 @@ class ReverseSingleRelatedObjectDescriptor(object):
         if value is None and field.required:
             raise ValueError('Cannot assign None: "%s.%s" does not allow null values.' %
                                 (instance._meta.object_name, field.name))
-        elif value is not None and not isinstance(value, field.rel.to):
-            raise ValueError('Cannot assign "%r": "%s.%s" must be a "%s" instance.' %
-                                (value, instance._meta.object_name,
-                                 field.name, field.rel.to._meta.object_name))
+        elif value is not None and not isinstance(value, field.relmodel):
+            raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
+                                (value, field, field.relmodel._meta.name))
 
         # If we're setting the value of a OneToOneField to None, we need to clear
         # out the cache on any old related object. Otherwise, deleting the
@@ -108,11 +119,12 @@ class ReverseSingleRelatedObjectDescriptor(object):
 
 
 def _register_related(field, related):
+    field.relmodel = related
     meta  = related._meta
     related_name = field.related_name or '%s_set' % field.model._meta.name
-    if related_name not in meta.related and related_name not in meta.fields:
+    if related_name not in meta.related and related_name not in meta.dfields:
         field.related_name = related_name
-        manager = field.relmanager(related,field.name)
+        manager = field.relmanager(related,field.model,field.name)
         setattr(related,field.related_name,manager)
         meta.related[related_name] = manager
         field.rel = manager
@@ -120,6 +132,11 @@ def _register_related(field, related):
     else:
         raise stdnet.FieldError("Duplicated related name %s in model %s and field %s" % (related_name,related,name))
 
+
+def _register_container_model(field, related):
+    field.relmodel = related
+    if not field.pickler:
+        field.pickler = ModelFieldPickler(related)
 
 class RelatedObject(object):
     

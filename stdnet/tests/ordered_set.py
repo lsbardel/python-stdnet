@@ -22,6 +22,10 @@ class TestOrderedSet(TestCase):
             ts.add(dt,value)
         ts.save()
         
+    def unregister(self):
+        self.orm.unregister(Calendar)
+        self.orm.unregister(DateValue)
+        
     def testOrder(self):
         ts = Calendar.objects.get(name = 'MyCalendar')
         self.assertEqual(ts.data.size(),NUM_DATES)

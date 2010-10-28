@@ -128,10 +128,15 @@ function users should never call.'''
         self.name  = name
         self.attname =self.get_attname()
         self.model = model
-        self.meta  = model._meta
-        self.meta.dfields[name] = self
+        meta = model._meta
+        self.meta  = meta
+        meta.dfields[name] = self
         if name is not 'id':
-            self.meta.fields.append(self)
+            meta.fields.append(self)
+            self.add_to_fields()
+            
+    def add_to_fields(self):
+        self.model._meta.scalarfields.append(self)
     
     def get_attname(self):
         return self.name

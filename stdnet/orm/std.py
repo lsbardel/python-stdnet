@@ -4,6 +4,8 @@ from stdnet.exceptions import *
 from stdnet import pipelines
 from stdnet.orm.related import add_lazy_relation, _register_container_model
 
+from query import M2MRelatedManager
+
 
 class FieldForObject(object):
     
@@ -17,6 +19,12 @@ class FieldForObject(object):
         
     def __iter__(self):
         return self.st().__iter__()
+    
+    def __str__(self):
+        return self.st().__repr__()
+    
+    def __repr__(self):
+        return self.st().__repr__()
     
     def st(self):
         cache_name = self.field.get_cache_name()
@@ -65,8 +73,10 @@ class MultiField(Field):
                  model = None,
                  pickler = None,
                  converter = None,
+                 required = False,
                  **kwargs):
         self.model       = model
+        # Force required to be false
         super(MultiField,self).__init__(required = False,
                                         **kwargs)
         self.relmodel    = model
@@ -78,11 +88,13 @@ class MultiField(Field):
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
-        self.model._meta.multifields.append(self)
         if self.relmodel:
             add_lazy_relation(self,self.relmodel,_register_container_model)
+
+    def add_to_fields(self):
+        self.model._meta.multifields.append(self)
         
-    def for_object(self, instance):
+    def to_python(self, instance):
         return FieldForObject(self,instance)
         
     def get_structure(self):
@@ -193,29 +205,14 @@ This field is implemented as a double Set field.
         SetField.__init__(self, **kwargs)
         RelatedObject.__init__(self,
                                model,
-                               relmanager = self.__class__,
+                               relmanager = M2MRelatedManager,
                                related_name = related_name)
         self.index = False
         
-    #def register_with_model(self, name, related):
-    #    related_manager = self.register_related_model(name, related)
-    #    related_manager.name = self.related_name
-        
-    def _set_value(self, name, obj, value):
-        v = SetField._set_value(self, name, obj, value)
-        related_manager = self.model._meta.related[self.related_name]
-        related_manager.meta = related_manager.model._meta
-        related_manager.set_structure()
-        return v
-    
-    def get_full_value(self):
-        return self
-    
-    #def _id(self):
-    #    return self.meta.basekey('id',self.obj.id,self.name)
-        
-    #def _relid(self, rel):
-    #    return self.meta.basekey('id',rel.id,self.related_name)
+    def register_with_model(self, name, model):
+        super(ManyToManyField,self).register_with_model(name, model)
+        #setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
+        self.register_with_related_model()
     
     def add(self, value):
         if not isinstance(value,self.model):
@@ -236,15 +233,4 @@ This field is implemented as a double Set field.
     def _add(self, obj, name, value):
         s = self._structure(obj,name)
         s.add(value)
-        
-    def __iter__(self):
-        return self._structure(self.obj, self.name).__iter__()
-    
-    def __contains__(self, item):
-        return self._structure(self.obj, self.name).__contains__(item)
-    
-    def size(self):
-        return self._structure(self.obj, self.name).size()
-    
-    def count(self):
-        return self.size()        
+           

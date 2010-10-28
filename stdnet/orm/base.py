@@ -59,13 +59,14 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.model     = model
         self.app_label = app_label
         self.name      = model.__name__.lower()
-        self.fields      = []
-        self.multifields = []
-        self.dfields   = {}
-        self.timeout   = 0
-        self.related   = {}
-        self.maker     = lambda : model.__new__(model)
-        model._meta    = self
+        self.fields       = []
+        self.scalarfields = []
+        self.multifields  = []
+        self.dfields      = {}
+        self.timeout      = 0
+        self.related      = {}
+        self.maker        = lambda : model.__new__(model)
+        model._meta       = self
         
         try:
             pk = fields['id']
@@ -127,10 +128,10 @@ the model table'''
         '''Create a model instance from server data'''
         obj = self.maker()
         setattr(obj,'id',id)
-        for field,value in izip(self.fields,data):
+        for field,value in izip(self.scalarfields,data):
             setattr(obj,field.attname,field.to_python(value))
         for field in self.multifields:
-            setattr(obj,field.attname,field)
+            setattr(obj,field.attname,field.to_python(obj))
         return obj
 
 

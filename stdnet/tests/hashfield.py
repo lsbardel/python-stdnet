@@ -15,9 +15,13 @@ class TestLHashField(TestCase):
         self.orm.register(Dictionary)
         d = Dictionary(name = 'test').save()
         self.data = dict(izip(keys,values))
+        
+    def unregister(self):
+        self.orm.unregister(Dictionary)
     
     def fill(self):
         d = Dictionary.objects.get(name = 'test')
+        data = d.data
         d.data.update(self.data)
         self.assertEqual(d.data.size(),0)
         d.save()

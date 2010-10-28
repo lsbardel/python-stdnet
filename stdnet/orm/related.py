@@ -79,8 +79,7 @@ class ReverseSingleRelatedObjectDescriptor(object):
         field = self.field
 
         if value is None and field.required:
-            raise ValueError('Cannot assign None: "%s.%s" does not allow null values.' %
-                                (instance._meta.object_name, field.name))
+            raise ValueError('Cannot assign None: "%s" does not allow null values.' % field)
         elif value is not None and not isinstance(value, field.relmodel):
             raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
@@ -138,6 +137,7 @@ def _register_container_model(field, related):
     if not field.pickler:
         field.pickler = ModelFieldPickler(related)
 
+
 class RelatedObject(object):
     
     def __init__(self,
@@ -152,5 +152,6 @@ class RelatedObject(object):
     
     def register_with_related_model(self):
         add_lazy_relation(self,self.relmodel,_register_related)
+        
 
         

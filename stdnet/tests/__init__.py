@@ -8,12 +8,12 @@
 #from atomfields import *
 
 # Data-structure Fields
-from listfield import *
+#from listfield import *
 #from ordered_set import *
 #from hashfield import *
 
 # Many to many Field
-#from twitter import *
+from twitter import *
 #from testme import *
 
 # Contrib

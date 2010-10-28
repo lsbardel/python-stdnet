@@ -231,9 +231,36 @@ class RelatedManager(Manager):
             #data = meta.cursor.unordered_set(id)
             #hash = meta.cursor.hash(meta.basekey())
             #return hash.mget(data)
+            
+
+class M2MRelatedManager(Manager):
+    
+    def __init__(self, model, related, fieldname, obj = None):
+        self.model      = model
+        self.to         = related
+        self.fieldname  = fieldname
+        self.obj        = obj
+    
+    def __str__(self):
+        return '%s m2m %s' % (self.model._meta,self.to._meta)
+    
+    def __get__(self, instance, instance_type=None):
+        return self.__class__(self.model,self.to,self.fieldname,instance)
+    
+    def get_related_object(self, id):
+        return self.model.objects.get(id = id)
+        
+    def filter(self, **kwargs):
+        if self.obj:
+            kwargs[self.fieldname] = self.obj
+            return QuerySet(self.to._meta, kwargs)
+            #meta = self.related._meta
+            #id   = meta.basekey(self.fieldname,self.obj.id)
+            #data = meta.cursor.unordered_set(id)
+            #hash = meta.cursor.hash(meta.basekey())
+            #return hash.mget(data)
     
 
-    
 class UnregisteredManager(object):
     
     def __init__(self, model):

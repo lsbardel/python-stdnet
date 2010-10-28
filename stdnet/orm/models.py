@@ -21,7 +21,7 @@ the :attr:`StdModel._meta` attribute.
     __metaclass__ = StdNetType
     
     def __init__(self, **kwargs):
-        for field in self._meta.fields:
+        for field in self._meta.scalarfields:
             name = field.name
             value = kwargs.pop(name,None)
             if value is None:
@@ -31,7 +31,7 @@ the :attr:`StdModel._meta` attribute.
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for this function" % kwargs.keys()[0])
         for field in self._meta.multifields:
-            setattr(self,field.attname,field.for_object(self))
+            setattr(self,field.attname,field.to_python(self))
         
     def __repr__(self):
         return '%s: %s' % (self.__class__.__name__,self)
@@ -89,7 +89,7 @@ otherwise a ``ModelNotRegistered`` exception will be raised.'''
             raise ModelNotRegistered('Model %s is not registered with a backend database. Cannot save any instance.' % meta.name)
         data = []
         indexes = []
-        for field in meta.fields:
+        for field in meta.scalarfields:
             name = field.attname
             value = getattr(self,name,None)
             serializable = field.serialize(value)

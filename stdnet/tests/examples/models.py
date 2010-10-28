@@ -50,11 +50,8 @@ class UserDefaultView(orm.StdModel):
     
 class DateValue(orm.StdModel):
     "An helper class for adding calendar events"
-    
-    def __init__(self, dt, value):
-        self.dt = dt
-        self.value = value
-        super(DateValue,self).__init__()
+    dt = orm.DateField(index = False)
+    value = orm.CharField()
     
     def score(self):
         "implement the score function for sorting in the ordered set"
@@ -66,7 +63,7 @@ class Calendar(orm.StdModel):
     data   = orm.SetField(model = DateValue, ordered = True)
     
     def add(self, dt, value):
-        event = DateValue(dt,value).save()
+        event = DateValue(dt = dt,value = value).save()
         self.data.add(event)
 
     
@@ -109,7 +106,7 @@ class Post(orm.StdModel):
 class User(orm.StdModel):
     '''A model for holding information about users'''
     username  = orm.SymbolField(unique = True)
-    password  = orm.CharField(required = True)
+    password  = orm.SymbolField()
     updates   = orm.ListField(model = Post)
     following = orm.ManyToManyField(model = 'self', related_name = 'followers')
     

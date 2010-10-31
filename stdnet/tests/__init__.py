@@ -17,4 +17,4 @@ from twitter import *
 from testme import *
 
 # Contrib
-#from stdnet.contrib.timeserie.tests import *
+from stdnet.contrib.timeserie.tests import *

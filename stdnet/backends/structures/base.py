@@ -1,6 +1,6 @@
 '''Interfaces for supported data-structures'''
 
-from stdnet.utils import listPipeline, many2manyPipeline
+from stdnet.utils import listPipeline
 
 
 __all__ = ['PipeLine',
@@ -48,15 +48,11 @@ class ListPipe(PipeLine):
     def __init__(self, timeout):
         super(ListPipe,self).__init__(listPipeline(),'list',timeout)
         
-class Many2Many(PipeLine):
-    def __init__(self, timeout):
-        super(Many2Many,self).__init__(many2manyPipeline(),'unordered_set',timeout)
 
 _pipelines = {'list':ListPipe,
               'hash': HashPipe,
               'set': SetPipe,
-              'oset': OsetPipe,
-              'many2many': Many2Many}
+              'oset': OsetPipe}
 
 
 def pipelines(typ, timeout):

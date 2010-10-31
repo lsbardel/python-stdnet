@@ -19,21 +19,4 @@ class listPipeline(object):
         return len(self.back) + len(self.front)
     
 
-class many2manyPipeline(object):
-    def __init__(self):
-        self.pipe = {}
-    
-    def get(self, id):
-        s = self.pipe.get(id,None)
-        if s is None:
-            s = set()
-            self.pipe[id] = s
-        return s
-    __getitem__ = get
-    
-    def __iter__(self):
-        return self.pipe.iteritems()
-    
-    def clear(self):
-        self.pipe.clear()
     

@@ -9,7 +9,7 @@ from query import M2MRelatedManager
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, stype, pickler, converter = None):
+    def __init__(self, name, stype, pickler, converter):
         self.name    = name
         self.stype   = stype
         self.pickler = pickler
@@ -49,7 +49,7 @@ class ManyFieldManagerProxy(object):
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
     
     def __init__(self, name, stype, to_name, to):
-        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to))
+        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to), None)
         self.to_name = to_name
         self.to = to
         
@@ -114,7 +114,9 @@ class MultiField(Field):
         if related:
             if not field.pickler:
                 field.pickler = ModelFieldPickler(related)
-        setattr(self.model,self.name,ManyFieldManagerProxy(self.name,self.get_pipeline(),field.pickler))
+        setattr(self.model,
+                self.name,
+                ManyFieldManagerProxy(self.name,self.get_pipeline(),self.pickler,self.converter))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)

@@ -40,8 +40,8 @@ class TestTimeSerie(TestCase):
         intervals = ts.intervals(a,b)
         self.assertEqual(len(intervals),len(targets))
         for interval,target in izip(intervals,targets):
-            x = interval[0]
-            y = interval[1]
+            x = interval[0].date()
+            y = interval[1].date()
             self.assertEqual(x,target[0])
             self.assertEqual(y,target[1])
             for dt in dategenerator(x,y):

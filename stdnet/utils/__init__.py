@@ -17,3 +17,10 @@ def date2timestamp(dte):
 def timestamp2date(tstamp):
     "Converts a unix timestamp to a Python datetime object"
     return datetime.fromtimestamp(0.001*int(tstamp))
+
+    
+def todatetime(dt):
+    if isinstance(dt,datetime):
+        return dt
+    else:
+        return datetime(dt.year,dt.month,dt.day)

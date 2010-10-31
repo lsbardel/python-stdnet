@@ -273,7 +273,7 @@ a :class:`datetime.date` instance.'''
         return value
         
         
-class DateTimeField(AtomField):
+class DateTimeField(DateField):
     '''An date :class:`AtomField` represented in Python by
 a :class:`datetime.datetime` instance.'''
     type = 'datetime'

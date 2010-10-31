@@ -1,5 +1,5 @@
 from stdnet import orm
-from stdnet.utils import date2timestamp, timestamp2date
+from stdnet.utils import date2timestamp, timestamp2date, todatetime
 from stdnet.contrib.timeserie.utils import default_parse_interval
 
 class DateTimeConverter(object):
@@ -33,11 +33,8 @@ class TimeSerieField(orm.HashField):
 
 class TimeSerie(orm.StdModel):
     data  = TimeSerieField()
-    
-    def __init__(self, start = None, end = None, **kwargs):
-        super(TimeSerie,self).__init__(**kwargs)
-        self.start = start
-        self.end   = end
+    start = orm.DateTimeField(required = False, index = False)
+    end   = orm.DateTimeField(required = False, index = False)
     
     def size(self):
         '''number of dates in timeseries'''
@@ -65,14 +62,14 @@ class TimeSerie(orm.StdModel):
         return self.save()
     
     def intervals(self, startdate, enddate, parseinterval = default_parse_interval):
-        '''Given a *start* and an *end* date, evaluate the date intervals
+        '''Given a *startdate* and an *enddate* date, evaluate the date intervals
 from which data is not available. It return a list of two-dimensional tuples
 containing start and end date for the interval. The list could countain 0,1 or 2
 tuples.'''
         start     = self.start
         end       = self.end
-        startdate = parseinterval(startdate,0)
-        enddate   = max(startdate,parseinterval(enddate,0))
+        startdate = todatetime(parseinterval(startdate,0))
+        enddate   = max(startdate,todatetime(parseinterval(enddate,0)))
 
         calc_intervals = []
         # we have some history already

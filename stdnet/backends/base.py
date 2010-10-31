@@ -1,5 +1,5 @@
 from stdnet.exceptions import *
-from structures import pipelines, Structure
+from structures import Structure
 
 novalue = object()
 
@@ -94,7 +94,7 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
         cache  = self._cachepipe
         cvalue = cache.get(id,None)
         if cvalue is None:
-            cvalue = pipelines(typ, timeout)
+            cvalue = typ(timeout)
             cache[id] = cvalue
         return cvalue
             
@@ -127,7 +127,7 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
             self.commit()
             
     def commit(self):
-        '''Commit cache objects to database'''
+        '''Commit cache objects to database.'''
         cache = self._cachepipe
         keys = self._keys
         # flush cache
@@ -258,28 +258,24 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
     def index_keys(self, id, timeout):
         return Keys(id,timeout,self._keys)
     
-    def list(self, id, timeout = 0, pipeline = None, **kwargs):
+    def list(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.List`
 for a given *id*.'''
-        pip = pipeline if pipeline is not None else self._get_pipe(id,'list',timeout)
-        return self.structure_module.List(self, id, pip.pipe, **kwargs)
+        return self.structure_module.List(self, id, **kwargs)
     
-    def hash(self, id, timeout = 0, pipeline = None, **kwargs):
+    def hash(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        pip = pipeline if pipeline is not None else self._get_pipe(id,'hash',timeout)
-        return self.structure_module.HashTable(self, id, pip.pipe, **kwargs)
+        return self.structure_module.HashTable(self, id, **kwargs)
     
-    def unordered_set(self, id, timeout = 0, pipeline = None, **kwargs):
+    def unordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.Set` structure
 for a given *id*.'''
-        pip = pipeline if pipeline is not None else self._get_pipe(id,'set',timeout)
-        return self.structure_module.Set(self, id, pip.pipe, **kwargs)
+        return self.structure_module.Set(self, id, **kwargs)
     
-    def ordered_set(self, id, timeout = 0, pipeline = None, **kwargs):
+    def ordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.OrderedSet` structure
 for a given *id*.'''
-        pip = pipeline if pipeline is not None else self._get_pipe(id,'oset',timeout)
-        return self.structure_module.OrderedSet(self, id, pip.pipe, **kwargs)
+        return self.structure_module.OrderedSet(self, id, **kwargs)
     
 

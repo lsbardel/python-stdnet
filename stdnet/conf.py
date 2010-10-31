@@ -18,7 +18,7 @@ To change settings::
     '''
     def __init__(self):
         self.DEFAULT_BACKEND    = 'redis://127.0.0.1:6379/?db=7'
-        self.DEFAULT_KEYPREFIX  = 'stdnet'
+        self.DEFAULT_KEYPREFIX  = 'stdnet.'
         
         
 settings = Settings()

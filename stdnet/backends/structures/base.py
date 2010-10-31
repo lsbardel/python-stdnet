@@ -86,14 +86,15 @@ class Structure(object):
     An instance :class:`PipeLine`
 
     '''
-    
-    def __init__(self, cursor, id, pipeline = None,
-                 pickler = None, **kwargs):
+    struct = None
+    def __init__(self, cursor, id, timeout = 0,
+                 pickler = None, pipeline = None, **kwargs):
         self.cursor    = cursor
         self.pickler   = pickler or cursor.pickler
         self.id        = id
-        self._pipeline = pipeline
+        self.timeout   = timeout
         self._cache    = None
+        self._pipeline = pipeline
     
     def __repr__(self):
         base = '%s:%s' % (self.__class__.__name__,self.id)
@@ -105,6 +106,13 @@ class Structure(object):
     def __str__(self):
         return self.__repr__()
     
+    def __get_pipeline(self):
+        if self._pipeline is not None:
+            return self._pipeline.pipe
+        else:
+            return self.cursor._get_pipe(self.id,self.struct,self.timeout).pipe
+    pipeline = property(__get_pipeline)
+        
     def size(self):
         '''Number of elements in structure'''
         if self._cache is None:
@@ -134,9 +142,10 @@ class Structure(object):
         return self._cache
     
     def save(self):
-        if self._pipeline:
+        p = self.pipeline
+        if p:
             s = self._save()
-            self._pipeline.clear()
+            p.clear()
             return s
         else:
             return 0
@@ -149,6 +158,7 @@ class Structure(object):
 
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
+    struct = ListPipe
     def __iter__(self):
         if not self._cache:
             cache = []
@@ -170,17 +180,16 @@ class List(Structure):
     
     def push_back(self, value):
         '''Appends a copy of *value* to the end of the remote list.'''
-        self._pipeline.push_back(self.pickler.dumps(value))
+        self.pipeline.push_back(self.pickler.dumps(value))
     
     def push_front(self, value):
         '''Appends a copy of *value* to the beginning of the remote list.'''
-        self._pipeline.push_front(self.pickler.dumps(value))
-
+        self.pipeline.push_front(self.pickler.dumps(value))
 
 
 class Set(Structure):
     '''An unordered set :class:`stdnet.Structure`.'''
-    
+    struct = SetPipe
     def __iter__(self):
         if not self._cache:
             cache = []
@@ -203,11 +212,11 @@ class Set(Structure):
                     
     def add(self, value):
         '''Add *value* to the set'''
-        self._pipeline.add(self.pickler.dumps(value))
+        self.pipeline.add(self.pickler.dumps(value))
 
     def update(self, values):
         '''Add iterable *values* to the set'''
-        pipeline = self._pipeline
+        pipeline = self.pipeline
         for value in values:
             pipeline.add(self.pickler.dumps(value))
             
@@ -223,7 +232,7 @@ class Set(Structure):
 
 class OrderedSet(Set):
     '''An ordered set :class:`stdnet.Structure`.'''
-    
+    struct = OsetPipe
     def __iter__(self):
         if not self._cache:
             cache = []
@@ -239,7 +248,7 @@ class OrderedSet(Set):
                 
     def add(self, value):
         '''Add *value* to the set'''
-        self._pipeline.add((value.score(),self.pickler.dumps(value)))
+        self.pipeline.add((value.score(),self.pickler.dumps(value)))
 
 
 def itemcmp(x,y):
@@ -251,7 +260,7 @@ def itemcmp(x,y):
     
 class HashTable(Structure):
     '''An hash-table :class:`stdnet.Structure`.'''
-    
+    struct = HashPipe
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter
         super(HashTable,self).__init__(*args, **kwargs)
@@ -272,7 +281,7 @@ class HashTable(Structure):
         '''Add *mapping* dictionary to hashtable. Equivalent to python dictionary update method.'''
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
-        p     = self._pipeline
+        p     = self.pipeline
         for key,value in mapping.iteritems():
             p[tokey(key)] = dumps(value)
     

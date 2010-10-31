@@ -2,55 +2,69 @@ from fields import Field, RelatedObject, _novalue
 
 from stdnet.exceptions import *
 from stdnet import pipelines
-from stdnet.orm.related import add_lazy_relation, _register_container_model
+from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from query import M2MRelatedManager
 
 
-class FieldForObject(object):
+class ManyFieldManagerProxy(object):
     
-    def __init__(self,field,instance):
-        self.instance = instance
-        self.timeout  = instance._meta.timeout
-        self.field = field
-        self.pickler = field.pickler
-        self.converter = field.converter
-        self._data = None
+    def __init__(self, name, stype, pickler, converter = None):
+        self.name    = name
+        self.stype   = stype
+        self.pickler = pickler
+        self.converter = converter
         
-    def __iter__(self):
-        return self.st().__iter__()
+    def get_cache_name(self):
+        return '_%s_cache' % self.name
     
-    def __str__(self):
-        return self.st().__repr__()
-    
-    def __repr__(self):
-        return self.st().__repr__()
-    
-    def st(self):
-        cache_name = self.field.get_cache_name()
+    def id(self, instance):
+        return instance._meta.basekey('id',instance.id,self.name)
+
+    def __get__(self, instance, instance_type=None):
+        if instance is None:
+            return self
+
+        cache_name = self.get_cache_name()
         try:
-            val = getattr(self.instance, cache_name)
+            return getattr(instance, cache_name)
         except AttributeError:
-            objid = self.instance.id
-            if not objid:
-                raise FieldError('Object not saved. cannot access %s' % self)
-            id = self.instance._meta.basekey('id',objid,self.field.name)
-            st = self.field.get_structure()
-            val =  st(id,
-                      timeout = self.timeout,
-                      pickler = self.pickler,
-                      converter = self.converter)
-            setattr(self.instance,cache_name,val)
-        return val
-            
-    def __getattr__(self,name):
-        return getattr(self.st(),name)
+            rel_manager = self.get_related_manager(instance)
+            setattr(instance, cache_name, rel_manager)
+            return rel_manager
+        
+    def get_structure(self, instance):
+        meta = instance._meta
+        pipe = pipelines(self.stype,meta.timeout)
+        st = getattr(meta.cursor,pipe.method,None)
+        return st(meta.basekey('id',instance.id,self.name),
+                  timeout = meta.timeout,
+                  pickler = self.pickler,
+                  converter = self.converter)
+        
+    def get_related_manager(self, instance):
+        return self.get_structure(instance)
+
+
+class Many2ManyManagerProxy(ManyFieldManagerProxy):
+    
+    def __init__(self, name, stype, to_name, to):
+        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to))
+        self.to_name = to_name
+        self.to = to
+        
+    def get_related_manager(self, instance):
+        st = self.get_structure(instance)
+        return M2MRelatedManager(instance,self.to,st,self.to_name)
 
 
 class MultiField(Field):
     '''Virtual class for data-structure fields:
     
-    * *model* optional :ref:`StdModel <model-model>` class.
+.. attribute:: relmodel
+
+    Optional :class:`stdnet.otm.StdModel` class contained in the structure. It can also be specified as a string.
+    
     * *related_name* same as :ref:`ForeignKey <foreignkey>` Field.
     * *pickler* a module/class/objects used to serialize values.
     * *converter* a module/class/objects used to convert keys to suitable string to use as keys in :ref:`HashTables <hash-structure>`.
@@ -67,56 +81,46 @@ class MultiField(Field):
                     return value
             
     '''
-    _pipeline = None
+    def get_pipeline(self):
+        raise NotImplementedError
     
     def __init__(self,
                  model = None,
                  pickler = None,
                  converter = None,
                  required = False,
+                 related_name = None,
                  **kwargs):
-        self.model       = model
         # Force required to be false
         super(MultiField,self).__init__(required = False,
                                         **kwargs)
-        self.relmodel    = model
-        self.index       = False
-        self.unique      = False
-        self.primary_key = False
-        self.pickler     = pickler
-        self.converter   = converter
+        self.relmodel     = model
+        self.index        = False
+        self.unique       = False
+        self.primary_key  = False
+        self.related_name = related_name  
+        self.pickler      = pickler
+        self.converter    = converter
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
         if self.relmodel:
-            add_lazy_relation(self,self.relmodel,_register_container_model)
+            add_lazy_relation(self,self.relmodel,self._register_related_model)
+        else:
+            self._register_related_model(self,None)
+            
+    def _register_related_model(self, field, related):
+        field.relmodel = related
+        if related:
+            if not field.pickler:
+                field.pickler = ModelFieldPickler(related)
+        setattr(self.model,self.name,ManyFieldManagerProxy(self.name,self.get_pipeline(),field.pickler))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
         
     def to_python(self, instance):
-        return FieldForObject(self,instance)
-        
-    def get_structure(self):
-        pipe = pipelines(self.get_pipeline(),self.meta.timeout)
-        return getattr(self.meta.cursor,pipe.method,None)
-        
-    def serialize(self, value):
-        return None
-        
-    def save_index(self, commit, value):
-        if self._cache and commit:
-            if self.model:
-                idcache = set()
-                for obj in self._cache:
-                    idcache.add(obj.id)
-                    related = getattr(obj,self.related_name)
-                    related.add(self.obj)
-                    related.save(commit)
-    
-    def id(self, obj):
-        '''Delete field.'''
-        return meta.basekey('id',obj.id,self.name)
+        return None    
 
 
 class SetField(MultiField):
@@ -171,9 +175,9 @@ Keys are string while values are string/numeric. It accepts to optional argument
 '''
     def get_pipeline(self):
         return 'hash'
-    
 
-class ManyToManyField(SetField, RelatedObject):
+
+class ManyToManyField(MultiField):
     '''A many-to-many relationship. It accepts **related_name** as extra argument.
 
 .. attribute:: related_name
@@ -199,38 +203,18 @@ To use it::
 This field is implemented as a double Set field.
 '''
     def get_pipeline(self):
-        return 'many2many'
+        return 'set'
     
-    def __init__(self, model, related_name = None, **kwargs):
-        SetField.__init__(self, **kwargs)
-        RelatedObject.__init__(self,
-                               model,
-                               relmanager = M2MRelatedManager,
-                               related_name = related_name)
-        self.index = False
-        
     def register_with_model(self, name, model):
-        super(ManyToManyField,self).register_with_model(name, model)
-        #setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
-        self.register_with_related_model()
+        Field.register_with_model(self, name, model)
+        add_lazy_relation(self,self.relmodel,self._register_related_model)
     
-    def add(self, value):
-        if not isinstance(value,self.model):
-            raise FieldValueError('%s is not an instance of %s' % (value,self.model._meta.name))
-        if value is self:
-            return
-        self._add(self.obj,self.name,value)
-        self._add(value,self.related_name,self.obj)
-    
-    def _structure(self, obj, name):
-        meta = obj._meta
-        id   = meta.basekey('id',obj.id,name)
-        return self.structure(id,
-                              timeout = meta.timeout,
-                              pickler = self.pickler,
-                              converter = self.converter)
-        
-    def _add(self, obj, name, value):
-        s = self._structure(obj,name)
-        s.add(value)
+    def _register_related_model(self, field, related):
+        #Register manager to self and to the related model
+        related_name = self.related_name or '%s_set' % self.name
+        self.related_name = related_name
+        field.relmodel = related
+        stype = self.get_pipeline()
+        setattr(self.model,  self.name,    Many2ManyManagerProxy(self.name,    stype, related_name, related))
+        setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name, stype, self.name, self.model))
            

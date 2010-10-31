@@ -7,9 +7,9 @@ from stdnet.utils import populate
 
 from examples.models import User, Post
 
-NUM_USERS = 100
-MIN_FOLLOWERS = 10
-MAX_FOLLOWERS = 30
+NUM_USERS = 50
+MIN_FOLLOWERS = 5
+MAX_FOLLOWERS = 10
 
 usernames = populate('string',NUM_USERS, min_len = 5, max_len = 20)
 passwords = populate('string',NUM_USERS, min_len = 8, max_len = 20)
@@ -23,6 +23,20 @@ class TestTwitter(TestCase):
         for username,password in izip(usernames,passwords):
             User(username = username, password = password).save(False)
         User.commit()
+        
+    def testRelated(self):
+        users = User.objects.all()
+        user1 = users[0]
+        user2 = users[1]
+        user3 = users[2]
+        user1.following.add(user3)
+        user1.save()
+        followers = list(user3.followers.all())
+        self.assertEqual(len(followers),1)
+        user2.following.add(user3)
+        user2.save()
+        followers = list(user3.followers.all())
+        self.assertEqual(len(followers),2)
     
     def testFollowers(self):
         '''Add followers to a user'''
@@ -33,14 +47,13 @@ class TestTwitter(TestCase):
         for user in users:
             n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
             for tofollow in populate('choice',n, choice_from = users):
-                if tofollow.id != user.id:
-                    user.following.add(tofollow)
+                user.following.add(tofollow)
             user.save()
-            self.assertTrue(user.following.size()>0)
+            self.assertTrue(user.following.all().count()>0)
         
         for user in users:
-            for following in user.following:
-                self.assertTrue(user in following.followers)
+            for following in user.following.all():
+                self.assertTrue(user in following.followers.all())
             
     def testMessages(self):
         users = User.objects.all()
@@ -49,7 +62,7 @@ class TestTwitter(TestCase):
         user = User.objects.get(id = id)
         user.newupdate('this is my first message')
         user.newupdate('and this is another one')
-        user.updates.save()
+        user.save()
         self.assertEqual(user.updates.size(),2)
             
         

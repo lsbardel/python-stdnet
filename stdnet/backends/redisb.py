@@ -51,12 +51,18 @@ class BackendDataServer(stdnet.BackendDataServer):
     def _get(self, id):
         return self.execute_command('GET', id)
             
-    def query(self, meta, fargs, eargs):
+    def query(self, meta, fargs, eargs, filter_sets = None):
         '''Query a model table'''
         qset = None
         if fargs:
-            skeys = [meta.basekey(name,value) for name,value in fargs.iteritems()]
-            qset  = self.sinter(skeys)
+            filters = [meta.basekey(name,value) for name,value in fargs.iteritems()]
+        else:
+            filters = []
+        if filter_sets:
+            filters.extend(filter_sets)
+        if filters:
+            qset  = self.sinter(filters)
+            
         if eargs:
             skeys = [meta.basekey(name,value) for name,value in fargs.iteritems()]
             eset  = self.sinter(skeys)

@@ -2,11 +2,12 @@ Ver. 0.4 - Development
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.
-* Added :mod:`stdnet.dispatch` from django_.
+* Lasy loading of models via the :mod:`stdnet.dispatch` module.
+* Added :mod:`stdnet.dispatch` module from django_.
 * Added :class:`stdnet.orm.AtomField` subclasses. 
 * Before adding elements to a :class:`stdnet.orm.MultiField` the object needs to be saved, i.e. it needs to have a valid id.
 * Made clear that :class:`stdnet.orm.StdModel` classes are mapped to :class:`stdnet.HashTable`
-  structures in a :class:`stdnet.BackendDataServer`. 
+  structures in a :class:`stdnet.BackendDataServer`.
 * Moved ``structures`` module into ``backends`` directory. Internal reorganisation of several modules.
 * Added ``app_label`` attribute to :class:`stdnet.orm.DataMetaClass`.
 * Added a new module ``stdnet.contrib.monitor`` for monitoring objects on the web. The module requires djpcms_.

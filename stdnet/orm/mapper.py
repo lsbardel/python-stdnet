@@ -13,8 +13,6 @@ def register(model, backend = None, keyprefix = None, timeout = 0):
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
     prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
-    if prefix:
-        prefix = '%s:' % prefix
     meta           = model._meta
     meta.keyprefix = prefix
     meta.timeout   = timeout or 0

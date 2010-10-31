@@ -25,9 +25,9 @@ class List(structures.List):
     def _save(self):
         id = self.id
         s  = 0
-        for value in self._pipeline.back:
+        for value in self.pipeline.back:
             s = self.cursor.execute_command('RPUSH', id, value)
-        for value in self._pipeline.front:
+        for value in self.pipeline.front:
             s = self.cursor.execute_command('LPUSH', id, value)
         return s
         
@@ -47,7 +47,7 @@ class Set(structures.Set):
     def _save(self):
         id = self.id
         s  = 0
-        for value in self._pipeline:
+        for value in self.pipeline:
             s += self.cursor.execute_command('SADD', id, value)
         return s
     
@@ -76,7 +76,7 @@ class OrderedSet(structures.OrderedSet):
     def _save(self):
         id = self.id
         s  = 0
-        for score,value in self._pipeline:
+        for score,value in self.pipeline:
             s += self.cursor.execute_command('ZADD', id, score, value)
         return s
 
@@ -110,6 +110,6 @@ class HashTable(structures.HashTable):
             
     def _save(self):
         items = []
-        [items.extend(item) for item in self._pipeline.iteritems()]
+        [items.extend(item) for item in self.pipeline.iteritems()]
         return self.cursor.execute_command('HMSET',self.id,*items)
     

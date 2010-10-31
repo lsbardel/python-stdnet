@@ -130,8 +130,8 @@ the model table'''
         setattr(obj,'id',id)
         for field,value in izip(self.scalarfields,data):
             setattr(obj,field.attname,field.to_python(value))
-        for field in self.multifields:
-            setattr(obj,field.attname,field.to_python(obj))
+        #for field in self.multifields:
+        #    setattr(obj,field.attname,field.to_python(obj))
         return obj
 
 

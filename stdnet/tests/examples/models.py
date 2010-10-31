@@ -36,13 +36,23 @@ class Position(orm.StdModel):
     
     def __str__(self):
         return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
-
-
+    
+    
 class PortfolioView(orm.StdModel):
     name      = orm.SymbolField()
     portfolio = orm.ForeignKey(Fund)
     
     
+class Folder(orm.StdModel):
+    name      = orm.SymbolField()
+    view      = orm.ForeignKey(PortfolioView, related_name = 'folders')
+    positions = orm.ManyToManyField(Position, related_name = 'folders')
+    parent    = orm.ForeignKey('self',related_name = 'children',required=False)
+
+    def __str__(self):
+        return self.name
+
+
 class UserDefaultView(orm.StdModel):
     user = orm.SymbolField()
     view = orm.ForeignKey(PortfolioView)
@@ -60,7 +70,7 @@ class DateValue(orm.StdModel):
     
 class Calendar(orm.StdModel):
     name   = orm.SymbolField(unique = True)
-    data   = orm.SetField(model = DateValue, ordered = True)
+    data   = orm.SetField(DateValue, ordered = True)
     
     def add(self, dt, value):
         event = DateValue(dt = dt,value = value).save()
@@ -98,15 +108,11 @@ class Post(orm.StdModel):
     data = orm.CharField()
     user = orm.ForeignKey("User", index = False)
     
-    def __init__(self, data = '', dt = None):
-        dt   = dt or datetime.now()
-        super(Post,self).__init__(data = data, dt = dt)
-    
     
 class User(orm.StdModel):
     '''A model for holding information about users'''
     username  = orm.SymbolField(unique = True)
-    password  = orm.SymbolField()
+    password  = orm.SymbolField(index = False)
     updates   = orm.ListField(model = Post)
     following = orm.ManyToManyField(model = 'self', related_name = 'followers')
     
@@ -114,8 +120,7 @@ class User(orm.StdModel):
         return self.username
     
     def newupdate(self, data):
-        p  = Post(data = data).save()
-        #p  = Post(data = data, user = "self").save()
+        p  = Post(data = data, user = self, dt = datetime.now()).save()
         self.updates.push_front(p)
         return p
     

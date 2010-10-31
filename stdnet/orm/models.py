@@ -30,8 +30,8 @@ the :attr:`StdModel._meta` attribute.
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for this function" % kwargs.keys()[0])
-        for field in self._meta.multifields:
-            setattr(self,field.attname,field.to_python(self))
+        #for field in self._meta.multifields:
+        #    setattr(self,field.attname,field.to_python(self))
         
     def __repr__(self):
         return '%s: %s' % (self.__class__.__name__,self)
@@ -82,13 +82,14 @@ the :attr:`StdModel._meta` attribute.
     
     def save(self, commit = True):
         '''Save the instance in the remote :class:`stdnet.HashTable`
-The model must be registered with a backend
-otherwise a ``ModelNotRegistered`` exception will be raised.'''
+The model must be registered with a :class:`stdnet.backends.BackendDataServer`
+otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
         meta = self._meta
         if not meta.cursor:
             raise ModelNotRegistered('Model %s is not registered with a backend database. Cannot save any instance.' % meta.name)
         data = []
         indexes = []
+        #Loop over scalar fields first
         for field in meta.scalarfields:
             name = field.attname
             value = getattr(self,name,None)

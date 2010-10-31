@@ -131,8 +131,8 @@ function users should never call.'''
         meta = model._meta
         self.meta  = meta
         meta.dfields[name] = self
+        meta.fields.append(self)
         if name is not 'id':
-            meta.fields.append(self)
             self.add_to_fields()
             
     def add_to_fields(self):
@@ -277,13 +277,6 @@ class DateTimeField(AtomField):
     '''An date :class:`AtomField` represented in Python by
 a :class:`datetime.datetime` instance.'''
     type = 'datetime'
-    def serialize(self, value):
-        if value is not None:
-            if isinstance(value,date):
-                value = timestamp2date(value)
-            else:
-                raise FieldValueError('Field %s is not a valid datetime' % self)
-        return value
     
     def to_python(self, value):
         if value:

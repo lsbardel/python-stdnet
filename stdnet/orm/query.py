@@ -17,7 +17,7 @@ class svset(object):
 class QuerySet(object):
     '''Queryset manager'''
     
-    def __init__(self, meta, fargs = None, eargs = None):
+    def __init__(self, meta, fargs = None, eargs = None, filter_sets = None):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -27,6 +27,7 @@ class QuerySet(object):
         self._meta  = meta
         self.fargs  = fargs
         self.eargs  = eargs
+        self.filter_sets = filter_sets
         self.qset   = None
         self._seq   = None
         
@@ -88,7 +89,7 @@ fetching objects.'''
                 unique, eargs = self.aggregate(self.eargs, False)
             else:
                 eargs = None
-            self.qset = self._meta.cursor.query(meta, fargs, eargs)
+            self.qset = self._meta.cursor.query(meta, fargs, eargs, filter_sets = self.filter_sets)
         
     def aggregate(self, kwargs, filter = True):
         '''Aggregate lookup parameters.'''
@@ -128,7 +129,7 @@ fetching objects.'''
             elif field.index:
                 result[name] = value
             else:
-                raise ValueError("Field %s is not an index" % name)
+                raise QuerySetError("Field %s is not an index. Cannot query." % name)
         return unique, result
     
     def get(self):
@@ -179,7 +180,7 @@ fetching objects.'''
     
 
 class Manager(object):
-    
+    '''Manager for :class:`stdnet.orm.StdModel` models.'''
     def get(self, **kwargs):
         qs = self.filter(**kwargs)
         return qs.get()
@@ -206,7 +207,8 @@ class Manager(object):
     
     
 class RelatedManager(Manager):
-    
+    '''A :class:`Manager` for handling related :class:`stdnet.orm.StdModels`
+to a :class:`stdnet.orm.ForeignKey`.'''
     def __init__(self, model, related, fieldname, obj = None):
         self.model      = model
         self.to         = related
@@ -219,6 +221,10 @@ class RelatedManager(Manager):
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.model,self.to,self.fieldname,instance)
     
+    def _get_field(self):
+        return self.model._meta.dfields[self.fieldname]
+    field = property(_get_field)
+    
     def get_related_object(self, id):
         return self.model.objects.get(id = id)
         
@@ -226,39 +232,34 @@ class RelatedManager(Manager):
         if self.obj:
             kwargs[self.fieldname] = self.obj
             return QuerySet(self.to._meta, kwargs)
-            #meta = self.related._meta
-            #id   = meta.basekey(self.fieldname,self.obj.id)
-            #data = meta.cursor.unordered_set(id)
-            #hash = meta.cursor.hash(meta.basekey())
-            #return hash.mget(data)
+        else:
+            raise QuerySetError('Related manager has no object')
             
 
 class M2MRelatedManager(Manager):
+    '''A :class:`RelatedManager` for a :class:`stdnet.orm.ManyToManyField`'''
+    def __init__(self, instance, to, st, to_name):
+        self.instance = instance
+        self.to = to
+        self.st = st
+        self.to_name = to_name
     
-    def __init__(self, model, related, fieldname, obj = None):
-        self.model      = model
-        self.to         = related
-        self.fieldname  = fieldname
-        self.obj        = obj
-    
-    def __str__(self):
-        return '%s m2m %s' % (self.model._meta,self.to._meta)
-    
-    def __get__(self, instance, instance_type=None):
-        return self.__class__(self.model,self.to,self.fieldname,instance)
-    
-    def get_related_object(self, id):
-        return self.model.objects.get(id = id)
+    def add(self, value):
+        '''Add *value*, an instance of self.to'''
+        if not isinstance(value,self.to):
+            raise FieldValueError('%s is not an instance of %s' % (value,self.to._meta))
+        if value is self.instance:
+            return
+        related = getattr(value,self.to_name)
+        self._add(value)
+        related._add(self.instance)
+        
+    def _add(self, value):
+        self.st.add(value)
         
     def filter(self, **kwargs):
-        if self.obj:
-            kwargs[self.fieldname] = self.obj
-            return QuerySet(self.to._meta, kwargs)
-            #meta = self.related._meta
-            #id   = meta.basekey(self.fieldname,self.obj.id)
-            #data = meta.cursor.unordered_set(id)
-            #hash = meta.cursor.hash(meta.basekey())
-            #return hash.mget(data)
+        extrasets = [self.st.id]
+        return QuerySet(self.to._meta, kwargs, filter_sets = extrasets)
     
 
 class UnregisteredManager(object):

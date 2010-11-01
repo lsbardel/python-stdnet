@@ -1,0 +1,7 @@
+*.pyc
+*.egg
+dist/*
+docs/build/*
+.project
+.pydevproject
+MANIFEST

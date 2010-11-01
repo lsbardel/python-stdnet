@@ -29,7 +29,7 @@ the :attr:`StdModel._meta` attribute.
             setattr(self,name,value)
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
-            raise ValueError("'%s' is an invalid keyword argument for this function" % kwargs.keys()[0])
+            raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
         #for field in self._meta.multifields:
         #    setattr(self,field.attname,field.to_python(self))
         

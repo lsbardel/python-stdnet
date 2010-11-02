@@ -264,7 +264,7 @@ def itemcmp(x,y):
 
     
 class HashTable(Structure):
-    '''An hash-table :class:`stdnet.Structure`.'''
+    '''A hash-table :class:`stdnet.Structure`. Equivalent to a Python ``dict``.'''
     struct = HashPipe
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter
@@ -278,7 +278,7 @@ class HashTable(Structure):
             return value in self._cache
         
     def add(self, key, value):
-        '''Add *key* - *value* pair to hashtable.'''
+        '''Add ``key`` - ``value`` pair to hashtable.'''
         self.update({key:value})
     __setitem__ = add
     
@@ -349,6 +349,10 @@ class HashTable(Structure):
         return items
     
     # PURE VIRTUAL METHODS
+    
+    def clear(self):
+        '''Clear the Hash table. Equivalent to ``dict.clear`` method in Python.'''
+        raise NotImplementedError
     
     def _contains(self, value):
         raise NotImplementedError

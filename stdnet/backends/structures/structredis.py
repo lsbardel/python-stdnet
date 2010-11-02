@@ -43,6 +43,9 @@ class Set(structures.Set):
     def delete(self):
         return self.cursor.execute_command('DEL', self.id)
     
+    def clear(self):
+        return self.delete()
+    
     def discard(self, elem):
         return self.cursor.execute_command('SREM', self.id, elem)
     
@@ -94,7 +97,7 @@ class HashTable(structures.HashTable):
     def _size(self):
         return self.cursor.execute_command('HLEN', self.id)
     
-    def delete(self):
+    def clear(self):
         return self.cursor.execute_command('DEL', self.id)
     
     def _get(self, key):

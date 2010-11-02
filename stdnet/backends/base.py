@@ -261,21 +261,21 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
     def list(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.List`
 for a given *id*.'''
-        return self.structure_module.List(self, id, **kwargs)
+        return self.structure_module.List(self, id, timeout = timeout, **kwargs)
     
     def hash(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        return self.structure_module.HashTable(self, id, **kwargs)
+        return self.structure_module.HashTable(self, id, timeout = timeout, **kwargs)
     
     def unordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.Set` structure
 for a given *id*.'''
-        return self.structure_module.Set(self, id, **kwargs)
+        return self.structure_module.Set(self, id, timeout = timeout, **kwargs)
     
     def ordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.OrderedSet` structure
 for a given *id*.'''
-        return self.structure_module.OrderedSet(self, id, **kwargs)
+        return self.structure_module.OrderedSet(self, id, timeout = timeout, **kwargs)
     
 

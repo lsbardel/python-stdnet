@@ -24,7 +24,8 @@ class ManyFieldManagerProxy(object):
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
-
+        if instance.id is None:
+            raise MultiFieldError('id for %s is not available. Call save on instance before accessing %s.' % (instance._meta,self.name))
         cache_name = self.get_cache_name()
         try:
             return getattr(instance, cache_name)

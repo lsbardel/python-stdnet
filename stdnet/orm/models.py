@@ -38,37 +38,6 @@ the :attr:`StdModel._meta` attribute.
     
     def __str__(self):
         return ''
-    
-    def _load(self, kwargs):
-        meta = copy.deepcopy(self.__class__._meta)
-        self.__dict__['_meta'] = meta
-        for name,field in meta.fields.iteritems():
-            value = kwargs.pop(name,_novalue)
-            self.__set_field(name, field, value)
-            
-        for name,value in kwargs.items():
-            setattr(self,name,value)
-        
-        for name,related in meta.related.iteritems():
-            related.obj = self
-            #setattr(self,name,related)
-        
-    def a__setattr__(self, name, value):
-        field = self._meta.fields.get(name,None)
-        self.__set_field(name, field, value)
-        
-    def a__getattr__(self, name):
-        field = self._meta.fields.get(name,None)
-        if field:
-            return field.get_full_value()
-        else:
-            try:
-                return self.__dict__[name]
-            except KeyError:
-                try:
-                    return self._meta.related[name]
-                except KeyError:
-                    return self.customAttribute(name)
         
     def customAttribute(self, name):
         '''Override this function to provide custom attributes'''
@@ -154,7 +123,15 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
                 else:
                     odict.pop(name,None)
         return odict
+    
+    def model_to_dict(self, fields = None, exclude = None):
+        '''Convert ``self`` to a dictionary.'''
+        odict = self.__dict__.copy()
+        return odict
         
+    def afterload(self):
+        pass
+    
     @classmethod
     def commit(cls):
         return cls._meta.cursor.commit()

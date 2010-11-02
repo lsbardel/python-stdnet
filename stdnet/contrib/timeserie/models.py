@@ -35,7 +35,7 @@ class TimeSerie(orm.StdModel):
     data  = TimeSerieField()
     start = orm.DateTimeField(required = False, index = False)
     end   = orm.DateTimeField(required = False, index = False)
-    
+        
     def size(self):
         '''number of dates in timeseries'''
         return self.data.size()
@@ -49,6 +49,18 @@ class TimeSerie(orm.StdModel):
     def __str__(self):
         return self.fromto()
 
+    def save(self):
+        supersave = super(TimeSerie,self).save
+        supersave()
+        dates = self.data.sortedkeys()
+        if dates:
+            self.start = dates[0]
+            self.end   = dates[-1]
+        else:
+            self.start = None
+            self.end   = None
+        return supersave()
+    
     def storestartend(self):
         '''Store the start/end date of the timeseries'''
         self.save()

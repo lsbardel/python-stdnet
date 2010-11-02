@@ -22,6 +22,10 @@ class FieldError(StdNetException):
     '''Generic Field error'''
     pass
 
+class MultiFieldError(StdNetException):
+    '''A :class:`FieldError` for :class:stdnet.orm.MultiField`.'''
+    pass
+
 class FieldValueError(FieldError):
     '''Raised when passing a wrong value to a field method'''
     pass

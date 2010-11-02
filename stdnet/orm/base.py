@@ -132,6 +132,7 @@ the model table'''
             setattr(obj,field.attname,field.to_python(value))
         #for field in self.multifields:
         #    setattr(obj,field.attname,field.to_python(obj))
+        obj.afterload()
         return obj
 
 

@@ -90,7 +90,11 @@ class Structure(object):
         self.id        = id
         self.timeout   = timeout
         self._cache    = None
-        self._pipeline = pipeline
+        if pipeline:
+            self._pipeline = pipeline.pipe
+            self.timeout   = pipeline.timeout
+        else:
+            self._pipeline = None
     
     def __repr__(self):
         base = '%s:%s' % (self.__class__.__name__,self.id)
@@ -104,7 +108,7 @@ class Structure(object):
     
     def __get_pipeline(self):
         if self._pipeline is not None:
-            return self._pipeline.pipe
+            return self._pipeline
         else:
             return self.cursor._get_pipe(self.id,self.struct,self.timeout).pipe
     pipeline = property(__get_pipeline)
@@ -141,6 +145,8 @@ class Structure(object):
         p = self.pipeline
         if p:
             s = self._save()
+            if self.timeout:
+                self.add_expiry()
             p.clear()
             return s
         else:
@@ -150,7 +156,10 @@ class Structure(object):
         
     def _save(self):
         raise NotImplementedError("Could not save")
-
+    
+    def add_expiry(self):
+        '''Internal method called if a timeout is set. This needs to implemented.'''
+        raise NotImplementedError("Could not save")
 
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''

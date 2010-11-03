@@ -8,7 +8,7 @@ class StdnetMonitorApplication(appsite.ApplicationBase):
     name = 'Stdnet Monitor'
     keys_par_page = 200
     
-    home  = RedisHomeView(isplugin = True)
+    home  = RedisHomeView(isplugin = True, isapp = True)
     db    = RedisDbView(regex = '(?P<db>\d+)', isapp = True)
     flush = RedisDbFlushView(regex = 'flush', parent = 'db')
     

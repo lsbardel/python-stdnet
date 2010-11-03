@@ -168,6 +168,7 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
         return 1
         
     def set(self, id, value, timeout = None):
+        timeout = timeout if timeout is not None else self.default_timeout
         value = self.pickler.dumps(value)
         return self._set(id,value,timeout)
     

@@ -1,0 +1,12 @@
+<h2>Database {{ db }} - Keys</h2>
+<table class="tablesorter">
+<thead>
+<tr>{% for head in keys.header %}
+<th>{{ head }}</th>{% endfor %}</tr>
+</thead>
+<tbody>{% for key in keys.body %}
+<tr>{% for data in key %}
+<td>{{ data }}</td>{% endfor %}
+</tr>{% endfor %}
+</tbody>
+</table>

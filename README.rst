@@ -96,11 +96,13 @@ Currently the list of back-ends is limited to
  
 Object Relational Mapper
 ================================
-The module ``stdnet.orm`` is a lightweight ORM::
+The module ``stdnet.orm`` is the ORM, it maps python object into database data. It is design to be fast and
+safe to use::
  
 	from stdnet import orm
  		
 	class Base(orm.StdModel):
+	    '''An abstract model. This won't have any data in the database.'''
 	    name = orm.SymbolField(unique = True)
 	    ccy  = orm.SymbolField()
 	    
@@ -110,17 +112,21 @@ The module ``stdnet.orm`` is a lightweight ORM::
 	    class Meta:
 	        abstract = True
 	
+	
 	class Instrument(Base):
 	    type = orm.SymbolField()
+	
 	    
 	class Fund(Base):
 	    description = orm.CharField()
+	
 	
 	class PositionDescriptor(orm.StdModel):
 	    dt    = orm.DateField()
 	    size  = orm.FloatField()
 	    price = orm.FloatField()
-	    position = orm.ForeignKey("Position")
+	    position = orm.ForeignKey("Position", index = False)
+	
 	
 	class Position(orm.StdModel):
 	    instrument = orm.ForeignKey(Instrument, related_name = 'positions')

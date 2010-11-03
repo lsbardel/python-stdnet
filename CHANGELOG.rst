@@ -2,6 +2,10 @@ Ver. 0.4 - Development
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.
+* Added :class:`stdnet.ChacheClass` which can be used as django_ cache backend. For example, using redis database 11 as cache is obtained by::
+
+	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
+	
 * Overall refactoring of :mod:`stdnet.orm` and :mod:`stdnet.backends` modules.
 * Lazy loading of models via the :mod:`stdnet.dispatch` module.
 * Added :mod:`stdnet.dispatch` module from django_.

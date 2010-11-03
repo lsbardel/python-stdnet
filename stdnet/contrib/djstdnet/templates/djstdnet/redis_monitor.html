@@ -1,9 +1,27 @@
-<table>
+{% extends "djpcms/yui/yui-g.html" %}{% block left-column %}
+<h2>Server</h2>		
+<table class="plain">
 <tbody>{% for data in info1 %}
 <tr><td>{{ data.name }}</td><td>{{ data.value }}</td></tr>{% endfor %}{% for data in info2 %}
 <tr><td>{{ data.name }}</td><td>{{ data.value }}</td></tr>{% endfor %}
 </tbody>
-</table>{% if model_info %}
+</table>{% endblock %}{% block right-column %}
+<h2>Databases</h2>
+<table class="tablesorter">
+<thead>
+<tr>{% for head in databases.header %}
+<th>{{ head }}</th>{% endfor %}
+</tr>
+</thead>
+<tbody>{% for data in databases.body %}
+<tr>{% for el in data %}{% if el.class %}
+<td class="{{ el.class }}">{{ el.value }}</td>{% else %}
+<td>{{ el }}</td>{% endif %}{% endfor %}
+</tr>{% endfor %}
+</tbody>
+</table>{% endblock %}
+
+{% if model_info %}
 <table>
 <tbody>
 <thead>

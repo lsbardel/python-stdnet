@@ -41,11 +41,7 @@ def parse_backend_uri(backend_uri):
     return scheme, host, params
 
 
-def getdb(backend_uri = None, pickler = None):
-    backend_uri = backend_uri or settings.DEFAULT_BACKEND
-    if not backend_uri:
-        return None
-    scheme, host, params = parse_backend_uri(backend_uri)
+def _getdb(scheme, host, params, pickler = None):
     if scheme in BACKENDS:
         name = 'stdnet.backends.%s' % BACKENDS[scheme]
     else:
@@ -53,3 +49,24 @@ def getdb(backend_uri = None, pickler = None):
     module = import_module(name)
     return getattr(module, 'BackendDataServer')(scheme, host, params, pickler = pickler)
 
+
+def getdb(backend_uri = None, pickler = None):
+    backend_uri = backend_uri or settings.DEFAULT_BACKEND
+    if not backend_uri:
+        return None
+    scheme, host, params = parse_backend_uri(backend_uri)
+    return _getdb(scheme, host, params, pickler = pickler)
+
+
+class CacheClass(object):
+    '''Class which can be used as django cache backend'''
+    
+    def __init__(self, host, params):
+        scheme = params.pop('type','redis')
+        self.db = _getdb(scheme, host, params)
+        self.timeout = self.db.default_timeout
+        self.get     = self.db.get
+        self.set     = self.db.set
+        self.delete  = self.db.delete
+        self.has_key = self.db.has_key
+        self.clear   = self.db.clear    

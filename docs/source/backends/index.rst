@@ -1,7 +1,9 @@
 .. _db-index:
 
+.. module:: stdnet.backends
+
 ============================
-Data Structure BackEnds
+Data Structure and BackEnds
 ============================
 
 Contents:

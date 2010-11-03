@@ -77,9 +77,9 @@ class Structure(object):
     Expiry timeout. If different from zero it represents the number of seconds
     after which the structure is deleted from the data server. Default ``0``.
     
-.. attribute:: _pipeline
+.. attribute:: pipeline
 
-    An instance :class:`PipeLine`
+    An instance of :class:`PipeLine`.
 
     '''
     struct = None
@@ -161,6 +161,7 @@ class Structure(object):
         '''Internal method called if a timeout is set. This needs to implemented.'''
         raise NotImplementedError("Could not save")
 
+
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
     struct = ListPipe
@@ -193,7 +194,7 @@ class List(Structure):
 
 
 class Set(Structure):
-    '''An unordered set :class:`stdnet.Structure`.'''
+    '''An unordered set :class:`stdnet.Structure`. Equivalent to python ``set``.'''
     struct = SetPipe
     def __iter__(self):
         if not self._cache:
@@ -236,7 +237,7 @@ class Set(Structure):
 
 
 class OrderedSet(Set):
-    '''An ordered set :class:`stdnet.Structure`.'''
+    '''An ordered :class:`stdnet.Set`.'''
     struct = OsetPipe
     def __iter__(self):
         if not self._cache:

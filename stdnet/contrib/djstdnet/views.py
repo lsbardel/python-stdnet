@@ -139,6 +139,9 @@ class RedisDbView(appview.AppViewBase):
                            port = int(data.get('port',6379)),
                            db = int(db)),data
 
+    def title(self, page, **kwargs):
+        return 'Database %(db)s' % kwargs
+    
     def render(self, djp, **kwargs):
         r,data = self.get_db(djp)
         p = data.get('page',1)

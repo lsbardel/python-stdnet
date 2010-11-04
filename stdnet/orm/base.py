@@ -53,7 +53,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 '''
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
-                 app_label = '', **kwargs):
+                 app_label = '', verbose_name = None, **kwargs):
         self.abstract  = abstract
         self.keyprefix = keyprefix
         self.model     = model
@@ -65,6 +65,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.dfields      = {}
         self.timeout      = 0
         self.related      = {}
+        self.verbose_name = verbose_name or self.name
         self.maker        = lambda : model.__new__(model)
         model._meta       = self
         

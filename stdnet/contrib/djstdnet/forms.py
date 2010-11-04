@@ -42,10 +42,11 @@ class StdModelFormMetaclass(type):
 
 class StdForm(forms.BaseForm):
     __metaclass__ = StdModelFormMetaclass
-    
+    ValidationError = forms.ValidationError
     id = forms.CharField(widget=forms.HiddenInput, required = False)
     
     def __init__(self, *args, **kwargs):
+        self.request  = kwargs.pop('request',None)
         instance = kwargs.pop('instance',None)
         initial  = kwargs.pop('initial',None) or {}
         if not instance:

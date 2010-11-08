@@ -32,7 +32,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.keys            = redispy.keys
     
     def __repr__(self):
-        return '%s backend' % self.__name
+        r = self.redispy
+        return '%s db %s on %s:%s' % (self.__name,r.db,r.host,r.port)
     
     def set_timeout(self, id, timeout):
         timeout = timeout or self.default_timeout

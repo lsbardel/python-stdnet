@@ -1,0 +1,40 @@
+{% load tablesorter %}
+<h2>{{ meta.name }} model</h2>
+<div class="object-definition">
+<dl><dt>Register with database</dt><dd>{{ meta.cursor }}</dd></dl>
+<dl><dt>Scalar fields</dt><dd>{{ meta.scalarfields|length }}</dd></dl>
+<dl><dt>Structured fields</dt><dd>{{ meta.multifields|length }}</dd></dl>
+<dl><dt>Key prefix</dt><dd>{{ meta.keyprefix }}</dd></dl>
+<dl><dt>Application Label</dt><dd>{{ meta.app_label }}</dd></dl>
+<dl><dt>Timeout</dt><dd>{{ meta.timeout }}</dd></dl>
+</div>{% if meta.scalarfields %}
+<h3>Scalar fields</h3>
+<table class="tablesorter">
+<thead>
+<tr><th>name</th><th>type</th>
+<th>unique</th><th>index</th>
+<th>ordered</th></tr>
+</thead>
+<tbody>{% for field in meta.scalarfields %}
+<tr>
+<td>{{ field.name }}</td>
+<td>{{ field.type }}</td>
+<td>{{ field.unique|nicevalue }}</td>
+<td>{{ field.index|nicevalue }}</td>
+<td>{{ field.ordered|nicevalue }}</td>
+</tr>{% endfor %}
+</tbody>
+</table>{% endif %}{% if meta.multifields %}
+<h3>Structured fields</h3>
+<table class="tablesorter">
+<thead>
+<tr><th>name</th><th>type</th></tr>
+</thead>
+<tbody>{% for field in meta.multifields %}
+<tr>
+<td>{{ field.name }}</td>
+<td>{{ field.type }}</td>
+</tr>{% endfor %}
+</tbody>
+</table>{% endif %}
+

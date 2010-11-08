@@ -55,6 +55,7 @@ class StdForm(forms.BaseForm):
             initial.update(instance.model_to_dict())
             self.adding = False
         self.instance = instance
+        self.request  = kwargs.pop('request',None)
         kwargs['initial'] = initial
         super(StdForm,self).__init__(*args, **kwargs)
         

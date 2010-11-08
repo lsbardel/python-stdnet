@@ -190,7 +190,7 @@ value with a specific data type. it can be of four different types:
 * floating point
 * symbol
 '''
-    type = 'text'
+    type = None
 
 
 class SymbolField(AtomField):
@@ -198,6 +198,7 @@ class SymbolField(AtomField):
 A symbol holds a sequence of characters as a single unit.
 A symbol is irreducible, and are often used to hold names
 of other entities.'''
+    type = 'symbol'
     def serialize(self, value):
         if value is not None:
             value = str(value)
@@ -228,7 +229,8 @@ class AutoField(IntegerField):
 You usually won't need to use this directly;
 a primary key field will automatically be added to your model
 if you don't specify otherwise.
-    '''            
+    '''
+    type = 'auto'            
     def serialize(self, value):
         if not value:
             value = self.meta.cursor.incr(self.meta.autoid())
@@ -289,6 +291,7 @@ class CharField(Field):
 It contains strings and by default :attr:`Field.required`
 is set to ``False``.'''
     default = ''
+    type = 'text'
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False
         kwargs['unique'] = False

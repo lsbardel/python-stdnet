@@ -149,6 +149,7 @@ It can be used in the following way::
     True
     >>> _
     '''
+    type = 'set'
     def get_pipeline(self):
         return 'oset' if self.ordered else 'set'
     
@@ -168,6 +169,7 @@ Can be used as::
     >>> m.messages.push_back("ciao")
     >>> m.save()
     '''
+    type = 'list'
     def get_pipeline(self):
         return 'list'          
 
@@ -176,6 +178,7 @@ class HashField(MultiField):
     '''A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric. It accepts to optional arguments:
 '''
+    type = 'hash'
     def get_pipeline(self):
         return 'hash'
 
@@ -205,6 +208,7 @@ To use it::
     
 This field is implemented as a double Set field.
 '''
+    type = 'many-to-many'
     def get_pipeline(self):
         return 'set'
     

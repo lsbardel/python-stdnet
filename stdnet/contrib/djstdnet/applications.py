@@ -6,7 +6,7 @@ from stdnet.contrib.djstdnet.views import RedisHomeView, RedisDbView, RedisDbFlu
 
 class StdnetMonitorApplication(appsite.ApplicationBase):
     name = 'Stdnet Monitor'
-    keys_par_page = 200
+    list_per_page = 100
     
     home  = RedisHomeView(isplugin = True, isapp = True)
     db    = RedisDbView(regex = '(?P<db>\d+)', isapp = True)

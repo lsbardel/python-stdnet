@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from urllib import urlencode
 
-from djpcms.views import appview
-from djpcms.utils.ajax import jhtmls
-from djpcms.utils import mark_safe
 from djpcms import forms
+from djpcms.views import appview
+from djpcms.utils.html import Paginator
+from djpcms.utils.ajax import jhtmls
+from djpcms.utils import mark_safe, lazyattr, gen_unique_id
 from djpcms.template import loader
 from django.utils.dateformat import format, time_format
 
@@ -130,38 +131,84 @@ class RedisHomeView(appview.AppViewBase):
                                         'model_info':model_info})
         
 
-class RedisDbView(appview.AppViewBase):
+def type_length(r, key):
+    typ = r.type(key)
+    l = 1
+    if typ == 'set':
+        l = r.scard(key)
+    elif typ == 'list':
+        l = r.llen(key)
+    elif typ == 'hash':
+        l = r.hlen(key)
+    return typ,l
+        
+class DbQuery(object):
     
+    def __init__(self, djp, r):
+        self.djp   = djp
+        self.r     = r
+        
+    def count(self):
+        return self.r.dbsize()
+    
+    @lazyattr
+    def data(self):
+        return self.r.keys()
+    
+    def __getitem__(self, slic):
+        data = self.data()[slic]
+        r = self.r
+        for key in data:
+            typ,len = type_length(r, key)
+            yield key,typ,len,r.ttl(key),''
+        
+        
+class RedisDbView(appview.AppViewBase):
+    '''Display information about keys in one database.'''
     def get_db(self, djp):
         db = djp.kwargs.get('db',0)
         data = dict(djp.request.GET.items())
         return redis.Redis(host = data.get('server','localhost'),
                            port = int(data.get('port',6379)),
-                           db = int(db)),data
+                           db = int(db))
 
     def title(self, page, **kwargs):
         return 'Database %(db)s' % kwargs
     
     def render(self, djp, **kwargs):
-        r,data = self.get_db(djp)
-        p = data.get('page',1)
-        keys = {'header': ('name','type','tyme to expiry','delete'),
-                'body': self.keys(r,p)}
-        return loader.render_to_string('djstdnet/redis_db.html',
-                                       {'keys':keys})
+        request = djp.request
+        appmodel = self.appmodel
+        r = self.get_db(djp)
+        query = DbQuery(djp,r)
+        p = Paginator(request, query, per_page = appmodel.list_per_page)
+        c = {'paginator': p,
+             'id':gen_unique_id(),
+             'db':r.db,
+             'djp':djp,
+             'appmodel': appmodel,
+             'headers': ('name','type','length','time to expiry','delete')}
+        return loader.render_to_string(['djstdnet/pagination.html',
+                                        'djpcms/components/pagination.html'],c)
         
-    def keys(self, r, p):
-        kpp = self.appmodel.keys_par_page
-        keys = r.keys()
-        for key in keys:
-            yield key,r.type(key),r.ttl(key),''
 
 
 class RedisDbFlushView(RedisDbView):
     
     def default_post(self, djp):
-        r,data = self.get_db(djp)
+        r = self.get_db(djp)
         r.flushdb()
         keys = len(r.keys())
         return jhtmls(identifier = 'td.redisdb%s.keys' % r.db, html = format_number(keys))
 
+
+class StdModelInformationView(appview.AppView):
+    
+    def __init__(self, **kwargs):
+        kwargs['isplugin'] = True
+        super(StdModelInformationView,self).__init__(**kwargs)
+        
+    '''Display Information regarding a
+    :class:`stdnet.orm.StdModel` registered with a backend database.'''
+    def render(self, djp, **kwargs):
+        meta = self.model._meta
+        return loader.render_to_string('djstdnet/stdmodel.html',{'meta':meta})

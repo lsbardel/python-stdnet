@@ -194,10 +194,10 @@ value with a specific data type. it can be of four different types:
 
 
 class SymbolField(AtomField):
-    '''A :class:`AtomField` which contains a ``symbol``.
+    '''An :class:`AtomField` which contains a ``symbol``.
 A symbol holds a sequence of characters as a single unit.
-A symbol is irreducible, and are often used to hold names
-of other entities.'''
+A symbol is irreducible, and are often used to hold names, codes
+or other entities.'''
     type = 'symbol'
     def serialize(self, value):
         if value is not None:

@@ -59,12 +59,15 @@ Once done that, launch redis and type::
 otherwise from the package directory::
 
 	python runtests.py
+	
+**BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW**
+
 
 	
 Default settings
 =========================
 Running tests with the above commands assumes your Redis_ server
-is running on the same machine.
+is running on the same machine and it will use the database ``13``.
 
 StdNet comes with two default settings.
 
@@ -72,14 +75,12 @@ StdNet comes with two default settings.
 	>>> settings.__dict__
 	{'DEFAULT_BACKEND': 'redis://127.0.0.1:6379/?db=7', 'DEFAULT_KEYPREFIX': 'stdnet'}
 
-If your redis server runs on a different machine,
+If your redis server runs on a different machine, or you would like to use a different database number,
 you need to setup a	script file along these lines::
 	
 	if __name__ == '__main__':
-	    from stdnet.conf import settings
-	    settings.DEFAULT_BACKEND = 'redis://your.server.url:6379/?db=10'
-	    import stdnet
-	    stdnet.runtests()
+		import stdnet
+		stdnet.runtests('redis://your.server.url:6379/?db=10')
 
 
 Backends

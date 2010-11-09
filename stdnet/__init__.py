@@ -26,7 +26,11 @@ def add2path():
     if path not in sys.path:
         sys.path.insert(0,path)
         
-def runtests():
+        
+def runtests(backend = 'redis://127.0.0.1:6379/?db=13'):
+    from stdnet.conf import settings
+    std = settings.DEFAULT_BACKEND
+    settings.DEFAULT_BACKEND = backend
     import unittest
     add2path()
     from stdnet import tests
@@ -34,3 +38,4 @@ def runtests():
     suite  = loader.loadTestsFromModule(tests)
     runner = unittest.TextTestRunner()
     runner.run(suite)
+    settings.DEFAULT_BACKEND = std

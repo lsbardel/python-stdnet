@@ -86,7 +86,7 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
         if id is None:
             raise ObjectNotFund
         data = self.hash(meta.basekey()).get(id)
-        if value is None:
+        if data is None:
             raise ObjectNotFund
         return meta.make(id,data)
     

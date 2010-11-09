@@ -20,6 +20,3 @@ class StdnetMonitorApplication(appsite.ApplicationBase):
 class StdModelApplication(appsite.ModelApplication):
     search      = appview.SearchView()
     information = views.StdModelInformationView(regex = 'info')
-    add         = appview.AddView()
-    view        = appview.ViewView()
-    edit        = appview.EditView(isplugin = True)

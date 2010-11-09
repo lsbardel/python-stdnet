@@ -129,10 +129,9 @@ the model table'''
         '''Create a model instance from server data'''
         obj = self.maker()
         setattr(obj,'id',id)
-        for field,value in izip(self.scalarfields,data):
-            setattr(obj,field.attname,field.to_python(value))
-        #for field in self.multifields:
-        #    setattr(obj,field.attname,field.to_python(obj))
+        if data:
+            for field,value in izip(self.scalarfields,data):
+                setattr(obj,field.attname,field.to_python(value))
         obj.afterload()
         return obj
 

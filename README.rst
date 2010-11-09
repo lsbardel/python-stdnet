@@ -103,7 +103,9 @@ safe to use::
  		
 	class Base(orm.StdModel):
 	    '''An abstract model. This won't have any data in the database.'''
+	    # A unique symbol field, a symbol is an immutable string
 	    name = orm.SymbolField(unique = True)
+	    # Another symbol, symbol fields are by default indexes
 	    ccy  = orm.SymbolField()
 	    
 	    def __str__(self):
@@ -114,17 +116,20 @@ safe to use::
 	
 	
 	class Instrument(Base):
-	    type = orm.SymbolField()
+	    itype = orm.SymbolField()
 	
 	    
 	class Fund(Base):
+		# A char field is a string and it is never an index
 	    description = orm.CharField()
 	
 	
 	class PositionDescriptor(orm.StdModel):
 	    dt    = orm.DateField()
+	    # A float field is not an index by default
 	    size  = orm.FloatField()
 	    price = orm.FloatField()
+	    # A FK field which we explicitly set as non-index
 	    position = orm.ForeignKey("Position", index = False)
 	
 	
@@ -153,7 +158,7 @@ And play with the API::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* Django_ for inspiration, the ``dispatch`` module and the ``ForeignKey`` implementation.
+* Django_ for inspiration and the ``dispatch`` module.
 
 
 Licence

@@ -2,6 +2,7 @@ Ver. 0.4 - Development
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.
+* Documentation hosted at github.
 * Added new ``contrib`` module ``djstdnet`` which uses `djpcms`_ content management system to display an admin interface for a :class:`stdnet.orm.StdModel`.
 * Added :class:`stdnet.CacheClass` which can be used as django_ cache backend. For example, using redis database 11 as cache is obtained by::
 

@@ -10,7 +10,7 @@ class StdModel(object):
     '''A model is the single, definitive source of data
 about your data. It contains the essential fields and behaviors
 of the data you're storing. Each model class
-maps to a single :class:`stdnet.HashTable` structure. via
+maps to a single :class:`stdnet.HashTable` structure via
 the :attr:`StdModel._meta` attribute.
 
 .. attribute:: _meta

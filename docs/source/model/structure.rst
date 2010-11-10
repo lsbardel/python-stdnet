@@ -32,14 +32,6 @@ SetField
    :members:
    :member-order: bysource
    
-
-OrederedSetField
-==============================
-
-.. autoclass:: stdnet.orm.OrderedSetField
-   :members:
-   :member-order: bysource
-   
    
 HashField
 ==============================

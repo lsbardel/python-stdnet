@@ -10,7 +10,7 @@ and :ref:`data structure <model-field-structure>` fields
 available in :mod:`stdnet`.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    timeseries
    portfolio

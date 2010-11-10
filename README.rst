@@ -10,11 +10,10 @@
 
 The data is owned by different, configurable back-end databases and it is accessed using a
 light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 
-The source code is hosted at `github`__ while
-Documentation__ and Downloads__ are available via PyPi.
+The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
 __ http://github.com/lsbardel/python-stdnet
-__ http://packages.python.org/python-stdnet/
+__ http://lsbardel.github.com/python-stdnet/
 __ http://pypi.python.org/pypi/python-stdnet/
 
 
@@ -57,8 +56,13 @@ To know which version you have installed::
 
 Running Tests
 ======================
-At the moment, only redis back-end is available, so to run tests you need to install redis.
-Once done that, launch redis and type::
+At the moment, only redis back-end is available and therefore to run tests you need to install Redis_.
+If you are using linux, it can be achieved simply by downloading, uncompressing and running ``make``, if you are using
+windows and want to save yourself a headache you can download precompiled binaries at servicestack__.
+
+__ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
+
+Once done that, open a shell and launch Redis. On another shell launch python and type::
 
 	>>> import stdnet
 	>>> stdnet.runtests()
@@ -167,6 +171,14 @@ Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
 * Django_ for inspiration and the ``dispatch`` module.
+* Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
+
+
+Contributing
+=================
+Development of StdNet happens at Github: http://github.com/lsbardel/python-stdnet
+
+You are highly encouraged to participate in the development.
 
 
 Licence

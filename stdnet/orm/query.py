@@ -45,23 +45,28 @@ class QuerySet(object):
     def __str__(self):
         return self.__repr__()
     
-    def get(self, index):
-        return self._unwind()[index]
-    __getitem__ = get
+    def __getitem__(self, slic):
+        return self.aslist()[slic]
     
-    def filter(self,**kwargs):
+    def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the given lookup parameters.'''
         kwargs.update(self.fargs)
         return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs)
     
-    def exclude(self,**kwargs):
+    def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match the given lookup parameters.'''
         kwargs.update(self.eargs)
         return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs)
     
-    #def getid(self, id):
-    #    meta = self._meta
-    #    return meta.cursor.hash(meta.basekey()).get(id)
+    def get(self):
+        items = self.aslist()
+        if items:
+            if len(items) == 1:
+                return items[0]
+            else:
+                raise QuerySetError('Get query yielded non unique results')
+        else:
+            raise ObjectNotFund
     
     def count(self):
         '''Return the number of objects in ``self`` without
@@ -83,7 +88,10 @@ fetching objects.'''
         meta = self._meta
         unique, fargs = self.aggregate(self.fargs)
         if unique:
-            self.qset = svset(meta.cursor.get_object(meta, fargs[0], fargs[1]))
+            try:
+                self.qset = [meta.cursor.get_object(meta, fargs[0], fargs[1])]
+            except ObjectNotFund:
+                self.qset = []
         else:
             if self.eargs:
                 unique, eargs = self.aggregate(self.eargs, False)
@@ -131,44 +139,51 @@ fetching objects.'''
             else:
                 raise QuerySetError("Field %s is not an index. Cannot query." % name)
         return unique, result
-    
-    def get(self):
-        self.buildquery()
-        if len(self.qset) == 1:
-            try:
-                return self.qset.result
-            except:
-                id = tuple(self.qset)[0]
-                meta = self._meta
-                return meta.cursor.hash(meta.basekey()).get(id)
-        else:
-            raise QuerySetError('Get query yielded non unique results')
         
     def items(self):
         '''Generator of instances in queryset.'''
+        if self._seq is not None:
+            for m in self._seq:
+                yield m
         self.buildquery()
         meta  = self._meta
         model = meta.make
         ids   = self.qset
-        if isinstance(ids,svset):
-            yield ids.result
+        seq   = []
+        self._seq = seq
+        
+        if ids == 'all':
+            hash = meta.table()
+            for id,val in hash.items():
+                m = model(id,val)
+                seq.append(m)
+                yield m
+        elif len(ids) == 1:
+            try:
+                elem = ids[0]
+            except TypeError:
+                hash = meta.table()
+                for id,val in izip(ids,hash.mget(ids)):
+                    m = model(id,val)
+                    seq.append(m)
+                    yield m
+            else:
+                seq.append(elem)
+                yield elem
         else:
             hash = meta.table()
-            if ids == 'all':
-                for id,val in hash.items():
-                    yield model(id,val)
-            else:
-                for id,val in izip(ids,hash.mget(ids)):
-                    yield model(id,val)
+            for id,val in izip(ids,hash.mget(ids)):
+                m = model(id,val)
+                seq.append(m)
+                yield m
     
     def __iter__(self):
-        if self._seq is None:
-            self._seq = list(self.items())
-        return self._seq.__iter__()
+        return self.items()
                 
-    def _unwind(self):
-        if not self._seq:
-            self._seq = list(self)
+    def aslist(self):
+        '''Return python ``list`` of elements in queryset'''
+        if self._seq is None:
+            return list(self.items())
         return self._seq
     
     def delete(self, dlist = None):

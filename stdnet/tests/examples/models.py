@@ -5,6 +5,8 @@ from stdnet import orm
 
 class SimpleModel(orm.StdModel):
     code = orm.SymbolField(unique = True)
+    group = orm.SymbolField(required = False)
+    description = orm.CharField()
     
 
 #####################################################################

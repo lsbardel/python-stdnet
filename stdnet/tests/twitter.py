@@ -40,8 +40,9 @@ class TestTwitter(TestCase):
     
     def testFollowers(self):
         '''Add followers to a user'''
-        users = User.objects.all()
-        N = users.count()
+        # unwind queryset here since we are going to use it in a double loop
+        users = list(User.objects.all())
+        N = len(users)
         
         # Follow users
         for user in users:

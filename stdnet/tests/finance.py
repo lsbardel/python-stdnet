@@ -78,12 +78,8 @@ class TestFinanceApplication(TestCase):
     
     def testFilter(self):
         '''Test filtering on a model without foreignkeys'''
-        try:
-            result = Instrument.objects.get(type = 'equity')
-        except QuerySetError:
-            pass
-        else:
-            self.fail('get query on non-unique field should have failed')
+        instget = lambda : Instrument.objects.get(type = 'equity')
+        self.assertRaises(QuerySetError,instget)
         tot = 0
         for t in insts_types:
             fs = Instrument.objects.filter(type = t)

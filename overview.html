@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview &mdash; Python StdNet v0.4.0 documentation</title>
+    <link rel="stylesheet" href="static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#installing">Installing</a></li>
+<li><a class="reference internal" href="#version-check">Version Check</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#default-settings">Default settings</a></li>
+<li><a class="reference internal" href="#backends">Backends</a></li>
+<li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
+<li><a class="reference internal" href="#kudos">Kudos</a></li>
+<li><a class="reference internal" href="#licence">Licence</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="overview">
+<span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Documentation:</th><td class="field-body"><a class="reference external" href="http://packages.python.org/python-stdnet/">http://packages.python.org/python-stdnet/</a></td>
+</tr>
+<tr class="field"><th class="field-name">Dowloads:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">http://pypi.python.org/pypi/python-stdnet/</a></td>
+</tr>
+<tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="http://code.google.com/p/python-stdnet/">http://code.google.com/p/python-stdnet/</a></td>
+</tr>
+<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, orm</td>
+</tr>
+</tbody>
+</table>
+<p>&#8211;</p>
+<p><strong>An object relational mapper for remote data structures.</strong></p>
+<p>The data is owned by different, configurable back-end databases and it is accessed using a
+light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) inspired by <a class="reference external" href="http://www.djangoproject.com/">Django</a> and <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>.
+The source code is hosted at <a class="reference external" href="http://github.com/lsbardel/python-stdnet">github</a> while
+<a class="reference external" href="http://packages.python.org/python-stdnet/">Documentation</a> and <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>You need access to a <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server.</li>
+<li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> version 2.0 or higher.</li>
+</ul>
+</div>
+<div class="section" id="installing">
+<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
+<p>To install, download, uncompress and type:</p>
+<div class="highlight-python"><pre>python setup.py install</pre>
+</div>
+<p>otherwise use <tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
+<div class="highlight-python"><pre>easy_install python-stdnet</pre>
+</div>
+<p>or <tt class="docutils literal"><span class="pre">pip</span></tt>:</p>
+<div class="highlight-python"><pre>pip install python-stdnet</pre>
+</div>
+</div>
+<div class="section" id="version-check">
+<h2>Version Check<a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h2>
+<p>To know which version you have installed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
+<span class="go">&#39;0.3.2&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-tests">
+<h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
+<p>At the moment, only redis back-end is available, so to run tests you need to install redis.
+Once done that, launch redis and type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>otherwise from the package directory:</p>
+<div class="highlight-python"><pre>python runtests.py</pre>
+</div>
+<p><strong>BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW</strong></p>
+</div>
+<div class="section" id="default-settings">
+<h2>Default settings<a class="headerlink" href="#default-settings" title="Permalink to this headline">¶</a></h2>
+<p>Running tests with the above commands assumes your <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server
+is running on the same machine and it will use the database <tt class="docutils literal"><span class="pre">13</span></tt>.</p>
+<p>StdNet comes with two default settings.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">settings</span><span class="o">.</span><span class="n">__dict__</span>
+<span class="go">{&#39;DEFAULT_BACKEND&#39;: &#39;redis://127.0.0.1:6379/?db=7&#39;, &#39;DEFAULT_KEYPREFIX&#39;: &#39;stdnet&#39;}</span>
+</pre></div>
+</div>
+<p>If your redis server runs on a different machine, or you would like to use a different database number,
+you need to setup a     script file along these lines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">stdnet</span>
+        <span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">(</span><span class="s">&#39;redis://your.server.url:6379/?db=10&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="backends">
+<h2>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h2>
+<p>Backend data-stores provide the backbone of the library,
+while the Object Relational Mapper the syntactic sugar.
+Currently the list of back-ends is limited to</p>
+<ul class="simple">
+<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a>. Requires <a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a>.</li>
+<li>Local memory (planned). For testing purposes.</li>
+<li><a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> (planned). Requires <a class="reference external" href="http://code.google.com/p/couchdb-python/">couchdb-python</a>.</li>
+</ul>
+<p><strong>Only</strong> <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> <strong>is operational.</strong></p>
+</div>
+<div class="section" id="object-relational-mapper">
+<h2>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h2>
+<p>The module <tt class="docutils literal"><span class="pre">stdnet.orm</span></tt> is the ORM, it maps python object into database data. It is design to be fast and
+safe to use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+
+<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An abstract model. This won&#39;t have any data in the database.&#39;&#39;&#39;</span>
+    <span class="c"># A unique symbol field, a symbol is an immutable string</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="c"># Another symbol, symbol fields are by default indexes</span>
+    <span class="n">ccy</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+
+
+<span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">itype</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+        <span class="c"># A char field is a string and it is never an index</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">PositionDescriptor</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">dt</span>    <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateField</span><span class="p">()</span>
+    <span class="c"># A float field is not an index by default</span>
+    <span class="n">size</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="c"># A FK field which we explicitly set as non-index</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Position&quot;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Position</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;positions&#39;</span><span class="p">)</span>
+    <span class="n">fund</span>       <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
+    <span class="n">history</span>    <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">PositionDescriptor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> @ </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fund</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Register models with backend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=2&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And play with the API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;pluto,description=&quot;</span><span class="n">The</span> <span class="nb">super</span> <span class="n">pluto</span> <span class="n">fund</span><span class="s">&quot;,ccy=&quot;</span><span class="n">EUR</span><span class="s">&quot;).save()</span>
+<span class="go">Fund: pluto</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="kudos">
+<h2>Kudos<a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a> simply because this library uses its awesome features.</li>
+<li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for inspiration and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
+</ul>
+</div>
+<div class="section" id="licence">
+<h2>Licence<a class="headerlink" href="#licence" title="Permalink to this headline">¶</a></h2>
+<p>This software is licensed under the New <a class="reference external" href="http://www.opensource.org/licenses/bsd-license.php">BSD</a> License. See the LICENSE
+file in the top distribution directory for the full license text.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

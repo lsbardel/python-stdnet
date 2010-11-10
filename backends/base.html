@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Database backend interface &mdash; Python StdNet v0.4.0 documentation</title>
+    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="up" title="Data Structure and BackEnds" href="index.html" />
+    <link rel="next" title="Redis backend" href="redis.html" />
+    <link rel="prev" title="Remote Data Structures" href="structures.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="redis.html" title="Redis backend"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="structures.html" title="Remote Data Structures"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="structures.html"
+                        title="previous chapter">Remote Data Structures</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="redis.html"
+                        title="next chapter">Redis backend</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/backends/base.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="database-backend-interface">
+<span id="base-backend"></span><h1>Database backend interface<a class="headerlink" href="#database-backend-interface" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="stdnet.BackendDataServer">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>params</em>, <em>pickler=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic interface for a backend database:</p>
+<ul class="simple">
+<li><em>name</em> name of database, such as <strong>redis</strong>, <strong>couchdb</strong>, etc..</li>
+<li><em>params</em> dictionary of configuration parameters</li>
+<li><em>pickler</em> calss for serializing and unserializing data. It must implement the <em>loads</em> and <em>dumps</em> methods.</li>
+</ul>
+<dl class="method">
+<dt id="stdnet.BackendDataServer.delete">
+<tt class="descname">delete</tt><big>(</big><em>*key</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete one or more keys specified by <tt class="docutils literal"><span class="pre">keys</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.get_object">
+<tt class="descname">get_object</tt><big>(</big><em>meta</em>, <em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.get_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrive an object from the database. If object is not available, it raises
+an <a class="reference internal" href="../utility/exceptions.html#stdnet.exceptions.ObjectNotFund" title="stdnet.exceptions.ObjectNotFund"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.exceptions.ObjectNotFund</span></tt></a> exception.</p>
+<blockquote>
+<ul class="simple">
+<li><em>meta</em> <a class="reference internal" href="../model/models.html#database-metaclass"><em>database metaclass</em></a> or model</li>
+<li><em>name</em> name of field (must be unique)</li>
+<li><em>value</em> value of field to search.</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.add_object">
+<tt class="descname">add_object</tt><big>(</big><em>obj</em>, <em>data</em>, <em>indexes</em>, <em>commit=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.add_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a model object to the database:</p>
+<ul class="simple">
+<li><em>obj</em> instance of <a class="reference internal" href="../model/models.html#model-model"><em>StdModel</em></a> to add to database</li>
+<li><em>commit</em> If True, <em>obj</em> is saved to database, otherwise it remains in local cache.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.commit">
+<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commit cache objects to database.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.delete_object">
+<tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>deleted=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an object from the data server and clean up indices.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.get_many">
+<tt class="descname">get_many</tt><big>(</big><em>keys</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.get_many" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch a bunch of keys from the cache. For certain backends (memcached,
+pgsql) this can be <em>much</em> faster when fetching multiple values.</p>
+<p>Returns a dict mapping each key in keys to its value. If the given
+key is missing, it will be missing from the response dict.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.has_key">
+<tt class="descname">has_key</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.has_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the key is in the cache and has not expired.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.incr">
+<tt class="descname">incr</tt><big>(</big><em>key</em>, <em>delta=1</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.incr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add delta to value in the cache. If the key does not exist, raise a
+ValueError exception.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.decr">
+<tt class="descname">decr</tt><big>(</big><em>key</em>, <em>delta=1</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.decr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtract delta from value in the cache. If the key does not exist, raise
+a ValueError exception.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.delete_many">
+<tt class="descname">delete_many</tt><big>(</big><em>keys</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_many" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a bunch of values in the cache at once.  For certain backends
+(memcached), this is much more efficient than calling delete() multiple
+times.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove <em>all</em> values from the database at once.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.list">
+<tt class="descname">list</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an instance of <a class="reference internal" href="structures.html#stdnet.List" title="stdnet.List"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.List</span></tt></a>
+for a given <em>id</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.hash">
+<tt class="descname">hash</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an instance of <a class="reference internal" href="structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structure
+for a given <em>id</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.unordered_set">
+<tt class="descname">unordered_set</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.unordered_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an instance of <a class="reference internal" href="structures.html#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a> structure
+for a given <em>id</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.ordered_set">
+<tt class="descname">ordered_set</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.ordered_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an instance of <a class="reference internal" href="structures.html#stdnet.OrderedSet" title="stdnet.OrderedSet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.OrderedSet</span></tt></a> structure
+for a given <em>id</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="redis.html" title="Redis backend"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="structures.html" title="Remote Data Structures"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

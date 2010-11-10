@@ -1,0 +1,181 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Populate &mdash; Python StdNet v0.4.0 documentation</title>
+    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="up" title="Utilities" href="index.html" />
+    <link rel="next" title="Exceptions" href="exceptions.html" />
+    <link rel="prev" title="Utilities" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="exceptions.html" title="Exceptions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Utilities"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Utilities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="exceptions.html"
+                        title="next chapter">Exceptions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/utility/populate.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-stdnet.utils">
+<span id="populate"></span><span id="utility-populate"></span><h1>Populate<a class="headerlink" href="#module-stdnet.utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="stdnet.utils.populate">
+<tt class="descclassname">stdnet.utils.</tt><tt class="descname">populate</tt><big>(</big><em>datatype='string'</em>, <em>size=10</em>, <em>start=None</em>, <em>end=None</em>, <em>converter=None</em>, <em>choice_from=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.utils.populate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function for populating lists with random data. Useful for populating
+database with data for testing. Supported data-types</p>
+<blockquote>
+<ul>
+<li><dl class="first docutils">
+<dt><em>string</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;string&#39;</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span> <span class="n">min_len</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 100 elements list with random strings
+with random length between 3 and 10</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>date</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="n">populate</span><span class="p">(</span><span class="s">&#39;date&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">1997</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">end</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random datetime.date objects between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>integer</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;integer&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random int between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>floats</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;integer&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random floats between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>choice</em> (elements of an iterable)</dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;choice&#39;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">choice_from</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;pippo&#39;</span><span class="p">,</span><span class="s">&#39;pluto&#39;</span><span class="p">,</span><span class="s">&#39;blob&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random elements from <em>choice_from</em></p>
+</dd>
+</dl>
+</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="exceptions.html" title="Exceptions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Utilities"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

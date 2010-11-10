@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Remote Data Structures &mdash; Python StdNet v0.4.0 documentation</title>
+    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="up" title="Data Structure and BackEnds" href="index.html" />
+    <link rel="next" title="Database backend interface" href="base.html" />
+    <link rel="prev" title="Data Structure and BackEnds" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="base.html" title="Database backend interface"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Data Structure and BackEnds"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Remote Data Structures</a><ul>
+<li><a class="reference internal" href="#structure">Structure</a></li>
+<li><a class="reference internal" href="#list">List</a></li>
+<li><a class="reference internal" href="#set">Set</a></li>
+<li><a class="reference internal" href="#orderedset">OrderedSet</a></li>
+<li><a class="reference internal" href="#hashtable">HashTable</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Data Structure and BackEnds</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="base.html"
+                        title="next chapter">Database backend interface</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/backends/structures.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.backends.structures"><span id="structures-backend"></span></span><div class="section" id="remote-data-structures">
+<h1>Remote Data Structures<a class="headerlink" href="#remote-data-structures" title="Permalink to this headline">¶</a></h1>
+<p>Data structures are fundamental constructs around which you build your application.
+They are used in almost all computer programs, therefore becoming fluent in what the standard
+data-structures can do for you is essential to get full value out of them.
+The <a class="reference external" href="http://www.sgi.com/tech/stl/">standard template library</a> in C++ implements a wide array of structures,
+python has several of them too. <tt class="docutils literal"><span class="pre">stdnet</span></tt> implements four remote structures, all derived from
+<a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.</p>
+<div class="section" id="structure">
+<h2>Structure<a class="headerlink" href="#structure" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.Structure">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Structure</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for remote data-structures.</p>
+<dl class="attribute">
+<dt id="stdnet.backends.structures.Structure.cursor">
+<tt class="descname">cursor</tt><a class="headerlink" href="#stdnet.backends.structures.Structure.cursor" title="Permalink to this definition">¶</a></dt>
+<dd><p>instance of a <a class="reference internal" href="base.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.structures.Structure.id">
+<tt class="descname">id</tt><a class="headerlink" href="#stdnet.backends.structures.Structure.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>unique <em>id</em> for the structure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.structures.Structure.timeout">
+<tt class="descname">timeout</tt><a class="headerlink" href="#stdnet.backends.structures.Structure.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expiry timeout. If different from zero it represents the number of seconds
+after which the structure is deleted from the data server. Default <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.structures.Structure.pipeline">
+<tt class="descname">pipeline</tt><a class="headerlink" href="#stdnet.backends.structures.Structure.pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of <tt class="xref py py-class docutils literal"><span class="pre">PipeLine</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.size">
+<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements in structure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.delete">
+<tt class="descname">delete</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete structure from remote server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.add_expiry">
+<tt class="descname">add_expiry</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.add_expiry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Internal method called if a timeout is set. This needs to implemented.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="list">
+<h2>List<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.List">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">List</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.List" title="Permalink to this definition">¶</a></dt>
+<dd><p>A linked-list <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.</p>
+<dl class="method">
+<dt id="stdnet.List.push_back">
+<tt class="descname">push_back</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.List.push_back" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends a copy of <em>value</em> to the end of the remote list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.List.push_front">
+<tt class="descname">push_front</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.List.push_front" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends a copy of <em>value</em> to the beginning of the remote list.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="set">
+<h2>Set<a class="headerlink" href="#set" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.Set">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Set</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Set" title="Permalink to this definition">¶</a></dt>
+<dd><p>An unordered set <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to python <tt class="docutils literal"><span class="pre">set</span></tt>.</p>
+<dl class="method">
+<dt id="stdnet.Set.add">
+<tt class="descname">add</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.Set.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>value</em> to the set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Set.update">
+<tt class="descname">update</tt><big>(</big><em>values</em><big>)</big><a class="headerlink" href="#stdnet.Set.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add iterable <em>values</em> to the set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Set.discard">
+<tt class="descname">discard</tt><big>(</big><em>elem</em><big>)</big><a class="headerlink" href="#stdnet.Set.discard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an element from a set if it is a member</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="orderedset">
+<span id="orderedset-structure"></span><h2>OrderedSet<a class="headerlink" href="#orderedset" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.OrderedSet">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">OrderedSet</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>An ordered <a class="reference internal" href="#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>.</p>
+<dl class="method">
+<dt id="stdnet.OrderedSet.add">
+<tt class="descname">add</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>value</em> to the set</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="hashtable">
+<span id="hash-structure"></span><h2>HashTable<a class="headerlink" href="#hashtable" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.HashTable">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">HashTable</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.HashTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>A hash-table <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
+<dl class="method">
+<dt id="stdnet.HashTable.add">
+<tt class="descname">add</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.HashTable.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <tt class="docutils literal"><span class="pre">key</span></tt> - <tt class="docutils literal"><span class="pre">value</span></tt> pair to hashtable.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.HashTable.update">
+<tt class="descname">update</tt><big>(</big><em>mapping</em><big>)</big><a class="headerlink" href="#stdnet.HashTable.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>mapping</em> dictionary to hashtable. Equivalent to python dictionary update method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.HashTable.mget">
+<tt class="descname">mget</tt><big>(</big><em>keys</em><big>)</big><a class="headerlink" href="#stdnet.HashTable.mget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator of key-value pairs for the keys requested</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.HashTable.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.HashTable.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator over key-value items</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.HashTable.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.HashTable.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the Hash table. Equivalent to <tt class="docutils literal"><span class="pre">dict.clear</span></tt> method in Python.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="base.html" title="Database backend interface"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Data Structure and BackEnds"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

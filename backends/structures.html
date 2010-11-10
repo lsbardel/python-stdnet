@@ -88,7 +88,7 @@ after which the structure is deleted from the data server. Default <tt class="do
 <dl class="attribute">
 <dt id="stdnet.backends.structures.Structure.pipeline">
 <tt class="descname">pipeline</tt><a class="headerlink" href="#stdnet.backends.structures.Structure.pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>An instance of <tt class="xref py py-class docutils literal"><span class="pre">PipeLine</span></tt>.</p>
+<dd><p>An instance of <a class="reference internal" href="../utility/other.html#stdnet.PipeLine" title="stdnet.PipeLine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.PipeLine</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -139,6 +139,13 @@ after which the structure is deleted from the data server. Default <tt class="do
 <dt id="stdnet.Set">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Set</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Set" title="Permalink to this definition">¶</a></dt>
 <dd><p>An unordered set <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to python <tt class="docutils literal"><span class="pre">set</span></tt>.</p>
+<p>This structure is used for in two different parts of the library.</p>
+<ul class="simple">
+<li>It is the structure upon which indexes are built, therefore each <a class="reference internal" href="../model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a>
+which has <tt class="docutils literal"><span class="pre">index</span></tt> set to <tt class="xref docutils literal"><span class="pre">True</span></tt> will have an associated
+Set structure in the data server backend.</li>
+<li>It is also used as <a class="reference internal" href="../model/structure.html#stdnet.orm.SetField" title="stdnet.orm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.SetField</span></tt></a>.</li>
+</ul>
 <dl class="method">
 <dt id="stdnet.Set.add">
 <tt class="descname">add</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.Set.add" title="Permalink to this definition">¶</a></dt>
@@ -165,7 +172,7 @@ after which the structure is deleted from the data server. Default <tt class="do
 <dl class="class">
 <dt id="stdnet.OrderedSet">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">OrderedSet</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>An ordered <a class="reference internal" href="#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>.</p>
+<dd><p>An ordered version of <a class="reference internal" href="#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>.</p>
 <dl class="method">
 <dt id="stdnet.OrderedSet.add">
 <tt class="descname">add</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet.add" title="Permalink to this definition">¶</a></dt>
@@ -181,6 +188,13 @@ after which the structure is deleted from the data server. Default <tt class="do
 <dt id="stdnet.HashTable">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">HashTable</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.HashTable" title="Permalink to this definition">¶</a></dt>
 <dd><p>A hash-table <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
+<p>This structure is used for in two different parts of the library.</p>
+<ul class="simple">
+<li>It is the structure which holds instances for a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. Therefore each
+model is represented as a HashTable structure. The keys are the model instances ids and the values are the 
+serialised version of the instances.</li>
+<li>It is also used as <a class="reference internal" href="../model/structure.html#stdnet.orm.HashField" title="stdnet.orm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.HashField</span></tt></a>.</li>
+</ul>
 <dl class="method">
 <dt id="stdnet.HashTable.add">
 <tt class="descname">add</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.HashTable.add" title="Permalink to this definition">¶</a></dt>

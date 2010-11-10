@@ -54,8 +54,10 @@
             
   <div class="section" id="time-series">
 <span id="timeseries-example"></span><h1>Time Series<a class="headerlink" href="#time-series" title="Permalink to this headline">¶</a></h1>
-<p>A very simple example on how to manage timeseries data.</p>
-<p>Define the model:</p>
+<p>A very simple example on how to manage <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> data.</p>
+<div class="section" id="define-the-model">
+<h2>Define the model<a class="headerlink" href="#define-the-model" title="Permalink to this headline">¶</a></h2>
+<p>A simple model containing a <a class="reference internal" href="../model/structure.html#stdnet.orm.HashField" title="stdnet.orm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.HashField</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 <span class="kn">from</span> <span class="nn">stdnet.utils</span> <span class="kn">import</span> <span class="n">date2timestamp</span><span class="p">,</span> <span class="n">timestamp2date</span>
 
@@ -66,37 +68,46 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">tovalue</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">timestamp2date</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">timestamp2date</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">TimeSerie</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">ticker</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">ticker</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
     <span class="n">data</span>   <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">HashField</span><span class="p">(</span><span class="n">converter</span> <span class="o">=</span> <span class="n">DateConverter</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> - </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ticker</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
 </pre></div>
 </div>
 <p><tt class="docutils literal"><span class="pre">DateConverter</span></tt> is a module/object/class used to convert the keys to suitable
 values which can be used as keys for the hash table. In this example the conversion from a
-Python <tt class="docutils literal"><span class="pre">datetime.date</span></tt> object to a JavaScript timestamp is performed.</p>
-<p>Register <tt class="docutils literal"><span class="pre">TimeSerie</span></tt> to a backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">TimeSerie</span><span class="p">,</span><span class="s">&#39;redis://&#39;</span><span class="p">)</span>
+Python <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> object to a timestamp float number is used.</p>
+</div>
+<div class="section" id="register-the-model">
+<h2>Register the model<a class="headerlink" href="#register-the-model" title="Permalink to this headline">¶</a></h2>
+<p>Register <tt class="docutils literal"><span class="pre">TimeSerie</span></tt> to the standard backend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">TimeSerie</span><span class="p">)</span>
+<span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
 </pre></div>
 </div>
-<p>and create objects:</p>
+</div>
+<div class="section" id="create-objects">
+<h2>Create Objects<a class="headerlink" href="#create-objects" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TimeSerie</span><span class="p">(</span><span class="n">ticker</span> <span class="o">=</span> <span class="s">&#39;GOOG&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">),</span><span class="mf">436.07</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-<span class="go">TimeSerie: GOOG: 1</span>
+<span class="go">TimeSerie: GOOG - 1</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="mf">436.55</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="mf">439.49</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-<span class="go">TimeSerie: GOOG: 3</span>
+<span class="go">TimeSerie: GOOG - 3</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sorteditems</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="k">print</span> <span class="n">data</span>
 <span class="go">(datetime.date(2010,7,1), 439.49)</span>
 <span class="go">(datetime.date(2010,7,2), 436.55)</span>
 <span class="go">(datetime.date(2010,7,6), 436.07)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span>
 </pre></div>
+</div>
 </div>
 </div>
 
@@ -108,6 +119,16 @@ Python <tt class="docutils literal"><span class="pre">datetime.date</span></tt> 
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" width="128" height="128" src="" alt="Logo"/>
 </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Time Series</a><ul>
+<li><a class="reference internal" href="#define-the-model">Define the model</a></li>
+<li><a class="reference internal" href="#register-the-model">Register the model</a></li>
+<li><a class="reference internal" href="#create-objects">Create Objects</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Examples</a></p>

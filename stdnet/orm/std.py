@@ -125,17 +125,15 @@ class MultiField(Field):
 
 class SetField(MultiField):
     '''A field maintaining an unordered collection of values. It is initiated
-without any argument otherr than an optional model class.
-Equivalent to python ``set``. For example::
+without any argument other than an optional model class.
+When accessed from the model instance, it returns an instance of :class:`stdnet.Set` structure.
+For example::
 
     class User(orm.StdModel):
         username  = orm.AtomField(unique = True)
         password  = orm.AtomField()
-        following = orm.SetField(model = 'self',
-                                 index = True,
-                                 related_name = 'followers')
+        following = orm.SetField(model = 'self')
     
-The ``following`` field define a many-to-many relationship between Users.
 It can be used in the following way::
     
     >>> user = User(username = 'lsbardel', password = 'mypassword').save()
@@ -144,7 +142,6 @@ It can be used in the following way::
     >>> user.save()
     >>> user2 in user.following
     True
-    >>> _
     '''
     type = 'set'
     def get_pipeline(self):
@@ -153,18 +150,27 @@ It can be used in the following way::
 
 class ListField(MultiField):
     '''A field maintaining a list of values. When accessed from the model instance,
-it returns an instance of :ref:`list structure <list-structure>`. For example::
+it returns an instance of :class:`stdnet.List` structure. For example::
 
     class UserMessage(orm.StdModel):
-        user = orm.AtomField()
+        user = orm.SymbolField()
         messages = orm.ListField()
+    
+Lets register it with redis::
+
+    >>> orm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
+    'redis db 7 on 127.0.0.1:6379'
     
 Can be used as::
 
-    >>> m = UserMessage(user = 'pippo')
+    >>> m = UserMessage(user = 'pippo').save()
     >>> m.messages.push_back("adding my first message to the list")
     >>> m.messages.push_back("ciao")
     >>> m.save()
+    >>> type(u.messages)
+    <class 'stdnet.backends.structures.structredis.List'>
+    >>> u.messages.size()
+    2
     '''
     type = 'list'
     def get_pipeline(self):
@@ -173,7 +179,8 @@ Can be used as::
 
 class HashField(MultiField):
     '''A Hash table field, the networked equivalent of a python dictionary.
-Keys are string while values are string/numeric. It accepts to optional arguments:
+Keys are string while values are string/numeric.
+it returns an instance of :class:`stdnet.HashTable` structure.
 '''
     type = 'hash'
     def get_pipeline(self):

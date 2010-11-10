@@ -23,7 +23,7 @@ class keyconverter(object):
     
     
 class PipeLine(object):
-    '''Struicture pipeline'''
+    '''A pipeline utility class. Used to hold data in :class:`stdnet.Structure` before it is saved into the data server.'''
     def __init__(self, pipe, method, timeout):
         self.pipe = pipe
         self.method = method
@@ -79,7 +79,7 @@ class Structure(object):
     
 .. attribute:: pipeline
 
-    An instance of :class:`PipeLine`.
+    An instance of :class:`stdnet.PipeLine`.
 
     '''
     struct = None
@@ -194,7 +194,14 @@ class List(Structure):
 
 
 class Set(Structure):
-    '''An unordered set :class:`stdnet.Structure`. Equivalent to python ``set``.'''
+    '''An unordered set :class:`stdnet.Structure`. Equivalent to python ``set``.
+    
+This structure is used for in two different parts of the library.
+
+* It is the structure upon which indexes are built, therefore each :class:`stdnet.orm.Field`
+  which has ``index`` set to ``True`` will have an associated
+  Set structure in the data server backend.
+* It is also used as :class:`stdnet.orm.SetField`.'''
     struct = SetPipe
     def __iter__(self):
         if not self._cache:
@@ -237,7 +244,7 @@ class Set(Structure):
 
 
 class OrderedSet(Set):
-    '''An ordered :class:`stdnet.Set`.'''
+    '''An ordered version of :class:`stdnet.Set`.'''
     struct = OsetPipe
     def __iter__(self):
         if not self._cache:
@@ -265,7 +272,15 @@ def itemcmp(x,y):
 
     
 class HashTable(Structure):
-    '''A hash-table :class:`stdnet.Structure`. Equivalent to a Python ``dict``.'''
+    '''A hash-table :class:`stdnet.Structure`. Equivalent to a Python ``dict``.
+    
+This structure is used for in two different parts of the library.
+
+* It is the structure which holds instances for a :class:`stdnet.orm.StdModel` class. Therefore each
+  model is represented as a HashTable structure. The keys are the model instances ids and the values are the 
+  serialised version of the instances.
+
+* It is also used as :class:`stdnet.orm.HashField`.'''
     struct = HashPipe
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter

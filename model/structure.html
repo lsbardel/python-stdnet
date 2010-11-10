@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Data-structure Fields &mdash; Python StdNet v0.4.0 documentation</title>
+    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="up" title="Object Relational Mapper" href="index.html" />
+    <link rel="next" title="Executing Queries" href="query.html" />
+    <link rel="prev" title="Scalar Fields" href="fields.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="query.html" title="Executing Queries"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fields.html" title="Scalar Fields"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Data-structure Fields</a><ul>
+<li><a class="reference internal" href="#listfield">ListField</a></li>
+<li><a class="reference internal" href="#setfield">SetField</a></li>
+<li><a class="reference internal" href="#orederedsetfield">OrederedSetField</a></li>
+<li><a class="reference internal" href="#hashfield">HashField</a></li>
+<li><a class="reference internal" href="#manytomanyfield">ManyToManyField</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fields.html"
+                        title="previous chapter">Scalar Fields</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="query.html"
+                        title="next chapter">Executing Queries</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/model/structure.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.orm"><span id="model-field-structure"></span></span><div class="section" id="data-structure-fields">
+<h1>Data-structure Fields<a class="headerlink" href="#data-structure-fields" title="Permalink to this headline">¶</a></h1>
+<p>These fields are remote data-structures such as list, sets and hash tables.
+They can be bound to models so that
+many-to-many objects relationship can be established. All the data-structure
+fields derives from MultiField.</p>
+<dl class="class">
+<dt id="stdnet.orm.MultiField">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">MultiField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.MultiField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Virtual class for data-structure fields:</p>
+<dl class="attribute">
+<dt id="stdnet.orm.MultiField.relmodel">
+<tt class="descname">relmodel</tt><a class="headerlink" href="#stdnet.orm.MultiField.relmodel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional <tt class="xref py py-class docutils literal"><span class="pre">stdnet.otm.StdModel</span></tt> class contained in the structure. It can also be specified as a string.</p>
+<ul>
+<li><p class="first"><em>related_name</em> same as <a class="reference internal" href="fields.html#foreignkey"><em>ForeignKey</em></a> Field.</p>
+</li>
+<li><p class="first"><em>pickler</em> a module/class/objects used to serialize values.</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>converter</em> a module/class/objects used to convert keys to suitable string to use as keys in <a class="reference internal" href="../backends/structures.html#hash-structure"><em>HashTables</em></a>.</dt>
+<dd><p class="first">It must implement two methods, <tt class="docutils literal"><span class="pre">tokey</span></tt> to convert key to a suitable key
+for the database backend and <tt class="docutils literal"><span class="pre">tovalue</span></tt> the inverse operation. By default
+is the class:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">keyconverter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tokey</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tovalue</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="listfield">
+<h2>ListField<a class="headerlink" href="#listfield" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.orm.ListField">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ListField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ListField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field maintaining a list of values. When accessed from the model instance,
+it returns an instance of <em class="xref std std-ref">list structure</em>. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UserMessage</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Can be used as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">UserMessage</span><span class="p">(</span><span class="n">user</span> <span class="o">=</span> <span class="s">&#39;pippo&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">push_back</span><span class="p">(</span><span class="s">&quot;adding my first message to the list&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">push_back</span><span class="p">(</span><span class="s">&quot;ciao&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="setfield">
+<h2>SetField<a class="headerlink" href="#setfield" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.orm.SetField">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SetField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.SetField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field maintaining an unordered collection of values. It is initiated
+without any argument otherr than an optional model class.
+Equivalent to python <tt class="docutils literal"><span class="pre">set</span></tt>. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">username</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
+    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span>
+                             <span class="n">index</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span>
+                             <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;followers&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">following</span></tt> field define a many-to-many relationship between Users.
+It can be used in the following way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span> <span class="o">=</span> <span class="s">&#39;lsbardel&#39;</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="s">&#39;mypassword&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user2</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span> <span class="o">=</span> <span class="s">&#39;pippo&#39;</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="s">&#39;pippopassword&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="o">.</span><span class="n">following</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">user2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user2</span> <span class="ow">in</span> <span class="n">user</span><span class="o">.</span><span class="n">following</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="orederedsetfield">
+<h2>OrederedSetField<a class="headerlink" href="#orederedsetfield" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="hashfield">
+<h2>HashField<a class="headerlink" href="#hashfield" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.orm.HashField">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">HashField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Hash table field, the networked equivalent of a python dictionary.
+Keys are string while values are string/numeric. It accepts to optional arguments:</p>
+</dd></dl>
+
+</div>
+<div class="section" id="manytomanyfield">
+<h2>ManyToManyField<a class="headerlink" href="#manytomanyfield" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.orm.ManyToManyField">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ManyToManyField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ManyToManyField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A many-to-many relationship. It accepts <strong>related_name</strong> as extra argument.</p>
+<dl class="attribute">
+<dt id="stdnet.orm.ManyToManyField.related_name">
+<tt class="descname">related_name</tt><a class="headerlink" href="#stdnet.orm.ManyToManyField.related_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional name to use for the relation from the related object
+back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+</dd></dl>
+
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span>      <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span>
+                                    <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;followers&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To use it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;luca&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">following</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;john&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">following</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;mark&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This field is implemented as a double Set field.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="query.html" title="Executing Queries"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fields.html" title="Scalar Fields"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

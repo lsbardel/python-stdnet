@@ -1,7 +1,7 @@
 
-:Documentation: http://packages.python.org/python-stdnet/
+:Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
-:Source: http://code.google.com/p/python-stdnet/
+:Source: https://github.com/lsbardel/python-stdnet
 :Keywords: server, database, cache, redis, orm
 
 --
@@ -37,6 +37,13 @@ otherwise use ``easy_install``::
 or ``pip``::
 
 	pip install python-stdnet
+	
+	
+Documentation
+============================
+StdNet uses Sphinx_ for its documentation, and the latest is available at GitHub:
+
+* http://lsbardel.github.com/python-stdnet/
 	
 
 Version Check
@@ -79,8 +86,8 @@ If your redis server runs on a different machine, or you would like to use a dif
 you need to setup a	script file along these lines::
 	
 	if __name__ == '__main__':
-		import stdnet
-		stdnet.runtests('redis://your.server.url:6379/?db=10')
+	    import stdnet
+	    stdnet.runtests('redis://your.server.url:6379/?db=10')
 
 
 Backends
@@ -176,3 +183,4 @@ file in the top distribution directory for the full license text.
 .. _couchdb-python: http://code.google.com/p/couchdb-python/
 .. _Memcached: http://memcached.org/
 .. _BSD: http://www.opensource.org/licenses/bsd-license.php
+.. _Sphinx: http://sphinx.pocoo.org/

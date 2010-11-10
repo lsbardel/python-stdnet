@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Data-structure Fields &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,47 +45,7 @@
         <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Data-structure Fields</a><ul>
-<li><a class="reference internal" href="#listfield">ListField</a></li>
-<li><a class="reference internal" href="#setfield">SetField</a></li>
-<li><a class="reference internal" href="#orederedsetfield">OrederedSetField</a></li>
-<li><a class="reference internal" href="#hashfield">HashField</a></li>
-<li><a class="reference internal" href="#manytomanyfield">ManyToManyField</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="fields.html"
-                        title="previous chapter">Scalar Fields</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="query.html"
-                        title="next chapter">Executing Queries</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../sources/model/structure.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -107,29 +66,26 @@ fields derives from MultiField.</p>
 <dt id="stdnet.orm.MultiField.relmodel">
 <tt class="descname">relmodel</tt><a class="headerlink" href="#stdnet.orm.MultiField.relmodel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optional <tt class="xref py py-class docutils literal"><span class="pre">stdnet.otm.StdModel</span></tt> class contained in the structure. It can also be specified as a string.</p>
-<ul>
-<li><p class="first"><em>related_name</em> same as <a class="reference internal" href="fields.html#foreignkey"><em>ForeignKey</em></a> Field.</p>
-</li>
-<li><p class="first"><em>pickler</em> a module/class/objects used to serialize values.</p>
-</li>
-<li><dl class="first docutils">
-<dt><em>converter</em> a module/class/objects used to convert keys to suitable string to use as keys in <a class="reference internal" href="../backends/structures.html#hash-structure"><em>HashTables</em></a>.</dt>
-<dd><p class="first">It must implement two methods, <tt class="docutils literal"><span class="pre">tokey</span></tt> to convert key to a suitable key
-for the database backend and <tt class="docutils literal"><span class="pre">tovalue</span></tt> the inverse operation. By default
-is the class:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">keyconverter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">tokey</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">value</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">tovalue</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">value</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-</li>
-</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.MultiField.related_name">
+<tt class="descname">related_name</tt><a class="headerlink" href="#stdnet.orm.MultiField.related_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> Field.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.MultiField.pickler">
+<tt class="descname">pickler</tt><a class="headerlink" href="#stdnet.orm.MultiField.pickler" title="Permalink to this definition">¶</a></dt>
+<dd><p>a module/class/objects used to serialize values. Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.MultiField.converter">
+<tt class="descname">converter</tt><a class="headerlink" href="#stdnet.orm.MultiField.converter" title="Permalink to this definition">¶</a></dt>
+<dd><p>a module/class/objects used to convert keys to suitable string to use as keys in <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structures.
+It must implement two methods, <tt class="docutils literal"><span class="pre">tokey</span></tt> to convert key to a suitable key
+for the database backend and <tt class="docutils literal"><span class="pre">tovalue</span></tt> the inverse operation. Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -235,6 +191,48 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
           </div>
         </div>
       </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Data-structure Fields</a><ul>
+<li><a class="reference internal" href="#listfield">ListField</a></li>
+<li><a class="reference internal" href="#setfield">SetField</a></li>
+<li><a class="reference internal" href="#orederedsetfield">OrederedSetField</a></li>
+<li><a class="reference internal" href="#hashfield">HashField</a></li>
+<li><a class="reference internal" href="#manytomanyfield">ManyToManyField</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fields.html"
+                        title="previous chapter">Scalar Fields</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="query.html"
+                        title="next chapter">Executing Queries</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/model/structure.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
     <div class="related">
@@ -258,7 +256,7 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

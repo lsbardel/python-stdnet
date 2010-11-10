@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Twitter Clone Example &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,9 +45,93 @@
         <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="twitter-clone-example">
+<span id="twitter-example"></span><h1>Twitter Clone Example<a class="headerlink" href="#twitter-clone-example" title="Permalink to this headline">¶</a></h1>
+<p>A very simple twitter clone implemented using <tt class="docutils literal"><span class="pre">stdnet</span></tt> library.
+Illustrates the use of <a class="reference internal" href="../model/structure.html#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ManyToManyField</span></tt></a> and
+<a class="reference internal" href="../model/structure.html#stdnet.orm.ListField" title="stdnet.orm.ListField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ListField</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+
+<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">dt</span>   <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateField</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;User&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A model for holding information about users&#39;&#39;&#39;</span>
+    <span class="n">username</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">updates</span>   <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">Post</span><span class="p">)</span>
+    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;followers&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span>
+
+    <span class="k">def</span> <span class="nf">newupdate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">p</span>  <span class="o">=</span> <span class="n">Post</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">,</span> <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">push_front</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span>
+</pre></div>
+</div>
+<p>These models are available in the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.tests</span></tt> module.
+We can import them by using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.tests.examples.models</span> <span class="kn">import</span> <span class="n">Post</span><span class="p">,</span> <span class="n">User</span>
+</pre></div>
+</div>
+<p>Before using the models, we need to register them to a back-end. If your redis server is running locally
+just type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
+<span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Post</span><span class="p">)</span>
+<span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
+</pre></div>
+</div>
+<p>Now lets try it out:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;pluto&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;bla&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="go">User: pluto</span>
+</pre></div>
+</div>
+<p>Ok we have a user. Lets add few updates:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">newupdate</span><span class="p">(</span><span class="s">&#39;my name is Luka and I live on second floor&#39;</span><span class="p">)</span>
+<span class="go">Post: my name is Luka and I live on second floor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">newupdate</span><span class="p">(</span><span class="s">&#39;ciao&#39;</span><span class="p">)</span>
+<span class="go">Post: ciao</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="go">User: pluto</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">updates</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> :  </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span><span class="n">p</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="go">2010-11-10 18:05:59 :  ciao</span>
+<span class="go">2010-11-10 18:05:24 :  my name is Luka and I live on second floor</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="portfolio.html"
                         title="previous chapter">Simple Portfolio Management</a></p>
@@ -75,86 +158,6 @@
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
-            
-  <div class="section" id="twitter-clone-example">
-<span id="twitter-example"></span><h1>Twitter Clone Example<a class="headerlink" href="#twitter-clone-example" title="Permalink to this headline">¶</a></h1>
-<p>A very simple twitter clone implemented using <tt class="docutils literal"><span class="pre">stdnet</span></tt> library.
-Illustrates the use of <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.orm.ManyToManyField</span></tt> and
-<tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.orm.ListField</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
-
-<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">dt</span>   <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateField</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;User&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
-        <span class="n">dt</span>   <span class="o">=</span> <span class="n">dt</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Post</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;A model for holding information about users&#39;&#39;&#39;</span>
-    <span class="n">username</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">password</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">updates</span>   <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">Post</span><span class="p">)</span>
-    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;followers&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span>
-
-    <span class="k">def</span> <span class="nf">newupdate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">p</span>  <span class="o">=</span> <span class="n">Post</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">,</span> <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">push_front</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">p</span>
-</pre></div>
-</div>
-<p>These models are available in the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.tests</span></tt> module.
-We can import them by using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.tests.examples.models</span> <span class="kn">import</span> <span class="n">Post</span><span class="p">,</span> <span class="n">User</span>
-</pre></div>
-</div>
-<p>Before using the models, we need to register them to a back-end. If your redis server is running locally
-just type:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
-<span class="go">&#39;redis&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Post</span><span class="p">)</span>
-<span class="go">&#39;redis&#39;</span>
-</pre></div>
-</div>
-<p>Now lets try it out:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;pluto&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;bla&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-<span class="go">User: pluto</span>
-</pre></div>
-</div>
-<p>Ok we have a user. Lets add few updates:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">newupdate</span><span class="p">(</span><span class="s">&#39;my name is Luka and I live on second floor)</span><span class="gp">&gt;&gt;&gt; </span>
-<span class="n">u</span><span class="o">.</span><span class="n">newupdate</span><span class="p">(</span><span class="s">&#39;ciao&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-<span class="go">2</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">updates</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="k">print</span> <span class="n">p</span><span class="o">.</span><span class="n">data</span>
-<span class="gp">...</span>
-<span class="go">my name is Luka and I live on second floor</span>
-<span class="go">ciao</span>
-<span class="go">&gt;&gt;&gt;</span>
-</pre></div>
-</div>
-</div>
-
-
-          </div>
-        </div>
-      </div>
       <div class="clearer"></div>
     </div>
     <div class="related">
@@ -178,7 +181,7 @@ just type:</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

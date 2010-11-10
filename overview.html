@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Overview &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -36,45 +35,7 @@
              >modules</a> |</li>
         <li><a href="index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Overview</a><ul>
-<li><a class="reference internal" href="#requirements">Requirements</a></li>
-<li><a class="reference internal" href="#installing">Installing</a></li>
-<li><a class="reference internal" href="#version-check">Version Check</a></li>
-<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
-<li><a class="reference internal" href="#default-settings">Default settings</a></li>
-<li><a class="reference internal" href="#backends">Backends</a></li>
-<li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
-<li><a class="reference internal" href="#kudos">Kudos</a></li>
-<li><a class="reference internal" href="#licence">Licence</a></li>
-</ul>
-</li>
-</ul>
-
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="sources/overview.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -87,11 +48,11 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Documentation:</th><td class="field-body"><a class="reference external" href="http://packages.python.org/python-stdnet/">http://packages.python.org/python-stdnet/</a></td>
+<tr class="field"><th class="field-name">Documentation:</th><td class="field-body"><a class="reference external" href="http://lsbardel.github.com/python-stdnet/">http://lsbardel.github.com/python-stdnet/</a></td>
 </tr>
 <tr class="field"><th class="field-name">Dowloads:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">http://pypi.python.org/pypi/python-stdnet/</a></td>
 </tr>
-<tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="http://code.google.com/p/python-stdnet/">http://code.google.com/p/python-stdnet/</a></td>
+<tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="https://github.com/lsbardel/python-stdnet">https://github.com/lsbardel/python-stdnet</a></td>
 </tr>
 <tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, orm</td>
 </tr>
@@ -101,8 +62,7 @@
 <p><strong>An object relational mapper for remote data structures.</strong></p>
 <p>The data is owned by different, configurable back-end databases and it is accessed using a
 light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) inspired by <a class="reference external" href="http://www.djangoproject.com/">Django</a> and <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>.
-The source code is hosted at <a class="reference external" href="http://github.com/lsbardel/python-stdnet">github</a> while
-<a class="reference external" href="http://packages.python.org/python-stdnet/">Documentation</a> and <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
+The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -122,6 +82,13 @@ The source code is hosted at <a class="reference external" href="http://github.c
 <div class="highlight-python"><pre>pip install python-stdnet</pre>
 </div>
 </div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>StdNet uses <a class="reference external" href="http://sphinx.pocoo.org/">Sphinx</a> for its documentation, and the latest is available at GitHub:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://lsbardel.github.com/python-stdnet/">http://lsbardel.github.com/python-stdnet/</a></li>
+</ul>
+</div>
 <div class="section" id="version-check">
 <h2>Version Check<a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h2>
 <p>To know which version you have installed:</p>
@@ -133,8 +100,10 @@ The source code is hosted at <a class="reference external" href="http://github.c
 </div>
 <div class="section" id="running-tests">
 <h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
-<p>At the moment, only redis back-end is available, so to run tests you need to install redis.
-Once done that, launch redis and type:</p>
+<p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.
+If you are using linux, it can be achieved simply by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
+windows and want to save yourself a headache you can download precompiled binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
+<p>Once done that, open a shell and launch Redis. On another shell launch python and type:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">()</span>
 </pre></div>
@@ -157,8 +126,8 @@ is running on the same machine and it will use the database <tt class="docutils 
 <p>If your redis server runs on a different machine, or you would like to use a different database number,
 you need to setup a     script file along these lines:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">stdnet</span>
-        <span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">(</span><span class="s">&#39;redis://your.server.url:6379/?db=10&#39;</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">stdnet</span>
+    <span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">(</span><span class="s">&#39;redis://your.server.url:6379/?db=10&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -239,7 +208,13 @@ safe to use:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a> simply because this library uses its awesome features.</li>
 <li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for inspiration and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
+<li>Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.</li>
 </ul>
+</div>
+<div class="section" id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>Development of StdNet happens at Github: <a class="reference external" href="http://github.com/lsbardel/python-stdnet">http://github.com/lsbardel/python-stdnet</a></p>
+<p>You are highly encouraged to participate in the development.</p>
 </div>
 <div class="section" id="licence">
 <h2>Licence<a class="headerlink" href="#licence" title="Permalink to this headline">¶</a></h2>
@@ -250,6 +225,48 @@ file in the top distribution directory for the full license text.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#installing">Installing</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#version-check">Version Check</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#default-settings">Default settings</a></li>
+<li><a class="reference internal" href="#backends">Backends</a></li>
+<li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
+<li><a class="reference internal" href="#kudos">Kudos</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
+<li><a class="reference internal" href="#licence">Licence</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -268,7 +285,7 @@ file in the top distribution directory for the full license text.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

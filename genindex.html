@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Index &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -36,27 +35,7 @@
              >modules</a> |</li>
         <li><a href="index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-
-   
-
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -117,6 +96,7 @@
       <dt><a href="backends/structures.html#stdnet.HashTable.clear">(stdnet.HashTable method)</a></dt>
   </dl></dd>
     <dt><a href="backends/base.html#stdnet.BackendDataServer.commit">commit() (stdnet.BackendDataServer method)</a></dt>
+    <dt><a href="model/structure.html#stdnet.orm.MultiField.converter">converter (stdnet.orm.MultiField attribute)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
     <dt><a href="model/query.html#stdnet.orm.query.QuerySet.count">count() (stdnet.orm.query.QuerySet method)</a></dt>
@@ -270,6 +250,7 @@
 <h2 id="P">P</h2>
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
+    <dt><a href="model/structure.html#stdnet.orm.MultiField.pickler">pickler (stdnet.orm.MultiField attribute)</a></dt>
     <dt><a href="backends/structures.html#stdnet.backends.structures.Structure.pipeline">pipeline (stdnet.backends.structures.Structure attribute)</a></dt>
     <dt><a href="model/models.html#stdnet.orm.models.Metaclass.pk">pk (stdnet.orm.models.Metaclass attribute)</a></dt>
     <dt><a href="utility/populate.html#stdnet.utils.populate">populate() (in module stdnet.utils)</a></dt>
@@ -294,11 +275,15 @@
 <h2 id="R">R</h2>
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
+    <dt><a href="model/models.html#stdnet.orm.register">register() (in module stdnet.orm)</a></dt>
     <dt><a href="model/fields.html#stdnet.orm.Field.register_with_model">register_with_model() (stdnet.orm.Field method)</a></dt>
     <dt><a href="model/structure.html#stdnet.orm.ManyToManyField.related_name">related_name (stdnet.orm.ManyToManyField attribute)</a></dt>
-    <dt><a href="model/models.html#stdnet.orm.StdModel.related_objects">related_objects() (stdnet.orm.StdModel method)</a></dt>
+    <dd><dl>
+      <dt><a href="model/structure.html#stdnet.orm.MultiField.related_name">(stdnet.orm.MultiField attribute)</a></dt>
+  </dl></dd>
 </dl></td>
   <td width="33%" valign="top"><dl>
+    <dt><a href="model/models.html#stdnet.orm.StdModel.related_objects">related_objects() (stdnet.orm.StdModel method)</a></dt>
     <dt><a href="model/structure.html#stdnet.orm.MultiField.relmodel">relmodel (stdnet.orm.MultiField attribute)</a></dt>
     <dt><a href="model/fields.html#stdnet.orm.Field.required">required (stdnet.orm.Field attribute)</a></dt>
 </dl></td>
@@ -362,6 +347,25 @@
           </div>
         </div>
       </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
     <div class="related">
@@ -378,7 +382,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

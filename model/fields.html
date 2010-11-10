@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Scalar Fields &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,52 +45,7 @@
         <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Scalar Fields</a><ul>
-<li><a class="reference internal" href="#field-base-class">Field Base Class</a></li>
-<li><a class="reference internal" href="#atomfield">AtomField</a></li>
-<li><a class="reference internal" href="#integerfield">IntegerField</a></li>
-<li><a class="reference internal" href="#booleanfield">BooleanField</a></li>
-<li><a class="reference internal" href="#autofield">AutoField</a></li>
-<li><a class="reference internal" href="#floatfield">FloatField</a></li>
-<li><a class="reference internal" href="#datefield">DateField</a></li>
-<li><a class="reference internal" href="#symbolfield">SymbolField</a></li>
-<li><a class="reference internal" href="#charfield">CharField</a></li>
-<li><a class="reference internal" href="#foreignkey">ForeignKey</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="models.html"
-                        title="previous chapter">StdNet Models</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="structure.html"
-                        title="next chapter">Data-structure Fields</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../sources/model/fields.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -109,7 +63,7 @@ the equivalent of columns in a traditional relational databases.</p>
 <dl class="class">
 <dt id="stdnet.orm.Field">
 <em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Field</tt><big>(</big><em>unique=False</em>, <em>ordered=False</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=True</em>, <em>default=&lt;class 'stdnet.orm.fields.NoValue'&gt;</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the base class of of StdNet Fields.
+<dd><p>This is the base class of all StdNet Fields.
 Each field is specified as a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class attribute.</p>
 <dl class="attribute">
 <dt id="stdnet.orm.Field.index">
@@ -193,7 +147,7 @@ function users should never call.</p>
 <dl class="method">
 <dt id="stdnet.orm.Field.serialize">
 <tt class="descname">serialize</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.serialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called by the :func:&#8217;stdnet.orm.StdModel.save` method when saving
+<dd><p>Called by the <a class="reference internal" href="models.html#stdnet.orm.StdModel.save" title="stdnet.orm.StdModel.save"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.StdModel.save()</span></tt></a> method when saving
 an object to the remote data server. It return s a serializable representation of <em>value</em>.
 If an error occurs it raises <a class="reference internal" href="../utility/exceptions.html#stdnet.exceptions.FieldValueError" title="stdnet.exceptions.FieldValueError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.exceptions.FieldValueError</span></tt></a></p>
 </dd></dl>
@@ -340,6 +294,53 @@ back to self. For example:</p>
           </div>
         </div>
       </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Scalar Fields</a><ul>
+<li><a class="reference internal" href="#field-base-class">Field Base Class</a></li>
+<li><a class="reference internal" href="#atomfield">AtomField</a></li>
+<li><a class="reference internal" href="#integerfield">IntegerField</a></li>
+<li><a class="reference internal" href="#booleanfield">BooleanField</a></li>
+<li><a class="reference internal" href="#autofield">AutoField</a></li>
+<li><a class="reference internal" href="#floatfield">FloatField</a></li>
+<li><a class="reference internal" href="#datefield">DateField</a></li>
+<li><a class="reference internal" href="#symbolfield">SymbolField</a></li>
+<li><a class="reference internal" href="#charfield">CharField</a></li>
+<li><a class="reference internal" href="#foreignkey">ForeignKey</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="models.html"
+                        title="previous chapter">StdNet Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="structure.html"
+                        title="next chapter">Data-structure Fields</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/model/fields.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
     <div class="related">
@@ -363,7 +364,7 @@ back to self. For example:</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

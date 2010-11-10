@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>StdNet Models &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="../static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,45 +45,7 @@
         <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">StdNet Models</a><ul>
-<li><a class="reference internal" href="#creating-models">Creating Models</a></li>
-<li><a class="reference internal" href="#register-a-model">Register A Model</a></li>
-<li><a class="reference internal" href="#data-server-metaclass">Data Server Metaclass</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">Object Relational Mapper</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="fields.html"
-                        title="next chapter">Scalar Fields</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../sources/model/models.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -169,6 +130,25 @@ otherwise a <a class="reference internal" href="../utility/exceptions.html#stdne
 <span id="register-model"></span><h2>Register A Model<a class="headerlink" href="#register-a-model" title="Permalink to this headline">¶</a></h2>
 <p>Once a model is defined, in order to use it in an application it needs to be registered with
 a back-end database.</p>
+<dl class="function">
+<dt id="stdnet.orm.register">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>keyprefix=None</em>, <em>timeout=0</em><big>)</big><a class="headerlink" href="#stdnet.orm.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> model with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt> data server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. Must be provided.</li>
+<li><strong>backend</strong> &#8211; a backend connection string. Default <tt class="docutils literal"><span class="pre">settings.DEFAULT_BACKEND</span></tt>.</li>
+<li><strong>keyprefix</strong> &#8211; a string used to prefix all database keys. Default <tt class="docutils literal"><span class="pre">settings.DEFAULT_KEYPREFIX</span></tt>.</li>
+<li><strong>keyprefix</strong> &#8211; timeout in seconds for keys persistance. Default <tt class="docutils literal"><span class="pre">0</span></tt> (no timeout).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage</strong></p>
 <p>For Redis the syntax is the following:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">orm</span>
 
@@ -178,6 +158,8 @@ a back-end database.</p>
 </div>
 <p><tt class="docutils literal"><span class="pre">my.host.name</span></tt> can be <tt class="docutils literal"><span class="pre">localhost</span></tt> or an ip address while <tt class="docutils literal"><span class="pre">db</span></tt> indicate
 the database number (very useful for separating data on the same redis instance).</p>
+</dd></dl>
+
 </div>
 <div class="section" id="data-server-metaclass">
 <span id="database-metaclass"></span><h2>Data Server Metaclass<a class="headerlink" href="#data-server-metaclass" title="Permalink to this headline">¶</a></h2>
@@ -262,6 +244,46 @@ the model table</p>
           </div>
         </div>
       </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">StdNet Models</a><ul>
+<li><a class="reference internal" href="#creating-models">Creating Models</a></li>
+<li><a class="reference internal" href="#register-a-model">Register A Model</a></li>
+<li><a class="reference internal" href="#data-server-metaclass">Data Server Metaclass</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Object Relational Mapper</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fields.html"
+                        title="next chapter">Scalar Fields</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/model/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
     <div class="related">
@@ -285,7 +307,7 @@ the model table</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

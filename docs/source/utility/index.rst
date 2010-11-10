@@ -1,7 +1,7 @@
 .. _utility-index:
 
 ============================
-Utilities
+Internals and Utilities
 ============================
 
 Contents:

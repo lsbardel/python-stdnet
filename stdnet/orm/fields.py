@@ -32,7 +32,7 @@ _novalue = NoValue()
 
 
 class Field(object):
-    '''This is the base class of of StdNet Fields.
+    '''This is the base class of all StdNet Fields.
 Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: index
@@ -145,7 +145,7 @@ function users should never call.'''
         return '_%s_cache' % self.name
     
     def serialize(self, value):
-        '''Called by the :func:'stdnet.orm.StdModel.save` method when saving
+        '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It return s a serializable representation of *value*.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         return value

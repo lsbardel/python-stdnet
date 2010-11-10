@@ -66,22 +66,19 @@ class MultiField(Field):
 
     Optional :class:`stdnet.otm.StdModel` class contained in the structure. It can also be specified as a string.
     
-    * *related_name* same as :ref:`ForeignKey <foreignkey>` Field.
-    * *pickler* a module/class/objects used to serialize values.
-    * *converter* a module/class/objects used to convert keys to suitable string to use as keys in :ref:`HashTables <hash-structure>`.
-        It must implement two methods, ``tokey`` to convert key to a suitable key
-        for the database backend and ``tovalue`` the inverse operation. By default
-        is the class::
-        
-            class keyconverter(object):
-                @classmethod
-                def tokey(cls, value):
-                    return value
-                @classmethod
-                def tovalue(cls, value):
-                    return value
-            
-    '''
+.. attribute:: related_name
+
+    Same as :class:`stdnet.orm.ForeignKey` Field.
+    
+.. attribute:: pickler
+
+    a module/class/objects used to serialize values. Default ``None``.
+    
+.. attribute:: converter
+
+    a module/class/objects used to convert keys to suitable string to use as keys in :class:`stdnet.HashTable` structures.
+    It must implement two methods, ``tokey`` to convert key to a suitable key
+    for the database backend and ``tovalue`` the inverse operation. Default: ``None``.'''
     def get_pipeline(self):
         raise NotImplementedError
     

@@ -4,11 +4,13 @@ class StdNetException(Exception):
     pass
 
 class ModelNotRegistered(StdNetException):
-    '''Raised when trying to save an instance of a Model not registered with a backend database.'''
+    '''A :class:`StdNetException` raised when trying to save an instance of a :class:`stdnet.orm.StdModel` not yet
+registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.orm.register` for details.'''
     pass
 
 class ObjectNotValidated(StdNetException):
-    '''Raised when an instance of a Model fails to validate (there are missing fields which are required).'''
+    '''A :class:`StdNetException` raised when an instance of a :class:`stdnet.orm.StdModel` fails to validate
+(probably required :class:`stdnet.orm.Field` are missing from the instance).'''
     pass
 
 class ImproperlyConfigured(StdNetException):

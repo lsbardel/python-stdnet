@@ -48,7 +48,7 @@ copyright = u'2010, Luca Sbardella'
 html_theme = 'celery'
 
 templates_path = ['_templates']
-html_static_path = ['.static']
+html_static_path = ['_static']
 html_theme_path = ["_theme"]
 html_sidebars = {
     'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],

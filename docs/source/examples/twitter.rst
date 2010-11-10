@@ -5,8 +5,8 @@ Twitter Clone Example
 ==============================
 
 A very simple twitter clone implemented using ``stdnet`` library.
-Illustrates the use of :class:`stdnet.orm.orm.ManyToManyField` and
-:class:`stdnet.orm.orm.ListField`::
+Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
+:class:`stdnet.orm.ListField`::
 
 	from datetime import datetime
 	from stdnet import orm
@@ -16,9 +16,8 @@ Illustrates the use of :class:`stdnet.orm.orm.ManyToManyField` and
 	    data = orm.CharField()
 	    user = orm.ForeignKey("User")
 	    
-	    def __init__(self, data = '', dt = None):
-	        dt   = dt or datetime.now()
-	        super(Post,self).__init__(data = data, dt = dt)
+	    def __str__(self):
+	        return self.data
 	    
 	    
 	class User(orm.StdModel):
@@ -32,7 +31,7 @@ Illustrates the use of :class:`stdnet.orm.orm.ManyToManyField` and
 	        return self.username
 	    
 	    def newupdate(self, data):
-	        p  = Post(data = data, user = self).save()
+	        p  = Post(data = data, user = self, dt = datetime.now()).save()
 	        self.updates.push_front(p)
 	        return p
 	    
@@ -47,9 +46,9 @@ just type::
 
 	>>> from stdnet import orm
 	>>> orm.register(User)
-	'redis'
+	'redis db 7 on 127.0.0.1:6379'
 	>>> orm.register(Post)
-	'redis'
+	'redis db 7 on 127.0.0.1:6379'
 	
 Now lets try it out::
 
@@ -59,15 +58,18 @@ Now lets try it out::
 	
 Ok we have a user. Lets add few updates::
 
-	>>> u.newupdate('my name is Luka and I live on second floor)
+	>>> u.newupdate('my name is Luka and I live on second floor')
+	Post: my name is Luka and I live on second floor
 	>>> u.newupdate('ciao')
+	Post: ciao
 	>>> u.save()
+	User: pluto
 	>>> u.updates.size()
 	2
 	>>> for p in u.updates:
-	...     print p.data
+	...     print('%s :  %s' % (p.dt,p))
 	... 
-	my name is Luka and I live on second floor
-	ciao
+	2010-11-10 18:05:59 :  ciao
+	2010-11-10 18:05:24 :  my name is Luka and I live on second floor
 	>>>
 	

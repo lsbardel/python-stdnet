@@ -6,3 +6,4 @@ Exceptions
 
 .. automodule:: stdnet.exceptions
    :members:
+   :member-order: bysource

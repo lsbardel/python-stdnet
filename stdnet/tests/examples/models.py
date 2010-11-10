@@ -107,8 +107,11 @@ class Node(orm.StdModel):
 
 class Post(orm.StdModel):
     dt   = orm.DateTimeField(index = False)
-    data = orm.CharField()
+    data = orm.CharField(required = True)
     user = orm.ForeignKey("User", index = False)
+    
+    def __str__(self):
+        return self.data
     
     
 class User(orm.StdModel):

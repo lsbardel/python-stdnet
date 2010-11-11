@@ -24,3 +24,11 @@ def todatetime(dt):
         return dt
     else:
         return datetime(dt.year,dt.month,dt.day)
+    
+    
+def todate(dt):
+    if isinstance(dt,datetime):
+        return dt.date()
+    else:
+        return dt
+        

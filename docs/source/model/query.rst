@@ -99,14 +99,57 @@ and it's called objects by default. Access it directly via the model class::
 	<stdnet.orm.query.Manager object at ...>
 	>>>
 
-QuerySet Reference
+Retrieving all objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The simplest way to retrieve objects from a table is to get all of them. To do this, use the :meth:`stdnet.orm.query.Manager.all`
+method on a Manager:
+
+	>>> funds = Fund.objects.all()
+	>>> funds
+	QuerySet
+	>>> funds._seq
+	>>> list(funds)
+	[Fund: Markowitz]
+	>>> funds._seq
+	[Fund: Markowitz]
+
+QuerySet are lazy, they are evaluated only when you iterate over them.
+The results are then stored in the ``_seq`` attribute.
+
+Retrieving filtered objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Usually, you'll need to select only a subset of the complete set of objects.
+To create such a subset, you refine the initial QuerySet, adding filter conditions.
+Lets create few other objects in the same line as above and try::
+
+	>>> eur_funds = Fund.objects.filter(ccy = 'EUR')
+	>>> eur_funds
+	QuerySet.filter({'ccy': 'EUR'})
+	>>> eur_funds.count()
+	1
+	>>> list(eur_funds)
+	[Fund: Markowitz]
+
+The ``count`` method counts the object in the query without physically retrieving them.
+
+QuerySet API Reference
 ==============================
 
 
+QuerySet
+~~~~~~~~~~~~~~~
+Though you usually won't create one manually, you'll go through a :class:`stdnet.orm.query.Manager`,
+here's the formal declaration of a QuerySet.
 
 .. autoclass:: stdnet.orm.query.QuerySet
    :members:
    :member-order: bysource
    
+
+Manager
+~~~~~~~~~~~~~~~
+.. autoclass:: stdnet.orm.query.Manager
+   :members:
+   :member-order: bysource
    
 .. _django: http://www.djangoproject.com/

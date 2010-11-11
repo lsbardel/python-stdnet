@@ -195,7 +195,7 @@ fetching objects.'''
     
 
 class Manager(object):
-    '''Manager for :class:`stdnet.orm.StdModel` models.'''
+    '''A manager class for :class:`stdnet.orm.StdModel` models.'''
     def get(self, **kwargs):
         qs = self.filter(**kwargs)
         return qs.get()
@@ -218,6 +218,7 @@ class Manager(object):
         return QuerySet(self._meta, eargs = kwargs)
 
     def all(self):
+        '''Return a :class:`QuerySet` which retrieve all instances of the model.'''
         return self.filter()
     
     

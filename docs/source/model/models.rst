@@ -32,10 +32,10 @@ Defining a stdnet models is simple, you derive a Python class from ``StdModel``:
 	from stdnet import orm
 	
 	class Author(orm.StModel):
-	    name = orm.AtomField()
+	    name = orm.SymbolField()
 	
 	class Book(orm.StdModel):
-	    title  = orm.AtomField()
+	    title  = orm.CharField()
 	    author = orm.ForeignKey(Author, related_name = 'books')
 	    
 	    

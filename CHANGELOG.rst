@@ -18,7 +18,7 @@ Ver. 0.4 - Development
 * Moved ``structures`` module into ``backends`` directory. Internal reorganisation of several modules.
 * Added ``app_label`` attribute to :class:`stdnet.orm.DataMetaClass`.
 * Added a new module ``stdnet.contrib.monitor`` for monitoring objects on the web. The module requires djpcms_.
-* **41 tests**
+* **45 tests**
 
 Ver. 0.3.3 - 2010 Sep 13
 ========================================

@@ -27,11 +27,22 @@ class TimeSerieField(orm.HashField):
     '''A timeserie filed specializes :ref:`HashField <hashfield>` by
     providing support for keys given by instances of ``datetime.date``'''
     def __init__(self, *args, **kwargs):
-        kwargs['converter'] = kwargs.pop('converter',None) or DateConverter
+        kwargs['converter'] = kwargs.pop('converter',None) or DateTimeConverter
         super(TimeSerieField,self).__init__(*args, **kwargs)      
 
 
-class TimeSerie(orm.StdModel):
+class TimeSeriesBase(orm.StdModel):
+    data  = TimeSerieField()
+    start = orm.DateTimeField(required = False, index = False)
+    end   = orm.DateTimeField(required = False, index = False)
+
+
+class DateTimeSeries(TimeSeriesBase):
+    data  = TimeSerieField(converter = )
+    start = orm.DateTimeField(required = False, index = False)
+    end   = orm.DateTimeField(required = False, index = False)
+    
+class TimeSeries(TimeSeriesBase):
     data  = TimeSerieField()
     start = orm.DateTimeField(required = False, index = False)
     end   = orm.DateTimeField(required = False, index = False)

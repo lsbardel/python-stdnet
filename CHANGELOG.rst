@@ -1,4 +1,4 @@
-Ver. 0.4 - Development
+Ver. 0.4 - 2010 Nov 11
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.

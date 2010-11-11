@@ -75,7 +75,7 @@ class OrderedSet(structures.OrderedSet):
     def discard(self, elem):
         return self.cursor.execute_command('ZREM', self.id, elem)
     
-    def _contains(self):
+    def _contains(self, value):
         return self.cursor.execute_command('ZSCORE', self.id, value) is not None
     
     def _all(self):
@@ -109,6 +109,9 @@ class HashTable(structures.HashTable):
     def delete(self, key):
         return self.cursor.execute_command('HDEL', self.id, key)
     
+    def _contains(self, value):
+        return self.cursor.execute_command('HEXISTS', self.id, value) is not None
+        
     def _keys(self):
         return self.cursor.execute_command('HKEYS', self.id)
     

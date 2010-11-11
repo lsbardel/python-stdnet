@@ -25,9 +25,11 @@ class QuerySet(object):
         * *eargs* dictionary containing the lookup parameters to exclude.
         '''
         self._meta  = meta
+        self.model  = meta.model
         self.fargs  = fargs
         self.eargs  = eargs
         self.filter_sets = filter_sets
+        self.isall  = False
         self.qset   = None
         self._seq   = None
         
@@ -72,11 +74,18 @@ class QuerySet(object):
         '''Return the number of objects in ``self`` without
 fetching objects.'''
         self.buildquery()
-        if self.qset == 'all':
-            meta = self._meta
-            return meta.table().size()
+        return len(self.qset)
+        
+    def __contains__(self, val):
+        if isinstance(val,self.model):
+            id = val.id
         else:
-            return len(self.qset)
+            try:
+                id = int(val)
+            except:
+                return False
+        self.buildquery()
+        return str(id) in self.qset
         
     def __len__(self):
         return self.count()
@@ -98,6 +107,9 @@ fetching objects.'''
             else:
                 eargs = None
             self.qset = self._meta.cursor.query(meta, fargs, eargs, filter_sets = self.filter_sets)
+            if self.qset == 'all':
+                self.qset = self._meta.table()
+                self.isall = True
         
     def aggregate(self, kwargs, filter = True):
         '''Aggregate lookup parameters.'''
@@ -152,9 +164,8 @@ fetching objects.'''
         seq   = []
         self._seq = seq
         
-        if ids == 'all':
-            hash = meta.table()
-            for id,val in hash.items():
+        if self.isall:
+            for id,val in ids.items():
                 m = model(id,val)
                 seq.append(m)
                 yield m
@@ -220,6 +231,12 @@ class Manager(object):
     def all(self):
         '''Return a :class:`QuerySet` which retrieve all instances of the model.'''
         return self.filter()
+    
+    def _setmodel(self, model):
+        meta = model._meta
+        self.model    = model
+        self._meta    = meta
+        self.cursor   = meta.cursor
     
     
 class RelatedManager(Manager):

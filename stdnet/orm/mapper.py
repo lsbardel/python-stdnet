@@ -40,9 +40,7 @@ def register(model, backend = None, keyprefix = None, timeout = 0):
         objects = copy.copy(objects)
     model.objects    = objects
     meta.cursor      = getdb(backend)
-    objects.model    = model
-    objects._meta    = meta
-    objects.cursor   = meta.cursor
+    objects._setmodel(model)
     _registry[model] = meta
     return str(meta.cursor)
 

@@ -3,7 +3,8 @@ Ver. 0.4 - Development
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.
 * Documentation hosted at github.
-* Added new ``contrib`` module ``djstdnet`` which uses `djpcms`_ content management system to display an admin interface for a :class:`stdnet.orm.StdModel`.
+* Added new ``contrib`` module ``djstdnet`` which uses `djpcms`_ content management system to display an admin
+  interface for a :class:`stdnet.orm.StdModel`. Experimental for now.
 * Added :class:`stdnet.CacheClass` which can be used as django_ cache backend. For example, using redis database 11 as cache is obtained by::
 
 	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
@@ -17,8 +18,8 @@ Ver. 0.4 - Development
   structures in a :class:`stdnet.BackendDataServer`.
 * Moved ``structures`` module into ``backends`` directory. Internal reorganisation of several modules.
 * Added ``app_label`` attribute to :class:`stdnet.orm.DataMetaClass`.
-* Added a new module ``stdnet.contrib.monitor`` for monitoring objects on the web. The module requires djpcms_.
-* **45 tests**
+* Added a new module ``stdnet.contrib.djstdnet`` for monitoring objects on the web. The module requires djpcms_.
+* **47 tests**
 
 Ver. 0.3.3 - 2010 Sep 13
 ========================================

@@ -4,7 +4,10 @@ from itertools import izip
 import stdnet
 from stdnet.test import TestCase
 from examples.models import SimpleModel
-    
+from stdnet.utils import populate
+
+LEN = 100
+names = populate('string',LEN, min_len = 5, max_len = 20)
 
 class TestManager(TestCase):
     
@@ -13,7 +16,12 @@ class TestManager(TestCase):
     
     def unregister(self):
         self.orm.unregister(SimpleModel)
-        
+    
+    def fill(self):
+        for name in names:
+            SimpleModel(code = name).save(False)
+        SimpleModel.commit()
+                
     def testGetOrCreate(self):
         v,created = SimpleModel.objects.get_or_create(code = 'test')
         self.assertTrue(created)
@@ -64,3 +72,14 @@ class TestManager(TestCase):
     def testNoFilter(self):
         filter1 = lambda : SimpleModel.objects.filter(description = 'bo').count()
         self.assertRaises(stdnet.QuerySetError,filter1)
+        
+    def testContainsAll(self):
+        self.fill()
+        qs = SimpleModel.objects.all()
+        self.assertEqual(qs.qset,None)
+        self.assertFalse('ciao' in qs)
+        self.assertEqual(qs.qset,None)
+        self.assertTrue(1 in qs)
+        self.assertTrue(qs.qset)
+        self.assertEqual(qs._seq,None)
+        

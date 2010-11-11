@@ -8,6 +8,10 @@ from related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from stdnet.exceptions import *
 from stdnet.utils import timestamp2date, date2timestamp
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 hashfun = lambda x : sha1(x).hexdigest()
 
@@ -23,6 +27,7 @@ __all__ = ['Field',
            'SymbolField',
            'CharField',
            'ForeignKey',
+           'PickleObjectField',
            '_novalue']
 
 class NoValue(object):
@@ -305,6 +310,22 @@ is set to ``False``.'''
     def serialize(self, value):
         if value is not None:
             value = str(value)
+        return value
+    
+    
+class PickleObjectField(CharField):
+    type = 'object'
+    def to_python(self, value):
+        if value is None:
+            return value
+        elif isinstance(value, basestring):
+            return pickle.loads(value)
+        else:
+            return value
+    
+    def serialize(self, value):
+        if value is not None:
+            value = pickle.dumps(value)
         return value
     
 

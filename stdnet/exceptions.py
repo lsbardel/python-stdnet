@@ -33,9 +33,10 @@ class FieldValueError(FieldError):
     pass
 
 class QuerySetError(StdNetException):
-    '''Raised when queryset is malformed.'''
+    '''A :class:`StdNetException` raised during a :class:`stdnet.orm.query.QuerySet`
+evaluation.'''
     pass
 
 class ObjectNotFund(QuerySetError):
-    '''Raised when a get queryset has no result.'''
+    '''A :class:`QuerySetError` raised when an object is not found.'''
     pass

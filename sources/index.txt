@@ -19,6 +19,9 @@ First steps
 **From scratch:**
 :ref:`Overview and Installation <intro-overview>`
 
+**Models and QuerySets:**
+:ref:`Executing queries <model-query>` | :ref:`Model API <model-model>`  
+
 **Examples:**
 :ref:`Timeseries <timeseries-example>` | :ref:`Portfolio <portfolio-example>` |
 :ref:`Twitter Clone<twitter-example>`

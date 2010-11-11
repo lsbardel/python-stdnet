@@ -7,8 +7,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>StdNet Models &mdash; Python StdNet v0.4.0 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -18,9 +18,9 @@
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Scalar Fields" href="fields.html" />
@@ -118,10 +118,10 @@ otherwise a <a class="reference internal" href="../utility/exceptions.html#stdne
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 
 <span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
 
 <span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">title</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
+    <span class="n">title</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
     <span class="n">author</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Author</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;books&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -266,7 +266,7 @@ the model table</p>
                         title="next chapter">Scalar Fields</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/models.txt"
+    <li><a href="../_sources/model/models.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">

@@ -46,17 +46,22 @@ class LinkedManager(Manager):
         for obj in self.dj.all():
             if not id in all: 
                 pass
-   
 
-def get_djfield(self, name):
+
+def get_djobject(self):
     obj = getattr(self,'djobject',None)
     if not obj and self.id:
         try:
             obj = self._meta.linked.objects.get(id = self.id)
+            self.djobject = obj
+            self.save()
         except:
             obj = None
-        self.djobject = obj
-    
+            self.djobject = obj
+    return obj
+
+def get_djfield(self, name):
+    obj = self.get_djobject()    
     if obj:
         attr = getattr(obj,name,None)
         if callable(attr):
@@ -85,6 +90,7 @@ def link_models(model1,
                                            model2,
                                            pre_delete_callback,
                                            post_save_callback)
+            setattr(model2,'get_djobject',get_djobject)
             for field in field_map:
                 setattr(model2,field,add_djfield(field))
             

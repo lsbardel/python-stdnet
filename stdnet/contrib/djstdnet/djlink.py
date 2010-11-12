@@ -3,7 +3,7 @@ from django.db.models.base import ModelBase
 from django.db.models import signals
 
 from stdnet import orm
-from stdnet import ObjectNotFund
+from stdnet import ObjectNotFound
 from stdnet.orm.query import Manager
 
 
@@ -12,7 +12,7 @@ def remove_linked(sender, instance, **kwargs):
     if linked:
         try:
             linked.objects.get(id = id).delete()
-        except ObjectNotFund:
+        except ObjectNotFound:
             pass
 
 
@@ -22,7 +22,7 @@ def post_save(sender, instance, **kwargs):
         id = instance.id
         try:
             cobj = linked.objects.get(id = id)
-        except ObjectNotFund:
+        except ObjectNotFound:
             cobj = linked(id = id)
         cobj._linked = obj
         cobj.save()

@@ -1,3 +1,9 @@
+Ver. 0.4.1 - Development
+============================
+* Corrected spelling error in Exception ``ObjectNotFound`` exception class.
+* **47 tests**
+
+
 Ver. 0.4 - 2010 Nov 11
 ============================
 * Development status set to ``beta``.
@@ -18,7 +24,6 @@ Ver. 0.4 - 2010 Nov 11
   structures in a :class:`stdnet.BackendDataServer`.
 * Moved ``structures`` module into ``backends`` directory. Internal reorganisation of several modules.
 * Added ``app_label`` attribute to :class:`stdnet.orm.DataMetaClass`.
-* Added a new module ``stdnet.contrib.djstdnet`` for monitoring objects on the web. The module requires djpcms_.
 * **47 tests**
 
 Ver. 0.3.3 - 2010 Sep 13

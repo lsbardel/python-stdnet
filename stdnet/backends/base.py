@@ -74,7 +74,7 @@ class BackendDataServer(object):
     
     def get_object(self, meta, name, value):
         '''Retrive an object from the database. If object is not available, it raises
-an :class:`stdnet.exceptions.ObjectNotFund` exception.
+an :class:`stdnet.exceptions.ObjectNotFound` exception.
 
     * *meta* :ref:`database metaclass <database-metaclass>` or model
     * *name* name of field (must be unique)
@@ -84,10 +84,10 @@ an :class:`stdnet.exceptions.ObjectNotFund` exception.
         else:
             id = value
         if id is None:
-            raise ObjectNotFund
+            raise ObjectNotFound
         data = self.hash(meta.basekey()).get(id)
         if data is None:
-            raise ObjectNotFund
+            raise ObjectNotFound
         return meta.make(id,data)
     
     def _get_pipe(self, id, typ, timeout):

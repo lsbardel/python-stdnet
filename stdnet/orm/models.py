@@ -38,16 +38,6 @@ the :attr:`StdModel._meta` attribute.
     
     def __str__(self):
         return ''
-        
-    def customAttribute(self, name):
-        '''Override this function to provide custom attributes'''
-        raise AttributeError("object '%s' has not attribute %s" % (self,name))
-    
-    def __set_field(self, name, field, value):
-        if field:
-            field._set_value(name,self,value)
-        else:
-            self.__dict__[name] = value
     
     def save(self, commit = True):
         '''Save the instance in the remote :class:`stdnet.HashTable`

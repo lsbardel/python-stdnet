@@ -1,4 +1,3 @@
-
 from stdnet import structures
 
 

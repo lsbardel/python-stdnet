@@ -68,7 +68,7 @@ class QuerySet(object):
             else:
                 raise QuerySetError('Get query yielded non unique results')
         else:
-            raise ObjectNotFund
+            raise ObjectNotFound
     
     def count(self):
         '''Return the number of objects in ``self`` without
@@ -99,7 +99,7 @@ fetching objects.'''
         if unique:
             try:
                 self.qset = [meta.cursor.get_object(meta, fargs[0], fargs[1])]
-            except ObjectNotFund:
+            except ObjectNotFound:
                 self.qset = []
         else:
             if self.eargs:
@@ -216,7 +216,7 @@ class Manager(object):
         try:
             res = self.get(**kwargs)
             created = False
-        except ObjectNotFund:
+        except ObjectNotFound:
             res = self.model(**kwargs)
             res.save()
             created = True

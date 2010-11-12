@@ -37,6 +37,6 @@ class QuerySetError(StdNetException):
 evaluation.'''
     pass
 
-class ObjectNotFund(QuerySetError):
+class ObjectNotFound(QuerySetError):
     '''A :class:`QuerySetError` raised when an object is not found.'''
     pass

@@ -37,11 +37,11 @@ class TestManager(TestCase):
         self.assertEqual(v1,v)
         
     def testGetError(self):
-        '''Test for a ObjectNotFund exception.'''
+        '''Test for a ObjectNotFound exception.'''
         get1 = lambda : SimpleModel.objects.get(code = 'test2')
         get2 = lambda : SimpleModel.objects.get(id = 34)
-        self.assertRaises(stdnet.ObjectNotFund,get1)
-        self.assertRaises(stdnet.ObjectNotFund,get2)
+        self.assertRaises(stdnet.ObjectNotFound,get1)
+        self.assertRaises(stdnet.ObjectNotFound,get2)
         
     def testEmptyIDFilter(self):
         self.assertEqual(SimpleModel.objects.filter(id = 1).count(),0)
@@ -63,7 +63,7 @@ class TestManager(TestCase):
         v1 = SimpleModel.objects.get(group = 'g2')
         self.assertEqual(v,v1)
         get1 = lambda : SimpleModel.objects.get(group = 'g1')
-        self.assertRaises(stdnet.ObjectNotFund,get1)
+        self.assertRaises(stdnet.ObjectNotFound,get1)
         v2,created =SimpleModel.objects.get_or_create(code = 'test2', group = 'g2')
         self.assertEqual(SimpleModel.objects.filter(group = 'g2').count(),2)
         get2 = lambda : SimpleModel.objects.get(group = 'g2')

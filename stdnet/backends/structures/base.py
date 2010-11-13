@@ -362,10 +362,9 @@ This structure is used for in two different parts of the library.
 
     def items(self):
         '''Generator over key-value items'''
-        result   = self._items()
         loads    = self.pickler.loads
         tovalue  = self.converter.tovalue
-        for key,val in result.iteritems():
+        for key,val in self._items():
             yield tovalue(key),loads(val)
             
     def values(self):
@@ -440,7 +439,7 @@ class Map(HashTable):
         
     def range(self, start, end):
         '''Return a range between start and end key.'''
-        tokey = self.converter.tokey
+        tokey    = self.converter.tokey
         tovalue  = self.converter.tovalue
         loads    = self.pickler.loads
         for key,val in self._range(tokey(start),tokey(end)):

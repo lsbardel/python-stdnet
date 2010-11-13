@@ -109,6 +109,16 @@ class TestDateTimeSeriesMap(test_timeseries.TestTimeSeries):
             self.assertTrue(d>=front)
             front = d
         self.assertEqual(d,back)
+        
+    def testItems(self):
+        ts = self.get()
+        mkdate = self.mkdate
+        ts.data.update(testdata2)
+        ts.save()
+        for k,v in ts.data.items():
+            self.assertEqual(v,testdata2[k.date()])
+        
+        
         #range = ts.data.range(start,end)
         #p = start
         #for k,v in range:

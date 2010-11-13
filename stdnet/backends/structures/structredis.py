@@ -1,7 +1,18 @@
 '''Two different implementation of a redis::map, a networked
 ordered associative container
 '''
+from itertools import izip, imap
 import base as structures
+
+
+def zset_score_pairs(response):
+    """
+    If ``withscores`` is specified in the options, return the response as
+    a list of (value, score) pairs
+    """
+    #TODO: this is crap!
+    return izip(response[::2], response[1::2])
+
 
 
 class List(structures.List):
@@ -167,7 +178,11 @@ class Map(structures.Map):
         return self.cursor.execute_command('TKEYS', self.id)
     
     def _items(self):
-        return self.cursor.execute_command('TRANGE', self.id)
+        res = self.cursor.execute_command('TITEMS', self.id)
+        if res:
+            return zset_score_pairs(res)
+        else:
+            return res
 
     def values(self):
         for ky,val in self.items():

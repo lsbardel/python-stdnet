@@ -1,4 +1,8 @@
 
+try:
+    from collections import OrderedDict as odict
+except ImportError:
+    odict = dict
     
 
 class listPipeline(object):
@@ -19,4 +23,8 @@ class listPipeline(object):
         return len(self.back) + len(self.front)
     
 
+class mapPipeline(odict):
     
+    def items3(self):
+        for s,v in self.iteritems():
+            yield s,v[0],v[1]

@@ -23,6 +23,7 @@ class TestTimeSeries(TestCase):
     
     def setUp(self):
         self.orm.register(self.model)
+        #self.orm.clearall()
         self.model(ticker = 'GOOG').save()
         
     def unregister(self):
@@ -135,7 +136,22 @@ class TestTimeSeries(TestCase):
         B6   = mkdate(2010,8,1)
         self.interval(A6,B6,[[default_parse_interval(B5,1),B6]],A4,B6)
         
-    def testGetSet(self):
+    def testSetLen(self):
+        ts = self.get()
+        mkdate = self.mkdate
+        dt = mkdate(2010,7,1)
+        dt2 = mkdate(2010,4,1)
+        ts.data.add(dt,56)
+        ts.data[dt2] = 78
+        ts.save()
+        self.assertEqual(ts.data.size(),2)
+        ts.data.update({mkdate(2009,3,1):"ciao",mkdate(2009,7,4):"luca"})
+        ts.save()
+        self.assertEqual(ts.data.size(),4)
+        self.assertTrue(dt2 in ts.data)
+        self.assertFalse(mkdate(2000,4,13) in ts.data)
+        
+    def testGet(self):
         ts = self.get()
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
@@ -145,15 +161,12 @@ class TestTimeSeries(TestCase):
         ts.save()
         self.assertEqual(ts.data.get(dt),56)
         self.assertEqual(ts.data[dt2],78)
-        try:
-            ts.data[mkdate(2010,3,1)]
-        except KeyError:
-            pass
-        else:
-            self.fail('KeyError')
+        self.assertRaises(KeyError,lambda : ts.data[mkdate(2010,3,1)])
         self.assertEqual(ts.data.get(mkdate(2010,3,1)),None)
         
 
 class TestDateTimeSeries(TestTimeSeries):
     model = DateTimeSeries
     mkdate = date
+    
+    

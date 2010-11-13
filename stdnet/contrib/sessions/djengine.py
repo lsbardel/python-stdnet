@@ -22,15 +22,9 @@ class SessionStore(SessionBase):
         return False
 
     def create(self):
-        while True:
-            self.session_key = self._get_new_session_key()
-            try:
-                self.save(must_create=True)
-            except CreateError:
-                # The key wasn't unique, try again
-                continue
-            self.modified = True
-            return
+        s =  Session.objects.create()
+        self.session_key = s.id
+        return s
 
     def save(self, must_create=False):
         if must_create:

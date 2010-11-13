@@ -130,3 +130,44 @@ class HashTable(structures.HashTable):
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)
         
+
+class Map(structures.Map):
+    
+    def _size(self):
+        return self.cursor.execute_command('TLEN', self.id)
+    
+    def clear(self):
+        return self.cursor.execute_command('DEL', self.id)
+    
+    def _get(self, key):
+        return self.cursor.execute_command('TGET', self.id, key)
+    
+    def _mget(self, keys):
+        return self.cursor.execute_command('TMGET', self.id, *keys)
+    
+    def delete(self, key):
+        return self.cursor.execute_command('TDEL', self.id, key)
+    
+    def _contains(self, key):
+        if self.cursor.execute_command('TEXISTS', self.id, key):
+            return True
+        else:
+            return False
+        
+    def _keys(self):
+        return self.cursor.execute_command('TKEYS', self.id)
+    
+    def _items(self):
+        return self.cursor.execute_command('TGETALL', self.id)
+
+    def values(self):
+        for ky,val in self.items():
+            yield val
+            
+    def _save(self):
+        items = []
+        [items.extend(item) for item in self.pipeline.items3()]
+        return self.cursor.execute_command('TADD',self.id,*items)
+    
+    def add_expiry(self):
+        self.cursor.execute_command('EXPIRE', self.id, self.timeout)

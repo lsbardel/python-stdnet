@@ -1,6 +1,6 @@
 '''Interfaces for supported data-structures'''
 
-from stdnet.utils import listPipeline
+from stdnet.utils import listPipeline, mapPipeline
 
 
 __all__ = ['PipeLine',
@@ -10,6 +10,9 @@ __all__ = ['PipeLine',
            'Set',
            'OrderedSet',
            'HashTable']
+
+default_score = lambda x : 1
+
 
 class keyconverter(object):
     
@@ -35,6 +38,10 @@ class PipeLine(object):
 class HashPipe(PipeLine):
     def __init__(self, timeout):
         super(HashPipe,self).__init__({},'hash',timeout)
+        
+class MapPipe(PipeLine):
+    def __init__(self, timeout):
+        super(MapPipe,self).__init__(mapPipeline(),'map',timeout)
 
 class SetPipe(PipeLine):
     def __init__(self, timeout):
@@ -51,6 +58,7 @@ class ListPipe(PipeLine):
 
 _pipelines = {'list':ListPipe,
               'hash': HashPipe,
+              'map': MapPipe,
               'set': SetPipe,
               'oset': OsetPipe}
 
@@ -270,6 +278,21 @@ def itemcmp(x,y):
     else:
         return -1
 
+
+class KeyValueStructure(Structure):
+    '''Base class for :class:`HashTable`'''
+    def __init__(self, *args, **kwargs):
+        self.converter = kwargs.pop('converter',None) or keyconverter
+        super(KeyValueStructure,self).__init__(*args, **kwargs)
+    
+    def __contains__(self, key):
+        value = self.converter.tokey(key)
+        if self._cache is None:
+            return self._contains(value)
+        else:
+            return value in self._cache
+    
+    
     
 class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`. Equivalent to a Python ``dict``.
@@ -386,3 +409,20 @@ This structure is used for in two different parts of the library.
         raise NotImplementedError
 
     
+class Map(HashTable):
+    struct = MapPipe
+    def __init__(self, *args, **kwargs):
+        self.scorefun = kwargs.pop('scorefun',default_score)
+        super(Map,self).__init__(*args, **kwargs)
+        
+    def update(self, mapping):
+        '''Add *mapping* dictionary to hashtable. Equivalent to python dictionary update method.'''
+        tokey = self.converter.tokey
+        dumps = self.pickler.dumps
+        sfunc = self.scorefun
+        p     = self.pipeline
+        for key,value in mapping.iteritems():
+            rk = tokey(key)
+            sc = sfunc(rk)
+            p[sc] = rk,dumps(value)
+        

@@ -29,6 +29,23 @@ class TimeSerieField(orm.HashField):
         super(TimeSerieField,self).register_with_model(name, model)
         self.converter = model.converter
         
+        
+class TimeSerieMapField(orm.MapField):
+    
+    def __init__(self, *args, **kwargs):
+        kwargs['scorefun'] = lambda x : x
+        super(TimeSerieMapField,self).__init__(*args, **kwargs)
+        
+    def register_with_model(self, name, model):
+        super(TimeSerieMapField,self).register_with_model(name, model)
+        self.converter = model.converter
+        
+        
+
+class TimeSeriesMap(orm.StdModel):
+    converter = DateTimeConverter
+    data  = TimeSerieMapField()
+        
 
 class TimeSeries(orm.StdModel):
     '''Base abstract class for timeseries'''

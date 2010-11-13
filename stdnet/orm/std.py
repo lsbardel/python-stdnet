@@ -9,11 +9,12 @@ from query import M2MRelatedManager
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, stype, pickler, converter):
+    def __init__(self, name, stype, pickler, converter, scorefun):
         self.name    = name
         self.stype   = stype
         self.pickler = pickler
         self.converter = converter
+        self.scorefun  = scorefun
         
     def get_cache_name(self):
         return '_%s_cache' % self.name
@@ -41,7 +42,8 @@ class ManyFieldManagerProxy(object):
         return st(meta.basekey('id',instance.id,self.name),
                   timeout = meta.timeout,
                   pickler = self.pickler,
-                  converter = self.converter)
+                  converter = self.converter,
+                  scorefun = self.scorefun)
         
     def get_related_manager(self, instance):
         return self.get_structure(instance)
@@ -88,6 +90,7 @@ class MultiField(Field):
                  converter = None,
                  required = False,
                  related_name = None,
+                 scorefun = None,
                  **kwargs):
         # Force required to be false
         super(MultiField,self).__init__(required = False,
@@ -99,6 +102,7 @@ class MultiField(Field):
         self.related_name = related_name  
         self.pickler      = pickler
         self.converter    = converter
+        self.scorefun     = scorefun
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
@@ -114,7 +118,7 @@ class MultiField(Field):
                 field.pickler = ModelFieldPickler(related)
         setattr(self.model,
                 self.name,
-                ManyFieldManagerProxy(self.name,self.get_pipeline(),self.pickler,self.converter))
+                ManyFieldManagerProxy(self.name,self.get_pipeline(),self.pickler,self.converter,self.scorefun))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -185,6 +189,16 @@ it returns an instance of :class:`stdnet.HashTable` structure.
     type = 'hash'
     def get_pipeline(self):
         return 'hash'
+    
+
+class MapField(MultiField):
+    '''A Hash table field, the networked equivalent of a python dictionary.
+Keys are string while values are string/numeric.
+it returns an instance of :class:`stdnet.HashTable` structure.
+'''
+    type = 'map'
+    def get_pipeline(self):
+        return 'map'
 
 
 class ManyToManyField(MultiField):

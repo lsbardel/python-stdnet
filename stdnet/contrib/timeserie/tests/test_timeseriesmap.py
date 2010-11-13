@@ -4,7 +4,8 @@ from datetime import date, datetime
 import test_timeseries
 from models import TimeSeriesMap
 
-testdata = test_timeseries.testdata
+testdata  = test_timeseries.testdata
+testdata2 = test_timeseries.testdata2
 
 
 
@@ -95,3 +96,21 @@ class TestDateTimeSeriesMap(test_timeseries.TestTimeSeries):
         B6   = mkdate(2010,8,1)
         self.interval(A6,B6,[[default_parse_interval(B5,1),B6]],A4,B6)
         
+    def testRange(self):
+        ts = self.get()
+        mkdate = self.mkdate
+        ts.data.update(testdata2)
+        ts.save()
+        start = mkdate(2009,5,1)
+        end = mkdate(2009,9,20)
+        front = ts.data.front()
+        back  = ts.data.back()
+        for d in ts.data.keys():
+            self.assertTrue(d>=front)
+            front = d
+        self.assertEqual(d,back)
+        #range = ts.data.range(start,end)
+        #p = start
+        #for k,v in range:
+        #    self.assetTrue(k>=p)
+        #    p = k

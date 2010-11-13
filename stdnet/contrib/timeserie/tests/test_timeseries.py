@@ -11,10 +11,13 @@ from models import TimeSeries, DateTimeSeries
 
 NUM_DATES = 300
 
-dates    = populate('date',NUM_DATES)
-values   = populate('float',NUM_DATES, start = 10, end = 400)
-alldata  = list(izip(dates,values))
-testdata = dict(alldata)
+dates     = populate('date',NUM_DATES)
+dates2    = populate('date',NUM_DATES,start=date(2009,1,1),end=date(2010,1,1))
+values    = populate('float',NUM_DATES, start = 10, end = 400)
+alldata   = list(izip(dates,values))
+alldata2  = list(izip(dates2,values))
+testdata  = dict(alldata)
+testdata2 = dict(alldata2)
 
 
 class TestTimeSeries(TestCase):

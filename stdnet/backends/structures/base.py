@@ -425,4 +425,33 @@ class Map(HashTable):
             rk = tokey(key)
             sc = sfunc(rk)
             p[sc] = rk,dumps(value)
+    
+    def front(self):
+        try:
+            return self.converter.tovalue(self._front())
+        except:
+            return None
+        
+    def back(self):
+        try:
+            return self.converter.tovalue(self._back())
+        except:
+            return None
+        
+    def range(self, start, end):
+        '''Return a range between start and end key.'''
+        tokey = self.converter.tokey
+        tovalue  = self.converter.tovalue
+        loads    = self.pickler.loads
+        for key,val in self._range(tokey(start),tokey(end)):
+            yield tovalue(key),loads(val)
+            
+    def _range(self, start, end):
+        raise NotImplementedError
+    
+    def _front(self):
+        raise NotImplementedError
+    
+    def _back(self):
+        raise NotImplementedError
         

@@ -154,11 +154,20 @@ class Map(structures.Map):
         else:
             return False
         
+    def _range(self, start, end):
+        return self.cursor.execute_command('TRANGE', self.id, start, end)
+    
+    def _front(self):
+        return self.cursor.execute_command('THEAD', self.id)
+    
+    def _back(self):
+        return self.cursor.execute_command('TTAIL', self.id)
+        
     def _keys(self):
         return self.cursor.execute_command('TKEYS', self.id)
     
     def _items(self):
-        return self.cursor.execute_command('TGETALL', self.id)
+        return self.cursor.execute_command('TRANGE', self.id)
 
     def values(self):
         for ky,val in self.items():

@@ -35,13 +35,14 @@ class TestTimeSeries(TestCase):
     def get(self, ticker = 'GOOG'):
         return self.model.objects.get(ticker = ticker)
         
-    def filldata(self):
+    def filldata(self, data = None):
+        data = data or testdata
         d = self.get()
-        d.data.update(testdata)
+        d.data.update(data)
         self.assertEqual(d.data.size(),0)
         d.save()
         data = d.data
-        self.assertEqual(data.size(),len(testdata))
+        self.assertEqual(data.size(),len(data))
         return self.get()
 
     def interval(self, a, b, targets, C, D):
@@ -59,11 +60,24 @@ class TestTimeSeries(TestCase):
         self.assertEqual(ts.start,C)
         self.assertEqual(ts.end,D)
         
+    def testFrontBack(self):
+        ts = self.get()
+        mkdate = self.mkdate
+        ts.data.update(testdata2)
+        ts.save()
+        start = ts.start
+        end   = ts.end
+        p = start
+        for d in ts.dates():
+            self.assertTrue(d>=p)
+            p = d
+        self.assertEqual(d,end)
+        
     def testkeys(self):
         ts = self.filldata()
         keyp = None
         data = testdata.copy()
-        for key in ts.data.sortedkeys():
+        for key in ts.dates():
             if keyp:
                 self.assertTrue(key,keyp)
             keyp = key
@@ -74,7 +88,7 @@ class TestTimeSeries(TestCase):
         ts = self.filldata()
         keyp = None
         data = testdata.copy()
-        for key,value in ts.data.sorteditems():
+        for key,value in ts.items():
             if keyp:
                 self.assertTrue(key,keyp)
             keyp = key

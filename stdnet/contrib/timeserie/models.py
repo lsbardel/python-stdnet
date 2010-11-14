@@ -40,19 +40,9 @@ class TimeSerieMapField(orm.MapField):
         super(TimeSerieMapField,self).register_with_model(name, model)
         self.converter = model.converter
         
-        
 
-class TimeSeriesMap(orm.StdModel):
+class TimeSeriesBase(orm.StdModel):
     converter = DateTimeConverter
-    data  = TimeSerieMapField()
-        
-
-class TimeSeries(orm.StdModel):
-    '''Base abstract class for timeseries'''
-    converter = DateTimeConverter
-    data  = TimeSerieField()
-    start = orm.DateTimeField(required = False, index = False)
-    end   = orm.DateTimeField(required = False, index = False)
     
     def todate(self, v):
         return todatetime(v)
@@ -61,31 +51,9 @@ class TimeSeries(orm.StdModel):
         '''number of dates in timeseries'''
         return self.data.size()
     
-    def save(self):
-        supersave = super(TimeSeries,self).save
-        supersave()
-        self.storestartend()
-        return supersave()
-    
-    def storestartend(self):
-        '''Store the start/end date of the timeseries'''
-        dates = self.data.sortedkeys()
-        if dates:
-            self.start = dates[0]
-            self.end   = dates[-1]
-        else:
-            self.start = None
-            self.end   = None
-    
-    def fromto(self):
-        if self.start:
-            return '%s - %s' % (self.start.strftime('%Y %m %d'),self.end.strftime('%Y %m %d'))
-        else:
-            return ''
+    class Meta:
+        abstract = True
         
-    def __str__(self):
-        return self.fromto()
-    
     def intervals(self, startdate, enddate, parseinterval = default_parse_interval):
         '''Given a *startdate* and an *enddate* date, evaluate the date intervals
 from which data is not available. It return a list of two-dimensional tuples
@@ -130,11 +98,63 @@ tuples.'''
                 start = start1
                 end = end1
 
-        # Set values in the cache in order to avoid duplicate calculations
-        #self.start = start
-        #self.end   = end
-        #self.save()
         return calc_intervals 
+        
+    
+class TimeSeriesMap(TimeSeriesBase):
+    data  = TimeSerieMapField()
+    
+    def dates(self):
+        return self.data.keys()
+    
+    def items(self):
+        return self.data.items()
+    
+    def __get_start(self):
+        return self.data.front()
+    start = property(__get_start)
+    
+    def __get_end(self):
+        return self.data.back()
+    end = property(__get_end)
+        
+
+class TimeSeries(TimeSeriesBase):
+    '''Base abstract class for timeseries'''
+    data  = TimeSerieField()
+    start = orm.DateTimeField(required = False, index = False)
+    end   = orm.DateTimeField(required = False, index = False)
+    
+    def dates(self):
+        return self.data.sortedkeys()
+    
+    def items(self):
+        return self.data.sorteditems()
+    
+    def save(self):
+        supersave = super(TimeSeries,self).save
+        supersave()
+        self.storestartend()
+        return supersave()
+    
+    def storestartend(self):
+        '''Store the start/end date of the timeseries'''
+        dates = self.data.sortedkeys()
+        if dates:
+            self.start = dates[0]
+            self.end   = dates[-1]
+        else:
+            self.start = None
+            self.end   = None
+    
+    def fromto(self):
+        if self.start:
+            return '%s - %s' % (self.start.strftime('%Y %m %d'),self.end.strftime('%Y %m %d'))
+        else:
+            return ''
+        
+    def __str__(self):
+        return self.fromto()
 
 
 class DateTimeSeries(TimeSeries):

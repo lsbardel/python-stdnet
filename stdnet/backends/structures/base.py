@@ -441,11 +441,30 @@ class Map(HashTable):
         '''Return a range between start and end key.'''
         tokey    = self.converter.tokey
         tovalue  = self.converter.tovalue
+        sfunc    = self.scorefun
         loads    = self.pickler.loads
-        for key,val in self._range(tokey(start),tokey(end)):
+        for key,val in self._range(sfunc(tokey(start)),sfunc(tokey(end))):
             yield tovalue(key),loads(val)
             
+    def count(self, start, end):
+        tokey    = self.converter.tokey
+        sfunc    = self.scorefun
+        return self._count(sfunc(tokey(start)),sfunc(tokey(end)))
+            
+    def irange(self, start = 0, end = -1):
+        '''Return a range between start and end key.'''
+        tovalue  = self.converter.tovalue
+        loads    = self.pickler.loads
+        for key,val in self._irange(start,end):
+            yield tovalue(key),loads(val)
+            
+    def _count(self, start, end):
+        raise NotImplementedError
+    
     def _range(self, start, end):
+        raise NotImplementedError
+    
+    def _irange(self, start, end):
         raise NotImplementedError
     
     def _front(self):

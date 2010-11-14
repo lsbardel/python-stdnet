@@ -96,31 +96,47 @@ class TestDateTimeSeriesMap(test_timeseries.TestTimeSeries):
         B6   = mkdate(2010,8,1)
         self.interval(A6,B6,[[default_parse_interval(B5,1),B6]],A4,B6)
         
-    def testRange(self):
-        ts = self.get()
-        mkdate = self.mkdate
-        ts.data.update(testdata2)
-        ts.save()
-        start = mkdate(2009,5,1)
-        end = mkdate(2009,9,20)
-        front = ts.data.front()
-        back  = ts.data.back()
-        for d in ts.data.keys():
-            self.assertTrue(d>=front)
-            front = d
-        self.assertEqual(d,back)
-        
-    def testItems(self):
-        ts = self.get()
-        mkdate = self.mkdate
-        ts.data.update(testdata2)
-        ts.save()
+    def testitems(self):
+        ts = self.filldata(testdata2)
         for k,v in ts.data.items():
             self.assertEqual(v,testdata2[k.date()])
+            
+    def testiRange(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        self.assertEqual(r1[-1],r2[0])
+        self.assertEqual(r2[-1],r3[0])
+        self.assertEqual(r1[0][0],ts.data.front())
+        self.assertEqual(r3[-1][0],ts.data.back())
+        T = len(r1)+len(r2)+len(r3)
+        self.assertEqual(T,N+2)
+        self.assertEqual(len(r1),a+1)
+        self.assertEqual(len(r2),b-a+1)
+        self.assertEqual(len(r3),N-b)
         
+    def testRange(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        r4 = list(ts.data.range(r2[0][0],r2[-1][0]))
+        self.assertEqual(r4[0],r2[0])
+        self.assertEqual(r4[-1],r2[-1])
         
-        #range = ts.data.range(start,end)
-        #p = start
-        #for k,v in range:
-        #    self.assetTrue(k>=p)
-        #    p = k
+    def testCount(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)

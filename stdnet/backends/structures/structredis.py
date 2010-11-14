@@ -14,6 +14,14 @@ def zset_score_pairs(response):
     return izip(response[::2], response[1::2])
 
 
+def riteritems(self, com, *rargs):
+    res = self.cursor.execute_command(com, self.id, *rargs)
+    if res:
+        return zset_score_pairs(res)
+    else:
+        return res
+
+
 
 class List(structures.List):
     
@@ -121,13 +129,17 @@ class HashTable(structures.HashTable):
         return self.cursor.execute_command('HDEL', self.id, key)
     
     def _contains(self, value):
-        return self.cursor.execute_command('HEXISTS', self.id, value) is not None
+        if self.cursor.execute_command('HEXISTS', self.id, value):
+            return True
+        else:
+            return False
         
     def _keys(self):
         return self.cursor.execute_command('HKEYS', self.id)
     
     def _items(self):
-        return self.cursor.execute_command('HGETALL', self.id)
+        return self.cursor.execute_command('HGETALL', self.id).iteritems()
+        #return riteritems(self, 'HGETALL', self.id)
 
     def values(self):
         for ky,val in self.items():
@@ -165,8 +177,14 @@ class Map(structures.Map):
         else:
             return False
         
+    def _irange(self, start, end):
+        return riteritems(self, 'TRANGE', start, end, 'withvalues')
+    
     def _range(self, start, end):
-        return self.cursor.execute_command('TRANGE', self.id, start, end)
+        return riteritems(self, 'TRANGEBYSCORE', start, end, 'withvalues')
+    
+    def _count(self, start, end):
+        return self.cursor.execute_command('TCOUNT', self.id, start, end)
     
     def _front(self):
         return self.cursor.execute_command('THEAD', self.id)
@@ -178,11 +196,7 @@ class Map(structures.Map):
         return self.cursor.execute_command('TKEYS', self.id)
     
     def _items(self):
-        res = self.cursor.execute_command('TITEMS', self.id)
-        if res:
-            return zset_score_pairs(res)
-        else:
-            return res
+        return riteritems(self, 'TITEMS')
 
     def values(self):
         for ky,val in self.items():
@@ -195,3 +209,4 @@ class Map(structures.Map):
     
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)
+        

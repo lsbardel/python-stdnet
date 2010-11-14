@@ -52,7 +52,7 @@ class ManyFieldManagerProxy(object):
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
     
     def __init__(self, name, stype, to_name, to):
-        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to), None)
+        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to), None, None)
         self.to_name = to_name
         self.to = to
         

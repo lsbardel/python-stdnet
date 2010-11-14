@@ -1,7 +1,7 @@
 Ver. 0.4.1 - Development
 ============================
 * Corrected spelling error in Exception ``ObjectNotFound`` exception class.
-* **47 tests**
+* **60 tests**
 
 
 Ver. 0.4 - 2010 Nov 11

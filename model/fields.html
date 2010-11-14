@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Scalar Fields &mdash; Python StdNet v0.4.0 documentation</title>
+    <title>Scalar Fields &mdash; Python StdNet v0.4.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.0',
+        VERSION:     '0.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.4.1 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Data-structure Fields" href="structure.html" />
     <link rel="prev" title="StdNet Models" href="models.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="models.html" title="StdNet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -70,7 +70,7 @@ Each field is specified as a <a class="reference internal" href="models.html#std
 <tt class="descname">index</tt><a class="headerlink" href="#stdnet.orm.Field.index" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field will create indexes for fast search.
 An index is implemented as a <a class="reference internal" href="../backends/structures.html#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>
-in the <a class="reference internal" href="../backends/base.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>. If you don&#8217;t need to search
+in the <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>. If you don&#8217;t need to search
 the field you should set this value to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
@@ -80,7 +80,7 @@ the field you should set this value to <tt class="xref docutils literal"><span c
 <tt class="descname">unique</tt><a class="headerlink" href="#stdnet.orm.Field.unique" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
 In this case <a class="reference internal" href="#stdnet.orm.Field.index" title="stdnet.orm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
-Enforced at <a class="reference internal" href="../backends/base.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
+Enforced at <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
@@ -358,7 +358,7 @@ back to self. For example:</p>
         <li class="right" >
           <a href="models.html" title="StdNet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>

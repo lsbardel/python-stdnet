@@ -1,0 +1,174 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Remote Structure &mdash; Python StdNet v0.4.1 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.1 documentation" href="../index.html" />
+    <link rel="up" title="Data Structure and BackEnds" href="index.html" />
+    <link rel="next" title="Structures" href="structures.html" />
+    <link rel="prev" title="Data Structure and BackEnds" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="structures.html" title="Structures"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Data Structure and BackEnds"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="remote-structure">
+<h1>Remote Structure<a class="headerlink" href="#remote-structure" title="Permalink to this headline">¶</a></h1>
+<p>Data structures are fundamental constructs around which you build your application.
+They are used in almost all computer programs, therefore becoming fluent in what the standard
+data-structures can do for you is essential to get full value out of them.
+The <a class="reference external" href="http://www.sgi.com/tech/stl/">standard template library</a> in C++ implements a wide array of structures,
+python has several of them too. <tt class="docutils literal"><span class="pre">stdnet</span></tt> implements <strong>five</strong> remote structures,
+all derived from <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.</p>
+<dl class="class">
+<dt id="stdnet.Structure">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Structure</tt><big>(</big><em>cursor</em>, <em>id</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>pipeline=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for remote data-structures.</p>
+<dl class="attribute">
+<dt id="Structure.cursor">
+<tt class="descname">cursor</tt><a class="headerlink" href="#Structure.cursor" title="Permalink to this definition">¶</a></dt>
+<dd><p>instance of a <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Structure.id">
+<tt class="descname">id</tt><a class="headerlink" href="#Structure.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>unique <em>id</em> for the structure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Structure.timeout">
+<tt class="descname">timeout</tt><a class="headerlink" href="#Structure.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expiry timeout. If different from zero it represents the number of seconds
+after which the structure is deleted from the data server. Default <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Structure.pipeline">
+<tt class="descname">pipeline</tt><a class="headerlink" href="#Structure.pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of <a class="reference internal" href="../utility/other.html#stdnet.PipeLine" title="stdnet.PipeLine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.PipeLine</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.size">
+<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements in structure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.delete">
+<tt class="descname">delete</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete structure from remote server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.Structure.add_expiry">
+<tt class="descname">add_expiry</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.Structure.add_expiry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Internal method called if a timeout is set. This needs to implemented.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Data Structure and BackEnds</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="structures.html"
+                        title="next chapter">Structures</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/backends/basestructure.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="structures.html" title="Structures"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Data Structure and BackEnds"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

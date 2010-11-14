@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data-structure Fields &mdash; Python StdNet v0.4.0 documentation</title>
+    <title>Data-structure Fields &mdash; Python StdNet v0.4.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.0',
+        VERSION:     '0.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.4.0 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.4.1 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Executing Queries" href="query.html" />
     <link rel="prev" title="Scalar Fields" href="fields.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="fields.html" title="Scalar Fields"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -60,7 +60,7 @@ many-to-many objects relationship can be established. All the data-structure
 fields derives from MultiField.</p>
 <dl class="class">
 <dt id="stdnet.orm.MultiField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">MultiField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.MultiField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">MultiField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.MultiField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Virtual class for data-structure fields:</p>
 <dl class="attribute">
 <dt id="stdnet.orm.MultiField.relmodel">
@@ -94,7 +94,7 @@ for the database backend and <tt class="docutils literal"><span class="pre">tova
 <h2>ListField<a class="headerlink" href="#listfield" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.orm.ListField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ListField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ListField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ListField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ListField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field maintaining a list of values. When accessed from the model instance,
 it returns an instance of <a class="reference internal" href="../backends/structures.html#stdnet.List" title="stdnet.List"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.List</span></tt></a> structure. For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UserMessage</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
@@ -124,7 +124,7 @@ it returns an instance of <a class="reference internal" href="../backends/struct
 <h2>SetField<a class="headerlink" href="#setfield" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.orm.SetField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SetField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.SetField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SetField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.SetField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field maintaining an unordered collection of values. It is initiated
 without any argument other than an optional model class.
 When accessed from the model instance, it returns an instance of <a class="reference internal" href="../backends/structures.html#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a> structure.
@@ -151,7 +151,7 @@ For example:</p>
 <h2>HashField<a class="headerlink" href="#hashfield" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.orm.HashField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">HashField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">HashField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric.
 it returns an instance of <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structure.</p>
@@ -162,7 +162,7 @@ it returns an instance of <a class="reference internal" href="../backends/struct
 <h2>ManyToManyField<a class="headerlink" href="#manytomanyfield" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.orm.ManyToManyField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ManyToManyField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ManyToManyField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ManyToManyField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>converter=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ManyToManyField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A many-to-many relationship. It accepts <strong>related_name</strong> as extra argument.</p>
 <dl class="attribute">
 <dt id="stdnet.orm.ManyToManyField.related_name">
@@ -252,7 +252,7 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
         <li class="right" >
           <a href="fields.html" title="Scalar Fields"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.4.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>

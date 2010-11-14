@@ -1,6 +1,8 @@
 Ver. 0.4.1 - Development
 ============================
+* Added ``CONTRIBUTING`` to distribution.
 * Corrected spelling error in Exception ``ObjectNotFound`` exception class.
+* Added support for ``Map`` structures.
 * **60 tests**
 
 

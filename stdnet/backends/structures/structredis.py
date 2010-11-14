@@ -155,7 +155,8 @@ class HashTable(structures.HashTable):
         
 
 class Map(structures.Map):
-    
+    '''Requires Redis Map structure which is not yet implemented in redis (and I don't know if it will).
+It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
     def _size(self):
         return self.cursor.execute_command('TLEN', self.id)
     

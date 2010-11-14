@@ -39,3 +39,11 @@ def runtests(backend = 'redis://127.0.0.1:6379/?db=13'):
     runner = unittest.TextTestRunner()
     runner.run(suite)
     settings.DEFAULT_BACKEND = std
+
+def runbench(backend = 'redis://127.0.0.1:6379/?db=13'):
+    from stdnet.conf import settings
+    std = settings.DEFAULT_BACKEND
+    settings.DEFAULT_BACKEND = backend
+    from stdnet.utils import bench
+    suite = bench.loadBenchFromModules(['stdnet.bench.*'])
+    bench.run(suite)

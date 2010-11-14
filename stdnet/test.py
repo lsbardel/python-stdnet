@@ -1,5 +1,6 @@
 import unittest
 from stdnet import orm
+from stdnet.utils import bench
 
 
 class TestCase(unittest.TestCase):
@@ -14,3 +15,18 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         orm.clearall()
         self.unregister()
+        
+        
+class BenchMark(bench.BenchMark):
+
+    def __init__(self, *args, **kwargs):
+        self.orm = orm
+        super(BenchMark,self).__init__(*args, **kwargs)
+        
+    def setUp(self):
+        self.register()
+        orm.clearall()
+        
+    def register(self):
+        pass
+        

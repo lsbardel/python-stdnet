@@ -94,6 +94,19 @@ class TestTimeSeries(TestCase):
             keyp = key
             self.assertEqual(data.pop(todate(key)),value)
         self.assertEqual(len(data),0)
+    
+    def testUpdate(self):
+        ts = self.get()
+        dt1 = self.mkdate(2010,5,6)
+        dt2 = self.mkdate(2010,6,6)
+        ts.data[dt1] = 56
+        ts.data[dt2] = 88
+        ts.save()
+        self.assertEqual(ts.data[dt1],56)
+        self.assertEqual(ts.data[dt2],88)
+        ts.data[dt1] = "ciao"
+        ts.save()
+        self.assertEqual(ts.data[dt1],"ciao")
         
     def testInterval(self):
         '''Test interval handling'''

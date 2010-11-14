@@ -11,12 +11,12 @@ from fields import *
 
 
 def date2timestamp(dte):
-    return int(1000*time.mktime(dte.timetuple()))
+    return time.mktime(dte.timetuple())
 
 
 def timestamp2date(tstamp):
     "Converts a unix timestamp to a Python datetime object"
-    return datetime.fromtimestamp(0.001*int(tstamp))
+    return datetime.fromtimestamp(float(tstamp))
 
     
 def todatetime(dt):

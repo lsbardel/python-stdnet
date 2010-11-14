@@ -1,5 +1,5 @@
 '''A networked standard template library for Python.'''
-VERSION = (0, 4, 0)
+VERSION = (0, 4, 1)
  
 def get_version():
     if len(VERSION) == 3:
@@ -44,6 +44,7 @@ def runbench(backend = 'redis://127.0.0.1:6379/?db=13'):
     from stdnet.conf import settings
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
+    settings.DEFAULT_KEYPREFIX = 'stdbench.'
     from stdnet.utils import bench
     suite = bench.loadBenchFromModules(['stdnet.bench.*'])
     bench.run(suite)

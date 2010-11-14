@@ -1,9 +1,9 @@
-Ver. 0.4.1 - Development
+Ver. 0.4.1 - 2010 Nov 14
 ============================
 * Added ``CONTRIBUTING`` to distribution.
 * Corrected spelling error in Exception ``ObjectNotFound`` exception class.
-* Added support for ``Map`` structures.
-* **60 tests**
+* Added initial support for ``Map`` structures. Ordered Associative Containers.
+* **63 tests**
 
 
 Ver. 0.4 - 2010 Nov 11

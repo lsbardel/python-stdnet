@@ -345,7 +345,7 @@ This structure is used for in two different parts of the library.
             return v
     
     def mget(self, keys):
-        '''Return a generator of key-value pairs for the keys requested'''
+        '''Return a generator of key-value pairs for the ``keys`` requested'''
         if not keys:
             raise StopIteration
         tokey = self.converter.tokey
@@ -356,12 +356,13 @@ This structure is used for in two different parts of the library.
             yield loads(obj)
     
     def keys(self, desc = False):
+        '''Return a generator of all keys.'''
         tovalue  = self.converter.tovalue
         for key in self._keys():
             yield tovalue(key)
 
     def items(self):
-        '''Generator over key-value items'''
+        '''Generator over all key-value items'''
         loads    = self.pickler.loads
         tovalue  = self.converter.tovalue
         for key,val in self._items():

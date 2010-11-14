@@ -1,6 +1,16 @@
-.. _redis-backend:
+.. _base-backend:
 
 ============================
+Database backend interface
+============================
+
+.. autoclass:: stdnet.BackendDataServer
+   :members:
+   :member-order: bysource
+
+
+.. _redis-backend:
+
 Redis backend
 ============================
 

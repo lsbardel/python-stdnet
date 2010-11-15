@@ -10,6 +10,8 @@ testdata2 = test_timeseries.testdata2
 
 
 class TestDateTimeSeriesMap(test_timeseries.TestTimeSeries):
+    tags    = ['timeserie','map']
+    default_run = False
     model = TimeSeriesMap
     mkdate = date
     

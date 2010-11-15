@@ -21,8 +21,9 @@ testdata2 = dict(alldata2)
 
 
 class TestTimeSeries(TestCase):
-    model = TimeSeries
-    mkdate = datetime
+    tags    = ['timeserie','hash']
+    model   = TimeSeries
+    mkdate  = datetime
     
     def setUp(self):
         self.orm.register(self.model)

@@ -27,24 +27,25 @@ def add2path():
         sys.path.insert(0,path)
         
         
-def runtests(backend = 'redis://127.0.0.1:6379/?db=13'):
+def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
     from stdnet.conf import settings
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
-    import unittest
     add2path()
-    from stdnet import tests
-    loader = unittest.TestLoader()
+    from stdnet import test, tests
+    loader = test.TestLoader(tags)
     suite  = loader.loadTestsFromModule(tests)
-    runner = unittest.TextTestRunner()
+    runner = test.TextTestRunner()
     runner.run(suite)
     settings.DEFAULT_BACKEND = std
 
-def runbench(backend = 'redis://127.0.0.1:6379/?db=13'):
+
+def runbench(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
     from stdnet.conf import settings
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
     settings.DEFAULT_KEYPREFIX = 'stdbench.'
-    from stdnet.utils import bench
-    suite = bench.loadBenchFromModules(['stdnet.bench.*'])
-    bench.run(suite)
+    from stdnet import test
+    loader = test.BenchLoader(tags)
+    suite  = loader.loadBenchFromModules(['stdnet.bench.*'])
+    test.runbench(suite)

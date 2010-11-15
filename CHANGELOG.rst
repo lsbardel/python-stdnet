@@ -1,3 +1,18 @@
+Ver. 0.4.2 - Development
+============================
+* Added ``tags`` in tests. You can now run specific tags::
+
+	python runtests.py hash
+	
+ will run tests specific to hashtables.
+* Added ``bench`` module for benchmarking. To run benchmark::
+
+	python runbench.py
+	python runbench.py tag1 tag2
+	
+* Removed ``map`` tests since the map structure is not in redis.
+* **53** tests.
+
 Ver. 0.4.1 - 2010 Nov 14
 ============================
 * Added ``CONTRIBUTING`` to distribution.

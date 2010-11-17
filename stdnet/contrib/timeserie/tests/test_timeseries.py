@@ -63,6 +63,8 @@ class TestTimeSeries(TestCase):
         
     def testFrontBack(self):
         ts = self.get()
+        self.assertEqual(ts.start,None)
+        self.assertEqual(ts.end,None)
         mkdate = self.mkdate
         ts.data.update(testdata2)
         ts.save()

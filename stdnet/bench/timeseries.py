@@ -19,6 +19,7 @@ testdata2 = dict(alldata2)
 class UpdateMap(test.BenchMark):
     model = TimeSeriesMap
     number = 100
+    tags   = ['timeseries','map']
     def register(self):
         self.names = iter(names)
         self.orm.register(self.model)
@@ -33,10 +34,12 @@ class UpdateMap(test.BenchMark):
         
 
 class UpdateHash(UpdateMap):
+    tags   = ['timeseries','hash']
     model = TimeSeries
     
     
-class AddToMap(UpdateMap):        
+class AddToMap(UpdateMap):
+    tags   = ['timeseries','map']     
     def run(self):
         ts = self.model(ticker = self.names.next()).save()
         data = ts.data
@@ -46,5 +49,6 @@ class AddToMap(UpdateMap):
         
             
 class AddToHash(AddToMap):
+    tags   = ['timeseries','hash']
     model = TimeSeries
         

@@ -423,8 +423,7 @@ class Map(HashTable):
         p     = self.pipeline
         for key,value in mapping.iteritems():
             rk = tokey(key)
-            sc = sfunc(rk)
-            p[sc] = rk,dumps(value)
+            p[rk] = dumps(value)
     
     def front(self):
         try:

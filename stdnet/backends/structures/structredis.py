@@ -168,26 +168,29 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         else:
             return False
         
+    def _getdate(self, val):
+        return None if not val else val[0]
+        
     def _irange(self, start, end):
-        return riteritems(self, 'TRANGE', start, end, 'withvalues')
+        return riteritems(self, 'TRANGE', start, end, 'withscores')
     
     def _range(self, start, end):
-        return riteritems(self, 'TRANGEBYSCORE', start, end, 'withvalues')
+        return riteritems(self, 'TRANGEBYSCORE', start, end, 'withscores')
     
     def _count(self, start, end):
         return self.cursor.execute_command('TCOUNT', self.id, start, end)
     
     def _front(self):
-        return self.cursor.execute_command('THEAD', self.id)
+        return self._getdate(self.cursor.execute_command('TRANGE', self.id, 0, 0, 'novalues'))
     
     def _back(self):
-        return self.cursor.execute_command('TTAIL', self.id)
+        return self._getdate(self.cursor.execute_command('TRANGE', self.id, -1, -1, 'novalues'))
         
     def _keys(self):
-        return self.cursor.execute_command('TKEYS', self.id)
+        return self.cursor.execute_command('TRANGE', self.id, 0, -1, 'novalues')
     
     def _items(self):
-        return riteritems(self, 'TITEMS')
+        return riteritems(self, 'TRANGE', 0, -1, 'withscores')
 
     def values(self):
         for ky,val in self.items():
@@ -195,7 +198,7 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
             
     def _save(self):
         items = []
-        [items.extend(item) for item in self.pipeline.items3()]
+        [items.extend(item) for item in self.pipeline.iteritems()]
         return self.cursor.execute_command('TADD',self.id,*items)
     
     def add_expiry(self):

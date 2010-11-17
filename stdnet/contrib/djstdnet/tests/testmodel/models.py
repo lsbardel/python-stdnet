@@ -10,3 +10,8 @@ class DataId(models.Model):
     
 class Data(orm.StdModel):
     data = orm.ListField()
+    
+    
+class Environment(Data):
+    '''A derived model. To test for manager.'''
+    pass

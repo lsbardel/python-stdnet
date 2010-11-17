@@ -2,11 +2,21 @@ import time
 from datetime import datetime, date
 
 from stdnet import orm
+from stdnet.orm import query
+
+
+class CustomManager(query.Manager):
+    
+    def something(self):
+        return "I'm a custom manager"
+
 
 class SimpleModel(orm.StdModel):
     code = orm.SymbolField(unique = True)
     group = orm.SymbolField(required = False)
     description = orm.CharField()
+    
+    objects = CustomManager()
     
 
 #####################################################################

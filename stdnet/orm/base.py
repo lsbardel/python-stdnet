@@ -149,7 +149,9 @@ class StdNetType(type):
         # remove and build field list
         fields    = get_fields(bases, attrs)        
         # create the new class
+        objects   = attrs.pop('objects',None)
         new_class = super_new(cls, name, bases, attrs)
+        new_class.objects = objects
         if meta:
             kwargs   = meta_options(**meta.__dict__)
         else:
@@ -161,8 +163,7 @@ class StdNetType(type):
             except:
                 app_label = ''
         
-        meta = Metaclass(new_class,fields,app_label=app_label,**kwargs)            
-        objects = getattr(new_class,'objects',None)
+        meta = Metaclass(new_class,fields,app_label=app_label,**kwargs)
         if objects is None:
             new_class.objects = UnregisteredManager(new_class)
         signals.class_prepared.send(sender=new_class)

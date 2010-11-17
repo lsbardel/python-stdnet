@@ -19,7 +19,7 @@ testdata2 = dict(alldata2)
 class UpdateMap(test.BenchMark):
     model = TimeSeriesMap
     number = 100
-    tags   = ['timeseries','map','update']
+    tags   = ['timeseries','ts','update']
     def register(self):
         self.names = iter(names)
         self.orm.register(self.model)
@@ -39,7 +39,7 @@ class UpdateHash(UpdateMap):
     
     
 class AddToMap(UpdateMap):
-    tags   = ['timeseries','map']
+    tags   = ['timeseries','ts']
     def run(self):
         ts = self.model(ticker = self.names.next()).save()
         data = ts.data

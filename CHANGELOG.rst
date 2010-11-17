@@ -1,4 +1,4 @@
-Ver. 0.4.2 - Development
+Ver. 0.4.2 - 2010 Nov 17
 ============================
 * Added ``tags`` in tests. You can now run specific tags::
 
@@ -10,7 +10,7 @@ Ver. 0.4.2 - Development
 	python runbench.py
 	python runbench.py tag1 tag2
 	
-* Removed ``map`` tests since the map structure is not in redis.
+* Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
 * **54** tests.
 
 Ver. 0.4.1 - 2010 Nov 14

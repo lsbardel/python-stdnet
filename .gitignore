@@ -1,6 +1,7 @@
 *.pyc
 *.egg
 dist/*
+.settings/*
 docs/build/*
 .project
 .pydevproject

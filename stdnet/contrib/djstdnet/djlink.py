@@ -61,26 +61,47 @@ def get_djobject(self):
     return obj
 
 def get_djfield(self, name):
-    obj = self.get_djobject()    
+    obj = self.get_djobject()
     if obj:
         attr = getattr(obj,name,None)
         if callable(attr):
             attr = attr()
         return attr
     
-add_djfield = lambda name : lambda self : get_djfield(self, name) 
+add_djfield = lambda name : lambda self : get_djfield(self, name)
+
+
+class StdNetDjangoLink(object):
+    
+    def __init__(self, name):
+        self.name = name
+        
+    def __get__(self, instance, instance_type=None):
+        linked = getattr(instance._meta,self.name, None)
+        if linked:
+            return linked.objects.get(id = instance.id)
+        else:
+            return None
+         
     
 def link_models(model1,
                 model2,
                 field_map = [],
                 pre_delete_callback = None,
                 post_save_callback = None):
-    '''Link a django model with a stdnet model together'''
+    '''Link a django model with a stdnet model.
+:keyword model1: A django model.
+:keyword model2: A stdnet model.
+:keyword field_map: List of 2 elements tuples for mapping django fields in model1
+                    with attribute in model2. The first element is a
+                    django field of model1, the second is the name of the
+                    attribute added to model2.'''
     if isinstance(model1,ModelBase) and isinstance(model2,orm.StdNetType):
-        linked1 = getattr(model1._meta,'linked',None)
+        django_linked = '%s_linked' % model2._meta.name
+        linked1 = getattr(model1._meta,django_linked,None)
         linked2 = getattr(model2._meta,'linked',None)
         if not linked1 and not linked2:
-            setattr(model1._meta,'linked',model2)
+            setattr(model1._meta,django_linked,model2)
             setattr(model2._meta,'linked',model1)
             pre_delete_callback = pre_delete_callback or remove_linked
             post_save_callback  = post_save_callback or post_save
@@ -91,6 +112,7 @@ def link_models(model1,
                                            pre_delete_callback,
                                            post_save_callback)
             setattr(model2,'get_djobject',get_djobject)
+            setattr(model1,django_linked,StdNetDjangoLink(django_linked))
             for field in field_map:
                 setattr(model2,field,add_djfield(field))
             

@@ -8,4 +8,4 @@ include docs/make.bat
 include docs/Makefile
 include docs/source/conf.py
 recursive-include docs *.rst
-recursive-include stdnet/contrib/djstdnet/templates *
+recursive-include stdnet/contrib/monitor/templates *

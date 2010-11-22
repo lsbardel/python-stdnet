@@ -7,13 +7,9 @@ DATABASES = {
 
 
 INSTALLED_APPS  = ['django.contrib.auth',
-                   'django.contrib.sessions',
-                   'django.contrib.sites',
                    'django.contrib.contenttypes',
-                   'django.contrib.admin',
-                   #'djpcms',
-                   'stdnet.contrib.djstdnet'
-                   'stdnet.contrib.djstdnet.tests.testmodel']
+                   'stdnet.contrib.djangolink',
+                   'stdnet.contrib.djangolink.tests.testmodel']
 
 # Silence logging
 import logging
@@ -22,10 +18,9 @@ class Silence(logging.Handler):
     def emit(self, record):
         pass
 
-logging.getLogger("djstdnet").addHandler(Silence())
+logging.getLogger("djangolink").addHandler(Silence())
 
 TEMPLATE_CONTEXT_PROCESSORS = (
             "django.contrib.auth.context_processors.auth",
-            "django.contrib.messages.context_processors.messages",
-            "djpcms.core.context_processors.djpcms"
+            "django.contrib.messages.context_processors.messages"
             )

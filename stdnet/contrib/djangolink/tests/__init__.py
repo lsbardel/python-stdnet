@@ -1,4 +1,4 @@
 try:
-    from test_djstdnet import *
+    from test_djangolink import *
 except ImportError:
     pass

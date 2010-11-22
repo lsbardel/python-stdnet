@@ -3,5 +3,5 @@
 .. module:: stdnet.contrib.monitor
 
 ============================
-StdNet Monitor
+Admin monitors for stdnet
 ============================

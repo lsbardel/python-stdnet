@@ -1,6 +1,6 @@
 from djpcms.views import appsite, appview
 
-from stdnet.contrib.djstdnet import views
+from stdnet.contrib.monitor import views
 
 
 class StdnetMonitorApplication(appsite.ApplicationBase):

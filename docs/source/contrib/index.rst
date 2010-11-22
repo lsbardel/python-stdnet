@@ -14,4 +14,6 @@ core library. They may also have external dependencies.
    :maxdepth: 2
    
    timeserie
+   sessions
    monitor
+   djangolink

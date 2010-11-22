@@ -18,5 +18,5 @@ from testme import *
 
 # Contrib
 from stdnet.contrib.timeserie.tests import *
-from stdnet.contrib.djstdnet.tests import *
+from stdnet.contrib.djangolink.tests import *
 #from stdnet.contrib.sessions.tests import *

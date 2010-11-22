@@ -148,22 +148,22 @@ class Map(structures.Map):
     '''Requires Redis Map structure which is not yet implemented in redis (and I don't know if it will).
 It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
     def _size(self):
-        return self.cursor.execute_command('TLEN', self.id)
+        return self.cursor.execute_command('TSLEN', self.id)
     
     def clear(self):
         return self.cursor.execute_command('DEL', self.id)
     
     def _get(self, key):
-        return self.cursor.execute_command('TGET', self.id, key)
+        return self.cursor.execute_command('TSGET', self.id, key)
     
     def _mget(self, keys):
         return self.cursor.execute_command('TMGET', self.id, *keys)
     
     def delete(self, key):
-        return self.cursor.execute_command('TDEL', self.id, key)
+        return self.cursor.execute_command('TSDEL', self.id, key)
     
     def _contains(self, key):
-        if self.cursor.execute_command('TEXISTS', self.id, key):
+        if self.cursor.execute_command('TSEXISTS', self.id, key):
             return True
         else:
             return False
@@ -172,25 +172,25 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return None if not val else val[0]
         
     def _irange(self, start, end):
-        return riteritems(self, 'TRANGE', start, end, 'withscores')
+        return riteritems(self, 'TSRANGE', start, end, 'withscores')
     
     def _range(self, start, end):
-        return riteritems(self, 'TRANGEBYSCORE', start, end, 'withscores')
+        return riteritems(self, 'TSRANGEBYSCORE', start, end, 'withscores')
     
     def _count(self, start, end):
-        return self.cursor.execute_command('TCOUNT', self.id, start, end)
+        return self.cursor.execute_command('TSCOUNT', self.id, start, end)
     
     def _front(self):
-        return self._getdate(self.cursor.execute_command('TRANGE', self.id, 0, 0, 'novalues'))
+        return self._getdate(self.cursor.execute_command('TSRANGE', self.id, 0, 0, 'novalues'))
     
     def _back(self):
-        return self._getdate(self.cursor.execute_command('TRANGE', self.id, -1, -1, 'novalues'))
+        return self._getdate(self.cursor.execute_command('TSRANGE', self.id, -1, -1, 'novalues'))
         
     def _keys(self):
-        return self.cursor.execute_command('TRANGE', self.id, 0, -1, 'novalues')
+        return self.cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues')
     
     def _items(self):
-        return riteritems(self, 'TRANGE', 0, -1, 'withscores')
+        return riteritems(self, 'TSRANGE', self.id, 0, -1, 'withscores')
 
     def values(self):
         for ky,val in self.items():
@@ -199,7 +199,7 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
     def _save(self):
         items = []
         [items.extend(item) for item in self.pipeline.iteritems()]
-        return self.cursor.execute_command('TADD',self.id,*items)
+        return self.cursor.execute_command('TSADD',self.id,*items)
     
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)

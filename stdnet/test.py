@@ -22,7 +22,7 @@ class TestCase(unittest.TestCase):
         
 
         
-class BenchMark:
+class BenchMark(object):
     orm = orm
             
     def __str__(self):
@@ -31,6 +31,10 @@ class BenchMark:
     def setUp(self):
         self.register()
         orm.clearall()
+        self.initialise()
+        
+    def initialise(self):
+        pass
         
     def register(self):
         pass

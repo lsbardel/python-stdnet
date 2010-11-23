@@ -1,0 +1,200 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>StdNet &amp; Django Link &mdash; Python StdNet v0.4.3 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.4.3 documentation" href="../index.html" />
+    <link rel="up" title="Battery Included" href="index.html" />
+    <link rel="next" title="Examples" href="../examples/index.html" />
+    <link rel="prev" title="Admin monitors for stdnet" href="monitor.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../examples/index.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="Admin monitors for stdnet"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Battery Included</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.contrib.djangolink"><span id="contrib-djangolink"></span></span><div class="section" id="stdnet-django-link">
+<h1>StdNet &amp; Django Link<a class="headerlink" href="#stdnet-django-link" title="Permalink to this headline">¶</a></h1>
+<p>This is a battery included module avaiable at <a class="reference internal" href="#module-stdnet.contrib.djangolink" title="stdnet.contrib.djangolink"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.contrib.djangolink</span></tt></a> useful for <a class="reference external" href="http://www.djangoproject.com/">django</a>
+developers needing to use a smart cache or adding extra in memory data to their relational
+database models, or both.</p>
+<p>To use this module you need to have <a class="reference external" href="http://www.djangoproject.com/">django</a> installed.</p>
+<div class="section" id="stdnet-as-django-cache">
+<h2>Stdnet as django cache<a class="headerlink" href="#stdnet-as-django-cache" title="Permalink to this headline">¶</a></h2>
+<p>The first example is simple, we create a link so that objects of
+specific django models are cached using stdnet:</p>
+<div class="highlight-python"><pre>from django.db import models
+from stdnet import orm
+
+class Article(models.Model):
+    title = models.CharField(max_length = 200):
+    published = models.DateTime()
+    body = models.TextField()
+
+class ArticleCache(orm.StdNet):
+    pass</pre>
+</div>
+<p>And now we link them together using the <a class="reference internal" href="#stdnet.contrib.djangolink.link_models" title="stdnet.contrib.djangolink.link_models"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.contrib.djangolink.link_models()</span></tt></a> function:</p>
+<div class="highlight-python"><pre>stdnet.contrib.djangolink import link_models
+
+link_models(Article,ArticleCache)</pre>
+</div>
+<p>We can do more. Create <tt class="docutils literal"><span class="pre">stdnet</span></tt> filters by adding fields to our <tt class="docutils literal"><span class="pre">stdnet</span></tt> model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ArticleCache</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdNet</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+
+<span class="n">link_models</span><span class="p">(</span><span class="n">Article</span><span class="p">,</span><span class="n">ArticleCache</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-extra-data">
+<h2>Adding Extra Data<a class="headerlink" href="#adding-extra-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="stdnet.contrib.djangolink.link_models">
+<tt class="descclassname">stdnet.contrib.djangolink.</tt><tt class="descname">link_models</tt><big>(</big><em>model1</em>, <em>model2</em>, <em>field_map=</em><span class="optional">[</span><span class="optional">]</span>, <em>pre_delete_callback=None</em>, <em>post_save_callback=None</em><big>)</big><a class="headerlink" href="#stdnet.contrib.djangolink.link_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links a django <tt class="docutils literal"><span class="pre">model1</span></tt> with a stdnet <tt class="docutils literal"><span class="pre">model2</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model1</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">django.db.models.Model</span></tt> class (not an instance!)</li>
+<li><strong>model2</strong> &#8211; A <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class.</li>
+<li><strong>field_map</strong> &#8211; List of 2 elements tuples for mapping django fields in model1
+with attribute in model2. The first element is a
+django field of model1, the second is the name of the
+attribute added to model2.</li>
+<li><strong>pre_delete_callback</strong> &#8211; function called just before an instance of model1 is deleted.
+If not provided, a default functions which remove the instance of
+<tt class="docutils literal"><span class="pre">model2</span></tt> associated with it is used.</li>
+<li><strong>post_save_callback</strong> &#8211; function called just after an instance of model1 is saved.
+If not provided, a default functions which updated the instance of
+<tt class="docutils literal"><span class="pre">model2</span></tt> associated with it is used.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This function injects methods to both model1 and model2:</p>
+<ul class="simple">
+<li>The StdModel <tt class="docutils literal"><span class="pre">model2</span></tt> will have a new <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.PickleObjectField</span></tt>
+field named <tt class="docutils literal"><span class="pre">djobject</span></tt> used to stored the django <tt class="docutils literal"><span class="pre">model1</span></tt> instances.</li>
+</ul>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">StdNet &amp; Django Link</a><ul>
+<li><a class="reference internal" href="#stdnet-as-django-cache">Stdnet as django cache</a></li>
+<li><a class="reference internal" href="#adding-extra-data">Adding Extra Data</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="monitor.html"
+                        title="previous chapter">Admin monitors for stdnet</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../examples/index.html"
+                        title="next chapter">Examples</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/contrib/djangolink.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../examples/index.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="Admin monitors for stdnet"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Battery Included</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

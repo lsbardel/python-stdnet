@@ -37,7 +37,7 @@ class LinkedManager(Manager):
     def get(self, **kwargs):
         try:
             return self._get(**kwargs)
-        except:
+        except self.model.ObjectNotFound:
             return self.djmodel.objects.get(**kwargs)
             
     def sync(self):

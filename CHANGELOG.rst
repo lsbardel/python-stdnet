@@ -1,7 +1,7 @@
 Ver. 0.4.3
 ======================
 * Added :class:`stdnet.orm.JSONField` with tests.
-* **58 tests**.
+* **60 tests**.
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================

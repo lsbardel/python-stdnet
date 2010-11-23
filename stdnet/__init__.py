@@ -25,6 +25,7 @@ def add2path():
     path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
     if path not in sys.path:
         sys.path.insert(0,path)
+    return path
         
         
 def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
@@ -32,8 +33,9 @@ def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
     add2path()
-    from stdnet import test, tests
+    from stdnet import test
     loader = test.TestLoader(tags)
+    from stdnet import tests
     suite  = loader.loadTestsFromModule(tests)
     runner = test.TextTestRunner()
     runner.run(suite)

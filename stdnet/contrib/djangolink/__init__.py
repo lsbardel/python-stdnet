@@ -7,7 +7,7 @@ def remove_linked(sender, instance, **kwargs):
     linked = getattr(sender._meta,'linked',None)
     if linked:
         try:
-            linked.objects.get(id = id).delete()
+            linked.objects._get(id = instance.id).delete()
         except ObjectNotFound:
             pass
 
@@ -17,10 +17,10 @@ def post_save(sender, instance, **kwargs):
     if linked:
         id = instance.id
         try:
-            cobj = linked.objects.get(id = id)
+            cobj = linked.objects._get(id = id)
         except ObjectNotFound:
             cobj = linked(id = id)
-        cobj._linked = obj
+        cobj.djobject = instance
         cobj.save()
    
 
@@ -31,6 +31,15 @@ class LinkedManager(Manager):
         self._setmodel(model)
         self.dj      = djmodel.objects
         
+    def _get(self, **kwargs):
+        return super(LinkedManager,self).get(**kwargs)
+        
+    def get(self, **kwargs):
+        try:
+            return self._get(**kwargs)
+        except:
+            return self.djmodel.objects.get(**kwargs)
+            
     def sync(self):
         all = self.all()
         for obj in self.dj.all():
@@ -97,7 +106,12 @@ def link_models(model1,
                                   ``model2`` associated with it is used.
     :keyword post_save_callback: function called just after an instance of model1 is saved.
                                  If not provided, a default functions which updated the instance of
-                                 ``model2`` associated with it is used.'''
+                                 ``model2`` associated with it is used.
+                                 
+This function injects methods to both model1 and model2.
+
+model2, the StdModel, will have a new :class:`stdnet.orm.PickleObjectField`
+field named ``djobject``'''
     from django.db import models
     from django.db.models.base import ModelBase
     from django.db.models import signals

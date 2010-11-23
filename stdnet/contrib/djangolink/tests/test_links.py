@@ -1,16 +1,8 @@
 from datetime import datetime
-from django.core.management import setup_environ
-import settings
-setup_environ(settings)
-from django.conf import settings
 
-#from django import test
 from stdnet import orm, test
 from stdnet.contrib.djangolink import link_models, LinkedManager
-from testmodel.models import Article, ArticleAndComments, Environment
-
-
-__all__ = ['DjangoStdNetLinkTest']
+from djangotestapp.testapp.models import Article, ArticleAndComments, Environment
 
 
 class DjangoStdNetLinkTest(test.TestCase):
@@ -32,10 +24,15 @@ class DjangoStdNetLinkTest(test.TestCase):
     def testDerivedManager(self):
         self.assertFalse(isinstance(Environment.objects,LinkedManager))
     
-    def __testCreate(self):
+    def testCreate(self):
         a = Article(title = 'test article', published = datetime.now(), body = 'bla bla bla')
         a.save()
+        ac = ArticleAndComments.objects.get(id = a.id)
+        self.assertEqual(a,ac.djobject)
         
-    def tearDown(self):
-        orm.clearall()
-        self.unregister()
+    def testDelete(self):
+        self.testCreate()
+        self.assertTrue(ArticleAndComments.objects.all().count())
+        Article.objects.all().delete()
+        self.assertFalse(ArticleAndComments.objects.all().count())
+        

@@ -18,6 +18,8 @@ class SimpleModel(orm.StdModel):
     
     objects = CustomManager()
     
+    
+    
 
 #####################################################################
 #    FINANCE APPLICATION
@@ -138,4 +140,16 @@ class User(orm.StdModel):
         p  = Post(data = data, user = self, dt = datetime.now()).save()
         self.updates.push_front(p)
         return p
+    
+
+##############################################
+# JSON FIELD
+
+class Statistics(orm.StdModel):
+    dt = orm.DateField()
+    data = orm.JSONField()
+    
+class Statistics2(orm.StdModel):
+    dt = orm.DateField()
+    data = orm.JSONField(sep = '__')
     

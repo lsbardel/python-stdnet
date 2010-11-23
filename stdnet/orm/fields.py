@@ -7,6 +7,7 @@ from query import RelatedManager
 from related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from stdnet.exceptions import *
 from stdnet.utils import timestamp2date, date2timestamp
+from stdnet.utils import json, json_compact, DefaultJSONEncoder, DefaultJSONHook
 
 try:
     import cPickle as pickle
@@ -27,6 +28,7 @@ __all__ = ['Field',
            'SymbolField',
            'CharField',
            'ForeignKey',
+           'JSONField',
            'PickleObjectField',
            '_novalue']
 
@@ -367,4 +369,27 @@ back to self. For example::
             return value.id
         except:
             return value
+    
+    
+class JSONField(CharField):
+    type = 'json object'
+    def __init__(self, *args, **kwargs):
+        kwargs['default'] = kwargs.get('default','{}')
+        self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
+        self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
+        self.sep = kwargs.pop('sep',None)
+        super(JSONField,self).__init__(*args, **kwargs)
+        
+    def to_python(self, value):
+        if isinstance(value, basestring):
+            if not value:
+                value = {}
+            else:
+                value = json.loads(value, object_hook = self.decoder_hook)
+        return value
+    
+    def serialize(self, value):
+        if value is not None:
+            value = json.dumps(json_compact(value,self.sep), cls=self.encoder_class)
+        return value
     

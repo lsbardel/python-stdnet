@@ -11,6 +11,11 @@ class Article(models.Model):
     
 class ArticleAndComments(orm.StdModel):
     comments = orm.ListField()
+    
+    
+class ArticleAndCommentsWithTitle(orm.StdModel):
+    title    = orm.SymbolField()
+    comments = orm.ListField()
 
     
 class Environment(ArticleAndComments):

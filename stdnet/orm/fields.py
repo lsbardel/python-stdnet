@@ -372,6 +372,7 @@ back to self. For example::
     
     
 class JSONField(CharField):
+    '''A JSON field which implements authomatic converion to and form dictionary of data.'''
     type = 'json object'
     def __init__(self, *args, **kwargs):
         kwargs['default'] = kwargs.get('default','{}')

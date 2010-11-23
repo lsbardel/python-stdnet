@@ -13,6 +13,8 @@ def remove_linked(sender, instance, **kwargs):
 
 
 def post_save(sender, instance, **kwargs):
+    '''Default django model post save call back method. It updates an existinf linked ``stdmodel`` instance
+or create a new one.'''
     linked = getattr(sender._meta,'linked',None)
     if linked:
         id = instance.id
@@ -93,25 +95,26 @@ def link_models(model1,
                 field_map = [],
                 pre_delete_callback = None,
                 post_save_callback = None):
-    '''Links a django model with a stdnet model.
+    '''
+Links a django ``model1`` with a stdnet ``model2``.
     
-    :keyword model1: A :class:`django.db.models.Model` class (not instance!)
-    :keyword model2: A :class:`stdnet.orm.StdModel` class.
-    :keyword field_map: List of 2 elements tuples for mapping django fields in model1
-                        with attribute in model2. The first element is a
-                        django field of model1, the second is the name of the
-                        attribute added to model2.
-    :keyword pre_delete_callback: function called just before an instance of model1 is deleted.
-                                  If not provided, a default functions which remove the instance of
-                                  ``model2`` associated with it is used.
-    :keyword post_save_callback: function called just after an instance of model1 is saved.
-                                 If not provided, a default functions which updated the instance of
-                                 ``model2`` associated with it is used.
+:keyword model1: A :class:`django.db.models.Model` class (not an instance!)
+:keyword model2: A :class:`stdnet.orm.StdModel` class.
+:keyword field_map: List of 2 elements tuples for mapping django fields in model1
+                    with attribute in model2. The first element is a
+                    django field of model1, the second is the name of the
+                    attribute added to model2.
+:keyword pre_delete_callback: function called just before an instance of model1 is deleted.
+                              If not provided, a default functions which remove the instance of
+                              ``model2`` associated with it is used.
+:keyword post_save_callback: function called just after an instance of model1 is saved.
+                             If not provided, a default functions which updated the instance of
+                             ``model2`` associated with it is used.
                                  
-This function injects methods to both model1 and model2.
+This function injects methods to both model1 and model2:
 
-model2, the StdModel, will have a new :class:`stdnet.orm.PickleObjectField`
-field named ``djobject``'''
+* The StdModel ``model2`` will have a new :class:`stdnet.orm.PickleObjectField`
+  field named ``djobject`` used to stored the django ``model1`` instances.'''
     from django.db import models
     from django.db.models.base import ModelBase
     from django.db.models import signals

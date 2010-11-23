@@ -24,8 +24,9 @@ def register(model, backend = None, keyprefix = None, timeout = 0):
         orm.register(Author, 'redis://my.host.name:6379/?db=1')
         orm.register(Book, 'redis://my.host.name:6379/?db=2')
         
-    ``my.host.name`` can be ``localhost`` or an ip address while ``db`` indicate
-    the database number (very useful for separating data on the same redis instance).'''
+    ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
+    while ``db`` indicates the database number (very useful for separating data
+    on the same redis instance).'''
     global _registry
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND

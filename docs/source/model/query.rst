@@ -37,8 +37,9 @@ as example::
 	    fund = orm.ForeignKey(Fund)
 	    size = orm.FloatField()
 
-These models are available in the :mod:`stdnet.tests.examples.models`, therefore you can import
-them from there. Before playing with the API, :ref:`register the models <register-model>`.
+These models are available in the :mod:`stdnet.tests.examples.models` module,
+therefore you can import them from there. Before playing with the API you need
+to :ref:`register the models <register-model>`.
 
 Creating objects
 ======================
@@ -64,7 +65,7 @@ Here's an example::
 	
 The object ``b`` is a python representation of data stored in the server at ``id`` 1.
 As discussed the :class:`stdnet.orm.StdModel` documentation, an instance of a model is
-an mapped to an entry in a remote :class:`stdnet.HashTable` structure. If you want to see the actual struture you can procede as following::
+mapped to an entry in a remote :class:`stdnet.HashTable` structure. If you want to see the actual struture you can procede as following::
 
 	>>> meta = b._meta
 	>>> t = meta.table()
@@ -86,7 +87,7 @@ The hashtable ``id`` is the ``key`` used by the server to identify the structure
 Retrieving objects
 ==============================
 To retrieve objects from your data sarver, you construct a :class:`stdnet.orm.query.QuerySet`
-via a :class:`stdnet.orm.Manager` on your model class.
+via a :class:`stdnet.orm.query.Manager` on your model class.
 
 A QuerySet represents a collection of objects from your database.
 It can have zero, one or many filters criteria that narrow down the collection

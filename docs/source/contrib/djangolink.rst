@@ -6,24 +6,21 @@
 StdNet & Django Link
 ============================
 
-This module is designed to make django_ models and ``stdnet`` models
-work together by creating a one-to-one relationship between them.
+This is a battery included module avaiable at :mod:`stdnet.contrib.djangolink` useful for django_
+developers needing to use a smart cache or adding extra in memory data to their relational
+database models, or both.
 
 To use this module you need to have django_ installed.
 
 
-Examples
-=========================
-
-
-
-Using stdnet as cache
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Stdnet as django cache
+===========================================
 
 The first example is simple, we create a link so that objects of 
 specific django models are cached using stdnet::
 
 	from django.db import models
+	from stdnet import orm
 	
 	class Article(models.Model):
 	    title = models.CharField(max_length = 200):
@@ -40,8 +37,26 @@ And now we link them together using the :func:`stdnet.contrib.djangolink.link_mo
 	link_models(Article,ArticleCache)
 	
 
+We can do more. Create ``stdnet`` filters by adding fields to our ``stdnet`` model::
+
+	class ArticleCache(orm.StdNet):
+	    title = orm.SymbolField()
+	    
+	link_models(Article,ArticleCache)
+	
+
+	
+
+
+Adding Extra Data
+=====================
+
+
+	
+
 API
 ===========
+
 
 .. autofunction:: stdnet.contrib.djangolink.link_models
 

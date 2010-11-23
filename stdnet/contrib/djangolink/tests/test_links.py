@@ -2,7 +2,8 @@ from datetime import datetime
 
 from stdnet import orm, test
 from stdnet.contrib.djangolink import link_models, LinkedManager
-from djangotestapp.testapp.models import Article, ArticleAndComments, Environment
+from djangotestapp.testapp.models import Article, ArticleAndComments
+from djangotestapp.testapp.models import ArticleAndCommentsWithTitle, Environment
 
 
 class DjangoStdNetLinkTest(test.TestCase):

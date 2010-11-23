@@ -65,13 +65,18 @@ class StdNetDjangoLink(object):
     
     def __init__(self, name):
         self.name = name
+        self.cache_name = '_%s' % name
         
     def __get__(self, instance, instance_type=None):
-        linked = getattr(instance._meta,self.name, None)
-        if linked:
-            return linked.objects.get(id = instance.id)
-        else:
-            return None
+        val = getattr(instance,self.cache_name,None)
+        if not val:
+            linked = getattr(instance._meta,'linked', None)
+            if linked:
+                val = linked.objects.get(id = instance.id)
+                setattr(instance,self.cache_name,val)
+            else:
+                val = None
+        return val
          
     
 def link_models(model1,

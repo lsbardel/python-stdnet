@@ -124,7 +124,7 @@ class RedisHomeView(appview.AppViewBase):
             cursor = meta.cursor
             if cursor.name == 'redis':
                 model_info.append([meta, cursor.db, meta.basekey()])
-        return loader.render_to_string('djstdnet/redis_monitor.html',
+        return loader.render_to_string('monitor/redis_monitor.html',
                                        {'info1':info1,
                                         'databases':databases,
                                         'model_header':model_header,
@@ -187,7 +187,7 @@ class RedisDbView(appview.AppViewBase):
              'djp':djp,
              'appmodel': appmodel,
              'headers': ('name','type','length','time to expiry','delete')}
-        return loader.render_to_string(['djstdnet/pagination.html',
+        return loader.render_to_string(['monitor/pagination.html',
                                         'djpcms/components/pagination.html'],c)
         
 
@@ -211,4 +211,4 @@ class StdModelInformationView(appview.AppView):
     :class:`stdnet.orm.StdModel` registered with a backend database.'''
     def render(self, djp, **kwargs):
         meta = self.model._meta
-        return loader.render_to_string('djstdnet/stdmodel.html',{'meta':meta})
+        return loader.render_to_string('monitor/stdmodel.html',{'meta':meta})

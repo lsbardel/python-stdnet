@@ -3,7 +3,7 @@ from datetime import datetime
 from stdnet import orm, test
 from stdnet.contrib.djangolink import link_models, LinkedManager
 from djangotestapp.testapp.models import Article, ArticleAndComments
-from djangotestapp.testapp.models import ArticleAndCommentsWithTitle, Environment
+from djangotestapp.testapp.models import Strategy, StrategyData, Environment
 
 
 class DjangoStdNetLinkTest(test.TestCase):
@@ -36,4 +36,34 @@ class DjangoStdNetLinkTest(test.TestCase):
         self.assertTrue(ArticleAndComments.objects.all().count())
         Article.objects.all().delete()
         self.assertFalse(ArticleAndComments.objects.all().count())
+        
+
+class DjangoStdNetLinkWithFieldsTest(test.TestCase):
+    tags = ['django']
+    
+    def setUp(self):
+        orm.register(StrategyData)
+        link_models(Strategy,StrategyData)
+        
+    def unregister(self):
+        orm.unregister(StrategyData)
+    
+    def testLinked(self):
+        self.assertEqual(StrategyData._meta.linked,Strategy)
+        self.assertEqual(Strategy._meta.linked,StrategyData)
+        self.assertTrue(isinstance(StrategyData.objects,LinkedManager))
+    
+    def testCreate(self, name = 'simple'):
+        a = Strategy(name = name, body = 'bla bla bla')
+        a.save()
+        ac = StrategyData.objects.get(id = a.id)
+        self.assertEqual(a,ac.djobject)
+        ac = StrategyData.objects.get(name = a.name)
+        self.assertEqual(a,ac.djobject)
+        
+    def testDelete(self):
+        self.testCreate('simple2')
+        self.assertTrue(StrategyData.objects.all().count())
+        Strategy.objects.all().delete()
+        self.assertFalse(StrategyData.objects.all().count())
         

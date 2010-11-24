@@ -13,9 +13,13 @@ class ArticleAndComments(orm.StdModel):
     comments = orm.ListField()
     
     
-class ArticleAndCommentsWithTitle(orm.StdModel):
-    title    = orm.SymbolField()
-    comments = orm.ListField()
+class Strategy(models.Model):
+    name = models.CharField(unique = True, max_length = 20)
+    body = models.TextField()
+    
+class StrategyData(orm.StdModel):
+    name     = orm.SymbolField(unique = True)
+    data     = orm.HashField()
 
     
 class Environment(ArticleAndComments):

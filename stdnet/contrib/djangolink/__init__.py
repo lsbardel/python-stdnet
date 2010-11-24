@@ -22,6 +22,12 @@ or create a new one.'''
             cobj = linked.objects._get(id = id)
         except ObjectNotFound:
             cobj = linked(id = id)
+        for field in cobj._meta.scalarfields:
+            name = field.name
+            if name is not 'djobject':
+                val = getattr(instance,name,None)
+                if val is not None:
+                    setattr(cobj,name,val)
         cobj.djobject = instance
         cobj.save()
    

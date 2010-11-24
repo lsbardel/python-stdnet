@@ -17,23 +17,16 @@ def post_save(sender, instance, **kwargs):
 or create a new one.'''
     linked = getattr(sender._meta,'linked',None)
     if linked:
-        id = instance.id
         try:
-            cobj = linked.objects._get(id = id)
+            obj = linked.objects._get(id = instance.id)
         except ObjectNotFound:
-            cobj = linked(id = id)
-        for field in cobj._meta.scalarfields:
-            name = field.name
-            if name is not 'djobject':
-                val = getattr(instance,name,None)
-                if val is not None:
-                    setattr(cobj,name,val)
-        cobj.djobject = instance
-        cobj.save()
+            obj = None
+        linked.objects.update_from_django(instance,obj)
    
 
 class LinkedManager(Manager):
-    
+    '''Manager which will replace the standard manager for stdnet models
+linked with django models.'''
     def __init__(self,djmodel,model):
         self.djmodel = djmodel
         self._setmodel(model)
@@ -45,9 +38,28 @@ class LinkedManager(Manager):
     def get(self, **kwargs):
         try:
             return self._get(**kwargs)
-        except self.model.ObjectNotFound:
-            return self.djmodel.objects.get(**kwargs)
-            
+        except ObjectNotFound:
+            pass
+        from django.core.exceptions import ObjectDoesNotExist
+        try:
+            dobj = self.djmodel.objects.get(**kwargs)
+        except ObjectDoesNotExist:
+            raise self.model.ObjectNotFound
+        return self.update_from_django(dobj)
+        
+    def update_from_django(self, dobj, instance = None):
+        if instance is None:
+            instance = self.model(id = dobj.id)
+        for field in instance._meta.scalarfields:
+            name = field.name
+            if name is not 'djobject':
+                val = getattr(dobj,name,None)
+                if val is not None:
+                    setattr(instance,name,val)
+        instance.djobject = dobj
+        instance.save()
+        return instance
+        
     def sync(self):
         all = self.all()
         for obj in self.dj.all():

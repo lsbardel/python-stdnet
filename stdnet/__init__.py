@@ -15,6 +15,8 @@ __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "http://code.google.com/p/python-stdnet/"
 
 
+sphinxtogithub = False
+
 from exceptions import *
 
 from backends import *
@@ -28,14 +30,19 @@ def add2path():
     return path
         
         
-def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
+def setup_tests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
     from stdnet.conf import settings
-    std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
     add2path()
     from stdnet import test
-    loader = test.TestLoader(tags)
-    from stdnet import tests
+    return test.TestLoader(tags)
+    
+    
+def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
+    from stdnet.conf import settings
+    std = settings.DEFAULT_BACKEND
+    loader = setup_tests(tags,backend)
+    from stdnet import test, tests
     suite  = loader.loadTestsFromModule(tests)
     runner = test.TextTestRunner()
     runner.run(suite)

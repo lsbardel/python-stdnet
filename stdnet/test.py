@@ -8,7 +8,6 @@ from stdnet.utils import import_modules
 
 TextTestRunner = unittest.TextTestRunner
 
-
 class TestCase(unittest.TestCase):
     
     def __init__(self, *args, **kwargs):

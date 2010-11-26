@@ -71,15 +71,14 @@ def getint(v):
 
     
 
-class RedisHomeView(appview.AppViewBase):
+class RedisHomeView(appview.View):
     plugin_form = RedisForm
     
-    def render(self,
-               djp,
-               server = 'localhost',
-               port = 6379,
-               db = 0,
-               **kwargs):
+    def render(self, djp):
+        kwargs = djp.kwargs
+        server = kwargs.get('server','localhost')
+        port   = kwargs.get('port',6379)
+        db     = kwargs.get('db', 0)
         r = redis.Redis(host = server, port = port, db = db)
         urldata = urlencode({'server':server,'port':port})
         info = r.info()
@@ -163,7 +162,7 @@ class DbQuery(object):
             yield key,typ,len,r.ttl(key),''
         
         
-class RedisDbView(appview.AppViewBase):
+class RedisDbView(appview.View):
     '''Display information about keys in one database.'''
     def get_db(self, djp):
         db = djp.kwargs.get('db',0)
@@ -201,7 +200,7 @@ class RedisDbFlushView(RedisDbView):
         return jhtmls(identifier = 'td.redisdb%s.keys' % r.db, html = format_number(keys))
 
 
-class StdModelInformationView(appview.AppView):
+class StdModelInformationView(appview.ModelView):
     
     def __init__(self, **kwargs):
         kwargs['isplugin'] = True

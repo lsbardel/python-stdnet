@@ -3,7 +3,7 @@ from djpcms.views import appsite, appview
 from stdnet.contrib.monitor import views
 
 
-class StdnetMonitorApplication(appsite.ApplicationBase):
+class StdnetMonitorApplication(appsite.Application):
     name = 'Stdnet Monitor'
     list_per_page = 100
     

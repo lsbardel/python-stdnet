@@ -1,15 +1,23 @@
+import logging
+
 from stdnet import orm
 from stdnet import ObjectNotFound
 from stdnet.orm.query import Manager
+
+logger = logging.getLogger('stdnet.contrib.djangolink')
 
 
 def remove_linked(sender, instance, **kwargs):
     linked = getattr(sender._meta,'linked',None)
     if linked:
         try:
-            linked.objects._get(id = instance.id).delete()
+            instance = linked.objects._get(id = instance.id)
+            logger.debug('Updating linked stdmodel %s' % instance)
+            instance.delete()
         except ObjectNotFound:
             pass
+    else:
+        logger.debug('Got a pre delete callback for a model not linked with stdnet. Skipping.')
 
 
 def post_save(sender, instance, **kwargs):
@@ -22,6 +30,8 @@ or create a new one.'''
         except ObjectNotFound:
             obj = None
         linked.objects.update_from_django(instance,obj)
+    else:
+        logger.debug('Got a post save callback for a model not linked with stdnet. Skipping.')
    
 
 class LinkedManager(Manager):
@@ -58,6 +68,7 @@ linked with django models.'''
                     setattr(instance,name,val)
         instance.djobject = dobj
         instance.save()
+        logger.debug('Updated linked stdmodel %s' % instance)
         return instance
         
     def sync(self):

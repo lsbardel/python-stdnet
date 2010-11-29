@@ -90,6 +90,14 @@ class TestJsonField(test.TestCase):
         self.assertEqual(a.data['started'],started)
         self.assertEqual(a.data['timestamp'],timestamp)
         
+    def testEmpty(self):
+        a = Statistics(dt = date.today())
+        self.assertEqual(a.data,{})
+        a.save()
+        self.assertEqual(a.data,{})
+        a = Statistics.objects.get(id = a.id)
+        self.assertEqual(a.data,{})
+        
 
 class TestJsonFieldSep(test.TestCase):
     tags = ['json']

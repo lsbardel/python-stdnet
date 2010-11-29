@@ -375,7 +375,7 @@ class JSONField(CharField):
     '''A JSON field which implements authomatic converion to and form dictionary of data.'''
     type = 'json object'
     def __init__(self, *args, **kwargs):
-        kwargs['default'] = kwargs.get('default','{}')
+        kwargs['default'] = kwargs.get('default',{})
         self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
         self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
         self.sep = kwargs.pop('sep',None)

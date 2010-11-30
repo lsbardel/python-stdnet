@@ -12,7 +12,7 @@ def remove_linked(sender, instance, **kwargs):
     if linked:
         try:
             instance = linked.objects._get(id = instance.id)
-            logger.debug('Updating linked stdmodel %s' % instance)
+            logger.debug('Deleting linked stdmodel %s' % instance)
             instance.delete()
         except ObjectNotFound:
             pass

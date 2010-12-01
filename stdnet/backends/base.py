@@ -68,6 +68,13 @@ class BackendDataServer(object):
     def createdb(self, name):
         pass
     
+    def isempty(self):
+        '''Returns ``True`` if the database has no keys.'''
+        keys = self.keys()
+        if not hasattr(keys,'__len__'):
+            keys = list(keys)
+        return len(keys)
+    
     def delete(self, *key):
         "Delete one or more keys specified by ``keys``"
         raise NotImplementedError

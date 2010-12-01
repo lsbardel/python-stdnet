@@ -127,5 +127,11 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     def commit(cls):
         return cls._meta.cursor.commit()
     
+    @classmethod
+    def flush(cls, count = None):
+        '''Flush the table and all related tables. If count is a dictionary, the method
+will enumerate the number of object to delete. without deleting them.'''
+        return cls._meta.flush(count)
+    
     
 

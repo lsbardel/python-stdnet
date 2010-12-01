@@ -30,27 +30,25 @@ def add2path():
     return path
         
         
-def setup_tests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
+def setup_tests(backend = 'redis://127.0.0.1:6379/?db=13'):
     from stdnet.conf import settings
     settings.DEFAULT_BACKEND = backend
     add2path()
-    from stdnet import test
-    return test.TestLoader(tags)
     
     
-def runtests(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
+def runtests(tags = None, verbosity = 1, backend = None):
     from stdnet.conf import settings
+    backend = backend or 'redis://127.0.0.1:6379/?db=13'
     std = settings.DEFAULT_BACKEND
-    loader = setup_tests(tags,backend)
-    from stdnet import test, tests
-    suite  = loader.loadTestsFromModule(tests)
-    runner = test.TextTestRunner()
-    runner.run(suite)
+    setup_tests(backend)
+    from stdnet.tests.runtests import run
+    run(tags = tags, verbosity = verbosity)
     settings.DEFAULT_BACKEND = std
 
 
-def runbench(tags = None, backend = 'redis://127.0.0.1:6379/?db=13'):
+def runbench(tags = None, backend = None):
     from stdnet.conf import settings
+    backend = backend or 'redis://127.0.0.1:6379/?db=13'
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND = backend
     settings.DEFAULT_KEYPREFIX = 'stdbench.'

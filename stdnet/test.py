@@ -21,6 +21,58 @@ class TestCase(unittest.TestCase):
         orm.clearall()
         self.unregister()
         
+        
+
+class TestSuite(unittest.TestSuite):
+    pass
+
+
+class TestSuiteRunner(object):
+    '''A suite runner with twisted if available.'''
+    
+    def __init__(self, verbosity = 1):
+        self.verbosity = verbosity
+        
+    def setup_test_environment(self):
+        pass
+    
+    def teardown_test_environment(self):
+        pass
+    
+    def run_tests(self, modules):
+        self.setup_test_environment()
+        suite = self.build_suite(modules)
+        self.run_suite(suite)
+    
+    def close_tests(self, result):
+        self.teardown_test_environment()
+        return self.suite_result(suite, result)
+    
+    def build_suite(self, modules):
+        loader = TestLoader()
+        return loader.loadTestsFromModules(modules)
+        
+    def run_suite(self, suite):
+        return TextTestRunner(verbosity = self.verbosity).run(suite)
+    
+    def suite_result(self, suite, result, **kwargs):
+        return len(result.failures) + len(result.errors) 
+     
+
+class TestLoader(unittest.TestLoader):
+    suiteClass = TestSuite
+    
+    def loadTestsFromModules(self, modules):
+        """Return a suite of all tests cases contained in the given module"""
+        tests = []
+        for module in modules:
+            for name in dir(module):
+                obj = getattr(module, name)
+                if (isinstance(obj, (type, types.ClassType)) and
+                    issubclass(obj, unittest.TestCase)):
+                    tests.append(self.loadTestsFromTestCase(obj))
+        return self.suiteClass(tests)
+        
 
         
 class BenchMark(object):
@@ -78,7 +130,7 @@ class StdNetTestSuiteRunner(unittest.TestSuite):
             connection.creation.destroy_test_db(old_name, self.verbosity)
 
 
-class TestLoader(unittest.TestLoader):
+class _TestLoader(unittest.TestLoader):
     cls = unittest.TestCase
     
     def __init__(self, tags = None):

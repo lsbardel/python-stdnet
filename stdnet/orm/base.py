@@ -134,6 +134,23 @@ the model table'''
                 setattr(obj,field.attname,field.to_python(value))
         obj.afterload()
         return obj
+    
+    def flush(self, count = None):
+        '''Fast method for clearing the whole table including related tables'''
+        for rel in self.related.values():
+            to = rel.to
+            if to._meta.cursor:
+                to.flush(count)
+        table = self.table()
+        table.clear()
+        cursor = self.cursor
+        # Remove indices
+        keys   = [self.autoid()]
+        for field in self.scalarfields:
+            if field.index:
+                bkey   = self.basekey(field.name)
+                keys.extend(cursor.keys('{0}*'.format(bkey)))
+        cursor.delete(*keys)
 
 
 class StdNetType(type):

@@ -7,7 +7,7 @@ from stdnet.test import TestCase
 from stdnet.utils import populate
 from stdnet.exceptions import QuerySetError
 
-from examples.models import Instrument, Fund, Position
+from examples.models import Instrument, Fund, Position, Dictionary
 
 
 INST_LEN    = 100
@@ -31,9 +31,11 @@ view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
 
 dates = populate('date',NUM_DATES,start=datetime.date(2009,6,1),end=datetime.date(2010,6,6))
 
+DICT_LEN    = 200
+dict_keys   = populate('string', DICT_LEN, min_len = 5, max_len = 20)
+dict_values = populate('string', DICT_LEN, min_len = 20, max_len = 300)
 
-
-class TestFinanceApplication(TestCase):
+class TestDeleteScalarFields(TestCase):
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
@@ -109,3 +111,44 @@ class TestFinanceApplication(TestCase):
         self.assertEqual(Instrument.objects.all().count(),0)
         self.assertEqual(Position.objects.all().count(),0)
         
+
+class TestDeleteStructuredFields(TestCase):
+    
+    def setUp(self):
+        '''Create Instruments and Funds commiting at the end for speed'''
+        orm = self.orm
+        orm.register(Dictionary)
+        orm.clearall()
+        Dictionary(name = 'test').save()
+        Dictionary(name = 'test2').save()
+        self.assertEqual(Dictionary.objects.all().count(),2)
+        self.data = dict(izip(dict_keys,dict_values))
+    
+    def unregister(self):
+        self.orm.unregister(Dictionary)
+    
+    def fill(self, name):
+        d = Dictionary.objects.get(name = name)
+        data = d.data
+        d.data.update(self.data)
+        self.assertEqual(d.data.size(),0)
+        d.save()
+        data = d.data
+        self.assertEqual(data.size(),len(self.data))
+        return Dictionary.objects.get(name = name)
+    
+    def testSimpleFlush(self):
+        Dictionary.flush()
+        self.assertEqual(Dictionary.objects.all().count(),0)
+        # Now we check the database if it is empty as it should
+        keys = list(Dictionary._meta.cursor.keys())
+        self.assertEqual(len(keys),0)
+        
+    def testFlushWithData(self):
+        self.fill('test')
+        self.fill('test2')
+        Dictionary.flush()
+        self.assertEqual(Dictionary.objects.all().count(),0)
+        # Now we check the database if it is empty as it should
+        keys = list(Dictionary._meta.cursor.keys())
+        self.assertEqual(len(keys),0)

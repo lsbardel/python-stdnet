@@ -218,6 +218,6 @@ class StdModelDeleteAllView(appview.ModelView):
     _methods = ('post',)
     
     def default_post(self, djp):
-        self.model.objects.all().delete()
+        self.model.flush()
         next,curr = forms.next_and_current(djp.request)
         return jredirect(next or curr)

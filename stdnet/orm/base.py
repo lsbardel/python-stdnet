@@ -141,16 +141,13 @@ the model table'''
             to = rel.to
             if to._meta.cursor:
                 to.flush(count)
-        table = self.table()
-        table.clear()
-        cursor = self.cursor
-        # Remove indices
-        keys   = [self.autoid()]
-        for field in self.scalarfields:
-            if field.index:
-                bkey   = self.basekey(field.name)
-                keys.extend(cursor.keys('{0}*'.format(bkey)))
-        cursor.delete(*keys)
+        if count is None:
+            cursor = self.cursor
+            keys = cursor.keys('{0}*'.format(self.basekey()))
+            if keys:
+                cursor.delete(*keys)
+        else:
+            count[str(self)] = self.table().count()
 
 
 class StdNetType(type):

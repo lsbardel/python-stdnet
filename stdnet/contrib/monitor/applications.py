@@ -20,3 +20,4 @@ class StdnetMonitorApplication(appsite.Application):
 class StdModelApplication(appsite.ModelApplication):
     search      = appview.SearchView()
     information = views.StdModelInformationView(regex = 'info')
+    flush       = views.StdModelDeleteAllView(regex = 'flush')

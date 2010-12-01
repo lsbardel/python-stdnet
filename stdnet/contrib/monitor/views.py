@@ -4,7 +4,7 @@ from urllib import urlencode
 from djpcms import forms
 from djpcms.views import appview
 from djpcms.utils.html import Paginator
-from djpcms.utils.ajax import jhtmls
+from djpcms.utils.ajax import jhtmls, jredirect
 from djpcms.utils import mark_safe, lazyattr, gen_unique_id
 from djpcms.template import loader
 from django.utils.dateformat import format, time_format
@@ -174,7 +174,7 @@ class RedisDbView(appview.View):
     def title(self, page, **kwargs):
         return 'Database %(db)s' % kwargs
     
-    def render(self, djp, **kwargs):
+    def render(self, djp):
         request = djp.request
         appmodel = self.appmodel
         r = self.get_db(djp)
@@ -185,7 +185,8 @@ class RedisDbView(appview.View):
              'db':r.db,
              'djp':djp,
              'appmodel': appmodel,
-             'headers': ('name','type','length','time to expiry','delete')}
+             'headers': ('name','type','length','time to expiry','delete'),
+             'items':p.qs}
         return loader.render_to_string(['monitor/pagination.html',
                                         'djpcms/components/pagination.html'],c)
         
@@ -211,3 +212,12 @@ class StdModelInformationView(appview.ModelView):
     def render(self, djp, **kwargs):
         meta = self.model._meta
         return loader.render_to_string('monitor/stdmodel.html',{'meta':meta})
+
+
+class StdModelDeleteAllView(appview.ModelView):
+    _methods = ('post',)
+    
+    def default_post(self, djp):
+        self.model.objects.all().delete()
+        next,curr = forms.next_and_current(djp.request)
+        return jredirect(next or curr)

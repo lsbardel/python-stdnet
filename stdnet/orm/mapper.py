@@ -3,9 +3,11 @@ from stdnet import getdb
 
 from query import Manager, UnregisteredManager
     
-def clearall():
+def clearall(exclude = None):
+    exclude = exclude or []
     for meta in _registry.values():
-        meta.cursor.clear()
+        if not meta.name in exclude:
+            meta.cursor.clear()
 
 def register(model, backend = None, keyprefix = None, timeout = 0):
     '''Register a :class:`stdnet.orm.StdModel` model with a :class:`stdnet.backends.BackendDataServer` data server.

@@ -1,8 +1,5 @@
 '''Interfaces for supported data-structures'''
 
-from stdnet.utils import listPipeline, mapPipeline
-
-
 __all__ = ['PipeLine',
            'pipelines',
            'Structure',
@@ -12,6 +9,25 @@ __all__ = ['PipeLine',
            'HashTable']
 
 default_score = lambda x : 1
+
+
+
+class listPipeline(object):
+    def __init__(self):
+        self.clear()
+        
+    def push_front(self, value):
+        self.front.append(value)
+        
+    def push_back(self, value):
+        self.back.append(value)
+        
+    def clear(self):
+        self.back = []
+        self.front = []
+        
+    def __len__(self):
+        return len(self.back) + len(self.front)
 
 
 class keyconverter(object):
@@ -39,9 +55,9 @@ class HashPipe(PipeLine):
     def __init__(self, timeout):
         super(HashPipe,self).__init__({},'hash',timeout)
         
-class MapPipe(PipeLine):
+class TsPipe(PipeLine):
     def __init__(self, timeout):
-        super(MapPipe,self).__init__(mapPipeline(),'map',timeout)
+        super(TsPipe,self).__init__({},'ts',timeout)
 
 class SetPipe(PipeLine):
     def __init__(self, timeout):
@@ -58,7 +74,7 @@ class ListPipe(PipeLine):
 
 _pipelines = {'list':ListPipe,
               'hash': HashPipe,
-              'map': MapPipe,
+              'ts': TsPipe,
               'set': SetPipe,
               'oset': OsetPipe}
 
@@ -409,21 +425,18 @@ This structure is used for in two different parts of the library.
         raise NotImplementedError
 
     
-class Map(HashTable):
-    struct = MapPipe
+class TS(HashTable):
+    struct = TsPipe
+
     def __init__(self, *args, **kwargs):
-        self.scorefun = kwargs.pop('scorefun',default_score)
-        super(Map,self).__init__(*args, **kwargs)
+        super(TS,self).__init__(*args, **kwargs)
         
     def update(self, mapping):
-        '''Add *mapping* dictionary to hashtable. Equivalent to python dictionary update method.'''
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
-        sfunc = self.scorefun
         p     = self.pipeline
         for key,value in mapping.iteritems():
-            rk = tokey(key)
-            p[rk] = dumps(value)
+            p[tokey(key)] = dumps(value)
     
     def front(self):
         try:
@@ -441,15 +454,13 @@ class Map(HashTable):
         '''Return a range between start and end key.'''
         tokey    = self.converter.tokey
         tovalue  = self.converter.tovalue
-        sfunc    = self.scorefun
         loads    = self.pickler.loads
-        for key,val in self._range(sfunc(tokey(start)),sfunc(tokey(end))):
+        for key,val in self._range(tokey(start),tokey(end)):
             yield tovalue(key),loads(val)
             
     def count(self, start, end):
         tokey    = self.converter.tokey
-        sfunc    = self.scorefun
-        return self._count(sfunc(tokey(start)),sfunc(tokey(end)))
+        return self._count(tokey(start),tokey(end))
             
     def irange(self, start = 0, end = -1):
         '''Return a range between start and end key.'''

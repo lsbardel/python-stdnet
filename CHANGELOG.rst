@@ -1,8 +1,10 @@
 Ver. 0.4.3 - Development
 ===========================
 * More documentation and tests.
+* Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
+* Added ``contrib.sessions`` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.
-* **64 tests**.
+* **64 tests** (75 including timeseries) with **53% coverage**.
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================

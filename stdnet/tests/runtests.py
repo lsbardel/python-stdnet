@@ -70,9 +70,9 @@ def setup_logging(verbosity):
         logger.setLevel(level)
         
         
-def run(tags = None, verbosity = 1):
+def run(tags = None, itags = None, verbosity = 1):
     setup_logging(verbosity)
     modules = import_tests(tags)
-    runner  = TestSuiteRunner(verbosity = verbosity)
+    runner  = TestSuiteRunner(verbosity = verbosity, itags = itags)
     runner.run_tests(modules)
     

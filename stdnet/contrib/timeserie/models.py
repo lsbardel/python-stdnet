@@ -2,6 +2,7 @@ from stdnet import orm
 from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate
 from stdnet.contrib.timeserie.utils import default_parse_interval
 
+
 class DateTimeConverter(object):
     
     @classmethod
@@ -11,6 +12,7 @@ class DateTimeConverter(object):
     @classmethod
     def tovalue(cls, value):
         return timestamp2date(value)
+    
     
 class DateConverter(object):
     
@@ -30,18 +32,18 @@ class TimeSerieField(orm.HashField):
         self.converter = model.converter
         
         
-class TimeSerieMapField(orm.MapField):
-    
+class TimeSeriesField(orm.TSField):
+    '''A new timeseries field based on TS data structure in Redis'''
     def __init__(self, *args, **kwargs):
-        kwargs['scorefun'] = lambda x : x
-        super(TimeSerieMapField,self).__init__(*args, **kwargs)
+        super(TimeSeriesField,self).__init__(*args, **kwargs)
         
     def register_with_model(self, name, model):
-        super(TimeSerieMapField,self).register_with_model(name, model)
+        super(TimeSeriesField,self).register_with_model(name, model)
         self.converter = model.converter
         
 
 class TimeSeriesBase(orm.StdModel):
+    '''Timeseries base class'''
     converter = DateTimeConverter
     
     def todate(self, v):
@@ -101,8 +103,8 @@ tuples.'''
         return calc_intervals 
         
     
-class TimeSeriesMap(TimeSeriesBase):
-    data  = TimeSerieMapField()
+class TimeSeries(TimeSeriesBase):
+    data  = TimeSeriesField()
     
     def dates(self):
         return self.data.keys()
@@ -119,7 +121,7 @@ class TimeSeriesMap(TimeSeriesBase):
     end = property(__get_end)
         
 
-class TimeSeries(TimeSeriesBase):
+class HashTimeSeries(TimeSeriesBase):
     '''Base abstract class for timeseries'''
     data  = TimeSerieField()
     start = orm.DateTimeField(required = False, index = False)
@@ -132,7 +134,7 @@ class TimeSeries(TimeSeriesBase):
         return self.data.sorteditems()
     
     def save(self):
-        supersave = super(TimeSeries,self).save
+        supersave = super(HashTimeSeries,self).save
         supersave()
         self.storestartend()
         return supersave()
@@ -157,7 +159,7 @@ class TimeSeries(TimeSeriesBase):
         return self.fromto()
 
 
-class DateTimeSeries(TimeSeries):
+class DateHashTimeSeries(HashTimeSeries):
     converter = DateConverter
     start = orm.DateField(required = False, index = False)
     end   = orm.DateField(required = False, index = False)

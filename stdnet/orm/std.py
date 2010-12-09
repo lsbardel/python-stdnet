@@ -7,6 +7,16 @@ from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 from query import M2MRelatedManager
 
 
+__all__ = ['ManyFieldManagerProxy',
+           'Many2ManyManagerProxy',
+           'MultiField',
+           'SetField',
+           'ListField',
+           'HashField',
+           'TSField',
+           'ManyToManyField']
+
+
 class ManyFieldManagerProxy(object):
     
     def __init__(self, name, stype, pickler, converter, scorefun):
@@ -191,14 +201,12 @@ it returns an instance of :class:`stdnet.HashTable` structure.
         return 'hash'
     
 
-class MapField(MultiField):
-    '''A Hash table field, the networked equivalent of a python dictionary.
-Keys are string while values are string/numeric.
-it returns an instance of :class:`stdnet.HashTable` structure.
+class TSField(MultiField):
+    '''A timeserie field table field. NOT SUPPORTED IN REDIS MASTER.
 '''
-    type = 'map'
+    type = 'ts'
     def get_pipeline(self):
-        return 'map'
+        return 'ts'
 
 
 class ManyToManyField(MultiField):

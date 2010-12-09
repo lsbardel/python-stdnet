@@ -144,7 +144,7 @@ class HashTable(structures.HashTable):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)
         
 
-class Map(structures.Map):
+class TS(structures.TS):
     '''Requires Redis Map structure which is not yet implemented in redis (and I don't know if it will).
 It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
     def _size(self):
@@ -163,19 +163,16 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return self.cursor.execute_command('TSDEL', self.id, key)
     
     def _contains(self, key):
-        if self.cursor.execute_command('TSEXISTS', self.id, key):
-            return True
-        else:
-            return False
+        return self.cursor.execute_command('TSEXISTS', self.id, key)
         
     def _getdate(self, val):
         return None if not val else val[0]
         
     def _irange(self, start, end):
-        return riteritems(self, 'TSRANGE', start, end, 'withscores')
+        return riteritems(self, 'TSRANGE', start, end, 'withtimes')
     
     def _range(self, start, end):
-        return riteritems(self, 'TSRANGEBYSCORE', start, end, 'withscores')
+        return riteritems(self, 'TSRANGEBYTIME', start, end, 'withtimes')
     
     def _count(self, start, end):
         return self.cursor.execute_command('TSCOUNT', self.id, start, end)
@@ -190,7 +187,7 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return self.cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues')
     
     def _items(self):
-        return riteritems(self, 'TSRANGE', self.id, 0, -1, 'withscores')
+        return riteritems(self, 'TSRANGE', 0, -1, 'withtimes')
 
     def values(self):
         for ky,val in self.items():

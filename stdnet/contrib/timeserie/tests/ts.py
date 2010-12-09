@@ -1,18 +1,18 @@
 from itertools import izip
 from datetime import date, datetime
 
-import test_timeseries_hash
-from models import TimeSeriesMap
+import hashtimeseries
+from models import TimeSeries
 
-testdata  = test_timeseries_hash.testdata
-testdata2 = test_timeseries_hash.testdata2
+testdata  = hashtimeseries.testdata
+testdata2 = hashtimeseries.testdata2
 
 
 
-class TestDateTimeSeriesTS(test_timeseries_hash.TestTimeSeriesHash):
-    tags    = ['timeserie','ts']
+class TestDateTimeSeriesTS(hashtimeseries.TestHashTimeSeries):
+    tag         = 'ts'
     default_run = False
-    model = TimeSeriesMap
+    model       = TimeSeries
         
     def testitems2(self):
         ts = self.filldata(testdata2)

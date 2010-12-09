@@ -74,6 +74,14 @@ otherwise from the package directory::
 **BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW**
 
 
+To access coverage of tests you need to install the coverage_ package and run the tests using::
+
+	coverage run --source=stdnet runtests.py
+	
+and to check out the coverage report::
+
+	coverage report -m
+
 	
 Default settings
 =========================
@@ -201,3 +209,4 @@ file in the top distribution directory for the full license text.
 .. _Memcached: http://memcached.org/
 .. _BSD: http://www.opensource.org/licenses/bsd-license.php
 .. _Sphinx: http://sphinx.pocoo.org/
+.. _coverage: http://nedbatchelder.com/code/coverage/

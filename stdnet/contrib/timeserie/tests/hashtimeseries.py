@@ -6,7 +6,7 @@ from stdnet.test import TestCase
 from stdnet.contrib.timeserie.utils import dategenerator, default_parse_interval
 from stdnet.utils import populate, todate
 
-from models import TimeSeries, DateTimeSeries
+from .models import HashTimeSeries, DateHashTimeSeries
 
 
 NUM_DATES = 300
@@ -20,9 +20,8 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestTimeSeriesHash(TestCase):
-    tags    = ['timeserie','hash']
-    model   = TimeSeries
+class TestHashTimeSeries(TestCase):
+    model   = HashTimeSeries
     mkdate  = datetime
     
     def setUp(self):
@@ -198,8 +197,8 @@ class TestTimeSeriesHash(TestCase):
         self.assertEqual(ts.data.get(mkdate(2010,3,1)),None)
         
 
-class TestDateTimeSeriesHash(TestTimeSeriesHash):
-    model = DateTimeSeries
+class TestDateHashTimeSeries(TestHashTimeSeries):
+    model = DateHashTimeSeries
     mkdate = date
     
     

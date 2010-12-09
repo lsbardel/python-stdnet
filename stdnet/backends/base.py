@@ -276,10 +276,10 @@ for a given *id*.'''
 for a given *id*.'''
         return self.structure_module.HashTable(self, id, timeout = timeout, **kwargs)
     
-    def map(self, id, timeout = 0, **kwargs):
+    def ts(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        return self.structure_module.Map(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.TS(self, id, timeout = timeout, **kwargs)
     
     def unordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.Set` structure

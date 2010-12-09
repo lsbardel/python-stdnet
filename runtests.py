@@ -20,12 +20,20 @@ def makeoptions():
                       dest="server",
                       default='',
                       help="Backend server where to run tests")
+    parser.add_option("-i", "--include",
+                      action="store",
+                      dest="itags",
+                      default='',
+                      help="Include develepment tags, comma separated")
     return parser
 
     
 if __name__ == '__main__':
     options, tags = makeoptions().parse_args()
     server = options.server
+    itags  = options.itags.replace(' ','')
+    itags  = None if not itags else itags.split(',')
     stdnet.runtests(tags,
+                    itags=itags,
                     verbosity=options.verbosity,
                     backend=options.server)

@@ -1,7 +1,20 @@
 import copy
+from stdnet import utils
 from stdnet import getdb
 
 from query import Manager, UnregisteredManager
+
+
+__all__ = ['clearall',
+           'register',
+           'unregister',
+           'Manager',
+           'UnregisteredManager']
+
+
+# lock used to synchronize the "mapper compile" step
+_COMPILE_MUTEX = utils.threading.RLock()
+
     
 def clearall(exclude = None):
     exclude = exclude or []
@@ -54,3 +67,30 @@ def unregister(model):
     model._meta.cursor = None
 
 _registry = {}
+
+
+
+class Mapper(object):
+    
+    def __init__(self,
+                 class_,
+                 local_table,
+                 properties = None,
+                 primary_key = None):
+        self.class_ = class_
+        self.local_table = local_table
+        self.compiled = False
+        
+        _COMPILE_MUTEX.acquire()
+        try:
+            self._configure_inheritance()
+            self._configure_extensions()
+            self._configure_class_instrumentation()
+            self._configure_properties()
+            self._configure_pks()
+            global _new_mappers
+            _new_mappers = True
+            self._log("constructed")
+        finally:
+            _COMPILE_MUTEX.release()
+            

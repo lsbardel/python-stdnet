@@ -9,6 +9,11 @@ from odict import *
 from populate import populate
 from fields import *
 
+try:
+    import threading
+except ImportError:
+    import dummy_threading as threading
+
 
 def date2timestamp(dte):
     return time.mktime(dte.timetuple())

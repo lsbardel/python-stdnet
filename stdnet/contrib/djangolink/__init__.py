@@ -20,19 +20,31 @@ def remove_linked(sender, instance, **kwargs):
         logger.debug('Got a pre delete callback for a model not linked with stdnet. Skipping.')
 
 
-def post_save(sender, instance, **kwargs):
-    '''Default django model post save call back method. It updates an existinf linked ``stdmodel`` instance
-or create a new one.'''
-    linked = getattr(sender._meta,'linked',None)
-    if linked:
-        try:
-            obj = linked.objects._get(id = instance.id)
-        except ObjectNotFound:
-            obj = None
-        linked.objects.update_from_django(instance,obj)
-    else:
-        logger.debug('Got a post save callback for a model not linked with stdnet. Skipping.')
+class PostSave(object):
+    
+    def __call__(self, sender, instance, **kwargs):
+        '''Default django model post save call back method.
+    It updates an existing linked ``stdmodel`` instance
+    or create a new one.'''
+        linked = getattr(sender._meta,'linked',None)
+        if linked:
+            try:
+                obj = linked.objects._get(id = instance.id)
+            except ObjectNotFound:
+                obj = None
+            if obj:
+                obj = self.update(obj)
+            linked.objects.update_from_django(instance,obj)
+        else:
+            logger.debug('Got a post save callback for a model not linked with stdnet. Skipping.')
+            
+    def update(self, obj):
+        '''Hook for custom update of stdnet object'''
+        return obj
    
+   
+post_save_default = PostSave()
+
 
 class LinkedManager(Manager):
     '''Manager which will replace the standard manager for stdnet models
@@ -156,7 +168,7 @@ This function injects methods to both model1 and model2:
             setattr(model1._meta,'linked',model2)
             setattr(model2._meta,'linked',model1)
             pre_delete_callback = pre_delete_callback or remove_linked
-            post_save_callback  = post_save_callback or post_save
+            post_save_callback  = post_save_callback or post_save_default
             djfield = orm.PickleObjectField()
             djfield.register_with_model('djobject',model2)
             model2.objects = LinkedManager(model1, model2)

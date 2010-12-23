@@ -1,12 +1,12 @@
-from datetime import datetime, timedelta
 from urllib import urlencode
+from datetime import datetime, timedelta
 
 from djpcms import forms
 from djpcms.views import appview
 from djpcms.utils.html import Paginator
 from djpcms.utils.ajax import jhtmls, jredirect
-from djpcms.utils import mark_safe, lazyattr, gen_unique_id
-from djpcms.template import loader
+from djpcms.utils import lazyattr, gen_unique_id
+from djpcms.template import loader, mark_safe
 from django.utils.dateformat import format, time_format
 
 from stdnet import orm

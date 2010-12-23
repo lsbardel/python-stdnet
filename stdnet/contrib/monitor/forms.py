@@ -48,6 +48,7 @@ class StdForm(forms.BaseForm):
     def __init__(self, *args, **kwargs):
         instance = kwargs.pop('instance',None)
         initial  = kwargs.pop('initial',None) or {}
+        kwargs.pop('save_as_new',None)
         if not instance:
             instance = self._meta.model()
             self.adding = True

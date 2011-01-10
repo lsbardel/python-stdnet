@@ -1,13 +1,13 @@
 import logging
-
 from stdnet import orm
 from stdnet import ObjectNotFound
 from stdnet.orm.query import Manager
 
+
 logger = logging.getLogger('stdnet.contrib.djangolink')
 
 
-def remove_linked(sender, instance, **kwargs):
+def remove_linked(sender, instance = None, **kwargs):
     linked = getattr(sender._meta,'linked',None)
     if linked:
         try:

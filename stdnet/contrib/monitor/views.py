@@ -171,8 +171,8 @@ class RedisDbView(appview.View):
                            port = int(data.get('port',6379)),
                            db = int(db))
 
-    def title(self, page, **kwargs):
-        return 'Database %(db)s' % kwargs
+    def title(self, djp):
+        return 'Database {0[db]}'.format(djp.kwargs)
     
     def render(self, djp):
         request = djp.request

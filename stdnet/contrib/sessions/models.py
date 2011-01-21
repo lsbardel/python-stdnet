@@ -20,7 +20,7 @@ session_settings = {'SECRET_KEY': None}
 class SuspiciousOperation(Exception):
     pass
 
-    
+
 class EncodedPickledObjectField(orm.CharField):
     
     def to_python(self, value):
@@ -72,4 +72,4 @@ class Session(orm.StdModel):
     expiry = orm.DateTimeField(index = False, required = False)
 
     objects = SessionManager()
-     
+

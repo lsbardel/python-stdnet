@@ -133,5 +133,4 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
 will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
-    
 

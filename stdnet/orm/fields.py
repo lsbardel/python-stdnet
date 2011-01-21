@@ -3,18 +3,18 @@ from hashlib import sha1
 import time
 from datetime import date, datetime
 
-from query import RelatedManager
-from related import RelatedObject, ReverseSingleRelatedObjectDescriptor
-from stdnet.exceptions import *
-from stdnet.utils import timestamp2date, date2timestamp
-from stdnet.utils import json, json_compact, DefaultJSONEncoder, DefaultJSONHook
-
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
-hashfun = lambda x : sha1(x).hexdigest()
+from stdnet.exceptions import *
+from stdnet.utils import timestamp2date, date2timestamp
+from stdnet.utils import json, json_compact, DefaultJSONEncoder, DefaultJSONHook
+
+from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
+from .query import RelatedManager
+from .globals import get_model_from_hash
 
 
 __all__ = ['Field',
@@ -30,6 +30,7 @@ __all__ = ['Field',
            'ForeignKey',
            'JSONField',
            'PickleObjectField',
+           'ModelField',
            '_novalue']
 
 class NoValue(object):
@@ -394,3 +395,15 @@ class JSONField(CharField):
             value = json.dumps(json_compact(value,self.sep), cls=self.encoder_class)
         return value
     
+
+class ModelField(SymbolField):
+    '''A filed which can be used to store the model unique sha1'''
+    
+    def to_python(self, value):
+        return get_model_from_hash(value)
+    
+    def serialize(self, value):
+        if value is not None:
+            value = value._meta.hash
+        return value
+

@@ -1,11 +1,18 @@
 import sys
 import copy
-from itertools import izip
-from fields import Field, AutoField
+
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
 
 from stdnet.orm import signals
 from stdnet.exceptions import *
-from query import UnregisteredManager 
+
+from .globals import hashmodel
+from .query import UnregisteredManager
+from .fields import Field, AutoField
+
 
 def get_fields(bases, attrs):
     fields = {}
@@ -18,7 +25,6 @@ def get_fields(bases, attrs):
             fields[name] = attrs.pop(name)
     
     return fields
-
 
 
 class Metaclass(object):
@@ -58,7 +64,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.keyprefix = keyprefix
         self.model     = model
         self.app_label = app_label
-        self.name      = model.__name__.lower()
+        self.name = model.__name__.lower()
         self.fields       = []
         self.scalarfields = []
         self.multifields  = []
@@ -68,6 +74,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.verbose_name = verbose_name or self.name
         self.maker        = lambda : model.__new__(model)
         model._meta       = self
+        hashmodel(model)
         
         try:
             pk = fields['id']
@@ -130,7 +137,7 @@ the model table'''
         obj = self.maker()
         setattr(obj,'id',id)
         if data:
-            for field,value in izip(self.scalarfields,data):
+            for field,value in zip(self.scalarfields,data):
                 setattr(obj,field.attname,field.to_python(value))
         obj.afterload()
         return obj
@@ -184,10 +191,10 @@ class StdNetType(type):
         return new_class
     
 
-
 def meta_options(abstract = False,
                  keyprefix = None,
                  **kwargs):
     return {'abstract': abstract,
             'keyprefix': keyprefix}
     
+

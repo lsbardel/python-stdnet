@@ -97,7 +97,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     default=NoValue
     
     def __init__(self, unique = False, ordered = False, primary_key = False,
-                 required = True, index = True, default=NoValue):
+                 required = True, index = True, default=NoValue, **extras):
         self.primary_key = primary_key
         if primary_key:
             self.unique   = True
@@ -112,6 +112,15 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.name     = None
         self.model    = None
         self.default  = default if default is not NoValue else self.default
+        self._handle_extras(**extras)
+        
+    def _handle_extras(self, **extras):
+        self.error_extras(extras)
+        
+    def error_extras(self, extras):
+        keys = list(extras)
+        if keys:
+            raise TypeError("__init__() got an unexepcted keyword argument '{0}'".format(keys[0]))
         
     def __str__(self):
         return '%s.%s' % (self.meta,self.name)

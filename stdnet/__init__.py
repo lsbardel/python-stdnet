@@ -1,5 +1,5 @@
 '''A networked standard template library for Python.'''
-VERSION = (0, 4, 3)
+VERSION = (0, 5, 0)
  
 def get_version():
     if len(VERSION) == 3:

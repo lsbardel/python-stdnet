@@ -1,18 +1,16 @@
 from cgi import parse_qsl
 
 from stdnet.conf import settings
-from stdnet.utils import import_module
+from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
 
 
 BACKENDS = {
-    'memcached': 'memcached',
     'locmem': 'locmem',
     'file': 'filebased',
     'db': 'db',
     'dummy': 'dummy',
     'redis': 'redisb',
-    'couchdb': 'couchdbb'
 }
 
 

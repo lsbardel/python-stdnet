@@ -4,9 +4,11 @@ import unittest
 import types
 
 from stdnet import orm
-from stdnet.utils import import_modules
+from stdnet.utils.importer import import_modules
+
 
 TextTestRunner = unittest.TextTestRunner
+
 
 class TestCase(unittest.TestCase):
     

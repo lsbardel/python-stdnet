@@ -28,22 +28,6 @@ def add2path():
     if path not in sys.path:
         sys.path.insert(0,path)
     return path
-        
-        
-def setup_tests(backend = 'redis://127.0.0.1:6379/?db=13'):
-    from stdnet.conf import settings
-    settings.DEFAULT_BACKEND = backend
-    add2path()
-    
-    
-def runtests(tags = None, itags = None, verbosity = 1, backend = None):
-    from stdnet.conf import settings
-    backend = backend or 'redis://127.0.0.1:6379/?db=13'
-    std = settings.DEFAULT_BACKEND
-    setup_tests(backend)
-    from stdnet.tests.runtests import run
-    run(tags = tags, itags = itags, verbosity = verbosity)
-    settings.DEFAULT_BACKEND = std
 
 
 def runbench(tags = None, backend = None):

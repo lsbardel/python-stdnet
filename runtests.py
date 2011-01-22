@@ -30,10 +30,15 @@ def makeoptions():
     
 if __name__ == '__main__':
     options, tags = makeoptions().parse_args()
+    # add the tests directory to the Python Path
+    p = os.path
+    path = p.join(p.split(p.abspath(__file__))[0],'tests')
+    sys.path.insert(0, path)
+    from testsrunner import run
     server = options.server
     itags  = options.itags.replace(' ','')
     itags  = None if not itags else itags.split(',')
-    stdnet.runtests(tags,
-                    itags=itags,
-                    verbosity=options.verbosity,
-                    backend=options.server)
+    run(tags,
+        itags=itags,
+        verbosity=options.verbosity,
+        backend=options.server)

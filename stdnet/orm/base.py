@@ -167,17 +167,23 @@ class StdNetType(type):
         
         # remove the Meta class if present
         meta      = attrs.pop('Meta', None)
+        if meta:
+            kwargs   = meta_options(**meta.__dict__)
+        else:
+            kwargs   = meta_options()
+        
+        if kwargs['abstract']:
+            return super_new(cls, name, bases, attrs)
+        
         # remove and build field list
         fields    = get_fields(bases, attrs)        
         # create the new class
         objects   = attrs.pop('objects',None)
         new_class = super_new(cls, name, bases, attrs)
         new_class.objects = objects
-        if meta:
-            kwargs   = meta_options(**meta.__dict__)
-        else:
-            kwargs   = {}
-        if kwargs.pop('app_label',None) is None:
+        app_label = kwargs.pop('app_label')
+        
+        if app_label is None:
             model_module = sys.modules[new_class.__module__]
             try:
                 app_label = model_module.__name__.split('.')[-2]
@@ -193,8 +199,10 @@ class StdNetType(type):
 
 def meta_options(abstract = False,
                  keyprefix = None,
+                 app_label = None,
                  **kwargs):
     return {'abstract': abstract,
-            'keyprefix': keyprefix}
+            'keyprefix': keyprefix,
+            'app_label':app_label}
     
 

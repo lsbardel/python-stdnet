@@ -1,13 +1,20 @@
 import copy
+import logging
+
 from stdnet import utils
 from stdnet import getdb
+from stdnet.utils.importer import import_module
 
-from query import Manager, UnregisteredManager
+from .query import Manager, UnregisteredManager
+from .base import StdNetType
 
+
+logger = logging.getLogger('stdnet.mapper')
 
 __all__ = ['clearall',
            'register',
            'unregister',
+           'register_applications',
            'Manager',
            'UnregisteredManager']
 
@@ -65,6 +72,35 @@ def unregister(model):
     global _registry 
     _registry.pop(model,None)
     model._meta.cursor = None
+
+
+
+def register_applications(applications, app_defaults = None, **kwargs):
+    app_defaults = app_defaults or {}
+    modules = []
+    for app in applications:
+        mod = import_module(app)
+        modules.append(mod)
+        mod_name = mod.__name__
+        try:
+            models = import_module(app+'.models')
+        except ImportError:
+            logger.debug('No models in ' + app)
+            continue
+        for name in dir(models):
+            obj = getattr(models,name)
+            if isinstance(obj,StdNetType) and hasattr(obj,'_meta'):
+                name = str(obj._meta)
+                if not name in app_defaults:
+                    name = obj._meta.app_label
+                if name in app_defaults:
+                    args = app_defaults[name]
+                else:
+                    args = kwargs
+                register(obj,**args)
+    return modules
+
+
 
 _registry = {}
 

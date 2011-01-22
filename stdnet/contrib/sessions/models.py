@@ -15,7 +15,6 @@ else:
     randrange = random.randrange
 MAX_SESSION_KEY = 18446744073709551616L     # 2 << 63
 
-session_settings = {'SECRET_KEY': None}
 
 class SuspiciousOperation(Exception):
     pass
@@ -26,7 +25,7 @@ class EncodedPickledObjectField(orm.CharField):
     def to_python(self, value):
         encoded_data = base64.decodestring(self.data)
         pickled, tamper_check = encoded_data[:-32], encoded_data[-32:]
-        if md5_constructor(pickled + session_settings['SECRET_KEY']).hexdigest() != tamper_check:
+        if md5_constructor(pickled + os.environ.get('SESSION_SECRET_KEY')).hexdigest() != tamper_check:
             raise SuspiciousOperation("User tampered with session cookie.")
         try:
             return pickle.loads(pickled)
@@ -35,7 +34,7 @@ class EncodedPickledObjectField(orm.CharField):
         
     def serialise(self, value):
         pickled = pickle.dumps(session_dict)
-        pickled_md5 = md5_constructor(pickled + session_settings['SECRET_KEY']).hexdigest()
+        pickled_md5 = md5_constructor(pickled + os.environ.get('SESSION_SECRET_KEY')).hexdigest()
         return base64.encodestring(pickled + pickled_md5)
 
 
@@ -53,7 +52,7 @@ class SessionManager(orm.Manager):
         except AttributeError:
             pid = 1
         while 1:
-            sk = session_settings['SECRET_KEY']
+            sk = os.environ.get('SESSION_SECRET_KEY')
             id = md5_constructor("%s%s%s%s" % (randrange(0, MAX_SESSION_KEY), pid, time.time(),sk)).hexdigest()
             if not self.exists(id):
                 return id
@@ -64,12 +63,35 @@ class SessionManager(orm.Manager):
         except ObjectNotFound:
             return False
         return True
+    
+    
+class User(orm.StdModel):
+    username = orm.SymbolField(unique = True)
+    password = orm.CharField(required = True)
+    
+    def is_authenticated(self):
+        return True
+    
+    
+class AnonymousUser(object):
+    
+    def is_authenticated(self):
+        return False
 
 
 class Session(orm.StdModel):
+    TEST_COOKIE_NAME = 'testcookie'
+    TEST_COOKIE_VALUE = 'worked'
+    
     id     = orm.SymbolField(primary_key=True)
     data   = orm.HashField()
     expiry = orm.DateTimeField(index = False, required = False)
 
     objects = SessionManager()
+    
+    def __str__(self):
+        return self.id
 
+    def set_test_cookie(self):
+        self.data[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
+        self.save()

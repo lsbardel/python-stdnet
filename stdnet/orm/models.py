@@ -105,17 +105,12 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         return objs
     
     def todict(self):
-        odict = self.__dict__.copy()
-        meta = odict.pop('_meta')
-        for name,field in meta.fields.items():
-            val = field.serialize()
-            if val is not None:
-                odict[name] = val
-            else:
-                if field.required:
-                    raise ValueError("Field %s is required" % name)
-                else:
-                    odict.pop(name,None)
+        odict = {}
+        for field in self._meta.scalarfields:
+            value = getattr(self,field.attname,None)
+            value = field.serialize(value)
+            if value:
+                odict[field.name] = value
         return odict
     
     def model_to_dict(self, fields = None, exclude = None):
@@ -139,4 +134,13 @@ will enumerate the number of object to delete. without deleting them.'''
 
 
 def model_to_dict(instance, fields = None, exclude = None):
-    return {}
+    if isinstance(instance,StdModel):
+        return instance.todict()
+    else:
+        d = {}
+        for field in instance._meta.fields:
+            default = field.get_default()
+            if default:
+                d[field.name] = default
+        return d
+                

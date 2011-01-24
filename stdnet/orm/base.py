@@ -172,8 +172,8 @@ class StdNetType(type):
         else:
             kwargs   = meta_options()
         
-        if kwargs['abstract']:
-            return super_new(cls, name, bases, attrs)
+        #if kwargs['abstract']:
+        #    return super_new(cls, name, bases, attrs)
         
         # remove and build field list
         fields    = get_fields(bases, attrs)        

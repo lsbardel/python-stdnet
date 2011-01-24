@@ -181,7 +181,7 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
     def get_default(self):
         "Returns the default value for this field."
         if self.has_default():
-            if callable(self.default):
+            if hasattr(self.default,'__call__'):
                 return self.default()
             else:
                 return self.default

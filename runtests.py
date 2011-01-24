@@ -15,6 +15,11 @@ def makeoptions():
                       dest="verbosity",
                       default=1,
                       help="Tests verbosity level, one of 0, 1, 2 or 3")
+    parser.add_option("-t", "--type",
+                      action="store",
+                      dest="test_type",
+                      default='regression',
+                      help="Test type, possible choices are: regression, bench and profile")
     parser.add_option("-s", "--server",
                       action="store",
                       dest="server",

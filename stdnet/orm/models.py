@@ -5,6 +5,9 @@ from base import StdNetType
 from fields import _novalue
 from stdnet.exceptions import *
 
+__all__ = ['StdModel',
+           'model_to_dict']
+
 
 class StdModel(object):
     '''A model is the single, definitive source of data
@@ -134,3 +137,6 @@ will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
 
+
+def model_to_dict(instance, fields = None, exclude = None):
+    return {}

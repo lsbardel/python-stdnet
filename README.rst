@@ -51,7 +51,7 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.3.2'
+	'0.5.0'
 
 
 Running Tests
@@ -62,12 +62,8 @@ windows and want to save yourself a headache you can download precompiled binari
 
 __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
-Once done that, open a shell and launch Redis. On another shell launch python and type::
-
-	>>> import stdnet
-	>>> stdnet.runtests()
-	
-otherwise from the package directory::
+Once done that, open a shell and launch Redis. On another shell, from the package directory,
+type::
 
 	python runtests.py
 	

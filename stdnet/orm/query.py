@@ -117,7 +117,7 @@ fetching objects.'''
         meta    = self._meta
         fields  = meta.dfields
         result  = {}
-        # Loop over 
+        # Loop over arguments
         for name,value in kwargs.items():
             names = name.split('__')
             N = len(names)
@@ -125,15 +125,20 @@ fetching objects.'''
             if N == 1:
                 field = fields.get(name,None)
                 if not field:
-                    raise QuerySetError("Could not filter. Field %s not defined." % name)
+                    raise QuerySetError("Could not filter. Field {0} not defined.".format(name))
                 value = field.serialize(value)
                 unique = field.unique
             # group lookup filter(name_in ['pippo','luca'])
             elif N == 2 and names[1] == 'in':
-                field = meta.fields.get(names[0],None)
+                name = names[0]
+                field = fields.get(name,None)
                 if not field:
-                    raise QuerySetError("Could not filter. Field %s not defined." % names[0])
-                value = field.hash(value)
+                    raise QuerySetError("Could not filter. Field %s not defined."
+                                        .format(name))
+                if field.unique:
+                    raise QuerySetError("Cannot use in command when filtering unique field {0}."
+                                        .format(name))
+                value = tuple((field.serialize(v) for v in value))
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")

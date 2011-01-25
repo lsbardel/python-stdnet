@@ -32,8 +32,7 @@ view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
 dates = populate('date',NUM_DATES,start=datetime.date(2009,6,1),end=datetime.date(2010,6,6))
 
 
-
-class TestFinanceApplication(TestCase):
+class BaseFinance(TestCase):
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
@@ -49,7 +48,7 @@ class TestFinanceApplication(TestCase):
         for name,ccy in izip(fund_names,fund_ccys):
             Fund(name = name, ccy = ccy).save(False)
         Fund.commit()
-    
+        
     def makePositions(self):
         '''Create Positions objects which hold foreign key to instruments and funds'''
         instruments = Instrument.objects.all()
@@ -62,6 +61,9 @@ class TestFinanceApplication(TestCase):
                     Position(instrument = inst, dt = dt, fund = f).save(False)
         Position.commit()
         return n
+
+
+class TestFinanceApplication(BaseFinance):
         
     def testGetObject(self):
         '''Test get method for id and unique field'''

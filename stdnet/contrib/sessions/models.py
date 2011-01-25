@@ -66,16 +66,23 @@ class SessionManager(orm.Manager):
     
     
 class User(orm.StdModel):
-    username = orm.SymbolField(unique = True)
-    password = orm.CharField(required = True)
+    username  = orm.SymbolField(unique = True)
+    password  = orm.CharField(required = True)
+    superuser = orm.BooleanField(default = False)
     
     def is_authenticated(self):
         return True
+    
+    def is_superuser(self):
+        return self.superuser
     
     
 class AnonymousUser(object):
     
     def is_authenticated(self):
+        return False
+    
+    def is_superuser(self):
         return False
 
 

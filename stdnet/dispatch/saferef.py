@@ -4,8 +4,12 @@
 Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).
 """
-
+import logging
 import weakref, traceback
+
+
+logger = logging.getLogger('stdnet.dispatch')
+
 
 def safeRef(target, onDelete = None):
     """Return a *safe* weak reference to a callable target
@@ -28,10 +32,11 @@ def safeRef(target, onDelete = None):
                 onDelete=onDelete
             )
             return reference
-    if callable(onDelete):
+    if hasattr(onDelete,'__call__'):
         return weakref.ref(target, onDelete)
     else:
         return weakref.ref( target )
+
 
 class BoundMethodWeakref(object):
     """'Safe' and reusable weak references to instance methods
@@ -118,13 +123,12 @@ class BoundMethodWeakref(object):
                 try:
                     if callable( function ):
                         function( self )
-                except Exception, e:
+                except Exception as e:
                     try:
                         traceback.print_exc()
-                    except AttributeError, err:
-                        print '''Exception during saferef %s cleanup function %s: %s'''%(
-                            self, function, e
-                        )
+                    except AttributeError:
+                        logger.error('Exception during saferef {0} cleanup\
+function {1}: {2}'.format(self, function, e))
         self.deletionMethods = [onDelete]
         self.key = self.calculateKey( target )
         self.weakSelf = weakref.ref(target.im_self, remove)

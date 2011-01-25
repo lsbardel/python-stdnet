@@ -1,6 +1,6 @@
 import stdnet
 from stdnet.utils import jsonPickler
-from stdnet import BackendDataServer, ImproperlyConfigured, novalue
+from stdnet import BackendDataServer, ImproperlyConfigured
 from stdnet.backends.structures import structredis
 
 try:

@@ -17,9 +17,9 @@ __homepage__ = "http://code.google.com/p/python-stdnet/"
 
 sphinxtogithub = False
 
-from exceptions import *
+from .exceptions import *
 
-from backends import *
+from .backends import *
 
 def add2path():
     import os

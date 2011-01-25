@@ -1,9 +1,15 @@
-import collections
+import sys
+from collections import *
 
+if sys.version_info < (2,7):
+    from .fallbacks._collections import *
+    
 KEY, PREV, NEXT = range(3)
 
 class OrderedSet(object):
-
+    '''Equivalent to OrderedDict, this is a set class which remembers the
+insertion order.
+From http://code.activestate.com/recipes/576694-orderedset/'''
     def __init__(self, iterable=None):
         self.end = end = [] 
         end += [None, end, end]         # sentinel node for doubly linked list

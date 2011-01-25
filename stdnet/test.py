@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-import types
+from inspect import isclass
 
 from stdnet import orm
 from stdnet.utils.importer import import_modules
@@ -72,7 +72,7 @@ class TestLoader(unittest.TestLoader):
         for module in modules:
             for name in dir(module):
                 obj = getattr(module, name)
-                if (isinstance(obj, (type, types.ClassType)) and
+                if (isclass(obj) and
                     issubclass(obj, unittest.TestCase)):
                     tag = getattr(obj,'tag',None)
                     if tag and not tag in itags:
@@ -161,7 +161,7 @@ class _TestLoader(unittest.TestLoader):
         elems = self.elems
         for name in dir(module):
             obj = getattr(module, name)
-            if (isinstance(obj, (type, types.ClassType)) and issubclass(obj, cls)):
+            if(isclass(obj) and issubclass(obj, cls)):
                 if self.tags:
                     load = False
                     tags = getattr(obj,'tags',None)

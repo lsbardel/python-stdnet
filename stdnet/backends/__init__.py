@@ -1,4 +1,4 @@
-from structures import * 
-from base import BackendDataServer, novalue
-from main import getdb, CacheClass
+from .structures import * 
+from .base import BackendDataServer
+from .main import getdb, CacheClass
 

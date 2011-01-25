@@ -1,9 +1,10 @@
 import copy
-from itertools import izip
 
-from base import StdNetType
-from fields import _novalue
 from stdnet.exceptions import *
+from stdnet.utils import zip
+
+from .base import StdNetType
+
 
 __all__ = ['StdModel',
            'model_to_dict']

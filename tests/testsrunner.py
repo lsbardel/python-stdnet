@@ -50,7 +50,7 @@ def import_tests(tags, test_type):
             
         try:
             mod = import_module(test_module)
-        except ImportError, e:
+        except ImportError as e:
             logger.debug("Could not import tests for %s: %s" % (test_module,e))
             continue
         
@@ -81,7 +81,8 @@ def run(tags = None, test_type = None,
     setup_logging(verbosity)
     test_type = test_type or 'regression'
     if test_type not in TEST_TYPES:
-        raise ValueError('Unknown test type {0}. Must be one of {1}.'.format(test_type, ', '.join(TEST_TYPES)))
+        print(('Unknown test type {0}. Must be one of {1}.'.format(test_type, ', '.join(TEST_TYPES))))
+        exit()
     modules = import_tests(tags, test_type)
     runner  = TestSuiteRunner(verbosity = verbosity, itags = itags)
     runner.run_tests(modules)

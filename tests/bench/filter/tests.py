@@ -1,4 +1,4 @@
-from itertools import izip
+from stdnet.utils import zip
 
 from stdnet import test
 from stdnet.tests.examples.models import Instrument

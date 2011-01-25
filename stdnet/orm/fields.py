@@ -3,14 +3,10 @@ from hashlib import sha1
 import time
 from datetime import date, datetime
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
 from stdnet.exceptions import *
-from stdnet.utils import timestamp2date, date2timestamp
-from stdnet.utils import json, json_compact, DefaultJSONEncoder, DefaultJSONHook
+from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
+                         DefaultJSONHook, timestamp2date, date2timestamp,\
+                         novalue
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -30,13 +26,7 @@ __all__ = ['Field',
            'ForeignKey',
            'JSONField',
            'PickleObjectField',
-           'ModelField',
-           '_novalue']
-
-class NoValue(object):
-    pass
-
-_novalue = NoValue()
+           'ModelField']
 
 
 class Field(object):
@@ -83,7 +73,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 
     Default value for this field.
     
-    Default :class:`NoValue`.
+    Default ``novalue``.
     
 .. attribute:: name
 
@@ -94,10 +84,10 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     The :class:`stdnet.orm.StdModel` holding the field.
     Created by the ``orm`` at runtime. 
 '''
-    default=NoValue
+    default=novalue
     
     def __init__(self, unique = False, ordered = False, primary_key = False,
-                 required = True, index = True, default=NoValue, **extras):
+                 required = True, index = True, default=novalue, **extras):
         self.primary_key = primary_key
         if primary_key:
             self.unique   = True
@@ -111,7 +101,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.meta     = None
         self.name     = None
         self.model    = None
-        self.default  = default if default is not NoValue else self.default
+        self.default  = default if default is not novalue else self.default
         self._handle_extras(**extras)
         
     def _handle_extras(self, **extras):
@@ -176,7 +166,7 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
     
     def has_default(self):
         "Returns a boolean of whether this field has a default value."
-        return self.default is not NoValue
+        return self.default is not novalue
     
     def get_default(self):
         "Returns the default value for this field."

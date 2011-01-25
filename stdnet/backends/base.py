@@ -1,16 +1,9 @@
 from stdnet.exceptions import *
-from structures import Structure
+from stdnet.utils import pickle
+from .structures import Structure
 
-novalue = object()
-
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-#default_pickler = jsonPickler()
 default_pickler = pickle
+
 
 class NoPickle(object):
     

@@ -1,10 +1,9 @@
-from fields import Field, RelatedObject, _novalue
-
 from stdnet.exceptions import *
 from stdnet import pipelines
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
-from query import M2MRelatedManager
+from .fields import Field, RelatedObject
+from .query import M2MRelatedManager
 
 
 __all__ = ['ManyFieldManagerProxy',

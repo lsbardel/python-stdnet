@@ -19,7 +19,10 @@ def makeoptions():
                       action="store",
                       dest="test_type",
                       default='regression',
-                      help="Test type, possible choices are: regression, bench and profile")
+                      help="Test type, possible choices are:\n\
+                      * regression (default)\n\
+                      * bench\n\
+                      * profile")
     parser.add_option("-s", "--server",
                       action="store",
                       dest="server",
@@ -44,6 +47,7 @@ if __name__ == '__main__':
     itags  = options.itags.replace(' ','')
     itags  = None if not itags else itags.split(',')
     run(tags,
+        test_type = options.test_type,
         itags=itags,
         verbosity=options.verbosity,
         backend=options.server)

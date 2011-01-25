@@ -1,10 +1,10 @@
 import time
 from datetime import datetime
 
+from .py2py3 import *
 from .encoding import *
 from .rwlock import *
 from .jsontools import *
-from .odict import *
 from .populate import populate
 from .fields import *
 
@@ -12,6 +12,17 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
+    
+    
+class NoValue(object):
+    
+    def __repr__(self):
+        return '<NoValue>'
+    __str__ = __repr__
+    
+
+novalue = NoValue()
+
 
 
 def date2timestamp(dte):

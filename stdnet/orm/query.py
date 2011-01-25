@@ -1,7 +1,7 @@
 from copy import copy
-from itertools import izip
 
 from stdnet.exceptions import *
+from stdnet.utils import zip
 
 
 class svset(object):
@@ -174,7 +174,7 @@ fetching objects.'''
                 elem = ids[0]
             except TypeError:
                 hash = meta.table()
-                for id,val in izip(ids,hash.mget(ids)):
+                for id,val in zip(ids,hash.mget(ids)):
                     m = model(id,val)
                     seq.append(m)
                     yield m
@@ -183,7 +183,7 @@ fetching objects.'''
                 yield elem
         else:
             hash = meta.table()
-            for id,val in izip(ids,hash.mget(ids)):
+            for id,val in zip(ids,hash.mget(ids)):
                 m = model(id,val)
                 seq.append(m)
                 yield m

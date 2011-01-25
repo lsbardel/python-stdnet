@@ -1,8 +1,7 @@
 from datetime import datetime
-from itertools import izip
 
 from stdnet.test import TestCase
-from stdnet.utils import populate
+from stdnet.utils import populate, zip
 
 from examples.models import Calendar, DateValue
 
@@ -18,7 +17,7 @@ class TestOrderedSet(TestCase):
         self.orm.register(Calendar)
         self.orm.register(DateValue)
         ts = Calendar(name = 'MyCalendar').save()
-        for dt,value in izip(dates,values):
+        for dt,value in zip(dates,values):
             ts.add(dt,value)
         ts.save()
         
@@ -35,6 +34,5 @@ class TestOrderedSet(TestCase):
                 self.assertTrue(event.dt >= dprec)
             dprec = event.dt    
                 
-            
-        
-        
+
+

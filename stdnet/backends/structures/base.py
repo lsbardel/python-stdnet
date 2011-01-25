@@ -288,13 +288,6 @@ class OrderedSet(Set):
         self.pipeline.add((value.score(),self.pickler.dumps(value)))
 
 
-def itemcmp(x,y):
-    if x[0] > y[0]:
-        return 1
-    else:
-        return -1
-
-
 class KeyValueStructure(Structure):
     '''Base class for :class:`HashTable`'''
     def __init__(self, *args, **kwargs):
@@ -401,7 +394,7 @@ This structure is important since it is used in two different parts of the libra
         return keys
             
     def sorteditems(self, desc = True):
-        items = sorted(self.items(),cmp = itemcmp)
+        items = sorted(self.items(),key = lambda t : t[0])
         if not desc:
             items = reversed(items)
         return items

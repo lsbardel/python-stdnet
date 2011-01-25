@@ -1,9 +1,8 @@
-from itertools import izip
 from datetime import datetime, date
 
 from stdnet import test
-from stdnet.contrib.timeserie.tests.models import TimeSeries, TimeSeriesMap
-from stdnet.utils import populate, todate
+from stdnet.contrib.timeserie.tests.models import TimeSeries, HashTimeSeries
+from stdnet.utils import populate, todate, zip
 
 NUM_DATES = 1000
 
@@ -16,8 +15,8 @@ alldata2  = zip(dates2,values)
 testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
-class UpdateMap(test.BenchMark):
-    model = TimeSeriesMap
+class UpdateTimeSerie(test.BenchMark):
+    model = TimeSeries
     number = 100
     tags   = ['timeseries','ts','update']
     def register(self):
@@ -33,12 +32,12 @@ class UpdateMap(test.BenchMark):
         ts.save()
         
 
-class UpdateHash(UpdateMap):
+class UpdateHash(UpdateTimeSerie):
     tags   = ['timeseries','hash','update']
-    model = TimeSeries
+    model = HashTimeSeries
     
     
-class AddToMap(UpdateMap):
+class AddToTimeSeries(UpdateTimeSerie):
     tags   = ['timeseries','ts']
     def run(self):
         ts = self.model(ticker = self.names.next()).save()
@@ -48,7 +47,7 @@ class AddToMap(UpdateMap):
             data.save()
         
             
-class AddToHash(AddToMap):
+class AddToHash(AddToTimeSeries):
     tags   = ['timeseries','hash']
-    model = TimeSeries
+    model = HashTimeSeries
         

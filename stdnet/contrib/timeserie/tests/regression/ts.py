@@ -1,8 +1,8 @@
 from itertools import izip
 from datetime import date, datetime
 
-import hashtimeseries
-from models import TimeSeries
+from stdnet.contrib.timeserie.tests.models import TimeSeries
+from stdnet.contrib.timeserie.tests.regression import hashtimeseries
 
 testdata  = hashtimeseries.testdata
 testdata2 = hashtimeseries.testdata2

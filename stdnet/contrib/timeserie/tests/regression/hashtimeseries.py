@@ -6,7 +6,7 @@ from stdnet.test import TestCase
 from stdnet.contrib.timeserie.utils import dategenerator, default_parse_interval
 from stdnet.utils import populate, todate
 
-from .models import HashTimeSeries, DateHashTimeSeries
+from stdnet.contrib.timeserie.tests.models import HashTimeSeries, DateHashTimeSeries
 
 
 NUM_DATES = 300

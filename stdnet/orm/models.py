@@ -7,6 +7,7 @@ from .base import StdNetType
 
 
 __all__ = ['StdModel',
+           'StdNetType',
            'model_to_dict']
 
 

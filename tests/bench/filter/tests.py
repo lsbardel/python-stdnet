@@ -1,8 +1,8 @@
-from stdnet.utils import zip
-
 from stdnet import test
-from stdnet.tests.examples.models import Instrument
+from stdnet.utils import zip
 from stdnet.utils import populate
+
+from examples.models import Instrument
 
 
 INST_LEN    = 10000
@@ -24,7 +24,7 @@ class FilterUnorderedCount(test.BenchMark):
         self.orm.register(self.model)
         
     def initialise(self):
-        for name,typ,ccy in izip(inst_names,inst_types,inst_ccys):
+        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
             Instrument(name = name, type = typ, ccy = ccy).save(False)
         Instrument.commit()
         

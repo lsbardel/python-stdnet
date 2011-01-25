@@ -1,10 +1,15 @@
-Ver. 0.4.3 - Development
+Ver. 0.5.0 - Development
 ===========================
-* More documentation and tests.
+* Minor bug fixes, more documentation and tests.
+* Added benchmark to tests. To run benchmarks::
+
+    python runtests.py -t bench
+    python runtests.py -t bench tag1 tag2
+    
 * Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
 * Added ``contrib.sessions`` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.
-* **64 tests** (75 including timeseries) with **53% coverage**.
+* **65 tests** (76 including timeseries) with **53% coverage**.
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================
@@ -12,12 +17,7 @@ Ver. 0.4.2 - 2010 Nov 17
 
 	python runtests.py hash
 	
- will run tests specific to hashtables.
-* Added ``bench`` module for benchmarking. To run benchmark::
-
-	python runbench.py
-	python runbench.py tag1 tag2
-	
+ will run tests specific to hashtables.	
 * Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
 * **54** tests.
 

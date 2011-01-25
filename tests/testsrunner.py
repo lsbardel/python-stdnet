@@ -3,12 +3,11 @@ import os
 import sys
 from stdnet.conf import settings
 import stdnet.contrib as contrib
-from stdnet.test import TestSuiteRunner
+from stdnet.test import TEST_TYPES
 from stdnet.utils.importer import import_module 
 
-logger = logging.getLogger()
 
-TEST_TYPES = ('regression','bench','profile')
+logger = logging.getLogger()
 
 LOGGING_MAP = {1: logging.CRITICAL,
                2: logging.INFO,
@@ -66,9 +65,6 @@ def setup_logging(verbosity):
         logger.addHandler(logging.StreamHandler())
         logger.setLevel(level)
         
-        
-
-TEST_TYPES = ('regression','bench','profile')
 
 
 def run(tags = None, test_type = None,
@@ -82,6 +78,10 @@ def run(tags = None, test_type = None,
     test_type = test_type or 'regression'
     if test_type not in TEST_TYPES:
         print(('Unknown test type {0}. Must be one of {1}.'.format(test_type, ', '.join(TEST_TYPES))))
+        exit()
+    TestSuiteRunner = TEST_TYPES[test_type]
+    if not TestSuiteRunner:
+        print(('No test suite for {0}'.format(test_type)))
         exit()
     modules = import_tests(tags, test_type)
     runner  = TestSuiteRunner(verbosity = verbosity, itags = itags)

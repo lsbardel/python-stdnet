@@ -25,6 +25,8 @@ class TestCase(unittest.TestCase):
      
 
 class TestLoader(unittest.TestLoader):
+    '''A modified loader class which load test cases form
+an interable over modules'''
     testClass = unittest.TestCase
     suiteClass = TestSuite
     

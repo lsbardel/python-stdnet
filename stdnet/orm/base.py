@@ -60,25 +60,27 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None, **kwargs):
-        self.abstract  = abstract
+        self.abstract = abstract
         self.keyprefix = keyprefix
-        self.model     = model
+        self.model = model
         self.app_label = app_label
         self.name = model.__name__.lower()
-        self.fields       = []
+        self.fields = []
         self.scalarfields = []
-        self.multifields  = []
-        self.dfields      = {}
-        self.timeout      = 0
-        self.related      = {}
+        self.multifields = []
+        self.dfields = {}
+        self.timeout = 0
+        self.related = {}
         self.verbose_name = verbose_name or self.name
-        self.maker        = lambda : model.__new__(model)
-        model._meta       = self
+        self.maker = lambda : model.__new__(model)
+        model._meta = self
         hashmodel(model)
         
+        # Check if ID field exists
         try:
             pk = fields['id']
         except:
+            # ID field not available, create one
             pk = AutoField(primary_key = True)
         pk.register_with_model('id',model)
         self.pk = pk
@@ -105,14 +107,20 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         return self.__repr__()
         
     def basekey(self, *args):
-        '''Calculate the key to access model hash-table, and model filters in the database.
-        For example::
+        """Calculate the key to access model hash-table/s,
+and model filters in the database. For example::
         
-            >>> a = Author(name = 'Dante Alighieri').save()
-            >>> a.meta.basekey()
-            'stdnet:author'
-            '''
-        key = '%s%s' % (self.keyprefix,self.name)
+    >>> from examples.models import User
+    >>> from orm import register
+    >>> register(User)
+    'redis db 7 on 127.0.0.1:6379'
+    >>> User._meta.basekey()
+    'stdnet.examples.user'
+    >>> a = Author(name = 'Dante Alighieri').save()
+    >>> a.meta.basekey()
+    'stdnet.someappname.author'
+    """
+        key = '%s%s' % (self.keyprefix,self)
         for arg in args:
             key = '%s:%s' % (key,arg)
         return key

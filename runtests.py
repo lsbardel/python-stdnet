@@ -36,12 +36,17 @@ def makeoptions():
     return parser
 
     
-if __name__ == '__main__':
-    options, tags = makeoptions().parse_args()
+def addpath():
     # add the tests directory to the Python Path
     p = os.path
     path = p.join(p.split(p.abspath(__file__))[0],'tests')
-    sys.path.insert(0, path)
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    
+addpath()
+
+if __name__ == '__main__':
+    options, tags = makeoptions().parse_args()
     from testsrunner import run
     server = options.server
     itags  = options.itags.replace(' ','')

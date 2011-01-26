@@ -51,7 +51,8 @@ The model must be registered with a :class:`stdnet.backends.BackendDataServer`
 otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
         meta = self._meta
         if not meta.cursor:
-            raise ModelNotRegistered('Model %s is not registered with a backend database. Cannot save any instance.' % meta.name)
+            raise ModelNotRegistered("Model '{0}' is not registered with a\
+ backend database. Cannot save instance.".format(meta))
         data = []
         indexes = []
         #Loop over scalar fields first
@@ -60,7 +61,8 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             value = getattr(self,name,None)
             serializable = field.serialize(value)
             if serializable is None and field.required:
-                raise FieldError('Field %s has no value for %s' % (field,self))
+                raise FieldError("Field '{0}' has no value for model '{1}'.\
+ Cannot save instance".format(field,meta))
             data.append(serializable)
             if field.index:
                 indexes.append((field,serializable))

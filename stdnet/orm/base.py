@@ -29,8 +29,8 @@ def get_fields(bases, attrs):
 
 class Metaclass(object):
     '''Utility class used for storing all information
-which maps a :class:`stdnet.orm.StdModel` model
-into a :class:`stdnet.HashTable` structure in a :class:`stdnet.BackendDataServer`.
+which maps a :class:`stdnet.orm.StdModel` model into an object in the
+in the remote :class:`stdnet.BackendDataServer`.
 An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 
 .. attribute:: model

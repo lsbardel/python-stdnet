@@ -87,6 +87,7 @@ class AnonymousUser(object):
 
 
 class Session(orm.StdModel):
+    '''A simple session model'''
     TEST_COOKIE_NAME = 'testcookie'
     TEST_COOKIE_VALUE = 'worked'
     
@@ -102,3 +103,4 @@ class Session(orm.StdModel):
     def set_test_cookie(self):
         self.data[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
         self.save()
+

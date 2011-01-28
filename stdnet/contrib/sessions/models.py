@@ -76,6 +76,18 @@ class User(orm.StdModel):
     def is_superuser(self):
         return self.superuser
     
+    @classmethod
+    def authenticate(cls, **credentials):
+        pass
+    
+    @classmethod
+    def login(cls, request, user):
+        pass
+    
+    @classmethod
+    def logout(cls, request):
+        pass
+    
     
 class AnonymousUser(object):
     
@@ -94,7 +106,7 @@ class Session(orm.StdModel):
     id     = orm.SymbolField(primary_key=True)
     data   = orm.HashField()
     expiry = orm.DateTimeField(index = False, required = False)
-
+    
     objects = SessionManager()
     
     def __str__(self):

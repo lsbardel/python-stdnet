@@ -103,7 +103,7 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     
     def todict(self):
         odict = self.__dict__.copy()
-        meta = odict.pop('_meta')
+        meta = odict.pop('_meta',None)
         for name,field in meta.fields.items():
             val = field.serialize()
             if val is not None:

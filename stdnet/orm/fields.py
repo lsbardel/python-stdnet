@@ -6,7 +6,7 @@ from datetime import date, datetime
 from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
-                         novalue
+                         UnicodeMixin, novalue, to_string
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -29,7 +29,7 @@ __all__ = ['Field',
            'ModelField']
 
 
-class Field(object):
+class Field(UnicodeMixin):
     '''This is the base class of all StdNet Fields.
 Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
@@ -112,11 +112,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         if keys:
             raise TypeError("__init__() got an unexepcted keyword argument '{0}'".format(keys[0]))
         
-    def __str__(self):
-        return '%s.%s' % (self.meta,self.name)
-    
-    def __repr__(self):
-        return '%s: %s' % (self.__class__.__name__,self)
+    def __unicode__(self):
+        return to_string('%s.%s' % (self.meta,self.name))
         
     def to_python(self, value):
         """Converts the input value into the expected Python

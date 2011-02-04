@@ -11,7 +11,8 @@ __all__ = ['string_type',
            'itervalues',
            'pickle',
            'map',
-           'zip']
+           'zip',
+           'UnicodeMixin']
 
 
 def ispy3k():
@@ -26,6 +27,16 @@ if ispy3k(): # Python 3
     is_string = lambda x : isinstance(x,str)
     zip = zip
     map = map
+    
+    class UnicodeMixin(object):
+        
+        def __unicode__(self):
+            return '{0} object'.format(self.__class__.__name__)
+        __str__ = __unicode__
+        
+        def __repr__(self):
+            return '%s: %s' % (self.__class__.__name__,self)
+    
 else: # Python 2
     from itertools import izip as zip
     from itertools import imap as map
@@ -34,7 +45,17 @@ else: # Python 2
     itervalues = lambda d : d.itervalues()
     iteritems = lambda d : d.iteritems()
     is_string = lambda x : isinstance(x,basestring)
-
+    
+    class UnicodeMixin(object):
+        
+        def __unicode__(self):
+            return u'{0} object'.format(self.__class__.__name__)
+        
+        def __str__(self):
+            return self.__unicode__().encode()
+        
+        def __repr__(self):
+            return u'%s: %s' % (self.__class__.__name__,self)
     
 try:
     int_type = (types.IntType, types.LongType)

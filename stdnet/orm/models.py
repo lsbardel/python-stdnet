@@ -1,7 +1,7 @@
 import copy
 
 from stdnet.exceptions import *
-from stdnet.utils import zip
+from stdnet.utils import zip, UnicodeMixin
 
 from .base import StdNetType
 
@@ -11,7 +11,7 @@ __all__ = ['StdModel',
            'model_to_dict']
 
 
-class StdModel(object):
+class StdModel(UnicodeMixin):
     '''A model is the single, definitive source of data
 about your data. It contains the essential fields and behaviors
 of the data you're storing. Each model class
@@ -38,12 +38,6 @@ the :attr:`StdModel._meta` attribute.
             raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
         #for field in self._meta.multifields:
         #    setattr(self,field.attname,field.to_python(self))
-        
-    def __repr__(self):
-        return '%s: %s' % (self.__class__.__name__,self)
-    
-    def __str__(self):
-        return ''
     
     def save(self, commit = True):
         '''Save the instance in the remote :class:`stdnet.HashTable`

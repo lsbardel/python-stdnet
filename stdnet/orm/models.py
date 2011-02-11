@@ -24,7 +24,7 @@ the :attr:`StdModel._meta` attribute.
     
 '''
     __metaclass__ = StdNetType
-    ObjectNotFound = ObjectNotFound
+    DoesNotExist = ObjectNotFound
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:

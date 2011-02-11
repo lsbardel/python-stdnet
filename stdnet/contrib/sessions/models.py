@@ -86,7 +86,7 @@ class SessionManager(orm.Manager):
     
 class UserManager(orm.Manager):
     
-    def create_user(self, username, password=None, email=None, superuser = False):
+    def create_user(self, username, password=None, email=None, is_superuser = False):
         if email:
             try:
                 email_name, domain_part = email.strip().split('@', 1)
@@ -99,28 +99,28 @@ class UserManager(orm.Manager):
 
         user = self.model(username=username,
                           #email=email,
-                          superuser=superuser)
+                          is_superuser=is_superuser)
 
         user.set_password(password)
         return user.save()
 
     def create_superuser(self, username, password = None, email = None):
-        return self.create_user(username, email, password, superuser = True)
+        return self.create_user(username, email, password, is_superuser = True)
     
     
 class User(orm.StdModel):
-    username  = orm.SymbolField(unique = True)
-    password  = orm.CharField(required = True)
+    username = orm.SymbolField(unique = True)
+    password = orm.CharField(required = True)
     is_active = orm.BooleanField(default = True)
-    superuser = orm.BooleanField(default = False)
+    is_superuser = orm.BooleanField(default = False)
     
     objects = UserManager()
     
+    def __unicode__(self):
+        return self.username
+    
     def is_authenticated(self):
         return True
-    
-    def is_superuser(self):
-        return self.superuser
     
     def set_password(self, raw_password):
         if raw_password:
@@ -139,10 +139,6 @@ class User(orm.StdModel):
         return check_password(raw_password, self.password)
     
     @classmethod
-    def authenticate(cls, **credentials):
-        pass
-    
-    @classmethod
     def login(cls, request, user):
         pass
     
@@ -152,15 +148,16 @@ class User(orm.StdModel):
     
     
 class AnonymousUser(object):
+    '''Anonymous user ala django'''
+    is_active = False
+    is_superuser = False
     
     def is_authenticated(self):
         return False
     
-    def is_superuser(self):
-        return False
-
 
 class Group(orm.StdModel):
+    '''simple group'''
     name  = orm.SymbolField(unique = True)
     users = orm.ManyToManyField(User, related_name = 'groups')
     
@@ -174,20 +171,45 @@ class Permission(orm.StdModel):
     
 
 class Session(orm.StdModel):
-    '''A simple session model'''
     TEST_COOKIE_NAME = 'testcookie'
     TEST_COOKIE_VALUE = 'worked'
     
-    id     = orm.SymbolField(primary_key=True)
-    data   = orm.HashField()
+    '''A simple session model with instances living in Redis.'''
+    id = orm.SymbolField(primary_key=True)
+    data = orm.HashField()
+    started = orm.DateTimeField(index = False, required = False)
     expiry = orm.DateTimeField(index = False, required = False)
+    expired = orm.BooleanField(default = False)
+    modified = True
     
     objects = SessionManager()
     
     def __str__(self):
         return self.id
+    
+    def __contains__(self, key):
+        return key in self.data
+    
+    def __getitem__(self, key):
+        return self.data[key]
+    
+    def __setitem__(self, key, val):
+        self.data[key] = val
+        self.data.save()
+        
+    def __delitem__(self, key):
+        del self.data[key]
+        self.data.save()
 
     def set_test_cookie(self):
-        self.data[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
-        self.save()
+        self[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
+        self.data.save()
 
+    def test_cookie_worked(self):
+        return self.get(self.TEST_COOKIE_NAME) == self.TEST_COOKIE_VALUE
+
+    def delete_test_cookie(self):
+        del self[self.TEST_COOKIE_NAME]
+        self.data.save()
+    
+    

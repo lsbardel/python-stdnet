@@ -162,36 +162,37 @@ fetching objects.'''
         if self._seq is not None:
             for m in self._seq:
                 yield m
-        self.buildquery()
-        meta  = self._meta
-        model = meta.make
-        ids   = self.qset
-        seq   = []
-        self._seq = seq
-        
-        if self.isall:
-            for id,val in ids.items():
-                m = model(id,val)
-                seq.append(m)
-                yield m
-        elif len(ids) == 1:
-            try:
-                elem = ids[0]
-            except TypeError:
+        else:
+            self.buildquery()
+            meta  = self._meta
+            model = meta.make
+            ids   = self.qset
+            seq   = []
+            self._seq = seq
+            
+            if self.isall:
+                for id,val in ids.items():
+                    m = model(id,val)
+                    seq.append(m)
+                    yield m
+            elif len(ids) == 1:
+                try:
+                    elem = ids[0]
+                except TypeError:
+                    hash = meta.table()
+                    for id,val in zip(ids,hash.mget(ids)):
+                        m = model(id,val)
+                        seq.append(m)
+                        yield m
+                else:
+                    seq.append(elem)
+                    yield elem
+            else:
                 hash = meta.table()
                 for id,val in zip(ids,hash.mget(ids)):
                     m = model(id,val)
                     seq.append(m)
                     yield m
-            else:
-                seq.append(elem)
-                yield elem
-        else:
-            hash = meta.table()
-            for id,val in zip(ids,hash.mget(ids)):
-                m = model(id,val)
-                seq.append(m)
-                yield m
     
     def __iter__(self):
         return self.items()

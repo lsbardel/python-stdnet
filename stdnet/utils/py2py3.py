@@ -34,7 +34,9 @@ if ispy3k(): # Python 3
         
         def __unicode__(self):
             return '{0} object'.format(self.__class__.__name__)
-        __str__ = __unicode__
+        
+        def __str__(self):
+            return self.__unicode__()
         
         def __repr__(self):
             return '%s: %s' % (self.__class__.__name__,self)

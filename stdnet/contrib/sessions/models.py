@@ -3,14 +3,10 @@ import os
 import time
 import random
 import hashlib
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
 from stdnet import orm
 from stdnet import ObjectNotFound
-from stdnet.utils.hash import md5_constructor
+from stdnet.utils import pickle, to_bytestring
 
 # Use the system (hardware-based) random number generator if it exists.
 if hasattr(random, 'SystemRandom'):
@@ -53,7 +49,7 @@ class EncodedPickledObjectField(orm.CharField):
         
     def serialise(self, value):
         pickled = pickle.dumps(session_dict)
-        pickled_md5 = md5_constructor(pickled + os.environ.get('SESSION_SECRET_KEY')).hexdigest()
+        pickled_sha = md5_constructor(pickled + os.environ.get('SESSION_SECRET_KEY')).hexdigest()
         return base64.encodestring(pickled + pickled_md5)
 
 
@@ -71,8 +67,9 @@ class SessionManager(orm.Manager):
         except AttributeError:
             pid = 1
         while 1:
-            sk = os.environ.get('SESSION_SECRET_KEY')
-            id = md5_constructor("%s%s%s%s" % (randrange(0, MAX_SESSION_KEY), pid, time.time(),sk)).hexdigest()
+            sk = os.environ.get('SESSION_SECRET_KEY') or ''
+            val = to_bytestring("%s%s%s%s" % (randrange(0, MAX_SESSION_KEY), pid, time.time(),sk))
+            id = hashlib.sha1(val).hexdigest()
             if not self.exists(id):
                 return id
 

@@ -1,8 +1,9 @@
 import stdnet
-from stdnet.utils import jsonPickler, iteritems
+from stdnet.utils import jsonPickler, iteritems, to_string
 from stdnet import BackendDataServer, ImproperlyConfigured
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis
+
 
 class BackendDataServer(stdnet.BackendDataServer):
 
@@ -23,6 +24,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.incr            = redispy.incr
         self.clear           = redispy.flushdb
         self.sinter          = redispy.sinter
+        self.sdiff           = redispy.sdiff
         self.sinterstore     = redispy.sinterstore
         self.sunionstore     = redispy.sunionstore
         self.delete          = redispy.delete
@@ -143,4 +145,9 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
         if commit:
             self.commit()
     
-    
+    def flush(self, meta, count):
+        if count is not None:
+            count[str(meta)] = meta.table().size()
+        keys = self.keys(meta.basekey()+b'*')
+        if keys:
+            self.delete(*keys)

@@ -1,7 +1,7 @@
 from copy import copy
 
 from stdnet.exceptions import *
-from stdnet.utils import zip
+from stdnet.utils import zip, to_bytestring
 
 
 class QuerySet(object):
@@ -67,14 +67,13 @@ fetching objects.'''
         
     def __contains__(self, val):
         if isinstance(val,self.model):
-            id = val.id
-        else:
-            try:
-                id = int(val)
-            except:
-                return False
+            val = val.id
+        try:
+            val = to_bytestring(val)
+        except:
+            return False
         self.buildquery()
-        return str(id) in self.qset
+        return val in self.qset
         
     def __len__(self):
         return self.count()
@@ -84,7 +83,10 @@ fetching objects.'''
         if self.qset is not None:
             return
         meta = self._meta
-        fargs = self.aggregate(self.fargs)
+        if self.fargs:
+            fargs = self.aggregate(self.fargs)
+        else:
+            fargs = None
         if self.eargs:
             eargs = self.aggregate(self.eargs)
         else:

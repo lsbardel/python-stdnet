@@ -1,10 +1,9 @@
-from itertools import izip
 from datetime import date, datetime
 from random import uniform
 
 from stdnet.test import TestCase
 from stdnet.contrib.timeserie.utils import dategenerator, default_parse_interval
-from stdnet.utils import populate, todate
+from stdnet.utils import populate, todate, zip
 
 from stdnet.contrib.timeserie.tests.models import HashTimeSeries, DateHashTimeSeries
 
@@ -14,8 +13,8 @@ NUM_DATES = 300
 dates     = populate('date',NUM_DATES)
 dates2    = populate('date',NUM_DATES,start=date(2009,1,1),end=date(2010,1,1))
 values    = populate('float',NUM_DATES, start = 10, end = 400)
-alldata   = list(izip(dates,values))
-alldata2  = list(izip(dates2,values))
+alldata   = list(zip(dates,values))
+alldata2  = list(zip(dates2,values))
 testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
@@ -49,7 +48,7 @@ class TestHashTimeSeries(TestCase):
         ts = self.get()
         intervals = ts.intervals(a,b)
         self.assertEqual(len(intervals),len(targets))
-        for interval,target in izip(intervals,targets):
+        for interval,target in zip(intervals,targets):
             x = interval[0]
             y = interval[1]
             self.assertEqual(x,target[0])

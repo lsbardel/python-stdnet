@@ -15,7 +15,7 @@ class User(orm.StdModel):
     password  = orm.AtomField()
     updates   = orm.ListField()
     
-    def __str__(self):
+    def __unicode__(self):
         return self.username
     
     def newupdate(self, data):

@@ -128,7 +128,7 @@ class HashTable(structures.HashTable):
         return self.cursor.execute_command('HKEYS', self.id)
     
     def _items(self):
-        return self.cursor.execute_command('HGETALL', self.id).iteritems()
+        return iteritems(self.cursor.execute_command('HGETALL', self.id))
         #return riteritems(self, 'HGETALL', self.id)
 
     def values(self):
@@ -195,7 +195,7 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
             
     def _save(self):
         items = []
-        [items.extend(item) for item in self.pipeline.iteritems()]
+        [items.extend(item) for item in iteritems(self.pipeline)]
         return self.cursor.execute_command('TSADD',self.id,*items)
     
     def add_expiry(self):

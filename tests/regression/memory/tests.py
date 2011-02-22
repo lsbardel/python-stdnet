@@ -1,9 +1,9 @@
-from stdnet.test import TestCase
+from stdnet import test
 from stdnet.utils.collections import OrderedDict
 from stdnet.utils import populate, zip
 
 
-class TestOrderedDict(TestCase):
+class TestOrderedDict(test.TestCase):
     
     def setUp(self):
         self.keys = populate(datatype = 'date', size = 100)

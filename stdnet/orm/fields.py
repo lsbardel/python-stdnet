@@ -195,7 +195,10 @@ value with a specific data type. it can be of four different types:
 * symbol
 '''
     type = None
-
+    
+    def to_python(self, value):
+        return to_string(value)
+    
 
 class SymbolField(AtomField):
     '''An :class:`AtomField` which contains a ``symbol``.
@@ -207,7 +210,7 @@ or other entities.'''
         if value is not None:
             value = str(value)
         return value
-
+    
 
 class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
@@ -220,6 +223,9 @@ class IntegerField(AtomField):
                 raise FieldValueError('Field is not a valid integer')
         return value
     
+    def to_python(self, value):
+        return int(value)
+    
     
 class BooleanField(AtomField):
     '''An boolean :class:`AtomField`'''
@@ -227,6 +233,9 @@ class BooleanField(AtomField):
     def serialise(self, value):
         return True if value else False
         
+    def to_python(self, value):
+        return True if value else False
+    
     
 class AutoField(IntegerField):
     '''An :class:`IntegerField` that automatically increments.
@@ -260,6 +269,9 @@ its :attr:`Field.index` is set to ``False``.
                 raise FieldValueError('Field is not a valid float')
         return value
     
+    def to_python(self, value):
+        return float(value)
+    
     
 class DateField(AtomField):
     '''An date :class:`AtomField` represented in Python by
@@ -290,7 +302,7 @@ a :class:`datetime.datetime` instance.'''
         return value
 
 
-class CharField(Field):
+class CharField(AtomField):
     '''A text :class:`Field` which is never an index.
 It contains strings and by default :attr:`Field.required`
 is set to ``False``.'''

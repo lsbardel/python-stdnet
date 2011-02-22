@@ -1,15 +1,15 @@
 import random
-from itertools import izip
 
 import stdnet
-from stdnet.test import TestCase
+from stdnet import test
 from examples.models import SimpleModel
 from stdnet.utils import populate
 
 LEN = 100
 names = populate('string',LEN, min_len = 5, max_len = 20)
 
-class TestManager(TestCase):
+
+class TestManager(test.TestCase):
     
     def setUp(self):
         self.orm.register(SimpleModel)
@@ -74,12 +74,13 @@ class TestManager(TestCase):
         self.assertRaises(stdnet.QuerySetError,filter1)
         
     def testContainsAll(self):
+        '''Test filter when performing a all request'''
         self.fill()
         qs = SimpleModel.objects.all()
         self.assertEqual(qs.qset,None)
         self.assertFalse('ciao' in qs)
-        self.assertEqual(qs.qset,None)
-        self.assertTrue(1 in qs)
         self.assertTrue(qs.qset)
+        self.assertTrue(1 in qs)
         self.assertEqual(qs._seq,None)
+        
         

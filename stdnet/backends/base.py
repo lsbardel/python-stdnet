@@ -233,6 +233,9 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
     
     def _set_keys(self):
         raise NotImplementedError
+    
+    def flush(self, meta, count = None):
+        raise NotImplementedError
             
     # DATASTRUCTURES
     

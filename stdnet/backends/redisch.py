@@ -30,13 +30,12 @@ class BackendDataServer(BackendDataServer0):
         # filter_sets are ids from fields
         #
         qset = None
-        temp_ids = None
+        temp_ids = []
         idset = self.idset(meta)
             
         filters = None
         if fargs:
             filters = []
-            temp_ids = []
             for name,data in iteritems(fargs):
                 values,unique = data
                 if unique:
@@ -85,8 +84,22 @@ class BackendDataServer(BackendDataServer0):
                 return qset
             
         if eargs:
-            skeys = [idset.id] + [meta.basekey(name,value) for name,value in iteritems(eargs)]
-            eset  = self.sdiff(skeys)
+            excludes = []
+            for name,data in iteritems(eargs):
+                values,unique = data
+                if unique:
+                    raise NotImplemented('Unique field exclude not working yet')
+                else:
+                    if len(values) == 1:
+                        excludes.append(meta.basekey(name,values[0]))
+                    else:
+                        insersept = [meta.basekey(name,value) for value in values]
+                        id = gen_unique_id()
+                        temp_ids.append(id)
+                        self.sunionstore(id,insersept)
+                        excludes.append(id)
+            excludes.insert(0,idset.id)
+            eset  = self.sdiff(excludes)
             if qset:
                 qset = qset.intersection(eset)
             else:
@@ -101,7 +114,8 @@ class BackendDataServer(BackendDataServer0):
     
     def make_object(self, meta, id , data):
         obj = meta.maker()
-        setattr(obj,'id',id)
+        field = meta.pk
+        setattr(obj,'id',field.to_python(id))
         for field in meta.scalarfields:
             name = field.attname
             if name in data:

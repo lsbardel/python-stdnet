@@ -73,6 +73,7 @@ class TestDeleteScalarFields(test.TestCase):
         return n
         
     def testFlushSimpleModel(self):
+        '''Use the class method flush to remove all instances of a Model including filters.'''
         self.makeInstruments()
         Instrument.flush()
         self.assertEqual(Instrument.objects.all().count(),0)

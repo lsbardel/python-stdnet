@@ -307,9 +307,7 @@ class Redis(threading.local):
         """
         return Pipeline(
             self.connection,
-            transaction,
-            self.encoding,
-            self.errors
+            transaction
             )
 
 
@@ -574,7 +572,7 @@ class Redis(threading.local):
         """
         return self.execute_command('INCRBY', name, amount)
 
-    def keys(self, pattern='*'):
+    def keys(self, pattern=b'*'):
         "Returns a list of keys matching ``pattern``"
         return self.execute_command('KEYS', pattern)
 
@@ -1221,11 +1219,9 @@ class Pipeline(Redis):
     ResponseError exceptions, such as those raised when issuing a command
     on a key of a different datatype.
     """
-    def __init__(self, connection, transaction, charset, errors):
+    def __init__(self, connection, transaction):
         self.connection = connection
         self.transaction = transaction
-        self.encoding = charset
-        self.errors = errors
         self.subscribed = False # NOTE not in use, but necessary
         self.reset()
 

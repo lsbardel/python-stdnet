@@ -1,4 +1,3 @@
-from itertools import izip
 from datetime import date, datetime
 
 from stdnet.contrib.timeserie.tests.models import TimeSeries

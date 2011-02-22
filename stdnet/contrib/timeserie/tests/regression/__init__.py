@@ -1,2 +1,2 @@
-from hashtimeseries import *
-from ts import *
+from .hashtimeseries import *
+from .ts import *

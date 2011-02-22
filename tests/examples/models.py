@@ -18,6 +18,9 @@ class SimpleModel(orm.StdModel):
     
     objects = CustomManager()
     
+    def __unicode__(self):
+        return self.code
+    
     
     
 
@@ -28,7 +31,7 @@ class Base(orm.StdModel):
     ccy  = orm.SymbolField()
     
     def __unicode__(self):
-        return str(self.name)
+        return self.name
     
     class Meta:
         abstract = True

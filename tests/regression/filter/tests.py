@@ -9,11 +9,64 @@ class TestFiler(fintests.BaseFinance):
         self.assertTrue(qs.count() > 0)
         
     def testFilterIn(self):
+        filter = Instrument.objects.filter
+        eur = dict(((o.id,o) for o in filter(ccy = 'EUR')))
+        usd = dict(((o.id,o) for o in filter(ccy = 'USD')))
+        all = set(eur).union(set(usd))
         CCYS = ('EUR','USD')
-        qs = Instrument.objects.filter(ccy__in = CCYS)
+        qs = filter(ccy__in = CCYS)
+        us = set()
+        for inst in qs:
+            us.add(inst.id)
+            self.assertTrue(inst.ccy in CCYS)
+        zero = all - us
+        self.assertTrue(qs)
+        self.assertEqual(len(zero),0)
+        
+    def testDoubleFilter(self):
+        qs = Instrument.objects.filter(ccy = 'EUR',type = 'future')
+        for inst in qs:
+            self.assertEqual(inst.ccy,'EUR')
+            self.assertEqual(inst.type,'future')
+            
+    def testDoubleFilterIn(self):
+        CCYS = ('EUR','USD')
+        qs = Instrument.objects.filter(ccy__in = CCYS,type = 'future')
         for inst in qs:
             self.assertTrue(inst.ccy in CCYS)
-        #self.assertTrue(qs.count()>0)
+            self.assertEqual(inst.type,'future')
+            
+    def testDoubleInFilter(self):
+        CCYS = ('EUR','USD','JPY')
+        types = ('equity','bond','future')
+        qs = Instrument.objects.filter(ccy__in = CCYS, type__in = types)
+        for inst in qs:
+            self.assertTrue(inst.ccy in CCYS)
+            self.assertTrue(inst.type in types)
+            
+    def testSimpleExcludeFilter(self):
+        qs = Instrument.objects.exclude(ccy = 'JPY')
+        for inst in qs:
+            self.assertNotEqual(inst.ccy,'JPY')
+            
+    def testExcludeFilterin(self):
+        CCYS = ('EUR','GBP','JPY')
+        A = Instrument.objects.filter(ccy__in = CCYS)
+        B = Instrument.objects.exclude(ccy__in = CCYS)
+        for inst in B:
+            self.assertTrue(inst.ccy not in CCYS)
+        all = dict(((o.id,o) for o in A))
+        all.update(dict(((o.id,o) for o in B)))
+        self.assertTrue(len(all),Instrument.objects.all().count())
+        
+    def testDoubleExclude(self):
+        CCYS = ('EUR','GBP','JPY')
+        types = ('equity','bond','future')
+        A = Instrument.objects.exclude(ccy__in = CCYS, type__in = types)
+        for inst in A:
+            self.assertTrue(inst.ccy not in CCYS)
+            self.assertTrue(inst.type not in types)
+        self.assertTrue(len(A))
         
     def testChangeFilter(self):
         '''Change the value of a filter field and perform filtering to check for zero values'''

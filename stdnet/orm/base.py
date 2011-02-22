@@ -128,12 +128,8 @@ The key is an encoded binary string. For example::
         return to_bytestring(key)
     
     def autoid(self):
+        '''The id for autoincrements ids'''
         return self.basekey('ids')
-    
-    @property
-    def uniqueid(self):
-        '''Unique id for an instance. This is unique across multiple model types.'''
-        return self.basekey(self.id)
     
     def table(self):
         '''Return an instance of :class:`stdnet.HashTable` holding
@@ -145,16 +141,12 @@ the model table'''
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''
         for rel in self.related.values():
-            to = rel.to
-            if to._meta.cursor:
-                to.flush(count)
-        if count is None:
-            cursor = self.cursor
-            keys = cursor.keys('{0}*'.format(self.basekey()))
-            if keys:
-                cursor.delete(*keys)
-        else:
-            count[str(self)] = self.table().count()
+            rmeta = rel.to._meta
+            # This avoid circular reference
+            if rmeta is not self:
+                rmeta.flush(count)
+        if self.cursor:
+            self.cursor.flush(self, count)
 
 
 class StdNetType(type):

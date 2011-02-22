@@ -20,7 +20,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 Requirements
 =================
 * You need access to a Redis_ server.
-
+* Python 2.6 or above, including Python 3.
 
 Installing 
 ================================

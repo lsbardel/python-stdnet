@@ -1,10 +1,9 @@
 import datetime
 import logging
-from itertools import izip
 from random import randint
 
 from stdnet.test import TestCase
-from stdnet.utils import populate
+from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
 from examples.models import Instrument, Fund, Position, PortfolioView, UserDefaultView
@@ -42,10 +41,10 @@ class BaseFinance(TestCase):
         orm.register(Position)
         orm.register(PortfolioView)
         orm.register(UserDefaultView)
-        for name,typ,ccy in izip(inst_names,inst_types,inst_ccys):
+        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
             Instrument(name = name, type = typ, ccy = ccy).save(False)
         Instrument.commit()
-        for name,ccy in izip(fund_names,fund_ccys):
+        for name,ccy in zip(fund_names,fund_ccys):
             Fund(name = name, ccy = ccy).save(False)
         Fund.commit()
         

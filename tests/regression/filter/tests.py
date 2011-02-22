@@ -11,3 +11,12 @@ class TestFiler(fintests.BaseFinance):
             self.assertTrue(inst.ccy in CCYS)
         #self.assertTrue(qs.count()>0)
         
+    def testChangeFilter(self):
+        '''Change the value of a filter field and perform filtering to check for zero values'''
+        insts = Instrument.objects.filter(ccy = 'EUR')
+        for inst in insts:
+            inst.ccy = 'USD'
+            inst.save()
+        insts = Instrument.objects.filter(ccy = 'EUR')
+        self.assertTrue(insts.count(),0)
+        

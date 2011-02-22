@@ -361,8 +361,7 @@ This structure is important since it is used in two different parts of the libra
         if not keys:
             raise StopIteration
         tokey = self.converter.tokey
-        ckeys = [tokey(key) for key in keys]
-        objs  = self._mget(ckeys)
+        objs  = self._mget((tokey(key) for key in keys))
         loads = self.pickler.loads
         for obj in objs:
             yield loads(obj)

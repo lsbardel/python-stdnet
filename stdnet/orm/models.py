@@ -67,12 +67,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     def isvalid(self):
         return self.meta.isvalid()
         
-    def __getstate__(self):
-        return self.todict()
-    
-    def __setstate__(self,dict):
-        self._load(dict)
-        
     def __eq__(self, other):
         if other.__class__ == self.__class__:
             return str(self.id) == str(other.id)

@@ -1,3 +1,10 @@
+Ver. 0.6.0 - Development
+===========================
+* Ported to ``Python 3``.
+* Removed dependency from ``redis-py`` for python 3 compatibility.
+* Refactored Object Relational Mapper
+* **155 tests**.
+
 Ver. 0.5.0 - Development
 ===========================
 * Minor bug fixes, more documentation and tests.

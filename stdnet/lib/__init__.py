@@ -5,4 +5,4 @@ except:
     hasextensions = False
     from .fallback import *
 else:
-    import fallback
+    from stdnet.lib import fallback

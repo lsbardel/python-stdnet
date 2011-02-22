@@ -20,7 +20,6 @@ __ http://pypi.python.org/pypi/python-stdnet/
 Requirements
 =================
 * You need access to a Redis_ server.
-* redis-py_ version 2.0 or higher.
 
 
 Installing 
@@ -104,11 +103,11 @@ Backend data-stores provide the backbone of the library,
 while the Object Relational Mapper the syntactic sugar.
 Currently the list of back-ends is limited to
 
-* Redis_. Requires redis-py_.
+* Redis_.
 * Local memory (planned). For testing purposes.
-* CouchDB_ (planned). Requires couchdb-python_.
 
 **Only** Redis_ **is operational.**
+ 
  
 Object Relational Mapper
 ================================

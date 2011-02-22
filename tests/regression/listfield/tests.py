@@ -1,10 +1,9 @@
 from copy import copy
 from time import sleep
-from itertools import izip
 
 import stdnet
 from stdnet.test import TestCase
-from stdnet.utils import populate
+from stdnet.utils import populate, zip
 
 from examples.models import SimpleList
 
@@ -52,7 +51,7 @@ class TestListField(BaseTestListField):
         for elem in elems:
             names.push_back(elem)
         li.save()
-        for el,ne in izip(elems,names):
+        for el,ne in zip(elems,names):
             self.assertEqual(el,ne)
             
     def testPushFront(self):
@@ -61,7 +60,7 @@ class TestListField(BaseTestListField):
         for elem in reversed(elems):
             names.push_front(elem)
         li.save()
-        for el,ne in izip(elems,names):
+        for el,ne in zip(elems,names):
             self.assertEqual(el,ne)
 
 
@@ -87,5 +86,4 @@ class TestTimeOutListField(BaseTestListField):
         self.assertEqual(SimpleList.objects.all().count(),1)
         sleep(2)
         self.assertEqual(SimpleList.objects.all().count(),0)
-        
         

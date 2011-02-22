@@ -4,6 +4,10 @@ from regression.finance import tests as fintests
 
 class TestFiler(fintests.BaseFinance):
     
+    def testAll(self):
+        qs = Instrument.objects.all()
+        self.assertTrue(qs.count() > 0)
+        
     def testFilterIn(self):
         CCYS = ('EUR','USD')
         qs = Instrument.objects.filter(ccy__in = CCYS)

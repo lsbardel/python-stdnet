@@ -1,5 +1,7 @@
 '''Interfaces for supported data-structures'''
 
+from stdnet.utils import iteritems
+
 __all__ = ['PipeLine',
            'pipelines',
            'Structure',
@@ -338,7 +340,7 @@ This structure is important since it is used in two different parts of the libra
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
         p     = self.pipeline
-        for key,value in mapping.iteritems():
+        for key,value in iteritems(mapping):
             p[tokey(key)] = dumps(value)
     
     def get(self, key, default = None):
@@ -361,7 +363,7 @@ This structure is important since it is used in two different parts of the libra
         if not keys:
             raise StopIteration
         tokey = self.converter.tokey
-        objs  = self._mget((tokey(key) for key in keys))
+        objs  = self._mget([tokey(key) for key in keys])
         loads = self.pickler.loads
         for obj in objs:
             yield loads(obj)

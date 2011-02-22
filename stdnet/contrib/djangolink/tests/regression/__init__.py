@@ -1,4 +1,4 @@
 try:
-    from test_links import *
+    from .test_links import *
 except ImportError:
     pass

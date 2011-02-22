@@ -27,7 +27,7 @@ class Base(orm.StdModel):
     name = orm.SymbolField(unique = True)
     ccy  = orm.SymbolField()
     
-    def __str__(self):
+    def __unicode__(self):
         return str(self.name)
     
     class Meta:
@@ -48,7 +48,7 @@ class Position(orm.StdModel):
     dt         = orm.DateField()
     size       = orm.FloatField(default = 1)
     
-    def __str__(self):
+    def __unicode__(self):
         return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
     
     
@@ -63,7 +63,7 @@ class Folder(orm.StdModel):
     positions = orm.ManyToManyField(Position, related_name = 'folders')
     parent    = orm.ForeignKey('self',related_name = 'children',required=False)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 
@@ -110,7 +110,7 @@ class Node(orm.StdModel):
     parent = orm.ForeignKey('self', required = False, related_name = 'children')
     weight = orm.FloatField()
     
-    def __str__(self):
+    def __unicode__(self):
         return '%s' % self.weight
     
 
@@ -122,7 +122,7 @@ class Post(orm.StdModel):
     data = orm.CharField(required = True)
     user = orm.ForeignKey("User", index = False)
     
-    def __str__(self):
+    def __unicode__(self):
         return self.data
     
     
@@ -133,7 +133,7 @@ class User(orm.StdModel):
     updates   = orm.ListField(model = Post)
     following = orm.ManyToManyField(model = 'self', related_name = 'followers')
     
-    def __str__(self):
+    def __unicode__(self):
         return self.username
     
     def newupdate(self, data):

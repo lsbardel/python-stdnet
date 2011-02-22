@@ -6,7 +6,7 @@ from datetime import date, datetime
 from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, novalue, to_string
+                         UnicodeMixin, novalue, to_string, is_string
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -379,7 +379,7 @@ class JSONField(CharField):
         super(JSONField,self).__init__(*args, **kwargs)
         
     def to_python(self, value):
-        if isinstance(value, basestring):
+        if is_string(value):
             if not value:
                 value = {}
             else:

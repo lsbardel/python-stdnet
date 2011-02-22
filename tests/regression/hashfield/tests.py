@@ -1,6 +1,4 @@
-from itertools import izip
-
-from stdnet.test import TestCase
+from stdnet.test import TestCase, zip
 from stdnet.utils import populate
 
 from examples.models import Dictionary
@@ -14,7 +12,7 @@ class TestHashField(TestCase):
     def setUp(self):
         self.orm.register(Dictionary)
         d = Dictionary(name = 'test').save()
-        self.data = dict(izip(keys,values))
+        self.data = dict(zip(keys,values))
         
     def unregister(self):
         self.orm.unregister(Dictionary)
@@ -52,4 +50,3 @@ class TestHashField(TestCase):
             self.assertEqual(v,self.data.pop(k))
         self.assertEqual(len(self.data),0)
         
-    

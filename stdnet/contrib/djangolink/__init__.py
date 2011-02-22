@@ -1,4 +1,5 @@
 import logging
+
 from stdnet import orm
 from stdnet import ObjectNotFound
 from stdnet.orm.query import Manager
@@ -179,5 +180,4 @@ This function injects methods to both model1 and model2:
                 
             signals.pre_delete.connect(pre_delete_callback, sender=model1)
             signals.post_save.connect(post_save_callback, sender=model1)
-            
-            
+        

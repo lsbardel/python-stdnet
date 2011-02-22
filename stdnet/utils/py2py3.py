@@ -12,6 +12,7 @@ __all__ = ['string_type',
            'pickle',
            'map',
            'zip',
+           'range',
            'UnicodeMixin']
 
 
@@ -27,6 +28,7 @@ if ispy3k(): # Python 3
     is_string = lambda x : isinstance(x,str)
     zip = zip
     map = map
+    range = range
     
     class UnicodeMixin(object):
         
@@ -41,6 +43,7 @@ else: # Python 2
     from itertools import izip as zip
     from itertools import imap as map
     import cPickle as pickle
+    range = xrange
     string_type = unicode
     itervalues = lambda d : d.itervalues()
     iteritems = lambda d : d.iteritems()
@@ -49,13 +52,13 @@ else: # Python 2
     class UnicodeMixin(object):
         
         def __unicode__(self):
-            return u'{0} object'.format(self.__class__.__name__)
+            return unicode('{0} object'.format(self.__class__.__name__))
         
         def __str__(self):
             return self.__unicode__().encode()
         
         def __repr__(self):
-            return u'%s: %s' % (self.__class__.__name__,self)
+            return '%s: %s' % (self.__class__.__name__,self)
     
 try:
     int_type = (types.IntType, types.LongType)
@@ -75,10 +78,9 @@ non-string-like objects."""
         else:
             return s
         
-    if isinstance(s, string_type):    
-        return s.encode(encoding, errors)
-    else:
-        return s
+    if not is_string(s):
+        s = string_type(s)
+    return s.encode(encoding, errors)
 
 
 def to_string(s, encoding='utf-8', errors='strict'):
@@ -88,5 +90,5 @@ def to_string(s, encoding='utf-8', errors='strict'):
     elif isinstance(s,bytes):
         return s.decode(encoding,errors)
     else:
-        string_type(s)
+        return string_type(s)
         

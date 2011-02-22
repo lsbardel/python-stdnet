@@ -6,6 +6,7 @@ try:
 except ImportError:
     pass
 
+from stdnet.utils import zip, to_bytestring
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
@@ -20,7 +21,7 @@ def get_fields(bases, attrs):
         if hasattr(base, '_meta'):
             fields.update(copy.deepcopy(base._meta.dfields))
     
-    for name,field in attrs.items():
+    for name,field in list(attrs.items()):
         if isinstance(field,Field):
             fields[name] = attrs.pop(name)
     
@@ -87,7 +88,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         if not self.pk.primary_key:
             raise FieldError("Primary key must be named id")
         
-        for name,field in fields.iteritems():
+        for name,field in fields.items():
             if name == 'id':
                 continue
             field.register_with_model(name,model)
@@ -108,22 +109,23 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         
     def basekey(self, *args):
         """Calculate the key to access model hash-table/s,
-and model filters in the database. For example::
+and model filters in the database.
+The key is an encoded binary string. For example::
         
     >>> from examples.models import User
     >>> from orm import register
     >>> register(User)
     'redis db 7 on 127.0.0.1:6379'
     >>> User._meta.basekey()
-    'stdnet.examples.user'
+    b'stdnet.examples.user'
     >>> a = Author(name = 'Dante Alighieri').save()
     >>> a.meta.basekey()
-    'stdnet.someappname.author'
+    b'stdnet.someappname.author'
     """
         key = '%s%s' % (self.keyprefix,self)
         for arg in args:
             key = '%s:%s' % (key,arg)
-        return key
+        return to_bytestring(key)
     
     def autoid(self):
         return self.basekey('ids')
@@ -139,16 +141,6 @@ the model table'''
         if not self.cursor:
             raise ModelNotRegistered('%s not registered. Call orm.register(model_class) to solve the problem.' % self)
         return self.cursor.hash(self.basekey(),self.timeout)
-    
-    def make(self, id, data):
-        '''Create a model instance from server data'''
-        obj = self.maker()
-        setattr(obj,'id',id)
-        if data:
-            for field,value in zip(self.scalarfields,data):
-                setattr(obj,field.attname,field.to_python(value))
-        obj.afterload()
-        return obj
     
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''
@@ -170,7 +162,7 @@ class StdNetType(type):
     def __new__(cls, name, bases, attrs):
         super_new = super(StdNetType, cls).__new__
         parents = [b for b in bases if isinstance(b, StdNetType)]
-        if not parents:
+        if not parents or attrs.pop('is_base_class',False):
             return super_new(cls, name, bases, attrs)
         
         # remove the Meta class if present

@@ -1,10 +1,9 @@
 import datetime
 import logging
-from itertools import izip
 from random import randint
 
-from stdnet.test import TestCase
-from stdnet.utils import populate
+from stdnet import test
+from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
 from examples.models import Instrument, Fund, Position, Dictionary
@@ -35,7 +34,8 @@ DICT_LEN    = 200
 dict_keys   = populate('string', DICT_LEN, min_len = 5, max_len = 20)
 dict_values = populate('string', DICT_LEN, min_len = 20, max_len = 300)
 
-class TestDeleteScalarFields(TestCase):
+
+class TestDeleteScalarFields(test.TestCase):
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
@@ -46,13 +46,13 @@ class TestDeleteScalarFields(TestCase):
         orm.clearall()
     
     def makeInstruments(self):
-        for name,typ,ccy in izip(inst_names,inst_types,inst_ccys):
+        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
             Instrument(name = name, type = typ, ccy = ccy).save(False)
         Instrument.commit()
         self.assertEqual(Instrument.objects.all().count(),INST_LEN)
         
     def makeFunds(self):
-        for name,ccy in izip(fund_names,fund_ccys):
+        for name,ccy in zip(fund_names,fund_ccys):
             Fund(name = name, ccy = ccy).save(False)
         Fund.commit()
         self.assertEqual(Fund.objects.all().count(),FUND_LEN)
@@ -112,7 +112,7 @@ class TestDeleteScalarFields(TestCase):
         self.assertEqual(Position.objects.all().count(),0)
         
 
-class TestDeleteStructuredFields(TestCase):
+class TestDeleteStructuredFields(test.TestCase):
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
@@ -122,7 +122,7 @@ class TestDeleteStructuredFields(TestCase):
         Dictionary(name = 'test').save()
         Dictionary(name = 'test2').save()
         self.assertEqual(Dictionary.objects.all().count(),2)
-        self.data = dict(izip(dict_keys,dict_values))
+        self.data = dict(zip(dict_keys,dict_values))
     
     def unregister(self):
         self.orm.unregister(Dictionary)
@@ -152,3 +152,4 @@ class TestDeleteStructuredFields(TestCase):
         # Now we check the database if it is empty as it should
         keys = list(Dictionary._meta.cursor.keys())
         self.assertEqual(len(keys),0)
+    

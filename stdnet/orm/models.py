@@ -11,7 +11,10 @@ __all__ = ['StdModel',
            'model_to_dict']
 
 
-class StdModel(UnicodeMixin):
+StdNetBase = StdNetType('StdNetBase',(UnicodeMixin,),{})
+
+
+class StdModel(StdNetBase):
     '''A model is the single, definitive source of data
 about your data. It contains the essential fields and behaviors
 of the data you're storing. Each model class
@@ -23,7 +26,7 @@ the :attr:`StdModel._meta` attribute.
     Instance of :class:`stdnet.orm.base.Metaclass`
     
 '''
-    __metaclass__ = StdNetType
+    is_base_class = True
     DoesNotExist = ObjectNotFound
     
     def __init__(self, **kwargs):
@@ -47,22 +50,7 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         if not meta.cursor:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot save instance.".format(meta))
-        data = []
-        indexes = []
-        #Loop over scalar fields first
-        for field in meta.scalarfields:
-            name = field.attname
-            value = getattr(self,name,None)
-            serializable = field.serialize(value)
-            if serializable is None and field.required:
-                raise FieldError("Field '{0}' has no value for model '{1}'.\
- Cannot save instance".format(field,meta))
-            data.append(serializable)
-            if field.index:
-                indexes.append((field,serializable))
-        self.id = meta.pk.serialize(self.id)
-        meta.cursor.add_object(self, data, indexes, commit = commit)
-        return self
+        return meta.cursor.save_object(self, commit)
     
     def isvalid(self):
         return self.meta.isvalid()

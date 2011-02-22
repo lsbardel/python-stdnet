@@ -1,6 +1,5 @@
 import datetime
 import random
-from itertools import izip
 
 from stdnet.test import TestCase
 
@@ -41,4 +40,3 @@ class TestSelfForeignKey(TestCase):
         for child in children:
             self.assertEqual(child.parent,root)
             
-        

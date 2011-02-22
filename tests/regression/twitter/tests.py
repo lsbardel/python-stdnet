@@ -1,9 +1,8 @@
 from datetime import datetime
-from itertools import izip
 from random import randint
 
 from stdnet.test import TestCase
-from stdnet.utils import populate
+from stdnet.utils import populate, zip
 
 from examples.models import User, Post
 
@@ -20,7 +19,7 @@ class TestTwitter(TestCase):
     def setUp(self):
         self.orm.register(User)
         self.orm.register(Post)
-        for username,password in izip(usernames,passwords):
+        for username,password in zip(usernames,passwords):
             User(username = username, password = password).save(False)
         User.commit()
         
@@ -65,6 +64,4 @@ class TestTwitter(TestCase):
         user.newupdate('and this is another one')
         user.save()
         self.assertEqual(user.updates.size(),2)
-            
-        
             

@@ -1,14 +1,14 @@
 '''Two different implementation of a redis::map, a networked
 ordered associative container
 '''
-from itertools import izip, imap
-import base as structures
+from stdnet.utils import zip, iteritems
+from stdnet.backends.structures import base as structures
 
 
 def riteritems(self, com, *rargs):
     res = self.cursor.execute_command(com, self.id, *rargs)
     if res:
-        return izip(res[::2], res[1::2])
+        return zip(res[::2], res[1::2])
     else:
         return res
 
@@ -137,7 +137,7 @@ class HashTable(structures.HashTable):
             
     def _save(self):
         items = []
-        [items.extend(item) for item in self.pipeline.iteritems()]
+        [items.extend(item) for item in iteritems(self.pipeline)]
         return self.cursor.execute_command('HMSET',self.id,*items)
     
     def add_expiry(self):

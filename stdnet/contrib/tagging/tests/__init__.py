@@ -20,4 +20,3 @@ class TestTags(test.TestCase):
         self.assertEqual(Issue,item.model_type)
         self.assertEqual(item.object,obj)
         
-        

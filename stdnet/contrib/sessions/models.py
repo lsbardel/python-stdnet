@@ -17,7 +17,7 @@ if hasattr(random, 'SystemRandom'):
     randrange = random.SystemRandom().randrange
 else:
     randrange = random.randrange
-MAX_SESSION_KEY = 18446744073709551616L     # 2 << 63
+MAX_SESSION_KEY = 18446744073709551616     # 2 << 63
 
 UNUSABLE_PASSWORD = '!' # This will never be a valid hash
 
@@ -211,5 +211,4 @@ class Session(orm.StdModel):
     def delete_test_cookie(self):
         del self[self.TEST_COOKIE_NAME]
         self.data.save()
-    
     

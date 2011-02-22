@@ -1,10 +1,9 @@
 from datetime import date, datetime
 from decimal import Decimal
-from itertools import izip
 
 import stdnet
 from stdnet import test
-from stdnet.utils import populate
+from stdnet.utils import populate, zip
 
 from examples.models import TestDateModel, Statistics, Statistics2
 
@@ -23,7 +22,7 @@ class TestAtomFields(test.TestCase):
         self.orm.unregister(TestDateModel)
         
     def create(self):
-        for na,dt in izip(names,dates):
+        for na,dt in zip(names,dates):
             m = TestDateModel(name = na, dt = dt)
             m.save(False)
         TestDateModel.commit()
@@ -144,4 +143,4 @@ class TestErrorAtomFields(test.TestCase):
     def testNotSaved(self):
         m = TestDateModel(name = names[1], dt = dates[0])
         self.assertRaises(stdnet.StdNetException,m.delete)    
-            
+

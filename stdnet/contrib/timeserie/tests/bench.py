@@ -18,7 +18,7 @@ testdata2 = dict(alldata2)
 class UpdateTimeSerie(test.BenchMark):
     model = TimeSeries
     number = 100
-    tags   = ['timeseries','ts','update']
+    tag    = 'ts'
     def register(self):
         self.names = iter(names)
         self.orm.register(self.model)
@@ -33,12 +33,11 @@ class UpdateTimeSerie(test.BenchMark):
         
 
 class UpdateHash(UpdateTimeSerie):
-    tags   = ['timeseries','hash','update']
     model = HashTimeSeries
     
     
 class AddToTimeSeries(UpdateTimeSerie):
-    tags   = ['timeseries','ts']
+    tag   = 'ts'
     def run(self):
         ts = self.model(ticker = self.names.next()).save()
         data = ts.data
@@ -48,6 +47,5 @@ class AddToTimeSeries(UpdateTimeSerie):
         
             
 class AddToHash(AddToTimeSeries):
-    tags   = ['timeseries','hash']
     model = HashTimeSeries
         

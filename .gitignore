@@ -3,6 +3,7 @@
 dist/*
 .settings/*
 docs/build/*
+.coverage
 .project
 .pydevproject
 MANIFEST

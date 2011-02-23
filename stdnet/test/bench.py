@@ -22,6 +22,12 @@ class BenchMark(object):
     def register(self):
         pass
     
+    def run(self):
+        raise NotImplementedError
+    
+    def tearDown(self):
+        pass
+    
 
 class BenchSuite(object):
     

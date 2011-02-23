@@ -12,7 +12,7 @@ __version__ = get_version()
 __license__ = "BSD"
 __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"
-__homepage__ = "http://code.google.com/p/python-stdnet/"
+__homepage__ = "https://github.com/lsbardel/python-stdnet"
 
 
 sphinxtogithub = False
@@ -20,11 +20,3 @@ sphinxtogithub = False
 from .exceptions import *
 
 from .backends import *
-
-def add2path():
-    import os
-    import sys
-    path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-    if path not in sys.path:
-        sys.path.insert(0,path)
-    return path

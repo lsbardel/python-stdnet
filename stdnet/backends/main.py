@@ -12,9 +12,6 @@ else:
 
 BACKENDS = {
     'locmem': 'locmem',
-    'file': 'filebased',
-    'db': 'db',
-    'dummy': 'dummy',
     'redis': 'redisch',
     'redislist': 'redisb',
 }

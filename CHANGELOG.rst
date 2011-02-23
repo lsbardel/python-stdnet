@@ -3,15 +3,16 @@ Ver. 0.5.0 - Development
 * Ported to ``Python 3``.
 * Removed dependency from ``redis-py`` for python 3 compatibility.
 * Refactored Object Relational Mapper.
-* Added benchmark to tests. To run benchmarks::
+* Added benchmark and profile to tests. To run benchmarks or prifile::
 
     python runtests.py -t bench
     python runtests.py -t bench tag1 tag2
+    python runtests.py -t profile
     
 * Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
 * Added ``contrib.sessions`` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.
-* * **164 tests**.
+* * **165 regression tests** with **58%** coverage.
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================

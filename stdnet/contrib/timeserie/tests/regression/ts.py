@@ -7,7 +7,6 @@ testdata  = hashtimeseries.testdata
 testdata2 = hashtimeseries.testdata2
 
 
-
 class TestDateTimeSeriesTS(hashtimeseries.TestHashTimeSeries):
     tag         = 'ts'
     default_run = False

@@ -71,7 +71,7 @@ type::
 
 To access coverage of tests you need to install the coverage_ package and run the tests using::
 
-	coverage run --source=stdnet runtests.py
+	coverage run runtests.py
 	
 and to check out the coverage report::
 
@@ -173,7 +173,8 @@ And play with the API::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* Django_ for inspiration and the ``dispatch`` module.
+* redis-py_ for the Redis Python client initial implementation which has been subsequently modified.
+* Django_ for some ideas and the ``dispatch`` module.
 * Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
 

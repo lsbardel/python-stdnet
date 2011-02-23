@@ -81,6 +81,20 @@ class BackendDataServer(object):
             cache[id] = cvalue
         return cvalue
             
+    def commit(self):
+        '''Commit cache objects to database.'''
+        cache = self._cachepipe
+        keys = self._keys
+        # flush cache
+        self._cachepipe = {}
+        self._keys = {}
+        # commit
+        for id,pipe in iteritems(cache):
+            el = getattr(self,pipe.method)(id, pipeline = pipe)
+            el.save()
+        if keys: 
+            self._set_keys(keys)
+            
     def get_object(self, meta, name, value):
         '''Retrive an object from the database. If object is not available, it raises
 an :class:`stdnet.exceptions.ObjectNotFound` exception.
@@ -105,47 +119,10 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
         * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
         '''
         raise NotImplementedError
-            
-    def commit(self):
-        '''Commit cache objects to database.'''
-        cache = self._cachepipe
-        keys = self._keys
-        # flush cache
-        self._cachepipe = {}
-        self._keys = {}
-        # commit
-        for id,pipe in iteritems(cache):
-            el = getattr(self,pipe.method)(id, pipeline = pipe)
-            el.save()
-        if keys: 
-            self._set_keys(keys)
-            
+    
     def delete_object(self, obj, deleted = None):
         '''Delete an object from the data server and clean up indices.'''
-        deleted = deleted if deleted is not None else []
-        meta    = obj._meta
-        timeout = meta.timeout
-        hash    = meta.table()
-        bkey    = meta.basekey
-        objid   = obj.id
-        if not hash.delete(objid):
-            return 0
-        for field in meta.fields:
-            name = field.name
-            if field.index:
-                key   = bkey(name,field.serialize(getattr(obj,name,None)))
-                if field.unique:
-                    deleted.append(self.delete(key))
-                else:
-                    if field.ordered:
-                        idx = self.ordered_set(key, timeout, pickler = nopickle)
-                    else:
-                        idx = self.unordered_set(key, timeout, pickler = nopickle)
-                    deleted.append(idx.discard(objid))
-            fid = field.id(obj)
-            if fid:
-                deleted.append(self.delete(fid))
-        return 1
+        raise NotImplementedError
         
     def set(self, id, value, timeout = None):
         timeout = timeout if timeout is not None else self.default_timeout

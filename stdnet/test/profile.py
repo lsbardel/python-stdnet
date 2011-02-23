@@ -1,6 +1,3 @@
-import cProfile
-import pstats
-
 from .test import TestLoader, TestSuiteRunner
 from .bench import BenchMark
 
@@ -27,6 +24,12 @@ class ProfileSuiteRunner(TestSuiteRunner):
     Loader = ProfileLoader
     
     def run_suite(self, suite):
+        try:
+            import cProfile
+            import pstats
+        except ImportError:
+            print('You need to install the python profiler installed to run profile tests')
+            exit(0)
         profile = cProfile.runctx
         n = 0
         stats = []

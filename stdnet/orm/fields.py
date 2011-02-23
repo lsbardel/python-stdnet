@@ -195,9 +195,13 @@ value with a specific data type. it can be of four different types:
 * symbol
 '''
     type = None
+    default = ''
     
     def to_python(self, value):
-        return to_string(value)
+        if value:
+            return to_string(value)
+        else:
+            return self.default
     
 
 class SymbolField(AtomField):
@@ -215,6 +219,7 @@ or other entities.'''
 class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
+    default = 0
     def serialise(self, value):
         if value is not None:
             try:
@@ -224,7 +229,10 @@ class IntegerField(AtomField):
         return value
     
     def to_python(self, value):
-        return int(value)
+        if value:
+            return int(value)
+        else:
+            return self.default
     
     
 class BooleanField(AtomField):
@@ -255,6 +263,7 @@ class FloatField(AtomField):
 its :attr:`Field.index` is set to ``False``.
     '''
     type = 'float'
+    default = 0.
     def __init__(self,*args,**kwargs):
         index = kwargs.get('index',None)
         if index is None:
@@ -270,13 +279,17 @@ its :attr:`Field.index` is set to ``False``.
         return value
     
     def to_python(self, value):
-        return float(value)
+        if value:
+            return float(value)
+        else:
+            return self.default
     
     
 class DateField(AtomField):
     '''An date :class:`AtomField` represented in Python by
 a :class:`datetime.date` instance.'''
     type = 'date'
+    default = None
     def serialize(self, value):
         if value is not None:
             if isinstance(value,date):

@@ -155,7 +155,15 @@ class BackendDataServer(BackendDataServer0):
             data[name] = svalue
             if field.index:
                 indexes.append((field,svalue))
-        objid = obj.id = meta.pk.serialize(obj.id)
+        objid = obj.id
+        # if editing we need to clear the previous element. completely.
+        if objid:
+            try:
+                pobj = obj.__class__.objects.get(id = objid)
+                pobj.delete()
+            except:
+                pass
+        objid = obj.id = meta.pk.serialize(objid)
         
         # Add object data to the model hash table
         hash = meta.table()

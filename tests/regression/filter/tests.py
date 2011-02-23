@@ -68,6 +68,22 @@ class TestFiler(fintests.BaseFinance):
             self.assertTrue(inst.type not in types)
         self.assertTrue(len(A))
         
+    def testExcludeAndFilter(self):
+        CCYS = ('EUR','GBP')
+        types = ('equity','bond','future')
+        qs = Instrument.objects.exclude(ccy__in = CCYS).filter(type__in = types)
+        for inst in qs:
+            self.assertTrue(inst.ccy not in CCYS)
+            self.assertTrue(inst.type in types)
+        self.assertTrue(qs)
+        
+    def testFilterIds(self):
+        ids = set((1,5,10))
+        qs = Instrument.objects.filter(id__in = ids)
+        self.assertEqual(len(qs),3)
+        cids = set((o.id for o in qs))
+        self.assertEqual(cids,ids)
+        
     def testChangeFilter(self):
         '''Change the value of a filter field and perform filtering to check for zero values'''
         insts = Instrument.objects.filter(ccy = 'EUR')
@@ -75,5 +91,5 @@ class TestFiler(fintests.BaseFinance):
             inst.ccy = 'USD'
             inst.save()
         insts = Instrument.objects.filter(ccy = 'EUR')
-        self.assertTrue(insts.count(),0)
+        self.assertEqual(insts.count(),0)
         

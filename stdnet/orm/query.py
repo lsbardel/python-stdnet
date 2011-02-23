@@ -41,13 +41,19 @@ class QuerySet(object):
     
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the given lookup parameters.'''
-        kwargs.update(self.fargs)
-        return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs)
+        if self.fargs:
+            c = self.fargs.copy()
+            c.update(kwargs)
+            kwargs = c
+        return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs,filter_sets=self.filter_sets)
     
     def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match the given lookup parameters.'''
-        kwargs.update(self.eargs)
-        return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs)
+        if self.eargs:
+            c = self.eargs.copy()
+            c.update(kwargs)
+            kwargs = c
+        return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs,filter_sets=self.filter_sets)
     
     def get(self):
         items = self.aslist()
@@ -119,6 +125,7 @@ fetching objects.'''
                                         .format(name))
                 field = fields[name]
                 value = tuple((field.serialize(v) for v in value))
+                unique = field.unique
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")

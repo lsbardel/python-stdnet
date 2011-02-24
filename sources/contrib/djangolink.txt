@@ -7,13 +7,13 @@ StdNet & Django Link
 ============================
 
 This is a battery included module avaiable at :mod:`stdnet.contrib.djangolink` useful for django_
-developers needing to use a smart cache or adding extra in memory data to their relational
+developers needing to use a *smart cache* or adding extra in memory data to their relational
 database models, or both.
 
 To use this module you need to have django_ installed.
 
 
-Stdnet as django cache
+Stdnet as django model cache
 ===========================================
 
 The first example is simple, we create a link so that objects of 

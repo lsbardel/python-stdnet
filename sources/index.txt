@@ -12,6 +12,12 @@ Create a model, register it to a back-end
 data structure server and create objects.
 Simple to use and configure.
 
+It includes a modified version of redis-py_ compatible with ``python 3``. There are no dependencies
+and the library requires ``python 2.6`` or above, including ``python 3``. There are over 160 tests
+with a coverage of about 60%.
+
+The library is stable and used in production.
+
 
 First steps
 ===============
@@ -50,4 +56,5 @@ Indices and tables
 * :ref:`search`
 
 .. _Redis: http://code.google.com/p/redis/
+.. _redis-py: https://github.com/andymccurdy/redis-py
 

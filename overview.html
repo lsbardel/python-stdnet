@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview &mdash; Python StdNet v0.4.3 documentation</title>
+    <title>Overview &mdash; Python StdNet v0.5.0 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.5.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.4.3 documentation" href="index.html" /> 
+    <link rel="top" title="Python StdNet v0.5.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +33,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -67,7 +67,7 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>You need access to a <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server.</li>
-<li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> version 2.0 or higher.</li>
+<li>Python 2.6 or above, including Python 3.</li>
 </ul>
 </div>
 <div class="section" id="installing">
@@ -94,7 +94,7 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <p>To know which version you have installed:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
-<span class="go">&#39;0.3.2&#39;</span>
+<span class="go">&#39;0.5.0&#39;</span>
 </pre></div>
 </div>
 </div>
@@ -103,15 +103,17 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.
 If you are using linux, it can be achieved simply by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
 windows and want to save yourself a headache you can download precompiled binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
-<p>Once done that, open a shell and launch Redis. On another shell launch python and type:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>otherwise from the package directory:</p>
+<p>Once done that, open a shell and launch Redis. On another shell, from the package directory,
+type:</p>
 <div class="highlight-python"><pre>python runtests.py</pre>
 </div>
 <p><strong>BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW</strong></p>
+<p>To access coverage of tests you need to install the <a class="reference external" href="http://nedbatchelder.com/code/coverage/">coverage</a> package and run the tests using:</p>
+<div class="highlight-python"><pre>coverage run runtests.py</pre>
+</div>
+<p>and to check out the coverage report:</p>
+<div class="highlight-python"><pre>coverage report -m</pre>
+</div>
 </div>
 <div class="section" id="default-settings">
 <h2>Default settings<a class="headerlink" href="#default-settings" title="Permalink to this headline">¶</a></h2>
@@ -137,9 +139,8 @@ you need to setup a     script file along these lines:</p>
 while the Object Relational Mapper the syntactic sugar.
 Currently the list of back-ends is limited to</p>
 <ul class="simple">
-<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a>. Requires <a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a>.</li>
+<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.</li>
 <li>Local memory (planned). For testing purposes.</li>
-<li><a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> (planned). Requires <a class="reference external" href="http://code.google.com/p/couchdb-python/">couchdb-python</a>.</li>
 </ul>
 <p><strong>Only</strong> <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> <strong>is operational.</strong></p>
 </div>
@@ -207,7 +208,8 @@ safe to use:</p>
 <h2>Kudos<a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a> simply because this library uses its awesome features.</li>
-<li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for inspiration and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
+<li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> for the Redis Python client initial implementation which has been subsequently modified.</li>
+<li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for some ideas and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
 <li>Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.</li>
 </ul>
 </div>
@@ -286,7 +288,7 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

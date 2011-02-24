@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Database backend interface &mdash; Python StdNet v0.4.3 documentation</title>
+    <title>Database backend interface &mdash; Python StdNet v0.5.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.3',
+        VERSION:     '0.5.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.4.3 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
     <link rel="up" title="Data Structure and BackEnds" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="../utility/index.html" />
     <link rel="prev" title="Structures" href="structures.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="structures.html" title="Structures"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,9 +64,21 @@
 <li><em>pickler</em> calss for serializing and unserializing data. It must implement the <em>loads</em> and <em>dumps</em> methods.</li>
 </ul>
 <dl class="method">
+<dt id="stdnet.BackendDataServer.isempty">
+<tt class="descname">isempty</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.isempty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the database has no keys.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="stdnet.BackendDataServer.delete">
 <tt class="descname">delete</tt><big>(</big><em>*key</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete one or more keys specified by <tt class="docutils literal"><span class="pre">keys</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.commit">
+<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commit cache objects to database.</p>
 </dd></dl>
 
 <dl class="method">
@@ -84,19 +96,13 @@ an <a class="reference internal" href="../utility/exceptions.html#stdnet.excepti
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.add_object">
-<tt class="descname">add_object</tt><big>(</big><em>obj</em>, <em>data</em>, <em>indexes</em>, <em>commit=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.add_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a model object to the database:</p>
+<dt id="stdnet.BackendDataServer.save_object">
+<tt class="descname">save_object</tt><big>(</big><em>obj</em>, <em>commit=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.save_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a model object to the database:</p>
 <ul class="simple">
 <li><em>obj</em> instance of <a class="reference internal" href="../model/models.html#model-model"><em>StdModel</em></a> to add to database</li>
 <li><em>commit</em> If True, <em>obj</em> is saved to database, otherwise it remains in local cache.</li>
 </ul>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.commit">
-<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.commit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Commit cache objects to database.</p>
 </dd></dl>
 
 <dl class="method">
@@ -163,8 +169,8 @@ for a given <em>id</em>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.map">
-<tt class="descname">map</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.map" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.BackendDataServer.ts">
+<tt class="descname">ts</tt><big>(</big><em>id</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.ts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an instance of <a class="reference internal" href="structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structure
 for a given <em>id</em>.</p>
 </dd></dl>
@@ -268,7 +274,7 @@ data can be loaded back in memory.</p>
         <li class="right" >
           <a href="structures.html" title="Structures"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>

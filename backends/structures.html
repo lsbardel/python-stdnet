@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Structures &mdash; Python StdNet v0.4.3 documentation</title>
+    <title>Structures &mdash; Python StdNet v0.5.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.3',
+        VERSION:     '0.5.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.4.3 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
     <link rel="up" title="Data Structure and BackEnds" href="index.html" />
     <link rel="next" title="Database backend interface" href="backends.html" />
     <link rel="prev" title="Remote Structure" href="basestructure.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="basestructure.html" title="Remote Structure"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>  
@@ -129,13 +129,16 @@ Set structure in the data server backend.</li>
 <dl class="class">
 <dt id="stdnet.HashTable">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">HashTable</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.HashTable" title="Permalink to this definition">¶</a></dt>
-<dd><p>A hash-table <a class="reference internal" href="basestructure.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
-<p>This structure is used for in two different parts of the library.</p>
+<dd><p>A hash-table <a class="reference internal" href="basestructure.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.
+The networked equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
+<p>This structure is important since it is used in two different parts of the library.</p>
 <ul class="simple">
-<li>It is the structure which holds instances for a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. Therefore each
-model is represented as a HashTable structure. The keys are the model instances ids and the values are the 
+<li>It is the structure which holds instances for a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class.
+Therefore each model is represented as a HashTable structure.
+The keys are the model instances ids and the values are the 
 serialised version of the instances.</li>
-<li>It is also used as <a class="reference internal" href="../model/structure.html#stdnet.orm.HashField" title="stdnet.orm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.HashField</span></tt></a>.</li>
+<li>It is also used as field (<a class="reference internal" href="../model/structure.html#stdnet.orm.HashField" title="stdnet.orm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.HashField</span></tt></a>) like all other 
+class:<cite>stdnet.Structure</cite>.</li>
 </ul>
 <dl class="method">
 <dt id="stdnet.HashTable.add">
@@ -240,7 +243,7 @@ serialised version of the instances.</li>
         <li class="right" >
           <a href="basestructure.html" title="Remote Structure"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>

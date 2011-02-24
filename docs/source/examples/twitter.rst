@@ -16,7 +16,7 @@ Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
 	    data = orm.CharField()
 	    user = orm.ForeignKey("User")
 	    
-	    def __str__(self):
+	    def __unicode__(self):
 	        return self.data
 	    
 	    
@@ -27,7 +27,7 @@ Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
 	    updates   = orm.ListField(model = Post)
 	    following = orm.ManyToManyField(model = 'self', related_name = 'followers')
 	    
-	    def __str__(self):
+	    def __unicode__(self):
 	        return self.username
 	    
 	    def newupdate(self, data):

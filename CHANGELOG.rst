@@ -1,10 +1,18 @@
-Ver. 0.4.3 - Development
+Ver. 0.5.0 - Development
 ===========================
-* More documentation and tests.
+* Ported to ``Python 3`` and dropped support for ``python 2.5``.
+* Removed dependency from ``redis-py`` for python 3 compatibility.
+* Refactored the object relational mapper, including several bug fixes.
+* Added benchmark and profile to tests. To run benchmarks or profile::
+
+    python runtests.py -t bench
+    python runtests.py -t bench tag1 tag2
+    python runtests.py -t profile
+    
 * Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
-* Added ``contrib.sessions`` module for handling web sessions. Experimental and pre-alpha.
+* Added :mod:`stdnet.contrib.sessions` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.
-* **64 tests** (75 including timeseries) with **53% coverage**.
+* **167 regression tests** with **61%** coverage.
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================
@@ -12,12 +20,7 @@ Ver. 0.4.2 - 2010 Nov 17
 
 	python runtests.py hash
 	
- will run tests specific to hashtables.
-* Added ``bench`` module for benchmarking. To run benchmark::
-
-	python runbench.py
-	python runbench.py tag1 tag2
-	
+ will run tests specific to hashtables.	
 * Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
 * **54** tests.
 

@@ -20,8 +20,8 @@ as example::
 	    ccy = orm.SymbolField()
 	    description = orm.CharField()
 	    
-	    def __str__(self):
-        	return str(self.name)
+	    def __unicode__(self):
+        	return self.name
 	    
 	class Instrument(orm.StdModel):
 	    name = orm.SymbolField(unique = True)
@@ -29,17 +29,26 @@ as example::
 	    type = orm.SymbolField()
 	    prices = orm.HashField()
 	    
-	    def __str__(self):
-        	return str(self.name)
+	    def __unicode__(self):
+        	return self.name
 	    
 	class Position(orm.StdModel):
 	    instrument = orm.ForeignKey(Instrument)
 	    fund = orm.ForeignKey(Fund)
 	    size = orm.FloatField()
+	    
+	    def __unicode__(self):
+        	return self.instrument
 
-These models are available in the :mod:`stdnet.tests.examples.models` module,
-therefore you can import them from there. Before playing with the API you need
-to :ref:`register the models <register-model>`.
+These models are available in the :mod:`tests.examples.models` module in the distribution directory.
+Before playing with the API you need to :ref:`register the models <register-model>`::
+
+	import orm
+
+	orm.register(Fund, 'redis://my.host.name:6379/?db=1')
+	orm.register(Instrument, 'redis://my.host.name:6379/?db=1')
+	orm.register(Position, 'redis://my.host.name:6379/?db=2')
+	
 
 Creating objects
 ======================
@@ -63,9 +72,10 @@ Here's an example::
 	>>> b.description
 	''
 	
-The object ``b`` is a python representation of data stored in the server at ``id`` 1.
+The object ``b`` is a ``python`` representation of data stored in the server at ``id`` 1.
 As discussed the :class:`stdnet.orm.StdModel` documentation, an instance of a model is
-mapped to an entry in a remote :class:`stdnet.HashTable` structure. If you want to see the actual struture you can procede as following::
+mapped to an entry in a remote :class:`stdnet.HashTable` structure.
+If you want to see the actual struture you can procede as following::
 
 	>>> meta = b._meta
 	>>> t = meta.table()
@@ -74,7 +84,7 @@ mapped to an entry in a remote :class:`stdnet.HashTable` structure. If you want 
 	>>> t.id
 	'stdnet.fund'
 	
-The hashtable ``id`` is the ``key`` used by the server to identify the structure.
+The hash-table ``id`` is the ``key`` used by the server to identify the structure.
 
 	>>> t.size()
 	1
@@ -86,7 +96,7 @@ The hashtable ``id`` is the ``key`` used by the server to identify the structure
 	
 Retrieving objects
 ==============================
-To retrieve objects from your data sarver, you construct a :class:`stdnet.orm.query.QuerySet`
+To retrieve objects from your data server, you construct a :class:`stdnet.orm.query.QuerySet`
 via a :class:`stdnet.orm.query.Manager` on your model class.
 
 A QuerySet represents a collection of objects from your database.
@@ -132,6 +142,22 @@ Lets create few other objects in the same line as above and try::
 	[Fund: Markowitz]
 
 The ``count`` method counts the object in the query without physically retrieving them.
+
+
+Retrieving from a list (equivalent to a select where in SQL)::
+
+	Fund.objects.filter(ccy__in = ('EUR','USD'))
+	
+	
+Concatenating queries::
+
+	Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))
+	
+You can also exclude fields from lookups::
+
+	Instrument.objects.exclude(type = 'future')
+	
+and so forth. The API is very similar to django_, but it is for an unstructured-in memory database.
 
 QuerySet API Reference
 ==============================

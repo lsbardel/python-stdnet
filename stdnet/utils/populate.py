@@ -2,7 +2,13 @@ from datetime import date, timedelta
 from random import uniform, randint, choice
 import string
 
-characters = string.letters + string.digits
+from stdnet.utils import ispy3k
+
+if ispy3k():
+    characters = string.ascii_letters + string.digits
+else:
+    characters = string.letters + string.digits
+    
 def_converter = lambda x : x
 
 def populate(datatype = 'string', size  = 10,

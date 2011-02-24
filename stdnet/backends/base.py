@@ -1,16 +1,10 @@
 from stdnet.exceptions import *
-from structures import Structure
+from stdnet.utils import pickle, iteritems
 
-novalue = object()
+from .structures import Structure
 
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-#default_pickler = jsonPickler()
 default_pickler = pickle
+
 
 class NoPickle(object):
     
@@ -79,24 +73,6 @@ class BackendDataServer(object):
         "Delete one or more keys specified by ``keys``"
         raise NotImplementedError
     
-    def get_object(self, meta, name, value):
-        '''Retrive an object from the database. If object is not available, it raises
-an :class:`stdnet.exceptions.ObjectNotFound` exception.
-
-    * *meta* :ref:`database metaclass <database-metaclass>` or model
-    * *name* name of field (must be unique)
-    * *value* value of field to search.'''
-        if name != 'id':
-            id = self._get(meta.basekey(name,value))
-        else:
-            id = value
-        if id is None:
-            raise ObjectNotFound
-        data = self.hash(meta.basekey()).get(id)
-        if data is None:
-            raise ObjectNotFound
-        return meta.make(id,data)
-    
     def _get_pipe(self, id, typ, timeout):
         cache  = self._cachepipe
         cvalue = cache.get(id,None)
@@ -104,34 +80,6 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
             cvalue = typ(timeout)
             cache[id] = cvalue
         return cvalue
-            
-    def add_object(self, obj, data, indexes, commit = True):
-        '''Add a model object to the database:
-        
-        * *obj* instance of :ref:`StdModel <model-model>` to add to database
-        * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
-        '''
-        meta  = obj._meta
-        timeout = meta.timeout
-        cache = self._cachepipe
-        hash  = meta.table()
-        objid = obj.id
-        hash.add(objid, data)
-        
-        # Create indexes if possible
-        for field,value in indexes:
-            key     = meta.basekey(field.name,value)
-            if field.unique:
-                index = self.index_keys(key, timeout)
-            else:
-                if field.ordered:
-                    index = self.ordered_set(key, timeout, pickler = nopickle)
-                else:
-                    index = self.unordered_set(key, timeout, pickler = nopickle)
-            index.add(objid)
-                
-        if commit:
-            self.commit()
             
     def commit(self):
         '''Commit cache objects to database.'''
@@ -141,38 +89,40 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
         self._cachepipe = {}
         self._keys = {}
         # commit
-        for id,pipe in cache.iteritems():
+        for id,pipe in iteritems(cache):
             el = getattr(self,pipe.method)(id, pipeline = pipe)
             el.save()
         if keys: 
             self._set_keys(keys)
             
+    def get_object(self, meta, name, value):
+        '''Retrive an object from the database. If object is not available, it raises
+an :class:`stdnet.exceptions.ObjectNotFound` exception.
+
+    * *meta* :ref:`database metaclass <database-metaclass>` or model
+    * *name* name of field (must be unique)
+    * *value* value of field to search.'''
+        raise NotImplementedError
+    
+    def save_object(self, obj, commit):
+        '''Save an instance of a model to the back-end database:
+        
+        * *obj* instance of :ref:`StdModel <model-model>` to add to database
+        * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
+        '''
+        raise NotImplementedError
+    
+    def save_object(self, obj, commit = True):
+        '''Save a model object to the database:
+        
+        * *obj* instance of :ref:`StdModel <model-model>` to add to database
+        * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
+        '''
+        raise NotImplementedError
+    
     def delete_object(self, obj, deleted = None):
         '''Delete an object from the data server and clean up indices.'''
-        deleted = deleted if deleted is not None else []
-        meta    = obj._meta
-        timeout = meta.timeout
-        hash    = meta.table()
-        bkey    = meta.basekey
-        objid   = obj.id
-        if not hash.delete(objid):
-            return 0
-        for field in meta.fields:
-            name = field.name
-            if field.index:
-                key   = bkey(name,field.serialize(getattr(obj,name,None)))
-                if field.unique:
-                    deleted.append(self.delete(key))
-                else:
-                    if field.ordered:
-                        idx = self.ordered_set(key, timeout, pickler = nopickle)
-                    else:
-                        idx = self.unordered_set(key, timeout, pickler = nopickle)
-                    deleted.append(idx.discard(objid))
-            fid = field.id(obj)
-            if fid:
-                deleted.append(self.delete(fid))
-        return 1
+        raise NotImplementedError
         
     def set(self, id, value, timeout = None):
         timeout = timeout if timeout is not None else self.default_timeout
@@ -259,6 +209,9 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
         raise NotImplementedError
     
     def _set_keys(self):
+        raise NotImplementedError
+    
+    def flush(self, meta, count = None):
         raise NotImplementedError
             
     # DATASTRUCTURES

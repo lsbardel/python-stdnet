@@ -6,6 +6,7 @@ try:
 except ImportError:
     pass
 
+from stdnet.utils import zip, to_bytestring
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
@@ -20,7 +21,7 @@ def get_fields(bases, attrs):
         if hasattr(base, '_meta'):
             fields.update(copy.deepcopy(base._meta.dfields))
     
-    for name,field in attrs.items():
+    for name,field in list(attrs.items()):
         if isinstance(field,Field):
             fields[name] = attrs.pop(name)
     
@@ -29,8 +30,8 @@ def get_fields(bases, attrs):
 
 class Metaclass(object):
     '''Utility class used for storing all information
-which maps a :class:`stdnet.orm.StdModel` model
-into a :class:`stdnet.HashTable` structure in a :class:`stdnet.BackendDataServer`.
+which maps a :class:`stdnet.orm.StdModel` model into an object in the
+in the remote :class:`stdnet.BackendDataServer`.
 An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 
 .. attribute:: model
@@ -60,32 +61,34 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None, **kwargs):
-        self.abstract  = abstract
+        self.abstract = abstract
         self.keyprefix = keyprefix
-        self.model     = model
+        self.model = model
         self.app_label = app_label
         self.name = model.__name__.lower()
-        self.fields       = []
+        self.fields = []
         self.scalarfields = []
-        self.multifields  = []
-        self.dfields      = {}
-        self.timeout      = 0
-        self.related      = {}
+        self.multifields = []
+        self.dfields = {}
+        self.timeout = 0
+        self.related = {}
         self.verbose_name = verbose_name or self.name
-        self.maker        = lambda : model.__new__(model)
-        model._meta       = self
+        self.maker = lambda : model.__new__(model)
+        model._meta = self
         hashmodel(model)
         
+        # Check if ID field exists
         try:
             pk = fields['id']
         except:
+            # ID field not available, create one
             pk = AutoField(primary_key = True)
         pk.register_with_model('id',model)
         self.pk = pk
         if not self.pk.primary_key:
             raise FieldError("Primary key must be named id")
         
-        for name,field in fields.iteritems():
+        for name,field in fields.items():
             if name == 'id':
                 continue
             field.register_with_model(name,model)
@@ -105,25 +108,28 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         return self.__repr__()
         
     def basekey(self, *args):
-        '''Calculate the key to access model hash-table, and model filters in the database.
-        For example::
+        """Calculate the key to access model hash-table/s,
+and model filters in the database.
+The key is an encoded binary string. For example::
         
-            >>> a = Author(name = 'Dante Alighieri').save()
-            >>> a.meta.basekey()
-            'stdnet:author'
-            '''
-        key = '%s%s' % (self.keyprefix,self.name)
+    >>> from examples.models import User
+    >>> from orm import register
+    >>> register(User)
+    'redis db 7 on 127.0.0.1:6379'
+    >>> User._meta.basekey()
+    b'stdnet.examples.user'
+    >>> a = Author(name = 'Dante Alighieri').save()
+    >>> a.meta.basekey()
+    b'stdnet.someappname.author'
+    """
+        key = '%s%s' % (self.keyprefix,self)
         for arg in args:
             key = '%s:%s' % (key,arg)
-        return key
+        return to_bytestring(key)
     
     def autoid(self):
+        '''The id for autoincrements ids'''
         return self.basekey('ids')
-    
-    @property
-    def uniqueid(self):
-        '''Unique id for an instance. This is unique across multiple model types.'''
-        return self.basekey(self.id)
     
     def table(self):
         '''Return an instance of :class:`stdnet.HashTable` holding
@@ -132,29 +138,15 @@ the model table'''
             raise ModelNotRegistered('%s not registered. Call orm.register(model_class) to solve the problem.' % self)
         return self.cursor.hash(self.basekey(),self.timeout)
     
-    def make(self, id, data):
-        '''Create a model instance from server data'''
-        obj = self.maker()
-        setattr(obj,'id',id)
-        if data:
-            for field,value in zip(self.scalarfields,data):
-                setattr(obj,field.attname,field.to_python(value))
-        obj.afterload()
-        return obj
-    
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''
         for rel in self.related.values():
-            to = rel.to
-            if to._meta.cursor:
-                to.flush(count)
-        if count is None:
-            cursor = self.cursor
-            keys = cursor.keys('{0}*'.format(self.basekey()))
-            if keys:
-                cursor.delete(*keys)
-        else:
-            count[str(self)] = self.table().count()
+            rmeta = rel.to._meta
+            # This avoid circular reference
+            if rmeta is not self:
+                rmeta.flush(count)
+        if self.cursor:
+            self.cursor.flush(self, count)
 
 
 class StdNetType(type):
@@ -162,22 +154,28 @@ class StdNetType(type):
     def __new__(cls, name, bases, attrs):
         super_new = super(StdNetType, cls).__new__
         parents = [b for b in bases if isinstance(b, StdNetType)]
-        if not parents:
+        if not parents or attrs.pop('is_base_class',False):
             return super_new(cls, name, bases, attrs)
         
         # remove the Meta class if present
         meta      = attrs.pop('Meta', None)
+        if meta:
+            kwargs   = meta_options(**meta.__dict__)
+        else:
+            kwargs   = meta_options()
+        
+        #if kwargs['abstract']:
+        #    return super_new(cls, name, bases, attrs)
+        
         # remove and build field list
         fields    = get_fields(bases, attrs)        
         # create the new class
         objects   = attrs.pop('objects',None)
         new_class = super_new(cls, name, bases, attrs)
         new_class.objects = objects
-        if meta:
-            kwargs   = meta_options(**meta.__dict__)
-        else:
-            kwargs   = {}
-        if kwargs.pop('app_label',None) is None:
+        app_label = kwargs.pop('app_label')
+        
+        if app_label is None:
             model_module = sys.modules[new_class.__module__]
             try:
                 app_label = model_module.__name__.split('.')[-2]
@@ -193,8 +191,10 @@ class StdNetType(type):
 
 def meta_options(abstract = False,
                  keyprefix = None,
+                 app_label = None,
                  **kwargs):
     return {'abstract': abstract,
-            'keyprefix': keyprefix}
+            'keyprefix': keyprefix,
+            'app_label':app_label}
     
 

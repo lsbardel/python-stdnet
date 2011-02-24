@@ -1,17 +1,7 @@
 from copy import copy
-from itertools import izip
 
 from stdnet.exceptions import *
-
-
-class svset(object):
-    
-    def __init__(self, result):
-        self.result = result
-        
-    def __len__(self):
-        return 1
-    
+from stdnet.utils import zip, to_bytestring
 
 
 class QuerySet(object):
@@ -29,7 +19,6 @@ class QuerySet(object):
         self.fargs  = fargs
         self.eargs  = eargs
         self.filter_sets = filter_sets
-        self.isall  = False
         self.qset   = None
         self._seq   = None
         
@@ -52,13 +41,19 @@ class QuerySet(object):
     
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the given lookup parameters.'''
-        kwargs.update(self.fargs)
-        return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs)
+        if self.fargs:
+            c = self.fargs.copy()
+            c.update(kwargs)
+            kwargs = c
+        return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs,filter_sets=self.filter_sets)
     
     def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match the given lookup parameters.'''
-        kwargs.update(self.eargs)
-        return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs)
+        if self.eargs:
+            c = self.eargs.copy()
+            c.update(kwargs)
+            kwargs = c
+        return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs,filter_sets=self.filter_sets)
     
     def get(self):
         items = self.aslist()
@@ -78,14 +73,13 @@ fetching objects.'''
         
     def __contains__(self, val):
         if isinstance(val,self.model):
-            id = val.id
-        else:
-            try:
-                id = int(val)
-            except:
-                return False
+            val = val.id
+        try:
+            val = to_bytestring(val)
+        except:
+            return False
         self.buildquery()
-        return str(id) in self.qset
+        return val in self.qset
         
     def __len__(self):
         return self.count()
@@ -95,96 +89,63 @@ fetching objects.'''
         if self.qset is not None:
             return
         meta = self._meta
-        unique, fargs = self.aggregate(self.fargs)
-        if unique:
-            try:
-                self.qset = [meta.cursor.get_object(meta, fargs[0], fargs[1])]
-            except ObjectNotFound:
-                self.qset = []
+        if self.fargs:
+            fargs = self.aggregate(self.fargs)
         else:
-            if self.eargs:
-                unique, eargs = self.aggregate(self.eargs, False)
-            else:
-                eargs = None
-            self.qset = self._meta.cursor.query(meta, fargs, eargs, filter_sets = self.filter_sets)
-            if self.qset == 'all':
-                self.qset = self._meta.table()
-                self.isall = True
+            fargs = None
+        if self.eargs:
+            eargs = self.aggregate(self.eargs)
+        else:
+            eargs = None
+        self.qset = self._meta.cursor.query(meta, fargs, eargs,
+                                            filter_sets = self.filter_sets)
         
-    def aggregate(self, kwargs, filter = True):
+    def aggregate(self, kwargs):
         '''Aggregate lookup parameters.'''
         unique  = False
         meta    = self._meta
         fields  = meta.dfields
         result  = {}
-        # Loop over 
+        # Loop over arguments
         for name,value in kwargs.items():
             names = name.split('__')
             N = len(names)
             # simple lookup for example filter(name = 'pippo')
             if N == 1:
-                field = fields.get(name,None)
-                if not field:
-                    raise QuerySetError("Could not filter. Field %s not defined." % name)
-                value = field.serialize(value)
+                if name not in fields:
+                    raise QuerySetError("Could not filter. Field {0} not defined.".format(name))
+                field = fields[name]
+                value = (field.serialize(value),)
                 unique = field.unique
             # group lookup filter(name_in ['pippo','luca'])
             elif N == 2 and names[1] == 'in':
-                field = meta.fields.get(names[0],None)
-                if not field:
-                    raise QuerySetError("Could not filter. Field %s not defined." % names[0])
-                value = field.hash(value)
+                name = names[0]
+                if name not in fields:
+                    raise QuerySetError("Could not filter. Field %s not defined."
+                                        .format(name))
+                field = fields[name]
+                value = tuple((field.serialize(v) for v in value))
+                unique = field.unique
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")
-                      
-            if unique:
-                result[name] = value
-                if filter:
-                    result = name,value
-                    unique = True
-                    break
-                else:
-                    result[name] = value   
-            elif field.index:
-                result[name] = value
-            else:
+            
+            result[name] = (value,unique)
+            
+            if not field.index:
                 raise QuerySetError("Field %s is not an index. Cannot query." % name)
-        return unique, result
+        return result
         
     def items(self):
         '''Generator of instances in queryset.'''
         if self._seq is not None:
             for m in self._seq:
                 yield m
-        self.buildquery()
-        meta  = self._meta
-        model = meta.make
-        ids   = self.qset
-        seq   = []
-        self._seq = seq
-        
-        if self.isall:
-            for id,val in ids.items():
-                m = model(id,val)
-                seq.append(m)
-                yield m
-        elif len(ids) == 1:
-            try:
-                elem = ids[0]
-            except TypeError:
-                hash = meta.table()
-                for id,val in izip(ids,hash.mget(ids)):
-                    m = model(id,val)
-                    seq.append(m)
-                    yield m
-            else:
-                seq.append(elem)
-                yield elem
         else:
-            hash = meta.table()
-            for id,val in izip(ids,hash.mget(ids)):
-                m = model(id,val)
+            self.buildquery()
+            seq = self._seq = []
+            meta = self._meta
+            for m in meta.cursor.unwind_query(meta,self.qset):
                 seq.append(m)
                 yield m
     

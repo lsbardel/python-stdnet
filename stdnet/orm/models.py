@@ -1,12 +1,20 @@
 import copy
-from itertools import izip
 
-from base import StdNetType
-from fields import _novalue
 from stdnet.exceptions import *
+from stdnet.utils import zip, UnicodeMixin
+
+from .base import StdNetType
 
 
-class StdModel(object):
+__all__ = ['StdModel',
+           'StdNetType',
+           'model_to_dict']
+
+
+StdNetBase = StdNetType('StdNetBase',(UnicodeMixin,),{})
+
+
+class StdModel(StdNetBase):
     '''A model is the single, definitive source of data
 about your data. It contains the essential fields and behaviors
 of the data you're storing. Each model class
@@ -18,8 +26,8 @@ the :attr:`StdModel._meta` attribute.
     Instance of :class:`stdnet.orm.base.Metaclass`
     
 '''
-    __metaclass__ = StdNetType
-    ObjectNotFound = ObjectNotFound
+    is_base_class = True
+    DoesNotExist = ObjectNotFound
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
@@ -33,12 +41,6 @@ the :attr:`StdModel._meta` attribute.
             raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
         #for field in self._meta.multifields:
         #    setattr(self,field.attname,field.to_python(self))
-        
-    def __repr__(self):
-        return '%s: %s' % (self.__class__.__name__,self)
-    
-    def __str__(self):
-        return ''
     
     def save(self, commit = True):
         '''Save the instance in the remote :class:`stdnet.HashTable`
@@ -46,31 +48,12 @@ The model must be registered with a :class:`stdnet.backends.BackendDataServer`
 otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
         meta = self._meta
         if not meta.cursor:
-            raise ModelNotRegistered('Model %s is not registered with a backend database. Cannot save any instance.' % meta.name)
-        data = []
-        indexes = []
-        #Loop over scalar fields first
-        for field in meta.scalarfields:
-            name = field.attname
-            value = getattr(self,name,None)
-            serializable = field.serialize(value)
-            if serializable is None and field.required:
-                raise FieldError('Field %s has no value for %s' % (field,self))
-            data.append(serializable)
-            if field.index:
-                indexes.append((field,serializable))
-        self.id = meta.pk.serialize(self.id)
-        meta.cursor.add_object(self, data, indexes, commit = commit)
-        return self
+            raise ModelNotRegistered("Model '{0}' is not registered with a\
+ backend database. Cannot save instance.".format(meta))
+        return meta.cursor.save_object(self, commit)
     
     def isvalid(self):
         return self.meta.isvalid()
-        
-    def __getstate__(self):
-        return self.todict()
-    
-    def __setstate__(self,dict):
-        self._load(dict)
         
     def __eq__(self, other):
         if other.__class__ == self.__class__:
@@ -102,17 +85,12 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         return objs
     
     def todict(self):
-        odict = self.__dict__.copy()
-        meta = odict.pop('_meta',None)
-        for name,field in meta.fields.items():
-            val = field.serialize()
-            if val is not None:
-                odict[name] = val
-            else:
-                if field.required:
-                    raise ValueError("Field %s is required" % name)
-                else:
-                    odict.pop(name,None)
+        odict = {}
+        for field in self._meta.scalarfields:
+            value = getattr(self,field.attname,None)
+            value = field.serialize(value)
+            if value:
+                odict[field.name] = value
         return odict
     
     def model_to_dict(self, fields = None, exclude = None):
@@ -134,3 +112,15 @@ will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
 
+
+def model_to_dict(instance, fields = None, exclude = None):
+    if isinstance(instance,StdModel):
+        return instance.todict()
+    else:
+        d = {}
+        for field in instance._meta.fields:
+            default = field.get_default()
+            if default:
+                d[field.name] = default
+        return d
+                

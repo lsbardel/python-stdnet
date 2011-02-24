@@ -6,7 +6,7 @@ class TaggedItem(orm.StdModel):
     model_type = orm.ModelField()
     object_id = orm.SymbolField()
     
-    def __str__(self):
+    def __unicode__(self):
         return self.tag
     
     @property

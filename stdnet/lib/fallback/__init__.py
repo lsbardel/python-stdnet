@@ -1,1 +1,1 @@
-from skiplist import *
+from .skiplist import *

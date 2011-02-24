@@ -1,6 +1,5 @@
 from .models import TaggedItem
 
-
 def cleantag(tag):
     return tag
 
@@ -17,5 +16,4 @@ def addtag(obj, tag):
                           tag = tag).save()
     else:
         return tags[0]
-    
     

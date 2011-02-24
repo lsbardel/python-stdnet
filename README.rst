@@ -20,8 +20,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 Requirements
 =================
 * You need access to a Redis_ server.
-* redis-py_ version 2.0 or higher.
-
+* Python 2.6 or above, including Python 3.
 
 Installing 
 ================================
@@ -51,7 +50,7 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.3.2'
+	'0.5.0'
 
 
 Running Tests
@@ -62,12 +61,8 @@ windows and want to save yourself a headache you can download precompiled binari
 
 __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
-Once done that, open a shell and launch Redis. On another shell launch python and type::
-
-	>>> import stdnet
-	>>> stdnet.runtests()
-	
-otherwise from the package directory::
+Once done that, open a shell and launch Redis. On another shell, from the package directory,
+type::
 
 	python runtests.py
 	
@@ -76,7 +71,7 @@ otherwise from the package directory::
 
 To access coverage of tests you need to install the coverage_ package and run the tests using::
 
-	coverage run --source=stdnet runtests.py
+	coverage run runtests.py
 	
 and to check out the coverage report::
 
@@ -108,11 +103,11 @@ Backend data-stores provide the backbone of the library,
 while the Object Relational Mapper the syntactic sugar.
 Currently the list of back-ends is limited to
 
-* Redis_. Requires redis-py_.
+* Redis_.
 * Local memory (planned). For testing purposes.
-* CouchDB_ (planned). Requires couchdb-python_.
 
 **Only** Redis_ **is operational.**
+ 
  
 Object Relational Mapper
 ================================
@@ -178,7 +173,8 @@ And play with the API::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* Django_ for inspiration and the ``dispatch`` module.
+* redis-py_ for the Redis Python client initial implementation which has been subsequently modified.
+* Django_ for some ideas and the ``dispatch`` module.
 * Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
 

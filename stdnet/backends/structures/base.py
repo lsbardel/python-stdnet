@@ -1,5 +1,7 @@
 '''Interfaces for supported data-structures'''
 
+from stdnet.utils import iteritems
+
 __all__ = ['PipeLine',
            'pipelines',
            'Structure',
@@ -288,13 +290,6 @@ class OrderedSet(Set):
         self.pipeline.add((value.score(),self.pickler.dumps(value)))
 
 
-def itemcmp(x,y):
-    if x[0] > y[0]:
-        return 1
-    else:
-        return -1
-
-
 class KeyValueStructure(Structure):
     '''Base class for :class:`HashTable`'''
     def __init__(self, *args, **kwargs):
@@ -311,15 +306,18 @@ class KeyValueStructure(Structure):
     
     
 class HashTable(Structure):
-    '''A hash-table :class:`stdnet.Structure`. Equivalent to a Python ``dict``.
+    '''A hash-table :class:`stdnet.Structure`.
+The networked equivalent to a Python ``dict``.
     
-This structure is used for in two different parts of the library.
+This structure is important since it is used in two different parts of the library.
 
-* It is the structure which holds instances for a :class:`stdnet.orm.StdModel` class. Therefore each
-  model is represented as a HashTable structure. The keys are the model instances ids and the values are the 
+* It is the structure which holds instances for a :class:`stdnet.orm.StdModel` class.
+  Therefore each model is represented as a HashTable structure.
+  The keys are the model instances ids and the values are the 
   serialised version of the instances.
 
-* It is also used as :class:`stdnet.orm.HashField`.'''
+* It is also used as field (:class:`stdnet.orm.HashField`) like all other 
+  class:`stdnet.Structure`.'''
     struct = HashPipe
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter
@@ -342,7 +340,7 @@ This structure is used for in two different parts of the library.
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
         p     = self.pipeline
-        for key,value in mapping.iteritems():
+        for key,value in iteritems(mapping):
             p[tokey(key)] = dumps(value)
     
     def get(self, key, default = None):
@@ -365,8 +363,7 @@ This structure is used for in two different parts of the library.
         if not keys:
             raise StopIteration
         tokey = self.converter.tokey
-        ckeys = [tokey(key) for key in keys]
-        objs  = self._mget(ckeys)
+        objs  = self._mget([tokey(key) for key in keys])
         loads = self.pickler.loads
         for obj in objs:
             yield loads(obj)
@@ -398,7 +395,7 @@ This structure is used for in two different parts of the library.
         return keys
             
     def sorteditems(self, desc = True):
-        items = sorted(self.items(),cmp = itemcmp)
+        items = sorted(self.items(),key = lambda t : t[0])
         if not desc:
             items = reversed(items)
         return items

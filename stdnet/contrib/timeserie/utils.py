@@ -21,4 +21,4 @@ def default_parse_interval(dt, delta = 0):
         return dt + timedelta(delta)
     else:
         return dt
-    
+

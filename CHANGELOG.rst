@@ -1,4 +1,4 @@
-Ver. 0.5.0 - Development
+Ver. 0.5.0 - 2011 Feb 24
 ===========================
 * Ported to ``Python 3`` and dropped support for ``python 2.5``.
 * Removed dependency from ``redis-py`` for python 3 compatibility.

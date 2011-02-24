@@ -61,7 +61,7 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         else:
             return False
         
-    def delete(self, dlist = None):
+    def delete(self, dlist = None, delete_related = True):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
 ``StdNetException`` exception will raise.'''
         if dlist is None:
@@ -69,11 +69,12 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         meta = self._meta
         if not self.id:
             raise StdNetException('Cannot delete object. It was never saved.')
-        # Gather related objects to delete
-        objs = self.related_objects()
         T = 0
-        for obj in objs:
-            T += obj.delete(dlist)
+        # Gather related objects to delete
+        if delete_related:
+            objs = self.related_objects()
+            for obj in objs:
+                T += obj.delete(dlist)
         return T + meta.cursor.delete_object(self, dlist)
     
     def related_objects(self):

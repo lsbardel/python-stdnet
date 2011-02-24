@@ -156,11 +156,11 @@ class BackendDataServer(BackendDataServer0):
             if field.index:
                 indexes.append((field,svalue))
         objid = obj.id
-        # if editing we need to clear the previous element. completely.
+        # if editing we need to clear the previous element. But not its related objects.
         if objid:
             try:
                 pobj = obj.__class__.objects.get(id = objid)
-                pobj.delete()
+                pobj.delete(delete_related = False)
             except:
                 pass
         objid = obj.id = meta.pk.serialize(objid)

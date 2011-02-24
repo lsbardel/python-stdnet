@@ -7,5 +7,7 @@ include runtests.py
 include docs/make.bat
 include docs/Makefile
 include docs/source/conf.py
+include stdnet/lib/redis/license.txt
+include stdnet/dispatch/license.txt
 recursive-include docs *.rst
 recursive-include stdnet/contrib/monitor/templates *

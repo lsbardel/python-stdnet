@@ -1,9 +1,10 @@
 from stdnet.lib import redis
-from stdnet.lib.exceptions import *
 import unittest as test
 
 DBTEST = 13
 
+
+ResponseError = redis.ResponseError
 
 class BaseTest(test.TestCase):
     

@@ -1,5 +1,5 @@
 '''A networked standard template library for Python.'''
-VERSION = (0, 5, 0)
+VERSION = (0, 5, '1dev')
  
 def get_version():
     return '.'.join(map(str,VERSION))

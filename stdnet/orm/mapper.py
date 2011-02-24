@@ -15,6 +15,7 @@ __all__ = ['clearall',
            'register',
            'unregister',
            'register_applications',
+           'register_application_models',
            'Manager',
            'UnregisteredManager']
 
@@ -74,22 +75,25 @@ def unregister(model):
     model._meta.cursor = None
 
 
-
-def register_applications(applications, app_defaults = None, **kwargs):
+def register_application_models(application,
+                                models = None,
+                                app_defaults=None,
+                                **kwargs):
+    '''Generator of which register models'''
     app_defaults = app_defaults or {}
-    modules = []
-    for app in applications:
-        mod = import_module(app)
-        modules.append(mod)
-        mod_name = mod.__name__
-        try:
-            models = import_module(app+'.models')
-        except ImportError:
-            logger.debug('No models in ' + app)
-            continue
-        for name in dir(models):
-            obj = getattr(models,name)
+    mod = import_module(application)
+    mod_name = mod.__name__
+    try:
+        mod_models = import_module(application+'.models')
+    except ImportError:
+        logger.debug('No models in ' + application)
+    else:
+        for name in dir(mod_models):
+            obj = getattr(mod_models,name)
             if isinstance(obj,StdNetType) and hasattr(obj,'_meta'):
+                name = obj._meta.name
+                if models and name not in models:
+                    continue
                 name = str(obj._meta)
                 if not name in app_defaults:
                     name = obj._meta.app_label
@@ -98,7 +102,16 @@ def register_applications(applications, app_defaults = None, **kwargs):
                 else:
                     args = kwargs
                 register(obj,**args)
-    return modules
+                yield obj
+
+
+def register_applications(applications, **kwargs):
+    '''Loop over applications and register models.
+    '''
+    models = []
+    for app in applications:
+        models.extend(register_application_models(app,**kwargs))
+    return models
 
 
 

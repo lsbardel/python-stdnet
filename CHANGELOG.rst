@@ -1,3 +1,11 @@
+Ver. 0.5.1 - Development
+===========================
+* Added a command to :mod:``stdnet.contrib.monitor``, a stdnet application for djpcms_.
+* Bug fix in redis backend ``save_object`` attribute. This bug was cousing the deletion of related objects when
+  updating the value of existing objects.
+* Added licences to the ``dispatch`` and ``redis`` module
+* **167 regression tests** with **61%** coverage.
+
 Ver. 0.5.0 - 2011 Feb 24
 ===========================
 * Ported to ``Python 3`` and dropped support for ``python 2.5``.

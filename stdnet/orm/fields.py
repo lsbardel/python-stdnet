@@ -326,6 +326,7 @@ is set to ``False``.'''
         kwargs['unique'] = False
         kwargs['primary_key'] = False
         kwargs['ordered'] = False
+        self.max_length = kwargs.pop('max_length',None) # not used for now 
         required = kwargs.get('required',None)
         if required is None:
             kwargs['required'] = False

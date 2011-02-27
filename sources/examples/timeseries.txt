@@ -5,61 +5,53 @@ Time Series
 ======================================
 
 A very simple example on how to manage timeseries_ data.
+It requires the ``timeseries`` branch of redis
+(see :ref:`redis timeseries API <redis-timeseries>`).
 
 
 Define the model
 =====================
-A simple model containing a :class:`stdnet.orm.HashField`::
+A simple model derived from :class:`stdnet.contrib.timeseries.models.TimeSeries` ::
 
-	from stdnet import orm
-	from stdnet.utils import date2timestamp, timestamp2date
-	
-	class DateConverter(object):
-	    @classmethod
-	    def tokey(cls, value):
-	        return date2timestamp(value)
-	    
-	    @classmethod
-	    def tovalue(cls, value):
-	        return timestamp2date(value)
+    from datetime import date
+    
+    from stdnet import orm
+    from stdnet.contrib.timeseries.models import TimeSeries
         
-	class TimeSerie(orm.StdModel):
-	    ticker = orm.SymbolField(unique = True)
-	    data   = orm.HashField(converter = DateConverter)
-	    
-	    def __str__(self):
-	        return '%s - %s' % (self.ticker,self.data.size())
-
-``DateConverter`` is a module/object/class used to convert the keys to suitable
-values which can be used as keys for the hash table. In this example the conversion from a 
-Python :class:`datetime.datetime` object to a timestamp float number is used.
+    
+    class FinanceTimeSeries(TimeSeries):
+        ticker = orm.SymbolField(unique = True)
+        
+        def __unicode__(self):
+            return '%s - %s' % (self.ticker,self.data.size())
 
 
 Register the model
 =====================
-Register ``TimeSerie`` to the standard backend::
+Register ``FinanceTimeSeries`` to the standard backend::
 
-    >>> orm.register(TimeSerie)
+    >>> from stdnet import orm
+    >>> orm.register(FinanceTimeSeries)
     'redis db 7 on 127.0.0.1:6379'
     
     
 Create Objects
 ===========================
-	
-	>>> from datetime import date
-	>>> ts = TimeSerie(ticker = 'GOOG').save()
-	>>> ts.data.add(date(2010,7,6),436.07)
-	>>> ts.save()
-	TimeSerie: GOOG - 1
-	>>> ts.data.add(date(2010,7,2),436.55)
-	>>> ts.data.add(date(2010,7,1),439.49)
-	>>> ts.save()
-	TimeSerie: GOOG - 3
-	>>> for data in ts.data.sorteditems():
-	...     print data
-	(datetime.date(2010,7,1), 439.49)
-	(datetime.date(2010,7,2), 436.55)
-	(datetime.date(2010,7,6), 436.07)
+    
+    >>> from datetime import date
+    >>> ts = FinanceTimeSeries(ticker = 'GOOG').save()
+    >>> ts.data.add(date(2010,7,6),436.07)
+    >>> ts.save()
+    FinanceTimeSeries:: GOOG - 1
+    >>> ts.data.add(date(2010,7,2),436.55)
+    >>> ts.data.add(date(2010,7,1),439.49)
+    >>> ts.save()
+    FinanceTimeSeries:: GOOG - 3
+    >>> for data in ts.data.items():
+    ...     print data
+    (datetime.date(2010,7,1), 439.49)
+    (datetime.date(2010,7,2), 436.55)
+    (datetime.date(2010,7,6), 436.07)
     
     
 .. _timeseries: http://en.wikipedia.org/wiki/Time_series

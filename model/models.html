@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>StdNet Models &mdash; Python StdNet v0.5.0 documentation</title>
+    <title>StdNet Models &mdash; Python StdNet v0.5.1dev documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.0',
+        VERSION:     '0.5.1dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.5.1dev documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Scalar Fields" href="fields.html" />
     <link rel="prev" title="Object Relational Mapper" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -95,7 +95,7 @@ otherwise a <a class="reference internal" href="../utility/exceptions.html#stdne
 <dt id="stdnet.orm.StdModel.delete">
 <tt class="descname">delete</tt><big>(</big><em>dlist=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete an instance from database. If the instance is not available (it does not have an id) and
-<tt class="docutils literal"><span class="pre">StdNetException</span></tt> exception will raise.</p>
+<tt class="docutils literal"><span class="pre">StdNetException</span></tt> exception will raise. Return the number of model instances deleted.</p>
 </dd></dl>
 
 <dl class="method">
@@ -110,10 +110,25 @@ otherwise a <a class="reference internal" href="../utility/exceptions.html#stdne
 <dd><p>Convert <tt class="docutils literal"><span class="pre">self</span></tt> to a dictionary.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.orm.StdModel.instance_keys">
+<tt class="descname">instance_keys</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.instance_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility method for returning keys associated with this instance only. The instance id
+is however available in other keys (indices and other backend containers).</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="stdnet.orm.StdModel.commit">
+<em class="property">classmethod </em><tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut to commit changes</p>
+</dd></dl>
+
 <dl class="classmethod">
 <dt id="stdnet.orm.StdModel.flush">
 <em class="property">classmethod </em><tt class="descname">flush</tt><big>(</big><em>count=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flush the table and all related tables. If count is a dictionary, the method
+<dd><p>Flush the model table and all related tables including all indexes.
+Calling flush will erase everything about the model instances in the remote server.
+If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.</p>
 </dd></dl>
 
@@ -316,7 +331,7 @@ the model table</p>
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>

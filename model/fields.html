@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Scalar Fields &mdash; Python StdNet v0.5.0 documentation</title>
+    <title>Scalar Fields &mdash; Python StdNet v0.5.1dev documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.0',
+        VERSION:     '0.5.1dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.5.1dev documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Data-structure Fields" href="structure.html" />
     <link rel="prev" title="StdNet Models" href="models.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="models.html" title="StdNet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -170,6 +170,12 @@ If an error occurs it raises <a class="reference internal" href="../utility/exce
 <dd><p>Returns the default value for this field.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.orm.Field.index_value">
+<tt class="descname">index_value</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Field.index_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>A value which is used by indexes to generate keys.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -249,7 +255,7 @@ a <tt class="xref py py-class docutils literal"><span class="pre">datetime.date<
 <dd><p>An <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> which contains a <tt class="docutils literal"><span class="pre">symbol</span></tt>.
 A symbol holds a sequence of characters as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
-or other entities.</p>
+or other entities. They are indexes by default.</p>
 </dd></dl>
 
 </div>
@@ -358,7 +364,7 @@ back to self. For example:</p>
         <li class="right" >
           <a href="models.html" title="StdNet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>

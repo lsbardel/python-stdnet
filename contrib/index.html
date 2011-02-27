@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Battery Included &mdash; Python StdNet v0.5.0 documentation</title>
+    <title>Battery Included &mdash; Python StdNet v0.5.1dev documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.0',
+        VERSION:     '0.5.1dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +21,8 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
-    <link rel="next" title="TimeSerie Model" href="timeserie.html" />
+    <link rel="top" title="Python StdNet v0.5.1dev documentation" href="../index.html" />
+    <link rel="next" title="Sessions" href="sessions.html" />
     <link rel="prev" title="Other Utilities" href="../utility/other.html" /> 
   </head>
   <body>
@@ -36,12 +36,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="timeserie.html" title="TimeSerie Model"
+          <a href="sessions.html" title="Sessions"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../utility/other.html" title="Other Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,13 +57,29 @@ which are based on <tt class="xref py py-mod docutils literal"><span class="pre"
 core library. They may also have external dependencies.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="timeserie.html">TimeSerie Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sessions.html">Sessions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitor.html">Admin monitors for stdnet</a></li>
 <li class="toctree-l1"><a class="reference internal" href="djangolink.html">StdNet &amp; Django Link</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="djangolink.html#stdnet-as-django-model-cache">Stdnet as django model cache</a></li>
 <li class="toctree-l2"><a class="reference internal" href="djangolink.html#adding-extra-data">Adding Extra Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="djangolink.html#api">API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tagging.html">Tagging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tagging.html#api">API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tagging.html#models">Models</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Timeseries Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-base-model">Timeseries base model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model">Timeseries model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model-field">Timeseries Model Field</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="redis_timeseries.html">Redis timeseries API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis_timeseries.html#commands">Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis_timeseries.html#use-cases">Use cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis_timeseries.html#source-code-changes">Source code changes</a></li>
 </ul>
 </li>
 </ul>
@@ -82,8 +98,8 @@ core library. They may also have external dependencies.</p>
   <p class="topless"><a href="../utility/other.html"
                         title="previous chapter">Other Utilities</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="timeserie.html"
-                        title="next chapter">TimeSerie Model</a></p>
+  <p class="topless"><a href="sessions.html"
+                        title="next chapter">Sessions</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/contrib/index.txt"
@@ -116,12 +132,12 @@ core library. They may also have external dependencies.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="timeserie.html" title="TimeSerie Model"
+          <a href="sessions.html" title="Sessions"
              >next</a> |</li>
         <li class="right" >
           <a href="../utility/other.html" title="Other Utilities"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

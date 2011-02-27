@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Database backend interface &mdash; Python StdNet v0.5.0 documentation</title>
+    <title>Database backend interface &mdash; Python StdNet v0.5.1dev documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.0',
+        VERSION:     '0.5.1dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.0 documentation" href="../index.html" />
+    <link rel="top" title="Python StdNet v0.5.1dev documentation" href="../index.html" />
     <link rel="up" title="Data Structure and BackEnds" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="../utility/index.html" />
     <link rel="prev" title="Structures" href="structures.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="structures.html" title="Structures"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>  
@@ -107,8 +107,12 @@ an <a class="reference internal" href="../utility/exceptions.html#stdnet.excepti
 
 <dl class="method">
 <dt id="stdnet.BackendDataServer.delete_object">
-<tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>deleted=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete an object from the data server and clean up indices.</p>
+<tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>deleted=None</em>, <em>multi_field=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an object from the data server and clean up indices.
+Called to clear a model instance.
+:parameter obj: instance of <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
+:parameter deleted: a list or <tt class="xref docutils literal"><span class="pre">None</span></tt>. If a list, deleted keys will be appended to it.
+:parameter multi_field: if <tt class="xref docutils literal"><span class="pre">True</span></tt> the multifield ids (if any) will be removed. Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -274,7 +278,7 @@ data can be loaded back in memory.</p>
         <li class="right" >
           <a href="structures.html" title="Structures"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
           <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
       </ul>
     </div>

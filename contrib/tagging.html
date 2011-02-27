@@ -1,0 +1,213 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tagging &mdash; Python StdNet v0.5.1dev documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.5.1dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.5.1dev documentation" href="../index.html" />
+    <link rel="up" title="Battery Included" href="index.html" />
+    <link rel="next" title="Timeseries Models" href="timeseries.html" />
+    <link rel="prev" title="StdNet &amp; Django Link" href="djangolink.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="timeseries.html" title="Timeseries Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="djangolink.html" title="StdNet &amp; Django Link"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Battery Included</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.contrib.tagging"><span id="contrib-tagging"></span></span><div class="section" id="tagging">
+<h1>Tagging<a class="headerlink" href="#tagging" title="Permalink to this headline">¶</a></h1>
+<p>A simple tagging framework.</p>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="stdnet.contrib.tagging.addtag">
+<tt class="descclassname">stdnet.contrib.tagging.</tt><tt class="descname">addtag</tt><big>(</big><em>obj</em>, <em>tag</em>, <em>lower_case=True</em><big>)</big><a class="headerlink" href="#stdnet.contrib.tagging.addtag" title="Permalink to this definition">¶</a></dt>
+<dd><p>A a tag to an object.
+If the object already has the tag associated with it do nothing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>obj</strong> &#8211; instance of <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</li>
+<li><strong>tag</strong> &#8211; a string for the tag name or a <a class="reference internal" href="#stdnet.contrib.tagging.Tag" title="stdnet.contrib.tagging.Tag"><tt class="xref py py-class docutils literal"><span class="pre">Tag</span></tt></a> instance.</li>
+<li><strong>lower_case</strong> &#8211; if <tt class="xref docutils literal"><span class="pre">True</span></tt> tags are always lower case. Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>It returns an instance of <a class="reference internal" href="#stdnet.contrib.tagging.TaggedItem" title="stdnet.contrib.tagging.TaggedItem"><tt class="xref py py-class docutils literal"><span class="pre">TaggedItem</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stdnet.contrib.tagging.formodels">
+<tt class="descclassname">stdnet.contrib.tagging.</tt><tt class="descname">formodels</tt><big>(</big><em>*models</em><big>)</big><a class="headerlink" href="#stdnet.contrib.tagging.formodels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary where keys are tag names and values are integers
+representing how many times the corresponding tag has been used against
+the Model classes in question.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="models">
+<h2>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.contrib.tagging.Tag">
+<em class="property">class </em><tt class="descclassname">stdnet.contrib.tagging.</tt><tt class="descname">Tag</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.contrib.tagging.Tag" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="stdnet.contrib.tagging.Tag.name">
+<tt class="descname">name</tt><a class="headerlink" href="#stdnet.contrib.tagging.Tag.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The tag name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.contrib.tagging.Tag.taggeditem_set">
+<tt class="descname">taggeditem_set</tt><a class="headerlink" href="#stdnet.contrib.tagging.Tag.taggeditem_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt> for handling related <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModels</span></tt>
+to a <a class="reference internal" href="../model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.contrib.tagging.TaggedItem">
+<em class="property">class </em><tt class="descclassname">stdnet.contrib.tagging.</tt><tt class="descname">TaggedItem</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.contrib.tagging.TaggedItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>A model for associating <a class="reference internal" href="#stdnet.contrib.tagging.Tag" title="stdnet.contrib.tagging.Tag"><tt class="xref py py-class docutils literal"><span class="pre">Tag</span></tt></a> instances with general <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
+instances.</p>
+<dl class="attribute">
+<dt id="stdnet.contrib.tagging.TaggedItem.tag">
+<tt class="descname">tag</tt><a class="headerlink" href="#stdnet.contrib.tagging.TaggedItem.tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>tag instance</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.contrib.tagging.TaggedItem.model_type">
+<tt class="descname">model_type</tt><a class="headerlink" href="#stdnet.contrib.tagging.TaggedItem.model_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Model type</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.contrib.tagging.TaggedItem.object_id">
+<tt class="descname">object_id</tt><a class="headerlink" href="#stdnet.contrib.tagging.TaggedItem.object_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Model instance id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.contrib.tagging.TaggedItem.object">
+<tt class="descname">object</tt><a class="headerlink" href="#stdnet.contrib.tagging.TaggedItem.object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instance of <a class="reference internal" href="#stdnet.contrib.tagging.TaggedItem.model_type" title="stdnet.contrib.tagging.TaggedItem.model_type"><tt class="xref py py-attr docutils literal"><span class="pre">model_type</span></tt></a> with id <a class="reference internal" href="#stdnet.contrib.tagging.TaggedItem.object_id" title="stdnet.contrib.tagging.TaggedItem.object_id"><tt class="xref py py-attr docutils literal"><span class="pre">object_id</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tagging</a><ul>
+<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#models">Models</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="djangolink.html"
+                        title="previous chapter">StdNet &amp; Django Link</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="timeseries.html"
+                        title="next chapter">Timeseries Models</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/contrib/tagging.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="timeseries.html" title="Timeseries Models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="djangolink.html" title="StdNet &amp; Django Link"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.5.1dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Battery Included</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

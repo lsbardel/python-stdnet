@@ -189,13 +189,19 @@ In doing so, convert byte data into unicode.'''
             except ValueError:
                 sub_dict[k] = v
         return sub_dict
+    data = info
     for line in response.splitlines():
         line = to_string(line)
-        key, value = line.split(':')
-        try:
-            info[key] = int(value)
-        except ValueError:
-            info[key] = get_value(value)
+        keyvalue = line.split(':')
+        if len(keyvalue) == 2:
+            key,value = keyvalue
+            try:
+                data[key] = int(value)
+            except ValueError:
+                data[key] = get_value(value)
+        else:
+            data = {}
+            info[line[2:]] = data
     return info
 
 def pairs_to_dict(response):

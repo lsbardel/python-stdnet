@@ -12,7 +12,7 @@ __all__ = ['ManyFieldManagerProxy',
            'SetField',
            'ListField',
            'HashField',
-           'TSField',
+           #'TSField',
            'ManyToManyField']
 
 
@@ -28,9 +28,6 @@ class ManyFieldManagerProxy(object):
     def get_cache_name(self):
         return '_%s_cache' % self.name
     
-    def id(self, instance):
-        return instance._meta.basekey('id',instance.id,self.name)
-
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
@@ -133,7 +130,10 @@ class MultiField(Field):
         self.model._meta.multifields.append(self)
         
     def to_python(self, instance):
-        return None    
+        return None
+    
+    def id(self, obj):
+        return getattr(obj,self.attname).id
 
 
 class SetField(MultiField):
@@ -198,14 +198,6 @@ it returns an instance of :class:`stdnet.HashTable` structure.
     type = 'hash'
     def get_pipeline(self):
         return 'hash'
-    
-
-class TSField(MultiField):
-    '''A timeserie field table field. NOT SUPPORTED IN REDIS MASTER.
-'''
-    type = 'ts'
-    def get_pipeline(self):
-        return 'ts'
 
 
 class ManyToManyField(MultiField):

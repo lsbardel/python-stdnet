@@ -1,8 +1,9 @@
 from datetime import datetime, date
 
 from stdnet import test
-from stdnet.contrib.timeserie.tests.models import TimeSeries, HashTimeSeries
+from stdnet.contrib.timeseries.tests.models import TimeSeries, HashTimeSeries
 from stdnet.utils import populate, todate, zip
+
 
 NUM_DATES = 1000
 

@@ -1,6 +1,6 @@
 from stdnet import orm
 
-from stdnet.contrib.timeserie import models
+from stdnet.contrib.timeseries import models
 
 
 class HashTimeSeries(models.HashTimeSeries):

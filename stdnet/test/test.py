@@ -4,6 +4,7 @@ import unittest
 from inspect import isclass
 
 from stdnet import orm
+from stdnet.utils import to_string
 
 
 TextTestRunner = unittest.TextTestRunner
@@ -22,7 +23,44 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         orm.clearall()
         self.unregister()
-     
+        
+        
+class TestMultiFieldMixin(object):
+    '''Test class which add a couple of tests for multi fields. You need to implement the
+    get_object_and_field and adddata methods'''
+    
+    def get_object_and_field(self):
+        raise NotImplementedError
+    
+    def adddata(self, obj):
+        raise NotImplementedError
+    
+    def testMultiFieldId(self):
+        '''Here we check for multifield specific stuff like the instance related keys (keys which
+are related to the instance rather than the model).'''
+        # get instance and field, the field has no data here
+        obj, field = self.get_object_and_field()
+        # get the object id
+        id = to_string(obj.id)
+        # get the field database key
+        field_key = to_string(field.id)
+        self.assertTrue(id in field_key)
+        keys = obj.instance_keys()
+        # field id should be in instance keys
+        self.assertTrue(field.id in keys)
+        lkeys = list(obj._meta.cursor.keys())
+        # the field has no data, so there is no key in the database
+        self.assertFalse(field.id in lkeys)
+        #
+        # Lets add data
+        self.adddata(obj)
+        # The field id should be in the server keys
+        lkeys = list(obj._meta.cursor.keys())
+        self.assertTrue(field.id in lkeys)
+        obj.delete()
+        lkeys = list(obj._meta.cursor.keys())
+        self.assertFalse(field.id in lkeys)
+        
 
 class TestLoader(unittest.TestLoader):
     '''A modified loader class which load test cases form

@@ -63,7 +63,7 @@ class QuerySet(object):
             else:
                 raise QuerySetError('Get query yielded non unique results')
         else:
-            raise ObjectNotFound
+            raise self.model.DoesNotExist
     
     def count(self):
         '''Return the number of objects in ``self`` without

@@ -1,11 +1,10 @@
 from datetime import date, datetime
 from random import uniform
 
-from stdnet.test import TestCase
-from stdnet.contrib.timeserie.utils import dategenerator, default_parse_interval
+from stdnet import test
 from stdnet.utils import populate, todate, zip
-
-from stdnet.contrib.timeserie.tests.models import HashTimeSeries, DateHashTimeSeries
+from stdnet.contrib.timeseries.utils import dategenerator, default_parse_interval
+from stdnet.contrib.timeseries.tests.models import HashTimeSeries, DateHashTimeSeries
 
 
 NUM_DATES = 300
@@ -19,7 +18,7 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestHashTimeSeries(TestCase):
+class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
     model   = HashTimeSeries
     mkdate  = datetime
     
@@ -28,21 +27,28 @@ class TestHashTimeSeries(TestCase):
         #self.orm.clearall()
         self.model(ticker = 'GOOG').save()
         
+    def get_object_and_field(self, ticker = 'GOOG'):
+        obj = self.model.objects.get(ticker = ticker)
+        return obj,obj.data
+    
+    def adddata(self, obj, data = None):
+        data = data or testdata
+        obj.data.update(data)
+        self.assertEqual(obj.data.size(),0)
+        obj.save()
+        data = obj.data
+        self.assertEqual(data.size(),len(data))
+        
     def unregister(self):
         self.orm.unregister(self.model)
         
     def get(self, ticker = 'GOOG'):
-        return self.model.objects.get(ticker = ticker)
+        return self.get_object_and_field(ticker)[0]
         
     def filldata(self, data = None):
-        data = data or testdata
         d = self.get()
-        d.data.update(data)
-        self.assertEqual(d.data.size(),0)
-        d.save()
-        data = d.data
-        self.assertEqual(data.size(),len(data))
-        return self.get()
+        self.adddata(d, data)
+        return self.get(ticker = d.ticker)
 
     def interval(self, a, b, targets, C, D):
         ts = self.get()

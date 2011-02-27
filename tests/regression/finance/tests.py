@@ -16,7 +16,7 @@ NUM_USERS   = 10
 NUM_DATES   = 2
 
 ccys_types  = ['EUR','GBP','AUD','USD','CHF','JPY']
-insts_types = ['equity','bond','future','cash','option']
+insts_types = ['equity','bond','future','cash','option','bond option']
 
 inst_names = populate('string',INST_LEN, min_len = 5, max_len = 20)
 inst_types = populate('choice',INST_LEN, choice_from = insts_types)

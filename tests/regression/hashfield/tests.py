@@ -7,7 +7,19 @@ keys = populate('string', 200)
 values = populate('string', 200, min_len = 20, max_len = 300)
 
 
-class TestHashField(test.TestCase):
+class TestHashField(test.TestCase,test.TestMultiFieldMixin):
+    
+    def get_object_and_field(self):
+        d = Dictionary.objects.get(name = 'test')
+        return d,d.data
+    
+    def adddata(self,d):
+        data = d.data
+        d.data.update(self.data)
+        self.assertEqual(d.data.size(),0)
+        d.save()
+        data = d.data
+        self.assertEqual(data.size(),len(self.data))
     
     def setUp(self):
         self.orm.register(Dictionary)
@@ -19,12 +31,7 @@ class TestHashField(test.TestCase):
     
     def fill(self):
         d = Dictionary.objects.get(name = 'test')
-        data = d.data
-        d.data.update(self.data)
-        self.assertEqual(d.data.size(),0)
-        d.save()
-        data = d.data
-        self.assertEqual(data.size(),len(self.data))
+        self.adddata(d)
         return Dictionary.objects.get(name = 'test')
     
     def testUpdate(self):

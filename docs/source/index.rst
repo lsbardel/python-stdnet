@@ -46,7 +46,7 @@ Contents
    contrib/index
    examples/index
    changelog
-   
+   contributing
 
 Indices and tables
 ==================

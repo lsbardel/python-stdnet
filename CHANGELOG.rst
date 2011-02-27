@@ -1,14 +1,17 @@
-Ver. 0.5.1 - Development
-===========================
-* Added a command to :mod:``stdnet.contrib.monitor``, a stdnet application for djpcms_.
-* Bug fix in redis backend ``save_object`` attribute. This bug was cousing the deletion of related objects when
+Ver. 0.5.1 - 2011 Feb 27
+==========================
+* Mainly bug fixes, documentations and more tests (improved coverage).
+* Modified the ``parse_info`` method in :mod:`stdnet.lib.redis`. Its now compatible with redis 2.2.
+* Added documentation for :ref:`Redis timeseries <redis-timeseries>`.
+* Added a command to :mod:`stdnet.contrib.monitor`, a stdnet application for djpcms_.
+* Critical Bug fix in redis backend ``save_object`` attribute. This bug was causing the deletion of related objects when
   updating the value of existing objects.
-* Added licences to the ``dispatch`` and ``redis`` module
-* **167 regression tests** with **61%** coverage.
+* Added licences to the :mod:`stdnet.dispatch` and :mod:`stdnet.lib.redis` module.
+* **177 regression tests, 189 with timeseries** with **67%** coverage.
 
 Ver. 0.5.0 - 2011 Feb 24
 ===========================
-* Ported to ``Python 3`` and dropped support for ``python 2.5``.
+* Ported to ``Python 3`` and dropped support for ``python 2.5``. Way to go.
 * Removed dependency from ``redis-py`` for python 3 compatibility.
 * Refactored the object relational mapper, including several bug fixes.
 * Added benchmark and profile to tests. To run benchmarks or profile::

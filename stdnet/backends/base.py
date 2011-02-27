@@ -69,6 +69,9 @@ class BackendDataServer(object):
             keys = list(keys)
         return len(keys)
     
+    def instance_keys(self, obj):
+        raise NotImplementedError
+    
     def delete(self, *key):
         "Delete one or more keys specified by ``keys``"
         raise NotImplementedError
@@ -120,8 +123,13 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
         '''
         raise NotImplementedError
     
-    def delete_object(self, obj, deleted = None):
-        '''Delete an object from the data server and clean up indices.'''
+    def delete_object(self, obj, deleted = None, multi_field = True):
+        '''Delete an object from the data server and clean up indices.
+Called to clear a model instance.
+:parameter obj: instance of :class:`stdnet.orm.StdModel`
+:parameter deleted: a list or ``None``. If a list, deleted keys will be appended to it.
+:parameter multi_field: if ``True`` the multifield ids (if any) will be removed. Default ``True``.
+        '''
         raise NotImplementedError
         
     def set(self, id, value, timeout = None):

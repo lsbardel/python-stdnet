@@ -424,15 +424,12 @@ This structure is important since it is used in two different parts of the libra
     
 class TS(HashTable):
     struct = TsPipe
-
-    def __init__(self, *args, **kwargs):
-        super(TS,self).__init__(*args, **kwargs)
         
     def update(self, mapping):
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
         p     = self.pipeline
-        for key,value in mapping.iteritems():
+        for key,value in iteritems(mapping):
             p[tokey(key)] = dumps(value)
     
     def front(self):

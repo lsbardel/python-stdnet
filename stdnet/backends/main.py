@@ -11,9 +11,7 @@ else:
 
 
 BACKENDS = {
-    'locmem': 'locmem',
     'redis': 'redisch',
-    'redislist': 'redisb',
 }
 
 

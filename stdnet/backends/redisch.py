@@ -21,6 +21,18 @@ class BackendDataServer(BackendDataServer0):
         
     def idset(self, meta):
         return self.unordered_set(meta.basekey('id'), pickler = nopickle)
+    
+    def instance_keys(self, obj):
+        meta = obj._meta
+        if meta.multifields:
+            keys = []
+            for field in meta.multifields:
+                f = getattr(obj,field.attname)
+                keys.append(f.id)
+            return keys
+        else:
+            return ()
+                
         
     def query(self, meta, fargs, eargs, filter_sets = None):
         # QUERY a model
@@ -160,7 +172,7 @@ class BackendDataServer(BackendDataServer0):
         if objid:
             try:
                 pobj = obj.__class__.objects.get(id = objid)
-                pobj.delete(delete_related = False)
+                self.delete_object(pobj, multi_field = False)
             except:
                 pass
         objid = obj.id = meta.pk.serialize(objid)
@@ -191,9 +203,8 @@ class BackendDataServer(BackendDataServer0):
         
         return obj
     
-    def delete_object(self, obj, deleted = None):
-        '''Delete an object from the data server and clean up indices.'''
-        deleted = deleted if deleted is not None else []
+    def delete_object(self, obj, deleted = None, multi_field = True):
+        append  = None if deleted is None else deleted.append
         meta    = obj._meta
         timeout = meta.timeout
         hash    = meta.table()
@@ -205,22 +216,26 @@ class BackendDataServer(BackendDataServer0):
             return 0
         
         # ids set
-        index = self.unordered_set(bkey('id'), timeout, pickler = nopickle)
-        deleted.append(index.discard(objid))
+        sid = bkey('id')
+        index = self.unordered_set(sid, timeout, pickler = nopickle)
+        if index.discard(objid) and append:
+            append(sid)
         
         for field in meta.fields:
             name = field.name
             if field.index:
-                key   = bkey(name,field.serialize(getattr(obj,name,None)))
+                key = bkey(name,field.serialize(getattr(obj,name,None)))
                 if field.unique:
-                    deleted.append(self.delete(key))
+                    if self.delete(key) and append:
+                        deleted.append(key)
                 else:
                     if field.ordered:
                         index = self.ordered_set(key, timeout, pickler = nopickle)
                     else:
                         index = self.unordered_set(key, timeout, pickler = nopickle)
-                    deleted.append(index.discard(objid))
+                    index.discard(objid)
             fid = field.id(obj)
-            if fid:
-                deleted.append(self.delete(fid))
+            if fid and multi_field:
+                if self.delete(fid) and append:
+                    append(fid)
         return 1

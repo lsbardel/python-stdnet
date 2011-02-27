@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
-from stdnet.contrib.timeserie.tests.models import TimeSeries
-from stdnet.contrib.timeserie.tests.regression import hashtimeseries
+from stdnet.contrib.timeseries.tests.models import TimeSeries
+from stdnet.contrib.timeseries.tests.regression import hashtimeseries
 
 testdata  = hashtimeseries.testdata
 testdata2 = hashtimeseries.testdata2

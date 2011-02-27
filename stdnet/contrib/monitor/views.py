@@ -11,8 +11,7 @@ from django.utils.dateformat import format, time_format
 
 from stdnet import orm
 from stdnet.utils.format import format_number
-
-import redis
+from stdnet.lib import redis
 
 
 class RedisForm(forms.Form):

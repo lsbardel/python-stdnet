@@ -1,6 +1,7 @@
 from stdnet import orm
 from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate
-from stdnet.contrib.timeserie.utils import default_parse_interval
+
+from .utils import default_parse_interval
 
 
 class DateTimeConverter(object):
@@ -25,26 +26,33 @@ class DateConverter(object):
         return timestamp2date(value).date()
 
 
-class TimeSerieField(orm.HashField):
+class HashTimeSeriesField(orm.HashField):
     '''To be used with subclasses of :class:`TimeSeriesBase`.'''
     def register_with_model(self, name, model):
-        super(TimeSerieField,self).register_with_model(name, model)
+        super(HashTimeSeriesField,self).register_with_model(name, model)
         self.converter = model.converter
         
         
-class TimeSeriesField(orm.TSField):
-    '''A new timeseries field based on TS data structure in Redis'''
+class TimeSeriesField(orm.MultiField):
+    '''A new timeseries field based on TS data structure in Redis.
+To be used with subclasses of :class:`TimeSeriesBase`'''
+    type = 'ts'
+    
+    def get_pipeline(self):
+        return 'ts'
+    
     def __init__(self, *args, **kwargs):
         super(TimeSeriesField,self).__init__(*args, **kwargs)
         
     def register_with_model(self, name, model):
+        self.converter = model.converter # must be set before calling super method
         super(TimeSeriesField,self).register_with_model(name, model)
-        self.converter = model.converter
         
 
 class TimeSeriesBase(orm.StdModel):
-    '''Timeseries base class'''
+    '''Timeseries base model class'''
     converter = DateTimeConverter
+    '''Class responsable for converting Python dates into unix timestamps'''
     
     def todate(self, v):
         return todatetime(v)
@@ -56,11 +64,12 @@ class TimeSeriesBase(orm.StdModel):
     class Meta:
         abstract = True
         
-    def intervals(self, startdate, enddate, parseinterval = default_parse_interval):
-        '''Given a *startdate* and an *enddate* date, evaluate the date intervals
+    def intervals(self, startdate, enddate, parseinterval = None):
+        '''Given a ``startdate`` and an ``enddate`` dates, evaluate the date intervals
 from which data is not available. It return a list of two-dimensional tuples
 containing start and end date for the interval. The list could countain 0,1 or 2
 tuples.'''
+        parseinterval = parseinterval or default_parse_interval
         start     = self.start
         end       = self.end
         todate    = self.todate
@@ -104,6 +113,7 @@ tuples.'''
         
     
 class TimeSeries(TimeSeriesBase):
+    '''Timeseries model'''
     data  = TimeSeriesField()
     
     def dates(self):
@@ -123,7 +133,7 @@ class TimeSeries(TimeSeriesBase):
 
 class HashTimeSeries(TimeSeriesBase):
     '''Base abstract class for timeseries'''
-    data  = TimeSerieField()
+    data  = HashTimeSeriesField()
     start = orm.DateTimeField(required = False, index = False)
     end   = orm.DateTimeField(required = False, index = False)
     

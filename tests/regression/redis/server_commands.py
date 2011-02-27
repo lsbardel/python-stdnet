@@ -15,6 +15,12 @@ to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
 
 
+def get_version(info):
+    if 'redis_version' in info:
+        return info['redis_version']
+    else:
+        return info['Server']['redis_version']
+
 
 class ServerCommandsTestCase(BaseTest):
 
@@ -64,7 +70,12 @@ class ServerCommandsTestCase(BaseTest):
         self.client['b'] = 'bar'
         info = self.client.info()
         self.assert_(isinstance(info, dict))
-        self.assertEquals(info['db{0}'.format(DBTEST)]['keys'], 2)
+        version = get_version(info)
+        if StrictVersion(version) >= StrictVersion('2.2.0'):
+            keyspace = info['Keyspace']
+        else:
+            keyspace = info
+        self.assertEquals(keyspace['db{0}'.format(DBTEST)]['keys'], 2)
 
     def test_lastsave(self):
         self.assert_(isinstance(self.client.lastsave(), datetime.datetime))
@@ -291,7 +302,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertRaises(ResponseError, self.client.lpush, 'a', 'a')
         del self.client['a']
         # real logic
-        version = self.client.info()['redis_version']
+        version = get_version(self.client.info())
         if StrictVersion(version) >= StrictVersion('1.3.4'):
             self.assertEqual(1, self.client.lpush('a', 'b'))
             self.assertEqual(2, self.client.lpush('a', 'a'))
@@ -414,7 +425,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertRaises(ResponseError, self.client.rpush, 'a', 'a')
         del self.client['a']
         # real logic
-        version = self.client.info()['redis_version']
+        version = get_version(self.client.info())
         if StrictVersion(version) >= StrictVersion('1.3.4'):
             self.assertEqual(1, self.client.rpush('a', 'a'))
             self.assertEqual(2, self.client.rpush('a', 'b'))

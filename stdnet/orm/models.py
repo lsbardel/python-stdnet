@@ -61,20 +61,17 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         else:
             return False
         
-    def delete(self, dlist = None, delete_related = True):
+    def delete(self, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
-``StdNetException`` exception will raise.'''
-        if dlist is None:
-            dlist = []
+``StdNetException`` exception will raise. Return the number of model instances deleted.'''
         meta = self._meta
         if not self.id:
             raise StdNetException('Cannot delete object. It was never saved.')
         T = 0
         # Gather related objects to delete
-        if delete_related:
-            objs = self.related_objects()
-            for obj in objs:
-                T += obj.delete(dlist)
+        objs = self.related_objects()
+        for obj in objs:
+            T += obj.delete(dlist)
         return T + meta.cursor.delete_object(self, dlist)
     
     def related_objects(self):
@@ -102,13 +99,24 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     def afterload(self):
         pass
     
+    # UTILITY METHODS
+    
+    def instance_keys(self):
+        '''Utility method for returning keys associated with this instance only. The instance id
+is however available in other keys (indices and other backend containers).'''
+        return self._meta.cursor.instance_keys(self)
+            
+    
     @classmethod
     def commit(cls):
+        '''Shortcut to commit changes'''
         return cls._meta.cursor.commit()
     
     @classmethod
     def flush(cls, count = None):
-        '''Flush the table and all related tables. If count is a dictionary, the method
+        '''Flush the model table and all related tables including all indexes.
+Calling flush will erase everything about the model instances in the remote server.
+If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     

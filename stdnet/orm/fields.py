@@ -174,6 +174,10 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
                 return self.default
         return None
     
+    def index_value(self):
+        '''A value which is used by indexes to generate keys.'''
+        return self.value
+    
     def __deepcopy__(self, memodict):
         '''Nothing to deepcopy here'''
         field = copy(self)
@@ -194,26 +198,26 @@ value with a specific data type. it can be of four different types:
 * floating point
 * symbol
 '''
-    type = None
-    default = ''
-    
-    def to_python(self, value):
-        if value:
-            return to_string(value)
-        else:
-            return self.default
+    pass
+        
     
 
 class SymbolField(AtomField):
     '''An :class:`AtomField` which contains a ``symbol``.
 A symbol holds a sequence of characters as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
-or other entities.'''
+or other entities. They are indexes by default.'''
     type = 'symbol'
-    def serialize(self, value):
+    default = to_string('')
+    
+    def to_python(self, value):
         if value is not None:
-            value = str(value)
-        return value
+            return to_string(value)
+        else:
+            return self.default
+    
+    def index_value(self):
+        return sha1(self.value)
     
 
 class IntegerField(AtomField):
@@ -233,6 +237,7 @@ class IntegerField(AtomField):
             return int(value)
         else:
             return self.default
+        
     
     
 class BooleanField(AtomField):
@@ -243,6 +248,9 @@ class BooleanField(AtomField):
         
     def to_python(self, value):
         return True if value else False
+    
+    def index_value(self):
+        return 1 if self.value else 0
     
     
 class AutoField(IntegerField):
@@ -315,11 +323,10 @@ a :class:`datetime.datetime` instance.'''
         return value
 
 
-class CharField(AtomField):
+class CharField(SymbolField):
     '''A text :class:`Field` which is never an index.
 It contains strings and by default :attr:`Field.required`
 is set to ``False``.'''
-    default = ''
     type = 'text'
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False

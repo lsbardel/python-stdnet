@@ -13,7 +13,9 @@ core library. They may also have external dependencies.
 .. toctree::
    :maxdepth: 2
    
-   timeserie
    sessions
    monitor
    djangolink
+   tagging
+   timeseries
+   redis_timeseries

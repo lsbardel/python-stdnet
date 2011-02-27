@@ -1,8 +1,7 @@
 from copy import copy
 from time import sleep
 
-import stdnet
-from stdnet.test import TestCase
+from stdnet import test, MultiFieldError
 from stdnet.utils import populate, zip
 
 from examples.models import SimpleList
@@ -10,7 +9,18 @@ from examples.models import SimpleList
 elems = populate('string', 100)
 
 
-class BaseTestListField(TestCase):
+class BaseTestListField(test.TestCase,test.TestMultiFieldMixin):
+    
+    def get_object_and_field(self):
+        d = SimpleList().save()
+        return d,d.names
+    
+    def adddata(self,li):
+        names = li.names
+        for elem in elems:
+            names.push_back(elem)
+        li.save()
+        self.assertEqual(li.names.size(),len(elems))
     
     def setUp(self):
         self.orm.register(SimpleList)
@@ -72,8 +82,8 @@ saved on databse.'''
         obj = SimpleList()
         push_back  = lambda : obj.names.push_back('this should fail')
         push_front = lambda : obj.names.push_front('this should also fail')
-        self.assertRaises(stdnet.MultiFieldError,push_back)
-        self.assertRaises(stdnet.MultiFieldError,push_front)
+        self.assertRaises(MultiFieldError,push_back)
+        self.assertRaises(MultiFieldError,push_front)
         
 
 class TestTimeOutListField(BaseTestListField):

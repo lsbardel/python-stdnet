@@ -20,7 +20,7 @@ Well, that is not strictly true, there is a ``contrib`` module, from which ``std
 where several applications will be added.
 
 
-Contents:
+**Contents**
 
 .. toctree::
    :maxdepth: 2

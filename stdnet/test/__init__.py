@@ -1,4 +1,4 @@
-from .test import TestCase, TestSuiteRunner
+from .test import TestCase, TestMultiFieldMixin, TestSuiteRunner
 from .bench import BenchMark, BenchSuiteRunner
 from .profile import ProfileTest, ProfileSuiteRunner
 

@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Python StdNet'
-copyright = u'2010, Luca Sbardella'
+copyright = u'2010-2011, Luca Sbardella'
 
 html_theme = 'celery'
 

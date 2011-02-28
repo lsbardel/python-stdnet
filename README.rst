@@ -50,7 +50,7 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.5.0'
+	'0.5.1'
 
 
 Running Tests

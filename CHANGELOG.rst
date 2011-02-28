@@ -1,3 +1,7 @@
+Ver. 0.5.2 - Development
+==========================
+
+
 Ver. 0.5.1 - 2011 Feb 27
 ==========================
 * Mainly bug fixes, documentations and more tests (improved coverage).

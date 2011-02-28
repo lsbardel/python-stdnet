@@ -12,7 +12,6 @@ __all__ = ['ManyFieldManagerProxy',
            'SetField',
            'ListField',
            'HashField',
-           #'TSField',
            'ManyToManyField']
 
 

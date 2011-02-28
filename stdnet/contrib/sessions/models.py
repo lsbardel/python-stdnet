@@ -5,8 +5,7 @@ import random
 import hashlib
 
 from stdnet import orm
-from stdnet import ObjectNotFound
-from stdnet.utils import pickle, to_bytestring
+from stdnet.utils import pickle, to_bytestring, to_string
 
 # Use the system (hardware-based) random number generator if it exists.
 if hasattr(random, 'SystemRandom'):
@@ -19,7 +18,8 @@ UNUSABLE_PASSWORD = '!' # This will never be a valid hash
 
 
 def get_hexdigest(salt, raw_password):
-    return hashlib.sha1(salt + raw_password).hexdigest()
+    b = to_bytestring(salt + raw_password,errors='ignore')
+    return to_string(hashlib.sha1(b).hexdigest())
 
 
 def check_password(raw_password, enc_password):
@@ -76,7 +76,7 @@ class SessionManager(orm.Manager):
     def exists(self, id):
         try:
             self.get(id = id)
-        except ObjectNotFound:
+        except self.model.DoesNotExist:
             return False
         return True
     
@@ -200,12 +200,10 @@ class Session(orm.StdModel):
 
     def set_test_cookie(self):
         self[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
-        self.data.save()
 
     def test_cookie_worked(self):
         return self.get(self.TEST_COOKIE_NAME) == self.TEST_COOKIE_VALUE
 
     def delete_test_cookie(self):
         del self[self.TEST_COOKIE_NAME]
-        self.data.save()
     

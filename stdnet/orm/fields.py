@@ -224,7 +224,7 @@ class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
     default = 0
-    def serialise(self, value):
+    def serialize(self, value):
         if value is not None:
             try:
                 return int(value)
@@ -243,7 +243,7 @@ class IntegerField(AtomField):
 class BooleanField(AtomField):
     '''An boolean :class:`AtomField`'''
     type = 'bool'
-    def serialise(self, value):
+    def serialize(self, value):
         return True if value else False
         
     def to_python(self, value):
@@ -263,7 +263,7 @@ if you don't specify otherwise.
     def serialize(self, value):
         if not value:
             value = self.meta.cursor.incr(self.meta.autoid())
-        return super(AutoField,self).serialise(value)
+        return super(AutoField,self).serialize(value)
 
 
 class FloatField(AtomField):

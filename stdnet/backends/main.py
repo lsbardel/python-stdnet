@@ -1,13 +1,10 @@
 
 from stdnet.conf import settings
-from stdnet.utils import ispy3k
+from stdnet.utils import urlparse
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
 
-if ispy3k():
-    from urllib.parse import parse_qsl
-else:
-    from urlparse import parse_qsl
+parse_qsl = urlparse.parse_qsl
 
 
 BACKENDS = {

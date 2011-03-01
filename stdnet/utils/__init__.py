@@ -1,17 +1,17 @@
 import time
 from datetime import datetime
 
-from .py2py3 import *
-from .encoding import *
+from stdnet.lib.py2py3.py2py3 import *
+if ispy3k:
+    import pickle
+else:
+    import cPickle as pickle
+
+#from .encoding import *
 from .rwlock import *
 from .jsontools import *
 from .populate import populate
 from .fields import *
-
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
     
     
 class NoValue(object):

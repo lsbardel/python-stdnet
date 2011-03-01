@@ -4,7 +4,7 @@ import string
 
 from stdnet.utils import ispy3k
 
-if ispy3k():
+if ispy3k:
     characters = string.ascii_letters + string.digits
 else:
     characters = string.letters + string.digits

@@ -10,16 +10,22 @@ root_dir         = os.path.split(os.path.abspath(__file__))[0]
 package_dir      = os.path.join(root_dir, package_name)
 
 
+# Try to import lib build
+try:
+    from vendor.setup import libparams
+except ImportError:
+    libparams = {'cmdclass': {}}
+    
+
+
 class osx_install_data(install_data):
 
     def finalize_options(self):
         self.set_undefined_options('install', ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
 
-if sys.platform == "darwin": 
-    cmdclasses = {'install_data': osx_install_data} 
-else: 
-    cmdclasses = {'install_data': install_data}  
+libparams['cmdclass']['install_data'] = osx_install_data if sys.platform == "darwin" else install_data
+
 
 # Tell distutils to put the data_files in platform-specific installation
 # locations. See here for an explanation:
@@ -84,20 +90,18 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
 
-setup(
-        name         = package_fullname,
-        version      = mod.__version__,
-        author       = mod.__author__,
-        author_email = mod.__contact__,
-        url          = mod.__homepage__,
-        license      = mod.__license__,
-        description  = mod.__doc__,
-        long_description = read('README.rst'),
-        packages     = packages,
-        cmdclass     = cmdclasses,
-        data_files   = data_files,
-        install_requires = ['redis>=2.0'],
-        classifiers = [
+libparams.update({
+        'name': package_fullname,
+        'version': mod.__version__,
+        'author': mod.__author__,
+        'author_email': mod.__contact__,
+        'url': mod.__homepage__,
+        'license': mod.__license__,
+        'description': mod.__doc__,
+        'long_description': read('README.rst'),
+        'packages': packages,
+        'data_files': data_files,
+        'classifiers': [
             'Development Status :: 4 - Beta',
             'Environment :: Plugins',
             'Intended Audience :: Developers',
@@ -108,6 +112,9 @@ setup(
             'Programming Language :: Python :: 3',
             'Topic :: Utilities',
             'Topic :: Database'
-        ],
-    )
+        ]
+        })
+ 
+setup(**libparams)
+ 
  

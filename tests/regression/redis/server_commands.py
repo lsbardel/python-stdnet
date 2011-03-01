@@ -5,7 +5,7 @@ from distutils.version import StrictVersion
 
 from stdnet.utils import to_string, ispy3k, iteritems, to_bytestring, range
 
-if not ispy3k():
+if not ispy3k:
     chr = unichr
     
 from .base import *

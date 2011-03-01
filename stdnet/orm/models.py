@@ -90,11 +90,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             if value:
                 odict[field.name] = value
         return odict
-    
-    def model_to_dict(self, fields = None, exclude = None):
-        '''Convert ``self`` to a dictionary.'''
-        odict = self.__dict__.copy()
-        return odict
         
     def afterload(self):
         pass

@@ -27,6 +27,7 @@ cdef class redisConnection:
         '''Send a command to the redis server'''
         if self.isconnected():
             shape = args.shape
+            #redisAppendCommandArgv(self._c_connection,)
             
             
             

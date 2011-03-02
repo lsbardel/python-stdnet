@@ -3,7 +3,15 @@ from stdnet.utils import pickle, iteritems
 
 from .structures import Structure
 
-default_pickler = pickle
+class default_pickler:
+    
+    @classmethod
+    def loads(cls,x):
+        return pickle.loads(x)
+    
+    @classmethod
+    def dumps(cls, x):
+        return pickle.dumps(x,2)
 
 
 class NoPickle(object):

@@ -1,9 +1,12 @@
 *.pyc
 *.egg
 dist/*
+build/*
 .settings/*
 docs/build/*
 .coverage
 .project
 .pydevproject
 MANIFEST
+vendor/src/hr.c
+stdnet/lib/hr.so

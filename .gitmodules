@@ -3,4 +3,4 @@
 	url = https://github.com/antirez/hiredis.git
 [submodule "stdnet/lib/py2py3"]
 	path = stdnet/lib/py2py3
-	url = git@github.com:lsbardel/py2py3.git
+	url = https://github.com/lsbardel/py2py3.git

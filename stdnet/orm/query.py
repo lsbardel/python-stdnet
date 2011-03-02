@@ -149,6 +149,9 @@ fetching objects.'''
                 seq.append(m)
                 yield m
     
+    def all(self):
+        return self
+    
     def __iter__(self):
         return self.items()
                 

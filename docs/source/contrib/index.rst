@@ -14,8 +14,6 @@ core library. They may also have external dependencies.
    :maxdepth: 2
    
    sessions
-   monitor
-   djangolink
    tagging
    timeseries
    redis_timeseries

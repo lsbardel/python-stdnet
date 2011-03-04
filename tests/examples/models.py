@@ -80,14 +80,16 @@ class DateValue(orm.StdModel):
     dt = orm.DateField(index = False)
     value = orm.CharField()
     
-    def score(self):
+    @classmethod
+    def score(cls, instance):
         "implement the score function for sorting in the ordered set"
-        return int(1000*time.mktime(self.dt.timetuple()))
+        return int(1000*time.mktime(instance.dt.timetuple()))
     
     
 class Calendar(orm.StdModel):
     name   = orm.SymbolField(unique = True)
-    data   = orm.SetField(DateValue, ordered = True)
+    data   = orm.SetField(DateValue, ordered = True,
+                          scorefun = DateValue.score)
     
     def add(self, dt, value):
         event = DateValue(dt = dt,value = value).save()

@@ -412,7 +412,8 @@ class JSONField(CharField):
         super(JSONField,self).__init__(*args, **kwargs)
         
     def to_python(self, value):
-        if is_string(value):
+        if value is not None:
+            value = to_string(value)
             if not value:
                 value = {}
             else:

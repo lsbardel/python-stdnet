@@ -101,18 +101,36 @@ class Structure(object):
 .. attribute:: timeout
 
     Expiry timeout. If different from zero it represents the number of seconds
-    after which the structure is deleted from the data server. Default ``0``.
+    after which the structure is deleted from the data server.
     
+    Default ``0``.
+
+.. attribute:: pickler
+
+    Class used for serialize and unserialize values. If ``None`` the :attr:`cursor`
+    pickler will be used. If ``False`` no pikler will be used.
+    
+    Default ``None``.
+        
 .. attribute:: pipeline
 
     An instance of :class:`stdnet.PipeLine`.
+    
+.. attribute:: scorefun
+
+    A callable which takes a value as parameter and return a float
+    number to be usedto score the value. Used in :class:`OrderedSet` structure.
+    
+    Default ``None``.
 
     '''
     struct = None
     def __init__(self, cursor, id, timeout = 0,
-                 pickler = None, pipeline = None, **kwargs):
+                 pickler = None, pipeline = None,
+                 scorefun = None, **kwargs):
         self.cursor    = cursor
-        self.pickler   = pickler or cursor.pickler
+        self.scorefun  = scorefun
+        self.pickler   = pickler if pickler is not None else cursor.pickler
         self.id        = id
         self.timeout   = timeout
         self._cache    = None
@@ -272,22 +290,30 @@ This structure is used for in two different parts of the library.
 class OrderedSet(Set):
     '''An ordered version of :class:`stdnet.Set`.'''
     struct = OsetPipe
+        
     def __iter__(self):
         if not self._cache:
-            cache = []
-            loads = self.pickler.loads
-            for item in self._all():
-                item = loads(item)
-                cache.append(item)
-                yield item
-            self.cache = cache
+            self.cache = cache = []
+            if self.pickler:
+                loads = self.pickler.loads
+                for item in self._all():
+                    item = loads(item)
+                    cache.append(item)
+                    yield item
+            else:
+                for item in self._all():
+                    cache.append(item)
+                    yield item
         else:
             for item in self.cache:
                 yield item
                 
     def add(self, value):
         '''Add *value* to the set'''
-        self.pipeline.add((value.score(),self.pickler.dumps(value)))
+        score = self.scorefun(value)
+        if self.pickler:
+            value = self.pickler.dumps(value)
+        self.pipeline.add((score,value))
 
 
 class KeyValueStructure(Structure):

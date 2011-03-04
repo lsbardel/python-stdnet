@@ -6,6 +6,9 @@ from stdnet.contrib import tagging
 
 from .models import User, Issue
 
+Tag = tagging.Tag
+TaggedItem = tagging.TaggedItem
+
 TAG_LEN = 10
 ISSUE_LEN = 100
 MAX_TAGS  = 5
@@ -23,8 +26,8 @@ class TestTags(test.TestCase):
     def setUp(self):
         self.orm.register(User)
         self.orm.register(Issue)
-        self.orm.register(tagging.Tag)
-        self.orm.register(tagging.TaggedItem)
+        self.orm.register(Tag)
+        self.orm.register(TaggedItem)
         #self.orm.clearall()
         self.user = User(username = 'pinco', password = 'pinco').save()
         
@@ -55,4 +58,11 @@ class TestTags(test.TestCase):
     def testForModel(self):
         self.make()
         tags = tagging.formodels(Issue)
-        self.assertTrue(tags)
+        alltags = Tag.objects.all()
+        self.assertEqual(len(tags),alltags.count())
+        for tag in alltags:
+            n = tags[tag.name]
+            self.assertTrue(n)
+            tagged = TaggedItem.objects.filter(tag = tag, model_type = Issue)
+            self.assertEqual(n,tagged.count())
+        

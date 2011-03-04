@@ -62,7 +62,6 @@ class TestAtomFields(test.TestCase):
         
 
 class TestJsonField(test.TestCase):
-    tags = ['json']
     
     def setUp(self):
         self.orm.register(Statistics)
@@ -99,7 +98,6 @@ class TestJsonField(test.TestCase):
         
 
 class TestJsonFieldSep(test.TestCase):
-    tags = ['json']
     
     def setUp(self):
         self.orm.register(Statistics2)

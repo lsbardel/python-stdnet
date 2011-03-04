@@ -1,6 +1,8 @@
 Ver. 0.5.2 - Development
 ==========================
-
+* Added experimental :mod:`stdnet.contrib.searchengine` application.
+* Added ``scorefun`` callable in structures to be used in OrderedSet.
+* Added a ``spelling`` example.
 
 Ver. 0.5.1 - 2011 Feb 27
 ==========================

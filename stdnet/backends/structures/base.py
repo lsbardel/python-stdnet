@@ -261,7 +261,8 @@ This structure is used for in two different parts of the library.
                 yield item
     
     def __contains__(self, value):
-        value = self.pickler.dumps(value)
+        if self.pickler:
+            value = self.pickler.dumps(value)
         if self._cache is None:
             return self._contains(value)
         else:

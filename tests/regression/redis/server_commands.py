@@ -30,7 +30,6 @@ class ServerCommandsTestCase(BaseTest):
         
     def tearDown(self):
         self.client.flushdb()
-        self.client.connection.disconnect()
 
     # GENERAL SERVER COMMANDS
     def test_dbsize(self):
@@ -82,7 +81,6 @@ class ServerCommandsTestCase(BaseTest):
 
     def test_ping(self):
         self.assertEquals(self.client.ping(), True)
-
 
     # KEYS
     def test_append(self):
@@ -1048,9 +1046,9 @@ class ServerCommandsTestCase(BaseTest):
             [b'vodka', b'milk', b'gin', b'apple juice'])
 
     # PUBSUB
-    def test_pubsub(self):
+    def _test_pubsub(self):
         # create a new client to not polute the existing one
-        r = self.get_client()
+        r = self.get_client(build = True)
         channels = ('a1', 'a2', 'a3')
         for c in channels:
             r.subscribe(c)

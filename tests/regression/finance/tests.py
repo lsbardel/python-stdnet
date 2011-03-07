@@ -2,7 +2,7 @@ import datetime
 import logging
 from random import randint
 
-from stdnet.test import TestCase
+from stdnet import test
 from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
@@ -31,7 +31,7 @@ view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
 dates = populate('date',NUM_DATES,start=datetime.date(2009,6,1),end=datetime.date(2010,6,6))
 
 
-class BaseFinance(TestCase):
+class BaseFinance(test.TestCase):
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''

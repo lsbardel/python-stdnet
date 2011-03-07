@@ -157,15 +157,7 @@ class Group(orm.StdModel):
     '''simple group'''
     name  = orm.SymbolField(unique = True)
     users = orm.ManyToManyField(User, related_name = 'groups')
-    
 
-class Permission(orm.StdModel):
-    '''A general permission model'''
-    numeric_code = orm.IntegerField()
-    group = orm.ForeignKey(Group, required = False)
-    user = orm.ForeignKey(User, required = False)
-    model_or_object = orm.SymbolField()
-    
 
 class Session(orm.StdModel):
     TEST_COOKIE_NAME = 'testcookie'

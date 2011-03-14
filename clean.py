@@ -5,8 +5,8 @@ def rmgeneric(path, __func__):
         __func__(path)
         #print 'Removed ', path
         return 1
-    except OSError, (errno, strerror):
-        print 'Could not remove %s, %s' % (path,strerror)
+    except OSError as e:
+        print('Could not remove {0}, {1}'.format(path,e))
         return 0
         
  
@@ -35,5 +35,6 @@ def rmfiles(path, ext = None):
 if __name__ == '__main__':
     path = os.curdir
     removed, allfiles = rmfiles(path,'pyc')
-    print('removed %s pyc files out of %s' % (removed, allfiles))
+    print('removed {0} pyc files out of {1}'.format(removed, allfiles))
     
+

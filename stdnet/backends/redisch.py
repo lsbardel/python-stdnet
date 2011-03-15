@@ -1,4 +1,5 @@
 from uuid import uuid4
+import json
 
 from stdnet.utils import zip, iteritems
 from stdnet.exceptions import FieldError, ObjectNotFound
@@ -155,24 +156,19 @@ class BackendDataServer(BackendDataServer0):
         # Save the object in the back-end
         meta = obj._meta
         timeout = meta.timeout
-        data = {}
-        indexes = []
-        #Loop over scalar fields first
-        for field in meta.scalarfields:
-            name = field.attname
-            svalue = field.serialize(getattr(obj,name,None))
-            if svalue is None and field.required:
-                raise FieldError("Field '{0}' has no value for model '{1}'.\
- Cannot save instance".format(name,meta))
-            data[name] = svalue
-            if field.index:
-                indexes.append((field,svalue))
+        if not obj.is_valid():
+            raise FieldError(json.dumps(obj.errors))
+        data = obj.cleaned_data
         objid = obj.id
-        # if editing we need to clear the previous element. But not its related objects.
+        #
+        # if editing (id already available) we need to clear the previous element.
+        # But not its related objects.
         if objid:
             try:
                 pobj = obj.__class__.objects.get(id = objid)
                 self.delete_object(pobj, multi_field = False)
+            #TODO: we should use this except but it fails ManyToMany field to fail tests
+            #except obj.DoesNotExist:
             except:
                 pass
         objid = obj.id = meta.pk.serialize(objid)
@@ -187,7 +183,7 @@ class BackendDataServer(BackendDataServer0):
         index.add(objid)
         
         # Create indexes if possible
-        for field,value in indexes:
+        for field,value in obj.indices:
             key = bkey(field.name,value)
             if field.unique:
                 index = self.index_keys(key, timeout)

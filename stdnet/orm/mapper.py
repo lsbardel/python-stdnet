@@ -14,6 +14,7 @@ logger = logging.getLogger('stdnet.mapper')
 __all__ = ['clearall',
            'register',
            'unregister',
+           'model_iterator',
            'register_applications',
            'register_application_models',
            'Manager',
@@ -73,6 +74,25 @@ def unregister(model):
     global _registry 
     _registry.pop(model,None)
     model._meta.cursor = None
+    
+    
+def model_iterator(application):
+    if hasattr(application,'__iter__'):
+        for app in application:
+            for m in model_iterator(app):
+                yield m
+    else:
+        mod = import_module(application)
+        mod_name = mod.__name__
+        try:
+            mod_models = import_module(application+'.models')
+        except:
+            raise StopIteration
+        
+        for name in dir(mod_models):
+            obj = getattr(mod_models,name)
+            if isinstance(obj,StdNetType) and hasattr(obj,'_meta'):
+                yield obj
 
 
 def register_application_models(application,
@@ -81,28 +101,19 @@ def register_application_models(application,
                                 **kwargs):
     '''Generator of which register models'''
     app_defaults = app_defaults or {}
-    mod = import_module(application)
-    mod_name = mod.__name__
-    try:
-        mod_models = import_module(application+'.models')
-    except ImportError:
-        logger.debug('No models in ' + application)
-    else:
-        for name in dir(mod_models):
-            obj = getattr(mod_models,name)
-            if isinstance(obj,StdNetType) and hasattr(obj,'_meta'):
-                name = obj._meta.name
-                if models and name not in models:
-                    continue
-                name = str(obj._meta)
-                if not name in app_defaults:
-                    name = obj._meta.app_label
-                if name in app_defaults:
-                    args = app_defaults[name]
-                else:
-                    args = kwargs
-                register(obj,**args)
-                yield obj
+    for obj in model_iterator(application):
+        name = obj._meta.name
+        if models and name not in models:
+            continue
+        name = str(obj._meta)
+        if not name in app_defaults:
+            name = obj._meta.app_label
+        if name in app_defaults:
+            args = app_defaults[name]
+        else:
+            args = kwargs
+        register(obj,**args)
+        yield obj
 
 
 def register_applications(applications, **kwargs):

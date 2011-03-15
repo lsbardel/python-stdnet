@@ -101,6 +101,13 @@ class TestFinanceApplication(BaseFinance):
         all = Instrument.objects.all()
         self.assertEqual(tot,len(all))
         
+    def testValidation(self):
+        pos = Position()
+        self.assertFalse(pos.is_valid())
+        self.assertEqual(len(pos.errors),3)
+        self.assertEqual(len(pos.cleaned_data),1)
+        self.assertTrue('size' in pos.cleaned_data)
+        
     def testForeignKey(self):
         '''Test filtering with foreignkeys'''
         self.makePositions()

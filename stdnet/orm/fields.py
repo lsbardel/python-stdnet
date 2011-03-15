@@ -243,6 +243,10 @@ class IntegerField(AtomField):
 class BooleanField(AtomField):
     '''An boolean :class:`AtomField`'''
     type = 'bool'
+    
+    def __init__(self, required = False, **kwargs):
+        super(BooleanField,self).__init__(required = required,**kwargs)
+                 
     def serialize(self, value):
         return True if value else False
         

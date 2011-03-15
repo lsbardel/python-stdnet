@@ -52,8 +52,24 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
  backend database. Cannot save instance.".format(meta))
         return meta.cursor.save_object(self, commit)
     
-    def isvalid(self):
-        return self.meta.isvalid()
+    def is_valid(self):
+        return self._meta.is_valid(self)
+
+    def _valattr(self, name):
+        if hasattr(self,self._meta.VALATTR):
+            return getattr(self,self._meta.VALATTR)[name]
+            
+    @property
+    def cleaned_data(self):
+        return self._valattr('data')
+        
+    @property
+    def errors(self):
+        return self._valattr('errors')
+        
+    @property
+    def indices(self):
+        return self._valattr('indices')
         
     def __eq__(self, other):
         if other.__class__ == self.__class__:
@@ -101,7 +117,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
 is however available in other keys (indices and other backend containers).'''
         return self._meta.cursor.instance_keys(self)
             
-    
     @classmethod
     def commit(cls):
         '''Shortcut to commit changes'''

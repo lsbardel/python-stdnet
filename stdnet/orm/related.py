@@ -78,9 +78,9 @@ class ReverseSingleRelatedObjectDescriptor(object):
             raise AttributeError("%s must be accessed via instance" % self._field.name)
         field = self.field
 
-        if value is None and field.required:
-            raise ValueError('Cannot assign None: "%s" does not allow null values.' % field)
-        elif value is not None and not isinstance(value, field.relmodel):
+        #if value is None and field.required:
+        #    raise ValueError('Cannot assign None: "%s" does not allow null values.' % field)
+        if value is not None and not isinstance(value, field.relmodel):
             raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
 

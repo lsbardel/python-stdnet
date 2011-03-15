@@ -1,11 +1,6 @@
 import sys
 import copy
 
-try:
-    from itertools import izip as zip
-except ImportError:
-    pass
-
 from stdnet.utils import zip, to_bytestring
 from stdnet.orm import signals
 from stdnet.exceptions import *
@@ -58,6 +53,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     primary key ::class:`stdnet.orm.Field`
 
 '''
+    VALATTR = '_validation'
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None, **kwargs):
@@ -131,6 +127,26 @@ The key is an encoded binary string. For example::
         '''The id for autoincrements ids'''
         return self.basekey('ids')
     
+    def is_valid(self, instance):
+        '''Perform validation and stored serialized data, indexes and errors.
+Return ``True`` is the instance is ready to be saved to database.'''
+        v = {}
+        setattr(instance,self.VALATTR,v)
+        data = v['data'] = {}
+        indexes = v['indices'] = []
+        errors = v['errors'] = {}
+        #Loop over scalar fields first
+        for field in self.scalarfields:
+            name = field.attname
+            svalue = field.serialize(getattr(instance,name,None))
+            if not svalue and field.required:
+                errors[name] = "Field '{0}' is required for '{1}'.".format(name,self)
+            else:
+                data[name] = svalue
+                if field.index:
+                    indexes.append((field,svalue))
+        return len(errors) == 0
+                
     def table(self):
         '''Return an instance of :class:`stdnet.HashTable` holding
 the model table'''

@@ -31,7 +31,7 @@ def clearall(exclude = None):
         if not meta.name in exclude:
             meta.cursor.clear()
 
-def register(model, backend = None, keyprefix = None, timeout = 0):
+def register(model, backend = None):
     '''Register a :class:`stdnet.orm.StdModel` model with a :class:`stdnet.backends.BackendDataServer` data server.
     
     :keyword model: a :class:`stdnet.orm.StdModel` class. Must be provided.
@@ -54,17 +54,18 @@ def register(model, backend = None, keyprefix = None, timeout = 0):
     global _registry
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
-    prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
-    meta           = model._meta
-    meta.keyprefix = prefix
-    meta.timeout   = timeout or 0
+    #prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
+    meta = model._meta
     objects = getattr(model,'objects',None)
     if objects is None or isinstance(objects,UnregisteredManager):
         objects = Manager()
     else:
         objects = copy.copy(objects)
-    model.objects    = objects
-    meta.cursor      = getdb(backend)
+    model.objects = objects
+    meta.cursor = getdb(backend)
+    params = meta.cursor.params
+    meta.keyprefix = params.get('prefix',settings.DEFAULT_KEYPREFIX)
+    meta.timeout = params.get('timeout',0)
     objects._setmodel(model)
     _registry[model] = meta
     return str(meta.cursor)
@@ -98,7 +99,7 @@ def model_iterator(application):
 def register_application_models(application,
                                 models = None,
                                 app_defaults=None,
-                                **kwargs):
+                                default=None):
     '''Generator of which register models'''
     app_defaults = app_defaults or {}
     for obj in model_iterator(application):
@@ -111,8 +112,8 @@ def register_application_models(application,
         if name in app_defaults:
             args = app_defaults[name]
         else:
-            args = kwargs
-        register(obj,**args)
+            args = default
+        register(obj,args)
         yield obj
 
 

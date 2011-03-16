@@ -139,7 +139,7 @@ Return ``True`` is the instance is ready to be saved to database.'''
         for field in self.scalarfields:
             name = field.attname
             svalue = field.serialize(getattr(instance,name,None))
-            if not svalue and field.required:
+            if (svalue is None or svalue is '') and field.required:
                 errors[name] = "Field '{0}' is required for '{1}'.".format(name,self)
             else:
                 data[name] = svalue

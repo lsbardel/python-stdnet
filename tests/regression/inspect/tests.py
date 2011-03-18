@@ -43,7 +43,21 @@ class TestInspectionAndComparison(test.TestCase):
         self.assertTrue(inst2 != b)
         
     def testHash(self):
+        '''Test model instance hash'''
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')
         self.assertRaises(TypeError,hash, inst)
         inst.save()
-        self.assertTrue(hash(inst))
+        h = hash(inst)
+        self.assertTrue(h)
+        
+    def testUniqueId(self):
+        '''Test model instance unique id across different model'''
+        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')
+        self.assertRaises(inst.DoesNotExist, lambda : inst.uuid)
+        inst.save()
+        v = inst.uuid.split('.') # <<model hash>>.<<instance id>>
+        self.assertEqual(len(v),2)
+        self.assertEqual(v[0],inst._meta.hash)
+        self.assertEqual(v[1],str(inst.id))
+
+        

@@ -70,6 +70,13 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     @property
     def indices(self):
         return self._valattr('indices')
+    
+    @property
+    def uuid(self):
+        '''Universally unique identifier for a model instance.'''
+        if not self.id:
+            raise self.DoesNotExist('Object not saved. Cannot obtain universally unique id')
+        return '{0}.{1}'.format(self._meta.hash,self.id)
         
     def __eq__(self, other):
         if other.__class__ == self.__class__:
@@ -81,9 +88,10 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         return not self.__eq__(other)
     
     def __hash__(self):
-        if not self.id:
-            raise TypeError('cannot hash unsaved instance of a model')
-        return hash('{0}.{1}'.format(self._meta.hash,self.id))
+        try:
+            return hash(self.uuid)
+        except self.DoesNotExist as e:
+            raise TypeError(str(e))
         
     def delete(self, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and

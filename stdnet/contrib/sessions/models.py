@@ -60,8 +60,6 @@ class SessionManager(orm.Manager):
     
     def new_session_id(self):
         "Returns session key that isn't being used."
-        # The random module is seeded when this Apache child is created.
-        # Use settings.SECRET_KEY as added salt.
         try:
             pid = os.getpid()
         except AttributeError:
@@ -160,10 +158,9 @@ class Group(orm.StdModel):
 
 
 class Session(orm.StdModel):
+    '''A simple session model with instances living in Redis.'''
     TEST_COOKIE_NAME = 'testcookie'
     TEST_COOKIE_VALUE = 'worked'
-    
-    '''A simple session model with instances living in Redis.'''
     id = orm.SymbolField(primary_key=True)
     data = orm.HashField()
     started = orm.DateTimeField(index = False, required = False)

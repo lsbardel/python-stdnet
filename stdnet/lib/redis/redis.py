@@ -246,7 +246,7 @@ class Redis(threading.local):
             ),
         string_keys_to_dict(
             b'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
-            b'SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
+            b'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             int
             ),
         string_keys_to_dict(
@@ -673,6 +673,10 @@ class Redis(threading.local):
         "Set the value of key ``name`` to ``value`` if key doesn't exist"
         return self.execute_command('SETNX', name, value)
 
+    def strlen(self, name):
+        "Return the number of bytes stored in the value of ``name``"
+        return self.execute_command('STRLEN', name)
+    
     def substr(self, name, start, end=-1):
         """
         Return a substring of the string at key ``name``. ``start`` and ``end``

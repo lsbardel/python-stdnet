@@ -73,9 +73,17 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         
     def __eq__(self, other):
         if other.__class__ == self.__class__:
-            return str(self.id) == str(other.id)
+            return self.id == other.id
         else:
             return False
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __hash__(self):
+        if not self.id:
+            raise TypeError('cannot hash unsaved instance of a model')
+        return hash('{0}.{1}'.format(self._meta.hash,self.id))
         
     def delete(self, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and

@@ -31,26 +31,33 @@ def clearall(exclude = None):
         if not meta.name in exclude:
             meta.cursor.clear()
 
-def register(model, backend = None):
-    '''Register a :class:`stdnet.orm.StdModel` model with a :class:`stdnet.backends.BackendDataServer` data server.
+
+def register(model, backend = None, keyprefix = None, timeout = None):
+    '''Register a :class:`stdnet.orm.StdModel`
+model with a :class:`stdnet.backends.BackendDataServer` data server.
     
-    :keyword model: a :class:`stdnet.orm.StdModel` class. Must be provided.
-    :keyword backend: a backend connection string. Default ``settings.DEFAULT_BACKEND``.
-    :keyword keyprefix: a string used to prefix all database keys. Default ``settings.DEFAULT_KEYPREFIX``.
-    :keyword keyprefix: timeout in seconds for keys persistance. Default ``0`` (no timeout).
+:parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
+:parameter backend: a backend connection string. Default ``settings.DEFAULT_BACKEND``.
+:parameter keyprefix: a string used to prefix all database keys related to the model.
+                      If not provided it is calculated from the connection string.
+                      Default ``None``.
+:parameter timeout: timeout in seconds for keys persistence.
+                    If not provided it is calculated from the connection string.
+                    Default ``None``.
     
-    **Usage**
+**Usage**
     
-    For Redis the syntax is the following::
+For Redis the syntax is the following::
+
+    import orm
     
-        import orm
-        
-        orm.register(Author, 'redis://my.host.name:6379/?db=1')
-        orm.register(Book, 'redis://my.host.name:6379/?db=2')
-        
-    ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
-    while ``db`` indicates the database number (very useful for separating data
-    on the same redis instance).'''
+    orm.register(Author, 'redis://my.host.name:6379/?db=1')
+    orm.register(Book, 'redis://my.host.name:6379/?db=2')
+    orm.register(MyOtherModel, 'redis://my.host.name:6379/?db=2&keyprefix=differentprefix')
+    
+``my.host.name`` can be ``localhost`` or an ip address or a domain name,
+while ``db`` indicates the database number (very useful for separating data
+on the same redis instance).'''
     global _registry
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
@@ -64,8 +71,8 @@ def register(model, backend = None):
     model.objects = objects
     meta.cursor = getdb(backend)
     params = meta.cursor.params
-    meta.keyprefix = params.get('prefix',settings.DEFAULT_KEYPREFIX)
-    meta.timeout = params.get('timeout',0)
+    meta.keyprefix = keyprefix if keyprefix is not None else params.get('prefix',settings.DEFAULT_KEYPREFIX)
+    meta.timeout = timeout if timeout is not None else params.get('timeout',0)
     objects._setmodel(model)
     _registry[model] = meta
     return str(meta.cursor)

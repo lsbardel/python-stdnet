@@ -1,5 +1,5 @@
-'''A networked standard template library for Python.'''
-VERSION = (0, 5, 1)
+'''An object relational mapper Python library for Redis remote data structures.'''
+VERSION = (0, 5, 2)
  
 def get_version():
     return '.'.join(map(str,VERSION))

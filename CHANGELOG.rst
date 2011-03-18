@@ -1,8 +1,12 @@
 Ver. 0.5.2 - Development
 ==========================
+* Bug fix in model coused by the lack of a ``__ne__`` operator.
+* Added ``__hash__`` operator, unique across different models, not just instances.
 * Added experimental :mod:`stdnet.contrib.searchengine` application.
 * Added ``scorefun`` callable in structures to be used in OrderedSet.
 * Added a ``spelling`` example.
+* Preliminary work on C extensions based on hiredis.
+* **193 regression tests (including timeseries)** with **67%** coverage.
 
 Ver. 0.5.1 - 2011 Feb 27
 ==========================

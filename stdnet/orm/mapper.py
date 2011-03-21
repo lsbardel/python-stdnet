@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from stdnet import utils
+from stdnet.utils import is_bytes_or_string
 from stdnet import getdb
 from stdnet.utils.importer import import_module
 
@@ -20,14 +20,11 @@ __all__ = ['clearall',
            'Manager',
            'UnregisteredManager']
 
-
-# lock used to synchronize the "mapper compile" step
-_COMPILE_MUTEX = utils.threading.RLock()
-
     
 def clearall(exclude = None):
+    global _GLOBAL_REGISTRY
     exclude = exclude or []
-    for meta in _registry.values():
+    for meta in _GLOBAL_REGISTRY.values():
         if not meta.name in exclude:
             meta.cursor.clear()
 
@@ -58,7 +55,7 @@ For Redis the syntax is the following::
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
-    global _registry
+    global _GLOBAL_REGISTRY
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
     #prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
@@ -74,18 +71,21 @@ on the same redis instance).'''
     meta.keyprefix = keyprefix if keyprefix is not None else params.get('prefix',settings.DEFAULT_KEYPREFIX)
     meta.timeout = timeout if timeout is not None else params.get('timeout',0)
     objects._setmodel(model)
-    _registry[model] = meta
+    _GLOBAL_REGISTRY[model] = meta
     return str(meta.cursor)
 
 
 def unregister(model):
-    global _registry 
-    _registry.pop(model,None)
+    global _GLOBAL_REGISTRY 
+    _GLOBAL_REGISTRY.pop(model,None)
     model._meta.cursor = None
     
     
 def model_iterator(application):
-    if hasattr(application,'__iter__'):
+    '''\
+generatotr of :class:`stdnet.orm.StdModel` classes found
+in the ``models`` module at ``application`` dotted path.'''
+    if not is_bytes_or_string(application):
         for app in application:
             for m in model_iterator(app):
                 yield m
@@ -103,13 +103,26 @@ def model_iterator(application):
                 yield obj
 
 
-def register_application_models(application,
+def register_application_models(applications,
                                 models = None,
                                 app_defaults=None,
                                 default=None):
-    '''Generator of which register models'''
+    '''\
+Generator which register models in ``application``.
+
+:parameter application: A String or a list of strings which represent
+                        python dotted paths to modules containing
+                        a ``models`` module where models are implemented.
+:parameter models: list of models to include or ``None`` (all models).
+                   Default ``None``.
+                   
+For example::
+
+    register_application_models('mylib.myapp')
+
+'''
     app_defaults = app_defaults or {}
-    for obj in model_iterator(application):
+    for obj in model_iterator(applications):
         name = obj._meta.name
         if models and name not in models:
             continue
@@ -125,40 +138,11 @@ def register_application_models(application,
 
 
 def register_applications(applications, **kwargs):
-    '''Loop over applications and register models.
-    '''
-    models = []
-    for app in applications:
-        models.extend(register_application_models(app,**kwargs))
-    return models
+    '''A simple convenience wrapper around the
+:func:`register_application_models` generator.
+It return s a list of registered models.'''
+    return list(register_application_models(applications,**kwargs))
 
 
+_GLOBAL_REGISTRY = {}
 
-_registry = {}
-
-
-
-class Mapper(object):
-    
-    def __init__(self,
-                 class_,
-                 local_table,
-                 properties = None,
-                 primary_key = None):
-        self.class_ = class_
-        self.local_table = local_table
-        self.compiled = False
-        
-        _COMPILE_MUTEX.acquire()
-        try:
-            self._configure_inheritance()
-            self._configure_extensions()
-            self._configure_class_instrumentation()
-            self._configure_properties()
-            self._configure_pks()
-            global _new_mappers
-            _new_mappers = True
-            self._log("constructed")
-        finally:
-            _COMPILE_MUTEX.release()
-            

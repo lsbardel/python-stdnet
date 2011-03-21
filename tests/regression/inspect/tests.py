@@ -1,7 +1,10 @@
+import inspect
+
 from stdnet import test
 from stdnet.utils import populate
 from stdnet.exceptions import QuerySetError
-from stdnet.orm import model_to_dict
+from stdnet.orm import model_to_dict, model_iterator
+from stdnet.orm.base import StdNetType
 
 from examples.models import Instrument, Fund, Position
 
@@ -60,4 +63,14 @@ class TestInspectionAndComparison(test.TestCase):
         self.assertEqual(v[0],inst._meta.hash)
         self.assertEqual(v[1],str(inst.id))
 
-        
+
+class TestRegistration(test.TestCase):
+    
+    def testModelIterator(self):
+        g = model_iterator('examples')
+        self.assertTrue(inspect.isgenerator(g))
+        d = list(g)
+        self.assertTrue(d)
+        for m in d:
+            self.assertTrue(inspect.isclass(m))
+            self.assertTrue(isinstance(m,StdNetType))

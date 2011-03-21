@@ -1,5 +1,6 @@
 from stdnet import test
 
+from stdnet.utils import to_string
 from stdnet.contrib.searchengine.models import AutoComplete, autocomplete
 #from examples.spelling.spelling import NWORDS
 
@@ -19,7 +20,7 @@ class TestAutoComplete(test.TestCase):
         self.assertEqual(len(auto.data),8)
         auto.add('world')
         self.assertEqual(len(auto.data),12)
-        items = list(auto.data)
+        items = [to_string(v) for v in auto.data]
         self.assertEqual(items,['fa','fan','fant','fanta',
                                 'fantas','fantast','fantasti',
                                 'fantastic*',

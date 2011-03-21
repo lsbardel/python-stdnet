@@ -11,4 +11,5 @@ Contents:
    
    populate
    exceptions
+   registration
    other

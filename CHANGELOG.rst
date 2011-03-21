@@ -41,7 +41,7 @@ Ver. 0.4.2 - 2010 Nov 17
 
 	python runtests.py hash
 	
- will run tests specific to hashtables.	
+  will run tests specific to hashtables.	
 * Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
 * **54** tests.
 

@@ -3,4 +3,4 @@
 Originally based on pydispatch (BSD) http://pypi.python.org/pypi/PyDispatcher/2.0.1
 See license.txt for original license.
 """
-from stdnet.dispatch.dispatcher import Signal
+from .dispatcher import Signal

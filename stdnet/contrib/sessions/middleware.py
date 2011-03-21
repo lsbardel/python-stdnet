@@ -57,7 +57,6 @@ def get_user(request):
 class SessionMiddleware(object):
     
     def process_request(self, request):
-        site = request.site
         cookie_name = os.environ.get('SESSION_COOKIE_NAME','stdnet-sessionid')
         session_key = request.COOKIES.get(cookie_name, None)
         if not (session_key and Session.objects.exists(session_key)):

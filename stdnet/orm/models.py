@@ -2,13 +2,18 @@ import copy
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, UnicodeMixin
+from stdnet import dispatch
 
 from .base import StdNetType
 
 
+post_save = dispatch.Signal()
+
+
 __all__ = ['StdModel',
            'StdNetType',
-           'model_to_dict']
+           'model_to_dict',
+           'post_save']
 
 
 StdNetBase = StdNetType('StdNetBase',(UnicodeMixin,),{})
@@ -51,6 +56,9 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot save instance.".format(meta))
         return meta.cursor.save_object(self, commit)
+        #if commit:
+        #    post_save.send(instance = self)
+        #return r
     
     def is_valid(self):
         return self._meta.is_valid(self)

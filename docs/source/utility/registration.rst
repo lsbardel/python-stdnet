@@ -1,6 +1,7 @@
 .. _utility-registration:
 
 .. module:: stdnet.orm
+
 ============================
 Registration
 ============================

@@ -1,12 +1,14 @@
 Ver. 0.5.2 - Development
 ==========================
-* Bug fix in model coused by the lack of a ``__ne__`` operator.
+* Added registration utilities in :mod:`stdnet.orm`. Check :ref:`the documentation <utility-registration>`
+  for more information.
+* Bug fix in model class :class:`stdnet.orm.StdModel` caused by the lack of a ``__ne__`` operator.
 * Added ``__hash__`` operator, unique across different models, not just instances.
-* Added experimental :mod:`stdnet.contrib.searchengine` application.
+* Added experimental :mod:`stdnet.contrib.searchengine` application. Very much alpha.
 * Added ``scorefun`` callable in structures to be used in OrderedSet.
 * Added a ``spelling`` example.
-* Preliminary work on C extensions based on hiredis.
-* **193 regression tests (including timeseries)** with **67%** coverage.
+* Preliminary work on C extensions based on ``hiredis``.
+* **194 regression tests (including timeseries)** with **71%** coverage.
 
 Ver. 0.5.1 - 2011 Feb 27
 ==========================

@@ -11,4 +11,3 @@ include stdnet/lib/redis/license.txt
 include stdnet/dispatch/license.txt
 recursive-include vendor *
 recursive-include docs *.rst
-recursive-include stdnet/contrib/monitor/templates *

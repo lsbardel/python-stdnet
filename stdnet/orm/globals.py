@@ -11,7 +11,7 @@ def hashmodel(model):
     '''Calculate the Hash id of metaclass ``meta``'''
     meta = model._meta
     sha = hashlib.sha1(to_bytestring('python-stdnet({0})'.format(meta)))
-    hash = sha.hexdigest()
+    hash = sha.hexdigest()[:8]
     meta.hash = hash
     _model_dict[hash] = model
 

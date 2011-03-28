@@ -15,7 +15,9 @@ try:
     from vendor.setup import libparams
 except ImportError:
     libparams = {'cmdclass': {}}
-    
+
+# Switch this of for now    
+libparams = {'cmdclass': {}}
 
 
 class osx_install_data(install_data):

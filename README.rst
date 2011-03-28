@@ -6,7 +6,7 @@
 
 --
 
-**An object relational mapper for remote data structures.**
+**A Python 3 compatible object relational mapper for Redis remote data structures.**
 
 The data is owned by different, configurable back-end databases and it is accessed using a
 light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 

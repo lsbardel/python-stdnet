@@ -164,6 +164,9 @@ the model table'''
         if self.cursor:
             self.cursor.flush(self, count)
 
+    def database(self):
+        return self.cursor
+
 
 class StdNetType(type):
     '''StdModel python metaclass'''

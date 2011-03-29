@@ -118,6 +118,11 @@ class Node(orm.StdModel):
     def __unicode__(self):
         return '%s' % self.weight
     
+    
+class Page(orm.StdModel):
+    in_navigation = orm.IntegerField(default = 1)
+    
+    
 
 #############################################################
 ## TWITTER CLONE MODELS

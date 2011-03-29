@@ -28,6 +28,8 @@ __all__ = ['Field',
            'PickleObjectField',
            'ModelField']
 
+EMPTY = ''
+
 
 class Field(UnicodeMixin):
     '''This is the base class of all StdNet Fields.
@@ -233,7 +235,8 @@ class IntegerField(AtomField):
         return value
     
     def to_python(self, value):
-        if value:
+        '''Convert ``value`` to an integer if possible.'''
+        if value is not None and value is not EMPTY:
             return int(value)
         else:
             return self.default

@@ -4,7 +4,7 @@ import sys
 from stdnet.conf import settings
 import stdnet.contrib as contrib
 from stdnet.test import TEST_TYPES
-from stdnet.utils.importer import import_module 
+from stdnet.utils.importer import import_module
 
 
 logger = logging.getLogger()
@@ -69,9 +69,9 @@ def setup_logging(verbosity):
 
 def run(tags = None, test_type = None,
         itags = None, verbosity = 1, backend = None):
+    '''Test Runner'''
     if CONTRIB_DIR not in sys.path:
         sys.path.insert(0,CONTRIB_DIR)
-        
     std = settings.DEFAULT_BACKEND
     settings.DEFAULT_BACKEND =  backend or 'redis://127.0.0.1:6379/?db=13'
     setup_logging(verbosity)

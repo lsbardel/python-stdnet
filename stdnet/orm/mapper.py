@@ -83,8 +83,22 @@ def unregister(model):
     
 def model_iterator(application):
     '''\
-generatotr of :class:`stdnet.orm.StdModel` classes found
-in the ``models`` module at ``application`` dotted path.'''
+Returns a generatotr of :class:`stdnet.orm.StdModel` classes found
+in the ``models`` module of an ``application`` dotted path.
+
+:parameter application: An iterable over python dotted-paths where models are defined.
+
+For example::
+
+    from stdnet.orm import model_iterator
+    
+    APPS = ('stdnet.contrib.sessions',
+            'stdnet.contrib.tagging')
+    
+    for model in model_iterator(APPS):
+        ...
+
+'''
     if not is_bytes_or_string(application):
         for app in application:
             for m in model_iterator(app):
@@ -108,7 +122,7 @@ def register_application_models(applications,
                                 app_defaults=None,
                                 default=None):
     '''\
-Generator which register models in ``application``.
+Returns a generator which register models in ``application``.
 
 :parameter application: A String or a list of strings which represent
                         python dotted paths to modules containing

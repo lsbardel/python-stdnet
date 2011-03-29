@@ -1,5 +1,7 @@
-Ver. 0.5.2 - 2011 Mar 24
+Ver. 0.5.2 - Development
 ==========================
+* Bug fixes, tests and preliminary work on C extensions based on ``hiredis``.
+* Bug fix in :meth:`stdnet.orm.IntegerField.to_python`.
 * Added registration utilities in :mod:`stdnet.orm`.
   Check :ref:`the documentation <utility-registration>`
   for more information.
@@ -8,7 +10,6 @@ Ver. 0.5.2 - 2011 Mar 24
 * Added experimental :mod:`stdnet.contrib.searchengine` application. Very much alpha.
 * Added ``scorefun`` callable in structures to be used in OrderedSet.
 * Added a ``spelling`` example.
-* Preliminary work on C extensions based on ``hiredis``.
 * **195 regression tests (including timeseries)** with **71%** coverage.
 
 Ver. 0.5.1 - 2011 Feb 27

@@ -13,8 +13,8 @@ data structure server and create objects.
 Simple to use and configure.
 
 It includes a modified version of redis-py_ compatible with ``python 3``. There are no dependencies
-and the library requires ``python 2.6`` or above, including ``python 3``. There are over 160 tests
-with a coverage of about 60%.
+and the library requires ``python 2.6`` or above, including ``python 3``.
+There are over 180 tests with a coverage of about 70%.
 
 The library is stable and used in production.
 

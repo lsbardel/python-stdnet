@@ -11,7 +11,7 @@ __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "https://github.com/lsbardel/python-stdnet"
 
 
-sphinxtogithub = False
+sphinxtogithub = True
 
 from .exceptions import *
 

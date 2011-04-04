@@ -30,7 +30,7 @@ class listPipeline(object):
         
     def __len__(self):
         return len(self.back) + len(self.front)
-
+    
 
 class keyconverter(object):
     
@@ -68,7 +68,7 @@ class SetPipe(PipeLine):
 class OsetPipe(PipeLine):
     def __init__(self, timeout):
         super(OsetPipe,self).__init__(set(),'ordered_set',timeout)        
-
+    
 class ListPipe(PipeLine):
     def __init__(self, timeout):
         super(ListPipe,self).__init__(listPipeline(),'list',timeout)
@@ -285,6 +285,9 @@ This structure is used for in two different parts of the library.
     
     def discard(self, elem):
         '''Remove an element from a set if it is a member'''
+        return self._discard(self.pickler.dumps(elem))
+    
+    def _discard(self, value):
         raise NotImplementedError
 
 

@@ -55,7 +55,7 @@ class Set(structures.Set):
     def clear(self):
         return self.delete()
     
-    def discard(self, elem):
+    def _discard(self, elem):
         return self.cursor.execute_command('SREM', self.id, elem)
     
     def _save(self):
@@ -81,7 +81,7 @@ class OrderedSet(structures.OrderedSet):
         '''Size of set'''
         return self.cursor.execute_command('ZCARD', self.id)
     
-    def discard(self, elem):
+    def _discard(self, elem):
         return self.cursor.execute_command('ZREM', self.id, elem)
     
     def _contains(self, value):

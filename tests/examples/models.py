@@ -152,6 +152,17 @@ class User(orm.StdModel):
         return p
     
 
+
+##############################################
+class Role(orm.StdModel):
+    name = orm.SymbolField()
+
+
+class Profile(orm.StdModel):
+    roles = orm.ManyToManyField(model=Role,
+                                related_name="profiles")
+
+
 ##############################################
 # JSON FIELD
 

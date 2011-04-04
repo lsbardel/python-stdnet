@@ -1,6 +1,7 @@
 from copy import copy
 
 from stdnet.exceptions import *
+from stdnet import pipelines
 from stdnet.utils import zip, to_bytestring
 
 
@@ -233,6 +234,19 @@ to a :class:`stdnet.orm.ForeignKey`.'''
             raise QuerySetError('Related manager has no object')
             
 
+class GetStructureMixin(object):
+    
+    def get_structure(self, instance):
+        meta = instance._meta
+        pipe = pipelines(self.stype,meta.timeout)
+        st = getattr(meta.cursor,pipe.method,None)
+        return st(meta.basekey('id',instance.id,self.name),
+                  timeout = meta.timeout,
+                  pickler = self.pickler,
+                  converter = self.converter,
+                  scorefun = self.scorefun)
+        
+
 class M2MRelatedManager(Manager):
     '''A :class:`RelatedManager` for a :class:`stdnet.orm.ManyToManyField`'''
     def __init__(self, instance, to, st, to_name):
@@ -245,14 +259,22 @@ class M2MRelatedManager(Manager):
         '''Add *value*, an instance of self.to'''
         if not isinstance(value,self.to):
             raise FieldValueError('%s is not an instance of %s' % (value,self.to._meta))
-        if value is self.instance:
-            return
-        related = getattr(value,self.to_name)
-        self._add(value)
-        related._add(self.instance)
+        if value not in self.st:
+            related = getattr(value,self.to_name)
+            self._add(value)
+            related._add(self.instance)
+            
+    def remove(self, value):
+        if not isinstance(value,self.to):
+            raise FieldValueError('%s is not an instance of %s' % (value,self.to._meta))
+        if value in self.st:
+            related = getattr(value,self.to_name)
+            self.st.discard(value)
+            related.st.discard(self.instance)
         
     def _add(self, value):
         self.st.add(value)
+        self.instance.save()
         
     def filter(self, **kwargs):
         extrasets = [self.st.id]

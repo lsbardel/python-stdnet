@@ -1,3 +1,8 @@
+Ver. 0.5.3 - Development
+=============================
+* Added ``remove`` method to :class:`stdnet.orm.ManyToManyField` and
+  fixed a bug on the same field.
+
 Ver. 0.5.2 - 2011 Mar 31
 ==========================
 * This version brings some important bug fixes with tests and preliminary work on C extensions

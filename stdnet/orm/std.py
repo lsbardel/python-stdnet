@@ -3,7 +3,7 @@ from stdnet import pipelines
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from .fields import Field, RelatedObject
-from .query import M2MRelatedManager
+from .query import M2MRelatedManager, GetStructureMixin
 
 
 __all__ = ['ManyFieldManagerProxy',
@@ -15,7 +15,7 @@ __all__ = ['ManyFieldManagerProxy',
            'ManyToManyField']
 
 
-class ManyFieldManagerProxy(object):
+class ManyFieldManagerProxy(GetStructureMixin):
     
     def __init__(self, name, stype, pickler, converter, scorefun):
         self.name    = name
@@ -39,16 +39,6 @@ class ManyFieldManagerProxy(object):
             rel_manager = self.get_related_manager(instance)
             setattr(instance, cache_name, rel_manager)
             return rel_manager
-        
-    def get_structure(self, instance):
-        meta = instance._meta
-        pipe = pipelines(self.stype,meta.timeout)
-        st = getattr(meta.cursor,pipe.method,None)
-        return st(meta.basekey('id',instance.id,self.name),
-                  timeout = meta.timeout,
-                  pickler = self.pickler,
-                  converter = self.converter,
-                  scorefun = self.scorefun)
         
     def get_related_manager(self, instance):
         return self.get_structure(instance)
@@ -220,7 +210,10 @@ To use it::
     >>> u = User(name = 'luca').save()
     >>> u.following.add(User(name = 'john').save())
     >>> u.following.add(User(name = 'mark').save())
-    
+
+and to remove::
+
+    >>> u.following.remove(User.objects.get(name = 'john))
     
 This field is implemented as a double Set field.
 '''

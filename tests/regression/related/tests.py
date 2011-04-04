@@ -1,13 +1,13 @@
 import datetime
 import random
 
-from stdnet.test import TestCase
+from stdnet import test
 
-from examples.models import Node
+from examples.models import Node, Role, Profile
 
 STEPS   = 10
 
-class TestSelfForeignKey(TestCase):
+class TestSelfForeignKey(test.TestCase):
         
     def create(self, N, root):
         for n in range(N):
@@ -40,3 +40,42 @@ class TestSelfForeignKey(TestCase):
         for child in children:
             self.assertEqual(child.parent,root)
             
+
+class TestManyToMany(test.TestCase):
+    
+    def setUp(self):
+        self.orm.register(Role)
+        self.orm.register(Profile)
+        
+    def unregister(self):
+        self.orm.unregister(Role)
+        self.orm.unregister(Profile)
+        
+    def testAdd(self):
+        profile = Profile().save()
+        role,created = Role.objects.get_or_create(name='admin')
+        self.assertTrue(role.id)
+        profile.roles.add(role)
+        profiles = role.profiles.all()
+        self.assertEqual(profiles.count(),1)
+        p2 = profiles.filter(id = profile.id)[0]
+        self.assertEqual(p2,profile)
+    
+    def testRemove(self):
+        p1 = Profile().save()
+        p2 = Profile().save()
+        role,created = Role.objects.get_or_create(name='admin')
+        self.assertTrue(role.id)
+        p1.roles.add(role)
+        p2.roles.add(role)
+        profiles = role.profiles.all()
+        self.assertEqual(profiles.count(),2)
+        p2.roles.add(role)
+        profiles = role.profiles.all()
+        self.assertEqual(profiles.count(),2)
+        p2.roles.remove(role)
+        profiles = role.profiles.all()
+        self.assertEqual(profiles.count(),1)
+        p1.roles.remove(role)
+        profiles = role.profiles.all()
+        self.assertEqual(profiles.count(),0)

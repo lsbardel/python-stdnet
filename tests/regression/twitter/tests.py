@@ -29,11 +29,9 @@ class TestTwitter(TestCase):
         user2 = users[1]
         user3 = users[2]
         user1.following.add(user3)
-        user1.save()
         followers = list(user3.followers.all())
         self.assertEqual(len(followers),1)
         user2.following.add(user3)
-        user2.save()
         followers = list(user3.followers.all())
         self.assertEqual(len(followers),2)
     
@@ -48,7 +46,6 @@ class TestTwitter(TestCase):
             n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
             for tofollow in populate('choice',n, choice_from = users):
                 user.following.add(tofollow)
-            user.save()
             self.assertTrue(user.following.all().count()>0)
         
         for user in users:

@@ -23,10 +23,24 @@ class List(structures.List):
         return self.cursor.execute_command('DEL', self.id)
     
     def pop_back(self):
-        return self.pickler.loads(self.cursor.execute_command('RPOP', self.id))
+        v = self.cursor.execute_command('RPOP', self.id)
+        if v:
+            return self.pickler.loads(v)
     
     def pop_front(self):
-        return self.pickler.loads(self.cursor.execute_command('LPOP', self.id))
+        v = self.cursor.execute_command('LPOP', self.id)
+        if v:
+            return self.pickler.loads(v)
+    
+    def block_pop_back(self, timeout = 0):
+        v = self.cursor.execute_command('BRPOP', self.id, timeout)
+        if v:
+            return self.pickler.loads(v[1])
+    
+    def block_pop_front(self, timeout = 0):
+        v = self.cursor.execute_command('BLPOP', self.id, timeout)
+        if v:
+            return self.pickler.loads(v[1])
     
     def _all(self):
         return self.cursor.execute_command('LRANGE', self.id, 0, -1)

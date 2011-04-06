@@ -228,6 +228,12 @@ class List(Structure):
     def pop_front(self):
         raise NotImplementedError
     
+    def block_pop_back(self, timeout = None):
+        raise NotImplementedError
+    
+    def block_pop_front(self, timeout = None):
+        raise NotImplementedError
+    
     def push_back(self, value):
         '''Appends a copy of *value* to the end of the remote list.'''
         self.pipeline.push_back(self.pickler.dumps(value))

@@ -1,5 +1,5 @@
 '''An object relational mapper library for Redis remote data structures.'''
-VERSION = (0, 5, 2)
+VERSION = (0, 5, 3)
  
 def get_version():
     return '.'.join(map(str,VERSION))
@@ -11,8 +11,7 @@ __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "https://github.com/lsbardel/python-stdnet"
 
 
-sphinxtogithub = False
+sphinxtogithub = True
 
 from .exceptions import *
-
 from .backends import *

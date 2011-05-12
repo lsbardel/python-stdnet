@@ -1,6 +1,11 @@
+Ver. 0.5.4 - Development
+============================
+* Added pre_save and post_save signals.
+* Bug fixes
+
 Ver. 0.5.3 - 2011 Apr 30
 =============================
-* Fixed problem in ``setup.py``.
+* Fixed problem in setup.py.
 * Added ``remove`` method to :class:`stdnet.orm.ManyToManyField` and
   fixed a bug on the same field.
 * **203 regression tests** with **71%** coverage.

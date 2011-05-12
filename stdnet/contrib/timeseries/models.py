@@ -143,11 +143,12 @@ class HashTimeSeries(TimeSeriesBase):
     def items(self):
         return self.data.sorteditems()
     
-    def save(self):
+    def save(self, commit = True):
         supersave = super(HashTimeSeries,self).save
-        supersave()
-        self.storestartend()
-        return supersave()
+        supersave(commit = commit)
+        if commit:
+            self.storestartend()
+            return supersave(True)
     
     def storestartend(self):
         '''Store the start/end date of the timeseries'''

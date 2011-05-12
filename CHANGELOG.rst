@@ -1,5 +1,7 @@
 Ver. 0.5.4 - Development
 ============================
+* Added pre_save and post_save signals.
+* Bug fixes
 
 Ver. 0.5.3 - 2011 Apr 30
 =============================

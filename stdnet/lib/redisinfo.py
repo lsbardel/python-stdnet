@@ -51,7 +51,10 @@ class RedisStats(object):
             l = r.execute_command('TSLEN', key)
             self.incr_count(typ)
         elif typ == 'string':
-            l = r.strlen(key)
+            try:
+                l = r.strlen(key)
+            except:
+                l = None
             self.incr_count(typ)
         else:
             self.incr_count('unkown')

@@ -5,15 +5,12 @@ from stdnet.utils import zip, UnicodeMixin
 from stdnet import dispatch
 
 from .base import StdNetType
-
-
-post_save = dispatch.Signal()
+from .signals import *
 
 
 __all__ = ['StdModel',
            'StdNetType',
-           'model_to_dict',
-           'post_save']
+           'model_to_dict']
 
 
 StdNetBase = StdNetType('StdNetBase',(UnicodeMixin,),{})
@@ -51,14 +48,17 @@ the :attr:`StdModel._meta` attribute.
         '''Save the instance in the remote :class:`stdnet.HashTable`
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
 otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
+        if commit:
+            pre_save.send(sender=self.__class__, instance = self)
         meta = self._meta
         if not meta.cursor:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot save instance.".format(meta))
-        return meta.cursor.save_object(self, commit)
-        #if commit:
-        #    post_save.send(instance = self)
-        #return r
+        r = meta.cursor.save_object(self, commit)
+        if commit:
+            post_save.send(sender=self.__class__,
+                           instance = r)
+        return r
     
     def is_valid(self):
         return self._meta.is_valid(self)

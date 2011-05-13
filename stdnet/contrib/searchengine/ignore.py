@@ -1,7 +1,7 @@
 
 # from
 # http://www.textfixer.com/resources/common-english-words.txt
-ignore_words = set('''a,able,about,across,after,all,almost,also,am,among,an,and,\
+STOP_WORDS = set('''a,able,about,across,after,all,almost,also,am,among,an,and,\
 any,are,as,at,be,because,been,but,by,can,cannot,could,dear,did,do,does,either,\
 else,ever,every,for,from,get,got,had,has,have,he,her,hers,him,his,how,however,\
 i,if,in,into,is,it,its,just,least,let,like,likely,may,me,might,most,must,my,\
@@ -12,4 +12,11 @@ why,will,with,would,yet,you,your
 '''.split(','))
 
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+
+
+# Do not index any words shorter than this
+MIN_WORD_LENGTH = 3
+
+# Consider these characters to be punctuation (they will be replaced with spaces prior to word extraction)
+PUNCTUATION_CHARS = ".,;:!?@£$%^&*()-–<>[]{}\\|/`~'\""

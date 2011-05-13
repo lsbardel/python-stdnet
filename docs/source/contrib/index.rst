@@ -14,6 +14,6 @@ core library. They may also have external dependencies.
    :maxdepth: 2
    
    sessions
-   tagging
+   searchengine
    timeseries
    redis_timeseries

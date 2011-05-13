@@ -71,7 +71,7 @@ class BackendDataServer(BackendDataServer0):
                         qset = qset.intersection(uset)
                         if not qset:
                             return qset
-                else:
+                elif values:
                     if len(values) == 1:
                         filters.append(meta.basekey(name,values[0]))
                     else:

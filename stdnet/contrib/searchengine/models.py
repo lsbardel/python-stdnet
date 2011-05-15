@@ -1,27 +1,8 @@
+'''\
+Search Engine and Tagging models. Just two of them, one for storing Words and
+one for linking other objects to Words.
+'''
 from stdnet import orm
-from stdnet.utils import range
-
-from .ignore import STOP_WORDS, MIN_WORD_LENGTH
-
-class ItemPointer(orm.StdModel):
-    '''tag instance'''
-    model_type = orm.ModelField()
-    '''Model type'''
-    object_id = orm.SymbolField()
-    '''Model instance id'''
-    
-    class Meta:
-        abstract = True
-        
-    def __unicode__(self):
-        return self.tag.__unicode__()
-    
-    @property
-    def object(self):
-        '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
-        if not hasattr(self,'_object'):
-            self._object = self.model_type.objects.get(id = self.object_id)
-        return self._object
 
 
 class Word(orm.StdModel):
@@ -51,28 +32,24 @@ class Word(orm.StdModel):
         self.save()
 
 
-class Tag(orm.StdModel):
-    id = orm.SymbolField(primary_key = True)
-    '''The tag name'''
-
-    def __unicode__(self):
-        return self.id
-
-
-class TaggedItem(ItemPointer):
-    '''A model for associating :class:`Tag` instances with general :class:`stdnet.orm.StdModel`
-instances.'''
-    tag = orm.ForeignKey(Tag)
-    
-    def __unicode__(self):
-        return self.tag.__unicode__()
-    
-
-class WordItem(ItemPointer):
+class WordItem(orm.StdModel):
     '''A model for associating :class:`Word` instances with general
 :class:`stdnet.orm.StdModel` instances.'''
     word = orm.ForeignKey(Word, related_name = 'items')
+    '''tag instance'''
+    model_type = orm.ModelField()
+    '''Model type'''
+    object_id = orm.SymbolField()
+    '''Model instance id'''
     
     def __unicode__(self):
         return self.word.__unicode__()
+    
+    @property
+    def object(self):
+        '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
+        if not hasattr(self,'_object'):
+            self._object = self.model_type.objects.get(id = self.object_id)
+        return self._object
+    
 

@@ -11,12 +11,23 @@
 #	bug squashing effort. There were many cases where this function wouldn't give the same output
 #	as the original C source that were fixed by his careful attention and excellent communication.
 #	The script was also updated to use utf-8 rather than latin-1.
+import sys
+try:
+	CCCC = unicode('Ç')
+	NNNN = unicode('N')
+	decode = lambda x : x.decode('utf-8', 'ignore')
+except:
+	CCCC = 'Ç'
+	NNNN = 'N'
+	decode = lambda x : x
+
+
 def dm(st) :
 	"""dm(string) -> (string, string or None)
 	returns the double metaphone codes for given string - always a tuple
 	there are no checks done on the input string, but it should be a single	word or name."""
 	vowels = ['A', 'E', 'I', 'O', 'U', 'Y']
-	st = st.decode('utf-8', 'ignore')
+	st = decode(st)
 	st = st.upper() # st is short for string. I usually prefer descriptive over short, but this var is used a lot!
 	is_slavo_germanic = (st.find('W') > -1 or st.find('K') > -1 or st.find('CZ') > -1 or st.find('WITZ') > -1)
 	length = len(st)
@@ -119,7 +130,7 @@ def dm(st) :
 						nxt = ('K', 2)
 					else : # default for 'C'
 						nxt = ('K', 1)
-		elif ch == u'Ç' :
+		elif ch == CCCC:
 			nxt = ('S', 1)
 		elif ch == 'D' :
 			if st[pos:pos+2] == 'DG' :
@@ -257,7 +268,7 @@ def dm(st) :
 				nxt = ('N', 2)
 			else :
 				nxt = ('N', 1)
-		elif ch == u'Ñ' :
+		elif ch == NNNN:
 			nxt = ('N', 1)
 		elif ch == 'P' :
 			if st[pos+1] == 'H' :

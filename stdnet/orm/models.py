@@ -109,10 +109,13 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             raise StdNetException('Cannot delete object. It was never saved.')
         T = 0
         # Gather related objects to delete
+        pre_delete.send(sender=self.__class__, instance = self)
         objs = self.related_objects()
         for obj in objs:
             T += obj.delete(dlist)
-        return T + meta.cursor.delete_object(self, dlist)
+        res = T + meta.cursor.delete_object(self, dlist)
+        post_delete.send(sender=self.__class__, instance = self)
+        return res
     
     def related_objects(self):
         '''Collect or related objects'''

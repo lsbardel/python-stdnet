@@ -358,13 +358,17 @@ This structure is important since it is used in two different parts of the libra
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter
         super(HashTable,self).__init__(*args, **kwargs)
-        
+    
     def __contains__(self, key):
         value = self.converter.tokey(key)
         if self._cache is None:
             return self._contains(value)
         else:
             return value in self._cache
+        
+    def __delitem__(self, key):
+        k = self.converter.tokey(key)
+        self.delete(k)
         
     def add(self, key, value):
         '''Add ``key`` - ``value`` pair to hashtable.'''
@@ -455,6 +459,9 @@ This structure is important since it is used in two different parts of the libra
         raise NotImplementedError
     
     def _mget(self, keys):
+        raise NotImplementedError
+    
+    def delete(self, key):
         raise NotImplementedError
 
     

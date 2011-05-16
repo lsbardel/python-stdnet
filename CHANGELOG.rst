@@ -3,8 +3,9 @@ Ver. 0.5.4 - Development
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.
   The search engine application has been refactored so that it can perform 
   a fast, fuzzy, full text index using Redis.
-* Added pre_save and post_save signals.
-* Bug fixes
+* Added ``pre_save`` and ``post_save`` signals.
+* Added ``pre_delete`` and ``post_delete`` signals.
+* Bug fixes.
 
 Ver. 0.5.3 - 2011 Apr 30
 =============================

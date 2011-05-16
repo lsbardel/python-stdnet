@@ -107,8 +107,8 @@ For example::
         mod = import_module(application)
         mod_name = mod.__name__
         try:
-            mod_models = import_module(application+'.models')
-        except:
+            mod_models = import_module('.models',application)
+        except ImportError:
             raise StopIteration
         
         for name in dir(mod_models):

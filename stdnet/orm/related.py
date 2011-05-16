@@ -129,7 +129,8 @@ def _register_related(field, related):
         field.rel = manager
         return manager
     else:
-        raise stdnet.FieldError("Duplicated related name %s in model %s and field %s" % (related_name,related,name))
+        raise stdnet.FieldError('Duplicated related name "{0}"\
+ in model "{1}" and field {2}'.format(related_name,meta,field))
 
 
 def _register_container_model(field, related):

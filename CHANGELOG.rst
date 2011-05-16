@@ -6,6 +6,7 @@ Ver. 0.5.4 - Development
 * Added ``pre_save`` and ``post_save`` signals.
 * Added ``pre_delete`` and ``post_delete`` signals.
 * Bug fixes.
+* **204 regression tests** with **72%** coverage.
 
 Ver. 0.5.3 - 2011 Apr 30
 =============================

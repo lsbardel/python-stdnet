@@ -3,7 +3,7 @@ from random import randint
 from stdnet import test
 
 from stdnet.utils import to_string
-from stdnet.contrib.searchengine import engine
+from stdnet.contrib.searchengine import engine, double_metaphone
 from stdnet.contrib.searchengine.models import Word, WordItem
 from stdnet.utils import populate
 
@@ -17,6 +17,17 @@ python_content = 'Python is a programming language that lets you work more\
  in productivity and lower maintenance costs.'
 
 
+NAMES = {'maurice':('MRS', None),'aubrey':('APR', None),'cambrillo':('KMPRL','KMPR')\
+        ,'heidi':('HT', None),'katherine':('K0RN','KTRN'),'Thumbail':('0MPL','TMPL')\
+        ,'catherine':('K0RN','KTRN'),'richard':('RXRT','RKRT'),'bob':('PP', None)\
+        ,'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'), 'Schwein':('XN', 'XFN')\
+        ,'dave':('TF', None),'ray':('R', None),'steven':('STFN', None),'bryce':('PRS', None)\
+        ,'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
+        ,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None), 'Dallas':('TLS', None)\
+        , 'maisey':('MS', None), 'zhang':('JNK', None), 'Chile':('XL', None)\
+        ,'Jose':('HS', None), 'Arnow':('ARN','ARNF'), 'solilijs':('SLLS', None)\
+        , 'Parachute':('PRKT', None), 'Nowhere':('NR', None), 'Tux':('TKS', None)}
+
 class TestSearchEngine(test.TestCase):
 
     def setUp(self):
@@ -28,7 +39,12 @@ class TestSearchEngine(test.TestCase):
         self.orm.unregister(Word)
         self.orm.unregister(WordItem)
         self.orm.unregister(Item)
-            
+    
+    def testMetaphone(self):
+        for name in NAMES:
+            d = double_metaphone(name)
+            self.assertEqual(d,NAMES[name])
+
     def testSimpleAdd(self):
         self.simpleadd()
         

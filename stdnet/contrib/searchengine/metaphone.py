@@ -21,12 +21,12 @@ except:
 	NNNN = 'N'
 	decode = lambda x : x
 
+VOWELS = frozenset(('A', 'E', 'I', 'O', 'U', 'Y'))
 
 def dm(st) :
 	"""dm(string) -> (string, string or None)
 	returns the double metaphone codes for given string - always a tuple
 	there are no checks done on the input string, but it should be a single	word or name."""
-	vowels = ['A', 'E', 'I', 'O', 'U', 'Y']
 	st = decode(st)
 	st = st.upper() # st is short for string. I usually prefer descriptive over short, but this var is used a lot!
 	is_slavo_germanic = (st.find('W') > -1 or st.find('K') > -1 or st.find('CZ') > -1 or st.find('WITZ') > -1)
@@ -52,9 +52,9 @@ def dm(st) :
 		# the secondary code letter is given only when it is different than the primary.
 		# This is just a trick to make the code easier to write and read.
 		nxt = (None, 1) # default action is to add nothing and move to next char
-		if ch in vowels :
+		if ch in VOWELS :
 			nxt = (None, 1)
-			if pos == first : # all init vowels now map to 'A'
+			if pos == first : # all init VOWELS now map to 'A'
 				nxt = ('A', 1)
 		elif ch == 'B' :
 			#"-mb", e.g", "dumb", already skipped over... see 'M' below
@@ -64,7 +64,7 @@ def dm(st) :
 				nxt = ('P', 1)
 		elif ch == 'C' :
 			# various germanic
-			if (pos > (first + 1) and st[pos-2] not in vowels and st[pos-1:pos+2] == 'ACH' and \
+			if (pos > (first + 1) and st[pos-2] not in VOWELS and st[pos-1:pos+2] == 'ACH' and \
 			   (st[pos+2] not in ['I', 'E'] or st[pos-2:pos+4] in ['BACHER', 'MACHER'])) :
 				nxt = ('K', 2)
 			# special case 'CAESAR'
@@ -149,7 +149,7 @@ def dm(st) :
 				nxt = ('F', 1)
 		elif ch == 'G' :
 			if st[pos+1] == 'H' :
-				if pos > first and st[pos-1] not in vowels :
+				if pos > first and st[pos-1] not in VOWELS :
 					nxt = ('K', 2)
 				elif pos < (first + 3) :
 					if pos == first : #'ghislane', ghiradelli
@@ -171,7 +171,7 @@ def dm(st) :
 						if pos > first and st[pos-1] != 'I' :
 							nxt = ('K', 2)
 			elif st[pos+1] == 'N' :
-				if pos == (first +1) and st[first] in vowels and not is_slavo_germanic :
+				if pos == (first +1) and st[first] in VOWELS and not is_slavo_germanic :
 					nxt = ('KN', 'N', 2)
 				else :
 					# not e.g. 'cagney'
@@ -208,8 +208,8 @@ def dm(st) :
 			else :
 				nxt = ('K', 1)
 		elif ch == 'H' :
-			# only keep if first & before vowel or btw. 2 vowels
-			if (pos == first or st[pos-1] in vowels) and st[pos+1] in vowels :
+			# only keep if first & before vowel or btw. 2 VOWELS
+			if (pos == first or st[pos-1] in VOWELS) and st[pos+1] in VOWELS :
 				nxt = ('H', 2)
 			else : # (also takes care of 'HH')
 				nxt = (None, 1)
@@ -224,7 +224,7 @@ def dm(st) :
 				nxt = ('J', 'A') # Yankelovich/Jankelowicz
 			else :
 				# spanish pron. of e.g. 'bajador'
-				if st[pos-1] in vowels and not is_slavo_germanic \
+				if st[pos-1] in VOWELS and not is_slavo_germanic \
 				   and st[pos+1] in ['A', 'O'] :
 					nxt = ('J', 'H')
 				else :
@@ -331,7 +331,7 @@ def dm(st) :
 						else :
 							nxt = ('SK', 3)
 					else :
-						if pos == first and st[first+3] not in vowels and st[first+3] != 'W' :
+						if pos == first and st[first+3] not in VOWELS and st[first+3] != 'W' :
 							nxt = ('X', 'S', 3)
 						else :
 							nxt = ('X', 3)
@@ -373,14 +373,14 @@ def dm(st) :
 			# can also be in middle of word
 			if st[pos:pos+2] == 'WR' :
 				nxt = ('R', 2)
-			elif pos == first and (st[pos+1] in vowels or st[pos:pos+2] == 'WH') :
+			elif pos == first and (st[pos+1] in VOWELS or st[pos:pos+2] == 'WH') :
 				# Wasserman should match Vasserman
-				if st[pos+1] in vowels :
+				if st[pos+1] in VOWELS :
 					nxt = ('A', 'F', 1)
 				else :
 					nxt = ('A', 1)
 			# Arnow should match Arnoff
-			elif (pos == last and st[pos-1] in vowels) \
+			elif (pos == last and st[pos-1] in VOWELS) \
 			   or st[pos-1:pos+5] in ["EWSKI", "EWSKY", "OWSKI", "OWSKY"] \
 			   or st[first:first+3] == 'SCH' :
 				nxt = ('', 'F', 1)
@@ -431,17 +431,3 @@ def dm(st) :
 		return (pri, None)
 	else :
 		return (pri, sec)
-
-if __name__ == '__main__' :
-	names = {'maurice':('MRS', None),'aubrey':('APR', None),'cambrillo':('KMPRL','KMPR')\
-        ,'heidi':('HT', None),'katherine':('K0RN','KTRN'),'Thumbail':('0MPL','TMPL')\
-		,'catherine':('K0RN','KTRN'),'richard':('RXRT','RKRT'),'bob':('PP', None)\
-        ,'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'), 'Schwein':('XN', 'XFN')\
-		,'dave':('TF', None),'ray':('R', None),'steven':('STFN', None),'bryce':('PRS', None)\
-        ,'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
-		,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None), 'Dallas':('TLS', None)\
-        , 'maisey':('MS', None), 'zhang':('JNK', None), 'Chile':('XL', None)\
-        ,'Jose':('HS', None), 'Arnow':('ARN','ARNF'), 'solilijs':('SLLS', None)\
-		, 'Parachute':('PRKT', None), 'Nowhere':('NR', None), 'Tux':('TKS', None)}
-	for name in names.keys() :
-		assert (dm(name) == names[name]), 'For "%s" function returned %s. Should be %s.' % (name, dm(name), names[name])

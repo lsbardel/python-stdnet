@@ -13,7 +13,6 @@ core library. They may also have external dependencies.
 .. toctree::
    :maxdepth: 2
    
-   sessions
    searchengine
    timeseries
    redis_timeseries

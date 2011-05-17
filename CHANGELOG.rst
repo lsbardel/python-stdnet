@@ -1,5 +1,6 @@
 Ver. 0.5.4 - Development
 ============================
+* Fixed a filtering problem regarding exclude on unique fields.
 * Refactored registration utilities.
 * Added :func:`stdnet.orm.test_unique` for testing uniqueness.
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.

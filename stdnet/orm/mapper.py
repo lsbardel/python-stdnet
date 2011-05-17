@@ -6,7 +6,7 @@ from stdnet import getdb
 from stdnet.utils.importer import import_module
 
 from .query import Manager, UnregisteredManager
-from .base import StdNetType
+from .base import StdNetType, AlreadyRegistered
 
 
 logger = logging.getLogger('stdnet.mapper')
@@ -30,7 +30,7 @@ def clearall(exclude = None):
 
 
 def register(model, backend = None, keyprefix = None, timeout = None,
-             ignore_duplicates = False):
+             ignore_duplicates = True):
     '''Register a :class:`stdnet.orm.StdModel`
 model with a :class:`stdnet.backends.BackendDataServer` data server.
     

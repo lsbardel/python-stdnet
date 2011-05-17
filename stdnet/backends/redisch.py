@@ -1,7 +1,7 @@
 from uuid import uuid4
 import json
 
-from stdnet.utils import zip, iteritems
+from stdnet.utils import zip, iteritems, to_bytestring
 from stdnet.exceptions import FieldError, ObjectNotFound
 
 from .base import nopickle
@@ -9,6 +9,7 @@ from .redisb import BackendDataServer as BackendDataServer0
 
 def gen_unique_id():
     return str(uuid4())
+
 
 class BackendDataServer(BackendDataServer0):
     '''A new Redis backend'''
@@ -33,7 +34,21 @@ class BackendDataServer(BackendDataServer0):
             return keys
         else:
             return ()
-                
+    
+    def _unique_set(self, meta, idset, name, values, check = True):
+        '''Handle filtering over unique fields'''
+        uset = set()
+        if name == 'id':
+            for id in values:
+                if not check or id in idset:
+                    uset.add(to_bytestring(id))
+        else:
+            for value in values:
+                bkey = meta.basekey(name,value)
+                id = self._get(bkey)
+                if id:
+                    uset.add(to_bytestring(id))
+        return uset
         
     def query(self, meta, fargs, eargs, filter_sets = None):
         # QUERY a model
@@ -52,17 +67,7 @@ class BackendDataServer(BackendDataServer0):
             for name,data in iteritems(fargs):
                 values,unique = data
                 if unique:
-                    uset = set()
-                    if name == 'id':
-                        for id in values:
-                            if id in idset:
-                                uset.add(id)
-                    else:
-                        for value in values:
-                            bkey = meta.basekey(name,value)
-                            id = self._get(bkey)
-                            if id:
-                                uset.add(id)
+                    uset = self._unique_set(meta, idset, name, values)
                     if not uset:
                         return uset
                     if qset is None:
@@ -98,10 +103,11 @@ class BackendDataServer(BackendDataServer0):
             
         if eargs:
             excludes = []
+            euset = set()
             for name,data in iteritems(eargs):
                 values,unique = data
                 if unique:
-                    raise NotImplemented('Unique field exclude not working yet')
+                    euset = euset.union(self._unique_set(meta, idset, name, values, check = False))
                 else:
                     if len(values) == 1:
                         excludes.append(meta.basekey(name,values[0]))
@@ -111,12 +117,19 @@ class BackendDataServer(BackendDataServer0):
                         temp_ids.append(id)
                         self.sunionstore(id,insersept)
                         excludes.append(id)
-            excludes.insert(0,idset.id)
-            eset  = self.sdiff(excludes)
-            if qset:
-                qset = qset.intersection(eset)
-            else:
-                qset = eset
+                        
+            if excludes:
+                excludes.insert(0,idset.id)
+                eset  = self.sdiff(excludes)
+                if qset:
+                    qset = qset.intersection(eset)
+                else:
+                    qset = eset
+            elif qset is None:
+                qset = set(idset)
+                
+            if euset:
+                qset -= euset
         
         if qset is None:
             qset = idset

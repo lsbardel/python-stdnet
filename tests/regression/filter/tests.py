@@ -84,8 +84,24 @@ class TestFiler(fintests.BaseFinance):
         cids = set((o.id for o in qs))
         self.assertEqual(cids,ids)
         
+    def testFilterUniqueExclude(self):
+        CCYS = ('EUR','GBP')
+        types = ('equity','bond','future')
+        qt1 = set(Instrument.objects.filter(type__in = types))
+        qt = set((i.id for i in qt1))
+        qt2 = set(Instrument.objects.filter(id__in = qt))
+        self.assertEqual(qt1,qt2)
+        #
+        qt3 = set(Instrument.objects.exclude(id__in = qt))
+        qt4 = qt2.intersection(qt3)
+        self.assertFalse(qt4)
+        qs1 = set(Instrument.objects.filter(ccy__in = CCYS).exclude(type__in = types))
+        qs2 = set(Instrument.objects.filter(ccy__in = CCYS).exclude(id__in = qt))
+        self.assertEqual(qs1,qs2)
+        
     def testChangeFilter(self):
-        '''Change the value of a filter field and perform filtering to check for zero values'''
+        '''Change the value of a filter field and perform filtering to
+ check for zero values'''
         insts = Instrument.objects.filter(ccy = 'EUR')
         for inst in insts:
             inst.ccy = 'USD'
@@ -98,3 +114,4 @@ class TestFiler(fintests.BaseFinance):
         for inst in insts:
             self.assertEqual(inst.type,'bond option')
         self.assertTrue(inst)
+

@@ -30,6 +30,7 @@ the :attr:`StdModel._meta` attribute.
 '''
     is_base_class = True
     DoesNotExist = ObjectNotFound
+    DoesNotValidate = ObjectNotValidated
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:

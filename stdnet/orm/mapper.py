@@ -29,7 +29,8 @@ def clearall(exclude = None):
             meta.cursor.clear()
 
 
-def register(model, backend = None, keyprefix = None, timeout = None):
+def register(model, backend = None, keyprefix = None, timeout = None,
+             ignore_duplicates = False):
     '''Register a :class:`stdnet.orm.StdModel`
 model with a :class:`stdnet.backends.BackendDataServer` data server.
     
@@ -60,6 +61,11 @@ on the same redis instance).'''
     backend = backend or settings.DEFAULT_BACKEND
     #prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
     meta = model._meta
+    if model in _GLOBAL_REGISTRY:
+        if not ignore_duplicates:  
+            raise AlreadyRegistered('Model {0} is already registered'.format(meta))
+        else:
+            return
     objects = getattr(model,'objects',None)
     if objects is None or isinstance(objects,UnregisteredManager):
         objects = Manager()
@@ -92,8 +98,8 @@ For example::
 
     from stdnet.orm import model_iterator
     
-    APPS = ('stdnet.contrib.sessions',
-            'stdnet.contrib.tagging')
+    APPS = ('stdnet.contrib.searchengine',
+            'stdnet.contrib.timeseries')
     
     for model in model_iterator(APPS):
         ...
@@ -104,6 +110,7 @@ For example::
             for m in model_iterator(app):
                 yield m
     else:
+        label = application.split('.')[-1]
         mod = import_module(application)
         mod_name = mod.__name__
         try:
@@ -112,9 +119,10 @@ For example::
             raise StopIteration
         
         for name in dir(mod_models):
-            obj = getattr(mod_models,name)
-            if isinstance(obj,StdNetType) and hasattr(obj,'_meta'):
-                yield obj
+            model = getattr(mod_models,name)
+            if isinstance(model,StdNetType) and hasattr(model,'_meta'):
+                if model._meta.app_label == label:
+                    yield model
 
 
 def register_application_models(applications,
@@ -147,8 +155,8 @@ For example::
             args = app_defaults[name]
         else:
             args = default
-        register(obj,args)
-        yield obj
+        if register(obj,args,ignore_duplicates=True):
+            yield obj
 
 
 def register_applications(applications, **kwargs):

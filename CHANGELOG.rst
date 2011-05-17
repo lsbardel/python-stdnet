@@ -1,5 +1,7 @@
 Ver. 0.5.4 - Development
 ============================
+* Refactored registration utilities.
+* Added :func:`stdnet.orm.test_unique` for testing uniqueness.
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.
   The search engine application has been refactored so that it can perform 
   a fast, fuzzy, full text index using Redis.

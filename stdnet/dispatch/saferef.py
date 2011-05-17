@@ -136,14 +136,14 @@ function {1}: {2}'.format(self, function, e))
         self.selfName = str(target.im_self)
         self.funcName = str(target.im_func.__name__)
     
-    def calculateKey( cls, target ):
+    @classmethod
+    def calculateKey(cls, target):
         """Calculate the reference key for this reference
 
         Currently this is a two-tuple of the id()'s of the
         target object and the target function respectively.
         """
         return (id(target.im_self),id(target.im_func))
-    calculateKey = classmethod( calculateKey )
     
     def __str__(self):
         """Give a friendly representation of the object"""
@@ -242,6 +242,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
                 # information.
                 return getattr(target, function.__name__)
         return None
+
 
 def get_bound_method_weakref(target, onDelete):
     """Instantiates the appropiate BoundMethodWeakRef, depending on the details of

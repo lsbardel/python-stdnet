@@ -1,6 +1,6 @@
 Ver. 0.5.4 - Development
 ============================
-* Fixed a filtering problem regarding exclude on unique fields.
+* Fixed a filtering problem when performing exclude on unique fields.
 * Refactored registration utilities.
 * Added :func:`stdnet.orm.test_unique` for testing uniqueness.
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.
@@ -8,8 +8,8 @@ Ver. 0.5.4 - Development
   a fast, fuzzy, full text index using Redis.
 * Added ``pre_save`` and ``post_save`` signals.
 * Added ``pre_delete`` and ``post_delete`` signals.
-* Bug fixes.
-* **204 regression tests** with **72%** coverage.
+* Bug fix on ``disptach`` module which was failing when using python 3.
+* **216 regression tests** with **73%** coverage.
 
 Ver. 0.5.3 - 2011 Apr 30
 =============================

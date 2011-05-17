@@ -1,6 +1,8 @@
 import weakref
+import threading
 
 from stdnet.dispatch import saferef
+from stdnet.utils import range
 
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
@@ -11,7 +13,7 @@ def _make_id(target):
 
 class Signal(object):
     """
-    Base class for all signals. From django.
+    Base class for all signals. From PyDispatcher and django.
     
     Internal attributes:
     
@@ -30,6 +32,7 @@ class Signal(object):
         if providing_args is None:
             providing_args = []
         self.providing_args = set(providing_args)
+        self.lock = threading.Lock()
 
     def connect(self, receiver, sender=None, weak=True, dispatch_uid=None):
         """
@@ -74,11 +77,15 @@ class Signal(object):
         if weak:
             receiver = saferef.safeRef(receiver, onDelete=self._remove_receiver)
 
-        for r_key, _ in self.receivers:
-            if r_key == lookup_key:
-                break
-        else:
-            self.receivers.append((lookup_key, receiver))
+        self.lock.acquire()
+        try:
+            for r_key, _ in self.receivers:
+                if r_key == lookup_key:
+                    break
+            else:
+                self.receivers.append((lookup_key, receiver))
+        finally:
+            self.lock.release()
 
     def disconnect(self, receiver=None, sender=None, weak=True, dispatch_uid=None):
         """
@@ -107,11 +114,15 @@ class Signal(object):
         else:
             lookup_key = (_make_id(receiver), _make_id(sender))
         
-        for index in xrange(len(self.receivers)):
-            (r_key, _) = self.receivers[index]
-            if r_key == lookup_key:
-                del self.receivers[index]
-                break
+        self.lock.acquire()
+        try:
+            for index in range(len(self.receivers)):
+                (r_key, _) = self.receivers[index]
+                if r_key == lookup_key:
+                    del self.receivers[index]
+                    break
+        finally:
+            self.lock.release()
 
     def send(self, sender, **named):
         """

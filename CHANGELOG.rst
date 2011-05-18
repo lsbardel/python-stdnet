@@ -1,4 +1,4 @@
-Ver. 0.5.4 - Development
+Ver. 0.5.4 - 2011 May 18
 ============================
 * Another bug fixing release with a couple of new functionalities and a new ``contrib`` application.
 * Fixed a filtering problem when performing exclude on unique fields.

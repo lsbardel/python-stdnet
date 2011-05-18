@@ -1,5 +1,6 @@
 Ver. 0.5.4 - Development
 ============================
+* Another bug fixing release with a couple of new functionalities and a new ``contrib`` application.
 * Fixed a filtering problem when performing exclude on unique fields.
 * Refactored registration utilities.
 * Added :func:`stdnet.orm.test_unique` for testing uniqueness.
@@ -9,7 +10,8 @@ Ver. 0.5.4 - Development
 * Added ``pre_save`` and ``post_save`` signals.
 * Added ``pre_delete`` and ``post_delete`` signals.
 * Bug fix on ``disptach`` module which was failing when using python 3.
-* **216 regression tests** with **73%** coverage.
+* Several more tests.
+* **218 regression tests** with **73%** coverage.
 
 Ver. 0.5.3 - 2011 Apr 30
 =============================

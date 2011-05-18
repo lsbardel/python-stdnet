@@ -25,9 +25,9 @@ def rmfiles(path, ext = None, rmcache = True):
                 if ext == None or sf[1] == ext:
                     tall += 1
                     trem += rmgeneric(fullpath, os.remove)
-            elif f == '__pycache__' and rmcache:
-                shutil.rmtree(fullpath)
-                tall += 1
+        elif f == '__pycache__' and rmcache:
+            shutil.rmtree(fullpath)
+            tall += 1
         elif os.path.isdir(fullpath):
             r,ra = rmfiles(fullpath, ext)
             trem += r
@@ -40,3 +40,4 @@ if __name__ == '__main__':
     path = os.curdir
     removed, allfiles = rmfiles(path,'pyc')
     print('removed {0} pyc files out of {1}'.format(removed, allfiles))
+    

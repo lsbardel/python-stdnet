@@ -4,18 +4,23 @@ from distutils.command.install import INSTALL_SCHEMES
 import os
 import sys
 
-package_name     = 'stdnet'
+package_name = 'stdnet'
 package_fullname = 'python-%s' % package_name
-root_dir         = os.path.split(os.path.abspath(__file__))[0]
-package_dir      = os.path.join(root_dir, package_name)
+root_dir = os.path.split(os.path.abspath(__file__))[0]
+package_dir = os.path.join(root_dir, package_name)
 
+def get_module():
+    if root_dir not in sys.path:
+        sys.path.insert(0,root_dir)
+    return __import__(package_name)
+
+mod = get_module()
 
 # Try to import lib build
 try:
     from vendor.setup import libparams
 except ImportError:
     libparams = {'cmdclass': {}}
-
 # Switch this of for now    
 libparams = {'cmdclass': {}}
 
@@ -34,13 +39,6 @@ libparams['cmdclass']['install_data'] = osx_install_data if sys.platform == "dar
 # http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
- 
-def get_module():
-    if root_dir not in sys.path:
-        sys.path.insert(0,root_dir)
-    return __import__(package_name)
-
-mod = get_module()
 
 
 def read(fname):
@@ -80,10 +78,11 @@ else:
 for dirpath, dirnames, filenames in os.walk(package_dir):
     # Ignore dirnames that start with '.'
     for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
+        if dirname.startswith('.') or dirname == '__pycache__':
+            del dirnames[i]
     if '__init__.py' in filenames:
         packages.append('.'.join(fullsplit(dirpath)[len_root_dir:]))
-    elif filenames:
+    elif filenames and not dirpath.endswith('__pycache__'):
         rel_dir = get_rel_dir(dirpath,root_dir)
         data_files.append([rel_dir, [os.path.join(dirpath, f) for f in filenames]])
 
@@ -91,7 +90,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
     for file_info in data_files:
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
-
+        
 libparams.update({
         'name': package_fullname,
         'version': mod.__version__,
@@ -103,18 +102,7 @@ libparams.update({
         'long_description': read('README.rst'),
         'packages': packages,
         'data_files': data_files,
-        'classifiers': [
-            'Development Status :: 4 - Beta',
-            'Environment :: Plugins',
-            'Intended Audience :: Developers',
-            'License :: OSI Approved :: BSD License',
-            'Operating System :: OS Independent',
-            'Programming Language :: Python :: 2.6',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3',
-            'Topic :: Utilities',
-            'Topic :: Database'
-        ]
+        'classifiers':  mod.CLASSIFIERS
         })
  
 setup(**libparams)

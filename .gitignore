@@ -1,5 +1,6 @@
 *.pyc
 *.egg
+*.so
 dist/*
 build/*
 .settings/*
@@ -9,4 +10,3 @@ docs/build/*
 .pydevproject
 MANIFEST
 vendor/src/hr.c
-stdnet/lib/hr.so

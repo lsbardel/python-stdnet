@@ -9,9 +9,22 @@ __license__ = "BSD"
 __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "https://github.com/lsbardel/python-stdnet"
+CLASSIFIERS = [
+               'Development Status :: 4 - Beta',
+               'Environment :: Plugins',
+               'Intended Audience :: Developers',
+               'License :: OSI Approved :: BSD License',
+               'Operating System :: OS Independent',
+               'Programming Language :: Python :: 2.6',
+               'Programming Language :: Python :: 2.7',
+               'Programming Language :: Python :: 3.1',
+               'Programming Language :: Python :: 3.2',
+               'Topic :: Utilities',
+               'Topic :: Database'
+               ]
 
 
-sphinxtogithub = False
+sphinxtogithub = True
 
 from .exceptions import *
 from .backends import *

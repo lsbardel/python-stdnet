@@ -1,5 +1,5 @@
 try:
-    from stdlib import *
+    from .stdlib import *
     hasextensions = True
 except:
     hasextensions = False

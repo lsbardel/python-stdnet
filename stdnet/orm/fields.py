@@ -6,7 +6,8 @@ from datetime import date, datetime
 from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, novalue, to_string, is_string
+                         UnicodeMixin, novalue, to_string, is_string,\
+                         to_bytestring
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -23,6 +24,7 @@ __all__ = ['Field',
            'DateTimeField',
            'SymbolField',
            'CharField',
+           'ByteField',
            'ForeignKey',
            'JSONField',
            'PickleObjectField',
@@ -242,7 +244,6 @@ class IntegerField(AtomField):
             return self.default
         
     
-    
 class BooleanField(AtomField):
     '''An boolean :class:`AtomField`'''
     type = 'bool'
@@ -433,6 +434,15 @@ class JSONField(CharField):
         return value
     
 
+class ByteField(CharField):
+    
+    def to_python(self, value):
+        if value is not None:
+            return to_bytestring(value)
+        else:
+            return b''
+        
+        
 class ModelField(SymbolField):
     '''A filed which can be used to store the model unique sha1'''
     

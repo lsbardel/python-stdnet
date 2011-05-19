@@ -1,12 +1,14 @@
+import os
 from datetime import date, datetime
 from decimal import Decimal
 
 import stdnet
 from stdnet import test
-from stdnet.utils import populate, zip
+from stdnet.utils import populate, zip, is_string, to_string
 from stdnet.exceptions import FieldError
 
-from examples.models import TestDateModel, Statistics, Statistics2, Page
+from examples.models import TestDateModel, Statistics, Statistics2,\
+                            Page, SimpleModel
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
@@ -163,7 +165,36 @@ class TestJsonFieldSep(test.TestCase):
         self.assertEqual(dt['started'],started)
         self.assertEqual(dt['timestamp'],timestamp)
         
+
+class TestByteField(test.TestCase):
+    
+    def setUp(self):
+        self.orm.register(SimpleModel)
+    
+    def unregister(self):
+        self.orm.unregister(SimpleModel)
         
+    def testMetaData(self):
+        field = SimpleModel._meta.dfields['somebytes']
+        
+    def testValue(self):
+        v = SimpleModel(code='one', somebytes=to_string('hello'))
+        self.assertTrue(is_string(v.somebytes))
+        v.save()
+        v = SimpleModel.objects.get(code = 'one')
+        self.assertFalse(is_string(v.somebytes))
+        self.assertEqual(v.somebytes,b'hello')
+        
+    def testValueByte(self):
+        b = os.urandom(8)
+        v = SimpleModel(code='one', somebytes=b)
+        self.assertFalse(is_string(v.somebytes))
+        self.assertEqual(v.somebytes,b)
+        v.save()
+        v = SimpleModel.objects.get(code = 'one')
+        self.assertFalse(is_string(v.somebytes))
+        self.assertEqual(v.somebytes,b)
+
 class TestErrorAtomFields(test.TestCase):
     
     def testNotRegistered(self):
@@ -174,4 +205,5 @@ class TestErrorAtomFields(test.TestCase):
     def testNotSaved(self):
         m = TestDateModel(name = names[1], dt = dates[0])
         self.assertRaises(stdnet.StdNetException,m.delete)    
+
 

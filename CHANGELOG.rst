@@ -1,3 +1,8 @@
+Ver. 0.5.5 - Development
+============================
+* Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
+* Renamed ``start`` and ``end`` in TimeSeres and ``data_start`` and ``data_end``.
+
 Ver. 0.5.4 - 2011 May 18
 ============================
 * Another bug fixing release with a couple of new functionalities and a new ``contrib`` application.

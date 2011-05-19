@@ -70,8 +70,8 @@ from which data is not available. It return a list of two-dimensional tuples
 containing start and end date for the interval. The list could countain 0,1 or 2
 tuples.'''
         parseinterval = parseinterval or default_parse_interval
-        start     = self.start
-        end       = self.end
+        start     = self.data_start
+        end       = self.data_end
         todate    = self.todate
         startdate = todate(parseinterval(startdate,0))
         enddate   = max(startdate,todate(parseinterval(enddate,0)))
@@ -133,9 +133,9 @@ class TimeSeries(TimeSeriesBase):
 
 class HashTimeSeries(TimeSeriesBase):
     '''Base abstract class for timeseries'''
-    data  = HashTimeSeriesField()
-    start = orm.DateTimeField(required = False, index = False)
-    end   = orm.DateTimeField(required = False, index = False)
+    data = HashTimeSeriesField()
+    data_start = orm.DateTimeField(required = False, index = False)
+    data_end = orm.DateTimeField(required = False, index = False)
     
     def dates(self):
         return self.data.sortedkeys()
@@ -154,15 +154,16 @@ class HashTimeSeries(TimeSeriesBase):
         '''Store the start/end date of the timeseries'''
         dates = self.data.sortedkeys()
         if dates:
-            self.start = dates[0]
-            self.end   = dates[-1]
+            self.data_start = dates[0]
+            self.data_end   = dates[-1]
         else:
-            self.start = None
-            self.end   = None
+            self.data_start = None
+            self.data_end   = None
     
     def fromto(self):
-        if self.start:
-            return '%s - %s' % (self.start.strftime('%Y %m %d'),self.end.strftime('%Y %m %d'))
+        if self.data_start:
+            return '%s - %s' % (self.data_start.strftime('%Y %m %d'),\
+                                self.data_end.strftime('%Y %m %d'))
         else:
             return ''
         
@@ -172,8 +173,8 @@ class HashTimeSeries(TimeSeriesBase):
 
 class DateHashTimeSeries(HashTimeSeries):
     converter = DateConverter
-    start = orm.DateField(required = False, index = False)
-    end   = orm.DateField(required = False, index = False)
+    data_start = orm.DateField(required = False, index = False)
+    data_end = orm.DateField(required = False, index = False)
     
     def todate(self, v):
         return todate(v)

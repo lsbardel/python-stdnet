@@ -62,18 +62,18 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
             for dt in dategenerator(x,y):
                 ts.data.add(dt,uniform(0,1))
         ts.save()
-        self.assertEqual(ts.start,C)
-        self.assertEqual(ts.end,D)
+        self.assertEqual(ts.data_start,C)
+        self.assertEqual(ts.data_end,D)
         
     def testFrontBack(self):
         ts = self.get()
-        self.assertEqual(ts.start,None)
-        self.assertEqual(ts.end,None)
+        self.assertEqual(ts.data_start,None)
+        self.assertEqual(ts.data_end,None)
         mkdate = self.mkdate
         ts.data.update(testdata2)
         ts.save()
-        start = ts.start
-        end   = ts.end
+        start = ts.data_start
+        end   = ts.data_end
         p = start
         for d in ts.dates():
             self.assertTrue(d>=p)
@@ -119,8 +119,8 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         '''Test interval handling'''
         mkdate = self.mkdate
         ts = self.get()
-        self.assertEqual(ts.start,None)
-        self.assertEqual(ts.end,None)
+        self.assertEqual(ts.data_start,None)
+        self.assertEqual(ts.data_end,None)
         #
         #
         A1   = mkdate(2010,5,10)

@@ -148,6 +148,7 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
     def flush(self, meta, count):
         if count is not None:
             count[str(meta)] = meta.table().size()
+        # This should be a lua script or pipeline?
         keys = self.keys(meta.basekey()+b'*')
         if keys:
             self.delete(*keys)

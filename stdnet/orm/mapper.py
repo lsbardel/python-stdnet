@@ -12,6 +12,7 @@ from .base import StdNetType, AlreadyRegistered
 logger = logging.getLogger('stdnet.mapper')
 
 __all__ = ['clearall',
+           'flush_models',
            'register',
            'unregister',
            'model_iterator',
@@ -28,6 +29,16 @@ def clearall(exclude = None):
         if not meta.name in exclude:
             meta.cursor.clear()
 
+
+def flush_models(apps = None):
+    '''Flush models data.'''
+    global _GLOBAL_REGISTRY
+    if not apps:
+        for model in _GLOBAL_REGISTRY:
+            model.flush()
+    else:
+        raise NotImplemented
+            
 
 def register(model, backend = None, keyprefix = None, timeout = None,
              ignore_duplicates = True):

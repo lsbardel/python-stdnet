@@ -124,11 +124,11 @@ class TimeSeries(TimeSeriesBase):
     
     def __get_start(self):
         return self.data.front()
-    start = property(__get_start)
+    data_start = property(__get_start)
     
     def __get_end(self):
         return self.data.back()
-    end = property(__get_end)
+    data_end = property(__get_end)
         
 
 class HashTimeSeries(TimeSeriesBase):

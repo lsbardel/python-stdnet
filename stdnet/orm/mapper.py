@@ -30,14 +30,28 @@ def clearall(exclude = None):
             meta.cursor.clear()
 
 
-def flush_models(apps = None):
+def models_from_names(names):
+    global _GLOBAL_REGISTRY
+    s = set(names)
+    for m in _GLOBAL_REGISTRY:
+        if str(m._meta) in s:
+            yield m
+    
+
+def flush_models(includes = None, excludes = None):
     '''Flush models data.'''
     global _GLOBAL_REGISTRY
-    if not apps:
-        for model in _GLOBAL_REGISTRY:
-            model.flush()
+    if includes:
+        includes = list(models_from_names(includes))
     else:
-        raise NotImplemented
+        includes = _GLOBAL_REGISTRY
+    if excludes:
+        excludes = set(models_from_names(excludes))
+    else:
+        excludes = set()
+    for model in includes:
+        if model not in excludes:
+            model.flush()
             
 
 def register(model, backend = None, keyprefix = None, timeout = None,

@@ -3,6 +3,7 @@ Ver. 0.5.5 - Development
 * Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres and ``data_start`` and ``data_end``.
+* **223 regression tests** with **73%** coverage.
 
 Ver. 0.5.4 - 2011 May 18
 ============================

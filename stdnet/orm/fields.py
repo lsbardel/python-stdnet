@@ -442,6 +442,12 @@ class ByteField(CharField):
         else:
             return b''
         
+    def serialize(self, value):
+        if value is not None:
+            return to_bytestring(value)
+        else:
+            b''
+        
         
 class ModelField(SymbolField):
     '''A filed which can be used to store the model unique sha1'''

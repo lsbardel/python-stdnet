@@ -39,7 +39,8 @@ def models_from_names(names):
     
 
 def flush_models(includes = None, excludes = None):
-    '''Flush models data.'''
+    '''Utility for flushing models data.
+It removes all keys associated with models.'''
     global _GLOBAL_REGISTRY
     if includes:
         includes = list(models_from_names(includes))
@@ -49,9 +50,12 @@ def flush_models(includes = None, excludes = None):
         excludes = set(models_from_names(excludes))
     else:
         excludes = set()
+    flushed = []
     for model in includes:
         if model not in excludes:
             model.flush()
+            flushed.append(str(model._meta))
+    return flushed
             
 
 def register(model, backend = None, keyprefix = None, timeout = None,

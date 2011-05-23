@@ -207,6 +207,9 @@ class StdNetType(type):
         signals.class_prepared.send(sender=new_class)
         return new_class
     
+    def __str__(cls):
+        return str(cls._meta)
+    
 
 def meta_options(abstract = False,
                  keyprefix = None,

@@ -173,7 +173,9 @@ class stdnet_processor(object):
     def field_iterator(self, item):
         for field in item._meta.fields:
             if isinstance(field,orm.SymbolField):
-                yield getattr(item,field.attname)
+                value = getattr(item,field.attname)
+                if value:
+                    yield value
 
 
 engine.add_processor(stdnet_processor())

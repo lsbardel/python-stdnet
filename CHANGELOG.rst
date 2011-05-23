@@ -1,5 +1,9 @@
 Ver. 0.5.5 - Development
 ============================
+* Bug fix in Backend, port was not read.
+* Bug fix in test suite.
+* Bug fix in :class:`stdnet.contrib.timeseries`. The models were overridding
+  the :meth:`__str__` rather than :meth:`__unicode__`. 
 * Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres and ``data_start`` and ``data_end``.

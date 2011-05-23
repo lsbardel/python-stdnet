@@ -1,5 +1,6 @@
 from stdnet.lib import redis
-from stdnet import test
+from stdnet import test, getdb
+from stdnet.conf import settings
 
 DBTEST = 13
 
@@ -7,7 +8,9 @@ DBTEST = 13
 ResponseError = redis.ResponseError
 
 def makeredis(pool = None):
-    return redis.Redis(host='localhost', port=6379, db=DBTEST, connection_pool=pool)
+    cursor = getdb(settings.DEFAULT_BACKEND)
+    return cursor.redispy
+    #return redis.Redis(host='localhost', port=6379, db=DBTEST, connection_pool=pool)
 
 
 class BaseTest(test.TestCase):

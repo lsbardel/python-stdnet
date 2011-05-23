@@ -145,10 +145,12 @@ class HashTimeSeries(TimeSeriesBase):
     
     def save(self, commit = True):
         supersave = super(HashTimeSeries,self).save
-        supersave(commit = commit)
+        c = supersave(commit = commit)
         if commit:
             self.storestartend()
             return supersave(True)
+        else:
+            return c
     
     def storestartend(self):
         '''Store the start/end date of the timeseries'''
@@ -167,7 +169,7 @@ class HashTimeSeries(TimeSeriesBase):
         else:
             return ''
         
-    def __str__(self):
+    def __unicode__(self):
         return self.fromto()
 
 

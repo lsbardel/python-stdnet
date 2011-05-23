@@ -1,6 +1,7 @@
 *.pyc
 *.egg
 *.so
+*.prof
 dist/*
 build/*
 .settings/*

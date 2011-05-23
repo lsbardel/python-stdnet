@@ -9,32 +9,48 @@ from itertools import chain
 from stdnet import orm
 from stdnet.utils import to_string
 
-from .models import Word, WordItem
+from .models import Word, WordItem, AutoComplete
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS, MIN_WORD_LENGTH
 from .metaphone import dm as double_metaphone
 
 
-class FullTextIndex(object):
+class SearchEngine(object):
     """A class to provide full-text indexing functionality using StdNet. Adapted from
     
 https://gist.github.com/389875
 """
     ITEM_PROCESSORS = []
     
-    def __init__(self, min_word_length = None, stop_words = None):
+    def __init__(self, min_word_length = None, stop_words = None,
+                 autocomplete = 'en', metaphone = True):
         self.MIN_WORD_LENGTH = min_word_length if min_word_length is not None else MIN_WORD_LENGTH
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
         self.punctuation_regex = re.compile(r"[%s]" % re.escape(PUNCTUATION_CHARS))
+        self.metaphone = metaphone
+        self._autocomplete = autocomplete           
+        
+    @property
+    def autocomplete(self):
+        if self._autocomplete:
+            return AutoComplete.me(self._autocomplete)
         
     def index_item(self, item):
-        """Extract content from the given item and add it to the index"""
-        w = self.get_words_from_text
+        """Extract content from the given item and add it to the index. If autocomplete
+is enabled, it adds indexes for it."""
+        wft = self.get_words_from_text
         link = self._link_item_and_word
         
-        words = chain(*[w(value) for value in self.item_field_iterator(item)])
-        linked = []        
-        for metaphone in self.get_metaphones(words):
-            wi = link(item, metaphone)
+        words = list(chain(*[wft(value) for value in self.item_field_iterator(item)]))
+        linked = []
+        auto = self.autocomplete
+        if auto:
+            auto.extend(words)
+        
+        if self.metaphone:
+            words = self.get_metaphones(words)
+        
+        for word in words:
+            wi = link(item, word)
             if wi:
                 linked.append(wi)
         return linked
@@ -161,11 +177,10 @@ https://gist.github.com/389875
             raise StopIteration
         
 
-engine = FullTextIndex()
-
 
 class stdnet_processor(object):
-    
+    '''A search engine processor for stdnet models. An engine processor is a callable
+which return an iterable over text.'''
     def __call__(self, item):
         if isinstance(item,orm.StdModel):
             return self.field_iterator(item)
@@ -177,6 +192,4 @@ class stdnet_processor(object):
                 if value:
                     yield value
 
-
-engine.add_processor(stdnet_processor())
 

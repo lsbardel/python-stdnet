@@ -11,6 +11,8 @@ from .exceptions import RedisError, AuthenticationError
 from stdnet.utils import to_bytestring, to_string, is_string, iteritems
 
 
+CRLF = b'\r\n'
+
 class ConnectionPool(threading.local):
     "Manages a list of connections on the local thread"
     def __init__(self):
@@ -338,15 +340,14 @@ class Redis(threading.local):
 
     def execute_command(self, *args, **options):
         "Sends the command to the redis server and returns it's response"
-        cmd_count = len(args)
-        cmds = []
         encode = self.encode
-        encoded_values = (encode(value) for value in args)
-        cmds = [b'$'+to_bytestring(len(value),'ascii')+b'\r\n' + value + b'\r\n'
+        N = len(args)
+        encoded_values = [encode(value) for value in args]
+        cmds = [b'$'+to_bytestring(len(value),'ascii')+CRLF+value+CRLF
                 for value in encoded_values]
         return self._execute_command(
             args[0],
-            b'*'+to_bytestring(len(cmds),'ascii')+b'\r\n' + b''.join(cmds),
+            b'*'+to_bytestring(N,'ascii')+CRLF+ b''.join(cmds),
             **options
             )
 

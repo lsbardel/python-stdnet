@@ -129,7 +129,14 @@ class TimeSeries(TimeSeriesBase):
     def __get_end(self):
         return self.data.back()
     data_end = property(__get_end)
-        
+    
+
+class DateTimeSeries(TimeSeries):
+    converter = DateConverter
+    
+    def todate(self, v):
+        return todate(v)
+    
 
 class HashTimeSeries(TimeSeriesBase):
     '''Base abstract class for timeseries'''

@@ -421,6 +421,13 @@ This structure is important since it is used in two different parts of the libra
         for key,val in self._items():
             yield tovalue(key),loads(val)
             
+    def range(self, start, end, desc = False):
+        '''Return a generator of ordered items between start and end.'''
+        items = sorted(self.items(),key = lambda t : t[0])
+        if not desc:
+            items = reversed(items)
+        return items
+            
     def values(self):
         for key,value in self.items():
             yield value

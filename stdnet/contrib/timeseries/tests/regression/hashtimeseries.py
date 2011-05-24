@@ -201,6 +201,14 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertRaises(KeyError,lambda : ts.data[mkdate(2010,3,1)])
         self.assertEqual(ts.data.get(mkdate(2010,3,1)),None)
         
+    def testRange(self):
+        '''Test the range (by time) command'''
+        ts = self.filldata(testdata2)
+        d1 = date(2009,4,1)
+        d2 = date(2009,11,1)
+        data = list(ts.data.range(d1,d2))
+        self.assertTrue(data)
+        
 
 class TestDateHashTimeSeries(TestHashTimeSeries):
     model = DateHashTimeSeries

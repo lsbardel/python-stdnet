@@ -74,7 +74,8 @@ class ServerCommandsTestCase(BaseTest):
             keyspace = info['Keyspace']
         else:
             keyspace = info
-        self.assertEquals(keyspace['db{0}'.format(DBTEST)]['keys'], 2)
+        db = self.client.db
+        self.assertEquals(keyspace['db{0}'.format(db)]['keys'], 2)
 
     def test_lastsave(self):
         self.assert_(isinstance(self.client.lastsave(), datetime.datetime))

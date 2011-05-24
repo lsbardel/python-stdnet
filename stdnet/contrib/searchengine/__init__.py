@@ -5,6 +5,7 @@ models with ideas from the fast, fuzzy, full-text index with Redis
 '''
 import re
 from itertools import chain
+from inspect import isclass
 
 from stdnet import orm
 from stdnet.utils import to_string
@@ -54,6 +55,15 @@ is enabled, it adds indexes for it."""
             if wi:
                 linked.append(wi)
         return linked
+    
+    def remove_item(self, item):
+        '''Remove indexes fir item'''
+        if isclass(item):
+            wi = WordItem.objects.filter(model_type = item)
+        else:
+            wi = WordItem.objects.filter(model_type = item.__class__,
+                                         object_id = item.id)
+        wi.delete()
     
     def search(self, text, **filters):
         '''Full text search'''
@@ -135,11 +145,16 @@ is enabled, it adds indexes for it."""
     def get_metaphones(self, words):
         """Get the metaphones for a given list of words"""
         metaphones = set()
+        add = metaphones.add
         for word in words:
             metaphone = double_metaphone(to_string(word))
-            metaphones.add(metaphone[0].strip())
+            w = metaphone[0].strip()
+            if w:
+                add(w)
             if(metaphone[1]):
-                metaphones.add(metaphone[1].strip())
+                w = metaphone[1].strip()
+                if w:
+                    add(w)
         return metaphones
     
     def item_field_iterator(self, item):
@@ -160,7 +175,6 @@ is enabled, it adds indexes for it."""
                 return w
         except Word.DoesNotExist:
             return Word(id = word, tag = tag).save()
-        
         
     def items_from_text(self, text, **filters):
         texts = self.get_words_from_text(text)

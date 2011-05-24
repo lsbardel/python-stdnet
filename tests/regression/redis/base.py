@@ -2,8 +2,6 @@ from stdnet.lib import redis
 from stdnet import test, getdb
 from stdnet.conf import settings
 
-DBTEST = 13
-
 
 ResponseError = redis.ResponseError
 

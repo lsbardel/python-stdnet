@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
-from stdnet.contrib.timeseries.tests.models import TimeSeries
+from stdnet.utils import todate
+from stdnet.contrib.timeseries.tests.models import TimeSeries, DateTimeSeries
 from stdnet.contrib.timeseries.tests.regression import hashtimeseries
 
 testdata  = hashtimeseries.testdata
@@ -15,7 +16,7 @@ class TestDateTimeSeriesTS(hashtimeseries.TestHashTimeSeries):
     def testitems2(self):
         ts = self.filldata(testdata2)
         for k,v in ts.data.items():
-            self.assertEqual(v,testdata2[k.date()])
+            self.assertEqual(v,testdata2[todate(k)])
             
     def testiRange(self):
         ts = self.filldata(testdata2)
@@ -56,3 +57,8 @@ class TestDateTimeSeriesTS(hashtimeseries.TestHashTimeSeries):
         r2 = list(ts.data.irange(a,b))
         r3 = list(ts.data.irange(b,-1))
         self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)
+
+
+class TestDateSeriesTS(TestDateTimeSeriesTS):
+    model = DateTimeSeries
+    mkdate = date

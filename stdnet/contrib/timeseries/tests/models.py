@@ -15,3 +15,7 @@ class TimeSeries(models.TimeSeries):
     ticker = orm.SymbolField(unique = True)
     
 
+class DateTimeSeries(models.DateTimeSeries):
+    ticker = orm.SymbolField(unique = True)
+    
+

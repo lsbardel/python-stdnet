@@ -167,5 +167,7 @@ class TestAutoComplete(TestCase):
         make_items(content = True)
         for item in Item.objects.all():
             self.assertTrue(engine.index_item(item))
+        search = engine.search('tro')
+        self.assertTrue(search)
         
         

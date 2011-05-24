@@ -116,7 +116,7 @@ return an iterator of suggested words'''
         add = self.data.add
         for word in words:
             we = word+self.endchar
+            add(we)
             for idx in range(self.minlen,len(word)):
                 add(word[:idx])
-            add(we)
         self.data.save()

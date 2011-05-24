@@ -1,5 +1,6 @@
 Ver. 0.5.5 - Development
 ============================
+* Bug Fix in JSONField.
 * Added tests for timeseries with date as keys (rather than datetimes).
 * Bug fix in Backend and test suite, Redis port was not read.
 * Bug fix in :class:`stdnet.contrib.timeseries`. The models were overridding

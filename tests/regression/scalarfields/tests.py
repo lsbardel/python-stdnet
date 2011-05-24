@@ -1,4 +1,6 @@
 import os
+import json
+import time
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -121,6 +123,21 @@ class TestJsonField(test.TestCase):
         self.assertEqual(len(a.data),4)
         self.assertEqual(a.data['mean'],mean)
         self.assertEqual(a.data['started'],started)
+        self.assertEqual(a.data['timestamp'],timestamp)
+        
+    def testCreateFromString(self):
+        mean = 'mean'
+        timestamp = time.time()
+        data = {'mean': mean,
+                'std': 5.78,
+                'timestamp':timestamp}
+        datas = json.dumps(data)
+        a = Statistics(dt = date.today(), data = datas).save()
+        a = Statistics.objects.get(id = a.id)
+        self.assertEqual(a.data['mean'],mean)
+        a = Statistics.objects.get(id = a.id)
+        self.assertEqual(len(a.data),3)
+        self.assertEqual(a.data['mean'],mean)
         self.assertEqual(a.data['timestamp'],timestamp)
         
     def testEmpty(self):

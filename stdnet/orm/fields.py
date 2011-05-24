@@ -7,7 +7,7 @@ from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, novalue, to_string, is_string,\
-                         to_bytestring
+                         to_bytestring, is_bytes_or_string
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -430,6 +430,8 @@ class JSONField(CharField):
     
     def serialize(self, value):
         if value is not None:
+            if is_bytes_or_string(value):
+                value = self.to_python(value)
             value = json.dumps(json_compact(value,self.sep), cls=self.encoder_class)
         return value
     

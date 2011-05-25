@@ -1,14 +1,14 @@
 Ver. 0.5.5 - Development
 ============================
-* Bug Fix in JSONField.
+* Bug Fix in :class:`stdnet.orm.JSONField`.
 * Added tests for timeseries with date as keys (rather than datetimes).
 * Bug fix in Backend and test suite, Redis port was not read.
 * Bug fix in :class:`stdnet.contrib.timeseries`. The models were overridding
   the :meth:`__str__` rather than :meth:`__unicode__`. 
 * Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
-* Renamed ``start`` and ``end`` in TimeSeres and ``data_start`` and ``data_end``.
-* **232 regression tests** with **75%** coverage.
+* Renamed ``start`` and ``end`` in TimeSeres to ``data_start`` and ``data_end``.
+* **241 regression tests** with **76%** coverage.
 
 Ver. 0.5.4 - 2011 May 18
 ============================

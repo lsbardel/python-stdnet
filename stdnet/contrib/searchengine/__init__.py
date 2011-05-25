@@ -177,7 +177,15 @@ is enabled, it adds indexes for it."""
             return Word(id = word, tag = tag).save()
         
     def items_from_text(self, text, **filters):
+        auto = self.autocomplete
         texts = self.get_words_from_text(text)
+        if auto:
+            texts = list(texts)
+            # We assume the [:-1] words are valid so that we search for autocomplete
+            # in the lsat word
+            autotext = texts[-1]
+            texts = texts[:-1]
+            texts.extend(auto.search(autotext))
         words = Word.objects.filter(id__in =\
                      [m for m in self.get_metaphones(texts)])
         processed = set()

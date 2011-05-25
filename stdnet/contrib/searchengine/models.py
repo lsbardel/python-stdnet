@@ -3,7 +3,7 @@ Search Engine and Tagging models. Just two of them, one for storing Words and
 one for linking other objects to Words.
 '''
 from stdnet import orm
-from stdnet.utils import range
+from stdnet.utils import range, to_string
 
 
 class Word(orm.StdModel):
@@ -94,7 +94,8 @@ return an iterator of suggested words'''
         echar = self.endchar
         N = len(echar)
         for elem in elems:
-            if elem[M:] != value:
+            elem = to_string(elem)
+            if elem[:M] != value:
                 raise StopIteration
             if elem.endswith(echar):
                 yield elem[:-N]

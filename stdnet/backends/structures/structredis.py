@@ -101,8 +101,15 @@ class OrderedSet(structures.OrderedSet):
     def _contains(self, value):
         return self.cursor.execute_command('ZSCORE', self.id, value) is not None
     
+    def _rank(self, elem):
+        return self.cursor.execute_command('ZRANK', self.id, elem)
+        
     def _all(self):
         return self.cursor.redispy.zrange(self.id, 0, -1)
+    
+    def range(self, start, end = -1, desc = False, withscores = False):
+        return self.cursor.redispy.zrange(self.id, start, end,
+                                          desc = desc, withscores = withscores)
     
     def _save(self):
         id = self.id

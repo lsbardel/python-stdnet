@@ -300,6 +300,12 @@ This structure is used for in two different parts of the library.
 class OrderedSet(Set):
     '''An ordered version of :class:`stdnet.Set`.'''
     struct = OsetPipe
+    
+    def rank(self, value):
+        if self.pickler:
+            value = self.pickler.dumps(value)
+        return self._rank(value)
+        
         
     def __iter__(self):
         if not self._cache:
@@ -324,6 +330,14 @@ class OrderedSet(Set):
         if self.pickler:
             value = self.pickler.dumps(value)
         self.pipeline.add((score,value))
+        
+    # VIRTUAL FUNCTIONS
+    
+    def range(self, start, end = -1, withscores = False):
+        raise NotImplementedError
+    
+    def _rank(self, value):
+        raise NotImplementedError
 
 
 class KeyValueStructure(Structure):

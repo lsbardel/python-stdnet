@@ -1,5 +1,8 @@
 Ver. 0.5.5 - Development
 ============================
+* Several new features, some important bug fixes and more tests.
+* Added pickle support to models. The `__getstate__` method return a tuple containg ``id``
+  and a dictionary representation of scalar fields (obtained from the ``todict`` method).
 * Bug Fix in :class:`stdnet.orm.JSONField`.
 * Added tests for timeseries with date as keys (rather than datetimes).
 * Bug fix in Backend and test suite, Redis port was not read.
@@ -8,7 +11,7 @@ Ver. 0.5.5 - Development
 * Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres to ``data_start`` and ``data_end``.
-* **241 regression tests** with **76%** coverage.
+* **242 regression tests** with **76%** coverage.
 
 Ver. 0.5.4 - 2011 May 18
 ============================

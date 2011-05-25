@@ -89,16 +89,17 @@ return an iterator of suggested words'''
         elif maxelem < 0:
             end = maxelem
         else:
-            end = rank 
-        elems = self.data.range(rank, end)
-        echar = self.endchar
-        N = len(echar)
-        for elem in elems:
-            elem = to_string(elem)
-            if elem[:M] != value:
-                raise StopIteration
-            if elem.endswith(echar):
-                yield elem[:-N]
+            end = rank
+        if rank is not None:
+            elems = self.data.range(rank, end)
+            echar = self.endchar
+            N = len(echar)
+            for elem in elems:
+                elem = to_string(elem)
+                if elem[:M] != value:
+                    raise StopIteration
+                if elem.endswith(echar):
+                    yield elem[:-N]
     
     def add(self, word):
         '''Add a word to the dataset'''

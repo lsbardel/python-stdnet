@@ -140,16 +140,7 @@ class BackendDataServer(BackendDataServer0):
     
     def make_object(self, meta, id , data):
         obj = meta.maker()
-        field = meta.pk
-        setattr(obj,'id',field.to_python(id))
-        for field in meta.scalarfields:
-            name = field.attname
-            if name in data:
-                value = data[name]
-            else:
-                value = None
-            setattr(obj,name,field.to_python(value))
-        obj.afterload()
+        obj.__setstate__((id,data))
         return obj
     
     def get_object(self, meta, name, value):

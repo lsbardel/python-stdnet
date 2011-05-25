@@ -1,7 +1,7 @@
 import inspect
 
 from stdnet import test
-from stdnet.utils import populate
+from stdnet.utils import populate, pickle
 from stdnet.exceptions import QuerySetError
 from stdnet.orm import model_to_dict, model_iterator
 from stdnet.orm.base import StdNetType
@@ -63,6 +63,23 @@ class TestInspectionAndComparison(test.TestCase):
         self.assertEqual(v[0],inst._meta.hash)
         self.assertEqual(v[1],str(inst.id))
 
+
+class PickleSupport(test.TestCase):
+    
+    def setUp(self):
+        '''Create Instruments and Funds'''
+        orm = self.orm
+        orm.register(Instrument)
+        
+    def testSimple(self):
+        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
+        p = pickle.dumps(inst)
+        inst2 = pickle.loads(p)
+        self.assertEqual(inst,inst2)
+        self.assertEqual(inst.name,inst2.name)
+        self.assertEqual(inst.type,inst2.type)
+        self.assertEqual(inst.ccy,inst2.ccy)
+        
 
 class TestRegistration(test.TestCase):
     

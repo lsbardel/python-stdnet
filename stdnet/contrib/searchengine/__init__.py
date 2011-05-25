@@ -180,12 +180,15 @@ is enabled, it adds indexes for it."""
         auto = self.autocomplete
         texts = self.get_words_from_text(text)
         if auto:
-            texts = list(texts)
+            otexts = list(texts)
             # We assume the [:-1] words are valid so that we search for autocomplete
             # in the lsat word
-            autotext = texts[-1]
-            texts = texts[:-1]
+            autotext = otexts[-1]
+            texts = otexts[:-1]
+            N = len(texts)
             texts.extend(auto.search(autotext))
+            if len(texts) == N:
+                texts = otexts
         words = Word.objects.filter(id__in =\
                      [m for m in self.get_metaphones(texts)])
         processed = set()

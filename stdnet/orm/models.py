@@ -158,6 +158,25 @@ If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
+    # PICKLING SUPPORT
+    
+    def __getstate__(self):
+        return (self.id, self.todict())
+    
+    def __setstate__(self, state):
+        id,data = state
+        meta = self._meta
+        field = meta.pk
+        setattr(self,'id',field.to_python(id))
+        for field in meta.scalarfields:
+            name = field.attname
+            if name in data:
+                value = data[name]
+            else:
+                value = None
+            setattr(self,name,field.to_python(value))
+        self.afterload()
+    
 
 
 def model_to_dict(instance, fields = None, exclude = None):

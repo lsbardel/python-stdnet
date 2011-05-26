@@ -84,13 +84,13 @@ return an iterator of suggested words'''
         if M < self.minlen:
             raise StopIteration
         rank = self.data.rank(value)
-        if maxelem > 0:
-            end = rank + maxelem
-        elif maxelem < 0:
-            end = maxelem
-        else:
-            end = rank
         if rank is not None:
+            if maxelem > 0:
+                end = rank + maxelem
+            elif maxelem < 0:
+                end = maxelem
+            else:
+                end = rank
             elems = self.data.range(rank, end)
             echar = self.endchar
             N = len(echar)

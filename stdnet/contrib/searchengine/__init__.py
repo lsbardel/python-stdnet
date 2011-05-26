@@ -33,7 +33,9 @@ https://gist.github.com/389875
     @property
     def autocomplete(self):
         if self._autocomplete:
-            return AutoComplete.me(self._autocomplete)
+            ac = AutoComplete.me(self._autocomplete)
+            #ac.minlen = self.MIN_WORD_LENGTH
+            return ac
         
     def index_item(self, item):
         """Extract content from the given item and add it to the index. If autocomplete
@@ -181,14 +183,16 @@ is enabled, it adds indexes for it."""
         texts = self.get_words_from_text(text)
         if auto:
             otexts = list(texts)
-            # We assume the [:-1] words are valid so that we search for autocomplete
-            # in the lsat word
-            autotext = otexts[-1]
-            texts = otexts[:-1]
-            N = len(texts)
-            texts.extend(auto.search(autotext))
-            if len(texts) == N:
-                texts = otexts
+            if not otexts:
+                autotext = text.strip()
+                texts = list(auto.search(autotext))
+            else:
+                autotext = otexts[-1]
+                texts = otexts[:-1]
+                N = len(texts)
+                texts.extend(auto.search(autotext))
+                if len(texts) == N:
+                    texts = otexts
         words = Word.objects.filter(id__in =\
                      [m for m in self.get_metaphones(texts)])
         processed = set()

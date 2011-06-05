@@ -16,8 +16,6 @@ ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 NUMBERS = '0123456789'
 ALPHA_NUMERIC = ALPHABET+NUMBERS
 
-MIN_WORD_LENGTH = 3
-
 # Consider these characters to be punctuation
 # they will be replaced with spaces prior to word extraction
 PUNCTUATION_CHARS = ",.;:'@~#[]{}`!$%^&*()_-"

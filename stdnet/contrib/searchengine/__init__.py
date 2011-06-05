@@ -1,7 +1,11 @@
 '''\
-A stdnet application for building a search-engine on
+An application for building a search-engine on ``stdnet``
 models with ideas from the fast, fuzzy, full-text index with Redis
-`blog post <http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/>`_.
+`blog post <http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/>`_
+and @antirez autocomplete https://gist.github.com/574044.
+
+Adapted from
+https://gist.github.com/389875
 '''
 import re
 from itertools import chain
@@ -11,20 +15,43 @@ from stdnet import orm
 from stdnet.utils import to_string
 
 from .models import Word, WordItem, AutoComplete
-from .ignore import STOP_WORDS, PUNCTUATION_CHARS, MIN_WORD_LENGTH
+from .ignore import STOP_WORDS, PUNCTUATION_CHARS
 from .metaphone import dm as double_metaphone
 
 
 class SearchEngine(object):
-    """A class to provide full-text indexing functionality using StdNet. Adapted from
+    """Search engine driver.
     
-https://gist.github.com/389875
+:parameter min_word_length: minimum number of words required by the engine to work.
+
+                            Default ``2``.
+                            
+:parameter stop_words: list of words not included in the search engine.
+
+                        Default in ``stdnet.contrib.searchengine.ignore.STOP_WORDS``
+                        
+:parameter autocomplete: Name for the autocomplete sorted set.
+                         If ``None`` autocomplete functionality won't be available.
+                         
+                         Default ``en``.
+                         
+:parameter metaphone: If ``True`` the double metaphone_ algorithm will be used to store
+                      and search for words.
+
+To use it::
+    
+    from stdnet.contrib.searchengine import SearchEngine
+     
+    engine = SearchEngine()
+    
+    
+.. _metaphone: http://en.wikipedia.org/wiki/Metaphone
 """
     ITEM_PROCESSORS = []
     
-    def __init__(self, min_word_length = None, stop_words = None,
+    def __init__(self, min_word_length = 3, stop_words = None,
                  autocomplete = 'en', metaphone = True):
-        self.MIN_WORD_LENGTH = min_word_length if min_word_length is not None else MIN_WORD_LENGTH
+        self.MIN_WORD_LENGTH = min_word_length
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
         self.punctuation_regex = re.compile(r"[%s]" % re.escape(PUNCTUATION_CHARS))
         self.metaphone = metaphone

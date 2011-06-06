@@ -6,6 +6,11 @@
 Model Utilities
 ============================
 
+Instance form UUID
+=======================
+
+.. autofunction:: stdnet.orm.from_uuid
+
 
 Model Iterator
 =======================

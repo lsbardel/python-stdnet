@@ -89,16 +89,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             raise self.DoesNotExist('Object not saved. Cannot obtain universally unique id')
         return '{0}.{1}'.format(self._meta.hash,self.id)
     
-    @classmethod
-    def from_uuid(self, uuid):
-        elems = uuid.split('.')
-        if len(elems) == 2:
-            model = get_model_from_hash(elems[0])
-            if not model:
-                raise cls.DoesNotExist('model id "{0}" not available'.format(elems[0]))
-            return model.objects.get(id = elems[1])
-        raise cls.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
-        
     def __eq__(self, other):
         if other.__class__ == self.__class__:
             return self.id == other.id
@@ -190,8 +180,19 @@ will enumerate the number of object to delete. without deleting them.'''
         self.afterload()
     
 
-from_uuid = StdModel.from_uuid
-
+def from_uuid(uuid):
+    '''Retrieve an instance of a :class:`stdnet.orm.StdModel`
+from an universal unique identifier *uuid*. If the *uuid* does not match any
+instance an exception will raise.'''
+    elems = uuid.split('.')
+    if len(elems) == 2:
+        model = get_model_from_hash(elems[0])
+        if not model:
+            raise StdModel.DoesNotExist('model id "{0}" not available'.format(elems[0]))
+        return model.objects.get(id = elems[1])
+    raise StdModel.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
+    
+    
 def model_to_dict(instance, fields = None, exclude = None):
     if isinstance(instance,StdModel):
         return instance.todict()

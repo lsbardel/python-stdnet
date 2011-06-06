@@ -24,3 +24,13 @@ class TestRegistration(test.TestCase):
         orm.flush_models()
         qs = SimpleModel.objects.all()
         self.assertFalse(qs)
+        
+    def testFromUuid(self):
+        s = SimpleModel(code = 'test').save()
+        uuid = s.uuid
+        s2  = orm.from_uuid(s.uuid)
+        self.assertEqual(s,s2)
+        self.assertRaises(SimpleModel.DoesNotExist,orm.from_uuid,'cdcdscscds')
+        self.assertRaises(SimpleModel.DoesNotExist,orm.from_uuid,'cdcdscscds.1')
+        a,b = tuple(uuid.split('.'))
+        self.assertRaises(SimpleModel.DoesNotExist,orm.from_uuid,'{0}.5'.format(a))

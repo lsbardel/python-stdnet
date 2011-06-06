@@ -41,7 +41,7 @@ Contents
    
    model/index
    backends/index
-   utility/index
+   utility
    contrib/index
    examples/index
    changelog

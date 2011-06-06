@@ -7,7 +7,7 @@ and @antirez autocomplete https://gist.github.com/574044.
 Usage
 ===========
 
-Somewhere in your application create the search engine signletone::
+Somewhere in your application create the search engine singletone::
 
     from stdnet.contrib.searchengine import SearchEngine
      
@@ -51,6 +51,8 @@ https://gist.github.com/389875
                          
 :parameter metaphone: If ``True`` the double metaphone_ algorithm will be used to store
                       and search for words.
+                      
+                      Default ``True``.
 
 To use it::
     
@@ -80,10 +82,13 @@ To use it::
             #ac.minlen = self.MIN_WORD_LENGTH
             return ac
         
-    def register(self, model):
+    def register(self, model, order_by = None):
         '''Register a model to the search engine. By registering a model,
 every time an instance is updated or created, it will be indexed by the
-search engine.'''
+search engine.
+
+:parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter order_by: an optional list of fields used to order the results once available.'''
         if model not in self.REGISTERED_MODELS:
             update_model = UpdateSE(self)
             delete_model = RemoveFromSE(self)

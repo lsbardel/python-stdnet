@@ -1,4 +1,4 @@
-Ver. 0.5.5 - Development
+Ver. 0.5.5 - 2011 June 6
 ============================
 * Several new features, some important bug fixes and more tests.
 * Added :func:`stdnet.orm.from_uuid` function which can be used to retrieve a model
@@ -13,7 +13,7 @@ Ver. 0.5.5 - Development
 * Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres to ``data_start`` and ``data_end``.
-* **242 regression tests** with **76%** coverage.
+* **245 regression tests** with **76%** coverage.
 
 Ver. 0.5.4 - 2011 May 18
 ============================
@@ -96,7 +96,7 @@ Ver. 0.4.1 - 2010 Nov 14
 * **63 tests**
 
 
-Ver. 0.4 - 2010 Nov 11
+Ver. 0.4.0 - 2010 Nov 11
 ============================
 * Development status set to ``beta``.
 * **This version is incompatible with previous versions**.

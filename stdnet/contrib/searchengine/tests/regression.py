@@ -136,6 +136,35 @@ class TestSearchEngine(TestCase):
         self.assertTrue(tags)
     
     
+class TestSearchEngineWithRegistration(TestCase):
+    
+    def setUp(self):
+        super(TestSearchEngineWithRegistration,self).setUp()
+        self.engine.register(Item)
+    
+    def make_item(self,**kwargs):
+        item = super(TestSearchEngineWithRegistration,self).make_item(**kwargs)
+        wis = WordItem.objects.filter(model_type = item.__class__,
+                                     object_id = item.id)
+        self.assertTrue(wis)
+        for wi in wis:
+            self.assertEqual(wi.object,item)
+        
+        return item
+        
+    def testAdd(self):
+        self.make_item()
+        
+    def testDelete(self):
+        item = self.make_item()
+        words = list(Word.objects.all())
+        item.delete()
+        wis = WordItem.objects.filter(model_type = item.__class__,
+                                     object_id = item.id)
+        self.assertFalse(wis)
+        self.assertEqual(len(words),len(Word.objects.all()))
+    
+    
 class TestAutoComplete(TestCase):
     autocomplete = 'en'
     

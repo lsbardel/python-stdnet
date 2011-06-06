@@ -1,6 +1,8 @@
 Ver. 0.5.5 - Development
 ============================
 * Several new features, some important bug fixes and more tests.
+* Added :func:`stdnet.orm.from_uuid` function which can be used to retrieve a model
+  instance from its universally unique identifier.
 * Added pickle support to models. The `__getstate__` method return a tuple containg ``id``
   and a dictionary representation of scalar fields (obtained from the ``todict`` method).
 * Bug Fix in :class:`stdnet.orm.JSONField`.

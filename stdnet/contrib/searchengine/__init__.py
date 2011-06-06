@@ -4,8 +4,20 @@ models with ideas from the fast, fuzzy, full-text index with Redis
 `blog post <http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/>`_
 and @antirez autocomplete https://gist.github.com/574044.
 
-Adapted from
-https://gist.github.com/389875
+Usage
+===========
+
+Somewhere in your application create the search engine signletone::
+
+    from stdnet.contrib.searchengine import SearchEngine
+     
+    engine = SearchEngine()
+
+
+To register a model with the search engine::
+
+    engine.register(MyModel)
+    
 '''
 import re
 from itertools import chain
@@ -21,10 +33,12 @@ from .metaphone import dm as double_metaphone
 
 class SearchEngine(object):
     """Search engine driver.
+Adapted from
+https://gist.github.com/389875
     
 :parameter min_word_length: minimum number of words required by the engine to work.
 
-                            Default ``2``.
+                            Default ``3``.
                             
 :parameter stop_words: list of words not included in the search engine.
 
@@ -47,6 +61,7 @@ To use it::
     
 .. _metaphone: http://en.wikipedia.org/wiki/Metaphone
 """
+    REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
     
     def __init__(self, min_word_length = 3, stop_words = None,
@@ -55,7 +70,8 @@ To use it::
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
         self.punctuation_regex = re.compile(r"[%s]" % re.escape(PUNCTUATION_CHARS))
         self.metaphone = metaphone
-        self._autocomplete = autocomplete           
+        self._autocomplete = autocomplete
+        self.add_processor(stdnet_processor())           
         
     @property
     def autocomplete(self):
@@ -64,9 +80,23 @@ To use it::
             #ac.minlen = self.MIN_WORD_LENGTH
             return ac
         
+    def register(self, model):
+        '''Register a model to the search engine. By registering a model,
+every time an instance is updated or created, it will be indexed by the
+search engine.'''
+        if model not in self.REGISTERED_MODELS:
+            update_model = UpdateSE(self)
+            delete_model = RemoveFromSE(self)
+            self.REGISTERED_MODELS[model] = (update_model,delete_model)
+            orm.post_save.connect(update_model, sender = model)
+            orm.post_delete.connect(delete_model, sender = model)
+        
     def index_item(self, item):
-        """Extract content from the given item and add it to the index. If autocomplete
-is enabled, it adds indexes for it."""
+        """Extract content from the given *item* and add it to the index. If autocomplete
+is enabled, it adds indexes for it.
+
+:parameter item: an instance of a :class:`stdnet.orm.StdModel`.
+"""
         wft = self.get_words_from_text
         link = self._link_item_and_word
         
@@ -86,7 +116,11 @@ is enabled, it adds indexes for it."""
         return linked
     
     def remove_item(self, item):
-        '''Remove indexes fir item'''
+        '''\
+Remove indexes for *item*.
+
+:parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
+'''
         if isclass(item):
             wi = WordItem.objects.filter(model_type = item)
         else:
@@ -233,6 +267,24 @@ is enabled, it adds indexes for it."""
             raise StopIteration
         
 
+class UpdateSE(object):
+    
+    def __init__(self, se):
+        self.se = se
+        
+    def __call__(self, instance, **kwargs):
+        self.se.remove_item(instance)
+        self.se.index_item(instance)
+        
+        
+class RemoveFromSE(object):
+    
+    def __init__(self, se):
+        self.se = se
+        
+    def __call__(self, instance, **kwargs):
+        self.se.remove_item(instance)       
+        
 
 class stdnet_processor(object):
     '''A search engine processor for stdnet models. An engine processor is a callable

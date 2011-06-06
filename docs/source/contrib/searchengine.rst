@@ -11,4 +11,6 @@ API
 ============
 
 .. autoclass:: stdnet.contrib.searchengine.SearchEngine
+   :members:
+   :member-order: bysource
 

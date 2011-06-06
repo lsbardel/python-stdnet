@@ -56,7 +56,6 @@ class TestBase(object):
     def register(self):
         self.engine = SearchEngine(metaphone = self.metaphone,
                                    autocomplete = self.autocomplete)
-        self.engine.add_processor(stdnet_processor())
         self.orm.register(AutoComplete)
         self.orm.register(Word)
         self.orm.register(WordItem)

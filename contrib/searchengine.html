@@ -6,22 +6,22 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>A SearchEngine for Models &mdash; Python StdNet v0.5.4 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <title>A Search Engine for Stdnet Models &mdash; Python StdNet v0.5.5 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.4',
+        VERSION:     '0.5.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.4 documentation" href="../index.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.5.5 documentation" href="../index.html" />
     <link rel="up" title="Battery Included" href="index.html" />
     <link rel="next" title="Timeseries Models" href="timeseries.html" />
     <link rel="prev" title="Battery Included" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Battery Included"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Battery Included</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,10 +53,160 @@
           <div class="body">
             
   <div class="section" id="module-stdnet.contrib.searchengine">
-<span id="a-searchengine-for-models"></span><span id="contrib-searchengine"></span><h1>A SearchEngine for Models<a class="headerlink" href="#module-stdnet.contrib.searchengine" title="Permalink to this headline">¶</a></h1>
-<p>A stdnet application for building a search-engine on
+<span id="a-search-engine-for-stdnet-models"></span><span id="contrib-searchengine"></span><h1>A Search Engine for Stdnet Models<a class="headerlink" href="#module-stdnet.contrib.searchengine" title="Permalink to this headline">¶</a></h1>
+<p>An application for building a search-engine on <tt class="docutils literal"><span class="pre">stdnet</span></tt>
 models with ideas from the fast, fuzzy, full-text index with Redis
-<a class="reference external" href="http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/">blog post</a>.</p>
+<a class="reference external" href="http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/">blog post</a>
+and &#64;antirez autocomplete <a class="reference external" href="https://gist.github.com/574044">https://gist.github.com/574044</a>.</p>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Somewhere in your application create the search engine singletone:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.contrib.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
+ 
+<span class="n">engine</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To register a model with the search engine:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">engine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.contrib.searchengine.SearchEngine">
+<em class="property">class </em><tt class="descclassname">stdnet.contrib.searchengine.</tt><tt class="descname">SearchEngine</tt><big>(</big><em>min_word_length=3</em>, <em>stop_words=None</em>, <em>autocomplete='en'</em>, <em>metaphone=True</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search engine driver.
+Adapted from
+<a class="reference external" href="https://gist.github.com/389875">https://gist.github.com/389875</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>min_word_length</strong> &#8211; <p>minimum number of words required by the engine to work.</p>
+<p>Default <tt class="docutils literal"><span class="pre">3</span></tt>.</p>
+</li>
+<li><strong>stop_words</strong> &#8211; <p>list of words not included in the search engine.</p>
+<p>Default in <tt class="docutils literal"><span class="pre">stdnet.contrib.searchengine.ignore.STOP_WORDS</span></tt></p>
+</li>
+<li><strong>autocomplete</strong> &#8211; <p>Name for the autocomplete sorted set.
+If <tt class="xref docutils literal"><span class="pre">None</span></tt> autocomplete functionality won&#8217;t be available.</p>
+<p>Default <tt class="docutils literal"><span class="pre">en</span></tt>.</p>
+</li>
+<li><strong>metaphone</strong> &#8211; <p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the double <a class="reference external" href="http://en.wikipedia.org/wiki/Metaphone">metaphone</a> algorithm will be used to store
+and search for words.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>To use it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.contrib.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
+ 
+<span class="n">engine</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.register">
+<tt class="descname">register</tt><big>(</big><em>model</em>, <em>order_by=None</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a model to the search engine. By registering a model,
+every time an instance is updated or created, it will be indexed by the
+search engine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class.</li>
+<li><strong>order_by</strong> &#8211; an optional list of fields used to order the results once available.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.index_item">
+<tt class="descname">index_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract content from the given <em>item</em> and add it to the index. If autocomplete
+is enabled, it adds indexes for it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.remove_item">
+<tt class="descname">remove_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove indexes for <em>item</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.search">
+<tt class="descname">search</tt><big>(</big><em>text</em>, <em>**filters</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full text search</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.add_tag">
+<tt class="descname">add_tag</tt><big>(</big><em>item</em>, <em>text</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.add_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>A a tag to an object.
+If the object already has the tag associated with it do nothing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>item</strong> &#8211; instance of <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</li>
+<li><strong>tag</strong> &#8211; a string for the tag name or a <tt class="xref py py-class docutils literal"><span class="pre">Tag</span></tt> instance.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>It returns an instance of <tt class="xref py py-class docutils literal"><span class="pre">TaggedItem</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.alltags">
+<tt class="descname">alltags</tt><big>(</big><em>*models</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.alltags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary where keys are tag names and values are integers
+representing how many times the corresponding tag has been used against
+the Model classes in question.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.get_words_from_text">
+<tt class="descname">get_words_from_text</tt><big>(</big><em>text</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.get_words_from_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator of words to index from the given text</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.contrib.searchengine.SearchEngine.get_metaphones">
+<tt class="descname">get_metaphones</tt><big>(</big><em>words</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.get_metaphones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the metaphones for a given list of words</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -67,6 +217,15 @@ models with ideas from the fast, fuzzy, full-text index with Redis
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" width="128" height="128" src="" alt="Logo"/>
 </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">A Search Engine for Stdnet Models</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Battery Included</a></p>
@@ -75,7 +234,7 @@ models with ideas from the fast, fuzzy, full-text index with Redis
                         title="next chapter">Timeseries Models</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/contrib/searchengine.txt"
+    <li><a href="../_sources/contrib/searchengine.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -110,7 +269,7 @@ models with ideas from the fast, fuzzy, full-text index with Redis
         <li class="right" >
           <a href="index.html" title="Battery Included"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
           <li><a href="index.html" >Battery Included</a> &raquo;</li> 
       </ul>
     </div>

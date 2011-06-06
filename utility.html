@@ -1,0 +1,362 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Internals and Utilities &mdash; Python StdNet v0.5.5 documentation</title>
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.5.5 documentation" href="index.html" />
+    <link rel="next" title="Battery Included" href="contrib/index.html" />
+    <link rel="prev" title="Database backend interface" href="backends/backends.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contrib/index.html" title="Battery Included"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="backends/backends.html" title="Database backend interface"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-stdnet.orm">
+<span id="internals-and-utilities"></span><span id="utility-index"></span><h1>Internals and Utilities<a class="headerlink" href="#module-stdnet.orm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="model-utilities">
+<h2>Model Utilities<a class="headerlink" href="#model-utilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="instance-form-uuid">
+<h3>Instance form UUID<a class="headerlink" href="#instance-form-uuid" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.from_uuid">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">from_uuid</tt><big>(</big><em>uuid</em><big>)</big><a class="headerlink" href="#stdnet.orm.from_uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
+from an universal unique identifier <em>uuid</em>. If the <em>uuid</em> does not match any
+instance an exception will raise.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="model-iterator">
+<h3>Model Iterator<a class="headerlink" href="#model-iterator" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.model_iterator">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em><big>)</big><a class="headerlink" href="#stdnet.orm.model_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generatotr of <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> classes found
+in the <tt class="docutils literal"><span class="pre">models</span></tt> module of an <tt class="docutils literal"><span class="pre">application</span></tt> dotted path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; An iterable over python dotted-paths where models are defined.</td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.orm</span> <span class="kn">import</span> <span class="n">model_iterator</span>
+
+<span class="n">APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;stdnet.contrib.searchengine&#39;</span><span class="p">,</span>
+        <span class="s">&#39;stdnet.contrib.timeseries&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">model_iterator</span><span class="p">(</span><span class="n">APPS</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="register-models">
+<h3>Register Models<a class="headerlink" href="#register-models" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.register_application_models">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_application_models</tt><big>(</big><em>applications</em>, <em>models=None</em>, <em>app_defaults=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_application_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generator which register models in <tt class="docutils literal"><span class="pre">application</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>application</strong> &#8211; A String or a list of strings which represent
+python dotted paths to modules containing
+a <tt class="docutils literal"><span class="pre">models</span></tt> module where models are implemented.</li>
+<li><strong>models</strong> &#8211; list of models to include or <tt class="xref docutils literal"><span class="pre">None</span></tt> (all models).
+Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">register_application_models</span><span class="p">(</span><span class="s">&#39;mylib.myapp&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="stdnet.orm.register_applications">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_applications</tt><big>(</big><em>applications</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_applications" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simple convenience wrapper around the
+<a class="reference internal" href="#stdnet.orm.register_application_models" title="stdnet.orm.register_application_models"><tt class="xref py py-func docutils literal"><span class="pre">register_application_models()</span></tt></a> generator.
+It return s a list of registered models.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="flush-models">
+<h3>Flush Models<a class="headerlink" href="#flush-models" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.flush_models">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">flush_models</tt><big>(</big><em>includes=None</em>, <em>excludes=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.flush_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility for flushing models data.
+It removes all keys associated with models.</p>
+</dd></dl>
+
+<span class="target" id="module-stdnet.utils"></span></div>
+</div>
+<div class="section" id="miscellaneous">
+<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="populate">
+<h3>Populate<a class="headerlink" href="#populate" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.utils.populate">
+<tt class="descclassname">stdnet.utils.</tt><tt class="descname">populate</tt><big>(</big><em>datatype='string'</em>, <em>size=10</em>, <em>start=None</em>, <em>end=None</em>, <em>converter=None</em>, <em>choice_from=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.utils.populate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function for populating lists with random data. Useful for populating
+database with data for testing. Supported data-types</p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt><em>string</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;string&#39;</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span> <span class="n">min_len</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 100 elements list with random strings
+with random length between 3 and 10</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>date</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="n">populate</span><span class="p">(</span><span class="s">&#39;date&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">1997</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">end</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random datetime.date objects between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>integer</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;integer&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random int between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>floats</em></dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;integer&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random floats between <em>start</em> and <em>end</em></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>choice</em> (elements of an iterable)</dt>
+<dd><p class="first">For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;choice&#39;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">choice_from</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;pippo&#39;</span><span class="p">,</span><span class="s">&#39;pluto&#39;</span><span class="p">,</span><span class="s">&#39;blob&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="last">create a 200 elements list with random elements from <em>choice_from</em></p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="pipeline">
+<h3>Pipeline<a class="headerlink" href="#pipeline" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.PipeLine">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">PipeLine</tt><big>(</big><em>pipe</em>, <em>method</em>, <em>timeout</em><big>)</big><a class="headerlink" href="#stdnet.PipeLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pipeline utility class. Used to hold data in <a class="reference internal" href="backends/basestructure.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a> before it is saved into the data server.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-stdnet.exceptions">
+<span id="exceptions"></span><h2>Exceptions<a class="headerlink" href="#module-stdnet.exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="stdnet.exceptions.StdNetException">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">StdNetException</tt><a class="headerlink" href="#stdnet.exceptions.StdNetException" title="Permalink to this definition">¶</a></dt>
+<dd><p>A general StdNet exception</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.ModelNotRegistered">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.exceptions.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
+registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> for details.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.ObjectNotValidated">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ObjectNotValidated</tt><a class="headerlink" href="#stdnet.exceptions.ObjectNotValidated" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> fails to validate
+(probably required <a class="reference internal" href="model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> are missing from the instance).</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.ImproperlyConfigured">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.exceptions.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
+<dd><p>stdnet is somehow improperly configured</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.FieldError">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">FieldError</tt><a class="headerlink" href="#stdnet.exceptions.FieldError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic Field error</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.MultiFieldError">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">MultiFieldError</tt><a class="headerlink" href="#stdnet.exceptions.MultiFieldError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.exceptions.FieldError" title="stdnet.exceptions.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">FieldError</span></tt></a> for :class:stdnet.orm.MultiField`.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.FieldValueError">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.exceptions.FieldValueError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when passing a wrong value to a field method</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.QuerySetError">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.exceptions.QuerySetError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised during a <a class="reference internal" href="model/query.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
+evaluation.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stdnet.exceptions.ObjectNotFound">
+<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ObjectNotFound</tt><a class="headerlink" href="#stdnet.exceptions.ObjectNotFound" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.exceptions.QuerySetError" title="stdnet.exceptions.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">QuerySetError</span></tt></a> raised when an object is not found.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Internals and Utilities</a><ul>
+<li><a class="reference internal" href="#model-utilities">Model Utilities</a><ul>
+<li><a class="reference internal" href="#instance-form-uuid">Instance form UUID</a></li>
+<li><a class="reference internal" href="#model-iterator">Model Iterator</a></li>
+<li><a class="reference internal" href="#register-models">Register Models</a></li>
+<li><a class="reference internal" href="#flush-models">Flush Models</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
+<li><a class="reference internal" href="#populate">Populate</a></li>
+<li><a class="reference internal" href="#pipeline">Pipeline</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-stdnet.exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="backends/backends.html"
+                        title="previous chapter">Database backend interface</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="contrib/index.html"
+                        title="next chapter">Battery Included</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/utility.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contrib/index.html" title="Battery Included"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="backends/backends.html" title="Database backend interface"
+             >previous</a> |</li>
+        <li><a href="index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

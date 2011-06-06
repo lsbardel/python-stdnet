@@ -1,0 +1,367 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Executing Queries &mdash; Python StdNet v0.5.5 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.5.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.5.5 documentation" href="../index.html" />
+    <link rel="up" title="Object Relational Mapper" href="index.html" />
+    <link rel="next" title="Data Structure and BackEnds" href="../backends/index.html" />
+    <link rel="prev" title="Data-structure Fields" href="structure.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../backends/index.html" title="Data Structure and BackEnds"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="structure.html" title="Data-structure Fields"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.orm.query"><span id="model-query"></span></span><div class="section" id="executing-queries">
+<h1>Executing Queries<a class="headerlink" href="#executing-queries" title="Permalink to this headline">¶</a></h1>
+<p>Executing queries is very similar to executing queries in <a class="reference external" href="http://www.djangoproject.com/">django</a>.
+Once you&#8217;ve created your models, <tt class="docutils literal"><span class="pre">stdnet</span></tt> automatically gives you
+a data-server abstraction API that lets you create, retrieve,
+update and delete objects.
+This document explains how to use this API by using the following models
+as example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+
+<span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">ccy</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+<span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">ccy</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">HashField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+<span class="k">class</span> <span class="nc">Position</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Instrument</span><span class="p">)</span>
+    <span class="n">fund</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span>
+</pre></div>
+</div>
+<p>These models are available in the <tt class="xref py py-mod docutils literal"><span class="pre">tests.examples.models</span></tt> module in the distribution directory.
+Before playing with the API you need to <a class="reference internal" href="models.html#register-model"><em>register the models</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">orm</span>
+
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="creating-objects">
+<h2>Creating objects<a class="headerlink" href="#creating-objects" title="Permalink to this headline">¶</a></h2>
+<p>A model is mapped to a <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> in a <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>
+and an instance of that model represents a particular record
+in the hash-table.</p>
+<p>To create an object, instantiate it using keyword arguments to the
+model class, then call <tt class="docutils literal"><span class="pre">save()</span></tt> to save it to the data-server.
+Here&#8217;s an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Markowitz&#39;</span><span class="p">,</span> <span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="go">Fund: Markowitz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">id</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;Markowitz&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">ccy</span>
+<span class="go">&#39;EUR&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">description</span>
+<span class="go">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The object <tt class="docutils literal"><span class="pre">b</span></tt> is a <tt class="docutils literal"><span class="pre">python</span></tt> representation of data stored in the server at <tt class="docutils literal"><span class="pre">id</span></tt> 1.
+As discussed the <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> documentation, an instance of a model is
+mapped to an entry in a remote <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structure.
+If you want to see the actual struture you can procede as following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">_meta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span>
+<span class="go">HashTable:stdnet.fund</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">id</span>
+<span class="go">&#39;stdnet.fund&#39;</span>
+</pre></div>
+</div>
+<p>The hash-table <tt class="docutils literal"><span class="pre">id</span></tt> is the <tt class="docutils literal"><span class="pre">key</span></tt> used by the server to identify the structure.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="go">[&#39;1&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="go">[[&#39;&#39;, &#39;EUR&#39;, &#39;Markowitz&#39;]]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="retrieving-objects">
+<h2>Retrieving objects<a class="headerlink" href="#retrieving-objects" title="Permalink to this headline">¶</a></h2>
+<p>To retrieve objects from your data server, you construct a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
+via a <a class="reference internal" href="#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a> on your model class.</p>
+<p>A QuerySet represents a collection of objects from your database.
+It can have zero, one or many filters criteria that narrow down the collection
+based on given parameters.</p>
+<p>You get a QuerySet by using your model&#8217;s Manager. Each model has at least one Manager,
+and it&#8217;s called objects by default. Access it directly via the model class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span>
+<span class="go">&lt;stdnet.orm.query.Manager object at ...&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="retrieving-all-objects">
+<h3>Retrieving all objects<a class="headerlink" href="#retrieving-all-objects" title="Permalink to this headline">¶</a></h3>
+<p>The simplest way to retrieve objects from a table is to get all of them. To do this, use the <a class="reference internal" href="#stdnet.orm.query.Manager.all" title="stdnet.orm.query.Manager.all"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.query.Manager.all()</span></tt></a>
+method on a Manager:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span>
+<span class="go">QuerySet</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span><span class="o">.</span><span class="n">_seq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">funds</span><span class="p">)</span>
+<span class="go">[Fund: Markowitz]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span><span class="o">.</span><span class="n">_seq</span>
+<span class="go">[Fund: Markowitz]</span>
+</pre></div>
+</div>
+<p>QuerySet are lazy, they are evaluated only when you iterate over them.
+The results are then stored in the <tt class="docutils literal"><span class="pre">_seq</span></tt> attribute.</p>
+</div>
+<div class="section" id="retrieving-filtered-objects">
+<h3>Retrieving filtered objects<a class="headerlink" href="#retrieving-filtered-objects" title="Permalink to this headline">¶</a></h3>
+<p>Usually, you&#8217;ll need to select only a subset of the complete set of objects.
+To create such a subset, you refine the initial QuerySet, adding filter conditions.
+Lets create few other objects in the same line as above and try:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span>
+<span class="go">QuerySet.filter({&#39;ccy&#39;: &#39;EUR&#39;})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">eur_funds</span><span class="p">)</span>
+<span class="go">[Fund: Markowitz]</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">count</span></tt> method counts the object in the query without physically retrieving them.</p>
+<p>Retrieving from a list (equivalent to a select where in SQL):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Concatenating queries:</p>
+<div class="highlight-python"><pre>Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))</pre>
+</div>
+<p>You can also exclude fields from lookups:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;future&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and so forth. The API is very similar to <a class="reference external" href="http://www.djangoproject.com/">django</a>, but it is for an unstructured-in memory database.</p>
+</div>
+</div>
+<div class="section" id="queryset-api-reference">
+<h2>QuerySet API Reference<a class="headerlink" href="#queryset-api-reference" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="queryset">
+<h3>QuerySet<a class="headerlink" href="#queryset" title="Permalink to this headline">¶</a></h3>
+<p>Though you usually won&#8217;t create one manually, you&#8217;ll go through a <a class="reference internal" href="#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a>,
+here&#8217;s the formal declaration of a QuerySet.</p>
+<dl class="class">
+<dt id="stdnet.orm.query.QuerySet">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">QuerySet</tt><big>(</big><em>meta</em>, <em>fargs=None</em>, <em>eargs=None</em>, <em>filter_sets=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queryset manager</p>
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.filter">
+<tt class="descname">filter</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <tt class="docutils literal"><span class="pre">QuerySet</span></tt> containing objects that match the given lookup parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.exclude">
+<tt class="descname">exclude</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <tt class="docutils literal"><span class="pre">QuerySet</span></tt> containing objects that do not match the given lookup parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.count">
+<tt class="descname">count</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of objects in <tt class="docutils literal"><span class="pre">self</span></tt> without
+fetching objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.buildquery">
+<tt class="descname">buildquery</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.buildquery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a queryset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.aggregate">
+<tt class="descname">aggregate</tt><big>(</big><em>kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate lookup parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of instances in queryset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.aslist">
+<tt class="descname">aslist</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.aslist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return python <tt class="docutils literal"><span class="pre">list</span></tt> of elements in queryset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.QuerySet.delete">
+<tt class="descname">delete</tt><big>(</big><em>dlist=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete all the element in the queryset</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="manager">
+<h3>Manager<a class="headerlink" href="#manager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.query.Manager">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">Manager</tt><a class="headerlink" href="#stdnet.orm.query.Manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>A manager class for <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> models.</p>
+<dl class="method">
+<dt id="stdnet.orm.query.Manager.get_or_create">
+<tt class="descname">get_or_create</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.get_or_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an object. If it does not exists, it creates one</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.query.Manager.all">
+<tt class="descname">all</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">QuerySet</span></tt></a> which retrieve all instances of the model.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" width="128" height="128" src="" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Executing Queries</a><ul>
+<li><a class="reference internal" href="#creating-objects">Creating objects</a></li>
+<li><a class="reference internal" href="#retrieving-objects">Retrieving objects</a><ul>
+<li><a class="reference internal" href="#retrieving-all-objects">Retrieving all objects</a></li>
+<li><a class="reference internal" href="#retrieving-filtered-objects">Retrieving filtered objects</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#queryset-api-reference">QuerySet API Reference</a><ul>
+<li><a class="reference internal" href="#queryset">QuerySet</a></li>
+<li><a class="reference internal" href="#manager">Manager</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="structure.html"
+                        title="previous chapter">Data-structure Fields</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../backends/index.html"
+                        title="next chapter">Data Structure and BackEnds</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/model/query.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../backends/index.html" title="Data Structure and BackEnds"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="structure.html" title="Data-structure Fields"
+             >previous</a> |</li>
+        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

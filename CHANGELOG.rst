@@ -1,3 +1,8 @@
+Ver. 0.5.6 - Development
+============================
+* Bug fix in :class:`stdnet.orm.PickleObjectField` field.
+* **245 regression tests** with **76%** coverage.
+
 Ver. 0.5.5 - 2011 June 6
 ============================
 * Several new features, some important bug fixes and more tests.

@@ -354,12 +354,17 @@ is set to ``False``.'''
     
     
 class PickleObjectField(CharField):
+    '''A field which implements authomatic converion to and form a pickable
+python object.'''
     type = 'object'
     def to_python(self, value):
         if value is None:
             return value
-        elif isinstance(value, basestring):
-            return pickle.loads(value)
+        elif isinstance(value, bytes):
+            try:
+                return pickle.loads(value)
+            except pickle.UnpicklingError:
+                return None
         else:
             return value
     

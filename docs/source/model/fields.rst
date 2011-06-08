@@ -86,6 +86,15 @@ CharField
 .. autoclass:: stdnet.orm.CharField
    :members:
    :member-order: bysource
+ 
+   
+ByteField
+==============================
+
+.. autoclass:: stdnet.orm.ByteField
+   :members:
+   :member-order: bysource
+ 
 
 .. _foreignkey:
    
@@ -93,6 +102,22 @@ ForeignKey
 ==============================
 
 .. autoclass:: stdnet.orm.ForeignKey
+   :members:
+   :member-order: bysource
+   
+
+JSONField
+==============================
+
+.. autoclass:: stdnet.orm.JSONField
+   :members:
+   :member-order: bysource
+   
+   
+PickleObjectField
+==============================
+
+.. autoclass:: stdnet.orm.PickleObjectField
    :members:
    :member-order: bysource
    

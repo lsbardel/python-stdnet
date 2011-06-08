@@ -7,8 +7,6 @@ if ispy3k:
 else:
     import cPickle as pickle
 
-#from .encoding import *
-from .rwlock import *
 from .jsontools import *
 from .populate import populate
 from .fields import *

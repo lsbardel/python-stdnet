@@ -175,3 +175,11 @@ class Statistics2(orm.StdModel):
     dt = orm.DateField()
     data = orm.JSONField(sep = '__')
     
+    
+##############################################
+# PickleObjectField FIELD
+
+class Environment(orm.StdModel):
+    data = orm.PickleObjectField()
+    
+    

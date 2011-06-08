@@ -10,7 +10,7 @@ from stdnet.utils import populate, zip, is_string, to_string
 from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
-                            Page, SimpleModel
+                            Page, SimpleModel, Environment
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
@@ -211,6 +211,29 @@ class TestByteField(test.TestCase):
         v = SimpleModel.objects.get(code = 'one')
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes,b)
+
+
+class TestPickleObjectField(test.TestCase):
+    
+    def setUp(self):
+        self.orm.register(Environment)
+    
+    def unregister(self):
+        self.orm.unregister(Environment)
+        
+    def testOkObject(self):
+        v = Environment(data = ['ciao','pippo']).save()
+        self.assertEqual(v.data, ['ciao','pippo'])
+        v = Environment.objects.get(id = v.id)
+        self.assertEqual(v.data, ['ciao','pippo'])
+        
+    def testRecursive(self):
+        '''Silly test to test both pickle field and pickable instace'''
+        v = Environment(data = ('ciao','pippo', 4, {})).save()
+        v2 = Environment(data = v).save()
+        v3 = Environment.objects.get(id = v2.id)
+        self.assertEqual(v3.data, v)
+    
 
 class TestErrorAtomFields(test.TestCase):
     

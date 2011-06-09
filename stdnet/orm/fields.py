@@ -88,7 +88,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     The :class:`stdnet.orm.StdModel` holding the field.
     Created by the ``orm`` at runtime. 
 '''
-    default=novalue
+    default = novalue
+    type = None
     
     def __init__(self, unique = False, ordered = False, primary_key = False,
                  required = True, index = True, default=novalue, **extras):
@@ -211,7 +212,7 @@ class SymbolField(AtomField):
 A symbol holds a sequence of characters as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.'''
-    type = 'symbol'
+    type = 'text'
     default = to_string('')
     
     def to_python(self, value):
@@ -335,7 +336,6 @@ class CharField(SymbolField):
     '''A text :class:`Field` which is never an index.
 It contains strings and by default :attr:`Field.required`
 is set to ``False``.'''
-    type = 'text'
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False
         kwargs['unique'] = False

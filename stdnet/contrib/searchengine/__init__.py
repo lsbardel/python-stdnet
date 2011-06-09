@@ -102,6 +102,7 @@ is enabled, it adds indexes for it.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
 """
+        self.remove_item(item)
         wft = self.get_words_from_text
         link = self._link_item_and_word
         
@@ -278,7 +279,6 @@ class UpdateSE(object):
         self.se = se
         
     def __call__(self, instance, **kwargs):
-        self.se.remove_item(instance)
         self.se.index_item(instance)
         
         
@@ -300,7 +300,7 @@ which return an iterable over text.'''
     
     def field_iterator(self, item):
         for field in item._meta.fields:
-            if isinstance(field,orm.SymbolField):
+            if field.type == 'text':
                 value = getattr(item,field.attname)
                 if value:
                     yield value

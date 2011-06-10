@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+import logging
 from inspect import isclass
 
 from stdnet import orm
@@ -9,6 +10,25 @@ from stdnet.utils import to_string
 
 TextTestRunner = unittest.TextTestRunner
 TestSuite = unittest.TestSuite
+
+LOGGING_MAP = {1: logging.CRITICAL,
+               2: logging.INFO,
+               3: logging.DEBUG}
+
+
+class Silence(logging.Handler):
+    def emit(self, record):
+        pass
+
+
+def setup_logging(verbosity):
+    logger = logging.getLogger()
+    level = LOGGING_MAP.get(verbosity,None)
+    if level is None:
+        logger.addHandler(Silence())
+    else:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(level)
 
 
 class TestCase(unittest.TestCase):

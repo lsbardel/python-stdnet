@@ -41,29 +41,29 @@ def makeoptions():
     return parser
 
     
-def addpath():
+def addpath(test_type):
     # add the tests directory to the Python Path
     p = os.path
     CUR_DIR = os.path.split(os.path.abspath(__file__))[0]
+    if CUR_DIR not in sys.path:
+        sys.path.insert(0, CUR_DIR)
     
-    path = p.join(CUR_DIR,'tests')
-    if path not in sys.path:
-        sys.path.insert(0, path)
-
-    CUR_DIR = os.path.split(os.path.abspath(__file__))[0]
+    from stdnet import contrib
     CONTRIB_DIR  = os.path.dirname(contrib.__file__)
-    ALL_TEST_PATHS = (lambda test_type : os.path.join(CUR_DIR,test_type),
-                      lambda test_type : CONTRIB_DIR)
-    
-    if CONTRIB_DIR not in sys.path:
-        sys.path.insert(0,CONTRIB_DIR)
+    TEST_DIR = p.join(CUR_DIR,'tests')
+    if TEST_DIR not in sys.path:
+        sys.path.insert(0, TEST_DIR)
+
+    return (lambda test_type : os.path.join(TEST_DIR,test_type),
+            lambda test_type : CONTRIB_DIR)
     
 
 if __name__ == '__main__':
-    paths = addpath()
     options, tags = makeoptions().parse_args()
-    from testsrunner import run
-    server = options.server
+    test_type = options.test_type
+    paths = addpath(test_type)
+    
+    from stdnet.test import run
     itags  = options.itags.replace(' ','')
     itags  = None if not itags else itags.split(',')
     run(paths,
@@ -73,3 +73,4 @@ if __name__ == '__main__':
         itags=itags,
         verbosity=options.verbosity,
         backend=options.server)
+

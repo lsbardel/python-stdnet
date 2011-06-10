@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 
+from stdnet.conf import settings
 from stdnet.utils.importer import import_module
 
 from .test import TestCase, TestMultiFieldMixin, TestSuiteRunner, setup_logging

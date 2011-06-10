@@ -12,7 +12,9 @@ CUR_DIR = os.path.split(os.path.abspath(__file__))[0]
 CONTRIB_DIR  = os.path.dirname(contrib.__file__)
 ALL_TEST_PATHS = (lambda test_type : os.path.join(CUR_DIR,test_type),
                   lambda test_type : CONTRIB_DIR)
-        
+
+if CONTRIB_DIR not in sys.path:
+    sys.path.insert(0,CONTRIB_DIR)
 
 
 def run(tags = None, test_type = None,

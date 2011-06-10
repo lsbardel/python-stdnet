@@ -44,19 +44,31 @@ def makeoptions():
 def addpath():
     # add the tests directory to the Python Path
     p = os.path
-    path = p.join(p.split(p.abspath(__file__))[0],'tests')
+    CUR_DIR = os.path.split(os.path.abspath(__file__))[0]
+    
+    path = p.join(CUR_DIR,'tests')
     if path not in sys.path:
         sys.path.insert(0, path)
+
+    CUR_DIR = os.path.split(os.path.abspath(__file__))[0]
+    CONTRIB_DIR  = os.path.dirname(contrib.__file__)
+    ALL_TEST_PATHS = (lambda test_type : os.path.join(CUR_DIR,test_type),
+                      lambda test_type : CONTRIB_DIR)
     
-addpath()
+    if CONTRIB_DIR not in sys.path:
+        sys.path.insert(0,CONTRIB_DIR)
+    
 
 if __name__ == '__main__':
+    paths = addpath()
     options, tags = makeoptions().parse_args()
     from testsrunner import run
     server = options.server
     itags  = options.itags.replace(' ','')
     itags  = None if not itags else itags.split(',')
-    run(tags,
+    run(paths,
+        tags = tags,
+        library = 'stdnet',
         test_type = options.test_type,
         itags=itags,
         verbosity=options.verbosity,

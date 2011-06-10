@@ -46,3 +46,23 @@ def import_tests(tags, test_type, tests_path, library = None):
         logger.debug("Adding tests for %s" % app)
         yield mod
 
+
+def run(tests_paths, tags = None, test_type = None,
+        itags = None, verbosity = 1, backend = None,
+        library = None):
+    '''Test Runner'''
+    std = settings.DEFAULT_BACKEND
+    settings.DEFAULT_BACKEND =  backend or 'redis://127.0.0.1:6379/?db=13'
+    setup_logging(verbosity)
+    test_type = test_type or 'regression'
+    if test_type not in TEST_TYPES:
+        print(('Unknown test type {0}. Must be one of {1}.'.format(test_type, ', '.join(TEST_TYPES))))
+        exit()
+    TestSuiteRunner = TEST_TYPES[test_type]
+    if not TestSuiteRunner:
+        print(('No test suite for {0}'.format(test_type)))
+        exit()
+    modules = import_tests(tags, test_type, tests_paths, library)
+    runner  = TestSuiteRunner(verbosity = verbosity, itags = itags)
+    runner.run_tests(modules)
+    settings.DEFAULT_BACKEND = std

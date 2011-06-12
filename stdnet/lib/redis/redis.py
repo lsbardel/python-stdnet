@@ -10,7 +10,7 @@ from .exceptions import RedisError, AuthenticationError
 
 from stdnet.utils import to_bytestring, to_string, is_string, iteritems
 
-
+EMPTY = b''
 CRLF = b'\r\n'
 
 class ConnectionPool(threading.local):
@@ -1265,11 +1265,11 @@ class Pipeline(Redis):
     def _execute_transaction(self, commands):
         # wrap the commands in MULTI ... EXEC statements to indicate an
         # atomic operation
-        all_cmds = ''.join([c for _1, c, _2 in chain(
-            (('', 'MULTI\r\n', ''),),
+        all_cmds = b''.join((c for _1, c, _2 in chain(
+            ((EMPTY, b'MULTI\r\n', b''),),
             commands,
-            (('', 'EXEC\r\n', ''),)
-            )])
+            ((b'', b'EXEC\r\n', b''),)
+            )))
         self.connection.send(all_cmds, self)
         # parse off the response for MULTI and all commands prior to EXEC
         for i in range(len(commands)+1):

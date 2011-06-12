@@ -5,7 +5,7 @@ init_data = {'set':{'count':0,'size':0},
              'hash':{'count':0,'size':0},
              'ts':{'count':0,'size':0},
              'string':{'count':0,'size':0},
-             'unknow':{'count':0,'size':0}}
+             'unknown':{'count':0,'size':0}}
 
 
 class RedisStats(object):
@@ -32,12 +32,12 @@ class RedisStats(object):
         pipe = r.pipeline()
         pipe.type(key).ttl(key)
         tt = pipe.execute()
-        typ = tt[0]
+        typ = tt[0].decode()
         if typ == 'set':
             cl = pipe.scard(key).srandmember(key).execute()
             l = cl[0]
             self.incr_count(typ,len(cl[1]))       
-        elif typ =='zset':
+        elif typ == 'zset':
             cl = pipe.zcard(key).zrange(key,0,0).execute()
             l = cl[0]
             self.incr_count(typ,len(cl[1][0]))
@@ -57,7 +57,7 @@ class RedisStats(object):
                 l = None
             self.incr_count(typ)
         else:
-            self.incr_count('unkown')
+            self.incr_count('unknown')
             l = None
         return typ,l,tt[1]
 

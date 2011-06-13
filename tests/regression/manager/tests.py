@@ -18,9 +18,9 @@ class TestManager(test.TestCase):
         self.orm.unregister(SimpleModel)
     
     def fill(self):
-        for name in names:
-            SimpleModel(code = name).save(False)
-        SimpleModel.commit()
+        with SimpleModel.transaction() as t:
+            for name in names:
+                SimpleModel(code = name).save(t)
                 
     def testGetOrCreate(self):
         v,created = SimpleModel.objects.get_or_create(code = 'test')

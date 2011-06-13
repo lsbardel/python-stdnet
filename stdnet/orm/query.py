@@ -162,8 +162,10 @@ fetching objects.'''
             return list(self.items())
         return self._seq
     
-    def delete(self, dlist = None):
+    def delete(self, transaction = None, dlist = None):
         '''Delete all the element in the queryset'''
+        if not transaction:
+            transaction = self._meta.cursor.transaction()
         T = 0
         for el in self:
             T += el.delete(dlist)
@@ -238,13 +240,16 @@ class GetStructureMixin(object):
     
     def get_structure(self, instance):
         meta = instance._meta
+        transaction = getattr(instance,'_transaction',None)
         pipe = pipelines(self.stype,meta.timeout)
-        st = getattr(meta.cursor,pipe.method,None)
+        st = getattr(meta.cursor,pipe.method)
         return st(meta.basekey('id',instance.id,self.name),
                   timeout = meta.timeout,
                   pickler = self.pickler,
                   converter = self.converter,
-                  scorefun = self.scorefun)
+                  scorefun = self.scorefun,
+                  cachepipes = instance._cachepipes,
+                  transaction = transaction)
         
 
 class M2MRelatedManager(Manager):

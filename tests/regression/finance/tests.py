@@ -41,24 +41,24 @@ class BaseFinance(test.TestCase):
         orm.register(Position)
         orm.register(PortfolioView)
         orm.register(UserDefaultView)
-        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-            Instrument(name = name, type = typ, ccy = ccy).save(False)
-        Instrument.commit()
-        for name,ccy in zip(fund_names,fund_ccys):
-            Fund(name = name, ccy = ccy).save(False)
-        Fund.commit()
+        with Instrument.transaction() as t:
+            for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
+                Instrument(name = name, type = typ, ccy = ccy).save(t)
+        with Fund.transaction() as t:        
+            for name,ccy in zip(fund_names,fund_ccys):
+                Fund(name = name, ccy = ccy).save(t)
         
     def makePositions(self):
         '''Create Positions objects which hold foreign key to instruments and funds'''
         instruments = Instrument.objects.all()
         n = 0
-        for f in Fund.objects.all():
-            insts = populate('choice',POS_LEN,choice_from = instruments)
-            for dt in dates:
-                for inst in insts:
-                    n += 1
-                    Position(instrument = inst, dt = dt, fund = f).save(False)
-        Position.commit()
+        with Position.transaction() as t:
+            for f in Fund.objects.all():
+                insts = populate('choice',POS_LEN,choice_from = instruments)
+                for dt in dates:
+                    for inst in insts:
+                        n += 1
+                        Position(instrument = inst, dt = dt, fund = f).save(t)
         return n
 
 
@@ -176,17 +176,17 @@ class TestFinanceApplication(BaseFinance):
         # Create Portfolio views
         funds = Fund.objects.all()
         N     = funds.count()
-        for name in view_names:
-            fund = funds[randint(0,N-1)] 
-            PortfolioView(name = name, portfolio = fund).save(False)
-        PortfolioView.commit()
+        with PortfolioView.transaction() as t:
+            for name in view_names:
+                fund = funds[randint(0,N-1)] 
+                PortfolioView(name = name, portfolio = fund).save(t)
         views = PortfolioView.objects.all()
         N = views.count()
-        for user in users:
-            for i in range(0,FUND_LEN): 
-                view = views[randint(0,N-1)]
-                user = UserDefaultView(user = user, view = view).save()
-        UserDefaultView.commit()
+        with UserDefaultView.transaction() as t:
+            for user in users:
+                for i in range(0,FUND_LEN): 
+                    view = views[randint(0,N-1)]
+                    user = UserDefaultView(user = user, view = view).save(t)
         #
         #Finally do the filtering
         N = 0

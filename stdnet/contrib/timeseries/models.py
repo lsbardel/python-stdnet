@@ -150,12 +150,12 @@ class HashTimeSeries(TimeSeriesBase):
     def items(self):
         return self.data.sorteditems()
     
-    def save(self, commit = True):
+    def save(self, transaction = None):
         supersave = super(HashTimeSeries,self).save
-        c = supersave(commit = commit)
-        if commit:
+        c = supersave(transaction = transaction)
+        if not transaction:
             self.storestartend()
-            return supersave(True)
+            return supersave()
         else:
             return c
     

@@ -18,9 +18,9 @@ class TestUniqueFilter(test.TestCase):
     
     def setUp(self):
         self.orm.register(SimpleModel)
-        for n,g in zip(codes,groups):
-            SimpleModel(code = n, group = g).save(commit = False)
-        SimpleModel.commit()
+        with SimpleModel.transaction() as t:
+            for n,g in zip(codes,groups):
+                SimpleModel(code = n, group = g).save(t)
     
     def testFilterSimple(self):
         for i in range(10):
@@ -37,3 +37,4 @@ class TestUniqueFilter(test.TestCase):
             r = SimpleModel.objects.exclude(code = code)
             self.assertEqual(r.count(),SIZE-1)
             self.assertFalse(code in set((o.code for o in r)))
+

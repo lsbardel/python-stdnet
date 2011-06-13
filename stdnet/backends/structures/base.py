@@ -126,19 +126,25 @@ class Structure(object):
     '''
     struct = None
     def __init__(self, cursor, id, timeout = 0,
-                 pickler = None, pipeline = None,
-                 scorefun = None, **kwargs):
-        self.cursor    = cursor
-        self.scorefun  = scorefun
-        self.pickler   = pickler if pickler is not None else cursor.pickler
-        self.id        = id
-        self.timeout   = timeout
-        self._cache    = None
-        if pipeline:
-            self._pipeline = pipeline.pipe
-            self.timeout   = pipeline.timeout
-        else:
-            self._pipeline = None
+                 pickler = None, cachepipes = None,
+                 scorefun = None, transaction = None,
+                 **kwargs):
+        self.scorefun = scorefun
+        self.transaction = transaction
+        self.pickler = pickler if pickler is not None else cursor.pickler
+        self.id = id
+        self._cache = None
+        if not transaction:
+            self.transaction = cursor.transaction(pipelined = False,
+                                                  cachepipes = cachepipes)
+        self.timeout = timeout
+        self.cursor = self.transaction.pipe
+    
+    def __get_pipeline(self):
+        pipeline = self.transaction._get_pipe(self.id,self.struct,self.timeout)
+        self.timeout = pipeline.timeout
+        return pipeline.pipe
+    pipeline = property(__get_pipeline)
     
     def __repr__(self):
         base = '%s:%s' % (self.__class__.__name__,self.id)
@@ -150,12 +156,12 @@ class Structure(object):
     def __str__(self):
         return self.__repr__()
     
-    def __get_pipeline(self):
-        if self._pipeline is not None:
-            return self._pipeline
-        else:
-            return self.cursor._get_pipe(self.id,self.struct,self.timeout).pipe
-    pipeline = property(__get_pipeline)
+    #def __get_pipeline(self):
+    #    if self._pipeline is not None:
+    #        return self._pipeline
+    #    else:
+    #        return self.cursor._get_pipe(self.id,self.struct,self.timeout).pipe
+    #pipeline = property(__get_pipeline)
         
     def size(self):
         '''Number of elements in structure'''
@@ -186,13 +192,12 @@ class Structure(object):
         return self._cache
     
     def save(self):
-        p = self.pipeline
-        if p:
-            s = self._save()
+        pipeline = self.pipeline
+        if pipeline:
+            self._save()
+            pipeline.clear()
             if self.timeout:
                 self.add_expiry()
-            p.clear()
-            return s
         else:
             return 0
         
@@ -291,7 +296,7 @@ This structure is used for in two different parts of the library.
     
     def discard(self, elem):
         '''Remove an element from a set if it is a member'''
-        return self._discard(self.pickler.dumps(elem))
+        self._discard(self.pickler.dumps(elem))
     
     def _discard(self, value):
         raise NotImplementedError

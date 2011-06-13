@@ -92,7 +92,7 @@ class BackendDataServer(object):
             cache[id] = cvalue
         return cvalue
             
-    def commit(self):
+    def __commit(self):
         '''Commit cache objects to database.'''
         cache = self._cachepipe
         keys = self._keys
@@ -115,23 +115,15 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
     * *value* value of field to search.'''
         raise NotImplementedError
     
-    def save_object(self, obj, commit):
-        '''Save an instance of a model to the back-end database:
+    def save_object(self, obj, transaction = None):
+        '''\
+Save an instance of a model to the back-end database:
         
-        * *obj* instance of :ref:`StdModel <model-model>` to add to database
-        * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
-        '''
+:parameter obj: instance of :ref:`StdModel <model-model>` to add to database
+:parameer transaction: optional transaction instance.'''
         raise NotImplementedError
     
-    def save_object(self, obj, commit = True):
-        '''Save a model object to the database:
-        
-        * *obj* instance of :ref:`StdModel <model-model>` to add to database
-        * *commit* If True, *obj* is saved to database, otherwise it remains in local cache.
-        '''
-        raise NotImplementedError
-    
-    def delete_object(self, obj, deleted = None, multi_field = True):
+    def delete_object(self, obj, deleted = None, multi_field = True, transaction = None):
         '''Delete an object from the data server and clean up indices.
 Called to clear a model instance.
 :parameter obj: instance of :class:`stdnet.orm.StdModel`
@@ -232,7 +224,7 @@ Called to clear a model instance.
             
     # DATASTRUCTURES
     
-    def index_keys(self, id, timeout):
+    def index_keys(self, id, timeout, transaction = None):
         return Keys(id,timeout,self._keys)
     
     def list(self, id, timeout = 0, **kwargs):

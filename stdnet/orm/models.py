@@ -44,21 +44,23 @@ the :attr:`StdModel._meta` attribute.
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
-        #for field in self._meta.multifields:
-        #    setattr(self,field.attname,field.to_python(self))
+        self._init()
+        
+    def _init(self):
+        self._cachepipes = {}
     
-    def save(self, commit = True):
+    def save(self, transaction = None):
         '''Save the instance in the remote :class:`stdnet.HashTable`
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
 otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
-        if commit:
+        if not transaction:
             pre_save.send(sender=self.__class__, instance = self)
         meta = self._meta
         if not meta.cursor:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot save instance.".format(meta))
-        r = meta.cursor.save_object(self, commit)
-        if commit:
+        r = meta.cursor.save_object(self, transaction)
+        if not transaction:
             post_save.send(sender=self.__class__,
                            instance = r)
         return r
@@ -104,7 +106,7 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         except self.DoesNotExist as e:
             raise TypeError(str(e))
         
-    def delete(self, dlist = None):
+    def delete(self, transaction = None, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
 ``StdNetException`` exception will raise. Return the number of model instances deleted.'''
         meta = self._meta
@@ -115,8 +117,8 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         pre_delete.send(sender=self.__class__, instance = self)
         objs = self.related_objects()
         for obj in objs:
-            T += obj.delete(dlist)
-        res = T + meta.cursor.delete_object(self, dlist)
+            T += obj.delete(transaction,dlist)
+        res = T + meta.cursor.delete_object(self, transaction, dlist)
         post_delete.send(sender=self.__class__, instance = self)
         return res
     
@@ -146,11 +148,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         '''Utility method for returning keys associated with this instance only. The instance id
 is however available in other keys (indices and other backend containers).'''
         return self._meta.cursor.instance_keys(self)
-            
-    @classmethod
-    def commit(cls):
-        '''Shortcut to commit changes'''
-        return cls._meta.cursor.commit()
     
     @classmethod
     def flush(cls, count = None):
@@ -159,6 +156,10 @@ Calling flush will erase everything about the model instances in the remote serv
 If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
+    
+    @classmethod
+    def transaction(cls):
+        return cls._meta.cursor.transaction()
     
     # PICKLING SUPPORT
     

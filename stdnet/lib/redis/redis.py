@@ -318,7 +318,6 @@ class Redis(threading.local):
             transaction
             )
 
-
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def _execute_command(self, command_name, command, **options):
         command_name = self.encode(command_name)

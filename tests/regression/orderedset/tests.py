@@ -16,16 +16,23 @@ class TestOrderedSet(TestCase):
     def setUp(self):
         self.orm.register(Calendar)
         self.orm.register(DateValue)
-        ts = Calendar(name = 'MyCalendar').save()
-        for dt,value in zip(dates,values):
-            ts.add(dt,value)
-        ts.save()
         
     def unregister(self):
         self.orm.unregister(Calendar)
         self.orm.unregister(DateValue)
         
+    def fill(self):
+        ts = Calendar(name = 'MyCalendar').save()
+        for dt,value in zip(dates,values):
+            ts.add(dt,value)
+        ts.save()
+        return ts
+    
+    def testAdd(self):
+        self.fill()
+        
     def testOrder(self):
+        self.fill()
         ts = Calendar.objects.get(name = 'MyCalendar')
         self.assertEqual(ts.data.size(),NUM_DATES)
         dprec = None

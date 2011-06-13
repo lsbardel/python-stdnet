@@ -1,8 +1,12 @@
 Ver. 0.5.6 - Development
 ============================
+* Added :ref:`transaction support <model-transactions>`.
+  In this way model instances are always consistents even when redis
+  shut down during an update.
+* Unique fields indexes are in a hash table.
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **247 regression tests** with **77%** coverage.
+* **250 regression tests** with **77%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

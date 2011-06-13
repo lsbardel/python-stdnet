@@ -3,7 +3,7 @@
 .. module:: stdnet.orm.query
 
 ============================
-Executing Queries
+Queries and Transactions
 ============================
 
 Executing queries is very similar to executing queries in django_.
@@ -158,6 +158,16 @@ You can also exclude fields from lookups::
 	Instrument.objects.exclude(type = 'future')
 	
 and so forth. The API is very similar to django_, but it is for an unstructured-in memory database.
+
+
+.. _model-transactions:
+
+Transactions
+==========================
+
+Since version 0.5.6, stdnet perform server updates via transactions.
+
+
 
 QuerySet API Reference
 ==============================

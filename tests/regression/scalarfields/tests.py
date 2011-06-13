@@ -27,10 +27,9 @@ class TestAtomFields(test.TestCase):
         self.orm.unregister(TestDateModel)
         
     def create(self):
-        for na,dt in zip(names,dates):
-            m = TestDateModel(name = na, dt = dt)
-            m.save(False)
-        TestDateModel.commit()
+        with TestDateModel.transaction() as t:
+            for na,dt in zip(names,dates):
+                TestDateModel(name = na, dt = dt).save(t)
             
     def testFilter(self):
         self.create()

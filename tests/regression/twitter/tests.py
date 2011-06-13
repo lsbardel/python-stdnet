@@ -19,9 +19,9 @@ class TestTwitter(TestCase):
     def setUp(self):
         self.orm.register(User)
         self.orm.register(Post)
-        for username,password in zip(usernames,passwords):
-            User(username = username, password = password).save(False)
-        User.commit()
+        with User.transaction() as t:
+            for username,password in zip(usernames,passwords):
+                User(username = username, password = password).save(t)
         
     def testRelated(self):
         users = User.objects.all()

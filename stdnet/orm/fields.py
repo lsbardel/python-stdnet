@@ -153,7 +153,7 @@ function users should never call.'''
     def get_cache_name(self):
         return '_%s_cache' % self.name
     
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It return s a serializable representation of *value*.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
@@ -229,7 +229,7 @@ class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
     default = 0
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             try:
                 return int(value)
@@ -252,7 +252,7 @@ class BooleanField(AtomField):
     def __init__(self, required = False, **kwargs):
         super(BooleanField,self).__init__(required = required,**kwargs)
                  
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         return True if value else False
         
     def to_python(self, value):
@@ -269,7 +269,7 @@ a primary key field will automatically be added to your model
 if you don't specify otherwise.
     '''
     type = 'auto'            
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if not value:
             value = self.meta.cursor.incr(self.meta.autoid())
         return super(AutoField,self).serialize(value)
@@ -287,7 +287,7 @@ its :attr:`Field.index` is set to ``False``.
             kwargs['index'] = False
         super(FloatField,self).__init__(*args,**kwargs)
         
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             try:
                 return float(value)
@@ -307,7 +307,7 @@ class DateField(AtomField):
 a :class:`datetime.date` instance.'''
     type = 'date'
     default = None
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             if isinstance(value,date):
                 value = date2timestamp(value)
@@ -347,7 +347,7 @@ is set to ``False``.'''
             kwargs['required'] = False
         super(CharField,self).__init__(*args, **kwargs)
         
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             value = str(value)
         return value
@@ -368,7 +368,7 @@ python object.'''
         else:
             return value
     
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             value = pickle.dumps(value)
         return value
@@ -407,7 +407,7 @@ back to self. For example::
         setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
         self.register_with_related_model()
     
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         try:
             return value.id
         except:
@@ -433,7 +433,7 @@ class JSONField(CharField):
                 value = json.loads(value, object_hook = self.decoder_hook)
         return value
     
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             if is_bytes_or_string(value):
                 value = self.to_python(value)
@@ -449,7 +449,7 @@ class ByteField(CharField):
         else:
             return b''
         
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             return to_bytestring(value)
         else:
@@ -462,7 +462,7 @@ class ModelField(SymbolField):
     def to_python(self, value):
         return get_model_from_hash(value)
     
-    def serialize(self, value):
+    def serialize(self, value, transaction = None):
         if value is not None:
             value = value._meta.hash
         return value

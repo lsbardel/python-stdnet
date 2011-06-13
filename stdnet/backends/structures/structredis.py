@@ -47,11 +47,12 @@ class List(structures.List):
     
     def _save(self):
         s  = 0
+        id = self.id
+        c = self.cursor.execute_command
         for value in self.pipeline.back:
-            s = self.cursor.execute_command('RPUSH', self.id, value)
+            c('RPUSH', id, value)
         for value in self.pipeline.front:
-            s = self.cursor.execute_command('LPUSH', self.id, value)
-        return s
+            c('LPUSH', id, value)
     
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)
@@ -75,9 +76,9 @@ class Set(structures.Set):
     def _save(self):
         id = self.id
         s  = 0
+        cursor = self.cursor
         for value in self.pipeline:
-            s += self.cursor.execute_command('SADD', id, value)
-        return s
+            cursor = cursor.execute_command('SADD', id, value)
     
     def _contains(self, value):
         return self.cursor.execute_command('SISMEMBER', self.id, value)
@@ -104,19 +105,19 @@ class OrderedSet(structures.OrderedSet):
     def _rank(self, elem):
         return self.cursor.execute_command('ZRANK', self.id, elem)
         
-    def _all(self):
-        return self.cursor.redispy.zrange(self.id, 0, -1)
+    def _all(self, desc = False, withscores = False):
+        return self.range(0, -1, desc = desc, withscores = withscores)
     
     def range(self, start, end = -1, desc = False, withscores = False):
-        return self.cursor.redispy.zrange(self.id, start, end,
-                                          desc = desc, withscores = withscores)
+        return self.cursor.execute_command('ZRANGE', self.id, start, end,
+                                           desc = desc,
+                                           withscores = withscores)
     
     def _save(self):
         id = self.id
         s  = 0
         for score,value in self.pipeline:
-            s += self.cursor.execute_command('ZADD', id, score, value)
-        return s
+            self.cursor.execute_command('ZADD', id, score, value)
 
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)
@@ -159,7 +160,7 @@ class HashTable(structures.HashTable):
     def _save(self):
         items = []
         [items.extend(item) for item in iteritems(self.pipeline)]
-        return self.cursor.execute_command('HMSET',self.id,*items)
+        self.cursor.execute_command('HMSET',self.id,*items)
     
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)

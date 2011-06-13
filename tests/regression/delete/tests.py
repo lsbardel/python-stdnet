@@ -46,15 +46,15 @@ class TestDeleteScalarFields(test.TestCase):
         orm.clearall()
     
     def makeInstruments(self):
-        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-            Instrument(name = name, type = typ, ccy = ccy).save(False)
-        Instrument.commit()
+        with Instrument.transaction() as t:
+            for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
+                Instrument(name = name, type = typ, ccy = ccy).save(t)
         self.assertEqual(Instrument.objects.all().count(),INST_LEN)
         
     def makeFunds(self):
-        for name,ccy in zip(fund_names,fund_ccys):
-            Fund(name = name, ccy = ccy).save(False)
-        Fund.commit()
+        with Fund.transaction() as t:
+            for name,ccy in zip(fund_names,fund_ccys):
+                Fund(name = name, ccy = ccy).save(t)
         self.assertEqual(Fund.objects.all().count(),FUND_LEN)
         
     def makePositions(self):
@@ -62,13 +62,13 @@ class TestDeleteScalarFields(test.TestCase):
         self.makeFunds()
         instruments = Instrument.objects.all()
         n = 0
-        for f in Fund.objects.all():
-            insts = populate('choice',POS_LEN,choice_from = instruments)
-            for dt in dates:
-                for inst in insts:
-                    n += 1
-                    Position(instrument = inst, dt = dt, fund = f).save(False)
-        Position.commit()
+        with Position.transaction() as t:
+            for f in Fund.objects.all():
+                insts = populate('choice',POS_LEN,choice_from = instruments)
+                for dt in dates:
+                    for inst in insts:
+                        n += 1
+                        Position(instrument = inst, dt = dt, fund = f).save(t)
         self.assertEqual(Position.objects.all().count(),n)
         return n
         

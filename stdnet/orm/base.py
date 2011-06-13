@@ -69,7 +69,6 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.timeout = 0
         self.related = {}
         self.verbose_name = verbose_name or self.name
-        self.maker = lambda : model.__new__(model)
         model._meta = self
         hashmodel(model)
         
@@ -93,6 +92,12 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
             
         self.cursor = None
         self.keys  = None
+        
+    def maker(self):
+        model = self.model
+        m = model.__new__(model)
+        m._init()
+        return m
         
     def __repr__(self):
         if self.app_label:
@@ -147,12 +152,12 @@ Return ``True`` is the instance is ready to be saved to database.'''
                     indexes.append((field,svalue))
         return len(errors) == 0
                 
-    def table(self):
+    def table(self, transaction = None):
         '''Return an instance of :class:`stdnet.HashTable` holding
 the model table'''
         if not self.cursor:
             raise ModelNotRegistered('%s not registered. Call orm.register(model_class) to solve the problem.' % self)
-        return self.cursor.hash(self.basekey(),self.timeout)
+        return self.cursor.hash(self.basekey(),self.timeout,transaction=transaction)
     
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''

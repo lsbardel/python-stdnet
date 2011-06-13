@@ -41,12 +41,12 @@ def make_items(num = 100, content = False):
         contents = WORDS_GROUPS(num)
     else:
         contents = ['']*num
-    for name,co in zip(names,contents):
-        if len(name) > 3:
-            Item(name=name,
-                 counter=randint(0,10),
-                 content = co).save(commit = False)
-    Item.commit()
+    with Item.transaction() as t:
+        for name,co in zip(names,contents):
+            if len(name) > 3:
+                Item(name=name,
+                     counter=randint(0,10),
+                     content = co).save(t)
     
 
 class TestBase(object):

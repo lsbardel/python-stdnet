@@ -4,18 +4,53 @@ from stdnet.exceptions import *
 from stdnet.utils import zip, UnicodeMixin
 from stdnet import dispatch
 
-from .base import StdNetType
+from .base import StdNetType, FakeModelType
 from .globals import get_model_from_hash 
 from .signals import *
 
 
-__all__ = ['StdModel',
+__all__ = ['FakeModel',
+           'StdModel',
            'StdNetType',
            'from_uuid',
            'model_to_dict']
 
 
-StdNetBase = StdNetType('StdNetBase',(UnicodeMixin,),{})
+class ModelMixin(UnicodeMixin):
+    DoesNotExist = ObjectNotFound
+    DoesNotValidate = ObjectNotValidated
+    
+    def __eq__(self, other):
+        if other.__class__ == self.__class__:
+            return self.id == other.id
+        else:
+            return False
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __hash__(self):
+        try:
+            return hash(self.uuid)
+        except self.DoesNotExist as e:
+            raise TypeError(str(e))
+        
+    @property
+    def uuid(self):
+        '''Universally unique identifier for a model instance.'''
+        if not self.id:
+            raise self.DoesNotExist('Object not saved. Cannot obtain universally unique id')
+        return '{0}.{1}'.format(self._meta.hash,self.id)
+        
+    
+FakeModelBase = FakeModelType('FakeModelBase',(ModelMixin,),{})
+StdNetBase = StdNetType('StdNetBase',(ModelMixin,),{})
+
+
+class FakeModel(FakeModelBase):
+    id = None
+    is_base_class = True
+        
 
 
 class StdModel(StdNetBase):
@@ -31,8 +66,6 @@ the :attr:`StdModel._meta` attribute.
     
 '''
     is_base_class = True
-    DoesNotExist = ObjectNotFound
-    DoesNotValidate = ObjectNotValidated
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
@@ -44,9 +77,9 @@ the :attr:`StdModel._meta` attribute.
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
-        self._init()
+        self.afterload()
         
-    def _init(self):
+    def afterload(self):
         self._cachepipes = {}
     
     def save(self, transaction = None):
@@ -84,28 +117,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     def indices(self):
         return self._valattr('indices')
     
-    @property
-    def uuid(self):
-        '''Universally unique identifier for a model instance.'''
-        if not self.id:
-            raise self.DoesNotExist('Object not saved. Cannot obtain universally unique id')
-        return '{0}.{1}'.format(self._meta.hash,self.id)
-    
-    def __eq__(self, other):
-        if other.__class__ == self.__class__:
-            return self.id == other.id
-        else:
-            return False
-        
-    def __ne__(self, other):
-        return not self.__eq__(other)
-    
-    def __hash__(self):
-        try:
-            return hash(self.uuid)
-        except self.DoesNotExist as e:
-            raise TypeError(str(e))
-        
     def delete(self, transaction = None, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
 ``StdNetException`` exception will raise. Return the number of model instances deleted.'''
@@ -138,9 +149,6 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
             if value:
                 odict[field.name] = value
         return odict
-        
-    def afterload(self):
-        pass
     
     # UTILITY METHODS
     

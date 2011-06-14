@@ -96,7 +96,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     def maker(self):
         model = self.model
         m = model.__new__(model)
-        m._init()
+        m.afterload()
         return m
         
     def __repr__(self):
@@ -171,6 +171,26 @@ the model table'''
 
     def database(self):
         return self.cursor
+
+
+class FakeMeta(object):
+    
+    def __init__(self, hash):
+        self.hash = hash
+        
+    
+class FakeModelType(type):
+    '''StdModel python metaclass'''
+    def __new__(cls, name, bases, attrs):
+        parents = [b for b in bases if isinstance(b, FakeModelType)]
+        is_base_class = attrs.pop('is_base_class',False)
+        new_class = super(FakeModelType, cls).__new__(cls, name, bases, attrs)
+        if not parents or is_base_class:
+            return new_class
+        hashmodel(new_class)
+        new_class._meta = FakeMeta(new_class.hash)
+        delattr(new_class,'hash')
+        return new_class        
 
 
 class StdNetType(type):

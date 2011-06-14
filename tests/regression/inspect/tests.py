@@ -80,6 +80,13 @@ class PickleSupport(test.TestCase):
         self.assertEqual(inst.type,inst2.type)
         self.assertEqual(inst.ccy,inst2.ccy)
         
+    def testSimple2(self):
+        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
+        p = pickle.dumps(inst)
+        inst2 = pickle.loads(p)
+        self.assertTrue(isinstance(inst2._cachepipes,dict))
+        self.assertFalse(inst2._cachepipes)
+        
 
 class TestRegistration(test.TestCase):
     

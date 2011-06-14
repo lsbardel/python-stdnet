@@ -4,6 +4,7 @@ from .mapper import *
 from .fields import *
 from .std import *
 from .signals import *
+from .globals import hashmodel
 
 
 def test_unique(fieldname, model, value, instance = None, exception = None):

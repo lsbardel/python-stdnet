@@ -1,13 +1,14 @@
 Ver. 0.6.0 - Development
 ============================
 * The Schema is incompatible with previous versions when using unique fields.
-* Unique fields indexes are in a hash tables. Peviously they were in keys.
+* Unique fields indexes are in a hash tables. Peviously they were in keys. This solution
+  reduced the memory usage and reduce the number of keys used.
 * Added :ref:`transaction support <model-transactions>`.
-  In this way model instances are always consistent even when redis
+  This way model instances are always consistent even when redis
   shut down during an update.
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **251 regression tests** with **78%** coverage.
+* **253 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

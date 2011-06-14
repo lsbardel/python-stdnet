@@ -1,3 +1,7 @@
+'''\
+Modulule containing utility classes for retrieving and displaying
+Redis status and statistics.
+'''
 from distutils.version import StrictVersion
 
 from stdnet.utils.collections import OrderedDict

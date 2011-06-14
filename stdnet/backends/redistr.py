@@ -20,7 +20,6 @@ class Transaction(object):
         else:
             self.pipe = server.redispy
         self._cachepipes = cachepipes if cachepipes is not None else {}
-        self._keys = {}
         
     def _get_pipe(self, id, typ, timeout):
         '''Return a pipeline object'''
@@ -33,15 +32,10 @@ class Transaction(object):
     def commit(self):
         '''Commit cache objects to database.'''
         cachepipes = self._cachepipes
-        keys = self._keys
         pipe = self.pipe
         for id,cachepipe in iteritems(cachepipes):
             el = getattr(self.server,cachepipe.method)(id, transaction = self)
-            el.save()
-        if keys: 
-            self._set_keys(keys, transaction = self)
-        self._keys.clear()
-        
+            el.save()        
         if hasattr(pipe,'execute'):
             pipe.execute()
        
@@ -58,6 +52,7 @@ class BackendDataServer(BackendDataServer0):
     '''A new Redis backend with transactions'''
     
     def unwind_query(self, meta, qset):
+        '''Unwind queryset'''
         table = meta.table()
         ids = list(qset)
         make_object = self.make_object
@@ -246,7 +241,6 @@ class BackendDataServer(BackendDataServer0):
                 key = bkey(field.name)
                 index = self.hash(key,timeout,pickler=nopickle,transaction=transaction)
                 index.add(value,objid)
-                #index = self.index_keys(key, timeout, transaction = transaction)
             else:
                 key = bkey(field.name,value)
                 if field.ordered:

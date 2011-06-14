@@ -1,6 +1,7 @@
 from distutils.version import StrictVersion
 
 from stdnet.utils.collections import OrderedDict
+from stdnet.utils import iteritems
 from stdnet import orm
 
 init_data = {'set':{'count':0,'size':0},
@@ -10,8 +11,6 @@ init_data = {'set':{'count':0,'size':0},
              'ts':{'count':0,'size':0},
              'string':{'count':0,'size':0},
              'unknown':{'count':0,'size':0}}
-
-
 
 
 class RedisStats(object):
@@ -94,11 +93,22 @@ class RedisDbData(orm.FakeModel):
     def __init__(self, rpy = None, db = None, keys = None, expires = None):
         self.rpy = rpy
         self.id = db
-        if rpy:
+        if rpy and db is None:
             self.id = rpy.db
         self.keys = keys
         self.expires = expires
     
+    def delete(self):
+        rpy = self.rpy
+        if rpy:
+            if rpy.db != self.id:
+                db = rpy.db
+                rpy.select(self.id)
+                rpy.flushdb()
+                rpy.select(db)
+            else:
+                rpy.flushdb()
+        
     @property
     def db(self):
         return self
@@ -144,15 +154,6 @@ def format_int(val):
 def niceadd(l,name,value):
     if value is not None:
         l.append({'name':name,'value':value})
-
-
-def nicedate(t):
-    try:
-        d = datetime.fromtimestamp(t)
-        return '%s %s' % (format(d.date(),site.settings.DATE_FORMAT),
-                          time_format(d.time(),site.settings.TIME_FORMAT)) 
-    except:
-        return ''
     
 
 def getint(v):
@@ -169,19 +170,42 @@ def get_version(info):
         return info['Server']['redis_version']
 
 
+class RedisDataFormatter(object):
+    
+    def format_bool(self, val):
+        return 'yes' if val else 'no'
+    
+    def format_name(self, name):
+        return name
+    
+    def format_int(self, name):
+        return format_int(val)
+    
+    def format_date(self, dte):
+        try:
+            d = datetime.fromtimestamp(dte)
+            return d.isoformat().split('.')[0]
+        except:
+            return ''
+    
+    def format_timedelta(self, td):
+        return td
+    
+    
 class RedisInfo(object):
     
-    def __init__(self, version, info):
+    def __init__(self, rpy, version, info, formatter):
+        self.rpy = rpy
         self.version = version
         self.info = info
         self._panels = OrderedDict()
+        self.formatter = formatter
         self.makekeys()
         
-    def __get_panels(self):
+    def panels(self):
         if not self._panels:
             self.fill()
         return self._panels
-    panels = property(__get_panels)
     
     def _dbs(self,keydata):
         for k in keydata:
@@ -208,11 +232,14 @@ class RedisInfo(object):
         databases = []
         for k,n,data in self.dbs(kdata):
             keydb = data['keys']
-            rd.append(db = n, keys = data['keys'], expires = data['expires'])
+            rd.append(rpy = self.rpy, db = n, keys = data['keys'], expires = data['expires'])
         self.databases = rd
     
     def fill(self):
         info = self.info
+        format_int = self.formatter.format_int
+        nicetimedelta = self.formatter.format_timedelta
+        nicetimedelta = self.formatter.format_date
         server = self._panels['Server'] = []
         niceadd(server, 'Redis version', self.version)
         niceadd(server, 'Process id', info['process_id'])
@@ -234,11 +261,12 @@ class RedisInfo22(RedisInfo):
         
     def makepanel(self, name):
         pa = self._panels[name] = []
+        nicename = self.formatter.format_name
+        nicebool = self.formatter.format_bool
+        boolval = (0,1)
         for k,v in iteritems(self.info[name]):
-            if v == 0:
-                v = icons.circle_check()
-            elif v == 1:
-                v = icons.circle_check()
+            if v in boolval:
+                v = nicebool(v)
             pa.append({'name':nicename(k),'value':v})
             
     def fill(self):
@@ -247,10 +275,12 @@ class RedisInfo22(RedisInfo):
             self.makepanel(name)
             
             
-def redis_info(info):
+def redis_info(rpy, formatter = None):
+    info = rpy.info()
     version = get_version(info)
+    formatter = formatter or RedisDataFormatter()
     if StrictVersion(version) >= StrictVersion('2.2.0'):
-        return RedisInfo22(version,info)
+        return RedisInfo22(rpy,version,info,formatter)
     else:
-        return RedisInfo(version,info)
+        return RedisInfo(rpy,version,info,formatter)
     

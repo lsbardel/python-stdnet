@@ -90,10 +90,12 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 '''
     default = novalue
     type = None
+    index = True
     
     def __init__(self, unique = False, ordered = False, primary_key = False,
-                 required = True, index = True, default=novalue, **extras):
+                 required = True, index = None, default=novalue, **extras):
         self.primary_key = primary_key
+        index = index if index is not None else self.index
         if primary_key:
             self.unique   = True
             self.required = True
@@ -280,12 +282,8 @@ class FloatField(AtomField):
 its :attr:`Field.index` is set to ``False``.
     '''
     type = 'float'
+    index = False
     default = 0.
-    def __init__(self,*args,**kwargs):
-        index = kwargs.get('index',None)
-        if index is None:
-            kwargs['index'] = False
-        super(FloatField,self).__init__(*args,**kwargs)
         
     def serialize(self, value, transaction = None):
         if value is not None:
@@ -307,6 +305,7 @@ class DateField(AtomField):
 a :class:`datetime.date` instance.'''
     type = 'date'
     default = None
+    
     def serialize(self, value, transaction = None):
         if value is not None:
             if isinstance(value,date):
@@ -325,6 +324,7 @@ class DateTimeField(DateField):
     '''An date :class:`AtomField` represented in Python by
 a :class:`datetime.datetime` instance.'''
     type = 'datetime'
+    index = False
     
     def to_python(self, value):
         if value:

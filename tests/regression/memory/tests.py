@@ -1,5 +1,5 @@
 from stdnet import test
-from stdnet.utils.collections import OrderedDict
+from stdnet.utils.structures import OrderedDict
 from stdnet.utils import populate, zip
 
 
@@ -10,7 +10,7 @@ class TestOrderedDict(test.TestCase):
         self.vals = populate(datatype = 'string', size = 100)
         self.data = zip(self.keys,self.vals)
     
-    def _testOrdered(self):
+    def testOrdered(self):
         d = OrderedDict()
         for k,v in self.data:
             d[k] = v

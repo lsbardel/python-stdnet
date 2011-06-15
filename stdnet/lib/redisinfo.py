@@ -4,7 +4,7 @@ Redis status and statistics.
 '''
 from distutils.version import StrictVersion
 
-from stdnet.utils.collections import OrderedDict
+from stdnet.utils.structures import OrderedDict
 from stdnet.utils import iteritems
 from stdnet import orm
 

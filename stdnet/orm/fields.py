@@ -44,6 +44,11 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     in the :class:`stdnet.BackendDataServer`. If you don't need to search
     the field you should set this value to ``False``.
     
+    .. note:: if ``index`` is set to ``False`` executing queries agains the field will
+              throw a :class:`stdnet.QuerySetError` exception.
+              No database queries are allowed for non indexed fields
+              as a design decision (excplicit better than implicit).
+    
     Default ``True``.
     
 .. attribute:: unique
@@ -56,7 +61,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 
 .. attribute:: ordered
 
-    If ``True``, the field is ordered. if :attr:`Field.unique` is ``True`` this has no effect.
+    If ``True``, the field will creates an ordering structure in the
+    backend server.
     
     Default ``False``.
     
@@ -91,8 +97,9 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     default = novalue
     type = None
     index = True
+    ordered = False
     
-    def __init__(self, unique = False, ordered = False, primary_key = False,
+    def __init__(self, unique = False, ordered = None, primary_key = False,
                  required = True, index = None, default=novalue, **extras):
         self.primary_key = primary_key
         index = index if index is not None else self.index
@@ -104,7 +111,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
             self.unique = unique
             self.required = required
             self.index = True if unique else index
-        self.ordered  = ordered
+        self.ordered  = ordered if ordered is not None else self.ordered
         self.meta     = None
         self.name     = None
         self.model    = None
@@ -159,7 +166,7 @@ function users should never call.'''
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It return s a serializable representation of *value*.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
-        return value
+        return self.scorefun(value)
     
     def add(self, *args, **kwargs):
         raise NotImplementedError("Cannot add to field")
@@ -184,6 +191,15 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
     def index_value(self):
         '''A value which is used by indexes to generate keys.'''
         return self.value
+    
+    def scorefun(self, value):
+        '''Function which evaluate a score from the field value. Used by
+the ordering alorithm'''
+        return value
+    
+    def scoreobject(self, obj):
+        value = getattr(obj,self.name,None)
+        return self.scorefun(value)
     
     def __deepcopy__(self, memodict):
         '''Nothing to deepcopy here'''
@@ -211,7 +227,7 @@ value with a specific data type. it can be of four different types:
 
 class SymbolField(AtomField):
     '''An :class:`AtomField` which contains a ``symbol``.
-A symbol holds a sequence of characters as a single unit.
+A symbol holds a unicode string as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.'''
     type = 'text'
@@ -231,7 +247,8 @@ class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
     default = 0
-    def serialize(self, value, transaction = None):
+    
+    def scorefun(self, value):
         if value is not None:
             try:
                 return int(value)
@@ -253,9 +270,9 @@ class BooleanField(AtomField):
     
     def __init__(self, required = False, **kwargs):
         super(BooleanField,self).__init__(required = required,**kwargs)
-                 
-    def serialize(self, value, transaction = None):
-        return True if value else False
+    
+    def scorefun(self, value):
+        return 0 if value else 1
         
     def to_python(self, value):
         return True if value else False
@@ -270,7 +287,7 @@ You usually won't need to use this directly;
 a primary key field will automatically be added to your model
 if you don't specify otherwise.
     '''
-    type = 'auto'            
+    type = 'auto'
     def serialize(self, value, transaction = None):
         if not value:
             value = self.meta.cursor.incr(self.meta.autoid())
@@ -285,7 +302,7 @@ its :attr:`Field.index` is set to ``False``.
     index = False
     default = 0.
         
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             try:
                 return float(value)
@@ -304,9 +321,10 @@ class DateField(AtomField):
     '''An date :class:`AtomField` represented in Python by
 a :class:`datetime.date` instance.'''
     type = 'date'
+    ordered = True
     default = None
     
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             if isinstance(value,date):
                 value = date2timestamp(value)
@@ -333,29 +351,30 @@ a :class:`datetime.datetime` instance.'''
 
 
 class CharField(SymbolField):
-    '''A text :class:`Field` which is never an index.
-It contains strings and by default :attr:`Field.required`
+    '''A text :class:`SymbolField` which is never an index.
+It contains unicode and by default :attr:`Field.required`
 is set to ``False``.'''
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False
         kwargs['unique'] = False
         kwargs['primary_key'] = False
-        kwargs['ordered'] = False
         self.max_length = kwargs.pop('max_length',None) # not used for now 
         required = kwargs.get('required',None)
         if required is None:
             kwargs['required'] = False
         super(CharField,self).__init__(*args, **kwargs)
         
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             value = str(value)
         return value
     
     
 class PickleObjectField(CharField):
-    '''A field which implements authomatic converion to and form a pickable
-python object.'''
+    '''A field which implements automatic converion to and form a pickable
+python object. This field is python specific and therefore not of much use
+if accessed from external programs. Consider the :class:`ForeignKey`
+or :class:`JSONField` as a more general alternative.'''
     type = 'object'
     def to_python(self, value):
         if value is None:
@@ -368,7 +387,7 @@ python object.'''
         else:
             return value
     
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             value = pickle.dumps(value)
         return value
@@ -407,6 +426,9 @@ back to self. For example::
         setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
         self.register_with_related_model()
     
+    def scorefun(self, value):
+        raise NotImplementedError
+    
     def serialize(self, value, transaction = None):
         try:
             return value.id
@@ -415,7 +437,7 @@ back to self. For example::
     
     
 class JSONField(CharField):
-    '''A JSON field which implements authomatic converion to and form dictionary of data.'''
+    '''A JSON field which implements automatic converion to and form dictionary of data.'''
     type = 'json object'
     def __init__(self, *args, **kwargs):
         kwargs['default'] = kwargs.get('default',{})
@@ -442,14 +464,14 @@ class JSONField(CharField):
     
 
 class ByteField(CharField):
-    
+    '''A field which contains binary data. In python this is converted to `bytes`.'''
     def to_python(self, value):
         if value is not None:
             return to_bytestring(value)
         else:
             return b''
         
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             return to_bytestring(value)
         else:
@@ -457,12 +479,15 @@ class ByteField(CharField):
         
         
 class ModelField(SymbolField):
-    '''A filed which can be used to store the model unique sha1'''
+    '''A filed which can be used to store the model classes (not only
+:class:`stdnet.orm.StdModel` models). If a class has a attribute ``_meta``
+with a unique hash attribute ``hash`` and it is
+registered in the model hash table, it can be used.'''
     
     def to_python(self, value):
         return get_model_from_hash(value)
     
-    def serialize(self, value, transaction = None):
+    def scorefun(self, value):
         if value is not None:
             value = value._meta.hash
         return value

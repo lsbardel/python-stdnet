@@ -2,15 +2,14 @@
 
 .. module:: stdnet.backends
 
-============================
-Data Structure and BackEnds
-============================
+================================
+Backend Server and Structures
+================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
    
-   basestructure
-   structures
    backends
+   structures

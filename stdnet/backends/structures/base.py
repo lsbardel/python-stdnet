@@ -1,5 +1,5 @@
 '''Interfaces for supported data-structures'''
-
+import stdnet
 from stdnet.utils import iteritems
 
 __all__ = ['PipeLine',
@@ -311,7 +311,6 @@ class OrderedSet(Set):
             value = self.pickler.dumps(value)
         return self._rank(value)
         
-        
     def __iter__(self):
         if not self._cache:
             self.cache = cache = []
@@ -357,8 +356,7 @@ class KeyValueStructure(Structure):
             return self._contains(value)
         else:
             return value in self._cache
-    
-    
+
     
 class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`.
@@ -374,6 +372,7 @@ This structure is important since it is used in two different parts of the libra
 * It is also used as field (:class:`stdnet.orm.HashField`) like all other 
   class:`stdnet.Structure`.'''
     struct = HashPipe
+
     def __init__(self, *args, **kwargs):
         self.converter = kwargs.pop('converter',None) or keyconverter
         super(HashTable,self).__init__(*args, **kwargs)
@@ -393,6 +392,15 @@ This structure is important since it is used in two different parts of the libra
         '''Add ``key`` - ``value`` pair to hashtable.'''
         self.update({key:value})
     __setitem__ = add
+    
+    def addnx(self, field, value):
+        '''Set the value of a hash field only if the field
+does not exist. Otherwise it raises a :class:`stdnet.FieldValueError`
+exception.'''
+        key = self.converter.tokey(field)
+        value = self.pickler.dumps(value)
+        if not self._addnx(key,value):
+            raise stdnet.FieldValueError('Field {0} already in hash table {1}'.format(field,self))
     
     def update(self, mapping):
         '''Add *mapping* dictionary to hashtable. Equivalent to python dictionary update method.'''
@@ -472,6 +480,9 @@ This structure is important since it is used in two different parts of the libra
         '''Clear the Hash table. Equivalent to ``dict.clear`` method in Python.'''
         raise NotImplementedError
     
+    def _addnx(self, field, value):
+        raise NotImplementedError
+    
     def _contains(self, value):
         raise NotImplementedError
     
@@ -492,6 +503,8 @@ This structure is important since it is used in two different parts of the libra
 
     
 class TS(HashTable):
+    '''A timeseries :class:`stdnet.Structure`.
+'''
     struct = TsPipe
         
     def update(self, mapping):

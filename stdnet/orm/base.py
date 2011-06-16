@@ -1,5 +1,6 @@
 import sys
 import copy
+from uuid import uuid4
 
 from stdnet.utils import zip, to_bytestring
 from stdnet.orm import signals
@@ -8,6 +9,10 @@ from stdnet.exceptions import *
 from .globals import hashmodel
 from .query import UnregisteredManager
 from .fields import Field, AutoField
+
+
+def gen_unique_id():
+    return str(uuid4())[:8]
 
 
 def get_fields(bases, attrs):
@@ -56,7 +61,8 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     VALATTR = '_validation'
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
-                 app_label = '', verbose_name = None, **kwargs):
+                 app_label = '', verbose_name = None,
+                 order_by = None, **kwargs):
         self.abstract = abstract
         self.keyprefix = keyprefix
         self.model = model
@@ -84,14 +90,27 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
             raise FieldError("Primary key must be named id")
         
         for name,field in fields.items():
+            if name == '_tmp_':
+                raise ImproperlyConfigured('Field name _tmp_ is reserved')
             if name == 'id':
                 continue
             field.register_with_model(name,model)
             if field.primary_key:
                 raise FieldError("Primary key already available %s." % name)
-            
+        
+        if order_by:
+            self.order_by = None
+            for f in self.scalarfields:
+                if f.name == order_by:
+                    self.order_by = f
+                    break
+            if not self.order_by:
+                raise ImproperlyConfigured('Order by attribute {0}\
+ is not a scalar field'.format(order_by))
+        else:
+            self.order_by = None
         self.cursor = None
-        self.keys  = None
+        #self.keys  = None
         
     def maker(self):
         model = self.model
@@ -127,6 +146,9 @@ The key is an encoded binary string. For example::
         for arg in args:
             key = '%s:%s' % (key,arg)
         return to_bytestring(key)
+    
+    def tempkey(self):
+        return self.basekey('_tmp_',gen_unique_id())
     
     def autoid(self):
         '''The id for autoincrements ids'''
@@ -239,9 +261,11 @@ class StdNetType(type):
 def meta_options(abstract = False,
                  keyprefix = None,
                  app_label = None,
+                 order_by = None,
                  **kwargs):
     return {'abstract': abstract,
             'keyprefix': keyprefix,
-            'app_label':app_label}
+            'app_label':app_label,
+            'order_by':order_by}
     
 

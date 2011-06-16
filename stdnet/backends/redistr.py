@@ -1,4 +1,3 @@
-from uuid import uuid4
 import json
 
 from stdnet.utils import zip, iteritems, to_bytestring
@@ -7,9 +6,17 @@ from stdnet.exceptions import FieldError, ObjectNotFound
 from .base import nopickle
 from .redisb import BackendDataServer as BackendDataServer0
 
-def gen_unique_id():
-    return str(uuid4())
 
+class ordering_pickle:
+    
+    @classmethod
+    def loads(cls,x):
+        return x
+    
+    @classmethod
+    def dumps(cls, x):
+        return x.id
+    
 
 class Transaction(object):
     
@@ -46,6 +53,122 @@ class Transaction(object):
         if type is None:
             self.commit()
         
+        
+class RedisQuery(object):
+    result = None
+    query_set = None
+    sorted_list = None
+    start = 0
+    end = -1
+    
+    def __init__(self, server, meta, expire = 20):
+        self.slices = {}
+        self.expire = expire
+        self.server = server
+        self.meta = meta
+        self.pipe = server.redispy.pipeline()
+    
+    def _unique_set(self, name, values):
+        '''Handle filtering over unique fields'''
+        key = self.meta.tempkey()
+        pipe = self.pipe
+        if name == 'id':
+            for id in values:
+                pipe.sadd(key,id)
+        else:
+            for value in values:
+                hkey = self.meta.basekey(name)
+                id = self.server.hash(hkey, pickler = nopickle).get(value)
+                pipe.sadd(key,id)
+        pipe.expire(key,self.expire)
+        return key
+    
+    def _query(self, kwargs, setoper, key = None, extra = None):
+        pipe = self.pipe
+        meta = self.meta
+        keys = []
+        if kwargs:
+            for name,data in iteritems(kwargs):
+                values,unique = data
+                if unique:
+                    keys.append(self._unique_set(name, values))
+                elif values:
+                    if len(values) == 1:
+                        keys.append(meta.basekey(name,values[0]))
+                    else:
+                        insersept = [meta.basekey(name,value) for value in values]
+                        tkey = self.meta.tempkey()
+                        pipe.sunionstore(tkey,insersept).expire(tkey,self.expire)
+                        keys.append(tkey)
+                        
+        if extra:
+            keys.extend(extra)
+        
+        if keys:
+            if key:
+                keys.append(key)
+            if len(keys) > 1:
+                key = self.meta.tempkey()
+                setoper(key, keys).expire(key,self.expire)
+            else:
+                key = keys[0]
+                
+        return key
+    
+    def __call__(self, fargs, eargs, filter_sets = None, order_by = None):
+        if self.result is not None:
+            raise ValueError('Already Called')
+        
+        pipe = self.pipe
+        idset = self.meta.basekey('id')
+        key1 = self._query(fargs,pipe.sinterstore,idset,filter_sets)
+        key2 = self._query(eargs,pipe.sunionstore)
+        
+        if key2:
+            key = self.meta.tempkey()
+            pipe.sdiffstore(key,(key1,key2)).expire(key,self.expire)
+        else:
+            key = key1
+        
+        self.result = pipe.execute()
+        
+        if order_by:
+            skey = self.meta.tempkey()
+            okey = meta.basekey(order_by,'order')
+            self.server.redispy.sort(key, by = '{0}->*', store = skey)
+        else:
+            skey = None
+        
+        self.query_set = key
+        self.sorted_list = skey
+        return self
+    
+    def count(self):
+        return self.server.redispy.scard(self.query_set)
+    
+    def __len__(self):
+        return self.count()
+    
+    def __contains__(self, val):
+        return self.server.redispy.sismember(self.query_set, val)
+    
+    def __iter__(self):
+        return iter(self.aslist())
+    
+    def aslist(self):
+        if self.sorted_list:
+            res = self.server.redispy.sismember(self.sorted_list,\
+                                                self.start,self.end)
+        else:
+            res = list(self.server.redispy.smembers(self.query_set))
+            end = self.end
+            if self.start and end != -1:
+                if end > 0:
+                    end -= 1
+                res = res[self.start,end]
+        
+        res = list(self.server.unwind_query(self.meta,res))
+        return res
 
 
 class BackendDataServer(BackendDataServer0):
@@ -58,9 +181,6 @@ class BackendDataServer(BackendDataServer0):
         make_object = self.make_object
         for id,data in zip(ids,table.mget(ids)):
             yield make_object(meta,id,data)            
-        
-    def idset(self, meta):
-        return self.unordered_set(meta.basekey('id'), pickler = nopickle)
     
     def instance_keys(self, obj):
         meta = obj._meta
@@ -72,109 +192,9 @@ class BackendDataServer(BackendDataServer0):
             return keys
         else:
             return ()
-    
-    def _unique_set(self, meta, idset, name, values, check = True):
-        '''Handle filtering over unique fields'''
-        uset = set()
-        if name == 'id':
-            for id in values:
-                if not check or id in idset:
-                    uset.add(to_bytestring(id))
-        else:
-            for value in values:
-                key = meta.basekey(name)
-                id = self.hash(key, pickler = nopickle).get(value)
-                if id:
-                    uset.add(to_bytestring(id))
-        return uset
         
-    def query(self, meta, fargs, eargs, filter_sets = None):
-        # QUERY a model
-        #
-        # fargs is a dictionary of filters
-        # eargs is a dictionary of excludes
-        # filter_sets are ids from fields
-        #
-        qset = None
-        temp_ids = []
-        idset = self.idset(meta)
-            
-        filters = None
-        if fargs:
-            filters = []
-            for name,data in iteritems(fargs):
-                values,unique = data
-                if unique:
-                    uset = self._unique_set(meta, idset, name, values)
-                    if not uset:
-                        return uset
-                    if qset is None:
-                        qset = uset
-                    else:
-                        qset = qset.intersection(uset)
-                        if not qset:
-                            return qset
-                elif values:
-                    if len(values) == 1:
-                        filters.append(meta.basekey(name,values[0]))
-                    else:
-                        insersept = [meta.basekey(name,value) for value in values]
-                        id = gen_unique_id()
-                        temp_ids.append(id)
-                        self.sunionstore(id,insersept)
-                        filters.append(id)
-                    
-        if filters or filter_sets:
-            if filters and filter_sets:
-                filters.extend(filter_sets)
-            elif not filters:
-                filters = filter_sets
-                
-            v = self.sinter(filters)
-            if qset:
-                qset.intersection(v)
-            else:
-                qset = v
-            
-            if not qset:
-                return qset
-            
-        if eargs:
-            excludes = []
-            euset = set()
-            for name,data in iteritems(eargs):
-                values,unique = data
-                if unique:
-                    euset = euset.union(self._unique_set(meta, idset, name, values, check = False))
-                else:
-                    if len(values) == 1:
-                        excludes.append(meta.basekey(name,values[0]))
-                    else:
-                        insersept = [meta.basekey(name,value) for value in values]
-                        id = gen_unique_id()
-                        temp_ids.append(id)
-                        self.sunionstore(id,insersept)
-                        excludes.append(id)
-                        
-            if excludes:
-                excludes.insert(0,idset.id)
-                eset  = self.sdiff(excludes)
-                if qset:
-                    qset = qset.intersection(eset)
-                else:
-                    qset = eset
-            elif qset is None:
-                qset = set(idset)
-                
-            if euset:
-                qset -= euset
-        
-        if qset is None:
-            qset = idset
-            
-        if temp_ids:
-            self.delete(*temp_ids)
-        return qset
+    def query(self, meta, fargs, eargs, filter_sets = None, sort_by = None):
+        return RedisQuery(self,meta)(fargs, eargs, filter_sets, sort_by)
     
     def make_object(self, meta, id , data):
         obj = meta.maker()
@@ -228,6 +248,7 @@ class BackendDataServer(BackendDataServer0):
         
         # Add object data to the model hash table
         hash = meta.table(transaction)
+        #hash.addnx(objid, data)
         hash.add(objid, data)
         bkey = meta.basekey
         
@@ -241,13 +262,23 @@ class BackendDataServer(BackendDataServer0):
                 key = bkey(field.name)
                 index = self.hash(key,timeout,pickler=nopickle,transaction=transaction)
                 index.add(value,objid)
-            else:
+            elif field.index:
                 key = bkey(field.name,value)
-                if field.ordered:
-                    index = self.ordered_set(key, timeout, pickler = nopickle, transaction = transaction)
+                if meta.order_by:
+                    index = self.ordered_set(key,
+                                             timeout,
+                                             pickler = ordering_pickle,
+                                             scorefun = meta.order_by.scoreobject,
+                                             transaction = transaction)
+                    index.add(obj)
                 else:
                     index = self.unordered_set(key, timeout, pickler = nopickle, transaction = transaction)
-                index.add(objid)
+                    index.add(objid)
+            # The hash table for ordering
+            if field.ordered and field is not meta.order_by:
+                key = bkey(field.name,'id')
+                index = self.hash(key, timeout, transaction = transaction)
+                index.add(objid,value)
                 
         if commit:
             transaction.commit()
@@ -291,11 +322,16 @@ class BackendDataServer(BackendDataServer0):
                     index.delete(value)
                 else:
                     key = bkey(name,field.serialize(value))
-                    if field.ordered:
+                    if meta.order_by:
                         index = self.ordered_set(key, timeout, pickler = nopickle, transaction = transaction)
                     else:
                         index = self.unordered_set(key, timeout, pickler = nopickle, transaction = transaction)
                     index.discard(objid)
+            if field.ordered:
+                key = bkey(field.name,'id')
+                index = self.hash(key, timeout, transaction = transaction)
+                index.delete(objid)
+                
             fid = field.id(obj)
             if fid and multi_field:
                 pipe.delete(fid)

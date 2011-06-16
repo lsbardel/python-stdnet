@@ -109,7 +109,16 @@ class SimpleList(orm.StdModel):
 class TestDateModel(orm.StdModel):
     name = orm.SymbolField()
     dt = orm.DateField()
+
+
+class SportAtDate(orm.StdModel):
+    name = orm.SymbolField()
+    dt = orm.DateField()
     
+    class Meta:
+        order_by = 'dt'
+    
+
     
 # Create the model for testing.
 class Node(orm.StdModel):

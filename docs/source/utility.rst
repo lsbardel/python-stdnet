@@ -60,6 +60,23 @@ Pipeline
 Exceptions
 ============================
 
-.. automodule:: stdnet.exceptions
+.. autoclass:: stdnet.StdNetException
    :members:
    :member-order: bysource
+   
+.. autoclass:: stdnet.ImproperlyConfigured
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: stdnet.QuerySetError
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: stdnet.FieldError
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: stdnet.FieldValueError
+   :members:
+   :member-order: bysource
+   

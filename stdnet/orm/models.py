@@ -63,6 +63,14 @@ the :attr:`StdModel._meta` attribute.
 .. attribute:: _meta
 
     Instance of :class:`stdnet.orm.base.Metaclass`
+
+.. attribute:: id
+
+    Model instance id. The instance primary key.
+        
+.. attribute:: uuid
+
+    Universally unique identifier for a model instance.
     
 '''
     is_base_class = True
@@ -85,7 +93,17 @@ the :attr:`StdModel._meta` attribute.
     def save(self, transaction = None):
         '''Save the instance in the remote :class:`stdnet.HashTable`
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
-otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'''
+otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.
+
+:parameter transaction: Optional transaction instance. It can be useful when saving
+                        several object together (it guaranties atomicity and it is much faster).
+                        Check the :ref:`transaction <model-transactions>`
+                        documentation for more information.
+                        
+                        Default: ``None``.
+                        
+The method return ``self``.
+'''
         if not transaction:
             pre_save.send(sender=self.__class__, instance = self)
         meta = self._meta
@@ -99,6 +117,8 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
         return r
     
     def is_valid(self):
+        '''Return ``True`` if the model validates. It check all fields agains their respective
+validation algorithm.'''
         return self._meta.is_valid(self)
 
     def _valattr(self, name):
@@ -119,7 +139,13 @@ otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.'
     
     def delete(self, transaction = None, dlist = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
-``StdNetException`` exception will raise. Return the number of model instances deleted.'''
+``StdNetException`` exception will raise. Return the number of model instances deleted.
+
+:parameter transaction: Optional transaction instance as in :meth:`stdnet.orm.StdModel.save`.
+:parameter dlist: Optional list. If available it will be filled with the ids of all models deleted.
+
+It returns the number of objects deleted. This method can delete more than one object when
+related the model for ``self`` is a related field in other models.'''
         meta = self._meta
         if not self.id:
             raise StdNetException('Cannot delete object. It was never saved.')
@@ -167,6 +193,7 @@ will enumerate the number of object to delete. without deleting them.'''
     
     @classmethod
     def transaction(cls):
+        '''Return a transaction instance.'''
         return cls._meta.cursor.transaction()
     
     # PICKLING SUPPORT

@@ -3,8 +3,11 @@
 .. module:: stdnet.orm.models
 
 ============================
-StdNet Models
+Model and Query API
 ============================
+
+Model
+==================
 
 The StdNet Object Relational Mapper presents a method of
 associating user-defined Python classes, referred as **models**,
@@ -14,8 +17,9 @@ These python classes
 are referred as **models** and are subclasses of
 :class:`stdnet.orm.StdModel`.
 
-Each instance of model represents a key-value
-in the corresponding :class:`stdnet.HashTable`.
+
+StdModel Class
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: stdnet.orm.StdModel
    :members:
@@ -25,7 +29,7 @@ in the corresponding :class:`stdnet.HashTable`.
 .. _creating-models:
 
 Creating Models
-======================
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Defining a stdnet models is simple, you derive a Python class from ``StdModel``::
 
@@ -42,7 +46,7 @@ Defining a stdnet models is simple, you derive a Python class from ``StdModel``:
 .. _register-model:
 	    
 Register A Model
-=====================
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once a model is defined, in order to use it in an application it needs to be registered with
 a back-end database.
@@ -53,8 +57,29 @@ a back-end database.
 .. _database-metaclass:
 
 Data Server Metaclass
-==========================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: stdnet.orm.base.Metaclass
+   :members:
+   :member-order: bysource
+   
+   
+Query
+==============================
+
+
+QuerySet
+~~~~~~~~~~~~~~~
+Though you usually won't create one manually, you'll go through a :class:`stdnet.orm.query.Manager`,
+here's the formal declaration of a QuerySet.
+
+.. autoclass:: stdnet.orm.query.QuerySet
+   :members:
+   :member-order: bysource
+   
+
+Manager
+~~~~~~~~~~~~~~~
+.. autoclass:: stdnet.orm.query.Manager
    :members:
    :member-order: bysource

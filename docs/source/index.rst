@@ -25,7 +25,8 @@ First steps
 :ref:`Overview and Installation <intro-overview>`
 
 **Models and QuerySets:**
-:ref:`Executing queries <model-query>` | :ref:`Model API <model-model>`  
+:ref:`Executing queries <model-query>` | :ref:`Model API <model-model>` |
+:ref:`Fields API <model-field>`
 
 **Examples:**
 :ref:`Timeseries <timeseries-example>` | :ref:`Portfolio <portfolio-example>` |

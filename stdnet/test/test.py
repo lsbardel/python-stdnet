@@ -44,6 +44,14 @@ class TestCase(unittest.TestCase):
         orm.clearall()
         self.unregister()
         
+    def cleankeys(self, meta):
+        tmp = meta.basekey('_tmp_')
+        keys = []
+        for key in meta.cursor.keys():
+            if not key.startswith(tmp):
+                keys.append(key)
+        return keys
+        
         
 class TestMultiFieldMixin(object):
     '''Test class which add a couple of tests for multi fields. You need to implement the

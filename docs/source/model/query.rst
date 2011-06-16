@@ -3,7 +3,7 @@
 .. module:: stdnet.orm.query
 
 ============================
-Queries and Transactions
+Tutorial
 ============================
 
 Executing queries is very similar to executing queries in django_.
@@ -166,27 +166,17 @@ Transactions
 ==========================
 
 Since version 0.5.6, stdnet perform server updates via transactions.
+Transaction are important for two reasons:
+
+* To guarantee atomicity and therefore consistency of model instances when updating/deleting.
+* To speed up updating/deleting of several instances at once.
+
+A tipical usage to speed up the creation of several instances of a model ``MyModel``::
+
+    with MyModel.transaction() as t:
+        for kwargs in data:
+            MyModel(**kwargs).save(t)
 
 
-
-QuerySet API Reference
-==============================
-
-
-QuerySet
-~~~~~~~~~~~~~~~
-Though you usually won't create one manually, you'll go through a :class:`stdnet.orm.query.Manager`,
-here's the formal declaration of a QuerySet.
-
-.. autoclass:: stdnet.orm.query.QuerySet
-   :members:
-   :member-order: bysource
-   
-
-Manager
-~~~~~~~~~~~~~~~
-.. autoclass:: stdnet.orm.query.Manager
-   :members:
-   :member-order: bysource
    
 .. _django: http://www.djangoproject.com/

@@ -21,7 +21,8 @@ except:
 	NNNN = 'N'
 	decode = lambda x : x
 
-VOWELS = frozenset(('A', 'E', 'I', 'O', 'U', 'Y'))
+VOWELS = frozenset((decode(x) for x in ('A', 'E', 'I', 'O', 'U', 'Y')))
+GNKN = frozenset((decode(x) for x in ('GN', 'KN', 'PN', 'WR', 'PS')))
 
 def dm(st) :
 	"""dm(string) -> (string, string or None)
@@ -37,7 +38,7 @@ def dm(st) :
 	pos = first # pos is short for position
 	pri = sec = '' # primary and secondary metaphone codes
 	#skip these silent letters when at start of word
-	if st[first:first+2] in ["GN", "KN", "PN", "WR", "PS"] :
+	if st[first:first+2] in GNKN:
 		pos += 1
 	# Initial 'X' is pronounced 'Z' e.g. 'Xavier'
 	if st[first] == 'X' :

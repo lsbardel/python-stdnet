@@ -161,6 +161,9 @@ class HashTable(structures.HashTable):
         items = []
         [items.extend(item) for item in iteritems(self.pipeline)]
         self.cursor.execute_command('HMSET',self.id,*items)
+        
+    def _addnx(self, field, value):
+        return self.cursor.execute_command('HSETNX', self.id, field, value)
     
     def add_expiry(self):
         self.cursor.execute_command('EXPIRE', self.id, self.timeout)

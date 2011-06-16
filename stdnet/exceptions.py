@@ -17,7 +17,7 @@ class ObjectNotValidated(StdNetException):
     pass
 
 class ImproperlyConfigured(StdNetException):
-    "stdnet is somehow improperly configured"
+    "A :class:`stdnet.StdNetException` raised when stdnet is somehow improperly configured"
     pass
 
 class BadCacheDataStructure(StdNetException):
@@ -28,15 +28,16 @@ class FieldError(StdNetException):
     pass
 
 class MultiFieldError(StdNetException):
-    '''A :class:`FieldError` for :class:stdnet.orm.MultiField`.'''
+    '''A :class:`stdnet.FieldError` for :class:stdnet.orm.MultiField`.'''
     pass
 
 class FieldValueError(FieldError):
-    '''Raised when passing a wrong value to a field method'''
+    '''A :class:`stdnet.FieldError` raised when passing a wrong
+value to a field method'''
     pass
 
 class QuerySetError(StdNetException):
-    '''A :class:`StdNetException` raised during a :class:`stdnet.orm.query.QuerySet`
+    '''A :class:`stdnet.StdNetException` raised during a :class:`stdnet.orm.query.QuerySet`
 evaluation.'''
     pass
 

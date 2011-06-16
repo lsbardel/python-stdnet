@@ -59,8 +59,8 @@ class TestAtomFields(test.TestCase):
         all = TestDateModel.objects.all()
         self.assertEqual(all.count(),0)
         
-        # The only key remianed is the ids key for the AutoField
-        keys = self.meta.cursor.keys()
+        # The only key remaining is the ids key for the AutoField
+        keys = self.cleankeys(self.meta)
         self.assertEqual(len(keys),1)
         self.assertEqual(keys[0],self.meta.autoid())
         

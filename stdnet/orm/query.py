@@ -70,7 +70,7 @@ class QuerySet(object):
         '''Return the number of objects in ``self`` without
 fetching objects.'''
         self.buildquery()
-        return len(self.qset)
+        return self.qset.count()
         
     def __contains__(self, val):
         if isinstance(val,self.model):
@@ -114,7 +114,8 @@ fetching objects.'''
             # simple lookup for example filter(name = 'pippo')
             if N == 1:
                 if name not in fields:
-                    raise QuerySetError("Could not filter. Field {0} not defined.".format(name))
+                    raise QuerySetError("Could not filter.\
+ Filter for field {0} not enabled.".format(name))
                 field = fields[name]
                 value = (field.serialize(value),)
                 unique = field.unique
@@ -146,7 +147,7 @@ fetching objects.'''
             self.buildquery()
             seq = self._seq = []
             meta = self._meta
-            for m in meta.cursor.unwind_query(meta,self.qset):
+            for m in self.qset:
                 seq.append(m)
                 yield m
     

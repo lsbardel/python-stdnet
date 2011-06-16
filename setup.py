@@ -90,7 +90,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
     for file_info in data_files:
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
-        
+
 libparams.update({
         'name': package_fullname,
         'version': mod.__version__,
@@ -104,6 +104,5 @@ libparams.update({
         'data_files': data_files,
         'classifiers':  mod.CLASSIFIERS
         })
- 
-setup(**libparams)
 
+setup(**libparams)

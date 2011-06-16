@@ -4,10 +4,10 @@ from stdnet.utils import populate, zip
 
 
 class TestOrderedDict(test.TestCase):
-    
+    '''This test is really only needed for python 2.6'''
     def setUp(self):
-        self.keys = populate(datatype = 'date', size = 100)
-        self.vals = populate(datatype = 'string', size = 100)
+        self.keys = list(set(populate(datatype = 'date', size = 100)))
+        self.vals = populate(datatype = 'string', size = len(self.keys))
         self.data = zip(self.keys,self.vals)
     
     def testOrdered(self):

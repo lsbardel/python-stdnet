@@ -1,8 +1,9 @@
 import sys
 import copy
+import hashlib
 from uuid import uuid4
 
-from stdnet.utils import zip, to_bytestring
+from stdnet.utils import zip, to_bytestring, to_string
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
@@ -90,8 +91,6 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
             raise FieldError("Primary key must be named id")
         
         for name,field in fields.items():
-            if name == '_tmp_':
-                raise ImproperlyConfigured('Field name _tmp_ is reserved')
             if name == 'id':
                 continue
             field.register_with_model(name,model)
@@ -128,8 +127,8 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         return self.__repr__()
         
     def basekey(self, *args):
-        """Calculate the key to access model hash-table/s,
-and model filters in the database.
+        """Calculate the key to access model data in
+the backend server.
 The key is an encoded binary string. For example::
         
     >>> from examples.models import User
@@ -138,17 +137,19 @@ The key is an encoded binary string. For example::
     'redis db 7 on 127.0.0.1:6379'
     >>> User._meta.basekey()
     b'stdnet.examples.user'
-    >>> a = Author(name = 'Dante Alighieri').save()
-    >>> a.meta.basekey()
-    b'stdnet.someappname.author'
-    """
+"""
         key = '%s%s' % (self.keyprefix,self)
         for arg in args:
-            key = '%s:%s' % (key,arg)
+            if arg is not None:
+                key = '%s:%s' % (key,arg)
         return to_bytestring(key)
     
-    def tempkey(self):
-        return self.basekey('_tmp_',gen_unique_id())
+    def tempkey(self, name = None):
+        if name:
+            id = to_string(hashlib.sha1(to_bytestring(name)).hexdigest())
+        else:
+            id = str(uuid4())
+        return self.basekey('tmp',id[:8])
     
     def autoid(self):
         '''The id for autoincrements ids'''

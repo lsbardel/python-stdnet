@@ -8,7 +8,7 @@ from stdnet.utils import zip, to_bytestring
 class QuerySet(object):
     '''Queryset manager'''
     
-    def __init__(self, meta, fargs = None, eargs = None, filter_sets = None):
+    def __init__(self, meta, fargs = None, eargs = None, filter_sets = None, ordering = None):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -19,6 +19,7 @@ class QuerySet(object):
         self.model  = meta.model
         self.fargs  = fargs
         self.eargs  = eargs
+        self.ordering = ordering
         self.filter_sets = filter_sets
         self.qset   = None
         self._seq   = None
@@ -46,7 +47,11 @@ class QuerySet(object):
             c = self.fargs.copy()
             c.update(kwargs)
             kwargs = c
-        return self.__class__(self._meta,fargs=kwargs,eargs=self.eargs,filter_sets=self.filter_sets)
+        return self.__class__(self._meta,
+                              fargs=kwargs,
+                              eargs=self.eargs,
+                              filter_sets=self.filter_sets,
+                              ordering=self.ordering)
     
     def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match the given lookup parameters.'''
@@ -54,7 +59,15 @@ class QuerySet(object):
             c = self.eargs.copy()
             c.update(kwargs)
             kwargs = c
-        return self.__class__(self._meta,fargs=self.fargs,eargs=kwargs,filter_sets=self.filter_sets)
+        return self.__class__(self._meta,
+                              fargs=self.fargs,
+                              eargs=kwargs,
+                              filter_sets=self.filter_sets,
+                              ordering=self.ordering)
+    
+    def order_by(self, ordering):
+        self.ordering = ordering
+        return self
     
     def get(self):
         items = self.aslist()
@@ -99,7 +112,8 @@ fetching objects.'''
         else:
             eargs = None
         self.qset = self._meta.cursor.query(meta, fargs, eargs,
-                                            filter_sets = self.filter_sets)
+                                            filter_sets = self.filter_sets,
+                                            sort_by = self.ordering)
         
     def aggregate(self, kwargs):
         '''Aggregate lookup parameters.'''
@@ -165,13 +179,16 @@ fetching objects.'''
     
     def delete(self, transaction = None, dlist = None):
         '''Delete all the element in the queryset'''
-        if not transaction:
-            transaction = self._meta.cursor.transaction()
-        T = 0
-        for el in self:
-            T += el.delete(dlist)
-        return T
-    
+        if self.count():
+            commit = False
+            if not transaction:
+                commit = True
+                transaction = self._meta.cursor.transaction()
+            for el in self:
+                el.delete(transaction,dlist)
+            if commit:
+                transaction.commit()
+            
 
 class Manager(object):
     '''A manager class for :class:`stdnet.orm.StdModel` models.'''

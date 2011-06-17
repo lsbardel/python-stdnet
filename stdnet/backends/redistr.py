@@ -133,9 +133,14 @@ class RedisQuery(object):
         self.result = pipe.execute()
         
         if order_by:
+            desc = False
+            if order_by.startswith('-'):
+                order_by = order_by[1:]
+                desc = True
             skey = self.meta.tempkey()
-            okey = meta.basekey(order_by,'order')
-            self.server.redispy.sort(key, by = '{0}->*', store = skey)
+            okey = self.meta.basekey(order_by,'id')+b'->*'
+            self.server.redispy.sort(key, by = okey,
+                                     desc = desc, store = skey)
         else:
             skey = None
         
@@ -157,8 +162,8 @@ class RedisQuery(object):
     
     def aslist(self):
         if self.sorted_list:
-            res = self.server.redispy.sismember(self.sorted_list,\
-                                                self.start,self.end)
+            res = self.server.redispy.lrange(self.sorted_list,\
+                                             self.start,self.end)
         else:
             res = list(self.server.redispy.smembers(self.query_set))
             end = self.end
@@ -192,9 +197,6 @@ class BackendDataServer(BackendDataServer0):
             return keys
         else:
             return ()
-        
-    def query(self, meta, fargs, eargs, filter_sets = None, sort_by = None):
-        return RedisQuery(self,meta)(fargs, eargs, filter_sets, sort_by)
     
     def make_object(self, meta, id , data):
         obj = meta.maker()
@@ -277,7 +279,8 @@ class BackendDataServer(BackendDataServer0):
             # The hash table for ordering
             if field.ordered and field is not meta.order_by:
                 key = bkey(field.name,'id')
-                index = self.hash(key, timeout, transaction = transaction)
+                index = self.hash(key, timeout, pickler = nopickle,
+                                  transaction = transaction)
                 index.add(objid,value)
                 
         if commit:

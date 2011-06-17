@@ -208,7 +208,7 @@ In doing so, convert byte data into unicode.'''
 
 def pairs_to_dict(response):
     "Create a dict given a list of key/value pairs"
-    return dict(zip(response[::2], response[1::2]))
+    return dict(zip((k.decode() for k in response[::2]), response[1::2]))
 
 def zset_score_pairs(response, **options):
     """
@@ -873,7 +873,7 @@ class Redis(threading.local):
 
 
     #### SET COMMANDS ####
-    def sadd(self, name, value):
+    def sadd(self, name, value, score = None):
         "Add ``value`` to set ``name``"
         return self.execute_command('SADD', name, value)
 
@@ -1258,7 +1258,7 @@ class Pipeline(Redis):
             return super(Pipeline, self)._execute_command(
                 command_name, command, **options)
         else:
-            self.command_stack.append((command_name, command, options))
+            self.command_stack.append((to_bytestring(command_name), command, options))
         return self
 
     def _execute_transaction(self, commands):

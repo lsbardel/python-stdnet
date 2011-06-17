@@ -152,20 +152,19 @@ related the model for ``self`` is a related field in other models.'''
         T = 0
         # Gather related objects to delete
         pre_delete.send(sender=self.__class__, instance = self)
-        objs = self.related_objects()
-        for obj in objs:
+        for obj in self.related_objects():
             T += obj.delete(transaction,dlist)
         res = T + meta.cursor.delete_object(self, transaction, dlist)
         post_delete.send(sender=self.__class__, instance = self)
         return res
     
     def related_objects(self):
-        '''Collect or related objects'''
+        '''A generator of related objects'''
         objs = []
         for rel in self._meta.related:
             rmanager = getattr(self,rel)
-            objs.extend(rmanager.all())
-        return objs
+            for obj in rmanager.all():
+                yield obj
     
     def todict(self):
         odict = {}

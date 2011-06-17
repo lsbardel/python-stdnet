@@ -106,6 +106,7 @@ class TestFiler(fintests.BaseFinance):
  check for zero values'''
         insts = Instrument.objects.filter(ccy = 'EUR')
         for inst in insts:
+            self.assertEqual(inst.ccy, 'EUR')
             inst.ccy = 'USD'
             inst.save()
         insts = Instrument.objects.filter(ccy = 'EUR')
@@ -113,9 +114,9 @@ class TestFiler(fintests.BaseFinance):
         
     def testFilterWithSpace(self):
         insts = Instrument.objects.filter(type = 'bond option')
+        self.assertTrue(insts)
         for inst in insts:
             self.assertEqual(inst.type,'bond option')
-        self.assertTrue(inst)
 
 
         

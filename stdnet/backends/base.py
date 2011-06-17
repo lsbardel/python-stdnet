@@ -1,5 +1,5 @@
 from stdnet.exceptions import *
-from stdnet.utils import pickle, iteritems
+from stdnet.utils import zip, pickle, iteritems
 
 from .structures import Structure
 
@@ -43,7 +43,10 @@ class BackendDataServer(object):
     * *params* dictionary of configuration parameters
     * *pickler* calss for serializing and unserializing data. It must implement the *loads* and *dumps* methods.
     '''
+    Transaction = None
+    Query = None
     structure_module = None
+    
     def __init__(self, name, params, pickler = None):
         self.__name = name
         timeout = params.get('timeout', 0)
@@ -105,6 +108,13 @@ class BackendDataServer(object):
             el.save()
         if keys: 
             self._set_keys(keys)
+    
+    def transaction(self, pipelined = True, cachepipes = None):
+        '''Return a transaction instance'''
+        return self.Transaction(self,pipelined,cachepipes)
+    
+    def query(self, meta, fargs, eargs, filter_sets = None, sort_by = None):
+        return self.Query(self,meta)(fargs, eargs, filter_sets, sort_by)
             
     def get_object(self, meta, name, value):
         '''Retrive an object from the database. If object is not available, it raises
@@ -117,20 +127,59 @@ an :class:`stdnet.exceptions.ObjectNotFound` exception.
     
     def save_object(self, obj, transaction = None):
         '''\
-Save an instance of a model to the back-end database:
+Save or updated an instance of a model to the back-end database:
         
-:parameter obj: instance of :ref:`StdModel <model-model>` to add to database
+:parameter obj: instance of :ref:`StdModel <model-model>` to add/update to the database
 :parameer transaction: optional transaction instance.'''
-        raise NotImplementedError
-    
-    def delete_object(self, obj, deleted = None, multi_field = True, transaction = None):
+        commit = False
+        if not transaction:
+            commit = True
+            transaction = self.transaction(cachepipes = obj._cachepipes)
+            
+        # Save the object in the back-end
+        if not obj.is_valid():
+            raise FieldError(json.dumps(obj.errors))
+        
+        # We are updating the object, therefore we need to clean up indexes first
+        if obj.id:
+            pobj = obj.__class__.objects.get(id = obj.id)
+            self._remove_indexes(pobj, transaction)
+        
+        obj.id = obj._meta.pk.serialize(obj.id)
+        obj = self._save_object(obj, transaction)
+        
+        if commit:
+            transaction.commit()
+        
+        return obj
+        
+    def delete_object(self, obj, transaction = None, deleted = None):
         '''Delete an object from the data server and clean up indices.
 Called to clear a model instance.
 :parameter obj: instance of :class:`stdnet.orm.StdModel`
 :parameter deleted: a list or ``None``. If a list, deleted keys will be appended to it.
 :parameter multi_field: if ``True`` the multifield ids (if any) will be removed. Default ``True``.
         '''
-        raise NotImplementedError
+        commit = False
+        if not transaction:
+            commit = True
+            transaction = self.transaction()
+        
+        deleted = deleted if deleted is not None else []
+        self._remove_indexes(obj, transaction)
+        self._delete_object(obj, transaction, deleted)
+        
+        if commit:
+            transaction.commit()
+            
+        return 1
+    
+    def make_objects(self, meta, ids, data):
+        make_object = meta.maker
+        for id,fields in zip(ids,data):
+            obj = make_object()
+            obj.__setstate__((id,fields))
+            yield obj
         
     def set(self, id, value, timeout = None):
         timeout = timeout if timeout is not None else self.default_timeout
@@ -201,11 +250,20 @@ Called to clear a model instance.
         for key in keys:
             self.delete(key)
 
+    # PURE VIRTUAL METHODS
+        
     def clear(self):
         """Remove *all* values from the database at once."""
         raise NotImplementedError
-
-    # VIRTUAL METHODS
+    
+    def _save_object(self, obj, transaction):
+        raise NotImplementedError
+    
+    def _remove_indexes(self, obj, transaction):
+        raise NotImplementedError
+    
+    def _delete_object(self, obj, deleted, transaction):
+        raise NotImplementedError
     
     def keys(self, pattern = '*'):
         raise NotImplementedError

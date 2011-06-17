@@ -8,7 +8,7 @@ parse_qsl = urlparse.parse_qsl
 
 
 BACKENDS = {
-    'redis': 'redistr',
+    'redis': 'redisb',
 }
 
 

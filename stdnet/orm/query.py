@@ -65,9 +65,13 @@ class QuerySet(object):
                               filter_sets=self.filter_sets,
                               ordering=self.ordering)
     
-    def order_by(self, ordering):
-        self.ordering = ordering
-        return self
+    def sort_by(self, ordering):
+        '''Sort the query by the given field'''
+        return self.__class__(self._meta,
+                              fargs=self.fargs,
+                              eargs=self.eargs,
+                              filter_sets=self.filter_sets,
+                              ordering=ordering)
     
     def get(self):
         items = self.aslist()

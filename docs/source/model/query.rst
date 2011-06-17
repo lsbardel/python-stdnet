@@ -160,6 +160,23 @@ You can also exclude fields from lookups::
 and so forth. The API is very similar to django_, but it is for an unstructured-in memory database.
 
 
+.. _sorting:
+
+Sorting
+==================
+Since version 0.6.0, stdnet provides sorting using two different ways:
+
+* Implicit sorting via the :attr:`stdnet.orm.Meta.ordering` attribute of
+  the model metaclass.
+* Explicit sorting using the :attr:`stdnet.orm.query.QuerySet.sort_by` attribute
+  of a queryset.
+
+Implicit Sorting
+~~~~~~~~~~~~~~~~~~~~
+
+
+
+
 .. _model-transactions:
 
 Transactions

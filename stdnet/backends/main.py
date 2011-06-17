@@ -37,21 +37,21 @@ def parse_backend_uri(backend_uri):
     return scheme, host, params
 
 
-def _getdb(scheme, host, params, pickler = None):
+def _getdb(scheme, host, params):
     if scheme in BACKENDS:
         name = 'stdnet.backends.%s' % BACKENDS[scheme]
     else:
         name = scheme
     module = import_module(name)
-    return getattr(module, 'BackendDataServer')(scheme, host, params, pickler = pickler)
+    return getattr(module, 'BackendDataServer')(scheme, host, params)
 
 
-def getdb(backend_uri = None, pickler = None):
+def getdb(backend_uri = None):
     backend_uri = backend_uri or settings.DEFAULT_BACKEND
     if not backend_uri:
         return None
     scheme, host, params = parse_backend_uri(backend_uri)
-    return _getdb(scheme, host, params, pickler = pickler)
+    return _getdb(scheme, host, params)
 
 
 class CacheClass(object):

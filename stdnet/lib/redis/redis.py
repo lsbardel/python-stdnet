@@ -208,7 +208,10 @@ In doing so, convert byte data into unicode.'''
 
 def pairs_to_dict(response):
     "Create a dict given a list of key/value pairs"
-    return dict(zip((k.decode() for k in response[::2]), response[1::2]))
+    if response:
+        return zip(response[::2], response[1::2])
+    else:
+        return ()
 
 def zset_score_pairs(response, **options):
     """
@@ -271,7 +274,7 @@ class Redis(threading.local):
             b'BGREWRITEAOF': lambda r: \
                 r == b'Background rewriting of AOF file started',
             b'BGSAVE': lambda r: r == b'Background saving started',
-            b'HGETALL': lambda r: r and pairs_to_dict(r) or {},
+            b'HGETALL': lambda r: pairs_to_dict(r),
             b'INFO': parse_info,
             b'LASTSAVE': timestamp_to_datetime,
             b'PING': lambda r: r == b'PONG',

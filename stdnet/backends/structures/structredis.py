@@ -150,7 +150,7 @@ class HashTable(structures.HashTable):
         return self.cursor.execute_command('HKEYS', self.id)
     
     def _items(self):
-        return iteritems(self.cursor.execute_command('HGETALL', self.id))
+        return self.cursor.execute_command('HGETALL', self.id)
         #return riteritems(self, 'HGETALL', self.id)
 
     def values(self):

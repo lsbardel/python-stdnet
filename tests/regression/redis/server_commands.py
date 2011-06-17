@@ -856,7 +856,7 @@ class ServerCommandsTestCase(BaseTest):
         d = {'a': '1', 'b': '2', 'c': '3'}
         db = dict(((to_bytestring(k),to_bytestring(v)) for k,v in d.items()))
         self.assert_(self.client.hmset('foo', d))
-        self.assertEqual(self.client.hgetall('foo'), db)
+        self.assertEqual(dict(self.client.hgetall('foo')), db)
         self.assertRaises(ResponseError, self.client.hmset, 'foo', {})
 
     def test_hmget(self):
@@ -904,12 +904,12 @@ class ServerCommandsTestCase(BaseTest):
         self.assertRaises(ResponseError, self.client.hgetall, 'a')
         del self.client['a']
         # no key
-        self.assertEquals(self.client.hgetall('a'), {})
+        self.assertEquals(self.client.hgetall('a'), ())
         # real logic
         h = {'a1': '1', 'a2': '2', 'a3': '3'}
         db = dict(((to_bytestring(k),to_bytestring(v)) for k,v in h.items()))
         self.make_hash('a', h)
-        remote_hash = self.client.hgetall('a')
+        remote_hash = dict(self.client.hgetall('a'))
         self.assertEquals(db, remote_hash)
 
     def test_hincrby(self):

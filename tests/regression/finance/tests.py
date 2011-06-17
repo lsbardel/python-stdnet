@@ -158,19 +158,23 @@ class TestFinanceApplication(BaseFinance):
         '''Test delete on models without related models'''
         instruments = Instrument.objects.all()
         funds = Fund.objects.all()
-        Ni = len(instruments)
-        Nf = len(funds)
-        self.assertEqual(Ni,instruments.delete())
-        self.assertEqual(Nf,funds.delete())
+        self.assertTrue(instruments.count())
+        self.assertTrue(funds.count())
+        instruments.delete()
+        funds.delete()
+        self.assertFalse(Instrument.objects.all().count())
+        self.assertFalse(Fund.objects.all().count())
         
     def testDelete(self):
         '''Test delete on models with related models'''
         # Create Positions which hold foreign keys to Instruments
-        Np = self.makePositions()
+        self.makePositions()
         instruments = Instrument.objects.all()
-        Ni = len(instruments)
-        T = instruments.delete()
-        self.assertEqual(T,Np+Ni)
+        self.assertTrue(instruments.count())
+        self.assertTrue(Position.objects.all().count())
+        instruments.delete()
+        self.assertFalse(instruments.count())
+        self.assertFalse(Position.objects.all().count())
         
     def __testNestedLookUp(self):
         # Create Portfolio views

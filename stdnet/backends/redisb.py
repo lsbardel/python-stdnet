@@ -41,7 +41,7 @@ class RedisTransaction(object):
        
     def __enter__(self):
         return self
-     
+    
     def __exit__(self, type, value, traceback):
         if type is None:
             self.commit()
@@ -60,10 +60,14 @@ class RedisQuery(object):
         self.server = server
         self.meta = meta
         self.pipe = server.redispy.pipeline()
-        p = 'z' if meta.order_by else 's'
+        p = 'z' if meta.ordering else 's'
         self.intersect = setattr(self.pipe,p,'interstore')
         self.union = setattr(self.pipe,p,'unionstore')
-        self.diff = setattr(self.pipe,p,'diffstore')
+        #Redis does not have a zdiffstore at the moment.
+        try:
+            self.diff = setattr(self.pipe,p,'diffstore')
+        except AttributeError:
+            self.diff = None
         self.add = setattr(self.pipe,p,'add')
         self.card = setattr(self.server.redispy,p,'card')
     
@@ -117,15 +121,15 @@ class RedisQuery(object):
                 
         return key
     
-    def __call__(self, fargs, eargs, filter_sets = None, order_by = None):
+    def __call__(self, fargs, eargs, filter_sets = None, sort_by = None):
         if self.result is not None:
             raise ValueError('Already Called')
         
+        meta = self.meta
         pipe = self.pipe
         idset = self.meta.basekey('id')
-        if self.meta.order_by:
-            if order_by == self.meta.order_by.name:
-                order_by = None
+        if sort_by:
+            sort_by = meta.get_sorting(sort_by,stdnet.QuerySetError)
         
         key1 = self._query(fargs,self.intersect,idset,filter_sets)
         key2 = self._query(eargs,self.union)
@@ -141,15 +145,13 @@ class RedisQuery(object):
         else:
             self.result = 'all'
         
-        if order_by:
-            desc = False
-            if order_by.startswith('-'):
-                order_by = order_by[1:]
-                desc = True
+        if sort_by:
             skey = self.meta.tempkey()
-            okey = self.meta.basekey(OBJ,'*->')+order_by.encode()
-            self.server.redispy.sort(key, by = okey,
-                                     desc = desc, store = skey)
+            okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
+            self.server.redispy.sort(key,
+                                     by = okey,
+                                     desc = sort_by.desc,
+                                     store = skey)
         else:
             skey = None
         
@@ -173,6 +175,12 @@ class RedisQuery(object):
         if self.sorted_list:
             ids = self.server.redispy.lrange(self.sorted_list,\
                                              self.start,self.end)
+        elif self.meta.ordering:
+            if self.meta.ordering.desc:
+                command = self.server.redispy.zrevrange
+            else:
+                command = self.server.redispy.zrange
+            ids = command(self.query_set,self.start,self.end)
         else:
             ids = list(self.server.redispy.smembers(self.query_set))
             end = self.end
@@ -243,23 +251,22 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _get(self, id):
         return self.execute_command('GET', id)
-        
-    def get_object(self, meta, name, value):
-        raise NotImplementedError
-    
+
     def _save_object(self, obj, transaction):        
         # Add object data to the model hash table
         pipe = transaction.pipe
         meta = obj._meta
         obid = obj.id
         bkey = meta.basekey
-        pipe.hmset(bkey(OBJ,obid),obj.cleaned_data)
+        data = obj.cleaned_data
+        if data:
+            pipe.hmset(bkey(OBJ,obid),data)
         #hash.addnx(objid, data)
         
-        if meta.order_by:
+        if meta.ordering:
             add = pipe.zadd
-            v = getattr(obj,meta.order_by.name,None)
-            score = MIN_FLOAT if v is None else meta.order_by.scorefun(v)
+            v = getattr(obj,meta.ordering.name,None)
+            score = MIN_FLOAT if v is None else meta.ordering.field.scorefun(v)
         else:
             add = pipe.sadd
             score = 0
@@ -283,7 +290,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         pipe = transaction.pipe
         bkey = meta.basekey
         pipe.delete(bkey(OBJ,obid))
-        rem = setattr(pipe,'z' if meta.order_by else 's','rem')
+        rem = setattr(pipe,'z' if meta.ordering else 's','rem')
         rem(bkey('id'), obid)
         
         for field,value in obj.indices:
@@ -309,3 +316,11 @@ class BackendDataServer(stdnet.BackendDataServer):
         keys = self.keys(meta.basekey()+b'*')
         if keys:
             self.delete(*keys)
+            
+    def instance_keys(self, obj):
+        meta = obj._meta
+        keys = [meta.basekey(OBJ,obj.id)]
+        for field in meta.multifields:
+            f = getattr(obj,field.attname)
+            keys.append(f.id)
+        return keys

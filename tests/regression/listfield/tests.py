@@ -91,7 +91,7 @@ class TestTimeOutListField(BaseTestListField):
     def setUp(self):
         self.orm.register(SimpleList, timeout = 1)
         
-    def testTimeout(self):
+    def __testTimeout(self):
         s1 = SimpleList().save()
         self.assertEqual(SimpleList.objects.all().count(),1)
         sleep(2)

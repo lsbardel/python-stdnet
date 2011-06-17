@@ -1,6 +1,7 @@
 import sys
 import copy
 import hashlib
+from collections import namedtuple
 from uuid import uuid4
 
 from stdnet.utils import zip, to_bytestring, to_string
@@ -29,6 +30,9 @@ def get_fields(bases, attrs):
     return fields
 
 
+orderinginfo = namedtuple('orderinginfo','name field desc')
+
+
 class Metaclass(object):
     '''Utility class used for storing all information
 which maps a :class:`stdnet.orm.StdModel` model into an object in the
@@ -38,6 +42,14 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 .. attribute:: model
 
     a subclass of :class:`stdnet.orm.StdModel`.
+    
+.. attribute:: ordering
+
+    Optional name of a :class:`stdnet.orm.Field` in the :attr:`model`.
+    If provided, indeces will be sorted with respect the value of the field specidied.
+    Check the :ref:`sorting <sorting>` documentation for more details.
+    
+    Default: ``None``.
     
 .. attribute:: fields
 
@@ -63,7 +75,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None,
-                 order_by = None, **kwargs):
+                 ordering = None, **kwargs):
         self.abstract = abstract
         self.keyprefix = keyprefix
         self.model = model
@@ -97,19 +109,10 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
             if field.primary_key:
                 raise FieldError("Primary key already available %s." % name)
         
-        if order_by:
-            self.order_by = None
-            for f in self.scalarfields:
-                if f.name == order_by:
-                    self.order_by = f
-                    break
-            if not self.order_by:
-                raise ImproperlyConfigured('Order by attribute {0}\
- is not a scalar field'.format(order_by))
-        else:
-            self.order_by = None
+        self.ordering = None
+        if ordering:
+            self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
         self.cursor = None
-        #self.keys  = None
         
     def maker(self):
         model = self.model
@@ -170,7 +173,8 @@ Return ``True`` is the instance is ready to be saved to database.'''
             if (svalue is None or svalue is '') and field.required:
                 errors[name] = "Field '{0}' is required for '{1}'.".format(name,self)
             else:
-                data[name] = svalue
+                if svalue is not None:
+                    data[name] = svalue
                 if field.index:
                     indexes.append((field,svalue))
         return len(errors) == 0
@@ -195,6 +199,20 @@ the model table'''
     def database(self):
         return self.cursor
 
+    def get_sorting(self, sortby, errorClass):
+        s = None
+        desc = False
+        if sortby.startswith('-'):
+            desc = True
+            sortby = sortby[1:]
+        for f in self.scalarfields:
+            if f.name == sortby:
+                s = orderinginfo(f.name,f,desc)
+                break
+        if not s:
+            raise errorClass('Cannot Order by attribute {0}\
+is not a scalar field'.format(sortby))
+        return s
 
 class FakeMeta(object):
     
@@ -262,11 +280,11 @@ class StdNetType(type):
 def meta_options(abstract = False,
                  keyprefix = None,
                  app_label = None,
-                 order_by = None,
+                 ordering = None,
                  **kwargs):
     return {'abstract': abstract,
             'keyprefix': keyprefix,
             'app_label':app_label,
-            'order_by':order_by}
+            'ordering':ordering}
     
 

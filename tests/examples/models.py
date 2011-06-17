@@ -116,7 +116,7 @@ class SportAtDate(orm.StdModel):
     dt = orm.DateField()
     
     class Meta:
-        order_by = 'dt'
+        ordering = 'dt'
     
 
     

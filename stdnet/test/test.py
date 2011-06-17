@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
         self.unregister()
         
     def cleankeys(self, meta):
-        tmp = meta.basekey('_tmp_')
+        tmp = meta.basekey('tmp')
         keys = []
         for key in meta.cursor.keys():
             if not key.startswith(tmp):

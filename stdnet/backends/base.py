@@ -47,7 +47,7 @@ class BackendDataServer(object):
     Query = None
     structure_module = None
     
-    def __init__(self, name, params, pickler = None):
+    def __init__(self, name, params):
         self.__name = name
         timeout = params.get('timeout', 0)
         try:
@@ -58,7 +58,7 @@ class BackendDataServer(object):
         self._cachepipe = {}
         self._keys      = {}
         self.params     = params
-        self.pickler    = pickler or default_pickler
+        self.pickler    = default_pickler
 
     @property
     def name(self):
@@ -81,33 +81,8 @@ class BackendDataServer(object):
         return len(keys)
     
     def instance_keys(self, obj):
+        '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError
-    
-    def delete(self, *key):
-        "Delete one or more keys specified by ``keys``"
-        raise NotImplementedError
-    
-    def _get_pipe(self, id, typ, timeout):
-        cache  = self._cachepipe
-        cvalue = cache.get(id,None)
-        if cvalue is None:
-            cvalue = typ(timeout)
-            cache[id] = cvalue
-        return cvalue
-            
-    def __commit(self):
-        '''Commit cache objects to database.'''
-        cache = self._cachepipe
-        keys = self._keys
-        # flush cache
-        self._cachepipe = {}
-        self._keys = {}
-        # commit
-        for id,pipe in iteritems(cache):
-            el = getattr(self,pipe.method)(id, pipeline = pipe)
-            el.save()
-        if keys: 
-            self._set_keys(keys)
     
     def transaction(self, pipelined = True, cachepipes = None):
         '''Return a transaction instance'''
@@ -115,16 +90,7 @@ class BackendDataServer(object):
     
     def query(self, meta, fargs, eargs, filter_sets = None, sort_by = None):
         return self.Query(self,meta)(fargs, eargs, filter_sets, sort_by)
-            
-    def get_object(self, meta, name, value):
-        '''Retrive an object from the database. If object is not available, it raises
-an :class:`stdnet.exceptions.ObjectNotFound` exception.
 
-    * *meta* :ref:`database metaclass <database-metaclass>` or model
-    * *name* name of field (must be unique)
-    * *value* value of field to search.'''
-        raise NotImplementedError
-    
     def save_object(self, obj, transaction = None):
         '''\
 Save or updated an instance of a model to the back-end database:
@@ -142,8 +108,12 @@ Save or updated an instance of a model to the back-end database:
         
         # We are updating the object, therefore we need to clean up indexes first
         if obj.id:
-            pobj = obj.__class__.objects.get(id = obj.id)
-            self._remove_indexes(pobj, transaction)
+            try:
+                pobj = obj.__class__.objects.get(id = obj.id)
+            except obj.DoesNotExist:
+                pass
+            else:
+                self._remove_indexes(pobj, transaction)
         
         obj.id = obj._meta.pk.serialize(obj.id)
         obj = self._save_object(obj, transaction)
@@ -178,6 +148,7 @@ Called to clear a model instance.
         make_object = meta.maker
         for id,fields in zip(ids,data):
             obj = make_object()
+            fields = dict(((k.decode(),v) for (k,v) in fields))
             obj.__setstate__((id,fields))
             yield obj
         

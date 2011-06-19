@@ -1,3 +1,12 @@
+'''
+This file was originally forked from redis-py in January 2011.
+Since than it has moved on a different directions.
+
+Copyright (c) 2010 Andy McCurdy
+    BSD License   
+
+
+'''
 import datetime
 import errno
 import socket
@@ -168,13 +177,16 @@ def timestamp_to_datetime(response):
         return None
     return datetime.datetime.fromtimestamp(response)
 
+
 def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
+
 
 def dict_merge(*dicts):
     merged = {}
     [merged.update(d) for d in dicts]
     return merged
+
 
 def parse_info(response):
     '''Parse the result of Redis's INFO command into a Python dict.
@@ -1066,12 +1078,6 @@ class Redis(threading.local):
         "Return the score of element ``value`` in sorted set ``name``"
         return self.execute_command('ZSCORE', name, value)
 
-    def zunion(self, dest, keys, aggregate=None):
-        warnings.warn(DeprecationWarning(
-            "Redis.zunion has been deprecated, use Redis.zunionstore instead"
-            ))
-        return self.zunionstore(dest, keys, aggregate)
-
     def zunionstore(self, dest, keys, aggregate=None):
         """
         Union multiple sorted sets specified by ``keys`` into
@@ -1079,6 +1085,13 @@ class Redis(threading.local):
         aggregated based on the ``aggregate``, or SUM if none is provided.
         """
         return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate)
+    
+    def zdiffstore(self, dest, keys, aggregate=None):
+        """
+        Compute the difference of multiple sorted sets specified by ``keys`` into
+        a new sorted set, ``dest``.
+        """
+        return self._zaggregate('ZDIFFSTORE', dest, keys)
 
     def _zaggregate(self, command, dest, keys, aggregate=None):
         pieces = [command, dest, len(keys)]

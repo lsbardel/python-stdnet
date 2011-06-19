@@ -52,6 +52,11 @@ class TestOrderingModel(TestSort):
     def testSimple(self):
         self.checkOrder(self.fill())
         
+    def testExclude(self):
+        qs = self.fill().exclude(name='rugby')
+        self.checkOrder(qs)
+        
+        
         
 class TestSortBy(TestSort):
     model = TestDateModel

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from stdnet.test import TestCase
+from stdnet import test, getdb
 from stdnet.utils import populate, zip
 
 from examples.models import Calendar, DateValue
@@ -11,7 +11,26 @@ dates = populate('date',NUM_DATES)
 values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
 
 
-class TestOrderedSet(TestCase):
+class TestCommands(test.TestCase):
+    
+    def setUp(self):
+        self.rpy = getdb().redispy
+        
+    def fill(self, key, *vals):
+        pipe = self.rpy.pipeline()
+        for x in vals:
+            pipe.zadd(key,x,0)
+        pipe.execute()
+        
+    def testDiffStore(self):
+        rpy = self.rpy
+        self.fill('a','a','b','c','d')
+        self.fill('b','a','b','c')
+        r = self.rpy.zdiffstore('c1',('a','b'))
+        self.assertEqual(rpy.zcard('c1'),1)
+        
+    
+class TestOrderedSet(test.TestCase):
     
     def setUp(self):
         self.orm.register(Calendar)

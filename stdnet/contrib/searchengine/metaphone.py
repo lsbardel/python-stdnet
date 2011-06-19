@@ -13,14 +13,13 @@
 #	The script was also updated to use utf-8 rather than latin-1.
 import sys
 try:
-	CCCC = unicode('Ç')
 	NNNN = unicode('N')
 	decode = lambda x : x.decode('utf-8', 'ignore')
 except:
-	CCCC = 'Ç'
 	NNNN = 'N'
 	decode = lambda x : x
 
+CCCC = 'Ç'
 VOWELS = frozenset((decode(x) for x in ('A', 'E', 'I', 'O', 'U', 'Y')))
 GNKN = frozenset((decode(x) for x in ('GN', 'KN', 'PN', 'WR', 'PS')))
 
@@ -131,8 +130,8 @@ def dm(st) :
 						nxt = ('K', 2)
 					else : # default for 'C'
 						nxt = ('K', 1)
-		elif ch == CCCC:
-			nxt = ('S', 1)
+		#elif ch == CCCC:
+		#	nxt = ('S', 1)
 		elif ch == 'D' :
 			if st[pos:pos+2] == 'DG' :
 				if st[pos+2] in ['I', 'E', 'Y'] : #e.g. 'edge'

@@ -63,11 +63,7 @@ class RedisQuery(object):
         p = 'z' if meta.ordering else 's'
         self.intersect = setattr(self.pipe,p,'interstore')
         self.union = setattr(self.pipe,p,'unionstore')
-        #Redis does not have a zdiffstore at the moment.
-        try:
-            self.diff = setattr(self.pipe,p,'diffstore')
-        except AttributeError:
-            self.diff = None
+        self.diff = setattr(self.pipe,p,'diffstore')
         self.add = setattr(self.pipe,p,'add')
         self.card = setattr(self.server.redispy,p,'card')
     

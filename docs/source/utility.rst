@@ -68,6 +68,11 @@ Exceptions
    :members:
    :member-order: bysource
    
+.. autoclass:: stdnet.ModelNotRegistered
+   :members:
+   :member-order: bysource
+   
+   
 .. autoclass:: stdnet.QuerySetError
    :members:
    :member-order: bysource

@@ -96,15 +96,6 @@ Count element in range by ``time``::
 
 	tscount time_start,time_end
 	
-	
-TSUNION
------------------------------------------
-**Not implemented**	
-	
-TSINTERCEPTION
------------------------------------------
-**Not implemented**
-
 
 Use cases
 ================

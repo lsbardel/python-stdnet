@@ -159,7 +159,11 @@ def register_application_models(applications,
                                 app_defaults=None,
                                 default=None):
     '''\
-Returns a generator which register models in ``application``.
+An higher level registration functions for group of models located
+on application modules. It uses the :ref:`model_iterator`
+functions to iterate through all the models available in ``applications``
+and register them using the :ref:`register` function.
+It return a generator.
 
 :parameter application: A String or a list of strings which represent
                         python dotted paths to modules containing

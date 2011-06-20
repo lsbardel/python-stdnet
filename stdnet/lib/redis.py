@@ -1086,14 +1086,14 @@ class Redis(threading.local):
         """
         return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate)
     
-    def zdiffstore(self, dest, keys, aggregate=None):
+    def zdiffstore(self, dest, keys, withscores=None):
         """
         Compute the difference of multiple sorted sets specified by ``keys`` into
         a new sorted set, ``dest``.
         """
-        return self._zaggregate('ZDIFFSTORE', dest, keys)
+        return self._zaggregate('ZDIFFSTORE', dest, keys, withscores = withscores)
 
-    def _zaggregate(self, command, dest, keys, aggregate=None):
+    def _zaggregate(self, command, dest, keys, aggregate=None, withscores = None):
         pieces = [command, dest, len(keys)]
         if isinstance(keys, dict):
             items = keys.items()
@@ -1107,6 +1107,9 @@ class Redis(threading.local):
             pieces.extend(weights)
         if aggregate:
             pieces.append('AGGREGATE')
+            pieces.append(aggregate)
+        if withscores:
+            pieces.append('WITHSCORES')
             pieces.append(aggregate)
         return self.execute_command(*pieces)
 

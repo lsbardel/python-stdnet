@@ -3,18 +3,22 @@ import datetime
 from stdnet import test, QuerySetError
 from stdnet.utils import populate, zip, range
 
-from examples.models import SportAtDate, TestDateModel
+from examples.models import SportAtDate, SportAtDate2, TestDateModel
 
 NUM_DATES = 200
 
 dates = populate('date',NUM_DATES,
                  start=datetime.date(2005,6,1),
                  end=datetime.date(2010,6,6))
-sports = ['football','rugby','swimming','running','cycling']
-groups = populate('choice',NUM_DATES,choice_from=sports)
+
+groups = populate('choice',NUM_DATES,
+                  choice_from=['football','rugby','swimming','running','cycling'])
+persons = populate('choice',NUM_DATES,
+                   choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
 
 
 class TestSort(test.TestCase):
+    desc = False
     
     def setUp(self):
         self.orm.register(self.model)
@@ -22,13 +26,14 @@ class TestSort(test.TestCase):
     def fill(self):
         model = self.model
         with model.transaction() as t:
-            for n,d in zip(groups,dates):
-                model(name = n, dt = d).save(t)
+            for p,n,d in zip(persons,groups,dates):
+                model(person = p, name = n, dt = d).save(t)
         qs = model.objects.all()
         self.assertEqual(qs.count(),NUM_DATES)
         return qs    
     
-    def checkOrder(self, qs, desc = False):
+    def checkOrder(self, qs, desc = None):
+        desc = desc if desc is not None else self.desc
         dt = None
         for obj in qs:
             if dt:
@@ -43,11 +48,12 @@ class TestOrderingModel(TestSort):
     model = SportAtDate
     
     def testMeta(self):
-        self.assertTrue(SportAtDate._meta.ordering)
-        ordering = SportAtDate._meta.ordering
+        model = self.model
+        self.assertTrue(model._meta.ordering)
+        ordering = model._meta.ordering
         self.assertEqual(ordering.name,'dt')
         self.assertEqual(ordering.field.name,'dt')
-        self.assertEqual(ordering.desc,False)
+        self.assertEqual(ordering.desc,self.desc)
         
     def testSimple(self):
         self.checkOrder(self.fill())
@@ -56,7 +62,11 @@ class TestOrderingModel(TestSort):
         qs = self.fill().exclude(name='rugby')
         self.checkOrder(qs)
         
-        
+
+class TestOrderingModel2(TestOrderingModel):
+    model = SportAtDate2
+    desc = True
+    
         
 class TestSortBy(TestSort):
     model = TestDateModel

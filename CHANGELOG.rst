@@ -2,13 +2,13 @@ Ver. 0.6.0 - Development
 ============================
 * **New database schema incompatible with previous versions**.
 * This version brings into production several important new features
-  and a new database schema.
+  including new database schema.
 * Model instances are now save into separate redis hash tables.
 * Implemented two type of sorting: implicit by meta attribute
   ``ordering`` or excplicit by using the ``sort_by`` method in a queryset object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
-  are now indexed via a redis hash tables which maps the field value to the
+  are now indexed via redis hash tables which maps the field value to the
   object id. Previously they were stored in keys. This solution
   reduces the memory footprint and the number of keys used.
 * Added :ref:`transaction support <model-transactions>`.
@@ -18,6 +18,7 @@ Ver. 0.6.0 - Development
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
+* Development Status set to ``Production``.
 * **261 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6

@@ -57,7 +57,7 @@ class StdModel(StdNetBase):
     '''A model is the single, definitive source of data
 about your data. It contains the essential fields and behaviors
 of the data you're storing. Each model class
-maps to a single :class:`stdnet.HashTable` structure via
+maps instances to :class:`stdnet.HashTable` structures via
 the :attr:`StdModel._meta` attribute.
 
 .. attribute:: _meta
@@ -91,9 +91,9 @@ the :attr:`StdModel._meta` attribute.
         self._cachepipes = {}
     
     def save(self, transaction = None):
-        '''Save the instance in the remote :class:`stdnet.HashTable`
+        '''Save the instance.
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
-otherwise a :class:`stdnet.exceptions.ModelNotRegistered` exception will raise.
+otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
 
 :parameter transaction: Optional transaction instance. It can be useful when saving
                         several object together (it guaranties atomicity and it is much faster).

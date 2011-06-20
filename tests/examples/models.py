@@ -107,16 +107,21 @@ class SimpleList(orm.StdModel):
 
 
 class TestDateModel(orm.StdModel):
+    person = orm.SymbolField()
     name = orm.SymbolField()
     dt = orm.DateField()
 
 
-class SportAtDate(orm.StdModel):
-    name = orm.SymbolField()
-    dt = orm.DateField()
+class SportAtDate(TestDateModel):
     
     class Meta:
         ordering = 'dt'
+    
+
+class SportAtDate2(TestDateModel):
+    
+    class Meta:
+        ordering = '-dt'
     
 
     

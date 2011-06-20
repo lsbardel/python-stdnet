@@ -42,11 +42,11 @@ Contents
    
    model/index
    backends/index
-   utility
    contrib/index
    examples/index
    changelog
    contributing
+   utility
 
 Indices and tables
 ==================

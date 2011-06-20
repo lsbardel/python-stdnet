@@ -42,17 +42,6 @@ Defining a stdnet models is simple, you derive a Python class from ``StdModel``:
 	    title  = orm.CharField()
 	    author = orm.ForeignKey(Author, related_name = 'books')
 	    
-	    
-.. _register-model:
-	    
-Register A Model
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once a model is defined, in order to use it in an application it needs to be registered with
-a back-end database.
-
-.. autofunction:: stdnet.orm.register
-
  
 .. _database-metaclass:
 
@@ -62,7 +51,28 @@ Data Server Metaclass
 .. autoclass:: stdnet.orm.base.Metaclass
    :members:
    :member-order: bysource
-   
+
+
+        
+.. _register-model:
+        
+Registration
+======================
+
+Once a model is defined, in order to use it in an application it needs to be
+registered with a back-end database.
+
+Register
+~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.register
+
+
+Register application models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.register_application_models   
+
    
 Query
 ==============================

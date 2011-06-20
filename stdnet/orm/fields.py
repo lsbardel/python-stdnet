@@ -483,8 +483,11 @@ class ModelField(SymbolField):
 :class:`stdnet.orm.StdModel` models). If a class has a attribute ``_meta``
 with a unique hash attribute ``hash`` and it is
 registered in the model hash table, it can be used.'''
+    type = 'model'
     
     def to_python(self, value):
+        if value:
+            value = to_string(value)
         return get_model_from_hash(value)
     
     def scorefun(self, value):

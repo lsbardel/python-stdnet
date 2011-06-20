@@ -114,7 +114,7 @@ class TestSearchEngine(TestCase):
         engine = self.engine
         item = self.simpleadd()
         wi = engine.index_item(item)
-        self.assertFalse(wi)
+        self.assertTrue(wi)
         
     def testAddTag(self):
         item = self.make_item()

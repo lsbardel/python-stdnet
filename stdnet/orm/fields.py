@@ -83,7 +83,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 
     Default value for this field.
     
-    Default ``novalue``.
+    Default ``None``.
     
 .. attribute:: name
 
@@ -94,13 +94,13 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     The :class:`stdnet.orm.StdModel` holding the field.
     Created by the ``orm`` at runtime. 
 '''
-    default = novalue
+    default = None
     type = None
     index = True
     ordered = False
     
     def __init__(self, unique = False, ordered = None, primary_key = False,
-                 required = True, index = None, default=novalue, **extras):
+                 required = True, index = None, **extras):
         self.primary_key = primary_key
         index = index if index is not None else self.index
         if primary_key:
@@ -115,7 +115,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.meta     = None
         self.name     = None
         self.model    = None
-        self.default  = default if default is not novalue else self.default
+        self.default  = extras.pop('default',self.default)
         self._handle_extras(**extras)
         
     def _handle_extras(self, **extras):
@@ -175,18 +175,12 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         '''Field id for object *obj*, if applicable. Default is ``None``.'''
         return None
     
-    def has_default(self):
-        "Returns a boolean of whether this field has a default value."
-        return self.default is not novalue
-    
     def get_default(self):
         "Returns the default value for this field."
-        if self.has_default():
-            if hasattr(self.default,'__call__'):
-                return self.default()
-            else:
-                return self.default
-        return None
+        if hasattr(self.default,'__call__'):
+            return self.default()
+        else:
+            return self.default
     
     def index_value(self):
         '''A value which is used by indexes to generate keys.'''
@@ -246,7 +240,7 @@ or other entities. They are indexes by default.'''
 class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
-    default = 0
+    #default = 0
     
     def scorefun(self, value):
         if value is not None:
@@ -300,7 +294,6 @@ its :attr:`Field.index` is set to ``False``.
     '''
     type = 'float'
     index = False
-    default = 0.
         
     def scorefun(self, value):
         if value is not None:
@@ -334,7 +327,13 @@ a :class:`datetime.date` instance.'''
     
     def to_python(self, value):
         if value:
-            value = timestamp2date(value).date()
+            if isinstance(value,date):
+                if isinstance(value,datetime):
+                    value = value.date()
+            else:
+                value = timestamp2date(float(value)).date()
+        else:
+            value = None
         return value
         
         
@@ -346,7 +345,13 @@ a :class:`datetime.datetime` instance.'''
     
     def to_python(self, value):
         if value:
-            value = timestamp2date(value)
+            if isinstance(value,date):
+                if not isinstance(value,datetime):
+                    value = datetime(value.year,value.month,value.day) 
+            else:
+                value = timestamp2date(float(value))
+        else:
+            value = None
         return value
 
 

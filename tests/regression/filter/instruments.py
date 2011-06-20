@@ -124,5 +124,5 @@ class TestFilter(fintests.BaseFinance):
             self.assertEqual(inst.type,'bond option')
 
 
-class TestFilter2(TestFilter):
-    model = Instrument2
+#class TestFilter2(TestFilter):
+#    model = Instrument2

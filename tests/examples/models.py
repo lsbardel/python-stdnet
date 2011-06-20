@@ -132,7 +132,7 @@ class SportAtDate2(TestDateModel):
     
 
     
-# Create the model for testing.
+# A model for testing a recursive foreign key
 class Node(orm.StdModel):
     parent = orm.ForeignKey('self', required = False, related_name = 'children')
     weight = orm.FloatField()
@@ -203,4 +203,14 @@ class Statistics2(orm.StdModel):
 class Environment(orm.StdModel):
     data = orm.PickleObjectField()
     
-    
+
+class NumericData(orm.StdModel):
+    pv = orm.FloatField()
+    vega = orm.FloatField(default = 0.)
+    delta = orm.FloatField(default = 1.0)
+    gamma = orm.FloatField(required = False)
+
+
+class DateData(orm.StdModel):
+    dt1 = orm.DateField(required = False)
+    dt2 = orm.DateTimeField(default = datetime.now)

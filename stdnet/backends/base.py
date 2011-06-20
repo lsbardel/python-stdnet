@@ -1,3 +1,5 @@
+import json
+
 from stdnet.exceptions import *
 from stdnet.utils import zip, pickle, iteritems
 

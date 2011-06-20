@@ -11,7 +11,7 @@ class Word(orm.StdModel):
     id = orm.SymbolField(primary_key = True)
     tag = orm.BooleanField(default = False)
     # denormalised fields for frequency
-    frequency = orm.IntegerField()
+    frequency = orm.IntegerField(default = 0)
     model_frequency = orm.HashField()
     
     def __unicode__(self):

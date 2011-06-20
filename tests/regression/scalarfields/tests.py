@@ -10,7 +10,8 @@ from stdnet.utils import populate, zip, is_string, to_string
 from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
-                            Page, SimpleModel, Environment
+                            Page, SimpleModel, Environment, NumericData,\
+                            DateData
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
@@ -29,7 +30,7 @@ class TestAtomFields(test.TestCase):
     def create(self):
         with TestDateModel.transaction() as t:
             for na,dt in zip(names,dates):
-                TestDateModel(name = na, dt = dt).save(t)
+                TestDateModel(person = na, name = na, dt = dt).save(t)
             
     def testFilter(self):
         self.create()
@@ -65,6 +66,29 @@ class TestAtomFields(test.TestCase):
         self.assertEqual(keys[0],self.meta.autoid())
         
 
+class TestNumericData(test.TestCase):
+    
+    def setUp(self):
+        self.orm.register(NumericData)
+        
+    def testDefaultValue(self):
+        d = NumericData(pv = 1.).save()
+        self.assertAlmostEqual(d.pv,1.)
+        self.assertAlmostEqual(d.vega,0.)
+        self.assertAlmostEqual(d.delta,1.)
+        self.assertEqual(d.gamma,None)
+        
+    def testDefaultValue2(self):
+        d = NumericData(pv = 0., delta = 0.).save()
+        self.assertAlmostEqual(d.pv,0.)
+        self.assertAlmostEqual(d.vega,0.)
+        self.assertAlmostEqual(d.delta,0.)
+        self.assertEqual(d.gamma,None)
+        
+    def testFieldError(self):
+        self.assertRaises(stdnet.FieldError,NumericData().save)
+                
+        
 class TestIntegerField(test.TestCase):
     
     def setUp(self):
@@ -97,6 +121,21 @@ class TestIntegerField(test.TestCase):
         self.assertEqual(p.in_navigation,0)
                
 
+class TestDateData(test.TestCase):
+    
+    def setUp(self):
+        self.orm.register(DateData)
+    
+    def unregister(self):
+        self.orm.unregister(DateData)
+        
+    def testDateindateTime(self):
+        v = DateData(dt2 = date.today()).save()
+        v = DateData.objects.get(id = v.id)
+        self.assertEqual(v.dt1,None)
+        self.assertEqual(v.dt2.date(),date.today())
+        
+    
 class TestJsonField(test.TestCase):
     
     def setUp(self):

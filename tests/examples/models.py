@@ -41,6 +41,13 @@ class Base(orm.StdModel):
 class Instrument(Base):
     type = orm.SymbolField()
 
+
+class Instrument2(Base):
+    type = orm.SymbolField()
+
+    class Meta:
+        ordering = 'id'
+        
     
 class Fund(Base):
     description = orm.CharField()

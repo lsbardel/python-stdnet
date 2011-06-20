@@ -888,7 +888,7 @@ class Redis(threading.local):
 
 
     #### SET COMMANDS ####
-    def sadd(self, name, value, score = None):
+    def sadd(self, name, value):
         "Add ``value`` to set ``name``"
         return self.execute_command('SADD', name, value)
 

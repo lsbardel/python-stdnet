@@ -205,13 +205,17 @@ the model table'''
         if sortby.startswith('-'):
             desc = True
             sortby = sortby[1:]
-        for f in self.scalarfields:
-            if f.name == sortby:
-                s = orderinginfo(f.name,f,desc)
-                break
+        if sortby == 'id':
+            f = self.pk
+            s = orderinginfo(f.name,f,desc)
+        else:
+            for f in self.scalarfields:
+                if f.name == sortby:
+                    s = orderinginfo(f.name,f,desc)
+                    break
         if not s:
-            raise errorClass('Cannot Order by attribute {0}\
-is not a scalar field'.format(sortby))
+            raise errorClass('Cannot Order by attribute "{0}".\
+ It is not a scalar field.'.format(sortby))
         return s
 
 class FakeMeta(object):

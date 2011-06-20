@@ -46,6 +46,29 @@ class RedisTransaction(object):
         if type is None:
             self.commit()
 
+
+class add2set(object):
+
+    def __init__(self, server, pipe, meta):
+        self.server = server
+        self.pipe = pipe
+        self.meta = meta
+    
+    def __call__(self, key, id, score = None, obj = None):
+        ordering = self.meta.ordering
+        if ordering:
+            if obj is not None:
+                v = getattr(obj,ordering.name,None)
+                score = MIN_FLOAT if v is None else ordering.field.scorefun(v)
+            elif score is None:
+                # A two way trip here.
+                idset = self.meta.basekey('id')
+                score = self.server.redispy.zscore(idset,id)
+            self.pipe.zadd(key, id, score)
+        else:
+            self.pipe.sadd(key, id)
+        return score
+        
         
 class RedisQuery(object):
     result = None
@@ -64,9 +87,9 @@ class RedisQuery(object):
         self.intersect = setattr(self.pipe,p,'interstore')
         self.union = setattr(self.pipe,p,'unionstore')
         self.diff = setattr(self.pipe,p,'diffstore')
-        self.add = setattr(self.pipe,p,'add')
         self.card = setattr(self.server.redispy,p,'card')
-    
+        self.add = add2set(server,self.pipe,meta)
+        
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
         key = self.meta.tempkey()
@@ -259,23 +282,15 @@ class BackendDataServer(stdnet.BackendDataServer):
             pipe.hmset(bkey(OBJ,obid),data)
         #hash.addnx(objid, data)
         
-        if meta.ordering:
-            add = pipe.zadd
-            v = getattr(obj,meta.ordering.name,None)
-            score = MIN_FLOAT if v is None else meta.ordering.field.scorefun(v)
-        else:
-            add = pipe.sadd
-            score = 0
-            
-        # Add id to id set
-        add(bkey('id'), obid, score)
+        add = add2set(self,pipe,meta)
+        score = add(bkey('id'), obid, obj=obj)
         
         # Create indexes
         for field,value in obj.indices:
             if field.unique:
                 pipe.hset(bkey(UNI,field.name),value,obid)
             else:
-                add(bkey(IDX,field.name,value), obid, score)
+                add(bkey(IDX,field.name,value), obid, score = score)
                         
         return obj
     

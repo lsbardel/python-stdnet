@@ -15,8 +15,8 @@ groups = populate('choice',NUM_DATES,
                   choice_from=['football','rugby','swimming','running','cycling'])
 persons = populate('choice',NUM_DATES,
                    choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
-
-
+ 
+    
 class TestSort(test.TestCase):
     desc = False
     

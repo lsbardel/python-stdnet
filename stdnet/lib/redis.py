@@ -257,12 +257,12 @@ class Redis(threading.local):
     """
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
-            b'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
+            b'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
             b'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
             bool
             ),
         string_keys_to_dict(
-            b'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
+            b'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD'
             b'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             int
             ),
@@ -282,6 +282,7 @@ class Redis(threading.local):
             lambda r: set(r)
             ),
         string_keys_to_dict(b'ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
+        #string_keys_to_dict(b'TSRANGE TSRANGEBYTIME', zset_score_pairs),
         {
             b'BGREWRITEAOF': lambda r: \
                 r == b'Background rewriting of AOF file started',
@@ -1112,7 +1113,39 @@ class Redis(threading.local):
             pieces.append('WITHSCORES')
             pieces.append(aggregate)
         return self.execute_command(*pieces)
+    
+    ### TIMESERIES COMMAND ###
+    def tslen(self, key):
+        '''timeseries length'''
+        return self.execute_command('TSLEN', key)
+    
+    def tsexists(self, key, score):
+        '''timeseries length'''
+        return self.execute_command('TSEXISTS', key, score)
 
+    def tsadd(self, name, *items):
+        '''timeseries length'''
+        return self.execute_command('TSADD', name, *items)
+    
+    def tsrange(self, name, start, end, desc=False, withtimes=False, novalue=False):
+        """
+        Return a range of values from sorted set ``name`` between
+        ``start`` and ``end`` sorted in ascending order.
+
+        ``start`` and ``end`` can be negative, indicating the end of the range.
+
+        ``desc`` indicates to sort in descending order.
+
+        ``withscores`` indicates to return the scores along with the values.
+            The return type is a list of (value, score) pairs
+        """
+        #if desc:
+        #    return self.zrevrange(name, start, end, withscores)
+        pieces = ['ZRANGE', name, start, end]
+        if withtimes:
+            pieces.append('withtimes')
+        return self.execute_command(*pieces, **{'withscores': withtimes})
+    
     #### HASH COMMANDS ####
     def hdel(self, name, key):
         "Delete ``key`` from hash ``name``"

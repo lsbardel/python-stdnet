@@ -108,24 +108,22 @@ class RedisQuery(object):
         pipe.expire(key,self.expire)
         return key
     
-    def _query(self, kwargs, setoper, key = None, extra = None):
+    def _query(self, qargs, setoper, key = None, extra = None):
         pipe = self.pipe
         meta = self.meta
         keys = []
-        if kwargs:
-            for name,data in iteritems(kwargs):
-                values,unique = data
-                if unique:
-                    keys.append(self._unique_set(name, values))
-                elif values:
-                    if len(values) == 1:
-                        keys.append(meta.basekey(IDX,name,values[0]))
-                    else:
-                        insersept = [meta.basekey(IDX,name,value) for value in values]
-                        tkey = self.meta.tempkey()
-                        self.union(tkey,insersept).expire(tkey,self.expire)
-                        keys.append(tkey)
-                        
+        if qargs:
+            for q in qargs:
+                if q.unique:
+                    keys.append(self._unique_set(q.name, q.values))
+                elif len(q.values) == 1:
+                    keys.append(meta.basekey(IDX,q.name,q.values[0]))
+                else:
+                    insersept = [meta.basekey(IDX,q.name,value) for value in q.values]
+                    tkey = self.meta.tempkey()
+                    self.union(tkey,insersept).expire(tkey,self.expire)
+                    keys.append(tkey)
+        
         if extra:
             keys.extend(extra)
         
@@ -140,16 +138,17 @@ class RedisQuery(object):
                 
         return key
     
+    def querysha(self, fargs, eargs, filter_sets, sort_by):
+        '''Build a unique sha for the queryset'''
+        pass
+        
     def __call__(self, fargs, eargs, filter_sets = None, sort_by = None):
         if self.result is not None:
             raise ValueError('Already Called')
-        
         meta = self.meta
         pipe = self.pipe
-        idset = self.meta.basekey('id')
-        if sort_by:
-            sort_by = meta.get_sorting(sort_by,stdnet.QuerySetError)
-        
+        idset = self.meta.basekey('id')            
+        #
         key1 = self._query(fargs,self.intersect,idset,filter_sets)
         key2 = self._query(eargs,self.union)
         
@@ -210,8 +209,9 @@ class RedisQuery(object):
         
         bkey = self.meta.basekey
         pipe = self.server.redispy.pipeline()
+        hgetall = pipe.hgetall
         for id in ids:
-            pipe.hgetall(bkey(OBJ,to_string(id)))
+            hgetall(bkey(OBJ,to_string(id)))
         return list(self.server.make_objects(self.meta,ids,pipe.execute()))
     
     

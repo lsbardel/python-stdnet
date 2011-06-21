@@ -2,7 +2,7 @@ import time
 from datetime import date, datetime
 from decimal import Decimal
 import json
-    
+
 date2timestamp = lambda dte : int(time.mktime(dte.timetuple()))
 
 

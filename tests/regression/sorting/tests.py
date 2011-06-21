@@ -78,8 +78,8 @@ class TestSortBy(TestSort):
         self.checkOrder(self.fill().sort_by('-dt'),True)
         
     def testSimpleSortError(self):
-        qs = self.fill().sort_by('whaaaa')
-        self.assertRaises(QuerySetError, lambda : list(qs))
+        qs = self.fill()
+        self.assertRaises(QuerySetError, qs.sort_by, 'whaaaa')
         
     def testFilter(self):
         qs = self.fill().filter(name='rugby').sort_by('dt')

@@ -1,3 +1,4 @@
+import json
 from copy import copy
 from hashlib import sha1
 import time
@@ -7,7 +8,7 @@ from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, novalue, to_string, is_string,\
-                         to_bytestring, is_bytes_or_string
+                         to_bytestring, is_bytes_or_string, iteritems
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -31,6 +32,7 @@ __all__ = ['Field',
            'ModelField']
 
 EMPTY = ''
+JSPLITTER = '__'
 
 
 class Field(UnicodeMixin):
@@ -81,7 +83,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: default
 
-    Default value for this field.
+    Default value for this field. It can be a callable attribute.
     
     Default ``None``.
     
@@ -135,6 +137,9 @@ data type, raising :class:`stdnet.FieldValueError` if the data
 can't be converted.
 Returns the converted value. Subclasses should override this."""
         return value
+    
+    def value_from_data(self, data):
+        return None
     
     def register_with_model(self, name, model):
         '''Called during the creation of a the :class:`stdnet.orm.StdModel`
@@ -250,7 +255,6 @@ class IntegerField(AtomField):
         return value
     
     def to_python(self, value):
-        '''Convert ``value`` to an integer if possible.'''
         if value is not None and value is not EMPTY:
             return int(value)
         else:
@@ -258,7 +262,7 @@ class IntegerField(AtomField):
         
     
 class BooleanField(AtomField):
-    '''An boolean :class:`AtomField`'''
+    '''A boolean :class:`AtomField`'''
     type = 'bool'
     
     def __init__(self, required = False, **kwargs):
@@ -280,7 +284,8 @@ class BooleanField(AtomField):
 class AutoField(IntegerField):
     '''An :class:`IntegerField` that automatically increments.
 You usually won't need to use this directly;
-a primary key field will automatically be added to your model
+a ``primary_key`` field  of this type, named ``id``,
+will automatically be added to your model
 if you don't specify otherwise.
     '''
     type = 'auto'
@@ -313,7 +318,7 @@ its :attr:`Field.index` is set to ``False``.
     
     
 class DateField(AtomField):
-    '''An date :class:`AtomField` represented in Python by
+    '''An :class:`AtomField` represented in Python by
 a :class:`datetime.date` instance.'''
     type = 'date'
     ordered = True
@@ -444,31 +449,91 @@ back to self. For example::
     
     
 class JSONField(CharField):
-    '''A JSON field which implements automatic converion to and form dictionary of data.'''
+    '''A JSON field which implements automatic converion to
+and form a dictionary of data.
+There are few extra parameters which can be used to customize the
+behaviour and the storage of the JSON data.
+
+:parameter encoder_class: The JSON class used for encoding. A sensible default is available.
+:parameter decoder_hook: A JSON decoder function. A sensible default is available.
+:parameter sep: A string separator for building nested JSON data.
+                
+                Default ``None``.
+:parameter as_string: a boolean indicating if data should be serialized into a string.
+                      If the value is set to ``False``, the JSON data is stored as a field
+                      of the instance prefixed with the field name and double underscore.
+                      If ``True`` it is stored as a json string.
+                    
+                    Default ``True``.
+
+For example, lets consider the following::
+
+    class MyModel(orm.StdModel):
+        name = orm.SymbolField()
+        data = orm.JSONField(as_string = False)
+    
+And::
+
+    >>> m = MyModel(name='bla',data={'mean':1,'std':3.5})
+    >>> m.cleaned_data
+    {'name':'bla','data__mean':'1','data__std':'3.5'}
+    >>>
+    
+The only reason for setting ``as_string`` to ``False`` in a JSONfield
+is that it enables sorting of instances with respect to its fields::
+
+    >>> MyModel.objects.all().sort_by('data__std')
+
+which can be rather useful.
+'''
     type = 'json object'
     def __init__(self, *args, **kwargs):
         kwargs['default'] = kwargs.get('default',{})
         self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
         self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
         self.sep = kwargs.pop('sep',None)
+        self.as_string = kwargs.pop('as_string',True)
         super(JSONField,self).__init__(*args, **kwargs)
         
     def to_python(self, value):
-        if value is not None:
+        if value is not None and not isinstance(value,dict):
             value = to_string(value)
             if not value:
                 value = {}
             else:
-                value = json.loads(value, object_hook = self.decoder_hook)
+                value = self.loads(value)
         return value
     
     def serialize(self, value, transaction = None):
         if value is not None:
             if is_bytes_or_string(value):
                 value = self.to_python(value)
-            value = json.dumps(json_compact(value,self.sep), cls=self.encoder_class)
+            if self.as_string:
+                value = self.dumps(json_compact(value,self.sep))
+            else:
+                name = self.name
+                dumps = self.dumps
+                value = dict((('{0}{1}{2}'.format(name,JSPLITTER,field),dumps(v))\
+                              for field,v in iteritems(value)))
         return value
     
+    def value_from_data(self, data):
+        if not self.as_string:
+            name = self.name
+            loads = self.loads
+            val = {}
+            for k,v in iteritems(data):
+                ks = k.split(JSPLITTER)
+                if len(ks) > 1 and ks[0] == name:
+                    val[JSPLITTER.join(ks[1:])] = loads(to_string(v))
+            return val
+    
+    def dumps(self, value):
+        return json.dumps(value, cls=self.encoder_class)
+    
+    def loads(self, svalue):
+        return json.loads(svalue, object_hook = self.decoder_hook)
+
 
 class ByteField(CharField):
     '''A field which contains binary data. In python this is converted to `bytes`.'''

@@ -50,7 +50,6 @@ StdNetBase = StdNetType('StdNetBase',(ModelMixin,),{})
 class FakeModel(FakeModelBase):
     id = None
     is_base_class = True
-        
 
 
 class StdModel(StdNetBase):
@@ -210,7 +209,7 @@ will enumerate the number of object to delete. without deleting them.'''
             if name in data:
                 value = data[name]
             else:
-                value = None
+                value = field.value_from_data(data)
             setattr(self,name,field.to_python(value))
         self.afterload()
     

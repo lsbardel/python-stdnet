@@ -11,7 +11,7 @@ from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
                             Page, SimpleModel, Environment, NumericData,\
-                            DateData
+                            DateData, Statistics3
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
@@ -150,7 +150,6 @@ class TestBoolField(TestScalarBase):
         self.assertEqual(d.ok,True)
         
     
-    
 class TestJsonField(test.TestCase):
     
     def setUp(self):
@@ -236,6 +235,41 @@ class TestJsonFieldSep(test.TestCase):
         self.assertEqual(dt['timestamp'],timestamp)
         
 
+class TestJsonFieldAsData(TestScalarBase):
+    '''Test a model with a JSONField which expand as instance fields.'''
+    model = Statistics3
+    
+    def make(self):
+        data = {'mean': 1.0,
+                'std': 5.78,
+                'pv': 3.2,
+                'name': 'bla',
+                'dt': date.today()}
+        return self.model(name = 'bla', data = data)
+        
+    def testMeta(self):
+        field = self.meta.dfields['data']
+        self.assertFalse(field.as_string)
+        
+    def testMake(self):
+        m = self.make()
+        self.assertTrue(m.is_valid())
+        data = m.cleaned_data
+        self.assertEqual(len(data),6)
+        self.assertEqual(float(data['data__mean']),1.0)
+        self.assertEqual(float(data['data__std']),5.78)
+        self.assertEqual(float(data['data__pv']),3.2)
+        
+    def testGet(self):
+        m = self.make().save()
+        m = self.model.objects.get(id = m.id)
+        self.assertEqual(m.data['mean'],1.0)
+        self.assertEqual(m.data['std'],5.78)
+        self.assertEqual(m.data['pv'],3.2)
+        self.assertEqual(m.data['dt'],date.today())
+        self.assertEqual(m.data['name'],'bla')
+        
+    
 class TestByteField(test.TestCase):
     
     def setUp(self):

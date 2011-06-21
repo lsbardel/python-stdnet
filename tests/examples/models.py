@@ -192,9 +192,16 @@ class Statistics(orm.StdModel):
     dt = orm.DateField()
     data = orm.JSONField()
     
+    
 class Statistics2(orm.StdModel):
     dt = orm.DateField()
     data = orm.JSONField(sep = '__')
+    
+    
+class Statistics3(orm.StdModel):
+    name = orm.SymbolField()
+    data = orm.JSONField(as_string = False)
+    
     
     
 ##############################################

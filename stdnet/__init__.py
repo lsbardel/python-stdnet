@@ -10,7 +10,7 @@ __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "https://github.com/lsbardel/python-stdnet"
 CLASSIFIERS = [
-               'Development Status :: 5 - Production/Stable',
+               'Development Status :: 4 - Beta',
                'Environment :: Plugins',
                'Environment :: Web Environment',
                'Intended Audience :: Developers',

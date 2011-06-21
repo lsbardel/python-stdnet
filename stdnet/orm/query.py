@@ -1,8 +1,12 @@
 from copy import copy
+from collections import namedtuple
 
 from stdnet.exceptions import *
 from stdnet import pipelines
 from stdnet.utils import zip, to_bytestring
+
+
+queryarg = namedtuple('queryarg','name values unique')
 
 
 class QuerySet(object):
@@ -67,6 +71,8 @@ class QuerySet(object):
     
     def sort_by(self, ordering):
         '''Sort the query by the given field'''
+        if ordering:
+            ordering = self._meta.get_sorting(ordering,QuerySetError)
         return self.__class__(self._meta,
                               fargs=self.fargs,
                               eargs=self.eargs,
@@ -103,7 +109,7 @@ fetching objects.'''
         return self.count()
     
     def buildquery(self):
-        '''Build a queryset'''
+        '''Build a queryset for filters and exclude'''
         if self.qset is not None:
             return
         meta = self._meta
@@ -115,17 +121,21 @@ fetching objects.'''
             eargs = self.aggregate(self.eargs)
         else:
             eargs = None
+        self.sha  = self.querysha(fargs,eargs)
         self.qset = self._meta.cursor.query(meta, fargs, eargs,
                                             filter_sets = self.filter_sets,
                                             sort_by = self.ordering)
         
+    def querysha(self, fargs, eargs):
+        pass
+    
     def aggregate(self, kwargs):
+        return sorted(self._aggregate(kwargs), key = lambda x : x.name)
+        
+    def _aggregate(self, kwargs):
         '''Aggregate lookup parameters.'''
-        unique  = False
         meta    = self._meta
         fields  = meta.dfields
-        result  = {}
-        # Loop over arguments
         for name,value in kwargs.items():
             names = name.split('__')
             N = len(names)
@@ -150,11 +160,10 @@ fetching objects.'''
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")
             
-            result[name] = (value,unique)
-            
             if not field.index:
                 raise QuerySetError("Field %s is not an index. Cannot query." % name)
-        return result
+            elif value:
+                yield queryarg(name,value,unique)
         
     def items(self):
         '''Generator of instances in queryset.'''

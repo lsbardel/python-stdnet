@@ -163,7 +163,7 @@ The key is an encoded binary string. For example::
         return self.basekey('ids')
     
     def is_valid(self, instance):
-        '''Perform validation and stored serialized data, indexes and errors.
+        '''Perform validation and stores serialized data, indexes and errors.
 Return ``True`` is the instance is ready to be saved to database.'''
         v = {}
         setattr(instance,self.VALATTR,v)
@@ -177,10 +177,13 @@ Return ``True`` is the instance is ready to be saved to database.'''
             if (svalue is None or svalue is '') and field.required:
                 errors[name] = "Field '{0}' is required for '{1}'.".format(name,self)
             else:
-                if svalue is not None:
-                    data[name] = svalue
-                if field.index:
-                    indexes.append((field,svalue))
+                if isinstance(svalue, dict):
+                    data.update(svalue)
+                else:
+                    if svalue is not None:
+                        data[name] = svalue
+                    if field.index:
+                        indexes.append((field,svalue))
         return len(errors) == 0
                 
     def table(self, transaction = None):

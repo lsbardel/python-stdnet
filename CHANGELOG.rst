@@ -2,9 +2,11 @@ Ver. 0.6.0 - Development
 ============================
 * **New database schema incompatible with previous versions**.
 * This version brings into production several important new features
-  including new database schema.
-* Model instances are now save into separate redis hash tables.
-* Implemented two type of sorting: implicit by meta attribute
+  including a new and improved database schema.
+* :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash tables
+  with fields given by the model field names and values given by the instance
+  field values.
+* Implemented two types of sorting: implicit by meta attribute
   ``ordering`` or excplicit by using the ``sort_by`` method in a queryset object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
@@ -13,15 +15,17 @@ Ver. 0.6.0 - Development
   reduces the memory footprint and the number of keys used.
 * Added :ref:`transaction support <model-transactions>`.
   This way model instances are always consistent even when redis
-  shut down during an update. Transactions are also useful when updating several
+  shuts down during an update. Transactions are also useful when updating several
   instances at once.
 * Added :ref:`serialization utilities <serialize-models>` for saving model
-  data in JSON or CSV format. Extra serialization can be added to the library.
+  data in JSON or CSV format. Custom serialization algorithms
+  can be added to the library.
+* Added ``as_string`` parameter to :class:`stdnet.orm.JSONField` for specifying the
+  storage method.
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* Development Status set to ``Production``.
-* **270 regression tests** with **78%** coverage.
+* **273 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

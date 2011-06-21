@@ -2,6 +2,8 @@
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
+:Issues: https://github.com/lsbardel/python-stdnet/issues
+:Mailing List: https://groups.google.com/group/python-stdnet
 :Keywords: server, database, cache, redis, orm
 
 --

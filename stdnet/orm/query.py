@@ -10,7 +10,13 @@ queryarg = namedtuple('queryarg','name values unique')
 
 
 class QuerySet(object):
-    '''Queryset manager'''
+    '''A QuerySet is not created on its but instead using the model manager.
+For example::
+
+    qs = MyModel.objects.filter(field = 'bla)
+    
+``qs`` is a queryset instance for model ``MyModel``.
+'''
     
     def __init__(self, meta, fargs = None, eargs = None, filter_sets = None, ordering = None):
         '''A query set is  initialized with
@@ -44,6 +50,12 @@ class QuerySet(object):
     
     def __getitem__(self, slic):
         return self.aslist()[slic]
+    
+    def all(self):
+        return self
+    
+    def __iter__(self):
+        return self.items()
     
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the given lookup parameters.'''
@@ -91,8 +103,10 @@ class QuerySet(object):
     
     def count(self):
         '''Return the number of objects in ``self`` without
-fetching objects.'''
-        self.buildquery()
+fetching objects. This method is efficient since the queryset does not
+receive any data from the server. It construct the queries and count the
+objects on the server side.'''
+        self._buildquery()
         return self.qset.count()
         
     def __contains__(self, val):
@@ -102,14 +116,16 @@ fetching objects.'''
             val = to_bytestring(val)
         except:
             return False
-        self.buildquery()
+        self._buildquery()
         return val in self.qset
         
     def __len__(self):
         return self.count()
     
-    def buildquery(self):
-        '''Build a queryset for filters and exclude'''
+    # PRIVATE METHODS
+    
+    def _buildquery(self):
+        # Build a queryset from filters and exclude arguments
         if self.qset is not None:
             return
         meta = self._meta
@@ -171,18 +187,12 @@ fetching objects.'''
             for m in self._seq:
                 yield m
         else:
-            self.buildquery()
+            self._buildquery()
             seq = self._seq = []
             meta = self._meta
             for m in self.qset:
                 seq.append(m)
                 yield m
-    
-    def all(self):
-        return self
-    
-    def __iter__(self):
-        return self.items()
                 
     def aslist(self):
         '''Return python ``list`` of elements in queryset'''

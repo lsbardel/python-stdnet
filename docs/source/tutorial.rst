@@ -1,61 +1,103 @@
-.. _model-query:
+.. _tutorial:
 
-.. module:: stdnet.orm.query
 
 ============================
 Tutorial
 ============================
 
-Executing queries is very similar to executing queries in django_.
+In this section we will walk you though all the main aspect of the library, following a simple application
+as example. We will refer back to the library API as much as possible.
+
+
+.. _creating-models:
+
+Creating Models
+==========================
+
+Defining a stdnet models is simple, you derive a Python class from the :class:`stdnet.orm.StdModel` class::
+
+    from stdnet import orm
+    
+    class Author(orm.StModel):
+        name = orm.SymbolField()
+    
+    class Book(orm.StdModel):
+        title  = orm.CharField()
+        author = orm.ForeignKey(Author, related_name = 'books')
+
+
+An application
+~~~~~~~~~~~~~~~~~~~~~~
+
+This tutorial will try explain how to use the API by developing an application
+which run a small Hedge Fund. You never know it may become useful in the future.
+
+The application uses the following three models::
+
+    from stdnet import orm
+    
+    class Fund(orm.StdModel):
+        name = orm.SymbolField(unique = True)
+        ccy = orm.SymbolField()
+        description = orm.CharField()
+        
+        def __unicode__(self):
+            return self.name
+        
+        
+    class Instrument(orm.StdModel):
+        name = orm.SymbolField(unique = True)
+        ccy = orm.SymbolField()
+        type = orm.SymbolField()
+        prices = orm.HashField()
+        
+        def __unicode__(self):
+            return self.name
+        
+        
+    class Position(orm.StdModel):
+        instrument = orm.ForeignKey(Instrument)
+        fund = orm.ForeignKey(Fund)
+        size = orm.FloatField()
+        dt = orm.DateField()
+        
+        def __unicode__(self):
+            return self.instrument
+
+        class Meta:
+            ordering = '-dt'
+            
+If you are familiar with django_ you will see several similarities and you should be able to understand,
+with a certain degree of confidence, what it is going on.
+
+
+Registering Models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before playing with the API you need to :ref:`register the models <register-model>`::
+
+    import orm
+
+    orm.register(Fund, 'redis://my.host.name:6379/?db=1')
+    orm.register(Instrument, 'redis://my.host.name:6379/?db=1')
+    orm.register(Position, 'redis://my.host.name:6379/?db=2')
+    
+
+        
+Using Models
+==================
+
+Using models is equivalent to executing queries to the backend database.
+Once again, the API is very similar to executing queries in django_.
 Once you've created your models, ``stdnet`` automatically gives you
 a data-server abstraction API that lets you create, retrieve,
 update and delete objects. 
-This document explains how to use this API by using the following models
-as example::
-
-	from stdnet import orm
-	
-	class Fund(orm.StdModel):
-	    name = orm.SymbolField(unique = True)
-	    ccy = orm.SymbolField()
-	    description = orm.CharField()
-	    
-	    def __unicode__(self):
-        	return self.name
-	    
-	class Instrument(orm.StdModel):
-	    name = orm.SymbolField(unique = True)
-	    ccy = orm.SymbolField()
-	    type = orm.SymbolField()
-	    prices = orm.HashField()
-	    
-	    def __unicode__(self):
-        	return self.name
-	    
-	class Position(orm.StdModel):
-	    instrument = orm.ForeignKey(Instrument)
-	    fund = orm.ForeignKey(Fund)
-	    size = orm.FloatField()
-	    
-	    def __unicode__(self):
-        	return self.instrument
-
-These models are available in the :mod:`tests.examples.models` module in the distribution directory.
-Before playing with the API you need to :ref:`register the models <register-model>`::
-
-	import orm
-
-	orm.register(Fund, 'redis://my.host.name:6379/?db=1')
-	orm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-	orm.register(Position, 'redis://my.host.name:6379/?db=2')
-	
 
 Creating objects
-======================
-A model is mapped to a :class:`stdnet.HashTable` in a :class:`stdnet.BackendDataServer`
-and an instance of that model represents a particular record
-in the hash-table.
+~~~~~~~~~~~~~~~~~~~~~
 
+An instance of a :class:`stdnet.orm.StdModel`, an object for clarity,
+is mapped to a hash table in the :class:`stdnet.BackendDataServer` backend.
 To create an object, instantiate it using keyword arguments to the
 model class, then call ``save()`` to save it to the data-server.
 Here's an example::
@@ -71,31 +113,11 @@ Here's an example::
 	'EUR'
 	>>> b.description
 	''
-	
-The object ``b`` is a ``python`` representation of data stored in the server at ``id`` 1.
-As discussed the :class:`stdnet.orm.StdModel` documentation, an instance of a model is
-mapped to an entry in a remote :class:`stdnet.HashTable` structure.
-If you want to see the actual struture you can procede as following::
-
-	>>> meta = b._meta
-	>>> t = meta.table()
-	>>> t
-	HashTable:stdnet.fund
-	>>> t.id
-	'stdnet.fund'
-	
-The hash-table ``id`` is the ``key`` used by the server to identify the structure.
-
-	>>> t.size()
-	1
-	>>> list(t.keys())
-	['1']
-	>>> list(t.values())
-	[['', 'EUR', 'Markowitz']]
 
 	
 Retrieving objects
-==============================
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 To retrieve objects from your data server, you construct a :class:`stdnet.orm.query.QuerySet`
 via a :class:`stdnet.orm.query.Manager` on your model class.
 

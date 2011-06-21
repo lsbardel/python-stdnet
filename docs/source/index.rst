@@ -22,14 +22,15 @@ First steps
 ===============
 
 **From scratch:**
-:ref:`Overview and Installation <intro-overview>`
+:ref:`Overview and Installation <intro-overview>` |
+:ref:`Tutorial <tutorial>`
 
-**Models and QuerySets:**
-:ref:`Executing queries <model-query>` | :ref:`Model API <model-model>` |
+**The API:**
+:ref:`Model API <model-model>` |
 :ref:`Fields API <model-field>`
 
 **Examples:**
-:ref:`Timeseries <timeseries-example>` | :ref:`Portfolio <portfolio-example>` |
+:ref:`Timeseries <timeseries-example>` |
 :ref:`Twitter Clone<twitter-example>`
 
 .. _contents:

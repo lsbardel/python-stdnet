@@ -25,23 +25,6 @@ StdModel Class
    :members:
    :member-order: bysource
 
-
-.. _creating-models:
-
-Creating Models
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Defining a stdnet models is simple, you derive a Python class from ``StdModel``::
-
-	from stdnet import orm
-	
-	class Author(orm.StModel):
-	    name = orm.SymbolField()
-	
-	class Book(orm.StdModel):
-	    title  = orm.CharField()
-	    author = orm.ForeignKey(Author, related_name = 'books')
-	    
  
 .. _database-metaclass:
 

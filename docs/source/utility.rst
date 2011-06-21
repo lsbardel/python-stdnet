@@ -39,6 +39,34 @@ Flush Models
 .. module:: stdnet.utils
 
 
+.. _serialize-models:
+
+Serialization
+======================
+
+Stdnet comes with a bunch of extendible utilities for serializing model data into
+different formats.
+
+Get serializer
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.get_serializer
+
+
+Register serializer
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.register_serializer
+
+
+Serializer
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.orm.Serializer
+   :members:
+   :member-order: bysource
+
+
 Miscellaneous
 ============================
 

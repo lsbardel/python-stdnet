@@ -17,15 +17,19 @@ NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
 dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 
-
-class TestAtomFields(test.TestCase):
+class TestScalarBase(test.TestCase):
+    model = None
     
     def setUp(self):
-        self.orm.register(TestDateModel)
-        self.meta = TestDateModel._meta
+        self.orm.register(self.model)
+        self.meta = self.model._meta
     
     def unregister(self):
-        self.orm.unregister(TestDateModel)
+        self.orm.unregister(self.model)
+
+
+class TestAtomFields(TestScalarBase):
+    model = TestDateModel
         
     def create(self):
         with TestDateModel.transaction() as t:
@@ -66,10 +70,8 @@ class TestAtomFields(test.TestCase):
         self.assertEqual(keys[0],self.meta.autoid())
         
 
-class TestNumericData(test.TestCase):
-    
-    def setUp(self):
-        self.orm.register(NumericData)
+class TestNumericData(TestScalarBase):
+    model = NumericData
         
     def testDefaultValue(self):
         d = NumericData(pv = 1.).save()
@@ -89,14 +91,9 @@ class TestNumericData(test.TestCase):
         self.assertRaises(stdnet.FieldError,NumericData().save)
                 
         
-class TestIntegerField(test.TestCase):
-    
-    def setUp(self):
-        self.orm.register(Page)
-    
-    def unregister(self):
-        self.orm.unregister(Page)
-        
+class TestIntegerField(TestScalarBase):
+    model = Page
+            
     def testDefaultValue(self):
         p = Page()
         self.assertEqual(p.in_navigation,1)
@@ -121,13 +118,8 @@ class TestIntegerField(test.TestCase):
         self.assertEqual(p.in_navigation,0)
                
 
-class TestDateData(test.TestCase):
-    
-    def setUp(self):
-        self.orm.register(DateData)
-    
-    def unregister(self):
-        self.orm.unregister(DateData)
+class TestDateData(TestScalarBase):
+    model = DateData
         
     def testDateindateTime(self):
         v = DateData(dt2 = date.today()).save()
@@ -135,6 +127,29 @@ class TestDateData(test.TestCase):
         self.assertEqual(v.dt1,None)
         self.assertEqual(v.dt2.date(),date.today())
         
+
+class TestBoolField(TestScalarBase):
+    model = NumericData
+    
+    def testMeta(self):
+        self.assertEqual(len(self.meta.indices),1)
+        index = self.meta.indices[0]
+        self.assertEqual(index.type,'bool')
+        self.assertEqual(index.scorefun(True),1)
+        self.assertEqual(index.scorefun(False),0)
+        
+    def testBoolValue(self):
+        d = self.model(pv = 1.).save()
+        d = self.model.objects.get(id = d.id)
+        self.assertEqual(d.ok,False)
+        d.ok = 'jasxbhjaxsbjxsb'
+        self.assertRaises(ValueError,d.save)
+        d.ok = True
+        d.save()
+        d = self.model.objects.get(id = d.id)
+        self.assertEqual(d.ok,True)
+        
+    
     
 class TestJsonField(test.TestCase):
     

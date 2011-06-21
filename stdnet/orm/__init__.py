@@ -5,6 +5,7 @@ from .fields import *
 from .std import *
 from .signals import *
 from .globals import hashmodel
+from .utils import *
 
 
 def test_unique(fieldname, model, value, instance = None, exception = None):

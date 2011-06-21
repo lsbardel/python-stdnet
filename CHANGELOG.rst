@@ -15,11 +15,13 @@ Ver. 0.6.0 - Development
   This way model instances are always consistent even when redis
   shut down during an update. Transactions are also useful when updating several
   instances at once.
+* Added :ref:`serialization utilities <serialize-models>` for saving model
+  data in JSON or CSV format. Extra serialization can be added to the library.
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
 * Development Status set to ``Production``.
-* **268 regression tests** with **78%** coverage.
+* **270 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

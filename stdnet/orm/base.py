@@ -83,6 +83,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.name = model.__name__.lower()
         self.fields = []
         self.scalarfields = []
+        self.indices = []
         self.multifields = []
         self.dfields = {}
         self.timeout = 0
@@ -113,6 +114,9 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
         self.cursor = None
+        for scalar in self.scalarfields:
+            if scalar.index:
+                self.indices.append(scalar)
         
     def maker(self):
         model = self.model

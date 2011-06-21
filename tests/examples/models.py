@@ -204,13 +204,18 @@ class Environment(orm.StdModel):
     data = orm.PickleObjectField()
     
 
+##############################################
+# Numeric Data
+
 class NumericData(orm.StdModel):
     pv = orm.FloatField()
     vega = orm.FloatField(default = 0.)
     delta = orm.FloatField(default = 1.0)
     gamma = orm.FloatField(required = False)
+    ok = orm.BooleanField()
 
 
 class DateData(orm.StdModel):
     dt1 = orm.DateField(required = False)
     dt2 = orm.DateTimeField(default = datetime.now)
+    

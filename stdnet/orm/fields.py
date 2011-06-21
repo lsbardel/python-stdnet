@@ -216,8 +216,7 @@ value with a specific data type. it can be of four different types:
 * symbol
 '''
     pass
-        
-    
+
 
 class SymbolField(AtomField):
     '''An :class:`AtomField` which contains a ``symbol``.
@@ -266,10 +265,13 @@ class BooleanField(AtomField):
         super(BooleanField,self).__init__(required = required,**kwargs)
     
     def scorefun(self, value):
-        return 0 if value else 1
+        if value is None:
+            return 0
+        else:
+            return 1 if int(value) else 0
         
     def to_python(self, value):
-        return True if value else False
+        return True if self.scorefun(value) else False
     
     def index_value(self):
         return 1 if self.value else 0

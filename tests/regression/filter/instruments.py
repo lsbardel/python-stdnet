@@ -88,6 +88,7 @@ class TestFilter(fintests.BaseFinance):
         ids = set((1,5,10))
         qs = self.model.objects.filter(id__in = ids)
         self.assertEqual(len(qs),3)
+        self.assertTrue(qs.simple)
         cids = set((o.id for o in qs))
         self.assertEqual(cids,ids)
         
@@ -110,6 +111,7 @@ class TestFilter(fintests.BaseFinance):
         '''Change the value of a filter field and perform filtering to
  check for zero values'''
         insts = self.model.objects.filter(ccy = 'EUR')
+        N = insts.count()
         for inst in insts:
             self.assertEqual(inst.ccy, 'EUR')
             inst.ccy = 'USD'

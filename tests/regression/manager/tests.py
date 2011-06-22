@@ -38,10 +38,10 @@ class TestManager(test.TestCase):
         
     def testGetError(self):
         '''Test for a ObjectNotFound exception.'''
-        get1 = lambda : SimpleModel.objects.get(code = 'test2')
-        get2 = lambda : SimpleModel.objects.get(id = 34)
-        self.assertRaises(stdnet.ObjectNotFound,get1)
-        self.assertRaises(stdnet.ObjectNotFound,get2)
+        self.assertRaises(SimpleModel.DoesNotExist,
+                          SimpleModel.objects.get,code = 'test2')
+        self.assertRaises(SimpleModel.DoesNotExist,
+                          SimpleModel.objects.get,id = 34)
         
     def testEmptyIDFilter(self):
         self.assertEqual(SimpleModel.objects.filter(id = 1).count(),0)

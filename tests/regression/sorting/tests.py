@@ -88,3 +88,17 @@ class TestSortBy(TestSort):
         for v in qs:
             self.assertEqual(v.name,'rugby')
 
+    def _slicingTest(self, desc, start = 0, stop = 10,
+                     expected_len = 10):
+        p = '-' if desc else ''
+        qs = self.fill().sort_by(p+'dt')
+        qs1 = qs[start:stop]
+        self.assertEqual(len(qs1),expected_len)
+        self.checkOrder(qs1,desc)
+        
+    def testSlicing(self):
+        self._slicingTest(False)
+        
+    def testSlicingDesc(self):
+        self._slicingTest(True)
+        

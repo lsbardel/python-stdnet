@@ -1,7 +1,8 @@
 import json
+from hashlib import sha1
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, pickle, iteritems
+from stdnet.utils import zip, pickle, iteritems, BytesIO
 
 from .structures import Structure
 
@@ -40,20 +41,39 @@ class Keys(object):
         
 class BeckendQuery(object):
     
-    def __init__(self, qs, fargs, eargs, expire = 60):
+    def __init__(self, qs, fargs, eargs, timeout = 0):
         self.qs = qs
-        self.expire = expire
+        self.expire = max(timeout,30)
+        self.timeout = timeout
         self.server = qs._meta.cursor
         self.meta = qs._meta
-        self.setup()
+        self._sha = BytesIO()
         self.build(fargs, eargs)
-        
-    def setup(self):
-        pass
+        code = self._sha.getvalue()
+        self._sha = code if not code else sha1(code).hexdigest()
+        self.execute()
+
+    @property
+    def sha(self):
+        return self._sha
     
-    def build(self, fargs, eargs):
-        pass
-        
+    def __len__(self):
+        return self.count()
+
+    def has(self, val):
+        raise NotImplementedError
+    
+    def count(self):
+        raise NotImplementedError
+    
+    def build(self):
+        raise NotImplementedError
+    
+    def execute(self):
+        raise NotImplementedError
+    
+    def items(self, slic):
+        raise NotImplementedError
     
 
 class BackendDataServer(object):

@@ -152,11 +152,9 @@ The key is an encoded binary string. For example::
         return to_bytestring(key)
     
     def tempkey(self, name = None):
-        if name:
-            id = to_string(hashlib.sha1(to_bytestring(name)).hexdigest())
-        else:
-            id = str(uuid4())
-        return self.basekey('tmp',id[:8])
+        if not name:
+            name = str(uuid4())[:8]
+        return self.basekey('tmp',name)
     
     def autoid(self):
         '''The id for autoincrements ids'''

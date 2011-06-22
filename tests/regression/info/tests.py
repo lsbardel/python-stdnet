@@ -6,6 +6,7 @@ class TestInfo(test.TestCase):
     
     def setUp(self):
         rpy = getdb().redispy
+        rpy.set('test','bla')
         self.db = rpy.db
         self.info = redis_info(rpy)
         

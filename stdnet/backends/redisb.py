@@ -73,20 +73,7 @@ class add2set(object):
 class RedisQuery(BeckendQuery):
     result = None
     query_set = None
-    sorted_list = None
-    start = 0
-    end = -1
-    
-    def setup(self):
-        server = self.server
-        meta = self.meta
-        self.pipe = server.redispy.pipeline()
-        p = 'z' if meta.ordering else 's'
-        self.intersect = setattr(self.pipe,p,'interstore')
-        self.union = setattr(self.pipe,p,'unionstore')
-        self.diff = setattr(self.pipe,p,'diffstore')
-        self.card = setattr(self.server.redispy,p,'card')
-        self.add = add2set(server,self.pipe,meta)
+    _count = None
         
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
@@ -110,8 +97,10 @@ class RedisQuery(BeckendQuery):
         pipe = self.pipe
         meta = self.meta
         keys = []
+        sha  = self._sha
         if qargs:
             for q in qargs:
+                sha.write(q.__repr__().encode())
                 if q.unique:
                     keys.append(self._unique_set(q.name, q.values))
                 elif len(q.values) == 1:
@@ -123,7 +112,9 @@ class RedisQuery(BeckendQuery):
                     keys.append(tkey)
         
         if extra:
-            keys.extend(extra)
+            for id in extra:
+                sha.write(id)
+                keys.append(id)
         
         if keys:
             if key:
@@ -137,76 +128,128 @@ class RedisQuery(BeckendQuery):
         return key
         
     def build(self, fargs, eargs):
-        qs = self.qs
         meta = self.meta
-        pipe = self.pipe
-        idset = self.meta.basekey('id')            
-        #
-        key1 = self._query(fargs,self.intersect,idset,qs.filter_sets)
-        key2 = self._query(eargs,self.union)
-        
-        if key2:
-            key = self.meta.tempkey()
-            self.diff(key,(key1,key2)).expire(key,self.expire)
+        server = self.server
+        self.idset = meta.basekey('id')
+        p = 'z' if meta.ordering else 's'
+        self.pipe = pipe = server.redispy.pipeline()
+        if p == 'z':
+            pismember =  setattr(pipe,'','zrank')
+            self.ismember =  setattr(server.redispy,'','zrank')
         else:
-            key = key1
+            pismember =  setattr(pipe,'','sismember')
+            self.ismember =  setattr(server.redispy,'','sismember')
         
-        if pipe.command_stack:
-            self.result = pipe.execute()
+        if self.qs.simple:
+            allids = []
+            NONE = (None,False)
+            idset = self.idset
+            for q in fargs:
+                if q.name == 'id':
+                    ids = q.values
+                else:
+                    key = meta.basekey(UNI,q.name)
+                    ids = server.redispy.hmget(key, q.values)
+                for id in ids:
+                    if id is not None:
+                        allids.append(id)
+                        pismember(idset,id)
+            self.result = [id for (id,r) in zip(allids,pipe.execute())\
+                           if r not in NONE]
         else:
-            self.result = 'all'
-        
-        if qs.ordering:
-            sort_by = qs.ordering
+            self.intersect = setattr(pipe,p,'interstore')
+            self.union = setattr(pipe,p,'unionstore')
+            self.diff = setattr(pipe,p,'diffstore')
+            self.card = setattr(server.redispy,p,'card')
+            self.add = add2set(server,pipe,meta)
+            key1 = self._query(fargs,self.intersect,self.idset,self.qs.filter_sets)
+            key2 = self._query(eargs,self.union)
+            if key2:
+                key = meta.tempkey()
+                self.diff(key,(key1,key2)).expire(key,self.expire)
+            else:
+                key = key1
+            self.query_set = key
+            
+    def execute(self):
+        sha = self.sha
+        if sha:
+            if self.timeout:
+                key = self.meta.tempkey(sha)
+                if not self.server.redispy.exists(key):
+                    self.pipe.rename(self.query_set,key)
+                    self.result = self.pipe.execute()
+                self.query_set = key
+            else:
+                self.result = self.pipe.execute()
+    
+    def order(self):
+        if self.qs.ordering:
+            sort_by = self.qs.ordering
             skey = self.meta.tempkey()
             okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
-            self.server.redispy.sort(key,
+            self.server.redispy.sort(self.query_set,
                                      by = okey,
                                      desc = sort_by.desc,
                                      store = skey)
-        else:
-            skey = None
-        
-        self.query_set = key
-        self.sorted_list = skey
-        return self
+            return skey
     
     def count(self):
-        return self.card(self.query_set)
-    
-    def __len__(self):
-        return self.count()
-    
-    def __contains__(self, val):
-        return self.server.redispy.sismember(self.query_set, val)
-    
-    def __iter__(self):
-        return iter(self.aslist())
-    
-    def aslist(self):
-        if self.sorted_list:
-            ids = self.server.redispy.lrange(self.sorted_list,\
-                                             self.start,self.end)
-        elif self.meta.ordering:
-            if self.meta.ordering.desc:
-                command = self.server.redispy.zrevrange
+        if self._count is None:
+            if self.qs.simple:
+                self._count = len(self.result)
             else:
-                command = self.server.redispy.zrange
-            ids = command(self.query_set,self.start,self.end)
+                self._count = self.card(self.query_set)
+        return self._count
+    
+    def has(self, val):
+        if self.qs.simple:
+            return val in self.result
         else:
-            ids = list(self.server.redispy.smembers(self.query_set))
-            end = self.end
-            if self.start and end != -1:
-                if end > 0:
-                    end -= 1
-                ids = ids[self.start,end]
+            return True if self.ismember(self.query_set, val) else False
+    
+    def get_redis_slice(self, slic):
+        if slic:
+            start = slic.start or 0
+            stop = slic.stop or -1
+            if stop > 0:
+                stop -= 1
+        else:
+            start = 0
+            stop = -1
+        return start,stop
+    
+    def items(self, slic):
+        if self.qs.simple:
+            ids = self.result
+            if slic:
+                ids = ids[slic]
+        else:
+            skey = self.order()
+            if skey:
+                start,stop = self.get_redis_slice(slic)
+                ids = self.server.redispy.lrange(skey,start,stop)
+            elif self.meta.ordering:
+                start,stop = self.get_redis_slice(slic)
+                if self.meta.ordering.desc:
+                    command = self.server.redispy.zrevrange
+                else:
+                    command = self.server.redispy.zrange
+                ids = command(self.query_set,start,stop)
+            else:
+                ids = list(self.server.redispy.smembers(self.query_set))
+                if slic:
+                    ids = ids[slic]
         
-        bkey = self.meta.basekey
-        pipe = self.server.redispy.pipeline()
-        hgetall = pipe.hgetall
-        for id in ids:
-            hgetall(bkey(OBJ,to_string(id)))
-        return list(self.server.make_objects(self.meta,ids,pipe.execute()))
+        if ids:
+            bkey = self.meta.basekey
+            pipe = self.server.redispy.pipeline()
+            hgetall = pipe.hgetall
+            for id in ids:
+                hgetall(bkey(OBJ,to_string(id)))
+            return list(self.server.make_objects(self.meta,ids,pipe.execute()))
+        else:
+            return ids
     
     
 class BackendDataServer(stdnet.BackendDataServer):
@@ -229,10 +272,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.execute_command = redispy.execute_command
         self.incr            = redispy.incr
         self.clear           = redispy.flushdb
-        self.sinter          = redispy.sinter
-        self.sdiff           = redispy.sdiff
-        self.sinterstore     = redispy.sinterstore
-        self.sunionstore     = redispy.sunionstore
         self.delete          = redispy.delete
         self.keys            = redispy.keys
     
@@ -294,7 +333,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         obid = obj.id
         pipe = transaction.pipe
         bkey = meta.basekey
-        pipe.delete(bkey(OBJ,obid))
+        keys = self.redispy.keys(meta.tempkey('*'))
+        pipe.delete(bkey(OBJ,obid),*keys)
         rem = setattr(pipe,'z' if meta.ordering else 's','rem')
         rem(bkey('id'), obid)
         

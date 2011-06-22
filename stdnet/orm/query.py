@@ -17,8 +17,10 @@ For example::
     
 ``qs`` is a queryset instance for model ``MyModel``.
 '''
-    
-    def __init__(self, meta, fargs = None, eargs = None, filter_sets = None, ordering = None):
+    start = None
+    stop = None
+    def __init__(self, meta, fargs = None, eargs = None,
+                 filter_sets = None, ordering = None):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -31,6 +33,10 @@ For example::
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
+        self.clear()
+        
+    def clear(self):
+        self.simple = False
         self.qset   = None
         self._seq   = None
         
@@ -49,6 +55,8 @@ For example::
         return self.__repr__()
     
     def __getitem__(self, slic):
+        if isinstance(slic,slice):
+            self.aslist(slic)
         return self.aslist()[slic]
     
     def all(self):
@@ -85,11 +93,8 @@ For example::
         '''Sort the query by the given field'''
         if ordering:
             ordering = self._meta.get_sorting(ordering,QuerySetError)
-        return self.__class__(self._meta,
-                              fargs=self.fargs,
-                              eargs=self.eargs,
-                              filter_sets=self.filter_sets,
-                              ordering=ordering)
+        self.ordering = ordering
+        return self
     
     def get(self):
         items = self.aslist()
@@ -102,8 +107,8 @@ For example::
             raise self.model.DoesNotExist
     
     def count(self):
-        '''Return the number of objects in ``self`` without
-fetching objects. This method is efficient since the queryset does not
+        '''Return the number of objects in ``self``.
+This method is efficient since the queryset does not
 receive any data from the server. It construct the queries and count the
 objects on the server side.'''
         self._buildquery()
@@ -117,7 +122,7 @@ objects on the server side.'''
         except:
             return False
         self._buildquery()
-        return val in self.qset
+        return self.qset.has(val)
         
     def __len__(self):
         return self.count()
@@ -127,13 +132,15 @@ objects on the server side.'''
     def _buildquery(self):
         # Build a queryset from filters and exclude arguments
         if self.qset is not None:
-            return
+            return 
         meta = self._meta
         if self.fargs:
+            self.simple = not self.filter_sets
             fargs = self.aggregate(self.fargs)
         else:
             fargs = None
         if self.eargs:
+            self.simple = False
             eargs = self.aggregate(self.eargs)
         else:
             eargs = None
@@ -173,9 +180,10 @@ objects on the server side.'''
             if not field.index:
                 raise QuerySetError("Field %s is not an index. Cannot query." % name)
             elif value:
+                self.simple = self.simple and unique 
                 yield queryarg(name,value,unique)
         
-    def items(self):
+    def items(self, slic = None):
         '''Generator of instances in queryset.'''
         if self._seq is not None:
             for m in self._seq:
@@ -183,15 +191,14 @@ objects on the server side.'''
         else:
             self._buildquery()
             seq = self._seq = []
-            meta = self._meta
-            for m in self.qset:
+            for m in self.qset.items(slic):
                 seq.append(m)
                 yield m
                 
-    def aslist(self):
+    def aslist(self, slic = None):
         '''Return python ``list`` of elements in queryset'''
         if self._seq is None:
-            return list(self.items())
+            return list(self.items(slic))
         return self._seq
     
     def delete(self, transaction = None, dlist = None):
@@ -205,6 +212,7 @@ objects on the server side.'''
                 el.delete(transaction,dlist)
             if commit:
                 transaction.commit()
+        self.clear()
             
 
 class Manager(object):

@@ -26,9 +26,10 @@ class TestUniqueFilter(test.TestCase):
         for i in range(10):
             i = randint(0,len(codes)-1)
             code = codes[i]
-            r = SimpleModel.objects.filter(code = code)
-            self.assertEqual(r.count(),1)
-            self.assertEqual(r[0].code,code)
+            qs = SimpleModel.objects.filter(code = code)
+            self.assertEqual(qs.count(),1)
+            self.assertTrue(qs.simple)
+            self.assertEqual(qs[0].code,code)
             
     def testExcludeSimple(self):
         for i in range(10):

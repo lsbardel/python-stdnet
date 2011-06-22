@@ -4,8 +4,11 @@ from datetime import datetime
 from stdnet.lib.py2py3.py2py3 import *
 if ispy3k:
     import pickle
+    from io import BytesIO
 else:
     import cPickle as pickle
+    from StringIO import StringIO as BytesIO 
+    
 
 from .jsontools import *
 from .populate import populate

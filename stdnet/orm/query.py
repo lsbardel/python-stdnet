@@ -56,7 +56,7 @@ For example::
     
     def __getitem__(self, slic):
         if isinstance(slic,slice):
-            self.aslist(slic)
+            return self.aslist(slic)
         return self.aslist()[slic]
     
     def all(self):

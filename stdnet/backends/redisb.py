@@ -1,6 +1,6 @@
 import stdnet
 from stdnet.utils import jsonPickler, iteritems, to_string
-from stdnet import BackendDataServer, ImproperlyConfigured
+from stdnet import BackendDataServer, ImproperlyConfigured, BeckendQuery
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis
 
@@ -70,18 +70,16 @@ class add2set(object):
         return score
         
         
-class RedisQuery(object):
+class RedisQuery(BeckendQuery):
     result = None
     query_set = None
     sorted_list = None
     start = 0
     end = -1
     
-    def __init__(self, server, meta, expire = 60):
-        self.slices = {}
-        self.expire = expire
-        self.server = server
-        self.meta = meta
+    def setup(self):
+        server = self.server
+        meta = self.meta
         self.pipe = server.redispy.pipeline()
         p = 'z' if meta.ordering else 's'
         self.intersect = setattr(self.pipe,p,'interstore')
@@ -137,19 +135,14 @@ class RedisQuery(object):
                 key = keys[0]
                 
         return key
-    
-    def querysha(self, fargs, eargs, filter_sets, sort_by):
-        '''Build a unique sha for the queryset'''
-        pass
         
-    def __call__(self, fargs, eargs, filter_sets = None, sort_by = None):
-        if self.result is not None:
-            raise ValueError('Already Called')
+    def build(self, fargs, eargs):
+        qs = self.qs
         meta = self.meta
         pipe = self.pipe
         idset = self.meta.basekey('id')            
         #
-        key1 = self._query(fargs,self.intersect,idset,filter_sets)
+        key1 = self._query(fargs,self.intersect,idset,qs.filter_sets)
         key2 = self._query(eargs,self.union)
         
         if key2:
@@ -163,7 +156,8 @@ class RedisQuery(object):
         else:
             self.result = 'all'
         
-        if sort_by:
+        if qs.ordering:
+            sort_by = qs.ordering
             skey = self.meta.tempkey()
             okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
             self.server.redispy.sort(key,

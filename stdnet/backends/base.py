@@ -36,6 +36,24 @@ class Keys(object):
         
     def add(self, value):
         self.value = value
+        
+        
+class BeckendQuery(object):
+    
+    def __init__(self, qs, fargs, eargs, expire = 60):
+        self.qs = qs
+        self.expire = expire
+        self.server = qs._meta.cursor
+        self.meta = qs._meta
+        self.setup()
+        self.build(fargs, eargs)
+        
+    def setup(self):
+        pass
+    
+    def build(self, fargs, eargs):
+        pass
+        
     
 
 class BackendDataServer(object):
@@ -89,9 +107,6 @@ class BackendDataServer(object):
     def transaction(self, pipelined = True, cachepipes = None):
         '''Return a transaction instance'''
         return self.Transaction(self,pipelined,cachepipes)
-    
-    def query(self, meta, fargs, eargs, filter_sets = None, sort_by = None):
-        return self.Query(self,meta)(fargs, eargs, filter_sets, sort_by)
 
     def save_object(self, obj, transaction = None):
         '''\

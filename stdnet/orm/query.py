@@ -137,13 +137,7 @@ objects on the server side.'''
             eargs = self.aggregate(self.eargs)
         else:
             eargs = None
-        self.sha  = self.querysha(fargs,eargs)
-        self.qset = self._meta.cursor.query(meta, fargs, eargs,
-                                            filter_sets = self.filter_sets,
-                                            sort_by = self.ordering)
-        
-    def querysha(self, fargs, eargs):
-        pass
+        self.qset = self._meta.cursor.Query(self,fargs,eargs)
     
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)

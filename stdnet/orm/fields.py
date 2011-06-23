@@ -100,6 +100,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     type = None
     index = True
     ordered = False
+    internal_type = None
     
     def __init__(self, unique = False, ordered = None, primary_key = False,
                  required = True, index = None, **extras):
@@ -229,6 +230,7 @@ A symbol holds a unicode string as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.'''
     type = 'text'
+    internal_type = 'text'
     default = to_string('')
     
     def to_python(self, value):
@@ -244,6 +246,7 @@ or other entities. They are indexes by default.'''
 class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
+    internal_type = 'numeric'
     #default = 0
     
     def scorefun(self, value):
@@ -264,6 +267,7 @@ class IntegerField(AtomField):
 class BooleanField(AtomField):
     '''A boolean :class:`AtomField`'''
     type = 'bool'
+    internal_type = 'numeric'
     
     def __init__(self, required = False, **kwargs):
         super(BooleanField,self).__init__(required = required,**kwargs)
@@ -300,6 +304,7 @@ class FloatField(AtomField):
 its :attr:`Field.index` is set to ``False``.
     '''
     type = 'float'
+    internal_type = 'numeric'
     index = False
         
     def scorefun(self, value):
@@ -321,6 +326,7 @@ class DateField(AtomField):
     '''An :class:`AtomField` represented in Python by
 a :class:`datetime.date` instance.'''
     type = 'date'
+    internal_type = 'numeric'
     ordered = True
     default = None
     
@@ -388,6 +394,7 @@ python object. This field is python specific and therefore not of much use
 if accessed from external programs. Consider the :class:`ForeignKey`
 or :class:`JSONField` as a more general alternative.'''
     type = 'object'
+    internal_type = 'serialized'
     def to_python(self, value):
         if value is None:
             return value
@@ -422,7 +429,9 @@ back to self. For example::
     class File(orm.StdModel):
         folder = orm.ForeignKey(Folder, related_name = 'files')
         
-'''        
+'''
+    type = 'related object'
+    internal_type = 'numeric'
     def __init__(self, model, related_name = None, **kwargs):
         Field.__init__(self, **kwargs)
         RelatedObject.__init__(self,
@@ -487,6 +496,7 @@ is that it enables sorting of instances with respect to its fields::
 which can be rather useful.
 '''
     type = 'json object'
+    internal_type = 'serialized'
     def __init__(self, *args, **kwargs):
         kwargs['default'] = kwargs.get('default',{})
         self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
@@ -556,6 +566,7 @@ class ModelField(SymbolField):
 with a unique hash attribute ``hash`` and it is
 registered in the model hash table, it can be used.'''
     type = 'model'
+    internal_type = 'text'
     
     def to_python(self, value):
         if value:

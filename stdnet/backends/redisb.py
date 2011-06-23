@@ -191,7 +191,8 @@ class RedisQuery(BeckendQuery):
             self.server.redispy.sort(self.query_set,
                                      by = okey,
                                      desc = sort_by.desc,
-                                     store = skey)
+                                     store = skey,
+                                     alpha = sort_by.field.internal_type == 'text')
             return skey
     
     def count(self):

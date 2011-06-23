@@ -32,16 +32,56 @@ class TestSort(test.TestCase):
         self.assertEqual(qs.count(),NUM_DATES)
         return qs    
     
-    def checkOrder(self, qs, desc = None):
+    def checkOrder(self, qs, attr, desc = None):
+        self.assertTrue(qs)
         desc = desc if desc is not None else self.desc
-        dt = None
-        for obj in qs:
-            if dt:
-                if desc:
-                    self.assertTrue(obj.dt<=dt)
-                else:
-                    self.assertTrue(obj.dt>=dt)
-            dt = obj.dt
+        at0 = getattr(qs[0],attr)
+        for obj in qs[1:]:
+            at1 = getattr(obj,attr)
+            if desc:
+                self.assertTrue(at1<=at0)
+            else:
+                self.assertTrue(at1>=at0)
+            at0 = at1
+            
+
+class ExplicitOrderingMixin(object):
+    
+    def testDateSortBy(self):
+        self.checkOrder(self.fill().sort_by('dt'),'dt')
+        
+    def testDateSortByReversed(self):
+        self.checkOrder(self.fill().sort_by('-dt'),'dt',True)
+        
+    def testNameSortBy(self):
+        self.checkOrder(self.fill().sort_by('name'),'name')
+        
+    def testNameSortByReversed(self):
+        self.checkOrder(self.fill().sort_by('-name'),'name',True)
+        
+    def testSimpleSortError(self):
+        qs = self.fill()
+        self.assertRaises(QuerySetError, qs.sort_by, 'whaaaa')
+        
+    def testFilter(self):
+        qs = self.fill().filter(name='rugby').sort_by('dt')
+        self.checkOrder(qs,'dt')
+        for v in qs:
+            self.assertEqual(v.name,'rugby')
+
+    def _slicingTest(self, attr, desc, start = 0, stop = 10,
+                     expected_len = 10):
+        p = '-' if desc else ''
+        qs = self.fill().sort_by(p+attr)
+        qs1 = qs[start:stop]
+        self.assertEqual(len(qs1),expected_len)
+        self.checkOrder(qs1,attr,desc)
+        
+    def testDateSlicing(self):
+        self._slicingTest('dt',False)
+        
+    def testDateSlicingDesc(self):
+        self._slicingTest('dt',True)
 
 
 class TestOrderingModel(TestSort):
@@ -56,11 +96,11 @@ class TestOrderingModel(TestSort):
         self.assertEqual(ordering.desc,self.desc)
         
     def testSimple(self):
-        self.checkOrder(self.fill())
+        self.checkOrder(self.fill(),'dt')
         
     def testExclude(self):
         qs = self.fill().exclude(name='rugby')
-        self.checkOrder(qs)
+        self.checkOrder(qs,'dt')
         
 
 class TestOrderingModel2(TestOrderingModel):
@@ -68,37 +108,8 @@ class TestOrderingModel2(TestOrderingModel):
     desc = True
     
         
-class TestSortBy(TestSort):
+class TestSortBy(TestSort,ExplicitOrderingMixin):
+    '''Test the sort_by in a model without ordering meta attribute.
+Pure explicit ordering.'''
     model = TestDateModel
     
-    def testSimpleSortBy(self):
-        self.checkOrder(self.fill().sort_by('dt'))
-        
-    def testSimpleSortByReversed(self):
-        self.checkOrder(self.fill().sort_by('-dt'),True)
-        
-    def testSimpleSortError(self):
-        qs = self.fill()
-        self.assertRaises(QuerySetError, qs.sort_by, 'whaaaa')
-        
-    def testFilter(self):
-        qs = self.fill().filter(name='rugby').sort_by('dt')
-        self.assertTrue(qs)
-        self.checkOrder(qs)
-        for v in qs:
-            self.assertEqual(v.name,'rugby')
-
-    def _slicingTest(self, desc, start = 0, stop = 10,
-                     expected_len = 10):
-        p = '-' if desc else ''
-        qs = self.fill().sort_by(p+'dt')
-        qs1 = qs[start:stop]
-        self.assertEqual(len(qs1),expected_len)
-        self.checkOrder(qs1,desc)
-        
-    def testSlicing(self):
-        self._slicingTest(False)
-        
-    def testSlicingDesc(self):
-        self._slicingTest(True)
-        

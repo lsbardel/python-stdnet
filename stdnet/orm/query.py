@@ -102,7 +102,7 @@ For example::
             if len(items) == 1:
                 return items[0]
             else:
-                raise QuerySetError('Get query yielded non unique results')
+                raise QuerySetError('Get query {0} yielded non unique results'.format(self))
         else:
             raise self.model.DoesNotExist
     

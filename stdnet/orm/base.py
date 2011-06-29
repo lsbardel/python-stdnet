@@ -8,7 +8,7 @@ from stdnet.utils import zip, to_bytestring, to_string
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
-from .globals import hashmodel
+from .globals import hashmodel, JSPLITTER
 from .query import UnregisteredManager
 from .fields import Field, AutoField
 
@@ -214,14 +214,17 @@ the model table'''
             f = self.pk
             s = orderinginfo(f.name,f,desc)
         else:
-            for f in self.scalarfields:
-                if f.name == sortby:
-                    s = orderinginfo(f.name,f,desc)
-                    break
+            if sortby in self.dfields:
+                f = self.dfields[sortby]
+                return orderinginfo(f.name,f,desc)
+            sortbys = sortby.split(JSPLITTER)
+            s0 = sortbys[0]
+            if len(sortbys) == 2 and s0 in self.dfields:
+                f = self.dfields[s0]
+                return orderinginfo(sortby,f,desc)
         if not s:
             raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
-        return s
 
 class FakeMeta(object):
     

@@ -159,8 +159,8 @@ objects on the server side.'''
             # simple lookup for example filter(name = 'pippo')
             if N == 1:
                 if name not in fields:
-                    raise QuerySetError("Could not filter.\
- Filter for field {0} not enabled.".format(name))
+                    raise QuerySetError('Could not filter on model "{0}".\
+ Field "{1}" does not exist.'.format(meta,name))
                 field = fields[name]
                 value = (field.serialize(value),)
                 unique = field.unique

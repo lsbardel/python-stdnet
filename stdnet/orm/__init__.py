@@ -4,7 +4,7 @@ from .mapper import *
 from .fields import *
 from .std import *
 from .signals import *
-from .globals import hashmodel
+from .globals import hashmodel, JSPLITTER
 from .utils import *
 
 

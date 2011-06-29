@@ -12,7 +12,7 @@ from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
-from .globals import get_model_from_hash
+from .globals import get_model_from_hash, JSPLITTER
 
 
 __all__ = ['Field',
@@ -32,7 +32,6 @@ __all__ = ['Field',
            'ModelField']
 
 EMPTY = ''
-JSPLITTER = '__'
 
 
 class Field(UnicodeMixin):
@@ -408,7 +407,10 @@ or :class:`JSONField` as a more general alternative.'''
     
     def scorefun(self, value):
         if value is not None:
-            value = pickle.dumps(value)
+            try:
+                value = pickle.dumps(value)
+            except:
+                value = None
         return value
     
 

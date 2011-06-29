@@ -35,7 +35,7 @@ WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                               choice_from = basic_english_words)) for i in range(size))
 
 
-def make_items(num = 100, content = False):
+def make_items(num = 30, content = False):
     names = populate('choice', num, choice_from=basic_english_words)
     if content:
         contents = WORDS_GROUPS(num)
@@ -49,10 +49,13 @@ def make_items(num = 100, content = False):
                      content = co).save(t)
     
 
-class TestBase(object):
+class TestCase(test.TestCase):
     metaphone = True
     autocomplete = None
     
+    def setUp(self):
+        self.register()
+        
     def register(self):
         self.engine = SearchEngine(metaphone = self.metaphone,
                                    autocomplete = self.autocomplete)
@@ -93,13 +96,8 @@ class TestBase(object):
         return ' '.join(_())
 
 
-class TestCase(TestBase,test.TestCase):
-    
-    def setUp(self):
-        self.register()
-
-
-class TestSearchEngine(TestCase):
+class TestSearchEngine(object):
+#class TestSearchEngine(TestCase):
     
     def testMetaphone(self):
         '''Test metaphone algorithm'''
@@ -141,11 +139,12 @@ class TestSearchEngineWithRegistration(TestCase):
     def setUp(self):
         super(TestSearchEngineWithRegistration,self).setUp()
         self.engine.register(Item)
-    
+        self.assertTrue(Item in self.engine.REGISTERED_MODELS)
+        
     def make_item(self,**kwargs):
         item = super(TestSearchEngineWithRegistration,self).make_item(**kwargs)
         wis = WordItem.objects.filter(model_type = item.__class__,
-                                     object_id = item.id)
+                                      object_id = item.id)
         self.assertTrue(wis)
         for wi in wis:
             self.assertEqual(wi.object,item)

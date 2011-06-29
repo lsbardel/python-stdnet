@@ -138,18 +138,19 @@ class RedisData(list):
         return keys
 
 
+def iter_int(n,C=3,sep=','):
+    c = 0
+    for v in reversed(str(abs(n))):
+        if c == C:
+            c = 0
+            yield sep
+        else:
+            yield v
+
+            
 def format_int(val):
-    def _iter(n):
-        n = int(val)
-        c = 0
-        for v in reversed(str(abs(n))):
-            if c == 3:
-                c = 0
-                yield ','
-            else:
-                yield v
     n = int(val)
-    c = ''.join(reversed(_iter(n)))
+    c = ''.join(reversed(list(iter_int(n))))
     if n < 0:
         c = '-{0}'.format(c)
     return c
@@ -182,7 +183,7 @@ class RedisDataFormatter(object):
     def format_name(self, name):
         return name
     
-    def format_int(self, name):
+    def format_int(self, val):
         return format_int(val)
     
     def format_date(self, dte):
@@ -243,7 +244,7 @@ class RedisInfo(object):
         info = self.info
         format_int = self.formatter.format_int
         nicetimedelta = self.formatter.format_timedelta
-        nicetimedelta = self.formatter.format_date
+        nicedate = self.formatter.format_date
         server = self._panels['Server'] = []
         niceadd(server, 'Redis version', self.version)
         niceadd(server, 'Process id', info['process_id'])

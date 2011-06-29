@@ -12,12 +12,22 @@ Somewhere in your application create the search engine singletone::
     from stdnet.contrib.searchengine import SearchEngine
      
     engine = SearchEngine()
-
-
-To register a model with the search engine::
+ 
+The engine works by registering models to it.
+For example::
 
     engine.register(MyModel)
+
+From now on, everytime and instance of ``MyModel`` is updated/created,
+the search engine will updated indexes.
+
+To search, issue the command::
+
+    search_result = engine.search(sometext)
     
+If you would like to limit the search to some specified models::
+
+    search_result = engine.search(sometext, include = (model1,model2,...))
 '''
 import re
 from itertools import chain
@@ -54,17 +64,11 @@ https://gist.github.com/389875
                       
                       Default ``True``.
 
-To use it::
-    
-    from stdnet.contrib.searchengine import SearchEngine
-     
-    engine = SearchEngine()
-    
-    
 .. _metaphone: http://en.wikipedia.org/wiki/Metaphone
 """
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
+    web_hook = None
     
     def __init__(self, min_word_length = 3, stop_words = None,
                  autocomplete = 'en', metaphone = True):
@@ -115,10 +119,8 @@ is enabled, it adds indexes for it.
         if self.metaphone:
             words = self.get_metaphones(words)
         
-        for word in words:
-            wi = link(item, word)
-            if wi:
-                linked.append(wi)
+        with WordItem.transaction() as t:
+            linked = [link(item, word, transaction = t) for word in words]
         return linked
     
     def remove_item(self, item):
@@ -134,9 +136,9 @@ Remove indexes for *item*.
                                          object_id = item.id)
         wi.delete()
     
-    def search(self, text, **filters):
+    def search(self, text, include = None, exclude = None):
         '''Full text search'''
-        return set(self.items_from_text(text,**filters))
+        return list(self.items_from_text(text,include,exclude))
     
     def add_tag(self, item, text):
         '''A a tag to an object.
@@ -202,14 +204,16 @@ Remove indexes for *item*.
                 if word not in stp:
                     yield word
                     
-    def _link_item_and_word(self, item, word, tag = False):
+    def _link_item_and_word(self, item, word, tag = False, transaction = None):
         w = self.get_or_create(word, tag = tag)
-        if not WordItem.objects.filter(word = w,
+        if tag:
+            if WordItem.objects.filter(word = w,
                                        model_type = item.__class__,
                                        object_id = item.id):
-            return WordItem(word = w,
-                            model_type = item.__class__,
-                            object_id = item.id).save()
+                return
+        return WordItem(word = w,
+                        model_type = item.__class__,
+                        object_id = item.id).save(transaction)
     
     def get_metaphones(self, words):
         """Get the metaphones for a given list of words"""
@@ -245,7 +249,7 @@ Remove indexes for *item*.
         except Word.DoesNotExist:
             return Word(id = word, tag = tag).save()
         
-    def items_from_text(self, text, **filters):
+    def items_from_text(self, text, include = None, exclude = None):
         auto = self.autocomplete
         texts = self.get_words_from_text(text)
         if auto:
@@ -265,8 +269,16 @@ Remove indexes for *item*.
         processed = set()
         if words:
             items = WordItem.objects.filter(word__in = words)
-            if filters:
-                items.filter(**filters)
+            if include:
+                if isinstance(include,(list,tuple)):
+                    items = items.filter(model_type__in = include)
+                else:
+                    items = items.filter(model_type = include)
+            if exclude:
+                if isinstance(include,(list,tuple)):
+                    items = items.exclude(model_type__in = exclude)
+                else:
+                    items = items.exclude(model_type = exclude)
             for item in items:
                 yield item.object
         else:

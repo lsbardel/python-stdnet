@@ -2,6 +2,10 @@ import hashlib
 
 from stdnet.utils import to_bytestring
 
+
+JSPLITTER = '__'
+
+
 def get_model_from_hash(hash):
     if hash in _model_dict:
         return _model_dict[hash]

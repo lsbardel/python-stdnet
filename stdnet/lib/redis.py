@@ -876,8 +876,11 @@ class Redis(threading.local):
             pieces.append(start)
             pieces.append(num)
         if get is not None:
-            pieces.append('GET')
-            pieces.append(get)
+            if not isinstance(get, (list,tuple)):
+                get = (get,)
+            for g in get:
+                pieces.append('GET')
+                pieces.append(g)
         if desc:
             pieces.append('DESC')
         if alpha:

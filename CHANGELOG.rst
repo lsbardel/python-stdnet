@@ -7,10 +7,11 @@ Ver. 0.6.0 - Development
   with fields given by the model field names and values given by the instance
   field values.
 * Implemented two types of sorting: implicit by meta attribute
-  ``ordering`` or excplicit by using the ``sort_by`` method in a queryset object.
+  ``ordering`` or explicit by using the ``sort_by`` method in a
+  :class:`stdnet.orm.query.QuerySet` object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
-  are now indexed via redis hash tables which maps the field value to the
+  are now indexed via redis_ hash tables which maps the field value to the
   object id. Previously they were stored in keys. This solution
   reduces the memory footprint and the number of keys used.
 * Added :ref:`transaction support <model-transactions>`.
@@ -187,5 +188,6 @@ Ver. 0.2.0  - 2010 Jun 21
 * **8 tests**
 
 
+.. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
 .. _django: http://www.djangoproject.com/

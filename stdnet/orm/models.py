@@ -192,7 +192,11 @@ will enumerate the number of object to delete. without deleting them.'''
     @classmethod
     def transaction(cls):
         '''Return a transaction instance.'''
-        return cls._meta.cursor.transaction()
+        c = cls._meta.cursor
+        if not c:
+            raise ModelNotRegistered("Model '{0}' is not registered with a\
+ backend database. Cannot start a transaction.".format(cls._meta))
+        return c.transaction()
     
     # PICKLING SUPPORT
     

@@ -47,7 +47,7 @@ class TestQueue(test.TestCase):
         self.assertEqual(v,None)
         self.assertTrue(t<1)
         
-    def testTimeout(self):
+    def __testTimeout(self):
         
         def putData(q):
             for i in range(10):

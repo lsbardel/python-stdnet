@@ -52,7 +52,7 @@ class ServerCommandsTestCase(BaseTest):
 
     def test_getitem_and_setitem(self):
         self.client['a'] = 'bar'
-        self.assertEquals(self.client['a'], b'bar')
+        self.assertEquals(self.client['a'], 'bar')
 
     def test_delete(self):
         self.assertEquals(self.client.delete('a'), False)
@@ -91,17 +91,17 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.assertEquals(self.client.append('a', 'a1'), 2)
-        self.assertEquals(self.client['a'], b'a1')
+        self.assertEquals(self.client['a'], 'a1')
         self.assert_(self.client.append('a', 'a2'), 4)
-        self.assertEquals(self.client['a'], b'a1a2')
+        self.assertEquals(self.client['a'], 'a1a2')
 
     def test_decr(self):
         self.assertEquals(self.client.decr('a'), -1)
-        self.assertEquals(self.client['a'], b'-1')
+        self.assertEquals(self.client['a'], '-1')
         self.assertEquals(self.client.decr('a'), -2)
-        self.assertEquals(self.client['a'], b'-2')
+        self.assertEquals(self.client['a'], '-2')
         self.assertEquals(self.client.decr('a', amount=5), -7)
-        self.assertEquals(self.client['a'], b'-7')
+        self.assertEquals(self.client['a'], '-7')
 
     def test_exists(self):
         self.assertEquals(self.client.exists('a'), False)
@@ -129,23 +129,23 @@ class ServerCommandsTestCase(BaseTest):
 
     def test_getset(self):
         self.assertEquals(self.client.getset('a', 'foo'), None)
-        self.assertEquals(self.client.getset('a', 'bar'), b'foo')
+        self.assertEquals(self.client.getset('a', 'bar'), 'foo')
 
     def test_incr(self):
         self.assertEquals(self.client.incr('a'), 1)
-        self.assertEquals(self.client['a'], b'1')
+        self.assertEquals(self.client['a'], '1')
         self.assertEquals(self.client.incr('a'), 2)
-        self.assertEquals(self.client['a'], b'2')
+        self.assertEquals(self.client['a'], '2')
         self.assertEquals(self.client.incr('a', amount=5), 7)
-        self.assertEquals(self.client['a'], b'7')
+        self.assertEquals(self.client['a'], '7')
 
     def test_keys(self):
         self.assertEquals(self.client.keys(), [])
-        keys = set([b'test_a', b'test_b', b'testc'])
+        keys = set(['test_a', 'test_b', 'testc'])
         for key in keys:
             self.client[key] = 1
         self.assertEquals(set(self.client.keys(pattern='test_*')),
-            keys - set([b'testc']))
+            keys - set(['testc']))
         self.assertEquals(set(self.client.keys(pattern='test*')), keys)
 
     def test_mget(self):
@@ -154,7 +154,7 @@ class ServerCommandsTestCase(BaseTest):
         self.client['b'] = '2'
         self.client['c'] = '3'
         self.assertEquals(self.client.mget(['a', 'other', 'b', 'c']),
-            [b'1', None, b'2', b'3'])
+            ['1', None, '2', '3'])
 
     def test_mset(self):
         d = {'a': '1', 'b': '2', 'c': '3'}
@@ -176,31 +176,31 @@ class ServerCommandsTestCase(BaseTest):
         self.client['a'] = '1'
         self.client['b'] = '2'
         self.client['c'] = '3'
-        self.assert_(self.client.randomkey() in (b'a', b'b', b'c'))
+        self.assert_(self.client.randomkey() in ('a', 'b', 'c'))
 
     def test_rename(self):
         self.client['a'] = '1'
         self.assert_(self.client.rename('a', 'b'))
         self.assertEquals(self.client['a'], None)
-        self.assertEquals(self.client['b'], b'1')
+        self.assertEquals(self.client['b'], '1')
 
     def test_renamenx(self):
         self.client['a'] = '1'
         self.client['b'] = '2'
         self.assert_(not self.client.renamenx('a', 'b'))
-        self.assertEquals(self.client['a'], b'1')
-        self.assertEquals(self.client['b'], b'2')
+        self.assertEquals(self.client['a'], '1')
+        self.assertEquals(self.client['b'], '2')
 
     def test_setex(self):
         self.assertEquals(self.client.setex('a', '1', 60), True)
-        self.assertEquals(self.client['a'], b'1')
+        self.assertEquals(self.client['a'], '1')
         self.assertEquals(self.client.ttl('a'), 60  )
 
     def test_setnx(self):
         self.assert_(self.client.setnx('a', '1'))
-        self.assertEquals(self.client['a'], b'1')
+        self.assertEquals(self.client['a'], '1')
         self.assert_(not self.client.setnx('a', '2'))
-        self.assertEquals(self.client['a'], b'1')
+        self.assertEquals(self.client['a'], '1')
 
     def test_substr(self):
         # invalid key type
@@ -209,26 +209,26 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.client['a'] = 'abcdefghi'
-        self.assertEquals(self.client.substr('a', 0), b'abcdefghi')
-        self.assertEquals(self.client.substr('a', 2), b'cdefghi')
-        self.assertEquals(self.client.substr('a', 3, 5), b'def')
-        self.assertEquals(self.client.substr('a', 3, -2), b'defgh')
+        self.assertEquals(self.client.substr('a', 0), 'abcdefghi')
+        self.assertEquals(self.client.substr('a', 2), 'cdefghi')
+        self.assertEquals(self.client.substr('a', 3, 5), 'def')
+        self.assertEquals(self.client.substr('a', 3, -2), 'defgh')
         self.client['a'] = 123456 # does substr work with ints?
-        self.assertEquals(self.client.substr('a', 2, -2), b'345')
+        self.assertEquals(self.client.substr('a', 2, -2), '345')
 
     def test_type(self):
-        self.assertEquals(self.client.type('a'), b'none')
+        self.assertEquals(self.client.type('a'), 'none')
         self.client['a'] = '1'
-        self.assertEquals(self.client.type('a'), b'string')
+        self.assertEquals(self.client.type('a'), 'string')
         del self.client['a']
         self.client.lpush('a', '1')
-        self.assertEquals(self.client.type('a'), b'list')
+        self.assertEquals(self.client.type('a'), 'list')
         del self.client['a']
         self.client.sadd('a', '1')
-        self.assertEquals(self.client.type('a'), b'set')
+        self.assertEquals(self.client.type('a'), 'set')
         del self.client['a']
         self.client.zadd('a', '1', 1)
-        self.assertEquals(self.client.type('a'), b'zset')
+        self.assertEquals(self.client.type('a'), 'zset')
 
     # LISTS
     def make_list(self, name, l):
@@ -238,24 +238,24 @@ class ServerCommandsTestCase(BaseTest):
     def test_blpop(self):
         self.make_list('a', 'ab')
         self.make_list('b', 'cd')
-        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), (b'b', b'c'))
-        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), (b'b', b'd'))
-        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), (b'a', b'a'))
-        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), (b'a', b'b'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), ('b', 'c'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), ('b', 'd'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), ('a', 'a'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), ('a', 'b'))
         self.assertEquals(self.client.blpop(['b', 'a'], timeout=1), None)
         self.make_list('c', 'a')
-        self.assertEquals(self.client.blpop('c', timeout=1), (b'c', b'a'))
+        self.assertEquals(self.client.blpop('c', timeout=1), ('c', 'a'))
 
     def test_brpop(self):
         self.make_list('a', 'ab')
         self.make_list('b', 'cd')
-        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), (b'b', b'd'))
-        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), (b'b', b'c'))
-        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), (b'a', b'b'))
-        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), (b'a', b'a'))
+        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), ('b', 'd'))
+        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), ('b', 'c'))
+        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), ('a', 'b'))
+        self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), ('a', 'a'))
         self.assertEquals(self.client.brpop(['b', 'a'], timeout=1), None)
         self.make_list('c', 'a')
-        self.assertEquals(self.client.brpop('c', timeout=1), (b'c', b'a'))
+        self.assertEquals(self.client.brpop('c', timeout=1), ('c', 'a'))
 
     def test_lindex(self):
         # no key
@@ -266,9 +266,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_list('a', 'abc')
-        self.assertEquals(self.client.lindex('a', '0'), b'a')
-        self.assertEquals(self.client.lindex('a', '1'), b'b')
-        self.assertEquals(self.client.lindex('a', '2'), b'c')
+        self.assertEquals(self.client.lindex('a', '0'), 'a')
+        self.assertEquals(self.client.lindex('a', '1'), 'b')
+        self.assertEquals(self.client.lindex('a', '2'), 'c')
 
     def test_llen(self):
         # no key
@@ -308,8 +308,8 @@ class ServerCommandsTestCase(BaseTest):
         else:
             self.assert_(self.client.lpush('a', 'b'))
             self.assert_(self.client.lpush('a', 'a'))
-        self.assertEquals(self.client.lindex('a', 0), b'a')
-        self.assertEquals(self.client.lindex('a', 1), b'b')
+        self.assertEquals(self.client.lindex('a', 0), 'a')
+        self.assertEquals(self.client.lindex('a', 1), 'b')
 
     def test_lrange(self):
         # no key
@@ -320,8 +320,8 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_list('a', 'abcde')
-        self.assertEquals(self.client.lrange('a', 0, 2), [b'a', b'b', b'c'])
-        self.assertEquals(self.client.lrange('a', 2, 10), [b'c', b'd', b'e'])
+        self.assertEquals(self.client.lrange('a', 0, 2), ['a', 'b', 'c'])
+        self.assertEquals(self.client.lrange('a', 2, 10), ['c', 'd', 'e'])
 
     def test_lrem(self):
         # no key
@@ -333,7 +333,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_list('a', 'aaaa')
         self.assertEquals(self.client.lrem('a', 'a', 1), 1)
-        self.assertEquals(self.client.lrange('a', 0, 3), [b'a', b'a', b'a'])
+        self.assertEquals(self.client.lrange('a', 0, 3), ['a', 'a', 'a'])
         self.assertEquals(self.client.lrem('a', 'a'), 3)
         # remove all the elements in the list means the key is deleted
         self.assertEquals(self.client.lrange('a', 0, 1), [])
@@ -347,9 +347,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_list('a', 'abc')
-        self.assertEquals(self.client.lrange('a', 0, 2), [b'a', b'b', b'c'])
+        self.assertEquals(self.client.lrange('a', 0, 2), ['a', 'b', 'c'])
         self.assert_(self.client.lset('a', 1, 'd'))
-        self.assertEquals(self.client.lrange('a', 0, 2), [b'a', b'd', b'c'])
+        self.assertEquals(self.client.lrange('a', 0, 2), ['a', 'd', 'c'])
 
     def test_ltrim(self):
         # no key -- TODO: Not sure why this is actually true.
@@ -361,7 +361,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_list('a', 'abc')
         self.assert_(self.client.ltrim('a', 0, 1))
-        self.assertEquals(self.client.lrange('a', 0, 5), [b'a', b'b'])
+        self.assertEquals(self.client.lrange('a', 0, 5), ['a', 'b'])
 
     def test_lpop(self):
         # no key
@@ -372,9 +372,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_list('a', 'abc')
-        self.assertEquals(self.client.lpop('a'), b'a')
-        self.assertEquals(self.client.lpop('a'), b'b')
-        self.assertEquals(self.client.lpop('a'), b'c')
+        self.assertEquals(self.client.lpop('a'), 'a')
+        self.assertEquals(self.client.lpop('a'), 'b')
+        self.assertEquals(self.client.lpop('a'), 'c')
         self.assertEquals(self.client.lpop('a'), None)
 
     def test_rpop(self):
@@ -386,9 +386,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_list('a', 'abc')
-        self.assertEquals(self.client.rpop('a'), b'c')
-        self.assertEquals(self.client.rpop('a'), b'b')
-        self.assertEquals(self.client.rpop('a'), b'a')
+        self.assertEquals(self.client.rpop('a'), 'c')
+        self.assertEquals(self.client.rpop('a'), 'b')
+        self.assertEquals(self.client.rpop('a'), 'a')
         self.assertEquals(self.client.rpop('a'), None)
 
     def test_rpoplpush(self):
@@ -396,8 +396,8 @@ class ServerCommandsTestCase(BaseTest):
         self.make_list('b', ['b1'])
         self.assertEquals(self.client.rpoplpush('a', 'b'), None)
         # no dest key
-        self.assertEquals(self.client.rpoplpush('b', 'a'), b'b1')
-        self.assertEquals(self.client.lindex('a', 0), b'b1')
+        self.assertEquals(self.client.rpoplpush('b', 'a'), 'b1')
+        self.assertEquals(self.client.lindex('a', 0), 'b1')
         del self.client['a']
         del self.client['b']
         # src key is not a list
@@ -413,10 +413,10 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_list('a', ['a1', 'a2', 'a3'])
         self.make_list('b', ['b1', 'b2', 'b3'])
-        self.assertEquals(self.client.rpoplpush('a', 'b'), b'a3')
-        self.assertEquals(self.client.lrange('a', 0, 2), [b'a1', b'a2'])
+        self.assertEquals(self.client.rpoplpush('a', 'b'), 'a3')
+        self.assertEquals(self.client.lrange('a', 0, 2), ['a1', 'a2'])
         self.assertEquals(self.client.lrange('b', 0, 4),
-            [b'a3', b'b1', b'b2', b'b3'])
+            ['a3', 'b1', 'b2', 'b3'])
 
     def test_rpush(self):
         # key is not a list
@@ -431,8 +431,8 @@ class ServerCommandsTestCase(BaseTest):
         else:
             self.assert_(self.client.rpush('a', 'a'))
             self.assert_(self.client.rpush('a', 'b'))
-        self.assertEquals(self.client.lindex('a', 0), b'a')
-        self.assertEquals(self.client.lindex('a', 1), b'b')
+        self.assertEquals(self.client.lindex('a', 0), 'a')
+        self.assertEquals(self.client.lindex('a', 1), 'b')
 
     # Set commands
     def make_set(self, name, l):
@@ -445,7 +445,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertRaises(ResponseError, self.client.sadd, 'a', 'a1')
         del self.client['a']
         # real logic
-        members = set([b'a1', b'a2', b'a3'])
+        members = set(['a1', 'a2', 'a3'])
         self.make_set('a', members)
         self.assertEquals(self.client.smembers('a'), members)
 
@@ -466,7 +466,7 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['b']
         # real logic
         self.make_set('b', ['b1', 'a2', 'b3'])
-        self.assertEquals(self.client.sdiff(['a', 'b']), set([b'a1', b'a3']))
+        self.assertEquals(self.client.sdiff(['a', 'b']), set(['a1', 'a3']))
 
     def test_sdiffstore(self):
         # some key is not a set
@@ -480,7 +480,7 @@ class ServerCommandsTestCase(BaseTest):
         # test for that
         # real logic
         self.assertEquals(self.client.sdiffstore('c', ['a', 'b']), 2)
-        self.assertEquals(self.client.smembers('c'), set([b'a1', b'a3']))
+        self.assertEquals(self.client.smembers('c'), set(['a1', 'a3']))
 
     def test_sinter(self):
         # some key is not a set
@@ -490,7 +490,7 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['b']
         # real logic
         self.make_set('b', ['a1', 'b2', 'a3'])
-        self.assertEquals(self.client.sinter(['a', 'b']), set([b'a1', b'a3']))
+        self.assertEquals(self.client.sinter(['a', 'b']), set(['a1', 'a3']))
 
     def test_sinterstore(self):
         # some key is not a set
@@ -504,7 +504,7 @@ class ServerCommandsTestCase(BaseTest):
         # test for that
         # real logic
         self.assertEquals(self.client.sinterstore('c', ['a', 'b']), 2)
-        self.assertEquals(self.client.smembers('c'), set([b'a1', b'a3']))
+        self.assertEquals(self.client.smembers('c'), set(['a1', 'a3']))
 
     def test_sismember(self):
         # key is not a set
@@ -527,7 +527,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.smembers('a'), set())
         # real logic
         self.make_set('a', 'abc')
-        self.assertEquals(self.client.smembers('a'), set([b'a', b'b', b'c']))
+        self.assertEquals(self.client.smembers('a'), set(['a', 'b', 'c']))
 
     def test_smove(self):
         # src key is not set
@@ -548,8 +548,8 @@ class ServerCommandsTestCase(BaseTest):
         self.make_set('b', ['b1', 'b2'])
         # real logic
         self.assert_(self.client.smove('a', 'b', 'a1'))
-        self.assertEquals(self.client.smembers('a'), set([b'a2']))
-        self.assertEquals(self.client.smembers('b'), set([b'b1', b'b2', b'a1']))
+        self.assertEquals(self.client.smembers('a'), set(['a2']))
+        self.assertEquals(self.client.smembers('b'), set(['b1', 'b2', 'a1']))
 
     def test_spop(self):
         # key is not set
@@ -560,9 +560,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_set('a', 'abc')
-        bs = binary_set(b'abc')
+        bs = binary_set('abc')
         value = self.client.spop('a')
-        self.assert_(value in b'abc')
+        self.assert_(value in 'abc')
         self.assertEquals(self.client.smembers('a'), bs - binary_set(value))
 
     def test_srandmember(self):
@@ -574,7 +574,7 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_set('a', 'abc')
-        self.assert_(self.client.srandmember('a') in b'abc')
+        self.assert_(self.client.srandmember('a') in 'abc')
 
     def test_srem(self):
         # key is not set
@@ -585,9 +585,9 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_set('a', 'abc')
-        self.assertEquals(self.client.srem('a', b'd'), False)
-        self.assertEquals(self.client.srem('a', b'b'), True)
-        bs = binary_set(b'ac')
+        self.assertEquals(self.client.srem('a', 'd'), False)
+        self.assertEquals(self.client.srem('a', 'b'), True)
+        bs = binary_set('ac')
         self.assertEquals(self.client.smembers('a'), bs)
 
     def test_sunion(self):
@@ -599,7 +599,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_set('b', ['a1', 'b2', 'a3'])
         self.assertEquals(self.client.sunion(['a', 'b']),
-            set([b'a1', b'a2', b'a3', b'b2']))
+            set(['a1', 'a2', 'a3', 'b2']))
 
     def test_sunionstore(self):
         # some key is not a set
@@ -614,7 +614,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.assertEquals(self.client.sunionstore('c', ['a', 'b']), 4)
         self.assertEquals(self.client.smembers('c'),
-            set([b'a1', b'a2', b'a3', b'b2']))
+            set(['a1', 'a2', 'a3', 'b2']))
 
     # SORTED SETS
     def make_zset(self, name, d):
@@ -623,7 +623,7 @@ class ServerCommandsTestCase(BaseTest):
 
     def test_zadd(self):
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(self.client.zrange('a', 0, 3), [b'a1', b'a2', b'a3'])
+        self.assertEquals(self.client.zrange('a', 0, 3), ['a1', 'a2', 'a3'])
 
     def test_zcard(self):
         # key is not a zset
@@ -655,7 +655,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assert_(self.client.zinterstore('z', ['a', 'b', 'c']))
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a3', 8), (b'a1', 9)]
+            [('a3', 8), ('a1', 9)]
             )
 
         # max, no weight
@@ -664,14 +664,14 @@ class ServerCommandsTestCase(BaseTest):
             )
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a3', 5), (b'a1', 6)]
+            [('a3', 5), ('a1', 6)]
             )
 
         # with weight
         self.assert_(self.client.zinterstore('z', {'a': 1, 'b': 2, 'c': 3}))
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a3', 20), (b'a1', 23)]
+            [('a3', 20), ('a1', 23)]
             )
 
 
@@ -682,12 +682,12 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(list(self.client.zrange('a', 0, 1)), [b'a1', b'a2'])
-        self.assertEquals(list(self.client.zrange('a', 1, 2)), [b'a2', b'a3'])
+        self.assertEquals(list(self.client.zrange('a', 0, 1)), ['a1', 'a2'])
+        self.assertEquals(list(self.client.zrange('a', 1, 2)), ['a2', 'a3'])
         self.assertEquals(list(self.client.zrange('a', 0, 1, withscores=True)),
-            [(b'a1', 1.0), (b'a2', 2.0)])
+            [('a1', 1.0), ('a2', 2.0)])
         self.assertEquals(list(self.client.zrange('a', 1, 2, withscores=True)),
-            [(b'a2', 2.0), (b'a3', 3.0)])
+            [('a2', 2.0), ('a3', 3.0)])
         # a non existant key should return empty list
         self.assertEquals(self.client.zrange('b', 0, 1, withscores=True), [])
 
@@ -701,11 +701,11 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3, 'a4': 4, 'a5': 5})
         self.assertEquals(list(self.client.zrangebyscore('a', 2, 4)),
-            [b'a2', b'a3', b'a4'])
+            ['a2', 'a3', 'a4'])
         self.assertEquals(list(self.client.zrangebyscore('a', 2, 4, start=1, num=2)),
-            [b'a3', b'a4'])
+            ['a3', 'a4'])
         self.assertEquals(list(self.client.zrangebyscore('a', 2, 4, withscores=True)),
-            [(b'a2', 2.0), (b'a3', 3.0), (b'a4', 4.0)])
+            [('a2', 2.0), ('a3', 3.0), ('a4', 4.0)])
         # a non existant key should return empty list
         self.assertEquals(self.client.zrangebyscore('b', 0, 1, withscores=True), [])
 
@@ -732,9 +732,9 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
         self.assertEquals(self.client.zrem('a', 'a2'), True)
-        self.assertEquals(self.client.zrange('a', 0, 5), [b'a1', b'a3'])
+        self.assertEquals(self.client.zrange('a', 0, 5), ['a1', 'a3'])
         self.assertEquals(self.client.zrem('a', 'b'), False)
-        self.assertEquals(self.client.zrange('a', 0, 5), [b'a1', b'a3'])
+        self.assertEquals(self.client.zrange('a', 0, 5), ['a1', 'a3'])
 
     def test_zremrangebyscore(self):
         # key is not a zset
@@ -745,9 +745,9 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3, 'a4': 4, 'a5': 5})
         self.assertEquals(self.client.zremrangebyscore('a', 2, 4), 3)
-        self.assertEquals(self.client.zrange('a', 0, 5), [b'a1', b'a5'])
+        self.assertEquals(self.client.zrange('a', 0, 5), ['a1', 'a5'])
         self.assertEquals(self.client.zremrangebyscore('a', 2, 4), 0)
-        self.assertEquals(self.client.zrange('a', 0, 5), [b'a1', b'a5'])
+        self.assertEquals(self.client.zrange('a', 0, 5), ['a1', 'a5'])
 
     def test_zrevrange(self):
         # key is not a zset
@@ -757,12 +757,12 @@ class ServerCommandsTestCase(BaseTest):
         del self.client['a']
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(self.client.zrevrange('a', 0, 1), [b'a3', b'a2'])
-        self.assertEquals(self.client.zrevrange('a', 1, 2), [b'a2', b'a1'])
+        self.assertEquals(self.client.zrevrange('a', 0, 1), ['a3', 'a2'])
+        self.assertEquals(self.client.zrevrange('a', 1, 2), ['a2', 'a1'])
         self.assertEquals(list(self.client.zrevrange('a', 0, 1, withscores=True)),
-            [(b'a3', 3.0), (b'a2', 2.0)])
+            [('a3', 3.0), ('a2', 2.0)])
         self.assertEquals(list(self.client.zrevrange('a', 1, 2, withscores=True)),
-            [(b'a2', 2.0), (b'a1', 1.0)])
+            [('a2', 2.0), ('a1', 1.0)])
         # a non existant key should return empty list
         self.assertEquals(self.client.zrange('b', 0, 1, withscores=True), [])
 
@@ -800,7 +800,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assert_(self.client.zunionstore('z', ['a', 'b', 'c']))
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a2', 1), (b'a3', 3), (b'a5', 4), (b'a4', 7), (b'a1', 9)]
+            [('a2', 1), ('a3', 3), ('a5', 4), ('a4', 7), ('a1', 9)]
             )
 
         # max, no weight
@@ -809,14 +809,14 @@ class ServerCommandsTestCase(BaseTest):
             )
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a2', 1), (b'a3', 2), (b'a5', 4), (b'a4', 5), (b'a1', 6)]
+            [('a2', 1), ('a3', 2), ('a5', 4), ('a4', 5), ('a1', 6)]
             )
 
         # with weight
         self.assert_(self.client.zunionstore('z', {'a': 1, 'b': 2, 'c': 3}))
         self.assertEquals(
             list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a2', 1), (b'a3', 5), (b'a5', 12), (b'a4', 19), (b'a1', 23)]
+            [('a2', 1), ('a3', 5), ('a5', 12), ('a4', 19), ('a1', 23)]
             )
 
 
@@ -834,23 +834,23 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.hget('a', 'a1'), None)
         # real logic
         self.make_hash('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(self.client.hget('a', 'a1'), b'1')
-        self.assertEquals(self.client.hget('a', 'a2'), b'2')
-        self.assertEquals(self.client.hget('a', 'a3'), b'3')
+        self.assertEquals(self.client.hget('a', 'a1'), '1')
+        self.assertEquals(self.client.hget('a', 'a2'), '2')
+        self.assertEquals(self.client.hget('a', 'a3'), '3')
         self.assertEquals(self.client.hset('a', 'a2', 5), 0)
-        self.assertEquals(self.client.hget('a', 'a2'), b'5')
+        self.assertEquals(self.client.hget('a', 'a2'), '5')
         self.assertEquals(self.client.hset('a', 'a4', 4), 1)
-        self.assertEquals(self.client.hget('a', 'a4'), b'4')
+        self.assertEquals(self.client.hget('a', 'a4'), '4')
         # key inside of hash that doesn't exist returns null value
         self.assertEquals(self.client.hget('a', 'b'), None)
 
     def test_hsetnx(self):
         # Initially set the hash field
         self.client.hsetnx('a', 'a1', 1)
-        self.assertEqual(self.client.hget('a', 'a1'), b'1')
+        self.assertEqual(self.client.hget('a', 'a1'), '1')
         # Try and set the existing hash field to a different value
         self.client.hsetnx('a', 'a1', 2)
-        self.assertEqual(self.client.hget('a', 'a1'), b'1')
+        self.assertEqual(self.client.hget('a', 'a1'), '1')
 
     def test_hmset(self):
         d = {'a': '1', 'b': '2', 'c': '3'}
@@ -862,8 +862,8 @@ class ServerCommandsTestCase(BaseTest):
     def test_hmget(self):
         d = {'a': 1, 'b': 2, 'c': 3}
         self.assert_(self.client.hmset('foo', d))
-        self.assertEqual(self.client.hmget('foo', ['a', 'b', 'c']), [b'1', b'2', b'3'])
-        self.assertEqual(self.client.hmget('foo', ['a', 'c']), [b'1', b'3'])
+        self.assertEqual(self.client.hmget('foo', ['a', 'b', 'c']), ['1', '2', '3'])
+        self.assertEqual(self.client.hmget('foo', ['a', 'c']), ['1', '3'])
 
     def test_hmget_empty(self):
         self.assertEqual(self.client.hmget('foo', ['a', 'b']), [None, None])
@@ -880,7 +880,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.hdel('a', 'a1'), False)
         # real logic
         self.make_hash('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(self.client.hget('a', 'a2'), b'2')
+        self.assertEquals(self.client.hget('a', 'a2'), '2')
         self.assert_(self.client.hdel('a', 'a2'))
         self.assertEquals(self.client.hget('a', 'a2'), None)
 
@@ -983,11 +983,11 @@ class ServerCommandsTestCase(BaseTest):
 
     def test_sort_basic(self):
         self.make_list('a', '3214')
-        self.assertEquals(self.client.sort('a'), [b'1', b'2', b'3', b'4'])
+        self.assertEquals(self.client.sort('a'), ['1', '2', '3', '4'])
 
     def test_sort_limited(self):
         self.make_list('a', '3214')
-        self.assertEquals(self.client.sort('a', start=1, num=2), [b'2', b'3'])
+        self.assertEquals(self.client.sort('a', start=1, num=2), ['2', '3'])
 
     def test_sort_by(self):
         self.client['score:1'] = 8
@@ -995,7 +995,7 @@ class ServerCommandsTestCase(BaseTest):
         self.client['score:3'] = 5
         self.make_list('a_values', '123')
         self.assertEquals(self.client.sort('a_values', by='score:*'),
-            [b'2', b'3', b'1'])
+            ['2', '3', '1'])
 
     def test_sort_get(self):
         self.client['user:1'] = 'u1'
@@ -1003,22 +1003,22 @@ class ServerCommandsTestCase(BaseTest):
         self.client['user:3'] = 'u3'
         self.make_list('a', '231')
         self.assertEquals(self.client.sort('a', get='user:*'),
-            [b'u1', b'u2', b'u3'])
+            ['u1', 'u2', 'u3'])
 
     def test_sort_desc(self):
         self.make_list('a', '231')
-        self.assertEquals(self.client.sort('a', desc=True), [b'3', b'2', b'1'])
+        self.assertEquals(self.client.sort('a', desc=True), ['3', '2', '1'])
 
     def test_sort_alpha(self):
         self.make_list('a', 'ecbda')
         self.assertEquals(self.client.sort('a', alpha=True),
-            [b'a', b'b', b'c', b'd', b'e'])
+            ['a', 'b', 'c', 'd', 'e'])
 
     def test_sort_store(self):
         self.make_list('a', '231')
         self.assertEquals(self.client.sort('a', store='sorted_values'), 3)
         self.assertEquals(self.client.lrange('sorted_values', 0, 5),
-            [b'1', b'2', b'3'])
+            ['1', '2', '3'])
 
     def test_sort_all_options(self):
         self.client['user:1:username'] = 'zeus'
@@ -1044,7 +1044,7 @@ class ServerCommandsTestCase(BaseTest):
             get='user:*:favorite_drink', desc=True, alpha=True, store='sorted')
         self.assertEquals(num, 4)
         self.assertEquals(self.client.lrange('sorted', 0, 10),
-            [b'vodka', b'milk', b'gin', b'apple juice'])
+            ['vodka', 'milk', 'gin', 'apple juice'])
 
     # PUBSUB
     def _test_pubsub(self):
@@ -1082,29 +1082,29 @@ class ServerCommandsTestCase(BaseTest):
         for msg_type, channel, _ in messages:
             sent_types.setdefault(msg_type, 0)
             sent_types[msg_type] += 1
-            if msg_type == b'message':
+            if msg_type == 'message':
                 sent_channels.setdefault(channel, 0)
                 sent_channels[channel] += 1
         for channel in channels:
             channel = to_bytestring(channel)
             self.assertEquals(sent_channels[channel], messages_per_channel)
-        self.assertEquals(sent_types[b'subscribe'], len(channels))
-        self.assertEquals(sent_types[b'message'],
+        self.assertEquals(sent_types['subscribe'], len(channels))
+        self.assertEquals(sent_types['message'],
             len(channels) * messages_per_channel)
 
     ## BINARY SAFE
     # TODO add more tests
     def test_binary_get_set(self):
         self.assertTrue(self.client.set(' foo bar ', '123'))
-        self.assertEqual(self.client.get(' foo bar '), b'123')
+        self.assertEqual(self.client.get(' foo bar '), '123')
 
-        self.assertTrue(self.client.set(' foo\r\nbar\r\n ', b'456'))
-        self.assertEqual(self.client.get(' foo\r\nbar\r\n '), b'456')
+        self.assertTrue(self.client.set(' foo\r\nbar\r\n ', '456'))
+        self.assertEqual(self.client.get(' foo\r\nbar\r\n '), '456')
 
         self.assertTrue(self.client.set(' \r\n\t\x07\x13 ', '789'))
-        self.assertEqual(self.client.get(' \r\n\t\x07\x13 '), b'789')
+        self.assertEqual(self.client.get(' \r\n\t\x07\x13 '), '789')
 
-        self.assertEqual(sorted(self.client.keys('*')), [b' \r\n\t\x07\x13 ', b' foo\r\nbar\r\n ', b' foo bar '])
+        self.assertEqual(sorted(self.client.keys('*')), [' \r\n\t\x07\x13 ', ' foo\r\nbar\r\n ', ' foo bar '])
 
         self.assertTrue(self.client.delete(' foo bar '))
         self.assertTrue(self.client.delete(' foo\r\nbar\r\n '))

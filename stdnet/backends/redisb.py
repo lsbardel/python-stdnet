@@ -184,6 +184,7 @@ class RedisQuery(BeckendQuery):
                 self.result = self.pipe.execute()
     
     def order(self):
+        '''Perform ordering with respect model fields.'''
         if self.qs.ordering:
             sort_by = self.qs.ordering
             skey = self.meta.tempkey()
@@ -275,10 +276,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.clear           = redispy.flushdb
         self.delete          = redispy.delete
         self.keys            = redispy.keys
-    
-    def __repr__(self):
-        r = self.redispy
-        return '%s db %s on %s:%s' % (self.__name,r.db,r.host,r.port)
             
     def unwind_query(self, meta, qset):
         '''Unwind queryset'''

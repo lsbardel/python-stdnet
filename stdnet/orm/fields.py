@@ -29,7 +29,8 @@ __all__ = ['Field',
            'ForeignKey',
            'JSONField',
            'PickleObjectField',
-           'ModelField']
+           'ModelField',
+           'JSPLITTER']
 
 EMPTY = ''
 JSPLITTER = '__'

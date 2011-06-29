@@ -111,8 +111,8 @@ class Dictionary(orm.StdModel):
     
 class SimpleList(orm.StdModel):
     names = orm.ListField()
-
-
+    
+    
 class TestDateModel(orm.StdModel):
     person = orm.SymbolField()
     name = orm.SymbolField()
@@ -130,6 +130,14 @@ class SportAtDate2(TestDateModel):
     class Meta:
         ordering = '-dt'
     
+
+class Group(orm.StdModel):
+    name = orm.SymbolField()
+    
+    
+class Person(orm.StdModel):
+    name = orm.SymbolField()
+    group = orm.ForeignKey(Group)
 
     
 # A model for testing a recursive foreign key

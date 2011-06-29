@@ -7,165 +7,23 @@ Copyright (c) 2010 Andy McCurdy
 
 
 '''
-import datetime
-import errno
-import socket
-import threading
 import time
-import warnings
-from itertools import chain
-from .exceptions import ConnectionError, ResponseError, InvalidResponse
-from .exceptions import RedisError, AuthenticationError
+from datetime import datetime
+from itertools import starmap
 
-from stdnet.utils import to_bytestring, to_string, is_string, iteritems
+from stdnet.utils import zip
 
-EMPTY = b''
-CRLF = b'\r\n'
+from .connection import *
 
-class ConnectionPool(threading.local):
-    "Manages a list of connections on the local thread"
-    def __init__(self):
-        self.connections = {}
+tuple_list = (tuple,list)
 
-    def make_connection_key(self, host, port, db):
-        "Create a unique key for the specified host, port and db"
-        return '%s:%s:%s' % (host, port, db)
-
-    def get_connection(self, host, port, db, password, socket_timeout):
-        "Return a specific connection for the specified host, port and db"
-        key = self.make_connection_key(host, port, db)
-        if key not in self.connections:
-            self.connections[key] = Connection(
-                host, port, db, password, socket_timeout)
-        return self.connections[key]
-
-    def get_all_connections(self):
-        "Return a list of all connection objects the manager knows about"
-        return self.connections.values()
-
-
-class Connection:
-    "Manages TCP communication to and from a Redis server"
-    def __init__(self, host='localhost', port=6379, db=0, password=None,
-                 socket_timeout=None):
-        self.host = host
-        self.port = port
-        self.db = db
-        self.password = password
-        self.socket_timeout = socket_timeout
-        self._sock = None
-        self._inbuffer = bytearray()
-
-    def connect(self, redis_instance):
-        "Connects to the Redis server if not already connected"
-        if self._sock:
-            return
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.host, self.port))
-        except socket.error as e:
-            # args for socket.error can either be (errno, "message")
-            # or just "message"
-            if len(e.args) == 1:
-                error_message = "Error connecting to %s:%s. %s." % \
-                    (self.host, self.port, e.args[0])
-            else:
-                error_message = "Error %s connecting %s:%s. %s." % \
-                    (e.args[0], self.host, self.port, e.args[1])
-            raise ConnectionError(error_message)
-        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-        self._sock = sock
-        redis_instance._setup_connection()
-
-    def disconnect(self):
-        "Disconnects from the Redis server"
-        if self._sock is None:
-            return
-        try:
-            self._sock.close()
-        except socket.error:
-            pass
-        self._sock = None
-        self._fp = None
-
-    def send(self, command, redis_instance):
-        "Send ``command`` to the Redis server. Return the result."
-        self.connect(redis_instance)
-        try:
-            self._sock.sendall(command)
-        except socket.error as e:
-            if e.args[0] == errno.EPIPE:
-                self.disconnect()
-            raise ConnectionError("Error %s while writing to socket. %s." % \
-                e.args)
-
-    def _read_length(self,length):
-        """Read a fixed number of bytes on a socket.
-        """
-        chunk = bytes(self._inbuffer[:length])
-        if chunk:
-            del self._inbuffer[:length]
-        chunks = [chunk]
-        length -= len(chunk)
-        while length > 0:
-            chunk = self._sock.recv(length)
-            if not chunk:
-                break
-            length -= len(chunk)
-            chunks.append(bytes(chunk))
-        return b''.join(chunks)
-
-    def _readline(self):
-        while True:
-            nl_index = self._inbuffer.find(b'\n')
-            if nl_index >= 0:
-                line = self._inbuffer[0:nl_index+1]
-                del self._inbuffer[0:nl_index+1]
-                return bytes(line)
-            chunk = self._sock.recv(65536)
-            if not chunk:
-                line = self._inbuffer
-                self._inbuffer = bytearray()
-                return bytes(line)
-            self._inbuffer.extend(chunk)
-
-    def read(self, length=None):
-        """Read a line from the socket is length is None,
-otherwise read ``length`` bytes"""
-        try:
-            if length is not None:
-                return self._read_length(length)
-            else:
-                return self._readline()
-        except socket.error as e:
-            self.disconnect()
-            if e.args and e.args[0] == errno.EAGAIN:
-                raise ConnectionError("Error while reading from socket: %s" % \
-                    e.args[1])
-        return b''
-
-
-def list_or_args(command, keys, args):
-    # returns a single list combining keys and args
-    # if keys is not a list or args has items, issue a
-    # deprecation warning
-    oldapi = bool(args)
-    try:
-        i = iter(keys)
-        # a string can be iterated, but indicates
-        # keys wasn't passed as a list
-        if is_string(keys):
-            oldapi = True
-    except TypeError:
-        oldapi = True
+def list_or_args(keys, args):
+    if not isinstance(keys, tuple_list):
         keys = [keys]
-    if oldapi:
-        warnings.warn(DeprecationWarning(
-            "Passing *args to Redis.%s has been deprecated. "
-            "Pass an iterable to ``keys`` instead" % command
-        ))
+    if args:
         keys.extend(args)
     return keys
+
 
 def timestamp_to_datetime(response):
     "Converts a unix timestamp to a Python datetime object"
@@ -175,7 +33,7 @@ def timestamp_to_datetime(response):
         response = int(response)
     except ValueError:
         return None
-    return datetime.datetime.fromtimestamp(response)
+    return datetime.fromtimestamp(response)
 
 
 def string_keys_to_dict(key_string, callback):
@@ -245,7 +103,7 @@ def float_or_none(response):
     return float(response)
 
 
-class Redis(threading.local):
+class Redis(object):
     """
     Implementation of the Redis protocol.
 
@@ -257,43 +115,43 @@ class Redis(threading.local):
     """
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
-            b'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
-            b'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
+            'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
+            'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
             bool
             ),
         string_keys_to_dict(
-            b'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD'
-            b'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
+            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD'
+            'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             int
             ),
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
-            lambda r: isinstance(r, int) and r or r == b'OK'
+            lambda r: is_int(r) and r or r == OK
             ),
-        string_keys_to_dict(b'ZSCORE ZINCRBY', float_or_none),
+        string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
-            b'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME '
-            b'SAVE SELECT SET SHUTDOWN',
-            lambda r: r == b'OK'
+            'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME '
+            'SAVE SELECT SET SHUTDOWN',
+            lambda r: r == OK
             ),
-        string_keys_to_dict(b'BLPOP BRPOP', lambda r: r and tuple(r) or None),
-        string_keys_to_dict(b'SDIFF SINTER SMEMBERS SUNION',
+        string_keys_to_dict('BLPOP BRPOP', lambda r: r and tuple(r) or None),
+        string_keys_to_dict('SDIFF SINTER SMEMBERS SUNION',
             lambda r: set(r)
             ),
-        string_keys_to_dict(b'ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
-        #string_keys_to_dict(b'TSRANGE TSRANGEBYTIME', zset_score_pairs),
+        string_keys_to_dict('ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
+        #string_keys_to_dict('TSRANGE TSRANGEBYTIME', zset_score_pairs),
         {
-            b'BGREWRITEAOF': lambda r: \
-                r == b'Background rewriting of AOF file started',
-            b'BGSAVE': lambda r: r == b'Background saving started',
-            b'HGETALL': lambda r: pairs_to_dict(r),
-            b'INFO': parse_info,
-            b'LASTSAVE': timestamp_to_datetime,
-            b'PING': lambda r: r == b'PONG',
-            b'RANDOMKEY': lambda r: r and r or None,
-            b'TTL': lambda r: r != -1 and r or None,
-            b'ZRANK': int_or_none,
+            'BGREWRITEAOF': lambda r: \
+                r == 'Background rewriting of AOF file started',
+            'BGSAVE': lambda r: r == 'Background saving started',
+            'HGETALL': lambda r: pairs_to_dict(r),
+            'INFO': parse_info,
+            'LASTSAVE': timestamp_to_datetime,
+            'PING': lambda r: r == 'PONG',
+            'RANDOMKEY': lambda r: r and r or None,
+            'TTL': lambda r: r != -1 and r or None,
+            'ZRANK': int_or_none,
         }
         )
 
@@ -302,130 +160,48 @@ class Redis(threading.local):
 
     def __init__(self, host='localhost', port=6379,
                  db=0, password=None, socket_timeout=None,
-                 connection_pool=None):
-        self.connection = None
-        self.subscribed = False
-        self.connection_pool = connection_pool and connection_pool or ConnectionPool()
-        self.select(db, host, port, password, socket_timeout)
-
-    #### Legacty accessors of connection information ####
-    def _get_host(self):
-        return self.connection.host
-    host = property(_get_host)
-
-    def _get_port(self):
-        return self.connection.port
-    port = property(_get_port)
+                 connection=None):
+        if not connection:
+            connection = Connection(host = host, port = port, password = password, db = db)
+        self.connection = connection
+        self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
 
     def _get_db(self):
         return self.connection.db
     db = property(_get_db)
-
-    def pipeline(self, transaction=True):
+    
+    def pipeline(self, transaction=True, shard_hint=None):
         """
-        Return a new pipeline object that can queue multiple commands for
-        later execution. ``transaction`` indicates whether all commands
-        should be executed atomically. Apart from multiple atomic operations,
-        pipelines are useful for batch loading of data as they reduce the
-        number of back and forth network operations between client and server.
-        """
+Return a new pipeline object that can queue multiple commands for
+later execution. ``transaction`` indicates whether all commands
+should be executed atomically. Apart from making a group of operations
+atomic, pipelines are useful for reducing the back-and-forth overhead
+between the client and server.
+"""
         return Pipeline(
             self.connection,
-            transaction
-            )
+            self.response_callbacks,
+            transaction,
+            shard_hint)
 
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
-    def _execute_command(self, command_name, command, **options):
-        command_name = self.encode(command_name)
-        subscription_command = command_name in self.SUBSCRIPTION_COMMANDS
-        if self.subscribed and not subscription_command:
-            raise RedisError("Cannot issue commands other than SUBSCRIBE and "
-                "UNSUBSCRIBE while channels are open")
-        try:
-            self.connection.send(command, self)
-            if subscription_command:
-                return None
-            return self.parse_response(command_name, **options)
-        except ConnectionError:
-            self.connection.disconnect()
-            self.connection.send(command, self)
-            if subscription_command:
-                return None
-            return self.parse_response(command_name, **options)
-
     def execute_command(self, *args, **options):
-        "Sends the command to the redis server and returns it's response"
-        encode = self.encode
-        N = len(args)
-        encoded_values = [encode(value) for value in args]
-        cmds = [b'$'+to_bytestring(len(value),'ascii')+CRLF+value+CRLF
-                for value in encoded_values]
-        return self._execute_command(
-            args[0],
-            b'*'+to_bytestring(N,'ascii')+CRLF+ b''.join(cmds),
-            **options
-            )
+        "Execute a command and return a parsed response"
+        command_name = args[0]
+        connection = self.connection
+        try:
+            connection.send_command(*args)
+            return self.parse_response(connection, command_name, **options)
+        except ConnectionError:
+            connection.disconnect()
+            connection.send_command(*args)
+            return self.parse_response(connection, command_name, **options)
 
-    def _parse_response(self, command_name, catch_errors):
-        conn = self.connection
-        response = conn.read()[:-2] # strip last two characters (\r\n)
-        if not response:
-            self.connection.disconnect()
-            raise ConnectionError("Socket closed on remote end")
-
-        # server returned a null value
-        if response in (b'$-1', b'*-1'):
-            return None
-        byte, response = response[0:1], response[1:]
-
-        # server returned an error
-        if byte == b'-':
-            if response.startswith(b'ERR '):
-                response = response[4:]
-            raise ResponseError(response)
-        # single value
-        elif byte == b'+':
-            return response
-        # int value
-        elif byte == b':':
-            return int(response)
-        # bulk response
-        elif byte == b'$':
-            length = int(response)
-            if length == -1:
-                return None
-            response = length and conn.read(length) or b''
-            conn.read(2) # read the \r\n delimiter
-            return response
-        # multi-bulk response
-        elif byte == b'*':
-            length = int(response)
-            if length == -1:
-                return None
-            if not catch_errors:
-                return [self._parse_response(command_name, catch_errors)
-                    for i in range(length)]
-            else:
-                # for pipelines, we need to read everything,
-                # including response errors. otherwise we'd
-                # completely mess up the receive buffer
-                data = []
-                for i in range(length):
-                    try:
-                        data.append(
-                            self._parse_response(command_name, catch_errors)
-                            )
-                    except Exception as e:
-                        data.append(e)
-                return data
-
-        raise InvalidResponse("Unknown response type for: %s" % command_name)
-
-    def parse_response(self, command_name, catch_errors=False, **options):
+    def parse_response(self, connection, command_name, **options):
         "Parses a response from the Redis server"
-        response = self._parse_response(command_name, catch_errors)
-        if command_name in self.RESPONSE_CALLBACKS:
-            return self.RESPONSE_CALLBACKS[command_name](response, **options)
+        response = connection.read_response()
+        if command_name in self.response_callbacks:
+            return self.response_callbacks[command_name](response, **options)
         return response
 
     def encode(self, value):
@@ -433,16 +209,6 @@ class Redis(threading.local):
         return to_bytestring(value)
 
     #### CONNECTION HANDLING ####
-    def get_connection(self, host, port, db, password, socket_timeout):
-        "Returns a connection object"
-        conn = self.connection_pool.get_connection(
-            host, port, db, password, socket_timeout)
-        # if for whatever reason the connection gets a bad password, make
-        # sure a subsequent attempt with the right password makes its way
-        # to the connection
-        conn.password = password
-        return conn
-
     def _setup_connection(self):
         """
         After successfully opening a socket to the Redis server, the
@@ -500,14 +266,6 @@ class Redis(threading.local):
         "Delete one or more keys specified by ``names``"
         return self.execute_command('DEL', *names)
     __delitem__ = delete
-
-    def flush(self, all_dbs=False):
-        warnings.warn(DeprecationWarning(
-            "'flush' has been deprecated. "
-            "Use Redis.flushdb() or Redis.flushall() instead"))
-        if all_dbs:
-            return self.flushall()
-        return self.flushdb()
 
     def flushall(self):
         "Delete all keys in all databases on the current host"
@@ -569,7 +327,7 @@ class Redis(threading.local):
         Set an expire flag on key ``name``. ``when`` can be represented
         as an integer indicating unix time or a Python datetime object.
         """
-        if isinstance(when, datetime.datetime):
+        if isinstance(when, datetime):
             when = int(time.mktime(when.timetuple()))
         return self.execute_command('EXPIREAT', name, when)
 
@@ -604,7 +362,7 @@ class Redis(threading.local):
 
         * Passing *args to this method has been deprecated *
         """
-        keys = list_or_args('mget', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('MGET', *keys)
 
     def mset(self, mapping):
@@ -630,21 +388,10 @@ class Redis(threading.local):
         "Returns the name of a random key"
         return self.execute_command('RANDOMKEY')
 
-    def rename(self, src, dst, **kwargs):
+    def rename(self, src, dst):
         """
         Rename key ``src`` to ``dst``
-
-        * The following flags have been deprecated *
-        If ``preserve`` is True, rename the key only if the destination name
-            doesn't already exist
         """
-        if kwargs:
-            if 'preserve' in kwargs:
-                warnings.warn(DeprecationWarning(
-                    "preserve option to 'rename' is deprecated, "
-                    "use Redis.renamenx instead"))
-                if kwargs['preserve']:
-                    return self.renamenx(src, dst)
         return self.execute_command('RENAME', src, dst)
 
     def renamenx(self, src, dst):
@@ -652,29 +399,10 @@ class Redis(threading.local):
         return self.execute_command('RENAMENX', src, dst)
 
 
-    def set(self, name, value, **kwargs):
+    def set(self, name, value):
         """
         Set the value at key ``name`` to ``value``
-
-        * The following flags have been deprecated *
-        If ``preserve`` is True, set the value only if key doesn't already
-        exist
-        If ``getset`` is True, set the value only if key doesn't already exist
-        and return the resulting value of key
         """
-        if kwargs:
-            if 'getset' in kwargs:
-                warnings.warn(DeprecationWarning(
-                    "getset option to 'set' is deprecated, "
-                    "use Redis.getset() instead"))
-                if kwargs['getset']:
-                    return self.getset(name, value)
-            if 'preserve' in kwargs:
-                warnings.warn(DeprecationWarning(
-                    "preserve option to 'set' is deprecated, "
-                    "use Redis.setnx() instead"))
-                if kwargs['preserve']:
-                    return self.setnx(name, value)
         return self.execute_command('SET', name, value)
     __setitem__ = set
 
@@ -799,34 +527,6 @@ class Redis(threading.local):
         """
         return self.execute_command('LTRIM', name, start, end)
 
-    def pop(self, name, tail=False):
-        """
-        Pop and return the first or last element of list ``name``
-
-        * This method has been deprecated,
-          use Redis.lpop or Redis.rpop instead *
-        """
-        warnings.warn(DeprecationWarning(
-            "Redis.pop has been deprecated, "
-            "use Redis.lpop or Redis.rpop instead"))
-        if tail:
-            return self.rpop(name)
-        return self.lpop(name)
-
-    def push(self, name, value, head=False):
-        """
-        Push ``value`` onto list ``name``.
-
-        * This method has been deprecated,
-          use Redis.lpush or Redis.rpush instead *
-        """
-        warnings.warn(DeprecationWarning(
-            "Redis.push has been deprecated, "
-            "use Redis.lpush or Redis.rpush instead"))
-        if head:
-            return self.lpush(name, value)
-        return self.rpush(name, value)
-
     def rpop(self, name):
         "Remove and return the last item of the list ``name``"
         return self.execute_command('RPOP', name)
@@ -902,7 +602,7 @@ class Redis(threading.local):
 
     def sdiff(self, keys, *args):
         "Return the difference of sets specified by ``keys``"
-        keys = list_or_args('sdiff', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SDIFF', *keys)
 
     def sdiffstore(self, dest, keys, *args):
@@ -910,12 +610,12 @@ class Redis(threading.local):
         Store the difference of sets specified by ``keys`` into a new
         set named ``dest``.  Returns the number of keys in the new set.
         """
-        keys = list_or_args('sdiffstore', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SDIFFSTORE', dest, *keys)
 
     def sinter(self, keys, *args):
         "Return the intersection of sets specified by ``keys``"
-        keys = list_or_args('sinter', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SINTER', *keys)
 
     def sinterstore(self, dest, keys, *args):
@@ -923,7 +623,7 @@ class Redis(threading.local):
         Store the intersection of sets specified by ``keys`` into a new
         set named ``dest``.  Returns the number of keys in the new set.
         """
-        keys = list_or_args('sinterstore', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SINTERSTORE', dest, *keys)
 
     def sismember(self, name, value):
@@ -952,7 +652,7 @@ class Redis(threading.local):
 
     def sunion(self, keys, *args):
         "Return the union of sets specifiued by ``keys``"
-        keys = list_or_args('sunion', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SUNION', *keys)
 
     def sunionstore(self, dest, keys, *args):
@@ -960,7 +660,7 @@ class Redis(threading.local):
         Store the union of sets specified by ``keys`` into a new
         set named ``dest``.  Returns the number of keys in the new set.
         """
-        keys = list_or_args('sunionstore', keys, args)
+        keys = list_or_args(keys, args)
         return self.execute_command('SUNIONSTORE', dest, *keys)
 
 
@@ -973,22 +673,9 @@ class Redis(threading.local):
         "Return the number of elements in the sorted set ``name``"
         return self.execute_command('ZCARD', name)
 
-    def zincr(self, key, member, value=1):
-        "This has been deprecated, use zincrby instead"
-        warnings.warn(DeprecationWarning(
-            "Redis.zincr has been deprecated, use Redis.zincrby instead"
-            ))
-        return self.zincrby(key, member, value)
-
     def zincrby(self, name, value, amount=1):
         "Increment the score of ``value`` in sorted set ``name`` by ``amount``"
         return self.execute_command('ZINCRBY', name, amount, value)
-
-    def zinter(self, dest, keys, aggregate=None):
-        warnings.warn(DeprecationWarning(
-            "Redis.zinter has been deprecated, use Redis.zinterstore instead"
-            ))
-        return self.zinterstore(dest, keys, aggregate)
 
     def zinterstore(self, dest, keys, aggregate=None):
         """
@@ -1268,105 +955,101 @@ class Redis(threading.local):
 
 class Pipeline(Redis):
     """
-    Pipelines provide a way to transmit multiple commands to the Redis server
-    in one transmission.  This is convenient for batch processing, such as
-    saving all the values in a list to Redis.
+Pipelines provide a way to transmit multiple commands to the Redis server
+in one transmission. This is convenient for batch processing, such as
+saving all the values in a list to Redis.
 
-    All commands executed within a pipeline are wrapped with MULTI and EXEC
-    calls. This guarantees all commands executed in the pipeline will be
-    executed atomically.
+All commands executed within a pipeline are wrapped with MULTI and EXEC
+calls. This guarantees all commands executed in the pipeline will be
+executed atomically.
 
-    Any command raising an exception does *not* halt the execution of
-    subsequent commands in the pipeline. Instead, the exception is caught
-    and its instance is placed into the response list returned by execute().
-    Code iterating over the response list should be able to deal with an
-    instance of an exception as a potential value. In general, these will be
-    ResponseError exceptions, such as those raised when issuing a command
-    on a key of a different datatype.
-    """
-    def __init__(self, connection, transaction):
+Any command raising an exception does *not* halt the execution of
+subsequent commands in the pipeline. Instead, the exception is caught
+and its instance is placed into the response list returned by execute().
+Code iterating over the response list should be able to deal with an
+instance of an exception as a potential value. In general, these will be
+ResponseError exceptions, such as those raised when issuing a command
+on a key of a different datatype.
+"""
+    def __init__(self, connection, response_callbacks, transaction,
+                 shard_hint):
         self.connection = connection
+        self.response_callbacks = response_callbacks
         self.transaction = transaction
-        self.subscribed = False # NOTE not in use, but necessary
+        self.shard_hint = shard_hint
         self.reset()
 
     def reset(self):
         self.command_stack = []
+        if self.transaction:
+            self.execute_command('MULTI')
 
-    def _execute_command(self, command_name, command, **options):
+    def execute_command(self, *args, **options):
         """
-        Stage a command to be executed when execute() is next called
+Stage a command to be executed when execute() is next called
 
-        Returns the current Pipeline object back so commands can be
-        chained together, such as:
+Returns the current Pipeline object back so commands can be
+chained together, such as:
 
-        pipe = pipe.set('foo', 'bar').incr('baz').decr('bang')
+pipe = pipe.set('foo', 'bar').incr('baz').decr('bang')
 
-        At some other point, you can then run: pipe.execute(),
-        which will execute all commands queued in the pipe.
-        """
-        # if the command_name is 'AUTH' or 'SELECT', then this command
-        # must have originated after a socket connection and a call to
-        # _setup_connection(). run these commands immediately without
-        # buffering them.
-        if command_name in ('AUTH', 'SELECT'):
-            return super(Pipeline, self)._execute_command(
-                command_name, command, **options)
-        else:
-            self.command_stack.append((to_bytestring(command_name), command, options))
+At some other point, you can then run: pipe.execute(),
+which will execute all commands queued in the pipe.
+"""
+        self.command_stack.append((args, options))
         return self
 
-    def _execute_transaction(self, commands):
-        # wrap the commands in MULTI ... EXEC statements to indicate an
-        # atomic operation
-        all_cmds = b''.join((c for _1, c, _2 in chain(
-            ((EMPTY, b'MULTI\r\n', b''),),
-            commands,
-            ((b'', b'EXEC\r\n', b''),)
-            )))
-        self.connection.send(all_cmds, self)
-        # parse off the response for MULTI and all commands prior to EXEC
+    def _execute_transaction(self, connection, commands):
+        all_cmds = ''.join(starmap(connection.pack_command,
+                                   [args for args, options in commands]))
+        connection.send_packed_command(all_cmds)
+        # we don't care about the multi/exec any longer
+        commands = commands[1:-1]
+        # parse off the response for MULTI and all commands prior to EXEC.
+        # the only data we care about is the response the EXEC
+        # which is the last command
         for i in range(len(commands)+1):
-            _ = self.parse_response('_')
-        # parse the EXEC. we want errors returned as items in the response
-        response = self.parse_response('_', catch_errors=True)
+            self.parse_response(connection, '_')
+        # parse the EXEC.
+        response = self.parse_response(connection, '_')
+
+        if response is None:
+            raise WatchError("Watched variable changed.")
+
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
                 "pipeline execution")
-        # Run any callbacks for the commands run in the pipeline
+        # We have to run response callbacks manually
         data = []
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
-                if cmd[0] in self.RESPONSE_CALLBACKS:
-                    r = self.RESPONSE_CALLBACKS[cmd[0]](r, **cmd[2])
+                args, options = cmd
+                command_name = args[0]
+                if command_name in self.response_callbacks:
+                    r = self.response_callbacks[command_name](r, **options)
             data.append(r)
         return data
 
-    def _execute_pipeline(self, commands):
-        # build up all commands into a single request to increase network perf
-        all_cmds = ''.join([c for _1, c, _2 in commands])
-        self.connection.send(all_cmds, self)
-        data = []
-        for command_name, _, options in commands:
-            data.append(
-                self.parse_response(command_name, catch_errors=True, **options)
-                )
-        return data
+    def _execute_pipeline(self, connection, commands):
+    # build up all commands into a single request to increase network perf
+        all_cmds = ''.join(starmap(connection.pack_command,
+                                   [args for args, options in commands]))
+        connection.send_packed_command(all_cmds)
+        return [self.parse_response(connection, args[0], **options)
+                for args, options in commands]
 
     def execute(self):
         "Execute all the commands in the current pipeline"
-        stack = self.command_stack
-        self.reset()
         if self.transaction:
+            self.execute_command('EXEC')
             execute = self._execute_transaction
         else:
             execute = self._execute_pipeline
+        stack = self.command_stack
+        self.reset()
+        conn = self.connection
         try:
-            return execute(stack)
+            return execute(conn, stack)
         except ConnectionError:
-            self.connection.disconnect()
-            return execute(stack)
-
-    def select(self, *args, **kwargs):
-        raise RedisError("Cannot select a different database from a pipeline")
-
+            conn.disconnect()
+            return execute(conn, stack)

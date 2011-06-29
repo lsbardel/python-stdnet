@@ -1,9 +1,9 @@
 import datetime
 
-from stdnet import test, QuerySetError
+from stdnet import test, QuerySetError, orm
 from stdnet.utils import populate, zip, range
 
-from examples.models import SportAtDate, SportAtDate2, TestDateModel
+from examples.models import SportAtDate, SportAtDate2, Person, TestDateModel, Group
 
 NUM_DATES = 200
 
@@ -33,8 +33,10 @@ class TestSort(test.TestCase):
         return qs    
     
     def checkOrder(self, qs, attr, desc = None):
+        attrs = attr.split(orm.JSPLITTER)
         self.assertTrue(qs)
         desc = desc if desc is not None else self.desc
+        attr = attrs[0]
         at0 = getattr(qs[0],attr)
         for obj in qs[1:]:
             at1 = getattr(obj,attr)
@@ -113,3 +115,34 @@ class TestSortBy(TestSort,ExplicitOrderingMixin):
 Pure explicit ordering.'''
     model = TestDateModel
     
+    
+class TestSortByForeignKeyField(TestSort):
+    model = Person
+    
+    def setUp(self):
+        self.orm.register(self.model)
+        self.orm.register(Group)
+        
+    def fill(self):
+        with Group.transaction() as t:
+            for g in groups:
+                Group(name = g).save(t)
+                
+        model = self.model
+        gps = populate('choice',NUM_DATES,choice_from = Group.objects.all())
+        with model.transaction() as t:
+            for p,g in zip(persons,gps):
+                model(name = p, group = g).save(t)
+        qs = model.objects.all()
+        self.assertEqual(qs.count(),NUM_DATES)
+        return qs
+    
+    def testNameSortBy(self):
+        self.checkOrder(self.fill().sort_by('name'),'name')
+        
+    def testNameSortByReversed(self):
+        self.checkOrder(self.fill().sort_by('-name'),'name',True)
+        
+    #def testSortByFK(self):
+    #    self.checkOrder(self.fill().sort_by('group__name'),'group__name')
+        

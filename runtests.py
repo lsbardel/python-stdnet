@@ -33,6 +33,11 @@ def makeoptions():
                       dest="server",
                       default='',
                       help="Backend server where to run tests")
+    parser.add_option("-p", "--parser",
+                      action="store",
+                      dest="parser",
+                      default='',
+                      help="Specify the python parser.")
     parser.add_option("-i", "--include",
                       action="store",
                       dest="itags",
@@ -63,9 +68,11 @@ if __name__ == '__main__':
     test_type = options.test_type
     paths = addpath(test_type)
     
+    from stdnet.conf import settings
     from stdnet.test import run
     itags  = options.itags.replace(' ','')
     itags  = None if not itags else itags.split(',')
+    settings.REDIS_PARSER = options.parser
     run(paths,
         tags = tags,
         library = 'stdnet',

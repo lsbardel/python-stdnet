@@ -100,11 +100,12 @@ search engine.
             orm.post_save.connect(update_model, sender = model)
             orm.post_delete.connect(delete_model, sender = model)
         
-    def index_item(self, item):
+    def index_item(self, item, skipremove = True):
         """Extract content from the given *item* and add it to the index. If autocomplete
 is enabled, it adds indexes for it.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
+:parameter skipremove: If ``True`` it skip the remove step for improved performance.
 """
         self.remove_item(item)
         wft = self.get_words_from_text
@@ -283,6 +284,18 @@ Remove indexes for *item*.
                 yield item.object
         else:
             raise StopIteration
+        
+    def reindex(self, *models):
+        '''Reindex models by removing items in :class:`stdnet.contrib.searchengine.WordItem`
+and rubuilding them by iterating through all the instances of model provided.
+If models are not provided, it reindex all models registered with the search engine.'''
+        if not models:
+            models = self.REGISTERED_MODELS
+        for model in models:
+            if model in self.REGISTERED_MODELS:
+                WordItem.objects.filter(model_type = model).delete()
+                for obj in model.objects.all():
+                    self.index_item(obj,True)
         
 
 class UpdateSE(object):

@@ -118,6 +118,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.meta     = None
         self.name     = None
         self.model    = None
+        self.as_cache = False
         self.default  = extras.pop('default',self.default)
         self._handle_extras(**extras)
         
@@ -370,17 +371,28 @@ a :class:`datetime.datetime` instance.'''
 
 class CharField(SymbolField):
     '''A text :class:`SymbolField` which is never an index.
-It contains unicode and by default :attr:`Field.required`
-is set to ``False``.'''
+It contains unicode and by default and :attr:`Field.required`
+is set to ``False``.
+
+It accept an additional attribute
+
+.. attribute:: as_cache
+
+    If ``True`` the field contains cached data.
+    
+    Default ``False``.
+'''
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False
         kwargs['unique'] = False
         kwargs['primary_key'] = False
+        as_cache = kwargs.pop('as_cache',False)
         self.max_length = kwargs.pop('max_length',None) # not used for now 
         required = kwargs.get('required',None)
         if required is None:
             kwargs['required'] = False
         super(CharField,self).__init__(*args, **kwargs)
+        self.as_cache = as_cache
         
     def scorefun(self, value):
         if value is not None:
@@ -447,8 +459,9 @@ back to self. For example::
     
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
-        setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
-        self.register_with_related_model()
+        if not model._meta.abstract:
+            setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
+            self.register_with_related_model()
     
     def scorefun(self, value):
         raise NotImplementedError

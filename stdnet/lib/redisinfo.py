@@ -38,15 +38,14 @@ class RedisStats(object):
         return self.size()
     
     def __iter__(self):
-        return self.data().__iter__()
+        return iter(self.data)
     
     def cached_data(self):
         if not hasattr(self,'_data'):
             self._data = self.keys()
         return self._data
     
-    def __getitem__(self, slic):
-        data = self.cached_data()[slic]
+    def _iterate(self, data):
         type_length = self.type_length
         for key in data:
             keys = key.decode()
@@ -54,7 +53,15 @@ class RedisStats(object):
             if ttl == -1:
                 ttl = False
             yield (keys,typ,len,ttl)
-
+    
+    def all(self):
+        '''Return a generator over info on all keys'''
+        return self._iterate(self.cached_data())
+    
+    def __getitem__(self, slic):
+        data = self.cached_data()[slic]
+        return self._iterate(data)
+    
     def type_length(self, key):
         '''Retrive the type and length of a redis key.
         '''

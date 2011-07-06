@@ -127,6 +127,12 @@ class RedisQuery(BeckendQuery):
                 
         return key
         
+    def zism(self, r):
+        return r is not None
+    
+    def sism(self, r):
+        return r
+    
     def build(self, fargs, eargs):
         meta = self.meta
         server = self.server
@@ -136,13 +142,14 @@ class RedisQuery(BeckendQuery):
         if p == 'z':
             pismember =  setattr(pipe,'','zrank')
             self.ismember =  setattr(server.redispy,'','zrank')
+            chk = self.zism
         else:
             pismember =  setattr(pipe,'','sismember')
             self.ismember =  setattr(server.redispy,'','sismember')
+            chk = self.sism
         
         if self.qs.simple:
             allids = []
-            NONE = (None,False)
             idset = self.idset
             for q in fargs:
                 if q.name == 'id':
@@ -155,7 +162,7 @@ class RedisQuery(BeckendQuery):
                         allids.append(id)
                         pismember(idset,id)
             self.result = [id for (id,r) in zip(allids,pipe.execute())\
-                           if r not in NONE]
+                           if chk(r)]
         else:
             self.intersect = setattr(pipe,p,'interstore')
             self.union = setattr(pipe,p,'unionstore')

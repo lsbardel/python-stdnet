@@ -188,7 +188,6 @@ class Connection(object):
             return "Error %s connecting %s:%s. %s." % \
                 (exception.args[0], self.host, self.port, exception.args[1])
 
-
     def on_connect(self):
         "Initialize the connection, authenticate and select a database"
         self._parser.on_connect(self)

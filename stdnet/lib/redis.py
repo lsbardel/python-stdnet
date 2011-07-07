@@ -11,9 +11,11 @@ import time
 from datetime import datetime
 from itertools import starmap
 
-from stdnet.utils import zip
+from stdnet.utils import zip, is_int, iteritems, is_string
 
-from .connection import *
+from .connection import ConnectionPool
+from .exceptions import *
+
 
 tuple_list = (tuple,list)
 
@@ -63,7 +65,6 @@ In doing so, convert byte data into unicode.'''
         return sub_dict
     data = info
     for line in response.splitlines():
-        line = to_string(line)
         keyvalue = line.split(':')
         if len(keyvalue) == 2:
             key,value = keyvalue
@@ -160,14 +161,24 @@ class Redis(object):
 
     def __init__(self, host='localhost', port=6379,
                  db=0, password=None, socket_timeout=None,
-                 connection=None):
-        if not connection:
-            connection = Connection(host = host, port = port, password = password, db = db)
-        self.connection = connection
+                 connection_pool=None,
+                 encoding='utf-8', errors='strict'):
+        if not connection_pool:
+            kwargs = {
+                'db': db,
+                'password': password,
+                'socket_timeout': socket_timeout,
+                'encoding': encoding,
+                'encoding_errors': errors,
+                'host': host,
+                'port': port
+                }
+            connection_pool = ConnectionPool(**kwargs)
+        self.connection_pool = connection_pool
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
 
     def _get_db(self):
-        return self.connection.db
+        return self.connection_pool.db
     db = property(_get_db)
     
     def pipeline(self, transaction=True, shard_hint=None):
@@ -179,7 +190,7 @@ atomic, pipelines are useful for reducing the back-and-forth overhead
 between the client and server.
 """
         return Pipeline(
-            self.connection,
+            self.connection_pool,
             self.response_callbacks,
             transaction,
             shard_hint)
@@ -187,8 +198,9 @@ between the client and server.
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
+        pool = self.connection_pool
         command_name = args[0]
-        connection = self.connection
+        connection = pool.get_connection(command_name, **options)
         try:
             connection.send_command(*args)
             return self.parse_response(connection, command_name, **options)
@@ -196,6 +208,8 @@ between the client and server.
             connection.disconnect()
             connection.send_command(*args)
             return self.parse_response(connection, command_name, **options)
+        finally:
+            pool.release(connection)
 
     def parse_response(self, connection, command_name, **options):
         "Parses a response from the Redis server"
@@ -203,48 +217,6 @@ between the client and server.
         if command_name in self.response_callbacks:
             return self.response_callbacks[command_name](response, **options)
         return response
-
-    def encode(self, value):
-        "Encode ``value`` using the instance's charset"
-        return to_bytestring(value)
-
-    #### CONNECTION HANDLING ####
-    def _setup_connection(self):
-        """
-        After successfully opening a socket to the Redis server, the
-        connection object calls this method to authenticate and select
-        the appropriate database.
-        """
-        if self.connection.password:
-            if not self.execute_command('AUTH', self.connection.password):
-                raise AuthenticationError("Invalid Password")
-        self.execute_command('SELECT', self.connection.db)
-
-    def select(self, db, host=None, port=None, password=None,
-            socket_timeout=None):
-        """
-        Switch to a different Redis connection.
-
-        If the host and port aren't provided and there's an existing
-        connection, use the existing connection's host and port instead.
-
-        Note this method actually replaces the underlying connection object
-        prior to issuing the SELECT command.  This makes sure we protect
-        the thread-safe connections
-        """
-        if host is None:
-            if self.connection is None:
-                raise RedisError("A valid hostname or IP address "
-                    "must be specified")
-            host = self.connection.host
-        if port is None:
-            if self.connection is None:
-                raise RedisError("A valid port must be specified")
-            port = self.connection.port
-
-        self.connection = self.get_connection(
-            host, port, db, password, socket_timeout)
-
 
     #### SERVER INFORMATION ####
     def bgrewriteaof(self):
@@ -258,6 +230,14 @@ between the client and server.
         """
         return self.execute_command('BGSAVE')
 
+    def config_get(self, pattern="*"):
+        "Return a dictionary of configuration based on the ``pattern``"
+        return self.execute_command('CONFIG', 'GET', pattern, parse='GET')
+
+    def config_set(self, name, value):
+        "Set config item ``name`` with ``value``"
+        return self.execute_command('CONFIG', 'SET', name, value, parse='SET')
+    
     def dbsize(self):
         "Returns the number of keys in the current database"
         return self.execute_command('DBSIZE')
@@ -296,7 +276,25 @@ between the client and server.
         blocking until the save is complete
         """
         return self.execute_command('SAVE')
+    
+    def shutdown(self):
+        "Shutdown the server"
+        try:
+            self.execute_command('SHUTDOWN')
+        except ConnectionError:
+            # a ConnectionError here is expected
+            return
+        raise RedisError("SHUTDOWN seems to have failed.")
 
+    def slaveof(self, host=None, port=None):
+        """Set the server to be a replicated slave of the instance identified
+by the ``host`` and ``port``. If called without arguements, the
+instance is promoted to a master instead.
+"""
+        if host is None and port is None:
+            return self.execute_command("SLAVEOF", "NO", "ONE")
+        return self.execute_command("SLAVEOF", host, port)
+    
     #### BASIC KEY COMMANDS ####
     def append(self, key, value):
         """
@@ -817,7 +815,8 @@ between the client and server.
         '''timeseries length'''
         return self.execute_command('TSADD', name, *items)
     
-    def tsrange(self, name, start, end, desc=False, withtimes=False, novalue=False):
+    def tsrange(self, name, start, end, desc=False,
+                withtimes=False, novalue=False):
         """
         Return a range of values from sorted set ``name`` between
         ``start`` and ``end`` sorted in ascending order.
@@ -971,9 +970,9 @@ instance of an exception as a potential value. In general, these will be
 ResponseError exceptions, such as those raised when issuing a command
 on a key of a different datatype.
 """
-    def __init__(self, connection, response_callbacks, transaction,
+    def __init__(self, connection_pool, response_callbacks, transaction,
                  shard_hint):
-        self.connection = connection
+        self.connection_pool = connection_pool
         self.response_callbacks = response_callbacks
         self.transaction = transaction
         self.shard_hint = shard_hint
@@ -1000,7 +999,7 @@ which will execute all commands queued in the pipe.
         return self
 
     def _execute_transaction(self, connection, commands):
-        all_cmds = ''.join(starmap(connection.pack_command,
+        all_cmds = b''.join(starmap(connection.pack_command,
                                    [args for args, options in commands]))
         connection.send_packed_command(all_cmds)
         # we don't care about the multi/exec any longer
@@ -1032,7 +1031,7 @@ which will execute all commands queued in the pipe.
 
     def _execute_pipeline(self, connection, commands):
     # build up all commands into a single request to increase network perf
-        all_cmds = ''.join(starmap(connection.pack_command,
+        all_cmds = b''.join(starmap(connection.pack_command,
                                    [args for args, options in commands]))
         connection.send_packed_command(all_cmds)
         return [self.parse_response(connection, args[0], **options)
@@ -1047,7 +1046,7 @@ which will execute all commands queued in the pipe.
             execute = self._execute_pipeline
         stack = self.command_stack
         self.reset()
-        conn = self.connection
+        conn = self.connection_pool.get_connection('MULTI', self.shard_hint)
         try:
             return execute(conn, stack)
         except ConnectionError:

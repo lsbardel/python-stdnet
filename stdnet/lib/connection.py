@@ -10,48 +10,29 @@ Copyright (c) 2010 Andy McCurdy
 import errno
 import socket
 from itertools import chain
+from collections import namedtuple
 
 from stdnet.conf import settings
-from stdnet.utils import to_bytestring, to_string, is_string,\
-                         iteritems, map, ispy3k, is_int, range
+from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
+                         to_string, BytesIO
 
 if ispy3k:
     toint = lambda x : int(x)
-    LENCRLF = 1
-    LENCR = 0
 else:
     toint = lambda x : long(x)
-    LENCRLF = 2
-    LENCR = 2
 
-from .exceptions import ConnectionError, ResponseError, InvalidResponse
-from .exceptions import RedisError, AuthenticationError
+from .exceptions import *
+        
 
+class RedisPythonReader(object):
 
-EMPTY = b''
-CRLF = b'\r\n'
-STAR = b'*'
-DOLLAR = b'$'
-
-OK = 'OK'
-ERR = 'ERR '
-LOADING = 'LOADING '
-
-
-class PythonParser(object):
-    def __init__(self):
-        self._fp = None
-
-    def on_connect(self, connection):
-        "Called when the socket connects"
-        self._fp = connection._sock.makefile('r')
-
-    def on_disconnect(self):
-        "Called when the socket disconnects"
-        if self._fp is not None:
-            self._fp.close()
-            self._fp = None
-
+    def __init__(self, connection):
+        self.length = None
+        self.mbulk = None
+        self._inbuffer = BytesIO()
+        self.encoding = connection.encoding
+        self.encoding_errors = connection.encoding_errors
+            
     def read(self, length=None):
         """
         Read a line from the socket is no length is specified,
@@ -59,21 +40,38 @@ class PythonParser(object):
         """
         try:
             if length is not None:
-                return self._fp.read(length+LENCRLF)[:-LENCRLF]
-            return self._fp.readline()[:-LENCRLF]
+                chunk = self._inbuffer.read(length+2)
+            else:
+                chunk = self._inbuffer.readline()
+            if chunk:
+                if chunk[-1:] == b'\n':
+                    self.length = None
+                    return chunk[:-2]
+                else:
+                    self._inbuffer = BytesIO(chunk)
         except (socket.error, socket.timeout) as e:
             raise ConnectionError("Error while reading from socket: %s" % \
                 (e.args,))
-
-    def read_response(self):
-        response = self.read()
+    
+    def feed(self, buffer):
+        buffer = self._inbuffer.read(-1) + buffer
+        self._inbuffer = BytesIO(buffer)
+        
+    def gets(self):
+        response = self.read(self.length)
         if not response:
-            raise ConnectionError("Socket closed on remote end")
-
-        byte, response = response[0], response[1:]
+            return False
+        
+        encoding = self.encoding
+        encoding_errors = self.encoding_errors
+        if not self.length:
+            byte, response = response[:1], response[1:]
+        else:
+            response = self.read(self.length)
 
         # server returned an error
-        if byte == '-':
+        if byte == b'-':
+            response = to_string(response,encoding,encoding_errors)
             if response.startswith(ERR):
                 response = response[4:]
                 return ResponseError(response)
@@ -82,33 +80,46 @@ class PythonParser(object):
                 # so we re-initialize (and re-SELECT) next time.
                 raise ConnectionError("Redis is loading data into memory")
         # single value
-        elif byte == '+':
-            return response
+        elif byte == b'+':
+            return to_string(response,encoding,encoding_errors)
         # int value
-        elif byte == ':':
+        elif byte == b':':
             return toint(response)
         # bulk response
-        elif byte == '$':
+        elif byte == b'$':
             length = int(response)
-            if length == -1:
+            if self.length == -1:
                 return None
-            return self.read(length)
+            response = self.read(length)
+            if response is None:
+                self.length = length
+                return False
+            return to_string(response,encoding,encoding_errors)
         # multi-bulk response
-        elif byte == '*':
+        elif byte == b'*':
             length = int(response)
             if length == -1:
                 return None
-            read_response = self.read_response
-            return [read_response() for _ in range(length)]
+            read = self.gets
+            res = []
+            while length:
+                response = read()
+                if response is None:
+                    return False
+                length -= 1
+                res.append(response)
+            return res
         raise InvalidResponse("Protocol Error")
 
 
-class HiredisParser(object):
+class PythonParser(object):
+
+    def createReader(self, connection):
+        return RedisPythonReader(connection)
+    
     def on_connect(self, connection):
         self._sock = connection._sock
-        self._reader = hiredis.Reader(
-            protocolError=InvalidResponse,
-            replyError=ResponseError)
+        self._reader = self.createReader(connection)
 
     def on_disconnect(self):
         self._sock = None
@@ -131,6 +142,14 @@ class HiredisParser(object):
                 continue
             response = self._reader.gets()
         return response
+
+
+class HiredisParser(PythonParser):
+    
+    def createReader(self, connection):
+        return hiredis.Reader(protocolError=InvalidResponse,
+                              replyError=ResponseError)
+
 
 try:
     import hiredis
@@ -176,6 +195,7 @@ class Connection(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(self.socket_timeout)
         sock.connect((self.host, self.port))
+        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         return sock
 
     def _error_message(self, exception):
@@ -259,39 +279,68 @@ class Connection(object):
 
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"
-        command = [DOLLAR+to_bytestring(len(value))+CRLF+value+CRLF
-                   for value in map(self.encode, args)]
-        return STAR+to_bytestring(len(command))+CRLF+EMPTY.join(command)
+        crlf = b'\r\n'
+        chunk = BytesIO()
+        enc = self.encoding
+        err = self.encoding_errors
+        write = chunk.write
+        for value in map(self.encode, args):
+            write(b'$')
+            write(str(len(value)).encode(enc,err))
+            write(crlf)
+            write(value)
+            write(crlf)
+        data = BytesIO()
+        write = data.write
+        write(b'*')
+        write(str(len(args)).encode(enc,err))
+        write(crlf)
+        write(chunk.getvalue())
+        return data.getvalue()
+        
+
+class ConnectionPool(object):
+    "Generic connection pool"
+    def __init__(self,
+                 connection_class=Connection,
+                 max_connections=None,
+                 **connection_kwargs):
+        self.connection_class = connection_class
+        self.connection_kwargs = connection_kwargs
+        self.max_connections = max_connections or settings.MAX_CONNECTIONS
+        self._created_connections = 0
+        self._available_connections = []
+        self._in_use_connections = set()
+
+    @property
+    def db(self):
+        return self.connection_kwargs['db']
     
+    def get_connection(self, command_name, *keys, **options):
+        "Get a connection from the pool"
+        try:
+            connection = self._available_connections.pop()
+        except IndexError:
+            connection = self.make_connection()
+        self._in_use_connections.add(connection)
+        return connection
 
-class UnixDomainSocketConnection(Connection):
-    def __init__(self, path='', db=0, password=None,
-                 socket_timeout=None, encoding='utf-8',
-                 encoding_errors='strict', parser_class=DefaultParser):
-        self.path = path
-        self.db = db
-        self.password = password
-        self.socket_timeout = socket_timeout
-        self.encoding = encoding
-        self.encoding_errors = encoding_errors
-        self._sock = None
-        self._parser = parser_class()
+    def make_connection(self):
+        "Create a new connection"
+        if self._created_connections >= self.max_connections:
+            raise ConnectionError("Too many connections")
+        self._created_connections += 1
+        return self.connection_class(**self.connection_kwargs)
 
-    def _connect(self):
-        "Create a Unix domain socket connection"
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(self.socket_timeout)
-        sock.connect(self.path)
-        return sock
+    def release(self, connection):
+        "Releases the connection back to the pool"
+        self._in_use_connections.remove(connection)
+        self._available_connections.append(connection)
 
-    def _error_message(self, exception):
-        # args for socket.error can either be (errno, "message")
-        # or just "message"
-        if len(exception.args) == 1:
-            return "Error connecting to unix socket: %s. %s." % \
-                (self.path, exception.args[0])
-        else:
-            return "Error %s connecting to unix socket: %s. %s." % \
-                (exception.args[0], self.path, exception.args[1])
-
+    def disconnect(self):
+        "Disconnects all connections in the pool"
+        all_conns = chain(self._available_connections,
+                          self._in_use_connections)
+        for connection in all_conns:
+            connection.disconnect()
 

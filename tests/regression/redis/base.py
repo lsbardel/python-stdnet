@@ -4,6 +4,7 @@ from stdnet.conf import settings
 
 
 ResponseError = redis.ResponseError
+RedisError = redis.RedisError
 
 def makeredis(pool = None):
     cursor = getdb(settings.DEFAULT_BACKEND)

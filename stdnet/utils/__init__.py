@@ -7,7 +7,7 @@ if ispy3k:
     from io import BytesIO
 else:
     import cPickle as pickle
-    from StringIO import StringIO as BytesIO 
+    from cStringIO import StringIO as BytesIO 
     
 
 from .jsontools import *

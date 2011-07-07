@@ -1,5 +1,14 @@
 "Core exceptions raised by the Redis client"
 
+EMPTY = b''
+CRLF = b'\r\n'
+STAR = b'*'
+DOLLAR = b'$'
+
+OK = 'OK'
+ERR = 'ERR '
+LOADING = 'LOADING '
+
 class RedisError(Exception):
     pass
     

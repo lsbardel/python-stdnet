@@ -25,10 +25,11 @@ To change settings::
     settings.DEFAULT_BACKEND = 'redis://127.0.0.1:6379/?db=5'
     '''
     def __init__(self):
-        self.DEFAULT_BACKEND    = 'redis://127.0.0.1:6379/?db=7'
+        self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379/?db=7'
         self.DEFAULT_KEYPREFIX  = 'stdnet.'
         self.SCHEMA = 'compact-hash'
-        self.REDIS_PARSER = None 
+        self.REDIS_PARSER = None
+        self.MAX_CONNECTIONS = 128
         
         
 settings = Settings()

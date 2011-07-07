@@ -276,7 +276,9 @@ class BackendDataServer(stdnet.BackendDataServer):
         if len(servs) == 2:
             port = int(servs[1])
         self.db              = self.params.pop('db',0)
-        redispy              = redis.Redis(host = server, port = port, db = self.db)
+        redispy              = redis.Redis(host = server,
+                                           port = port,
+                                           db = self.db)
         self.redispy         = redispy
         self.execute_command = redispy.execute_command
         self.incr            = redispy.incr

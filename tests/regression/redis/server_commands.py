@@ -3,7 +3,7 @@ import threading
 import time
 from distutils.version import StrictVersion
 
-from stdnet.utils import to_string, ispy3k, iteritems, to_bytestring, range
+from stdnet.utils import to_string, ispy3k, iteritems, range
 
 if not ispy3k:
     chr = unichr
@@ -40,15 +40,15 @@ class ServerCommandsTestCase(BaseTest):
     def test_get_and_set(self):
         # get and set can't be tested independently of each other
         self.assertEquals(self.client.get('a'), None)
-        byte_string = b'value'
+        byte_string = 'value'
         integer = 5
         unicode_string = chr(3456) + to_string('abcd') + chr(3421)
         self.assert_(self.client.set('byte_string', byte_string))
         self.assert_(self.client.set('integer', 5))
         self.assert_(self.client.set('unicode_string', unicode_string))
         self.assertEquals(self.client.get('byte_string'), byte_string)
-        self.assertEquals(self.client.get('integer'), to_bytestring(integer))
-        self.assertEquals(self.client.get('unicode_string').decode('utf-8'), unicode_string)
+        self.assertEquals(self.client.get('integer'), str(integer))
+        self.assertEquals(self.client.get('unicode_string'), unicode_string)
 
     def test_getitem_and_setitem(self):
         self.client['a'] = 'bar'
@@ -160,7 +160,7 @@ class ServerCommandsTestCase(BaseTest):
         d = {'a': '1', 'b': '2', 'c': '3'}
         self.assert_(self.client.mset(d))
         for k,v in iteritems(d):
-            self.assertEquals(self.client[k], to_bytestring(v))
+            self.assertEquals(self.client[k], v)
 
     def test_msetnx(self):
         d = {'a': '1', 'b': '2', 'c': '3'}
@@ -168,7 +168,7 @@ class ServerCommandsTestCase(BaseTest):
         d2 = {'a': 'x', 'd': '4'}
         self.assert_(not self.client.msetnx(d2))
         for k,v in iteritems(d):
-            self.assertEquals(self.client[k], to_bytestring(v))
+            self.assertEquals(self.client[k], v)
         self.assertEquals(self.client['d'], None)
 
     def test_randomkey(self):
@@ -702,12 +702,14 @@ class ServerCommandsTestCase(BaseTest):
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3, 'a4': 4, 'a5': 5})
         self.assertEquals(list(self.client.zrangebyscore('a', 2, 4)),
             ['a2', 'a3', 'a4'])
-        self.assertEquals(list(self.client.zrangebyscore('a', 2, 4, start=1, num=2)),
-            ['a3', 'a4'])
-        self.assertEquals(list(self.client.zrangebyscore('a', 2, 4, withscores=True)),
+        self.assertEquals(list(self.client.zrangebyscore(
+                            'a', 2, 4, start=1, num=2)),['a3', 'a4'])
+        self.assertEquals(list(self.client.zrangebyscore(
+            'a', 2, 4, withscores=True)),
             [('a2', 2.0), ('a3', 3.0), ('a4', 4.0)])
         # a non existant key should return empty list
-        self.assertEquals(self.client.zrangebyscore('b', 0, 1, withscores=True), [])
+        self.assertEquals(self.client.zrangebyscore(
+                                'b', 0, 1, withscores=True), [])
 
     def test_zrank(self):
         # key is not a zset
@@ -759,9 +761,11 @@ class ServerCommandsTestCase(BaseTest):
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
         self.assertEquals(self.client.zrevrange('a', 0, 1), ['a3', 'a2'])
         self.assertEquals(self.client.zrevrange('a', 1, 2), ['a2', 'a1'])
-        self.assertEquals(list(self.client.zrevrange('a', 0, 1, withscores=True)),
+        self.assertEquals(list(self.client.zrevrange(
+            'a', 0, 1, withscores=True)),
             [('a3', 3.0), ('a2', 2.0)])
-        self.assertEquals(list(self.client.zrevrange('a', 1, 2, withscores=True)),
+        self.assertEquals(list(self.client.zrevrange(
+            'a', 1, 2, withscores=True)),
             [('a2', 2.0), ('a1', 1.0)])
         # a non existant key should return empty list
         self.assertEquals(self.client.zrange('b', 0, 1, withscores=True), [])
@@ -853,16 +857,16 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEqual(self.client.hget('a', 'a1'), '1')
 
     def test_hmset(self):
-        d = {'a': '1', 'b': '2', 'c': '3'}
-        db = dict(((to_bytestring(k),to_bytestring(v)) for k,v in d.items()))
-        self.assert_(self.client.hmset('foo', d))
+        db = {'a': '1', 'b': '2', 'c': '3'}
+        self.assert_(self.client.hmset('foo', db))
         self.assertEqual(dict(self.client.hgetall('foo')), db)
         self.assertRaises(ResponseError, self.client.hmset, 'foo', {})
 
     def test_hmget(self):
         d = {'a': 1, 'b': 2, 'c': 3}
         self.assert_(self.client.hmset('foo', d))
-        self.assertEqual(self.client.hmget('foo', ['a', 'b', 'c']), ['1', '2', '3'])
+        self.assertEqual(self.client.hmget('foo',
+                                     ['a', 'b', 'c']), ['1', '2', '3'])
         self.assertEqual(self.client.hmget('foo', ['a', 'c']), ['1', '3'])
 
     def test_hmget_empty(self):
@@ -907,7 +911,7 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.hgetall('a'), ())
         # real logic
         h = {'a1': '1', 'a2': '2', 'a3': '3'}
-        db = dict(((to_bytestring(k),to_bytestring(v)) for k,v in h.items()))
+        db = dict(((k,v) for k,v in h.items()))
         self.make_hash('a', h)
         remote_hash = dict(self.client.hgetall('a'))
         self.assertEquals(db, remote_hash)
@@ -941,7 +945,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         h = {'a1': '1', 'a2': '2', 'a3': '3'}
         self.make_hash('a', h)
-        keys = sorted((to_bytestring(k) for k in h.keys()))
+        keys = sorted((k for k in h.keys()))
         remote_keys = sorted(self.client.hkeys('a'))
         self.assertEquals(keys, remote_keys)
 
@@ -968,7 +972,7 @@ class ServerCommandsTestCase(BaseTest):
         # real logic
         h = {'a1': '1', 'a2': '2', 'a3': '3'}
         self.make_hash('a', h)
-        vals = sorted((to_bytestring(v) for v in h.values()))
+        vals = sorted((v for v in h.values()))
         remote_vals = sorted(self.client.hvals('a'))
         self.assertEquals(vals, remote_vals)
 
@@ -1086,7 +1090,6 @@ class ServerCommandsTestCase(BaseTest):
                 sent_channels.setdefault(channel, 0)
                 sent_channels[channel] += 1
         for channel in channels:
-            channel = to_bytestring(channel)
             self.assertEquals(sent_channels[channel], messages_per_channel)
         self.assertEquals(sent_types['subscribe'], len(channels))
         self.assertEquals(sent_types['message'],
@@ -1104,7 +1107,8 @@ class ServerCommandsTestCase(BaseTest):
         self.assertTrue(self.client.set(' \r\n\t\x07\x13 ', '789'))
         self.assertEqual(self.client.get(' \r\n\t\x07\x13 '), '789')
 
-        self.assertEqual(sorted(self.client.keys('*')), [' \r\n\t\x07\x13 ', ' foo\r\nbar\r\n ', ' foo bar '])
+        self.assertEqual(sorted(self.client.keys('*')),
+                 [' \r\n\t\x07\x13 ', ' foo\r\nbar\r\n ', ' foo bar '])
 
         self.assertTrue(self.client.delete(' foo bar '))
         self.assertTrue(self.client.delete(' foo\r\nbar\r\n '))
@@ -1121,10 +1125,10 @@ class ServerCommandsTestCase(BaseTest):
                 self.assertTrue(self.client.rpush(key, c))
 
         # check that KEYS returns all the keys as they are
-        bk = sorted((to_bytestring(k) for k in mapping.keys()))
+        bk = sorted((k for k in mapping.keys()))
         self.assertEqual(sorted(self.client.keys('*')), bk)
 
         # check that it is possible to get list content by key name
         for key in mapping.keys():
-            bl = [to_bytestring(v) for v in mapping[key]]
+            bl = [v for v in mapping[key]]
             self.assertEqual(self.client.lrange(key, 0, -1), bl)

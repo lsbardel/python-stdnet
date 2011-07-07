@@ -149,7 +149,7 @@ The key is an encoded binary string. For example::
         for arg in args:
             if arg is not None:
                 key = '%s:%s' % (key,arg)
-        return to_bytestring(key)
+        return key
     
     def tempkey(self, name = None):
         if not name:

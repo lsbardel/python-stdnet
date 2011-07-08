@@ -1,7 +1,10 @@
 from stdnet import test
-from stdnet.utils import zip
-from regression.finance.tests import Instrument, inst_names, \
-                                     inst_types, inst_ccys
+
+from regression.finance.tests import Instrument, finance_data
+
+inst_names,inst_types,inst_ccys,fund_names,fund_ccys,dates =\
+finance_data(10000,1000,10)
+
 
 class SimpleCreate(test.ProfileTest):
     

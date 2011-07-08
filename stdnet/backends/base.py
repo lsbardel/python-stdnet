@@ -6,14 +6,17 @@ from stdnet.utils import zip, pickle, iteritems, BytesIO
 
 from .structures import Structure
 
-class default_pickler:
+__all__ = ['BackendDataServer',
+           'BeckendQuery',
+           'nopickle',
+           'pythonpickle']
+
+class PythonPickle:
     
-    @classmethod
-    def loads(cls,x):
+    def loads(self,x):
         return pickle.loads(x)
     
-    @classmethod
-    def dumps(cls, x):
+    def dumps(self, x):
         return pickle.dumps(x,2)
 
 
@@ -25,6 +28,7 @@ class NoPickle(object):
     def dumps(self, obj):
         return obj
 
+pythonpickle = PythonPickle()
 nopickle = NoPickle()
 
 

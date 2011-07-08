@@ -31,7 +31,8 @@ class ManyFieldManagerProxy(GetStructureMixin):
         if instance is None:
             return self
         if instance.id is None:
-            raise MultiFieldError('id for %s is not available. Call save on instance before accessing %s.' % (instance._meta,self.name))
+            raise MultiFieldError('id for %s is not available.\
+ Call save on instance before accessing %s.' % (instance._meta,self.name))
         cache_name = self.get_cache_name()
         try:
             return getattr(instance, cache_name)
@@ -47,7 +48,8 @@ class ManyFieldManagerProxy(GetStructureMixin):
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
     
     def __init__(self, name, stype, to_name, to):
-        super(Many2ManyManagerProxy,self).__init__(name, stype, ModelFieldPickler(to), None, None)
+        super(Many2ManyManagerProxy,self).__init__(
+                        name, stype, ModelFieldPickler(to), None, None)
         self.to_name = to_name
         self.to = to
         
@@ -113,7 +115,8 @@ class MultiField(Field):
                 field.pickler = ModelFieldPickler(related)
         setattr(self.model,
                 self.name,
-                ManyFieldManagerProxy(self.name,self.get_pipeline(),self.pickler,self.converter,self.scorefun))
+                ManyFieldManagerProxy(self.name,self.get_pipeline(),
+                            self.pickler,self.converter,self.scorefun))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -128,8 +131,8 @@ class MultiField(Field):
 class SetField(MultiField):
     '''A field maintaining an unordered collection of values. It is initiated
 without any argument other than an optional model class.
-When accessed from the model instance, it returns an instance of :class:`stdnet.Set` structure.
-For example::
+When accessed from the model instance, it returns an instance of
+:class:`stdnet.Set` structure. For example::
 
     class User(orm.StdModel):
         username  = orm.AtomField(unique = True)
@@ -151,7 +154,8 @@ It can be used in the following way::
     
 
 class ListField(MultiField):
-    '''A field maintaining a list of values. When accessed from the model instance,
+    '''A field maintaining a list of values.
+When accessed from the model instance,
 it returns an instance of :class:`stdnet.List` structure. For example::
 
     class UserMessage(orm.StdModel):
@@ -190,7 +194,8 @@ it returns an instance of :class:`stdnet.HashTable` structure.
 
 
 class ManyToManyField(MultiField):
-    '''A many-to-many relationship. It accepts **related_name** as extra argument.
+    '''A many-to-many relationship. It accepts **related_name**
+as extra argument.
 
 .. attribute:: related_name
 
@@ -231,6 +236,8 @@ This field is implemented as a double Set field.
         self.related_name = related_name
         field.relmodel = related
         stype = self.get_pipeline()
-        setattr(self.model,  self.name,    Many2ManyManagerProxy(self.name,    stype, related_name, related))
-        setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name, stype, self.name, self.model))
+        setattr(self.model,  self.name,    Many2ManyManagerProxy(self.name,
+                                        stype, related_name, related))
+        setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name,
+                                        stype, self.name, self.model))
            

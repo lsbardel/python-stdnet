@@ -45,7 +45,8 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
         super(TimeSeriesField,self).__init__(*args, **kwargs)
         
     def register_with_model(self, name, model):
-        self.converter = model.converter # must be set before calling super method
+         # must be set before calling super method
+        self.converter = model.converter
         super(TimeSeriesField,self).register_with_model(name, model)
         
 

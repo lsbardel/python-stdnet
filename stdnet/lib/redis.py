@@ -995,7 +995,7 @@ which will execute all commands queued in the pipe.
         self.command_stack.append((args, options))
         return self
 
-    def _execute_transaction(self, connection, commands):
+    def _execute_transaction(self, connection, commands, with_callbacks):
         all_cmds = b''.join(starmap(connection.pack_command,
                                    (args for args, options in commands)))
         connection.send_packed_command(all_cmds)
@@ -1027,7 +1027,7 @@ which will execute all commands queued in the pipe.
             data.append(r)
         return data
 
-    def _execute_pipeline(self, connection, commands):
+    def _execute_pipeline(self, connection, commands, with_callbacks):
     # build up all commands into a single request to increase network perf
         all_cmds = b''.join(starmap(connection.pack_command,
                                    [args for args, options in commands]))
@@ -1035,7 +1035,7 @@ which will execute all commands queued in the pipe.
         return [self.parse_response(connection, args[0], **options)
                 for args, options in commands]
 
-    def execute(self):
+    def execute(self, with_callbacks = True):
         "Execute all the commands in the current pipeline"
         if self.transaction:
             self.execute_command('EXEC')
@@ -1046,7 +1046,7 @@ which will execute all commands queued in the pipe.
         self.reset()
         conn = self.connection_pool.get_connection('MULTI', self.shard_hint)
         try:
-            return execute(conn, stack)
+            return execute(conn, stack, with_callbacks)
         except ConnectionError:
             conn.disconnect()
             return execute(conn, stack)

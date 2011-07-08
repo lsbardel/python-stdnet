@@ -18,17 +18,23 @@ NUM_DATES   = 2
 ccys_types  = ['EUR','GBP','AUD','USD','CHF','JPY']
 insts_types = ['equity','bond','future','cash','option','bond option']
 
-inst_names = populate('string',INST_LEN, min_len = 5, max_len = 20)
-inst_types = populate('choice',INST_LEN, choice_from = insts_types)
-inst_ccys  = populate('choice',INST_LEN, choice_from = ccys_types)
+def finance_data(inst_len = INST_LEN, fund_len = FUND_LEN,
+                 num_dates = NUM_DATES):
+    return (
+            populate('string',inst_len, min_len = 5, max_len = 20),
+            populate('choice',inst_len, choice_from = insts_types),
+            populate('choice',inst_len, choice_from = ccys_types),
+            populate('string',fund_len, min_len = 5, max_len = 20),
+            populate('choice',fund_len, choice_from = ccys_types),
+            populate('date',num_dates,start=datetime.date(2009,6,1),
+                     end=datetime.date(2010,6,6))
+            )
+    
 
-fund_names = populate('string',FUND_LEN, min_len = 5, max_len = 20)
-fund_ccys  = populate('choice',FUND_LEN, choice_from = ccys_types)
+inst_names,inst_types,inst_ccys,fund_names,fund_ccys,dates = finance_data() 
 
 users      = populate('string', NUM_USERS, min_len = 8, max_len = 14)
 view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
-
-dates = populate('date',NUM_DATES,start=datetime.date(2009,6,1),end=datetime.date(2010,6,6))
 
 
 class BaseFinance(test.TestCase):

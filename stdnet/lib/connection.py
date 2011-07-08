@@ -41,9 +41,10 @@ REPLAY_TYPE = {b'$':REDIS_REPLY_STRING,
        
  
 class redisReadTask(object):
-    __slots__ = ('type','response','length')
+    __slots__ = ('type','response','length','connection')
     
-    def __init__(self, type, response):
+    def __init__(self, type, response, connection):
+        self.connection = connection
         self.type = rtype = REPLAY_TYPE.get(type,REDIS_ERR)
         length = None
         if rtype == REDIS_REPLY_ERROR:
@@ -64,6 +65,43 @@ class redisReadTask(object):
         self.response = response
         self.length = length
         
+    def gets(self, response = False, recursive = False):
+        gets = self.connection.gets
+        read = self.connection.read
+        stack = self.connection._stack
+        if self.type == REDIS_REPLY_STRING:
+            if response is False:
+                if self.length == -1:
+                    return None
+                response = read(self.length)
+                if response is False:
+                    stack.append(self)
+                    return False
+            self.response = response
+        elif self.type == REDIS_REPLY_ARRAY:
+            length = self.length
+            if length == -1:
+                return None
+            stack.append(self)
+            append = self.response.append
+            if response is not False:
+                length -= 1
+                append(response)
+            while length > 0:
+                response = gets(True)
+                if response is False:
+                    self.length = length
+                    return False
+                length -= 1
+                append(response)
+            stack.pop()
+        
+        if stack and not recursive:
+            task = stack.pop()
+            return task.gets(self.response,recursive)
+        
+        return self.response
+
 
 class RedisPythonReader(object):
 
@@ -99,44 +137,14 @@ class RedisPythonReader(object):
         
     def gets(self, recursive = False):
         '''Called by the Parser'''
-        response = self.read()
-        if not response:
-            return False
-        
-        if self._stack and self._stack[-1].type == REDIS_REPLY_STRING:
+        if self._stack and not recursive:
             task = self._stack.pop()
         else:
-            task = redisReadTask(response[:1], response[1:])
-
-        # server returned an error
-        rtype = task.type
-        if rtype == REDIS_REPLY_STRING:
-            if task.length == -1:
-                return None
-            response = self.read(task.length)
-            if response is False:
-                self._stack.append(task)
+            response = self.read()
+            if not response:
                 return False
-            task.response = response
-        elif rtype == REDIS_REPLY_ARRAY:
-            if task.length == -1:
-                return None
-            length = task.length
-            self._stack.append(task)
-            read = self.gets
-            append = task.response.append
-            while length > 0:
-                response = read(True)
-                if response is False:
-                    task.length = length
-                    return False
-                length -= 1
-                append(response)
-            task = self._stack.pop()
-        
-        if self._stack and not recursive:
-            return self.gets(True)
-        return task.response
+            task = redisReadTask(response[:1], response[1:], self)
+        return task.gets(recursive=recursive)
 
 
 class PythonParser(object):

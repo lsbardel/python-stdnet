@@ -87,22 +87,20 @@ class BackendDataServer(object):
     Query = None
     structure_module = None
     
-    def __init__(self, name, params):
+    def __init__(self, name, pickler = None, **params):
         self.__name = name
-        timeout = params.get('timeout', 0)
-        try:
-            timeout = int(timeout)
-        except (ValueError, TypeError):
-            timeout = 0
-        self.default_timeout = timeout
         self._cachepipe = {}
-        self._keys      = {}
-        self.params     = params
-        self.pickler    = nopickle
+        self._keys = {}
+        self.pickler = pickler or nopickle
+        self.params = params
 
     @property
     def name(self):
         return self.__name
+    
+    def disconnect(self):
+        '''Disconnect the connection.'''
+        pass
     
     def __repr__(self):
         return '%s backend' % self.__name
@@ -164,8 +162,10 @@ Save or updated an instance of a model to the back-end database:
         '''Delete an object from the data server and clean up indices.
 Called to clear a model instance.
 :parameter obj: instance of :class:`stdnet.orm.StdModel`
-:parameter deleted: a list or ``None``. If a list, deleted keys will be appended to it.
-:parameter multi_field: if ``True`` the multifield ids (if any) will be removed. Default ``True``.
+:parameter deleted: a list or ``None``. If a list, deleted keys
+                    will be appended to it.
+:parameter multi_field: if ``True`` the multifield ids (if any)
+                        will be removed. Default ``True``.
         '''
         commit = False
         if not transaction:
@@ -190,7 +190,7 @@ Called to clear a model instance.
             yield obj
         
     def set(self, id, value, timeout = None):
-        timeout = timeout if timeout is not None else self.default_timeout
+        timeout = timeout or 0
         value = self.pickler.dumps(value)
         return self._set(id,value,timeout)
     

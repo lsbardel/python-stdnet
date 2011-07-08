@@ -161,15 +161,12 @@ class Redis(object):
 
     def __init__(self, host='localhost', port=6379,
                  db=0, password=None, socket_timeout=None,
-                 connection_pool=None,
-                 encoding='utf-8', errors='strict'):
+                 connection_pool=None):
         if not connection_pool:
             kwargs = {
                 'db': db,
                 'password': password,
                 'socket_timeout': socket_timeout,
-                'encoding': encoding,
-                'encoding_errors': errors,
                 'host': host,
                 'port': port
                 }
@@ -1000,17 +997,18 @@ which will execute all commands queued in the pipe.
 
     def _execute_transaction(self, connection, commands):
         all_cmds = b''.join(starmap(connection.pack_command,
-                                   [args for args, options in commands]))
+                                   (args for args, options in commands)))
         connection.send_packed_command(all_cmds)
         # we don't care about the multi/exec any longer
         commands = commands[1:-1]
         # parse off the response for MULTI and all commands prior to EXEC.
         # the only data we care about is the response the EXEC
         # which is the last command
+        parse_response = self.parse_response 
         for i in range(len(commands)+1):
-            self.parse_response(connection, '_')
+            parse_response(connection, '_')
         # parse the EXEC.
-        response = self.parse_response(connection, '_')
+        response = parse_response(connection, '_')
 
         if response is None:
             raise WatchError("Watched variable changed.")
@@ -1052,3 +1050,5 @@ which will execute all commands queued in the pipe.
         except ConnectionError:
             conn.disconnect()
             return execute(conn, stack)
+        finally:
+            self.connection_pool.release(conn)

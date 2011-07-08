@@ -10,9 +10,9 @@ class SimpleFilter(test.ProfileTest):
         self.orm.register(Instrument)
         
     def initialise(self):
-        for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-            Instrument(name = name, type = typ, ccy = ccy).save(False)
-        Instrument.commit()
+        with Instrument.transaction() as t:
+            for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
+                Instrument(name = name, type = typ, ccy = ccy).save(t)
         
     def run(self):
         eur = list(Instrument.objects.filter(ccy = 'EUR'))

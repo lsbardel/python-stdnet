@@ -1,15 +1,22 @@
+from collections import namedtuple
+
 import stdnet
 from stdnet.utils import jsonPickler, iteritems, to_string
 from stdnet import BackendDataServer, ImproperlyConfigured, BeckendQuery
 from stdnet.backends.structures import structredis
-from stdnet.lib import redis
+from stdnet.lib import redis, connection
 
 MIN_FLOAT =-1.e99
 
 OBJ = 'obj'
 UNI = 'uni'
 IDX = 'idx'
-setattr = lambda pipe,p,name : getattr(pipe,p+name) 
+setattr = lambda pipe,p,name : getattr(pipe,p+name)
+
+
+redis_connection = namedtuple('redis_connection',
+                              'host port db password socket_timeout')
+ 
 
 class RedisTransaction(object):
     
@@ -169,7 +176,8 @@ class RedisQuery(BeckendQuery):
             self.diff = setattr(pipe,p,'diffstore')
             self.card = setattr(server.redispy,p,'card')
             self.add = add2set(server,pipe,meta)
-            key1 = self._query(fargs,self.intersect,self.idset,self.qs.filter_sets)
+            key1 = self._query(fargs,self.intersect,self.idset,
+                               self.qs.filter_sets)
             key2 = self._query(eargs,self.union)
             if key2:
                 key = meta.tempkey()
@@ -260,32 +268,37 @@ class RedisQuery(BeckendQuery):
         else:
             return ids
     
-    
+
 class BackendDataServer(stdnet.BackendDataServer):
     Transaction = RedisTransaction
     Query = RedisQuery
     structure_module = structredis
+    connection_pools = {}
+    _redis_clients = {}
     
-    def __init__(self, name, server, params, **kwargs):
-        super(BackendDataServer,self).__init__(name,
-                                               params,
-                                               **kwargs)
+    def __init__(self, name, server, db = 0,
+                 password = None, socket_timeout = None, **params):
+        super(BackendDataServer,self).__init__(name,**params)
         servs = server.split(':')
-        server = servs[0]
-        port   = 6379
-        if len(servs) == 2:
-            port = int(servs[1])
-        self.db              = self.params.pop('db',0)
-        redispy              = redis.Redis(host = server,
-                                           port = port,
-                                           db = self.db)
-        self.redispy         = redispy
+        host = servs[0] if servs[0] is not 'localhost' else '127.0.0.1'
+        port = int(servs[1]) if len(servs) == 2 else 6379
+        cp = redis_connection(host, port, db, password, socket_timeout)
+        if cp in self.connection_pools:
+            connection_pool = self.connection_pools[cp]
+        else:
+            connection_pool = redis.ConnectionPool(**cp._asdict())
+            self.connection_pools[cp] = connection_pool 
+        redispy = redis.Redis(connection_pool = connection_pool)
+        self.redispy = redispy
         self.execute_command = redispy.execute_command
         self.incr            = redispy.incr
         self.clear           = redispy.flushdb
         self.delete          = redispy.delete
         self.keys            = redispy.keys
-            
+    
+    def disconnect(self):
+        self.redispy.connection_pool.disconnect()
+    
     def unwind_query(self, meta, qset):
         '''Unwind queryset'''
         table = meta.table()
@@ -295,7 +308,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             yield make_object(meta,id,data)
     
     def set_timeout(self, id, timeout):
-        timeout = timeout or self.default_timeout
         if timeout:
             self.execute_command('EXPIRE', id, timeout)
     

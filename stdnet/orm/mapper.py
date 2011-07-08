@@ -64,12 +64,21 @@ def register(model, backend = None, keyprefix = None, timeout = None,
 model with a :class:`stdnet.backends.BackendDataServer` data server.
     
 :parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
-:parameter backend: a backend connection string. Default ``settings.DEFAULT_BACKEND``.
-:parameter keyprefix: a string used to prefix all database keys related to the model.
-                      If not provided it is calculated from the connection string.
+
+:parameter backend: a backend connection string.
+                    
+                    Default ``settings.DEFAULT_BACKEND``.
+                    
+:parameter keyprefix: a string used to prefix all database keys related
+                      to the model. If not provided it is calculated
+                      from the connection string.
+                      
                       Default ``None``.
+                      
 :parameter timeout: timeout in seconds for keys persistence.
-                    If not provided it is calculated from the connection string.
+                    If not provided it is calculated from the
+                    connection string.
+                    
                     Default ``None``.
     
 **Usage**
@@ -80,7 +89,8 @@ For Redis the syntax is the following::
     
     orm.register(Author, 'redis://my.host.name:6379/?db=1')
     orm.register(Book, 'redis://my.host.name:6379/?db=2')
-    orm.register(MyOtherModel, 'redis://my.host.name:6379/?db=2&keyprefix=differentprefix')
+    orm.register(MyOtherModel, 
+                'redis://my.host.name:6379/?db=2&keyprefix=differentprefix')
     
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
@@ -88,11 +98,11 @@ on the same redis instance).'''
     global _GLOBAL_REGISTRY
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
-    #prefix  = keyprefix or model._meta.keyprefix or settings.DEFAULT_KEYPREFIX or ''
     meta = model._meta
     if model in _GLOBAL_REGISTRY:
         if not ignore_duplicates:  
-            raise AlreadyRegistered('Model {0} is already registered'.format(meta))
+            raise AlreadyRegistered(
+                        'Model {0} is already registered'.format(meta))
         else:
             return
     objects = getattr(model,'objects',None)
@@ -101,9 +111,13 @@ on the same redis instance).'''
     else:
         objects = copy.copy(objects)
     model.objects = objects
+    # unregister backend if already available
+    #if meta.cursor:
+    #    meta.cursor.disconnect()
     meta.cursor = getdb(backend)
     params = meta.cursor.params
-    meta.keyprefix = keyprefix if keyprefix is not None else params.get('prefix',settings.DEFAULT_KEYPREFIX)
+    meta.keyprefix = keyprefix if keyprefix is not None else\
+                        params.get('prefix',settings.DEFAULT_KEYPREFIX)
     meta.timeout = timeout if timeout is not None else params.get('timeout',0)
     objects._setmodel(model)
     _GLOBAL_REGISTRY[model] = meta
@@ -121,7 +135,8 @@ def model_iterator(application):
 Returns a generatotr of :class:`stdnet.orm.StdModel` classes found
 in the ``models`` module of an ``application`` dotted path.
 
-:parameter application: An iterable over python dotted-paths where models are defined.
+:parameter application: An iterable over python dotted-paths
+                        where models are defined.
 
 For example::
 

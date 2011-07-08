@@ -11,8 +11,8 @@ class TestString(TestCase):
     
     def testSetGet(self):
         cache.set('test',1)
-        self.assertEqual(cache.get('test'),1)
+        self.assertEqual(cache.get('test'),b'1')
         cache.set('test2','ciao',1)
-        self.assertEqual(cache.get('test2'),'ciao')
+        self.assertEqual(cache.get('test2'),b'ciao')
         time.sleep(2)
         self.assertEqual(cache.get('test2'),None)

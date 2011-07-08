@@ -98,7 +98,7 @@ class BackendDataServer(object):
         self._cachepipe = {}
         self._keys      = {}
         self.params     = params
-        self.pickler    = default_pickler
+        self.pickler    = nopickle
 
     @property
     def name(self):

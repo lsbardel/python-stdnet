@@ -4,10 +4,9 @@ EMPTY = b''
 CRLF = b'\r\n'
 STAR = b'*'
 DOLLAR = b'$'
-
-OK = 'OK'
-ERR = 'ERR '
-LOADING = 'LOADING '
+OK = b'OK'
+ERR = b'ERR '
+LOADING = b'LOADING '
 
 class RedisError(Exception):
     pass

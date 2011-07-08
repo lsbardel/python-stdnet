@@ -22,18 +22,58 @@ else:
     toint = lambda x : long(x)
 
 from .exceptions import *
+
+
+REDIS_REPLY_STRING = 1
+REDIS_REPLY_ARRAY = 2
+REDIS_REPLY_INTEGER = 3
+REDIS_REPLY_NIL = 4
+REDIS_REPLY_STATUS = 5
+REDIS_REPLY_ERROR = 6
+REDIS_ERR = 7
+
+
+REPLAY_TYPE = {b'$':REDIS_REPLY_STRING,
+               b'*':REDIS_REPLY_ARRAY,
+               b':':REDIS_REPLY_INTEGER,
+               b'+':REDIS_REPLY_STATUS,
+               b'-':REDIS_REPLY_ERROR}
+       
+ 
+class redisReadTask(object):
+    __slots__ = ('type','response','length')
+    
+    def __init__(self, type, response):
+        self.type = rtype = REPLAY_TYPE.get(type,REDIS_ERR)
+        length = None
+        if rtype == REDIS_REPLY_ERROR:
+            if response.startswith(ERR):
+                response = ResponseError(response[4:])
+            elif response.startswith(LOADING):
+                raise ConnectionError("Redis is loading data into memory")
+        elif rtype == REDIS_REPLY_INTEGER:
+            response = toint(response)
+        elif rtype == REDIS_REPLY_STRING:
+            length = toint(response)
+            response = b''
+        elif rtype == REDIS_REPLY_ARRAY:
+            length = toint(response)
+            response = []
+        elif rtype == REDIS_ERR:
+            raise InvalidResponse("Protocol Error")        
+        self.response = response
+        self.length = length
         
 
 class RedisPythonReader(object):
 
     def __init__(self, connection):
-        self.length = None
-        self.mbulk = None
+        self._stack = []
         self._inbuffer = BytesIO()
         self.encoding = connection.encoding
         self.encoding_errors = connection.encoding_errors
             
-    def read(self, length=None):
+    def read(self, length = None):
         """
         Read a line from the socket is no length is specified,
         otherwise read ``length`` bytes. Always strip away the newlines.
@@ -45,10 +85,10 @@ class RedisPythonReader(object):
                 chunk = self._inbuffer.readline()
             if chunk:
                 if chunk[-1:] == b'\n':
-                    self.length = None
                     return chunk[:-2]
                 else:
                     self._inbuffer = BytesIO(chunk)
+            return False
         except (socket.error, socket.timeout) as e:
             raise ConnectionError("Error while reading from socket: %s" % \
                 (e.args,))
@@ -57,59 +97,46 @@ class RedisPythonReader(object):
         buffer = self._inbuffer.read(-1) + buffer
         self._inbuffer = BytesIO(buffer)
         
-    def gets(self):
-        response = self.read(self.length)
+    def gets(self, recursive = False):
+        '''Called by the Parser'''
+        response = self.read()
         if not response:
             return False
         
-        encoding = self.encoding
-        encoding_errors = self.encoding_errors
-        if not self.length:
-            byte, response = response[:1], response[1:]
+        if self._stack and self._stack[-1].type == REDIS_REPLY_STRING:
+            task = self._stack.pop()
         else:
-            response = self.read(self.length)
+            task = redisReadTask(response[:1], response[1:])
 
         # server returned an error
-        if byte == b'-':
-            response = to_string(response,encoding,encoding_errors)
-            if response.startswith(ERR):
-                response = response[4:]
-                return ResponseError(response)
-            if response.startswith(LOADING):
-                # If we're loading the dataset into memory, kill the socket
-                # so we re-initialize (and re-SELECT) next time.
-                raise ConnectionError("Redis is loading data into memory")
-        # single value
-        elif byte == b'+':
-            return to_string(response,encoding,encoding_errors)
-        # int value
-        elif byte == b':':
-            return toint(response)
-        # bulk response
-        elif byte == b'$':
-            length = int(response)
-            if self.length == -1:
+        rtype = task.type
+        if rtype == REDIS_REPLY_STRING:
+            if task.length == -1:
                 return None
-            response = self.read(length)
-            if response is None:
-                self.length = length
+            response = self.read(task.length)
+            if response is False:
+                self._stack.append(task)
                 return False
-            return to_string(response,encoding,encoding_errors)
-        # multi-bulk response
-        elif byte == b'*':
-            length = int(response)
-            if length == -1:
+            task.response = response
+        elif rtype == REDIS_REPLY_ARRAY:
+            if task.length == -1:
                 return None
+            length = task.length
+            self._stack.append(task)
             read = self.gets
-            res = []
-            while length:
-                response = read()
-                if response is None:
+            append = task.response.append
+            while length > 0:
+                response = read(True)
+                if response is False:
+                    task.length = length
                     return False
                 length -= 1
-                res.append(response)
-            return res
-        raise InvalidResponse("Protocol Error")
+                append(response)
+            task = self._stack.pop()
+        
+        if self._stack and not recursive:
+            return self.gets(True)
+        return task.response
 
 
 class PythonParser(object):
@@ -195,7 +222,7 @@ class Connection(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(self.socket_timeout)
         sock.connect((self.host, self.port))
-        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+        #sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         return sock
 
     def _error_message(self, exception):

@@ -29,7 +29,7 @@ To change settings::
         self.DEFAULT_KEYPREFIX  = 'stdnet.'
         self.SCHEMA = 'compact-hash'
         self.REDIS_PARSER = None
-        self.MAX_CONNECTIONS = 128
+        self.MAX_CONNECTIONS = 2**31
         
         
 settings = Settings()

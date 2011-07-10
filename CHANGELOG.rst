@@ -18,6 +18,7 @@ Ver. 0.6.0 - Development
   This way model instances are always consistent even when redis
   shuts down during an update. Transactions are also useful when updating several
   instances at once.
+* Added support for hiredis_. If installed it will be used as default redis parser.
 * Added :ref:`serialization utilities <serialize-models>` for saving model
   data in JSON or CSV format. Custom serialization algorithms
   can be added to the library.
@@ -26,7 +27,7 @@ Ver. 0.6.0 - Development
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **275 regression tests** with **78%** coverage.
+* **281 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================
@@ -191,3 +192,4 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
 .. _django: http://www.djangoproject.com/
+.. _hiredis: https://github.com/pietern/hiredis-py

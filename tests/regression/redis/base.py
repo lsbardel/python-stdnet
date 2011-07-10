@@ -7,9 +7,8 @@ ResponseError = redis.ResponseError
 RedisError = redis.RedisError
 
 def makeredis(pool = None):
-    cursor = getdb(settings.DEFAULT_BACKEND)
+    cursor = getdb('{0}&decode=1'.format(settings.DEFAULT_BACKEND))
     return cursor.redispy
-    #return redis.Redis(host='localhost', port=6379, db=DBTEST, connection_pool=pool)
 
 
 class BaseTest(test.TestCase):

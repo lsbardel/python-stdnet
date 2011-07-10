@@ -1,5 +1,6 @@
 from stdnet.exceptions import *
 from stdnet import pipelines
+from stdnet.utils import jsonpickler
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from .fields import Field, RelatedObject
@@ -63,7 +64,8 @@ class MultiField(Field):
     
 .. attribute:: relmodel
 
-    Optional :class:`stdnet.otm.StdModel` class contained in the structure. It can also be specified as a string.
+    Optional :class:`stdnet.otm.StdModel` class contained in the structure.
+    It can also be specified as a string.
     
 .. attribute:: related_name
 
@@ -71,13 +73,21 @@ class MultiField(Field):
     
 .. attribute:: pickler
 
-    a module/class/objects used to serialize values. Default ``None``.
+    a module/class/objects used to serialize values.
+    
+    Default ``None``.
     
 .. attribute:: converter
 
-    a module/class/objects used to convert keys to suitable string to use as keys in :class:`stdnet.HashTable` structures.
+    a module/class/objects used to convert keys to suitable string to use
+    as keys in :class:`stdnet.HashTable` structures.
     It must implement two methods, ``tokey`` to convert key to a suitable key
-    for the database backend and ``tovalue`` the inverse operation. Default: ``None``.'''
+    for the database backend and ``tovalue`` the inverse operation.
+    
+    Default: ``None``.
+'''
+    default_pickler = jsonpickler
+    
     def get_pipeline(self):
         raise NotImplementedError
     
@@ -96,8 +106,8 @@ class MultiField(Field):
         self.index        = False
         self.unique       = False
         self.primary_key  = False
-        self.related_name = related_name  
         self.pickler      = pickler
+        self.related_name = related_name
         self.converter    = converter
         self.scorefun     = scorefun
         
@@ -110,9 +120,10 @@ class MultiField(Field):
             
     def _register_related_model(self, field, related):
         field.relmodel = related
-        if related:
-            if not field.pickler:
-                field.pickler = ModelFieldPickler(related)
+        if related and not field.pickler:
+            field.pickler = ModelFieldPickler(related)
+        if not field.pickler:
+            field.pickler = self.default_pickler
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,self.get_pipeline(),

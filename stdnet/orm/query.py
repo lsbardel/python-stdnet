@@ -201,7 +201,7 @@ objects on the server side.'''
             return list(self.items(slic))
         return self._seq
     
-    def delete(self, transaction = None, dlist = None):
+    def delete(self, transaction = None):
         '''Delete all the element in the queryset'''
         if self.count():
             commit = False
@@ -209,7 +209,7 @@ objects on the server side.'''
                 commit = True
                 transaction = self._meta.cursor.transaction()
             for el in self:
-                el.delete(transaction,dlist)
+                el.delete(transaction)
             if commit:
                 transaction.commit()
         self.clear()

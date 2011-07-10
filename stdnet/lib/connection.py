@@ -14,137 +14,10 @@ from collections import namedtuple
 
 from stdnet.conf import settings
 from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
-                         to_string, BytesIO
-
-if ispy3k:
-    toint = lambda x : int(x)
-else:
-    toint = lambda x : long(x)
+                         to_string
 
 from .exceptions import *
-
-
-REDIS_REPLY_STRING = 1
-REDIS_REPLY_ARRAY = 2
-REDIS_REPLY_INTEGER = 3
-REDIS_REPLY_NIL = 4
-REDIS_REPLY_STATUS = 5
-REDIS_REPLY_ERROR = 6
-REDIS_ERR = 7
-
-
-REPLAY_TYPE = {b'$':REDIS_REPLY_STRING,
-               b'*':REDIS_REPLY_ARRAY,
-               b':':REDIS_REPLY_INTEGER,
-               b'+':REDIS_REPLY_STATUS,
-               b'-':REDIS_REPLY_ERROR}
-       
- 
-class redisReadTask(object):
-    __slots__ = ('type','response','length','connection')
-    
-    def __init__(self, type, response, connection):
-        self.connection = connection
-        self.type = rtype = REPLAY_TYPE.get(type,REDIS_ERR)
-        length = None
-        if rtype == REDIS_REPLY_ERROR:
-            if response.startswith(ERR):
-                response = ResponseError(response[4:])
-            elif response.startswith(LOADING):
-                raise ConnectionError("Redis is loading data into memory")
-        elif rtype == REDIS_REPLY_INTEGER:
-            response = toint(response)
-        elif rtype == REDIS_REPLY_STRING:
-            length = toint(response)
-            response = b''
-        elif rtype == REDIS_REPLY_ARRAY:
-            length = toint(response)
-            response = []
-        elif rtype == REDIS_ERR:
-            raise InvalidResponse("Protocol Error")        
-        self.response = response
-        self.length = length
-        
-    def gets(self, response = False, recursive = False):
-        gets = self.connection.gets
-        read = self.connection.read
-        stack = self.connection._stack
-        if self.type == REDIS_REPLY_STRING:
-            if response is False:
-                if self.length == -1:
-                    return None
-                response = read(self.length)
-                if response is False:
-                    stack.append(self)
-                    return False
-            self.response = response
-        elif self.type == REDIS_REPLY_ARRAY:
-            length = self.length
-            if length == -1:
-                return None
-            stack.append(self)
-            append = self.response.append
-            if response is not False:
-                length -= 1
-                append(response)
-            while length > 0:
-                response = gets(True)
-                if response is False:
-                    self.length = length
-                    return False
-                length -= 1
-                append(response)
-            stack.pop()
-        
-        if stack and not recursive:
-            task = stack.pop()
-            return task.gets(self.response,recursive)
-        
-        return self.response
-
-
-class RedisPythonReader(object):
-
-    def __init__(self, connection):
-        self._stack = []
-        self._inbuffer = BytesIO()
-        self.encoding = connection.encoding
-        self.encoding_errors = connection.encoding_errors
-            
-    def read(self, length = None):
-        """
-        Read a line from the socket is no length is specified,
-        otherwise read ``length`` bytes. Always strip away the newlines.
-        """
-        try:
-            if length is not None:
-                chunk = self._inbuffer.read(length+2)
-            else:
-                chunk = self._inbuffer.readline()
-            if chunk:
-                if chunk[-1:] == b'\n':
-                    return chunk[:-2]
-                else:
-                    self._inbuffer = BytesIO(chunk)
-            return False
-        except (socket.error, socket.timeout) as e:
-            raise ConnectionError("Error while reading from socket: %s" % \
-                (e.args,))
-    
-    def feed(self, buffer):
-        buffer = self._inbuffer.read(-1) + buffer
-        self._inbuffer = BytesIO(buffer)
-        
-    def gets(self, recursive = False):
-        '''Called by the Parser'''
-        if self._stack and not recursive:
-            task = self._stack.pop()
-        else:
-            response = self.read()
-            if not response:
-                return False
-            task = redisReadTask(response[:1], response[1:], self)
-        return task.gets(recursive=recursive)
+from .reader import RedisPythonReader
 
 
 class PythonParser(object):
@@ -164,17 +37,13 @@ class PythonParser(object):
         response = self._reader.gets()
         while response is False:
             try:
-                buffer = self._sock.recv(4096)
+                stream = self._sock.recv(4096)
             except (socket.error, socket.timeout) as e:
                 raise ConnectionError("Error while reading from socket: %s" % \
                     (e.args,))
-            if not buffer:
+            if not stream:
                 raise ConnectionError("Socket closed on remote end")
-            self._reader.feed(buffer)
-            # if the data received doesn't end with \r\n, then there's more in
-            # the socket
-            if not buffer.endswith(CRLF):
-                continue
+            self._reader.feed(stream)
             response = self._reader.gets()
         return response
 
@@ -197,7 +66,8 @@ class Connection(object):
     "Manages TCP communication to and from a Redis server"
     def __init__(self, host='localhost', port=6379, db=0, password=None,
                  socket_timeout=None, encoding='utf-8',
-                 encoding_errors='strict', parser_class=None):
+                 encoding_errors='strict', parser_class=None,
+                 decode = False):
         self.host = host
         self.port = port
         self.db = db
@@ -206,6 +76,10 @@ class Connection(object):
         self.encoding = encoding
         self.encoding_errors = encoding_errors
         self._sock = None
+        if decode:
+            self.decode = self._decode
+        else:
+            self.decode = lambda x : x
         if parser_class is None:
             if settings.REDIS_PARSER == 'python':
                 parser_class = PythonParser
@@ -307,32 +181,38 @@ class Connection(object):
         if response.__class__ == ResponseError:
             raise response
         return response
-
-    def encode(self, value):
-        "Return a bytestring representation of the value"
-        return to_bytestring(value, self.encoding, self.encoding_errors)
-
+    
+    if ispy3k:
+        def encode(self, value):
+            "Return a bytestring representation of the value"
+            return value if isinstance(value,bytes) else str(value).encode(
+                                        self.encoding,self.encoding_errors)
+            
+    else:
+        def encode(self, value):
+            "Return a bytestring representation of the value"
+            return value.encode(self.encoding,self.encoding_errors) if\
+                     isinstance(value,unicode) else str(value)
+    
+    def _decode(self, value):
+        return value.decode(self.encoding,self.encoding_errors)
+    
+    def __pack_gen(self, args):
+        crlf = b'\r\n'
+        yield b'*'
+        yield str(len(args)).encode()
+        yield crlf
+        for value in map(self.encode,args):
+            yield b'$'
+            yield str(len(value)).encode()
+            yield crlf
+            yield value
+            yield crlf
+    
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"
-        crlf = b'\r\n'
-        chunk = BytesIO()
-        enc = self.encoding
-        err = self.encoding_errors
-        write = chunk.write
-        for value in map(self.encode, args):
-            write(b'$')
-            write(str(len(value)).encode(enc,err))
-            write(crlf)
-            write(value)
-            write(crlf)
-        data = BytesIO()
-        write = data.write
-        write(b'*')
-        write(str(len(args)).encode(enc,err))
-        write(crlf)
-        write(chunk.getvalue())
-        return data.getvalue()
-        
+        return b''.join(self.__pack_gen(args))
+    
 
 class ConnectionPool(object):
     "Generic connection pool"

@@ -136,7 +136,7 @@ validation algorithm.'''
     def indices(self):
         return self._valattr('indices')
     
-    def delete(self, transaction = None, dlist = None):
+    def delete(self, transaction = None):
         '''Delete an instance from database. If the instance is not available (it does not have an id) and
 ``StdNetException`` exception will raise. Return the number of model instances deleted.
 
@@ -152,8 +152,8 @@ related the model for ``self`` is a related field in other models.'''
         # Gather related objects to delete
         pre_delete.send(sender=self.__class__, instance = self)
         for obj in self.related_objects():
-            T += obj.delete(transaction,dlist)
-        res = T + meta.cursor.delete_object(self, transaction, dlist)
+            T += obj.delete(transaction)
+        res = T + meta.cursor.delete_object(self, transaction)
         post_delete.send(sender=self.__class__, instance = self)
         return res
     

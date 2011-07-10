@@ -1,16 +1,22 @@
-from profile.create.tests import Instrument, Fund, Position, inst_names, \
-                                  inst_types, fund_names, inst_ccys,\
-                                  fund_ccys, dates, PLEN, populate, zip, test
-                                  
+from stdnet import test
+from stdnet.utils import populate, zip
 
-class SimpleCreate(test.ProfileTest):
-    
+from regression.finance.tests import Instrument, Fund, Position, finance_data
+
+inst_names,inst_types,inst_ccys,fund_names,fund_ccys,dates =\
+finance_data(10000, #number of instruments
+             1000,  # number of funds
+             50)    # number of dates
+
+PLEN = 20 #Position length per fund
+
+
+class DeleteTest(test.ProfileTest):
+    model = Instrument
     def register(self):
         self.orm.register(Instrument)
         self.orm.register(Fund)
         self.orm.register(Position)
-        
-    def run(self):
         with Instrument.transaction() as t:
             for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
                 Instrument(name = name, type = typ, ccy = ccy).save(t)
@@ -24,5 +30,9 @@ class SimpleCreate(test.ProfileTest):
                 for dt in dates:
                     for inst in insts:
                         Position(instrument = inst, dt = dt, fund = f).save(t)
-
+                        
+    
+    def run(self):
+        for inst in self.model.objects.all():
+            inst.delete()
 

@@ -37,12 +37,21 @@ class TestCase(unittest.TestCase):
         self.orm = orm
         super(TestCase,self).__init__(*args, **kwargs)
         
+    def register(self):
+        pass
+    
     def unregister(self):
         pass
     
-    def tearDown(self):
+    def __call__(self, result=None):
+        """Wrapper around default __call__ method
+to perform cleanup, registration and unregistration.
+        """
+        self.register()
         orm.clearall()
+        super(TestCase, self).__call__(result)
         self.unregister()
+        orm.clearall()
         
     def cleankeys(self, meta):
         tmp = meta.basekey('tmp')
@@ -64,8 +73,8 @@ class TestMultiFieldMixin(object):
         raise NotImplementedError
     
     def testMultiFieldId(self):
-        '''Here we check for multifield specific stuff like the instance related keys (keys which
-are related to the instance rather than the model).'''
+        '''Here we check for multifield specific stuff like the instance
+related keys (keys which are related to the instance rather than the model).'''
         # get instance and field, the field has no data here
         obj, field = self.get_object_and_field()
         # get the object id

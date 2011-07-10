@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 import stdnet
-from stdnet.utils import jsonPickler, iteritems, to_string
+from stdnet.utils import jsonPickler, iteritems, to_string, map
 from stdnet import BackendDataServer, ImproperlyConfigured, BeckendQuery
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis, connection
@@ -15,7 +15,7 @@ setattr = lambda pipe,p,name : getattr(pipe,p+name)
 
 
 redis_connection = namedtuple('redis_connection',
-                              'host port db password socket_timeout')
+                              'host port db password socket_timeout decode')
  
 
 class RedisTransaction(object):
@@ -113,7 +113,8 @@ class RedisQuery(BeckendQuery):
                 elif len(q.values) == 1:
                     keys.append(meta.basekey(IDX,q.name,q.values[0]))
                 else:
-                    insersept = [meta.basekey(IDX,q.name,value) for value in q.values]
+                    insersept = [meta.basekey(IDX,q.name,value)\
+                                  for value in q.values]
                     tkey = self.meta.tempkey()
                     self.union(tkey,insersept).expire(tkey,self.expire)
                     keys.append(tkey)
@@ -204,11 +205,12 @@ class RedisQuery(BeckendQuery):
             sort_by = self.qs.ordering
             skey = self.meta.tempkey()
             okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
-            self.server.redispy.sort(self.query_set,
-                                     by = okey,
-                                     desc = sort_by.desc,
-                                     store = skey,
-                                     alpha = sort_by.field.internal_type == 'text')
+            self.server.redispy.sort(
+                         self.query_set,
+                         by = okey,
+                         desc = sort_by.desc,
+                         store = skey,
+                         alpha = sort_by.field.internal_type == 'text')
             return skey
     
     def count(self):
@@ -277,12 +279,14 @@ class BackendDataServer(stdnet.BackendDataServer):
     _redis_clients = {}
     
     def __init__(self, name, server, db = 0,
-                 password = None, socket_timeout = None, **params):
+                 password = None, socket_timeout = None,
+                 decode = None, **params):
         super(BackendDataServer,self).__init__(name,**params)
         servs = server.split(':')
         host = servs[0] if servs[0] is not 'localhost' else '127.0.0.1'
         port = int(servs[1]) if len(servs) == 2 else 6379
-        cp = redis_connection(host, port, db, password, socket_timeout)
+        socket_timeout = int(socket_timeout) if socket_timeout else None
+        cp = redis_connection(host, port, db, password, socket_timeout, decode)
         if cp in self.connection_pools:
             connection_pool = self.connection_pools[cp]
         else:
@@ -354,30 +358,31 @@ class BackendDataServer(stdnet.BackendDataServer):
         bkey = meta.basekey
         keys = self.redispy.keys(meta.tempkey('*'))
         pipe.delete(bkey(OBJ,obid),*keys)
-        rem = setattr(pipe,'z' if meta.ordering else 's','rem')
-        rem(bkey('id'), obid)
-        
-        for field,value in obj.indices:
-            if field.unique:
-                pipe.hdel(bkey(UNI,field.name),value)
-            else:
-                rem(bkey(IDX,field.name,value), obid)
+            
+        if obj.indices:
+            rem = setattr(pipe,'z' if meta.ordering else 's','rem')
+            rem(bkey('id'), obid)
+            
+            for field,value in obj.indices:
+                if field.unique:
+                    pipe.hdel(bkey(UNI,field.name),value)
+                else:
+                    rem(bkey(IDX,field.name,value), obid)
     
-    def _delete_object(self, obj, transaction, deleted):
-        append = deleted.append
-        pipe = transaction.pipe
-        for field in obj._meta.multifields:
-            fid = field.id(obj)
-            if fid:
-                pipe.delete(fid)
-                append(fid)
+    def _delete_object(self, obj, transaction):
+        mfs = obj._meta.multifields
+        if mfs:
+            pipe = transaction.pipe
+            fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
+            if fids:
+                pipe.delete(*fids)
     
     def flush(self, meta, count):
         '''Flush all model keys from the database'''
         #TODO: this should become a Lua script
         if count is not None:
             count[str(meta)] = meta.table().size()
-        keys = self.keys(meta.basekey()+b'*')
+        keys = self.keys('{0}*'.format(meta.basekey()))
         if keys:
             self.delete(*keys)
             

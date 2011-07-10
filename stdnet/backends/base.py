@@ -162,7 +162,7 @@ Save or updated an instance of a model to the back-end database:
         
         return obj
         
-    def delete_object(self, obj, transaction = None, deleted = None):
+    def delete_object(self, obj, transaction = None):
         '''Delete an object from the data server and clean up indices.
 Called to clear a model instance.
 :parameter obj: instance of :class:`stdnet.orm.StdModel`
@@ -176,9 +176,9 @@ Called to clear a model instance.
             commit = True
             transaction = self.transaction()
         
-        deleted = deleted if deleted is not None else []
+
         self._remove_indexes(obj, transaction)
-        self._delete_object(obj, transaction, deleted)
+        self._delete_object(obj, transaction)
         
         if commit:
             transaction.commit()

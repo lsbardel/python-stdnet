@@ -211,7 +211,7 @@ class RedisQuery(BeckendQuery):
                       desc = sort_by.desc,
                       store = skey,
                       alpha = sort_by.field.internal_type == 'text')\
-                 .expire(skey,self.expire).execute()
+                .expire(skey,self.expire).execute()
             return skey
     
     def count(self):

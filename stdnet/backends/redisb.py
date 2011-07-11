@@ -205,12 +205,13 @@ class RedisQuery(BeckendQuery):
             sort_by = self.qs.ordering
             skey = self.meta.tempkey()
             okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
-            self.server.redispy.sort(
-                         self.query_set,
-                         by = okey,
-                         desc = sort_by.desc,
-                         store = skey,
-                         alpha = sort_by.field.internal_type == 'text')
+            pipe = self.server.redispy.pipeline()
+            pipe.sort(self.query_set,
+                      by = okey,
+                      desc = sort_by.desc,
+                      store = skey,
+                      alpha = sort_by.field.internal_type == 'text')\
+                 .expire(skey,self.expire).execute()
             return skey
     
     def count(self):

@@ -41,7 +41,8 @@ class redisReadTask(object):
             self.response = response
             self.length = length
         else:
-            raise InvalidResponse("Protocol Error") 
+            raise InvalidResponse('Protocol Error.\
+ Could not decode type "{0}"'.format(type)) 
         
     def gets(self, response = False, recursive = False):
         gets = self.connection.gets
@@ -142,7 +143,7 @@ class RedisPythonReader(object):
             else:
                 chunk = self._inbuffer.readline()
             if chunk:
-                if chunk[-1:] == b'\n':
+                if chunk[-2:] == b'\r\n':
                     return chunk[:-2]
                 else:
                     self._inbuffer = BytesIO(chunk)

@@ -205,6 +205,9 @@ between the client and server.
             connection.disconnect()
             connection.send_command(*args)
             return self.parse_response(connection, command_name, **options)
+        except:
+            connection.disconnect()
+            raise
         finally:
             pool.release(connection)
 
@@ -1030,7 +1033,7 @@ which will execute all commands queued in the pipe.
     def _execute_pipeline(self, connection, commands, with_callbacks):
     # build up all commands into a single request to increase network perf
         all_cmds = b''.join(starmap(connection.pack_command,
-                                   [args for args, options in commands]))
+                                   (args for args, options in commands)))
         connection.send_packed_command(all_cmds)
         return [self.parse_response(connection, args[0], **options)
                 for args, options in commands]
@@ -1049,6 +1052,6 @@ which will execute all commands queued in the pipe.
             return execute(conn, stack, with_callbacks)
         except ConnectionError:
             conn.disconnect()
-            return execute(conn, stack)
+            return execute(conn, stack, with_callbacks)
         finally:
             self.connection_pool.release(conn)

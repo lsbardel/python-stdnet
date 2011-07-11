@@ -7,7 +7,7 @@ ResponseError = redis.ResponseError
 RedisError = redis.RedisError
 
 def makeredis(pool = None):
-    cursor = getdb('{0}&decode=1'.format(settings.DEFAULT_BACKEND))
+    cursor = getdb(format(settings.DEFAULT_BACKEND), decode = 1)
     return cursor.redispy
 
 

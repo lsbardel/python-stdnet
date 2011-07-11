@@ -79,7 +79,8 @@ class RedisStats(object):
             l = cl[0]
             self.incr_count(typ,len(cl[1][0]))
         elif typ == 'list':
-            l = pipe.llen(key).lrange(key,0,0)
+            cl = pipe.llen(key).lrange(key,0,0).execute()
+            l = cl[0]
             self.incr_count(typ,len(cl[1][0]))
         elif typ == 'hash':
             l = r.hlen(key)

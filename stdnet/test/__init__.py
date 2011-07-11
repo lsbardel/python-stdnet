@@ -12,7 +12,8 @@ from .profile import ProfileTest, ProfileSuiteRunner
 
 TEST_TYPES = {'regression': TestSuiteRunner,
               'bench': BenchSuiteRunner,
-              'profile': ProfileSuiteRunner}
+              'profile': ProfileSuiteRunner,
+              'fuzzy': TestSuiteRunner}
 
 
 def get_tests(test_type, tests_path):

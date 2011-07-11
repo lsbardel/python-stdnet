@@ -16,8 +16,9 @@ def populate(datatype = 'string', size  = 10,
              converter = None, 
              choice_from = None,
              **kwargs):
-    '''Utility function for populating lists with random data. Useful for populating
-database with data for testing. Supported data-types
+    '''Utility function for populating lists with random data.
+Useful for populating database with data for fuzzy testing.
+Supported data-types
     
     * *string*
         For example::
@@ -33,7 +34,8 @@ database with data for testing. Supported data-types
             from datetime import date
             populate('date',200, start = date(1997,1,1), end = date.today())
         
-        create a 200 elements list with random datetime.date objects between *start* and *end*
+        create a 200 elements list with random datetime.date objects
+        between *start* and *end*
         
     * *integer*
         For example::

@@ -22,12 +22,14 @@ def makeoptions():
                       help="Test type, possible choices are:\n\
                       * regression (default)\n\
                       * bench\n\
-                      * profile")
+                      * profile\n\
+                      * fuzzy")
     parser.add_option("-f", "--fail",
                       action="store_false",
                       dest="can_fail",
                       default=True,
-                      help="If set, the tests won't run if there is an import error in tests")
+                      help="If set, the tests won't run if there is\
+ an import error in tests")
     parser.add_option("-s", "--server",
                       action="store",
                       dest="server",

@@ -40,15 +40,15 @@ class ServerCommandsTestCase(BaseTest):
     def test_get_and_set(self):
         # get and set can't be tested independently of each other
         self.assertEquals(self.client.get('a'), None)
-        byte_string = 'value'
+        byte_string = b'value'
         integer = 5
         unicode_string = chr(3456) + to_string('abcd') + chr(3421)
         self.assert_(self.client.set('byte_string', byte_string))
         self.assert_(self.client.set('integer', 5))
         self.assert_(self.client.set('unicode_string', unicode_string))
-        self.assertEquals(self.client.get('byte_string'), byte_string)
+        self.assertEquals(self.client.get('byte_string').decode(), byte_string)
         self.assertEquals(self.client.get('integer'), str(integer))
-        self.assertEquals(self.client.get('unicode_string').decode('utf-8'),
+        self.assertEquals(self.client.get('unicode_string'),
                           unicode_string)
 
     def test_getitem_and_setitem(self):

@@ -16,6 +16,7 @@ class SimpleModel(orm.StdModel):
     group = orm.SymbolField(required = False)
     description = orm.CharField()
     somebytes = orm.ByteField()
+    object = orm.PickleObjectField(required = False)
     
     objects = CustomManager()
     

@@ -1,4 +1,4 @@
-from stdnet import orm
+from stdnet import orm, pythonpickle
 
 from stdnet.contrib.timeseries import models
 
@@ -17,5 +17,10 @@ class TimeSeries(models.TimeSeries):
 
 class DateTimeSeries(models.DateTimeSeries):
     ticker = orm.SymbolField(unique = True)
+    
+    
+class BigTimeSeries(models.DateTimeSeries):
+    ticker = orm.SymbolField(unique = True)
+    data  = models.TimeSeriesField(pickler = pythonpickle)
     
 

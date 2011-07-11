@@ -127,7 +127,8 @@ class MultiField(Field):
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,self.get_pipeline(),
-                            self.pickler,self.converter,self.scorefun))
+                                      self.pickler,self.converter,
+                                      self.scorefun))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)

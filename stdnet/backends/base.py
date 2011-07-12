@@ -5,6 +5,7 @@ from stdnet.exceptions import *
 from stdnet.utils import zip, pickle, iteritems, BytesIO
 
 from .structures import Structure
+from .encoding import NoEncoder
 
 __all__ = ['BackendDataServer',
            'BeckendQuery',
@@ -95,7 +96,7 @@ class BackendDataServer(object):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
-        self.pickler = pickler or nopickle
+        self.pickler = pickler or NoEncoder()
         self.params = params
 
     @property

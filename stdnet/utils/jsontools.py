@@ -78,7 +78,7 @@ class jsonPickler(object):
     def dumps(self, obj, **kwargs):
         return json.dumps(obj, cls=JSONDateDecimalEncoder, **kwargs)
     
-    def loads(self,sobj):
+    def loads(self, sobj):
         return json.loads(sobj)
 
 

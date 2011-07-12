@@ -4,7 +4,7 @@ from stdnet.utils import urlparse
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
 
-from .base import pythonpickle
+from .encoding import PythonPickle
 
 parse_qsl = urlparse.parse_qsl
 
@@ -57,9 +57,10 @@ def getdb(backend_uri = None, **kwargs):
     return _getdb(scheme, host, params)
 
 
-def getcache(backend_uri = None, pickler = pythonpickle, **kwargs):
-    return getdb(backend_uri = backend_uri,
-                 pickler = pickler, **kwargs) 
+def getcache(backend_uri = None, pickler = PythonPickle, **kwargs):
+    if isclass(pickler):
+        pickler = pickler()
+    return getdb(backend_uri = backend_uri, pickler = pickler, **kwargs) 
 
 
 class CacheClass(object):

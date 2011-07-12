@@ -37,7 +37,9 @@ class redisReadTask(object):
                 response = b''
             elif rtype == REDIS_REPLY_ARRAY:
                 length = int(response)
-                response = []       
+                response = []
+            #elif rtype == REDIS_REPLY_STATUS:
+            #    response = self.connection.decode(response)
             self.response = response
             self.length = length
         else:

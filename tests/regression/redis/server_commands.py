@@ -46,7 +46,8 @@ class ServerCommandsTestCase(BaseTest):
         self.assert_(self.client.set('byte_string', byte_string))
         self.assert_(self.client.set('integer', 5))
         self.assert_(self.client.set('unicode_string', unicode_string))
-        self.assertEquals(self.client.get('byte_string').decode(), byte_string)
+        self.assertEquals(self.client.get('byte_string').encode(),
+                          byte_string)
         self.assertEquals(self.client.get('integer'), str(integer))
         self.assertEquals(self.client.get('unicode_string'),
                           unicode_string)
@@ -218,18 +219,18 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.substr('a', 2, -2), '345')
 
     def test_type(self):
-        self.assertEquals(self.client.type('a'), 'none')
+        self.assertEquals(self.client.type('a'), b'none')
         self.client['a'] = '1'
-        self.assertEquals(self.client.type('a'), 'string')
+        self.assertEquals(self.client.type('a'), b'string')
         del self.client['a']
         self.client.lpush('a', '1')
-        self.assertEquals(self.client.type('a'), 'list')
+        self.assertEquals(self.client.type('a'), b'list')
         del self.client['a']
         self.client.sadd('a', '1')
-        self.assertEquals(self.client.type('a'), 'set')
+        self.assertEquals(self.client.type('a'), b'set')
         del self.client['a']
         self.client.zadd('a', '1', 1)
-        self.assertEquals(self.client.type('a'), 'zset')
+        self.assertEquals(self.client.type('a'), b'zset')
 
     # LISTS
     def make_list(self, name, l):

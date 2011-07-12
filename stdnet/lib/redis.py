@@ -115,6 +115,9 @@ class Redis(object):
     the commands are sent and received to the Redis server
     """
     RESPONSE_CALLBACKS = dict_merge(
+        #bytes_to_string(
+        #    'KEYS',
+        #    ),
         string_keys_to_dict(
             'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
             'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
@@ -149,7 +152,7 @@ class Redis(object):
             'HGETALL': lambda r: pairs_to_dict(r),
             'INFO': parse_info,
             'LASTSAVE': timestamp_to_datetime,
-            'PING': lambda r: r == 'PONG',
+            'PING': lambda r: r == b'PONG',
             'RANDOMKEY': lambda r: r and r or None,
             'TTL': lambda r: r != -1 and r or None,
             'ZRANK': int_or_none,
@@ -1021,12 +1024,13 @@ which will execute all commands queued in the pipe.
                 "pipeline execution")
         # We have to run response callbacks manually
         data = []
+        response_callbacks = self.response_callbacks
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
                 args, options = cmd
                 command_name = args[0]
-                if command_name in self.response_callbacks:
-                    r = self.response_callbacks[command_name](r, **options)
+                if command_name in response_callbacks:
+                    r = response_callbacks[command_name](r, **options)
             data.append(r)
         return data
 

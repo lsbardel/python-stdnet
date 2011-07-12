@@ -2,10 +2,9 @@ import json
 from hashlib import sha1
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, pickle, iteritems, BytesIO
+from stdnet.utils import zip, pickle, iteritems, BytesIO, encoders
 
 from .structures import Structure
-from .encoding import NoEncoder
 
 __all__ = ['BackendDataServer',
            'BeckendQuery',
@@ -96,7 +95,7 @@ class BackendDataServer(object):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
-        self.pickler = pickler or NoEncoder()
+        self.pickler = pickler or encoders.NoEncoder()
         self.params = params
 
     @property
@@ -264,7 +263,7 @@ Called to clear a model instance.
             self.delete(key)
 
     # PURE VIRTUAL METHODS
-        
+    
     def clear(self):
         """Remove *all* values from the database at once."""
         raise NotImplementedError

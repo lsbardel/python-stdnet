@@ -3,7 +3,8 @@ from random import randint
 from stdnet import test
 
 from stdnet.utils import to_string, range
-from stdnet.contrib.searchengine import SearchEngine, double_metaphone, stdnet_processor
+from stdnet.contrib.searchengine import SearchEngine, double_metaphone,\
+                                        stdnet_processor
 from stdnet.contrib.searchengine.models import Word, WordItem, AutoComplete
 from stdnet.utils import populate
 
@@ -18,21 +19,33 @@ python_content = 'Python is a programming language that lets you work more\
  in productivity and lower maintenance costs.'
 
 
-NAMES = {'maurice':('MRS', None),'aubrey':('APR', None),'cambrillo':('KMPRL','KMPR')\
-        ,'heidi':('HT', None),'katherine':('K0RN','KTRN'),'Thumbail':('0MPL','TMPL')\
-        ,'catherine':('K0RN','KTRN'),'richard':('RXRT','RKRT'),'bob':('PP', None)\
-        ,'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'), 'Schwein':('XN', 'XFN')\
-        ,'dave':('TF', None),'ray':('R', None),'steven':('STFN', None),'bryce':('PRS', None)\
+NAMES = {'maurice':('MRS', None),
+         'aubrey':('APR', None),
+         'cambrillo':('KMPRL','KMPR'),
+         'heidi':('HT', None),
+         'katherine':('K0RN','KTRN'),
+         'Thumbail':('0MPL','TMPL'),
+         'catherine':('K0RN','KTRN'),
+         'richard':('RXRT','RKRT'),
+         'bob':('PP', None),
+         'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'),
+        'Schwein':('XN', 'XFN')\
+        ,'dave':('TF', None),'ray':('R', None),'steven':('STFN', None),
+        'bryce':('PRS', None)\
         ,'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
-        ,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None), 'Dallas':('TLS', None)\
+        ,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None),
+        'Dallas':('TLS', None)\
         , 'maisey':('MS', None), 'zhang':('JNK', None), 'Chile':('XL', None)\
-        ,'Jose':('HS', None), 'Arnow':('ARN','ARNF'), 'solilijs':('SLLS', None)\
-        , 'Parachute':('PRKT', None), 'Nowhere':('NR', None), 'Tux':('TKS', None)}
+        ,'Jose':('HS', None), 'Arnow':('ARN','ARNF'),
+        'solilijs':('SLLS', None)\
+        , 'Parachute':('PRKT', None), 'Nowhere':('NR', None),
+        'Tux':('TKS', None)}
 
 
 NUM_WORDS = 40
 WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
-                              choice_from = basic_english_words)) for i in range(size))
+                              choice_from = basic_english_words))\
+                               for i in range(size))
 
 
 def make_items(num = 30, content = False):

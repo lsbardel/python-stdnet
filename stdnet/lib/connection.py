@@ -200,11 +200,11 @@ class Connection(object):
     def __pack_gen(self, args):
         crlf = b'\r\n'
         yield b'*'
-        yield str(len(args)).encode()
+        yield str(len(args)).encode(self.encoding)
         yield crlf
         for value in map(self.encode,args):
             yield b'$'
-            yield str(len(value)).encode()
+            yield str(len(value)).encode(self.encoding)
             yield crlf
             yield value
             yield crlf

@@ -8,7 +8,8 @@ from stdnet.exceptions import *
 from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, novalue, to_string, is_string,\
-                         to_bytestring, is_bytes_or_string, iteritems
+                         to_bytestring, is_bytes_or_string, iteritems,\
+                         encoders
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -46,7 +47,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     in the :class:`stdnet.BackendDataServer`. If you don't need to search
     the field you should set this value to ``False``.
     
-    .. note:: if ``index`` is set to ``False`` executing queries agains the field will
+    .. note:: if ``index`` is set to ``False`` executing queries
+              againsT the field will
               throw a :class:`stdnet.QuerySetError` exception.
               No database queries are allowed for non indexed fields
               as a design decision (excplicit better than implicit).
@@ -94,12 +96,17 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 .. attribute:: model
 
     The :class:`stdnet.orm.StdModel` holding the field.
-    Created by the ``orm`` at runtime. 
+    Created by the ``orm`` at runtime.
+    
+.. attribute:: charset
+
+    The cahrset used for encoding decoding text.
 '''
     default = None
     type = None
     index = True
     ordered = False
+    charset = None
     internal_type = None
     
     def __init__(self, unique = False, ordered = None, primary_key = False,
@@ -114,21 +121,27 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
             self.unique = unique
             self.required = required
             self.index = True if unique else index
-        self.ordered  = ordered if ordered is not None else self.ordered
-        self.meta     = None
-        self.name     = None
-        self.model    = None
+        self.charset = extras.pop('charset',self.charset)
+        self.ordered = ordered if ordered is not None else self.ordered
+        self.meta = None
+        self.name = None
+        self.model = None
         self.as_cache = False
-        self.default  = extras.pop('default',self.default)
+        self.default = extras.pop('default',self.default)
+        self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
         
     def _handle_extras(self, **extras):
         self.error_extras(extras)
         
+    def get_encoder(self, params):
+        return None
+    
     def error_extras(self, extras):
         keys = list(extras)
         if keys:
-            raise TypeError("__init__() got an unexepcted keyword argument '{0}'".format(keys[0]))
+            raise TypeError("__init__() got an unexepcted keyword\
+ argument '{0}'".format(keys[0]))
         
     def __unicode__(self):
         return to_string('%s.%s' % (self.meta,self.name))
@@ -149,7 +162,8 @@ class when :class:`stdnet.orm.base.Metaclass` is initialised. It fills
 :attr:`Field.name` and :attr:`Field.model`. This is an internal
 function users should never call.'''
         if self.name:
-            raise FieldError('Field %s is already registered with a model' % self)
+            raise FieldError('Field %s is already registered\
+ with a model' % self)
         self.name  = name
         self.attname =self.get_attname()
         self.model = model
@@ -171,7 +185,8 @@ function users should never call.'''
     
     def serialize(self, value, transaction = None):
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
-an object to the remote data server. It return s a serializable representation of *value*.
+an object to the remote data server. It return s a serializable
+representation of *value*.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         return self.scorefun(value)
     
@@ -212,7 +227,8 @@ the ordering alorithm'''
             
 
 class AtomField(Field):
-    '''The base class for fields containing ``atoms``. An atom is an irreducible
+    '''The base class for fields containing ``atoms``.
+An atom is an irreducible
 value with a specific data type. it can be of four different types:
 
 * boolean
@@ -232,13 +248,21 @@ A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.'''
     type = 'text'
     internal_type = 'text'
-    default = to_string('')
+    charset = 'utf-8'
+    default = ''
+    
+    def get_encoder(self, params):
+        return encoders.Default(self.charset)
     
     def to_python(self, value):
         if value is not None:
-            return to_string(value)
+            return self.encoder.loads(value)
         else:
             return self.default
+        
+    def serialize(self, value, transaction = None):
+        if value is not None:
+            return self.encoder.dumps(value)
     
     def index_value(self):
         return sha1(self.value)
@@ -393,11 +417,6 @@ It accept an additional attribute
             kwargs['required'] = False
         super(CharField,self).__init__(*args, **kwargs)
         self.as_cache = as_cache
-        
-    def scorefun(self, value):
-        if value is not None:
-            value = str(value)
-        return value
     
     
 class PickleObjectField(CharField):
@@ -406,37 +425,28 @@ python object. This field is python specific and therefore not of much use
 if accessed from external programs. Consider the :class:`ForeignKey`
 or :class:`JSONField` as a more general alternative.'''
     type = 'object'
-    internal_type = 'serialized'
+    internal_type = 'bytes'
+    
+    def get_encoder(self, params):
+        return encoders.PythonPickle()
+    
     def to_python(self, value):
-        if value is None:
-            return value
-        elif isinstance(value, bytes):
-            try:
-                return pickle.loads(value)
-            except pickle.UnpicklingError:
-                return None
-        else:
-            return value
+        return self.encoder.loads(value)
     
     def scorefun(self, value):
-        if value is not None:
-            try:
-                value = pickle.dumps(value)
-            except:
-                value = None
-        return value
+        return self.encoder.dumps(value)
     
 
 class ForeignKey(Field, RelatedObject):
     '''A field defining a one-to-many objects relationship.
 Requires a positional argument: the class to which the model is related.
-To create a recursive relationship, an object that has a many-to-one relationship with itself,
-use::
+To create a recursive relationship, an object that has a many-to-one
+relationship with itself use::
 
     orm.ForeignKey('self')
 
-It accepts **related_name** as extra argument. It is the name to use for the relation from the related object
-back to self. For example::
+It accepts **related_name** as extra argument. It is the name to use for
+the relation from the related object back to self. For example::
 
     class Folder(orm.StdModel):
         name = orm.SymobolField()
@@ -479,14 +489,19 @@ and form a dictionary of data.
 There are few extra parameters which can be used to customize the
 behaviour and the storage of the JSON data.
 
-:parameter encoder_class: The JSON class used for encoding. A sensible default is available.
-:parameter decoder_hook: A JSON decoder function. A sensible default is available.
+:parameter encoder_class: The JSON class used for encoding.
+                          A sensible default is available.
+:parameter decoder_hook: A JSON decoder function.
+                          A sensible default is available.
 :parameter sep: A string separator for building nested JSON data.
                 
                 Default ``None``.
-:parameter as_string: a boolean indicating if data should be serialized into a string.
-                      If the value is set to ``False``, the JSON data is stored as a field
-                      of the instance prefixed with the field name and double underscore.
+:parameter as_string: a boolean indicating if data should be serialized
+                      into a string.
+                      If the value is set to ``False``,
+                      the JSON data is stored as a field
+                      of the instance prefixed with the field name
+                      and double underscore.
                       If ``True`` it is stored as a json string.
                     
                     Default ``True``.
@@ -539,7 +554,8 @@ which can be rather useful.
             else:
                 name = self.name
                 dumps = self.dumps
-                value = dict((('{0}{1}{2}'.format(name,JSPLITTER,field),dumps(v))\
+                value = dict((('{0}{1}{2}'.\
+                               format(name,JSPLITTER,field),dumps(v))\
                               for field,v in iteritems(value)))
         return value
     
@@ -562,20 +578,14 @@ which can be rather useful.
 
 
 class ByteField(CharField):
-    '''A field which contains binary data. In python this is converted to `bytes`.'''
-    def to_python(self, value):
-        if value is not None:
-            return to_bytestring(value)
-        else:
-            return b''
+    '''A field which contains binary data.
+In python this is converted to `bytes`.'''
+    internal_type = 'bytes'
+    
+    def get_encoder(self, params):
+        return encoders.Bytes(self.charset)
         
-    def scorefun(self, value):
-        if value is not None:
-            return to_bytestring(value)
-        else:
-            b''
-        
-        
+
 class ModelField(SymbolField):
     '''A filed which can be used to store the model classes (not only
 :class:`stdnet.orm.StdModel` models). If a class has a attribute ``_meta``
@@ -586,11 +596,11 @@ registered in the model hash table, it can be used.'''
     
     def to_python(self, value):
         if value:
-            value = to_string(value)
-        return get_model_from_hash(value)
+            value = self.encoder.loads(value)
+            return get_model_from_hash(value)
     
-    def scorefun(self, value):
+    def serialize(self, value):
         if value is not None:
             value = value._meta.hash
-        return value
+            return self.encoder.dumps(value)
 

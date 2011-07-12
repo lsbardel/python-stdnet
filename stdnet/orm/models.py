@@ -89,13 +89,15 @@ the :attr:`StdModel._meta` attribute.
     def afterload(self):
         self._cachepipes = {}
     
-    def save(self, transaction = None):
+    def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
 otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
 
-:parameter transaction: Optional transaction instance. It can be useful when saving
-                        several object together (it guaranties atomicity and it is much faster).
+:parameter transaction: Optional transaction instance.
+                        It can be useful when saving
+                        several object together (it guaranties atomicity
+                        and it is much faster).
                         Check the :ref:`transaction <model-transactions>`
                         documentation for more information.
                         
@@ -103,14 +105,15 @@ otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
                         
 The method return ``self``.
 '''
-        if not transaction:
+        send_signal = not transaction and not skip_signal
+        if send_signal:
             pre_save.send(sender=self.__class__, instance = self)
         meta = self._meta
         if not meta.cursor:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot save instance.".format(meta))
         r = meta.cursor.save_object(self, transaction)
-        if not transaction:
+        if send_signal:
             post_save.send(sender=self.__class__,
                            instance = r)
         return r

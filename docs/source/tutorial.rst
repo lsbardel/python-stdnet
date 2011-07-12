@@ -5,8 +5,11 @@
 Tutorial
 ============================
 
-In this section we will walk you though all the main aspect of the library, following a simple application
-as example. We will refer back to the library API as much as possible.
+In this section we will walk you though all the main aspects of the library,
+following a simple application as example.
+We will refer back to the :ref:`library API <model-index>`
+as much as possible so that
+advanced configuration parameters and functionalities can be investigated.
 
 
 .. _creating-models:
@@ -14,7 +17,9 @@ as example. We will refer back to the library API as much as possible.
 Creating Models
 ==========================
 
-Defining a stdnet models is simple, you derive a Python class from the :class:`stdnet.orm.StdModel` class::
+Defining stdnet models is achieved by subclassing the
+:class:`stdnet.orm.StdModel` class. The following
+snipped implements two models, ``Author`` and ``Book``::
 
     from stdnet import orm
     

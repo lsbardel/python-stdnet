@@ -27,7 +27,7 @@ Ver. 0.6.0 - Development
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **281 regression tests** with **78%** coverage.
+* **282 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

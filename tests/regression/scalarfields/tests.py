@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import stdnet
 from stdnet import test
-from stdnet.utils import populate, zip, is_string, to_string
+from stdnet.utils import populate, zip, is_string, to_string, chr
 from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
@@ -17,10 +17,11 @@ NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
 dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 
+
 class TestScalarBase(test.TestCase):
     model = None
     
-    def setUp(self):
+    def register(self):
         self.orm.register(self.model)
         self.meta = self.model._meta
     
@@ -70,6 +71,19 @@ class TestAtomFields(TestScalarBase):
         self.assertEqual(keys[0],self.meta.autoid())
         
 
+class TestCharFields(TestScalarBase):
+    model = SimpleModel
+    
+    def testUnicode(self):
+        unicode_string = chr(500) + to_string('ciao') + chr(300)
+        m = self.model(code = unicode_string).save()
+        code = m.todict()['code']
+        self.assertTrue(isinstance(code,bytes))
+        self.assertEqual(code.decode('utf-8'),unicode_string)
+        m = self.model.objects.get(id = m.id)
+        self.assertEqual(m.code,unicode_string)
+        
+    
 class TestNumericData(TestScalarBase):
     model = NumericData
         
@@ -203,7 +217,7 @@ class TestJsonField(test.TestCase):
 
 class TestJsonFieldSep(test.TestCase):
     
-    def setUp(self):
+    def register(self):
         self.orm.register(Statistics2)
     
     def unregister(self):

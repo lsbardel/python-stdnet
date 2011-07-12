@@ -96,6 +96,11 @@ For example::
         self.ordering = ordering
         return self
     
+    def search(self, text):
+        '''Search text in model. A search engine needs to be installed
+for this function to be available.'''
+        return self
+    
     def get(self):
         items = self.aslist()
         if items:

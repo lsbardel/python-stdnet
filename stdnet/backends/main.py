@@ -1,10 +1,9 @@
+from inspect import isclass
 
 from stdnet.conf import settings
-from stdnet.utils import urlparse
+from stdnet.utils import urlparse, encoders
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
-
-from .encoding import PythonPickle
 
 parse_qsl = urlparse.parse_qsl
 
@@ -57,10 +56,10 @@ def getdb(backend_uri = None, **kwargs):
     return _getdb(scheme, host, params)
 
 
-def getcache(backend_uri = None, pickler = PythonPickle, **kwargs):
-    if isclass(pickler):
-        pickler = pickler()
-    return getdb(backend_uri = backend_uri, pickler = pickler, **kwargs) 
+def getcache(backend_uri = None, encoder = encoders.PythonPickle, **kwargs):
+    if isclass(encoder):
+        encoder = encoder()
+    return getdb(backend_uri = backend_uri, pickler = encoder, **kwargs) 
 
 
 class CacheClass(object):

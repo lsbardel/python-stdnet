@@ -6,30 +6,7 @@ from stdnet.utils import zip, pickle, iteritems, BytesIO, encoders
 
 from .structures import Structure
 
-__all__ = ['BackendDataServer',
-           'BeckendQuery',
-           'nopickle',
-           'pythonpickle']
-
-class PythonPickle:
-    
-    def loads(self,x):
-        return pickle.loads(x)
-    
-    def dumps(self, x):
-        return pickle.dumps(x,2)
-
-
-class NoPickle(object):
-    
-    def loads(self, s):
-        return s
-    
-    def dumps(self, obj):
-        return obj
-
-pythonpickle = PythonPickle()
-nopickle = NoPickle()
+__all__ = ['BackendDataServer', 'BeckendQuery']
 
 
 class Keys(object):
@@ -91,10 +68,11 @@ class BackendDataServer(object):
     Query = None
     structure_module = None
     
-    def __init__(self, name, pickler = None, **params):
+    def __init__(self, name, pickler = None, charset = 'utf-8', **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
+        self.charset = charset
         self.pickler = pickler or encoders.NoEncoder()
         self.params = params
 

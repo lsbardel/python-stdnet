@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import stdnet
 from stdnet import test
-from stdnet.utils import populate, zip, is_string, to_string, chr
+from stdnet.utils import populate, zip, is_string, to_string, unichr, ispy3k
 from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
@@ -75,9 +75,13 @@ class TestCharFields(TestScalarBase):
     model = SimpleModel
     
     def testUnicode(self):
-        unicode_string = chr(500) + to_string('ciao') + chr(300)
+        unicode_string = unichr(500) + to_string('ciao') + unichr(300)
         m = self.model(code = unicode_string).save()
         code = m.todict()['code']
+        if ispy3k:
+            self.assertEqual(str(m),unicode_string)
+        else:
+            self.assertEqual(str(m),code)
         self.assertTrue(isinstance(code,bytes))
         self.assertEqual(code.decode('utf-8'),unicode_string)
         m = self.model.objects.get(id = m.id)
@@ -231,11 +235,12 @@ class TestJsonFieldSep(test.TestCase):
         mean = Decimal('56.4')
         started = date(2010,1,1)
         timestamp = datetime.now()
-        a = Statistics2(dt = date.today(), data = {'stat__mean': mean,
-                                                   'stat__std': 5.78,
-                                                   'stat__secondary__ar': 0.1,
-                                                   'date__started': started,
-                                                   'date__timestamp':timestamp}).save()
+        a = Statistics2(dt = date.today(),
+                        data = {'stat__mean': mean,
+                                'stat__std': 5.78,
+                                'stat__secondary__ar': 0.1,
+                                'date__started': started,
+                                'date__timestamp':timestamp}).save()
         a = Statistics2.objects.get(id = a.id)
         self.assertEqual(len(a.data),2)
         stat = a.data['stat']

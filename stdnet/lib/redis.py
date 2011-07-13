@@ -103,6 +103,12 @@ def float_or_none(response):
         return None
     return float(response)
 
+def bytes_to_string(result, encoding = None):
+    if isinstance(result,list):
+        return [res.decode(encoding) for res in result]
+    else:
+        return res.decode(encoding)
+
 
 class Redis(object):
     """
@@ -115,9 +121,10 @@ class Redis(object):
     the commands are sent and received to the Redis server
     """
     RESPONSE_CALLBACKS = dict_merge(
-        #bytes_to_string(
-        #    'KEYS',
-        #    ),
+        string_keys_to_dict(
+            'KEYS RANDOMKEY',
+            bytes_to_string
+            ),
         string_keys_to_dict(
             'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
             'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
@@ -164,17 +171,19 @@ class Redis(object):
 
     def __init__(self, host='localhost', port=6379,
                  db=0, password=None, socket_timeout=None,
-                 connection_pool=None):
+                 connection_pool=None, encoding = 'utf-8'):
         if not connection_pool:
             kwargs = {
                 'db': db,
                 'password': password,
                 'socket_timeout': socket_timeout,
                 'host': host,
-                'port': port
+                'port': port,
+                'encoding': encoding
                 }
             connection_pool = ConnectionPool(**kwargs)
         self.connection_pool = connection_pool
+        self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
 
     def _get_db(self):
@@ -353,9 +362,9 @@ instance is promoted to a master instead.
         """
         return self.execute_command('INCRBY', name, amount)
 
-    def keys(self, pattern=b'*'):
+    def keys(self, pattern='*'):
         "Returns a list of keys matching ``pattern``"
-        return self.execute_command('KEYS', pattern)
+        return self.execute_command('KEYS', pattern, encoding = self.encoding)
 
     def mget(self, keys, *args):
         """

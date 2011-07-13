@@ -190,9 +190,10 @@ class Connection(object):
             
     else:
         def encode(self, value):
-            if not isinstance(value,(unicode,str)):
-                value = str(value)
-            return value.encode(self.encoding,self.encoding_errors)
+            if isinstance(value,unicode):
+                return value.encode(self.encoding,self.encoding_errors)
+            else:
+                return str(value)
     
     def _decode(self, value):
         return value.decode(self.encoding,self.encoding_errors)
@@ -216,12 +217,16 @@ class Connection(object):
 
 class ConnectionPool(object):
     "Generic connection pool"
+    default_encoding = 'utf-8'
+    
     def __init__(self,
                  connection_class=Connection,
                  max_connections=None,
                  **connection_kwargs):
         self.connection_class = connection_class
         self.connection_kwargs = connection_kwargs
+        if 'encoding' not in connection_kwargs:
+            connection_kwargs['encoding'] = self.default_encoding
         self.max_connections = max_connections or settings.MAX_CONNECTIONS
         self._created_connections = 0
         self._available_connections = []
@@ -230,6 +235,10 @@ class ConnectionPool(object):
     @property
     def db(self):
         return self.connection_kwargs['db']
+    
+    @property
+    def encoding(self):
+        return self.connection_kwargs['encoding']
     
     def get_connection(self, command_name, *keys, **options):
         "Get a connection from the pool"

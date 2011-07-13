@@ -15,7 +15,7 @@ class ConnectionPoolTestCase(BaseTest):
         return pool
 
     def test_connection_creation(self):
-        connection_info = {'foo': 'bar', 'biz': 'baz'}
+        connection_info = {'foo': 'bar', 'biz': 'baz', 'encoding': 'utf-8'}
         pool = self.get_pool(connection_info=connection_info)
         connection = pool.get_connection('_')
         self.assertEquals(connection.kwargs, connection_info)

@@ -3,6 +3,7 @@ This file was originally forked from redis-py in January 2011.
 Since than it has moved on a different directions.
 
 Copyright (c) 2010 Andy McCurdy
+Copyright (c) 2011 Luca Sbardella
     BSD License   
 
 
@@ -184,15 +185,14 @@ class Connection(object):
     
     if ispy3k:
         def encode(self, value):
-            "Return a bytestring representation of the value"
             return value if isinstance(value,bytes) else str(value).encode(
                                         self.encoding,self.encoding_errors)
             
     else:
         def encode(self, value):
-            "Return a bytestring representation of the value"
-            return value.encode(self.encoding,self.encoding_errors) if\
-                     isinstance(value,unicode) else str(value)
+            if not isinstance(value,(unicode,str)):
+                value = str(value)
+            return value.encode(self.encoding,self.encoding_errors)
     
     def _decode(self, value):
         return value.decode(self.encoding,self.encoding_errors)

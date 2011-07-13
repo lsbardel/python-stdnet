@@ -18,4 +18,4 @@ ALPHA_NUMERIC = ALPHABET+NUMBERS
 
 # Consider these characters to be punctuation
 # they will be replaced with spaces prior to word extraction
-PUNCTUATION_CHARS = ",.;:'@~#[]{}`!$%^&*()_-"
+PUNCTUATION_CHARS = ",.;:'@~#[]{}`!$%^&*()_-+"

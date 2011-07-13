@@ -42,6 +42,7 @@ class WordItem(orm.StdModel):
     '''Model type'''
     object_id = orm.SymbolField()
     '''Model instance id'''
+    count = orm.IntegerField(index = False, default = 1)
     
     def __unicode__(self):
         return self.word.__unicode__()

@@ -76,3 +76,15 @@ Manager
 .. autoclass:: stdnet.orm.query.Manager
    :members:
    :member-order: bysource
+   
+
+.. _signal-api:
+
+Signals
+=====================
+Django includes a “signal dispatcher” which helps allow decoupled
+applications get notified when actions occur elsewhere in the framework.
+In a nutshell, signals allow certain senders to notify a set of receivers
+that some action has taken place.
+They’re especially useful when many pieces of code may be interested in
+the same events.

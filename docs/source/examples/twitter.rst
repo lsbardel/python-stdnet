@@ -6,34 +6,35 @@ Twitter Clone Example
 
 A very simple twitter clone implemented using ``stdnet`` library.
 Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
-:class:`stdnet.orm.ListField`::
+implicit sorting::
 
 	from datetime import datetime
 	from stdnet import orm
 	
 	class Post(orm.StdModel):
-	    dt   = orm.DateField(index = False)
+	    timestamp = orm.DateTimeField(default = datetime.now)
 	    data = orm.CharField()
 	    user = orm.ForeignKey("User")
 	    
 	    def __unicode__(self):
 	        return self.data
-	    
-	    
+	        
+	    class Meta:
+	       ordering = '-timestamp'
+    
+    
 	class User(orm.StdModel):
 	    '''A model for holding information about users'''
 	    username  = orm.SymbolField(unique = True)
 	    password  = orm.CharField(required = True)
-	    updates   = orm.ListField(model = Post)
-	    following = orm.ManyToManyField(model = 'self', related_name = 'followers')
+	    following = orm.ManyToManyField(model = 'self',
+	                                    related_name = 'followers')
 	    
 	    def __unicode__(self):
 	        return self.username
 	    
 	    def newupdate(self, data):
-	        p  = Post(data = data, user = self, dt = datetime.now()).save()
-	        self.updates.push_front(p)
-	        return p
+	        return Post(data = data, user = self).save()
 	    
 	    
 These models are available in the :mod:`stdnet.tests` module.
@@ -41,7 +42,8 @@ We can import them by using::
 
 	from stdnet.tests.examples.models import Post, User
 	
-Before using the models, we need to register them to a back-end. If your redis server is running locally
+Before using the models, we need to register them to a back-end.
+If your redis server is running locally
 just type::
 
 	>>> from stdnet import orm

@@ -29,10 +29,12 @@ NAMES = {'maurice':('MRS', None),
          'richard':('RXRT','RKRT'),
          'bob':('PP', None),
          'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'),
-        'Schwein':('XN', 'XFN')\
-        ,'dave':('TF', None),'ray':('R', None),'steven':('STFN', None),
-        'bryce':('PRS', None)\
-        ,'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
+         'Schwein':('XN', 'XFN'),
+         'dave':('TF', None),
+         'ray':('R', None),
+         'steven':('STFN', None),
+         'bryce':('PRS', None),
+         'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
         ,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None),
         'Dallas':('TLS', None)\
         , 'maisey':('MS', None), 'zhang':('JNK', None), 'Chile':('XL', None)\
@@ -62,12 +64,32 @@ def make_items(num = 30, content = False):
                      content = co).save(t)
     
 
+class TestMeta(test.TestCase):
+    '''Test internal functions, not the API.'''
+    def testSplitting(self):
+        eg = SearchEngine()
+        self.assertEqual(list(eg.get_words_from_text('bla-ciao+pippo')),\
+                         ['bla','ciao','pippo'])
+        self.assertEqual(list(eg.get_words_from_text('bla.-ciao:;pippo')),\
+                         ['bla','ciao','pippo'])
+        self.assertEqual(list(eg.get_words_from_text('  bla ; @ciao ;:`')),\
+                         ['bla','ciao'])
+        self.assertEqual(list(eg.get_words_from_text('bla bla____bla')),\
+                         ['bla','bla','bla'])
+        
+    def testMetaphone(self):
+        '''Test metaphone algorithm'''
+        for name in NAMES:
+            d = double_metaphone(name)
+            self.assertEqual(d,NAMES[name])
+
+
 class TestCase(test.TestCase):
+    '''Mixin for testing the search engine. No tests implemented here,
+just registration and some utility functions. All searchengine tests
+below will derive from this class.'''
     metaphone = True
     autocomplete = None
-    
-    def setUp(self):
-        self.register()
         
     def register(self):
         self.engine = SearchEngine(metaphone = self.metaphone,
@@ -111,12 +133,6 @@ class TestCase(test.TestCase):
 
 class TestSearchEngine(object):
 #class TestSearchEngine(TestCase):
-    
-    def testMetaphone(self):
-        '''Test metaphone algorithm'''
-        for name in NAMES:
-            d = double_metaphone(name)
-            self.assertEqual(d,NAMES[name])
 
     def testSimpleAdd(self):
         self.simpleadd()
@@ -150,7 +166,6 @@ class TestSearchEngine(object):
 class TestSearchEngineWithRegistration(TestCase):
     
     def setUp(self):
-        super(TestSearchEngineWithRegistration,self).setUp()
         self.engine.register(Item)
         self.assertTrue(Item in self.engine.REGISTERED_MODELS)
         

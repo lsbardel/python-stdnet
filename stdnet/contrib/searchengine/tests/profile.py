@@ -1,16 +1,16 @@
 from stdnet import test
 from stdnet.utils import zip
 
-from .regression import make_items, TestBase, Item
+from .fuzzy import makeItems, Item
 
 
-class TestIndexItem(TestBase,test.ProfileTest):
+class TestIndexItem(test.ProfileTest):
     
     def initialise(self):
-        make_items(200,content = True)
+        makeItems(100,300)
         
     def run(self):
-        engine = self.engine
+        engine = self.engine.index_item
         for item in Item.objects.all():
-            engine.index_item(item)
+            engine(item)
     

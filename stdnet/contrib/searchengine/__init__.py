@@ -1,8 +1,5 @@
 '''\
-An application for building a search-engine on ``stdnet``
-models with ideas from the fast, fuzzy, full-text index with Redis
-`blog post <http://playnice.ly/blog/2010/05/05/a-fast-fuzzy-full-text-index-using-redis/>`_
-and @antirez autocomplete https://gist.github.com/574044.
+An application for building a search-engine on ``stdnet`` models.
 
 Usage
 ===========
@@ -11,15 +8,17 @@ Somewhere in your application create the search engine singletone::
 
     from stdnet.contrib.searchengine import SearchEngine
      
-    engine = SearchEngine()
+    engine = SearchEngine(...)
  
-The engine works by registering models to it.
+The engine works by registering models to it or by indexing instances. If
+you go down the registering route, the simplest one, everything is done for
+you, all you need to do is to register a model with the search engine. 
 For example::
 
     engine.register(MyModel)
 
-From now on, everytime and instance of ``MyModel`` is updated/created,
-the search engine will updated indexes.
+From now on, every time and instance of ``MyModel`` is updated/created,
+the search engine will updated its indexes.
 
 To search, issue the command::
 
@@ -46,35 +45,52 @@ class SearchEngine(object):
 Adapted from
 https://gist.github.com/389875
     
-:parameter min_word_length: minimum number of words required by the engine to work.
+:parameter min_word_length: minimum number of words required by the engine
+                            to work.
 
                             Default ``3``.
                             
 :parameter stop_words: list of words not included in the search engine.
 
-                        Default in ``stdnet.contrib.searchengine.ignore.STOP_WORDS``
+                       Default ``stdnet.contrib.searchengine.ignore.STOP_WORDS``
                         
 :parameter autocomplete: Name for the autocomplete sorted set.
-                         If ``None`` autocomplete functionality won't be available.
+                         If ``None`` `autocomplete` functionality won't
+                         be available.
                          
                          Default ``en``.
                          
-:parameter metaphone: If ``True`` the double metaphone_ algorithm will be used to store
-                      and search for words.
+:parameter metaphone: If ``True`` the double metaphone_ algorithm will be
+                      used to store and search for words.
                       
                       Default ``True``.
+
+:parameter splitters: string whose characters are used to split text
+                      into words. If this parameter is set to `"_-"`,
+                      for example, than the word `bla_pippo_ciao-moon` will
+                      be split into `bla`, `pippo`, `ciao` and `moon`.
+                      Set to empty string for no splitting.
+                      Splitting will always occur on white spaces.
+                      
+                      Default
+                      ``stdnet.contrib.searchengine.ignore.PUNCTUATION_CHARS``.
 
 .. _metaphone: http://en.wikipedia.org/wiki/Metaphone
 """
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
-    web_hook = None
     
     def __init__(self, min_word_length = 3, stop_words = None,
-                 autocomplete = 'en', metaphone = True):
+                 autocomplete = 'en', metaphone = True,
+                 splitters = None):
         self.MIN_WORD_LENGTH = min_word_length
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
-        self.punctuation_regex = re.compile(r"[%s]" % re.escape(PUNCTUATION_CHARS))
+        splitters = splitters if splitters is not None else PUNCTUATION_CHARS
+        if splitters: 
+            self.punctuation_regex = re.compile(\
+                                    r"[%s]" % re.escape(splitters))
+        else:
+            self.punctuation_regex = None
         self.metaphone = metaphone
         self._autocomplete = autocomplete
         self.add_processor(stdnet_processor())           
@@ -86,13 +102,13 @@ https://gist.github.com/389875
             #ac.minlen = self.MIN_WORD_LENGTH
             return ac
         
-    def register(self, model, order_by = None):
+    def register(self, model):
         '''Register a model to the search engine. By registering a model,
 every time an instance is updated or created, it will be indexed by the
 search engine.
 
 :parameter model: a :class:`stdnet.orm.StdModel` class.
-:parameter order_by: an optional list of fields used to order the results once available.'''
+'''
         if model not in self.REGISTERED_MODELS:
             update_model = UpdateSE(self)
             delete_model = RemoveFromSE(self)
@@ -100,18 +116,24 @@ search engine.
             orm.post_save.connect(update_model, sender = model)
             orm.post_delete.connect(delete_model, sender = model)
         
-    def index_item(self, item, skipremove = True):
-        """Extract content from the given *item* and add it to the index. If autocomplete
-is enabled, it adds indexes for it.
+    def index_item(self, item, skipremove = False):
+        """This is the main function for indexing items.
+It extracts content from the given *item* and add it to the index.
+If autocomplete is enabled, it adds indexes for it too.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
-:parameter skipremove: If ``True`` it skip the remove step for improved performance.
+:parameter skipremove: If ``True`` it skip the remove step for
+                       improved performance.
+                       
+                       Default ``False``.
 """
-        self.remove_item(item)
+        if not skipremove:
+            self.remove_item(item)
         wft = self.get_words_from_text
         link = self._link_item_and_word
         
-        words = list(chain(*[wft(value) for value in self.item_field_iterator(item)]))
+        words = list(chain(*[wft(value) for value in\
+                              self.item_field_iterator(item)]))
         linked = []
         auto = self.autocomplete
         if auto:
@@ -192,11 +214,13 @@ Remove indexes for *item*.
             self.ITEM_PROCESSORS.append(processor)
             
     def get_words_from_text(self, text):
-        """A generator of words to index from the given text"""
+        #A generator of words to index from the given text. The text is
+        # split by white spaces and splitters characters (if available)
         if not text:
             raise StopIteration
         
-        text = self.punctuation_regex.sub(" ", text)
+        if self.punctuation_regex:
+            text = self.punctuation_regex.sub(" ", text)
         mwl = self.MIN_WORD_LENGTH
         stp = self.STOP_WORDS
         for word in text.split():
@@ -236,7 +260,8 @@ Remove indexes for *item*.
             result = processor(item)
             if result:
                 return result
-        raise ValueError('Cound not iterate through item {0} fields'.format(item))
+        raise ValueError(
+                'Cound not iterate through item {0} fields'.format(item))
     
     def get_or_create(self, word, tag = False):
         # Internal for adding or creating words
@@ -286,9 +311,11 @@ Remove indexes for *item*.
             raise StopIteration
         
     def reindex(self, *models):
-        '''Reindex models by removing items in :class:`stdnet.contrib.searchengine.WordItem`
-and rubuilding them by iterating through all the instances of model provided.
-If models are not provided, it reindex all models registered with the search engine.'''
+        '''Reindex models by removing items in
+:class:`stdnet.contrib.searchengine.WordItem` and rebuilding them by iterating
+through all the instances of model provided.
+If models are not provided, it reindex all models registered
+with the search engine.'''
         if not models:
             models = self.REGISTERED_MODELS
         for model in models:
@@ -317,7 +344,8 @@ class RemoveFromSE(object):
         
 
 class stdnet_processor(object):
-    '''A search engine processor for stdnet models. An engine processor is a callable
+    '''A search engine processor for stdnet models.
+An engine processor is a callable
 which return an iterable over text.'''
     def __call__(self, item):
         if isinstance(item,orm.StdModel):

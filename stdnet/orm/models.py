@@ -39,7 +39,8 @@ class ModelMixin(UnicodeMixin):
     def uuid(self):
         '''Universally unique identifier for a model instance.'''
         if not self.id:
-            raise self.DoesNotExist('Object not saved. Cannot obtain universally unique id')
+            raise self.DoesNotExist(\
+                    'Object not saved. Cannot obtain universally unique id')
         return '{0}.{1}'.format(self._meta.hash,self.id)
         
     
@@ -83,7 +84,8 @@ the :attr:`StdModel._meta` attribute.
             setattr(self,name,value)
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
-            raise ValueError("'%s' is an invalid keyword argument for %s" % (kwargs.keys()[0],self._meta))
+            raise ValueError("'%s' is an invalid keyword argument for %s" %\
+                              (kwargs.keys()[0],self._meta))
         self.afterload()
         
     def afterload(self):
@@ -96,12 +98,19 @@ otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
 
 :parameter transaction: Optional transaction instance.
                         It can be useful when saving
-                        several object together (it guaranties atomicity
+                        several object together (it guarantees atomicity
                         and it is much faster).
                         Check the :ref:`transaction <model-transactions>`
                         documentation for more information.
                         
                         Default: ``None``.
+                        
+:parameter skip_signal: When saving an instance, :ref:`signals <signal-api>`
+                        are sent just before and just after saving. If
+                        this flag is set to ``False``, those signals
+                        are not used in the function call.
+                        
+                        Default: ``False``
                         
 The method return ``self``.
 '''
@@ -119,8 +128,8 @@ The method return ``self``.
         return r
     
     def is_valid(self):
-        '''Return ``True`` if the model validates. It check all fields agains their respective
-validation algorithm.'''
+        '''Return ``True`` if the model validates.
+It check all fields agains their respective validation algorithm.'''
         return self._meta.is_valid(self)
 
     def _valattr(self, name):
@@ -140,14 +149,14 @@ validation algorithm.'''
         return self._valattr('indices')
     
     def delete(self, transaction = None):
-        '''Delete an instance from database. If the instance is not available (it does not have an id) and
-``StdNetException`` exception will raise. Return the number of model instances deleted.
+        '''Delete an instance from database.
+If the instance is not available (it does not have an id) and
+``StdNetException`` exception will raise. Return the number of
+model instances deleted.
 
-:parameter transaction: Optional transaction instance as in :meth:`stdnet.orm.StdModel.save`.
-:parameter dlist: Optional list. If available it will be filled with the ids of all models deleted.
-
-It returns the number of objects deleted. This method can delete more than one object when
-related the model for ``self`` is a related field in other models.'''
+:parameter transaction: Optional transaction instance as in
+                        :meth:`stdnet.orm.StdModel.save`.
+'''
         meta = self._meta
         if not self.id:
             raise StdNetException('Cannot delete object. It was never saved.')
@@ -180,15 +189,16 @@ related the model for ``self`` is a related field in other models.'''
     # UTILITY METHODS
     
     def instance_keys(self):
-        '''Utility method for returning keys associated with this instance only. The instance id
+        '''Utility method for returning keys associated with
+this instance only. The instance id
 is however available in other keys (indices and other backend containers).'''
         return self._meta.cursor.instance_keys(self)
     
     @classmethod
     def flush(cls, count = None):
         '''Flush the model table and all related tables including all indexes.
-Calling flush will erase everything about the model instances in the remote server.
-If count is a dictionary, the method
+Calling flush will erase everything about the model
+instances in the remote server. If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
@@ -229,7 +239,8 @@ instance an exception will raise.'''
     if len(elems) == 2:
         model = get_model_from_hash(elems[0])
         if not model:
-            raise StdModel.DoesNotExist('model id "{0}" not available'.format(elems[0]))
+            raise StdModel.DoesNotExist(\
+                        'model id "{0}" not available'.format(elems[0]))
         return model.objects.get(id = elems[1])
     raise StdModel.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
     

@@ -53,7 +53,8 @@ Atom Fields
 ===========================
 
 Atom Fields derived from :class:`stdnet.orm.AtomField` and, as the name says,
-they represents the simples data in a model.
+they represent the simplest data in a model. Their representation in python,
+is one of ``bytes``, ``strings``, ``numbers`` or ``dates``.
 
 IntegerField
 ~~~~~~~~~~~~~~~~~~~~~

@@ -420,10 +420,11 @@ It accept an additional attribute
     
     
 class PickleObjectField(CharField):
-    '''A field which implements automatic converion to and form a pickable
-python object. This field is python specific and therefore not of much use
+    '''A field which implements automatic conversion to and form a pickable
+python object.
+This field is python specific and therefore not of much use
 if accessed from external programs. Consider the :class:`ForeignKey`
-or :class:`JSONField` as a more general alternative.'''
+or :class:`JSONField` fields as more general alternatives.'''
     type = 'object'
     internal_type = 'bytes'
     

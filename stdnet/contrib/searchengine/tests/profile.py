@@ -1,12 +1,16 @@
-from stdnet import test
+from stdnet import test, orm
 from stdnet.utils import zip
 
-from .fuzzy import makeItems, Item
+from .fuzzy import makeItems, Item, Word, WordItem, SearchEngine
 
 
 class TestIndexItem(test.ProfileTest):
     
     def initialise(self):
+        self.engine = SearchEngine(autocomplete = False)
+        orm.register(Word)
+        orm.register(Item)
+        orm.register(WordItem)
         makeItems(100,300)
         
     def run(self):

@@ -7,21 +7,24 @@ from examples.models import Node, Role, Profile
 
 STEPS   = 10
 
+
 class TestSelfForeignKey(test.TestCase):
         
     def create(self, N, root):
         for n in range(N):
             node = Node(parent = root, weight = random.uniform(0,1)).save()
             
-    def setUp(self):
+    def register(self):
         self.orm.register(Node)
+        
+    def unregister(self):
+        self.orm.unregister(Node)
+        
+    def setUp(self):
         root = Node(weight = 1.0).save()
         for n in range(STEPS):
             node = Node(parent = root, weight = random.uniform(0,1)).save()
             self.create(random.randint(0,9), node)
-            
-    def unregister(self):
-        self.orm.unregister(Node)
     
     def testRelatedCache(self):
         for n in Node.objects.all():
@@ -43,7 +46,7 @@ class TestSelfForeignKey(test.TestCase):
 
 class TestManyToMany(test.TestCase):
     
-    def setUp(self):
+    def register(self):
         self.orm.register(Role)
         self.orm.register(Profile)
         

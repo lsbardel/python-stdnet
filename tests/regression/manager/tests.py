@@ -11,7 +11,7 @@ names = populate('string',LEN, min_len = 5, max_len = 20)
 
 class TestManager(test.TestCase):
     
-    def setUp(self):
+    def register(self):
         self.orm.register(SimpleModel)
     
     def unregister(self):

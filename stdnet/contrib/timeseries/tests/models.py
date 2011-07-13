@@ -1,4 +1,5 @@
-from stdnet import orm, pythonpickle
+from stdnet import orm
+from stdnet.utils import encoders
 
 from stdnet.contrib.timeseries import models
 
@@ -21,6 +22,6 @@ class DateTimeSeries(models.DateTimeSeries):
     
 class BigTimeSeries(models.DateTimeSeries):
     ticker = orm.SymbolField(unique = True)
-    data  = models.TimeSeriesField(pickler = pythonpickle)
+    data  = models.TimeSeriesField(pickler = encoders.PythonPickle())
     
 

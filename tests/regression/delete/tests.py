@@ -98,7 +98,7 @@ class TestDeleteScalarFields(test.TestCase):
         # The one used to autoincrement the Instrument ids
         keys = list(Instrument._meta.cursor.keys())
         self.assertEqual(len(keys),1)
-        self.assertEqual(keys[0].decode(),Instrument._meta.autoid())
+        self.assertEqual(keys[0],Instrument._meta.autoid())
         Instrument.flush()
         keys = list(Instrument._meta.cursor.keys())
         self.assertEqual(len(keys),0)

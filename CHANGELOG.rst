@@ -1,14 +1,14 @@
 Ver. 0.6.0 - Development
 ============================
 * **New database schema incompatible with previous versions**.
-* This version brings into production several important new features
-  including a new and improved database schema.
-* :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash tables
-  with fields given by the model field names and values given by the instance
-  field values.
-* Implemented two types of sorting: implicit by meta attribute
-  ``ordering`` or explicit by using the ``sort_by`` method in a
-  :class:`stdnet.orm.query.QuerySet` object.
+* This is a major release which brings into production several important
+  new features including an improved database schema.
+* :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash
+  tables with fields given by the model field names and values given by the
+  instance field values.
+* Implemented two types of sorting: implicit by the
+  :class:`stdnet.orm.Metaclass` attribute ``ordering`` or explicit by
+  using the ``sort_by`` method in a :class:`stdnet.orm.query.QuerySet` object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
   are now indexed via redis_ hash tables which maps the field value to the
@@ -27,7 +27,7 @@ Ver. 0.6.0 - Development
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **282 regression tests** with **78%** coverage.
+* **284 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

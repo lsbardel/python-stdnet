@@ -28,20 +28,30 @@ NAMES = {'maurice':('MRS', None),
          'catherine':('K0RN','KTRN'),
          'richard':('RXRT','RKRT'),
          'bob':('PP', None),
-         'eric':('ARK', None),'geoff':('JF','KF'),'Through':('0R','TR'),
+         'eric':('ARK', None),
+         'geoff':('JF','KF'),
+         'Through':('0R','TR'),
          'Schwein':('XN', 'XFN'),
          'dave':('TF', None),
          'ray':('R', None),
          'steven':('STFN', None),
          'bryce':('PRS', None),
-         'randy':('RNT', None),'bryan':('PRN', None),'Rapelje':('RPL', None)\
-        ,'brian':('PRN', None),'otto':('AT', None),'auto':('AT', None),
-        'Dallas':('TLS', None)\
-        , 'maisey':('MS', None), 'zhang':('JNK', None), 'Chile':('XL', None)\
-        ,'Jose':('HS', None), 'Arnow':('ARN','ARNF'),
-        'solilijs':('SLLS', None)\
-        , 'Parachute':('PRKT', None), 'Nowhere':('NR', None),
-        'Tux':('TKS', None)}
+         'randy':('RNT', None),
+         'bryan':('PRN', None),
+         'Rapelje':('RPL', None),
+         'brian':('PRN', None),
+         'otto':('AT', None),
+         'auto':('AT', None),
+         'Dallas':('TLS', None),
+         'maisey':('MS', None),
+         'zhang':('JNK', None),
+         'Chile':('XL', None),
+         'Jose':('HS', None),
+         'Arnow':('ARN','ARNF'),
+         'solilijs':('SLLS', None),
+         'Parachute':('PRKT', None),
+         'Nowhere':('NR', None),
+         'Tux':('TKS', None)}
 
 
 NUM_WORDS = 40
@@ -171,12 +181,10 @@ class TestSearchEngineWithRegistration(TestCase):
         
     def make_item(self,**kwargs):
         item = super(TestSearchEngineWithRegistration,self).make_item(**kwargs)
-        wis = WordItem.objects.filter(model_type = item.__class__,
-                                      object_id = item.id)
+        wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertTrue(wis)
         for wi in wis:
             self.assertEqual(wi.object,item)
-        
         return item
         
     def testAdd(self):
@@ -186,8 +194,7 @@ class TestSearchEngineWithRegistration(TestCase):
         item = self.make_item()
         words = list(Word.objects.all())
         item.delete()
-        wis = WordItem.objects.filter(model_type = item.__class__,
-                                     object_id = item.id)
+        wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertFalse(wis)
         self.assertEqual(len(words),len(Word.objects.all()))
     

@@ -1,3 +1,5 @@
+from stdnet import orm
+
 from .test import TestLoader, TestSuiteRunner
 from .bench import BenchMark
 
@@ -34,11 +36,15 @@ class ProfileSuiteRunner(TestSuiteRunner):
         n = 0
         stats = []
         for elem in suite.tests:
+            elem.register()
+            orm.clearall()
             elem.setUp()
             fname = "Profile{0}.prof".format(n)
             stats.append(fname)
             n += 1
             profile("elem.run()",globals(),locals(),fname)
+            elem.unregister()
+            orm.clearall()
             elem.tearDown()
         
         if stats:

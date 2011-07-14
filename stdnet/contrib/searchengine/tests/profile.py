@@ -6,11 +6,13 @@ from .fuzzy import makeItems, Item, Word, WordItem, SearchEngine
 
 class TestIndexItem(test.ProfileTest):
     
-    def initialise(self):
+    def register(self):
         self.engine = SearchEngine(autocomplete = False)
         orm.register(Word)
         orm.register(Item)
         orm.register(WordItem)
+        
+    def setUp(self):
         makeItems(100,300)
         
     def run(self):

@@ -10,16 +10,17 @@ class BenchMark(object):
             
     def __str__(self):
         return self.__class__.__name__
-        
+    
+    def register(self):
+        pass
+    
+    def unregister(self):
+        pass
+    
     def setUp(self):
-        self.register()
-        orm.clearall()
-        self.initialise()
-        
-    def initialise(self):
         pass
         
-    def register(self):
+    def initialise(self):
         pass
     
     def run(self):

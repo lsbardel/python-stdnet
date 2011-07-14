@@ -33,7 +33,7 @@ from itertools import chain
 from inspect import isclass
 
 from stdnet import orm
-from stdnet.utils import to_string
+from stdnet.utils import to_string, iteritems
 
 from .models import Word, WordItem, AutoComplete
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS
@@ -142,8 +142,16 @@ If autocomplete is enabled, it adds indexes for it too.
         if self.metaphone:
             words = self.get_metaphones(words)
         
+        wc = {}
+        for word in words:
+            if word in wc:
+                wc[word] += 1
+            else:
+                wc[word] = 1
+            
         with WordItem.transaction() as t:
-            linked = [link(item, word, transaction = t) for word in words]
+            linked = [link(item, word, c, transaction = t)\
+                       for word,c in iteritems(wc)]
         return linked
     
     def remove_item(self, item):
@@ -229,16 +237,13 @@ Remove indexes for *item*.
                 if word not in stp:
                     yield word
                     
-    def _link_item_and_word(self, item, word, tag = False, transaction = None):
+    def _link_item_and_word(self, item, word, count = 1, tag = False,
+                            transaction = None):
         w = self.get_or_create(word, tag = tag)
-        if tag:
-            if WordItem.objects.filter(word = w,
-                                       model_type = item.__class__,
-                                       object_id = item.id):
-                return
         return WordItem(word = w,
                         model_type = item.__class__,
-                        object_id = item.id).save(transaction)
+                        object_id = item.id,
+                        count = count).save(transaction)
     
     def get_metaphones(self, words):
         """Get the metaphones for a given list of words"""

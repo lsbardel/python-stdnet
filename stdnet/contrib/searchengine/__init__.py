@@ -58,7 +58,7 @@ https://gist.github.com/389875
                          If ``None`` `autocomplete` functionality won't
                          be available.
                          
-                         Default ``en``.
+                         Default ``None``.
                          
 :parameter metaphone: If ``True`` the double metaphone_ algorithm will be
                       used to store and search for words.
@@ -81,7 +81,7 @@ https://gist.github.com/389875
     ITEM_PROCESSORS = []
     
     def __init__(self, min_word_length = 3, stop_words = None,
-                 autocomplete = 'en', metaphone = True,
+                 autocomplete = None, metaphone = True,
                  splitters = None):
         self.MIN_WORD_LENGTH = min_word_length
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS

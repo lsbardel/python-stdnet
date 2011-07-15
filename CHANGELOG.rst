@@ -1,14 +1,17 @@
 Ver. 0.6.0 - Development
 ============================
 * **New database schema incompatible with previous versions**.
-* This is a major release which brings into production several important
-  new features including an improved database schema.
+* This is a major release which brings into production a vast array
+  of important new features including an improved database schema.
 * :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash
   tables with fields given by the model field names and values given by the
   instance field values.
-* Implemented two types of sorting: implicit by the
-  :class:`stdnet.orm.Metaclass` attribute ``ordering`` or explicit by
-  using the ``sort_by`` method in a :class:`stdnet.orm.query.QuerySet` object.
+* Implemented two types of sorting: 
+    * *Implicit* by the :class:`stdnet.orm.Metaclass` attribute ``ordering``.
+      When using this route, items are stored in the database in a sorted
+      fashion, therefore no overhead is required for the sorting step.
+    * *Explicit* by using the ``sort_by`` method in
+      a :class:`stdnet.orm.query.QuerySet` object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
   are now indexed via redis_ hash tables which maps the field value to the
@@ -22,12 +25,17 @@ Ver. 0.6.0 - Development
 * Added :ref:`serialization utilities <serialize-models>` for saving model
   data in JSON or CSV format. Custom serialization algorithms
   can be added to the library.
-* Added ``as_string`` parameter to :class:`stdnet.orm.JSONField` for specifying the
-  storage method.
+* Data encoders have been moved to the :mod:`stdnet.utils.encoders` module.
+  There are four available, a dummy one (no encoding), `Default` to and
+  from `unicode` and `bytes`, `Bytes` to and from bytes, `PythonPickle`
+  to and from object and their pickle (bytes) representation and
+  `Json` to and from structures and bytes.
+* Added ``as_string`` parameter to :class:`stdnet.orm.JSONField` for
+  specifying the storage method.
 * Moved testing functions into the :mod:`stdnet.test` module.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
-* **284 regression tests** with **78%** coverage.
+* **288 regression tests** with **78%** coverage.
 
 Ver. 0.5.5 - 2011 June 6
 ============================

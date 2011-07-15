@@ -1,4 +1,5 @@
 '''Classes used for encoding and decoding field values.'''
+import json
 
 from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\

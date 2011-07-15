@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 import stdnet
-from stdnet.utils import jsonPickler, iteritems, to_string, map
+from stdnet.utils import iteritems, to_string, map
 from stdnet import BackendDataServer, ImproperlyConfigured, BeckendQuery
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis, connection

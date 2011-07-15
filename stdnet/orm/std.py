@@ -1,6 +1,6 @@
 from stdnet.exceptions import *
 from stdnet import pipelines
-from stdnet.utils import jsonpickler
+from stdnet.utils import encoders
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from .fields import Field, RelatedObject
@@ -86,7 +86,7 @@ class MultiField(Field):
     
     Default: ``None``.
 '''
-    default_pickler = jsonpickler
+    default_pickler = encoders.Json()
     
     def get_pipeline(self):
         raise NotImplementedError
@@ -248,8 +248,8 @@ This field is implemented as a double Set field.
         self.related_name = related_name
         field.relmodel = related
         stype = self.get_pipeline()
-        setattr(self.model,  self.name,    Many2ManyManagerProxy(self.name,
-                                        stype, related_name, related))
+        setattr(self.model, self.name, Many2ManyManagerProxy(self.name,
+                            stype, related_name, related))
         setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name,
                                         stype, self.name, self.model))
            

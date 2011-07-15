@@ -17,9 +17,13 @@ init_data = {'set':{'count':0,'size':0},
              'unknown':{'count':0,'size':0}}
 
 
+OBJECT_VERSION = StrictVersion('2.4.0')
+
+
 class RedisStats(object):
     
-    def __init__(self, rpy):
+    def __init__(self, rpy, version):
+        self.version = version
         self.r = rpy
         self.data = init_data.copy()
 
@@ -49,7 +53,7 @@ class RedisStats(object):
         type_length = self.type_length
         for key in data:
             keys = key.decode()
-            typ,len,ttl = type_length(key)
+            typ,len,ttl,enc = type_length(key)
             if ttl == -1:
                 ttl = False
             yield (keys,typ,len,ttl)
@@ -68,8 +72,11 @@ class RedisStats(object):
         r = self.r
         pipe = r.pipeline()
         pipe.type(key).ttl(key)
+        # Not working yet!
+        #if self.version >= OBJECT_VERSION:
+        #    pipe.object('encoding',key)
         tt = pipe.execute()
-        typ = tt[0].decode()
+        typ = tt[0]
         if typ == 'set':
             cl = pipe.scard(key).srandmember(key).execute()
             l = cl[0]
@@ -102,7 +109,9 @@ class RedisStats(object):
     
 class RedisDbData(orm.FakeModel):
     
-    def __init__(self, rpy = None, db = None, keys = None, expires = None):
+    def __init__(self, version = None, rpy = None, db = None, keys = None,
+                 expires = None):
+        self.version = version
         self.rpy = rpy
         self.id = db
         if rpy and db is None:
@@ -129,13 +138,17 @@ class RedisDbData(orm.FakeModel):
         return '{0}'.format(self.id)
     
     def stats(self):
-        return RedisStats(self.rpy)
+        return RedisStats(self.rpy, self.version)
 
 
 class RedisData(list):
     
+    def __init__(self, *args, **kwargs):
+        self.version = kwargs.pop('version',None)
+        super(RedisData,self).__init__(*args, **kwargs)
+        
     def append(self, **kwargs):
-        instance = RedisDbData(**kwargs)
+        instance = RedisDbData(self.version,**kwargs)
         super(RedisData,self).append(instance)
     
     @property
@@ -240,7 +253,7 @@ class RedisInfo(object):
         self._makekeys(self.info)
         
     def _makekeys(self, kdata):
-        rd = RedisData()
+        rd = RedisData(version = self.version)
         tot = 0
         databases = []
         for k,n,data in self.dbs(kdata):

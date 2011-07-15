@@ -72,14 +72,3 @@ class JSONRPCEncoder(json.JSONEncoder):
         else:
             raise exceptions.JSONEncodeException("%r is not JSON serializable" % (obj,))
         
-
-class jsonPickler(object):
-    
-    def dumps(self, obj, **kwargs):
-        return json.dumps(obj, cls=JSONDateDecimalEncoder, **kwargs)
-    
-    def loads(self, sobj):
-        return json.loads(sobj)
-
-
-jsonpickler = jsonPickler()

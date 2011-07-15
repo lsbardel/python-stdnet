@@ -122,7 +122,7 @@ class Redis(object):
     """
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
-            'KEYS RANDOMKEY',
+            'KEYS RANDOMKEY TYPE OBJECT',
             bytes_to_string
             ),
         string_keys_to_dict(
@@ -446,6 +446,10 @@ instance is promoted to a master instead.
         "Returns the type of key ``name``"
         return self.execute_command('TYPE', name)
 
+    def object(self, name, subcommand):
+        '''Returns the subcommand on key ``name``. The subcommand
+can be one of: refcount, encoding, idletime.'''
+        return self.execute_command('OBJECT', subcommand, name)
 
     #### LIST COMMANDS ####
     def blpop(self, keys, timeout=0):

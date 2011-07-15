@@ -29,7 +29,6 @@ If you would like to limit the search to some specified models::
     search_result = engine.search(sometext, include = (model1,model2,...))
 '''
 import re
-from itertools import chain
 from inspect import isclass
 
 from stdnet import orm
@@ -37,10 +36,44 @@ from stdnet.utils import to_string, iteritems
 
 from .models import Word, WordItem, AutoComplete
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS
-from .metaphone import dm as double_metaphone
+from .processors.metaphone import dm as double_metaphone
+from .processors.porter import PorterStemmer
 
 
-class SearchEngine(object):
+def metaphone_processor(words):
+    '''Double metaphone word processor'''
+    for word in words:
+        for w in double_metaphone(word):
+            if w:
+                w = w.strip()
+                if w:
+                    yield w
+                
+                
+def stemming_processor(words):
+    '''Double metaphone word processor'''
+    stem = PorterStemmer().stem
+    for word in words:
+        word = stem(word, 0, len(word)-1)
+        yield word
+
+
+def autocomplete_processor(words):
+    if auto:
+        otexts = list(texts)
+        if not otexts:
+            autotext = text.strip()
+            texts = list(auto.search(autotext))
+        else:
+            autotext = otexts[-1]
+            texts = otexts[:-1]
+            N = len(texts)
+            texts.extend(auto.search(autotext))
+            if len(texts) == N:
+                texts = otexts
+
+
+class SearchEngine(orm.SearchEngine):
     """Search engine driver.
 Adapted from
 https://gist.github.com/389875
@@ -82,7 +115,8 @@ https://gist.github.com/389875
     
     def __init__(self, min_word_length = 3, stop_words = None,
                  autocomplete = None, metaphone = True,
-                 splitters = None):
+                 stemming = True, splitters = None):
+        super(SearchEngine,self).__init__()
         self.MIN_WORD_LENGTH = min_word_length
         self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
         splitters = splitters if splitters is not None else PUNCTUATION_CHARS
@@ -91,9 +125,22 @@ https://gist.github.com/389875
                                     r"[%s]" % re.escape(splitters))
         else:
             self.punctuation_regex = None
-        self.metaphone = metaphone
+        if stemming:
+            self.add_word_middleware(stemming_processor)
+        if metaphone:
+            self.add_word_middleware(metaphone_processor)
         self._autocomplete = autocomplete
-        self.add_processor(stdnet_processor())           
+        
+    def split_text(self, text):
+        if self.punctuation_regex:
+            text = self.punctuation_regex.sub(" ", text)
+        mwl = self.MIN_WORD_LENGTH
+        stp = self.STOP_WORDS
+        for word in text.split():
+            if len(word) >= mwl:
+                word = word.lower()
+                if word not in stp:
+                    yield word
         
     @property
     def autocomplete(self):
@@ -102,56 +149,11 @@ https://gist.github.com/389875
             #ac.minlen = self.MIN_WORD_LENGTH
             return ac
         
-    def register(self, model):
-        '''Register a model to the search engine. By registering a model,
-every time an instance is updated or created, it will be indexed by the
-search engine.
-
-:parameter model: a :class:`stdnet.orm.StdModel` class.
-'''
-        if model not in self.REGISTERED_MODELS:
-            update_model = UpdateSE(self)
-            delete_model = RemoveFromSE(self)
-            self.REGISTERED_MODELS[model] = (update_model,delete_model)
-            orm.post_save.connect(update_model, sender = model)
-            orm.post_delete.connect(delete_model, sender = model)
-        
-    def index_item(self, item, skipremove = False):
-        """This is the main function for indexing items.
-It extracts content from the given *item* and add it to the index.
-If autocomplete is enabled, it adds indexes for it too.
-
-:parameter item: an instance of a :class:`stdnet.orm.StdModel`.
-:parameter skipremove: If ``True`` it skip the remove step for
-                       improved performance.
-                       
-                       Default ``False``.
-"""
-        if not skipremove:
-            self.remove_item(item)
-        wft = self.get_words_from_text
+    def _index_item(self, item, words):    
         link = self._link_item_and_word
-        
-        words = list(chain(*[wft(value) for value in\
-                              self.item_field_iterator(item)]))
-        linked = []
-        auto = self.autocomplete
-        if auto:
-            auto.extend(words)
-        
-        if self.metaphone:
-            words = self.get_metaphones(words)
-        
-        wc = {}
-        for word in words:
-            if word in wc:
-                wc[word] += 1
-            else:
-                wc[word] = 1
-            
         with WordItem.transaction() as t:
             linked = [link(item, word, c, transaction = t)\
-                       for word,c in iteritems(wc)]
+                       for word,c in iteritems(words)]
         return linked
     
     def remove_item(self, item):
@@ -172,23 +174,7 @@ Remove indexes for *item*.
 return a list of :class:`stdnet.contrib.searchengine.Word` instances
 associated with it. The word items can be used to perform search
 on registered models.''' 
-        auto = self.autocomplete
-        texts = self.get_words_from_text(text)
-        if auto:
-            otexts = list(texts)
-            if not otexts:
-                autotext = text.strip()
-                texts = list(auto.search(autotext))
-            else:
-                autotext = otexts[-1]
-                texts = otexts[:-1]
-                N = len(texts)
-                texts.extend(auto.search(autotext))
-                if len(texts) == N:
-                    texts = otexts
-        if self.metaphone:
-            texts = self.get_metaphones(texts)
-            
+        texts = self.words_from_text(text)
         return list(Word.objects.filter(id__in = texts))
     
     def search(self, text, include = None, exclude = None):
@@ -249,26 +235,6 @@ words in text.'''
         else:
             for wi in wis:
                 yield wi.word
-        
-    def add_processor(self, processor):
-        if processor not in self.ITEM_PROCESSORS:
-            self.ITEM_PROCESSORS.append(processor)
-            
-    def get_words_from_text(self, text):
-        #A generator of words to index from the given text. The text is
-        # split by white spaces and splitters characters (if available)
-        if not text:
-            raise StopIteration
-        
-        if self.punctuation_regex:
-            text = self.punctuation_regex.sub(" ", text)
-        mwl = self.MIN_WORD_LENGTH
-        stp = self.STOP_WORDS
-        for word in text.split():
-            if len(word) >= mwl:
-                word = word.lower()
-                if word not in stp:
-                    yield word
                     
     def _link_item_and_word(self, item, word, count = 1, tag = False,
                             transaction = None):
@@ -277,21 +243,6 @@ words in text.'''
                         model_type = item.__class__,
                         object_id = item.id,
                         count = count).save(transaction)
-    
-    def get_metaphones(self, words):
-        """Get the metaphones for a given list of words"""
-        metaphones = set()
-        add = metaphones.add
-        for word in words:
-            metaphone = double_metaphone(to_string(word))
-            w = metaphone[0].strip()
-            if w:
-                add(w)
-            if(metaphone[1]):
-                w = metaphone[1].strip()
-                if w:
-                    add(w)
-        return metaphones
     
     def item_field_iterator(self, item):
         for processor in self.ITEM_PROCESSORS:
@@ -363,37 +314,5 @@ with the search engine.'''
                     self.index_item(obj,True)
         
 
-class UpdateSE(object):
-    
-    def __init__(self, se):
-        self.se = se
-        
-    def __call__(self, instance, **kwargs):
-        self.se.index_item(instance)
-        
-        
-class RemoveFromSE(object):
-    
-    def __init__(self, se):
-        self.se = se
-        
-    def __call__(self, instance, **kwargs):
-        self.se.remove_item(instance)       
-        
-
-class stdnet_processor(object):
-    '''A search engine processor for stdnet models.
-An engine processor is a callable
-which return an iterable over text.'''
-    def __call__(self, item):
-        if isinstance(item,orm.StdModel):
-            return self.field_iterator(item)
-    
-    def field_iterator(self, item):
-        for field in item._meta.fields:
-            if field.type == 'text':
-                value = getattr(item,field.attname)
-                if value:
-                    yield value
 
 

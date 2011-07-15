@@ -6,6 +6,7 @@ from .std import *
 from .signals import *
 from .globals import hashmodel, JSPLITTER
 from .utils import *
+from .search import SearchEngine
 
 
 def test_unique(fieldname, model, value, instance = None, exception = None):

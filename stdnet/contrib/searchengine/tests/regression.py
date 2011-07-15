@@ -3,8 +3,7 @@ from random import randint
 from stdnet import test
 
 from stdnet.utils import to_string, range
-from stdnet.contrib.searchengine import SearchEngine, double_metaphone,\
-                                        stdnet_processor
+from stdnet.contrib.searchengine import SearchEngine, double_metaphone
 from stdnet.contrib.searchengine.models import Word, WordItem, AutoComplete
 from stdnet.utils import populate
 
@@ -77,14 +76,14 @@ def make_items(num = 30, content = False):
 class TestMeta(test.TestCase):
     '''Test internal functions, not the API.'''
     def testSplitting(self):
-        eg = SearchEngine()
-        self.assertEqual(list(eg.get_words_from_text('bla-ciao+pippo')),\
+        eg = SearchEngine(metaphone = False, stemming = False)
+        self.assertEqual(list(eg.words_from_text('bla-ciao+pippo')),\
                          ['bla','ciao','pippo'])
-        self.assertEqual(list(eg.get_words_from_text('bla.-ciao:;pippo')),\
+        self.assertEqual(list(eg.words_from_text('bla.-ciao:;pippo')),\
                          ['bla','ciao','pippo'])
-        self.assertEqual(list(eg.get_words_from_text('  bla ; @ciao ;:`')),\
+        self.assertEqual(list(eg.words_from_text('  bla ; @ciao ;:`')),\
                          ['bla','ciao'])
-        self.assertEqual(list(eg.get_words_from_text('bla bla____bla')),\
+        self.assertEqual(list(eg.words_from_text('bla bla____bla')),\
                          ['bla','bla','bla'])
         
     def testMetaphone(self):
@@ -118,7 +117,7 @@ below will derive from this class.'''
     def simpleadd(self):
         engine = self.engine
         item = self.make_item()
-        wi = engine.index_item(item)
+        wi = self.engine.index_item(item)
         self.assertTrue(wi)
         return item,wi
     
@@ -206,7 +205,7 @@ class TestSearchEngineWithRegistration(TestCase):
         self.assertEqual(len(words),len(Word.objects.all()))
     
     
-class TestAutoComplete(TestCase):
+class TestAutoComplete(object):
     autocomplete = 'en'
     
     def testMeta(self):

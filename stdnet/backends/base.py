@@ -22,13 +22,17 @@ class Keys(object):
         
 class BeckendQuery(object):
     
-    def __init__(self, qs, fargs, eargs, timeout = 0):
+    def __init__(self, qs, fargs = None, eargs = None, timeout = 0,
+                 from_query = None,
+                 query_field = None):
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
         self.server = qs._meta.cursor
         self.meta = qs._meta
         self._sha = BytesIO()
+        if from_query and query_field:
+            self.build_from_query(from_query,query_field)
         self.build(fargs, eargs)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
@@ -45,6 +49,9 @@ class BeckendQuery(object):
         raise NotImplementedError
     
     def count(self):
+        raise NotImplementedError
+    
+    def build_from_query(self,from_query,query_field):
         raise NotImplementedError
     
     def build(self):

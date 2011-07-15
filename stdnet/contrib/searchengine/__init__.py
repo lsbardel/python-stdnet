@@ -167,10 +167,43 @@ Remove indexes for *item*.
                                          object_id = item.id)
         wi.delete()
     
+    def words(self, text):
+        '''Given a text string,
+return a list of :class:`stdnet.contrib.searchengine.Word` instances
+associated with it. The word items can be used to perform search
+on registered models.''' 
+        auto = self.autocomplete
+        texts = self.get_words_from_text(text)
+        if auto:
+            otexts = list(texts)
+            if not otexts:
+                autotext = text.strip()
+                texts = list(auto.search(autotext))
+            else:
+                autotext = otexts[-1]
+                texts = otexts[:-1]
+                N = len(texts)
+                texts.extend(auto.search(autotext))
+                if len(texts) == N:
+                    texts = otexts
+        if self.metaphone:
+            texts = self.get_metaphones(texts)
+            
+        return list(Word.objects.filter(id__in = texts))
+    
     def search(self, text, include = None, exclude = None):
         '''Full text search'''
         return list(self.items_from_text(text,include,exclude))
     
+    def search_model(self, model, text):
+        '''Return a query for ids of model instances containing
+words in text.'''
+        words = self.words(text)
+        if not words:
+            return None
+        items = WordItem.objects.filter(model_type = model, word__in = words)
+        return model.objects.from_query(items,'object_id')
+        
     def add_tag(self, item, text):
         '''A a tag to an object.
     If the object already has the tag associated with it do nothing.

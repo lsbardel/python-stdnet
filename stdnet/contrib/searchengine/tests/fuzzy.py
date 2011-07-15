@@ -43,7 +43,13 @@ class SearchEngineTest(test.TestCase):
         self.orm.register(WordItem)
         
     def testSmall(self):
-        makeItems(100)
+        '''Make 100 items with 200 text words each'''
+        makeItems(100,200)
         index(self.engine)
+        #
+        #Now lets do some searches
+        words = populate('choice',10,choice_from=basic_english_words)
+        for word in words:
+            self.engine.search(word)
 
     

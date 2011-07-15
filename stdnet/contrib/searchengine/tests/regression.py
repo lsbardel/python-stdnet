@@ -120,13 +120,7 @@ below will derive from this class.'''
         item = self.make_item()
         wi = engine.index_item(item)
         self.assertTrue(wi)
-        result = list(engine.search('python'))
-        self.assertEqual(len(result),1)
-        self.assertEqual(result[0],item)
-        result = list(engine.search('python learn'))
-        self.assertEqual(len(result),1)
-        self.assertEqual(result[0],item)
-        return item
+        return item,wi
     
     def make_item(self,name='python',counter=10,content=None):
         return Item(name=name,
@@ -141,19 +135,32 @@ below will derive from this class.'''
         return ' '.join(_())
 
 
-class TestSearchEngine(object):
-#class TestSearchEngine(TestCase):
+class TestSearchEngine(TestCase):
 
     def testSimpleAdd(self):
         self.simpleadd()
         
     def testDoubleEntries(self):
+        '''Test an item indexed twice'''
         engine = self.engine
-        item = self.simpleadd()
-        wi = engine.index_item(item)
-        self.assertTrue(wi)
+        item,wi = self.simpleadd()
+        wi2 = engine.index_item(item)
+        wi = set((w.word for w in wi))
+        wi2 = set((w.word for w in wi2))
+        self.assertEqual(wi,wi2)
         
-    def testAddTag(self):
+    def testSearchWords(self):
+        self.simpleadd()
+        words = self.engine.words('python gains')
+        self.assertTrue(words)
+        
+    def testSearchModel(self):
+        item,_ = self.simpleadd()
+        qs = self.engine.search_model(Item,'python gains')
+        self.assertEqual(qs.count(),1)
+        self.assertEqual(item,qs[0])
+        
+    def _testAddTag(self):
         item = self.make_item()
         engine = self.engine
         wi = engine.add_tag(item, 'language programming')
@@ -164,7 +171,7 @@ class TestSearchEngine(object):
         tags = engine.alltags()
         self.assertEqual(len(tags),2)
         
-    def testAddTags(self):
+    def _testAddTags(self):
         engine = self.engine
         make_items(num=100)
         for item in Item.objects.all():

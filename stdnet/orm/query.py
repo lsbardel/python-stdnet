@@ -20,7 +20,8 @@ For example::
     start = None
     stop = None
     def __init__(self, meta, fargs = None, eargs = None,
-                 filter_sets = None, ordering = None):
+                 filter_sets = None, ordering = None,
+                 query = None, query_field = None):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -33,6 +34,8 @@ For example::
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
+        self.query = query
+        self.query_field = query_field
         self.clear()
         
     def clear(self):
@@ -65,8 +68,13 @@ For example::
     def __iter__(self):
         return self.items()
     
+    def from_query(self, query, query_field):
+        return self._meta.cursor.Query(query = items,
+                                       query_field = query_field)
+        
     def filter(self, **kwargs):
-        '''Returns a new ``QuerySet`` containing objects that match the given lookup parameters.'''
+        '''Returns a new ``QuerySet`` containing objects that match the\
+ given lookup parameters.'''
         if self.fargs:
             c = self.fargs.copy()
             c.update(kwargs)
@@ -78,7 +86,8 @@ For example::
                               ordering=self.ordering)
     
     def exclude(self, **kwargs):
-        '''Returns a new ``QuerySet`` containing objects that do not match the given lookup parameters.'''
+        '''Returns a new ``QuerySet`` containing objects that do not match\
+ the given lookup parameters.'''
         if self.eargs:
             c = self.eargs.copy()
             c.update(kwargs)
@@ -107,7 +116,8 @@ for this function to be available.'''
             if len(items) == 1:
                 return items[0]
             else:
-                raise QuerySetError('Get query {0} yielded non unique results'.format(self))
+                raise QuerySetError('Get query {0} yielded non\
+ unique results'.format(self))
         else:
             raise self.model.DoesNotExist
     
@@ -173,8 +183,8 @@ objects on the server side.'''
             elif N == 2 and names[1] == 'in':
                 name = names[0]
                 if name not in fields:
-                    raise QuerySetError("Could not filter. Field %s not defined."
-                                        .format(name))
+                    raise QuerySetError("Could not filter.\
+ Field %s not defined.".format(name))
                 field = fields[name]
                 value = tuple((field.serialize(v) for v in value))
                 unique = field.unique
@@ -183,7 +193,8 @@ objects on the server side.'''
                 raise NotImplementedError("Nested lookup is not yet available")
             
             if not field.index:
-                raise QuerySetError("Field %s is not an index. Cannot query." % name)
+                raise QuerySetError("Field %s is not an index.\
+ Cannot query." % name)
             elif value:
                 self.simple = self.simple and unique 
                 yield queryarg(name,value,unique)
@@ -243,8 +254,12 @@ class Manager(object):
     def exclude(self, **kwargs):
         return QuerySet(self._meta, eargs = kwargs)
 
+    def from_query(self, items, field):
+        return QuerySet(self._meta, query = items, query_field = field)
+    
     def all(self):
-        '''Return a :class:`QuerySet` which retrieve all instances of the model.'''
+        '''Return a :class:`QuerySet` which retrieve all instances\
+ of the model.'''
         return self.filter()
     
     def _setmodel(self, model):
@@ -311,7 +326,8 @@ class M2MRelatedManager(Manager):
     def add(self, value):
         '''Add *value*, an instance of self.to'''
         if not isinstance(value,self.to):
-            raise FieldValueError('%s is not an instance of %s' % (value,self.to._meta))
+            raise FieldValueError(
+                        '%s is not an instance of %s' % (value,self.to._meta))
         if value not in self.st:
             related = getattr(value,self.to_name)
             self._add(value)
@@ -319,7 +335,8 @@ class M2MRelatedManager(Manager):
             
     def remove(self, value):
         if not isinstance(value,self.to):
-            raise FieldValueError('%s is not an instance of %s' % (value,self.to._meta))
+            raise FieldValueError(
+                        '%s is not an instance of %s' % (value,self.to._meta))
         if value in self.st:
             related = getattr(value,self.to_name)
             self.st.discard(value)
@@ -340,7 +357,8 @@ class UnregisteredManager(object):
         self.model = model
         
     def __getattr__(self, name):
-        raise ModelNotRegistered('Model %s is not registered with a backend' % self.model.__name__)
+        raise ModelNotRegistered('Model %s is not registered with\
+ a backend' % self.model.__name__)
 
 
     

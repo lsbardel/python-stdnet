@@ -141,6 +141,17 @@ class RedisQuery(BeckendQuery):
     def sism(self, r):
         return r
     
+    def build_from_query(self, query, field):
+        '''Build a set of ids from an external query (a query on a
+different model) which has a *field* containing current model ids.'''
+        skey = self.meta.tempkey()
+        qkey = query.query_set
+        okey = query._meta.basekey(OBJ,'*->{0}'.format(field))
+        pipe = self.server.redispy.pipeline()
+        pipe.sort(qset, by = 'nosort', get = okey, store = skey)\
+                .expire(skey,self.expire).execute()
+        self.query_set = skey
+    
     def build(self, fargs, eargs):
         meta = self.meta
         server = self.server

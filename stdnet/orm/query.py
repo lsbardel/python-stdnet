@@ -6,7 +6,8 @@ from stdnet import pipelines
 from stdnet.utils import zip, to_bytestring
 
 
-queryarg = namedtuple('queryarg','name values unique')
+queryarg = namedtuple('queryarg','name values unique lookup')
+field_query = namedtuple('field_query','query field')
 
 
 class QuerySet(object):
@@ -19,9 +20,11 @@ For example::
 '''
     start = None
     stop = None
+    lookups = ('in','contains')
+    
     def __init__(self, meta, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
-                 query = None, query_field = None):
+                 queries = None):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -34,8 +37,7 @@ For example::
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
-        self.query = query
-        self.query_field = query_field
+        self.queries = queries
         self.clear()
         
     def clear(self):
@@ -67,10 +69,6 @@ For example::
     
     def __iter__(self):
         return self.items()
-    
-    def from_query(self, query, query_field):
-        return self._meta.cursor.Query(query = items,
-                                       query_field = query_field)
         
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the\
@@ -83,7 +81,8 @@ For example::
                               fargs=kwargs,
                               eargs=self.eargs,
                               filter_sets=self.filter_sets,
-                              ordering=self.ordering)
+                              ordering=self.ordering,
+                              queries=self.queries)
     
     def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match\
@@ -96,7 +95,8 @@ For example::
                               fargs=self.fargs,
                               eargs=kwargs,
                               filter_sets=self.filter_sets,
-                              ordering=self.ordering)
+                              ordering=self.ordering,
+                              queries=self.queries)
     
     def sort_by(self, ordering):
         '''Sort the query by the given field'''
@@ -108,7 +108,12 @@ For example::
     def search(self, text):
         '''Search text in model. A search engine needs to be installed
 for this function to be available.'''
-        return self
+        se = self._meta.searchengine
+        if se:
+            return se.search_model(self.model,text)
+        else:
+            raise QuerySetError('Search not implemented for {0} model'\
+                                .format(self.model))
     
     def get(self):
         items = self.aslist()
@@ -159,7 +164,10 @@ objects on the server side.'''
             eargs = self.aggregate(self.eargs)
         else:
             eargs = None
-        self.qset = self._meta.cursor.Query(self,fargs,eargs)
+        if self.queries:
+            self.simple = False
+        self.qset = self._meta.cursor.Query(self,fargs,eargs,
+                                            queries = self.queries)
     
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -171,6 +179,7 @@ objects on the server side.'''
         for name,value in kwargs.items():
             names = name.split('__')
             N = len(names)
+            lookup = 'in'
             # simple lookup for example filter(name = 'pippo')
             if N == 1:
                 if name not in fields:
@@ -180,7 +189,7 @@ objects on the server side.'''
                 value = (field.serialize(value),)
                 unique = field.unique
             # group lookup filter(name_in ['pippo','luca'])
-            elif N == 2 and names[1] == 'in':
+            elif N == 2 and names[1] in self.lookups:
                 name = names[0]
                 if name not in fields:
                     raise QuerySetError("Could not filter.\
@@ -188,6 +197,7 @@ objects on the server side.'''
                 field = fields[name]
                 value = tuple((field.serialize(v) for v in value))
                 unique = field.unique
+                lookup = names[1]
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")
@@ -197,7 +207,7 @@ objects on the server side.'''
  Cannot query." % name)
             elif value:
                 self.simple = self.simple and unique 
-                yield queryarg(name,value,unique)
+                yield queryarg(name,value,unique,lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''
@@ -251,11 +261,14 @@ class Manager(object):
     def filter(self, **kwargs):
         return QuerySet(self._meta, fargs = kwargs)
     
+    def from_queries(self, queries):
+        return QuerySet(self._meta, queries = queries)
+    
     def exclude(self, **kwargs):
         return QuerySet(self._meta, eargs = kwargs)
-
-    def from_query(self, items, field):
-        return QuerySet(self._meta, query = items, query_field = field)
+    
+    def search(self, text):
+        return QuerySet(self._meta).search(text)
     
     def all(self):
         '''Return a :class:`QuerySet` which retrieve all instances\

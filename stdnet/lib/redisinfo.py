@@ -77,6 +77,7 @@ class RedisStats(object):
         #    pipe.object('encoding',key)
         tt = pipe.execute()
         typ = tt[0]
+        enc = None
         if typ == 'set':
             cl = pipe.scard(key).srandmember(key).execute()
             l = cl[0]
@@ -104,7 +105,7 @@ class RedisStats(object):
         else:
             self.incr_count('unknown')
             l = None
-        return typ,l,tt[1]
+        return typ,l,tt[1],enc
 
     
 class RedisDbData(orm.FakeModel):

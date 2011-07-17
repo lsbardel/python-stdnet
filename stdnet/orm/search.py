@@ -2,6 +2,7 @@ from itertools import chain
 from inspect import isgenerator
 
 from .models import StdModel
+from .fields import DateTimeField
 from .signals import post_save, post_delete
 
 
@@ -9,38 +10,44 @@ class SearchEngine(object):
     """Stdnet search engine driver.
     
 :attribute word_middleware: a list of functions for preprocessing text
-                            to be indexed. The first middleware function
-                            must accept a string and return an iterable over
-                            words. All the other must accept iterable and
-                            return iterable.
+                            to be indexed. Middleware function
+                            must accept an iterable of words and
+                            return iterable of words.
 """
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
+    last_indexed = 'last_indexed'
     
     def __init__(self):
         self.word_middleware = []
         self.add_processor(stdnet_processor())
         
-    def register(self, model):
+    def register(self, model, related = None):
         '''Register a model to the search engine. By registering a model,
 every time an instance is updated or created, it will be indexed by the
 search engine.
 
 :parameter model: a :class:`stdnet.orm.StdModel` class.
 '''
-        if model not in self.REGISTERED_MODELS:
-            update_model = UpdateSE(self)
-            delete_model = RemoveFromSE(self)
-            self.REGISTERED_MODELS[model] = (update_model,delete_model)
-            post_save.connect(update_model, sender = model)
-            post_delete.connect(delete_model, sender = model)
+        model._meta.searchengine = self
+        if self.last_indexed not in model._meta.dfields:
+            field = DateTimeField(required = False)
+            field.register_with_model('last_indexed',model)
+        model._index_related = related
+        update_model = UpdateSE(self)
+        delete_model = RemoveFromSE(self)
+        self.REGISTERED_MODELS[model] = (update_model,delete_model)
+        post_save.connect(update_model, sender = model)
+        post_delete.connect(delete_model, sender = model)
             
     def words_from_text(self, text):
         '''Generator of indexable words in *text*.
-This functions loop through the :attr:`word_middleware` middleware
+This functions loop through the :attr:`word_middleware` attribute
 to process the text.
 
 :parameter text: string from which to extract words.
+
+return a list of cleaned words.
 '''
         if not text:
             raise StopIteration
@@ -57,7 +64,7 @@ to process the text.
     
     def split_text(self, text):
         '''Split text into words and return an iterable over them.
-Can and should be '''
+Can and should be reimplemented by subclasses.'''
         return text.split()
     
     def add_processor(self, processor):
@@ -93,6 +100,9 @@ If autocomplete is enabled, it adds indexes for it too.
         
         return self._index_item(item,wc)
 
+    def flush(self, full = False):
+        '''Clean the search engine'''
+        raise NotImplementedError
     
     def remove_item(self, item):
         '''Remove an item from the serach indices'''
@@ -102,8 +112,23 @@ If autocomplete is enabled, it adds indexes for it too.
         '''Return a query for ids of model instances containing
 words in text.'''
         raise NotImplementedError
+    
+    def reindex(self, full = True):
+        '''Reindex models by removing items in
+:class:`stdnet.contrib.searchengine.WordItem` and rebuilding them by iterating
+through all the instances of model provided.
+If models are not provided, it reindex all models registered
+with the search engine.'''
+        self.flush(full)
+        n = 0
+        for model in self.REGISTERED_MODELS:
+            for obj in model.objects.all():
+                n += 1
+                self.index_item(obj,True)
+        return n
 
     # ABSTRACT INTERNAL FUNCTIONS
+    ################################################################
     
     def _index_item(self, item, words):
         raise NotImplementedError
@@ -115,7 +140,8 @@ class UpdateSE(object):
         self.se = se
         
     def __call__(self, instance, **kwargs):
-        self.se.index_item(instance)
+        if not instance.last_indexed:
+            self.se.index_item(instance)
         
         
 class RemoveFromSE(object):
@@ -136,8 +162,14 @@ which return an iterable over text.'''
             return self.field_iterator(item)
     
     def field_iterator(self, item):
+        related = getattr(item,'_index_related',())
         for field in item._meta.fields:
             if field.type == 'text':
                 value = getattr(item,field.attname)
                 if value:
                     yield value
+            elif field.name in related:
+                value = getattr(item,field.name,None)
+                if value:
+                    for value in self.field_iterator(value):
+                        yield value

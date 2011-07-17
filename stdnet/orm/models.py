@@ -151,8 +151,7 @@ It check all fields agains their respective validation algorithm.'''
     def delete(self, transaction = None):
         '''Delete an instance from database.
 If the instance is not available (it does not have an id) and
-``StdNetException`` exception will raise. Return the number of
-model instances deleted.
+``StdNetException`` exception will raise.
 
 :parameter transaction: Optional transaction instance as in
                         :meth:`stdnet.orm.StdModel.save`.

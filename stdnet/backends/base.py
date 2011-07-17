@@ -23,17 +23,14 @@ class Keys(object):
 class BeckendQuery(object):
     
     def __init__(self, qs, fargs = None, eargs = None, timeout = 0,
-                 from_query = None,
-                 query_field = None):
+                 queries = None):
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
         self.server = qs._meta.cursor
         self.meta = qs._meta
         self._sha = BytesIO()
-        if from_query and query_field:
-            self.build_from_query(from_query,query_field)
-        self.build(fargs, eargs)
+        self.build(fargs, eargs, queries)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
         self.execute()
@@ -51,10 +48,7 @@ class BeckendQuery(object):
     def count(self):
         raise NotImplementedError
     
-    def build_from_query(self,from_query,query_field):
-        raise NotImplementedError
-    
-    def build(self):
+    def build(self, fargs, eargs, queries):
         raise NotImplementedError
     
     def execute(self):
@@ -138,8 +132,9 @@ Save or updated an instance of a model to the back-end database:
                 pass
             else:
                 self._remove_indexes(pobj, transaction)
-        
-        obj.id = obj._meta.pk.serialize(obj.id)
+        else:
+            obj.id = obj._meta.pk.serialize(obj.id)
+            
         obj = self._save_object(obj, transaction)
         
         if commit:

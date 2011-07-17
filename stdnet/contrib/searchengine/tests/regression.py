@@ -9,7 +9,7 @@ from stdnet.utils import populate
 
 from .basicwords import basic_english_words
 
-from stdnet.contrib.searchengine.tests.testsearch.models import Item
+from .testsearch.models import Item, RelatedItem
 
 
 python_content = 'Python is a programming language that lets you work more\
@@ -59,7 +59,7 @@ WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                                for i in range(size))
 
 
-def make_items(num = 30, content = False):
+def make_items(num = 30, content = False, related = None):
     names = populate('choice', num, choice_from=basic_english_words)
     if content:
         contents = WORDS_GROUPS(num)
@@ -70,10 +70,57 @@ def make_items(num = 30, content = False):
             if len(name) > 3:
                 Item(name=name,
                      counter=randint(0,10),
-                     content = co).save(t)
-    
+                     content = co,
+                     related = related).save(t)
 
-class TestMeta(test.TestCase):
+
+class TestCase(test.TestCase):
+    '''Mixin for testing the search engine. No tests implemented here,
+just registration and some utility functions. All searchengine tests
+below will derive from this class.'''
+    metaphone = True
+    autocomplete = None
+        
+    def register(self):
+        self.engine = SearchEngine(metaphone = self.metaphone,
+                                   autocomplete = self.autocomplete)
+        self.orm.register(AutoComplete)
+        self.orm.register(Word)
+        self.orm.register(WordItem)
+        self.orm.register(Item)
+        self.orm.register(RelatedItem)
+        self.engine.register(Item,('related',))
+    
+    def unregister(self):
+        self.orm.unregister(AutoComplete)
+        self.orm.unregister(Word)
+        self.orm.unregister(WordItem)
+        self.orm.unregister(Item)
+        self.orm.unregister(RelatedItem)
+    
+    def simpleadd(self,name='python',counter=10,content=None,related=None):
+        engine = self.engine
+        item = self.make_item(name,counter,content,related)
+        wi = WordItem.objects.filter(model_type = Item, object_id = item.id)
+        self.assertTrue(wi)
+        return item,wi
+    
+    def make_item(self,name='python',counter=10,content=None,related=None):
+        return Item(name=name,
+                    counter = counter,
+                    content=content or python_content,
+                    related= related).save()
+    
+    def sometags(self, num = 10, minlen = 3):
+        def _():
+            for tag in populate('choice',num,choice_from=basic_english_words):
+                if len(tag) >= minlen:
+                    yield tag
+        return ' '.join(_())
+
+
+
+class TestMeta(TestCase):
     '''Test internal functions, not the API.'''
     def testSplitting(self):
         eg = SearchEngine(metaphone = False, stemming = False)
@@ -91,49 +138,18 @@ class TestMeta(test.TestCase):
         for name in NAMES:
             d = double_metaphone(name)
             self.assertEqual(d,NAMES[name])
-
-
-class TestCase(test.TestCase):
-    '''Mixin for testing the search engine. No tests implemented here,
-just registration and some utility functions. All searchengine tests
-below will derive from this class.'''
-    metaphone = True
-    autocomplete = None
+    
+    def testRegistered(self):
+        self.assertTrue(Item in self.engine.REGISTERED_MODELS)
+                
+    def testWordModel(self):
+        # This tests was put in place bacuse the Word model was
+        # not working properly in Python 3
+        Word(id = 'bla').save()
+        w = Word.objects.get(id = 'bla')
+        self.assertFalse(isinstance(w.id,bytes))
         
-    def register(self):
-        self.engine = SearchEngine(metaphone = self.metaphone,
-                                   autocomplete = self.autocomplete)
-        self.orm.register(AutoComplete)
-        self.orm.register(Word)
-        self.orm.register(WordItem)
-        self.orm.register(Item)
-    
-    def unregister(self):
-        self.orm.unregister(AutoComplete)
-        self.orm.unregister(Word)
-        self.orm.unregister(WordItem)
-        self.orm.unregister(Item)
-    
-    def simpleadd(self):
-        engine = self.engine
-        item = self.make_item()
-        wi = self.engine.index_item(item)
-        self.assertTrue(wi)
-        return item,wi
-    
-    def make_item(self,name='python',counter=10,content=None):
-        return Item(name=name,
-                    counter = counter,
-                    content=content or python_content).save()
-    
-    def sometags(self, num = 10, minlen = 3):
-        def _():
-            for tag in populate('choice',num,choice_from=basic_english_words):
-                if len(tag) >= minlen:
-                    yield tag
-        return ' '.join(_())
-
-
+        
 class TestSearchEngine(TestCase):
 
     def testSimpleAdd(self):
@@ -143,21 +159,46 @@ class TestSearchEngine(TestCase):
         '''Test an item indexed twice'''
         engine = self.engine
         item,wi = self.simpleadd()
-        wi2 = engine.index_item(item)
         wi = set((w.word for w in wi))
+        wi2 = engine.index_item(item)
         wi2 = set((w.word for w in wi2))
         self.assertEqual(wi,wi2)
         
     def testSearchWords(self):
         self.simpleadd()
         words = self.engine.words('python gains')
-        self.assertTrue(words)
+        self.assertTrue(len(words)>=2)
         
-    def testSearchModel(self):
+    def testSearchModelSimple(self):
         item,_ = self.simpleadd()
-        qs = self.engine.search_model(Item,'python gains')
+        qs = Item.objects.search('python gains')
+        self.assertEqual(len(qs.queries),3)
+        self.assertEqual(qs.queries[0].field,'object_id')
+        self.assertEqual(qs.queries[1].field,'object_id')
+        self.assertEqual(qs.queries[2].field,'object_id')
         self.assertEqual(qs.count(),1)
         self.assertEqual(item,qs[0])
+        
+    def testSearchModel(self):
+        item1,wi1 = self.simpleadd()
+        item2,wi2 = self.simpleadd('pink',content='the dark side of the moon')
+        item3,wi3 = self.simpleadd('queen',content='we will rock you')
+        item4,wi4 = self.simpleadd('python',content='nothing here')
+        qs = Item.objects.search('python')
+        self.assertEqual(qs.count(),2)
+        qs = Item.objects.search('python learn')
+        for q in qs.queries[:]:
+            wis = q.query[:]
+            self.assertTrue(wis)
+        self.assertEqual(qs.count(),1)
+        self.assertEqual(qs[0].name,'python')
+        
+    def testRelatedModel(self):
+        r = RelatedItem(name = 'planet earth is wonderful').save()
+        self.simpleadd('king',content='england')
+        self.simpleadd('nothing',content='empty', related = r)
+        qs = Item.objects.search('planet')
+        self.assertEqual(qs.count(),1)
         
     def _testAddTag(self):
         item = self.make_item()
@@ -180,10 +221,6 @@ class TestSearchEngine(TestCase):
     
     
 class TestSearchEngineWithRegistration(TestCase):
-    
-    def setUp(self):
-        self.engine.register(Item)
-        self.assertTrue(Item in self.engine.REGISTERED_MODELS)
         
     def make_item(self,**kwargs):
         item = super(TestSearchEngineWithRegistration,self).make_item(**kwargs)

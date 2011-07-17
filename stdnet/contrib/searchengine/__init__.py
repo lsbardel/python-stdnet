@@ -33,6 +33,7 @@ from inspect import isclass
 
 from stdnet import orm
 from stdnet.utils import to_string, iteritems
+from stdnet.orm.query import field_query
 
 from .models import Word, WordItem, AutoComplete
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS
@@ -141,6 +142,11 @@ https://gist.github.com/389875
                 word = word.lower()
                 if word not in stp:
                     yield word
+    
+    def flush(self, full = False):
+        WordItem.flush()
+        if full:
+            Word.flush()
         
     @property
     def autocomplete(self):
@@ -186,9 +192,13 @@ on registered models.'''
 words in text.'''
         words = self.words(text)
         if not words:
-            return None
-        items = WordItem.objects.filter(model_type = model, word__in = words)
-        return model.objects.from_query(items,'object_id')
+            return model.objects.all()
+        
+        qs = WordItem.objects.filter(model_type = model)
+        qsets = []
+        for word in words:
+            qsets.append(field_query(qs.filter(word = word),'object_id'))
+        return model.objects.from_queries(qsets)
         
     def add_tag(self, item, text):
         '''A a tag to an object.
@@ -264,54 +274,6 @@ words in text.'''
         except Word.DoesNotExist:
             return Word(id = word, tag = tag).save()
         
-    def items_from_text(self, text, include = None, exclude = None):
-        auto = self.autocomplete
-        texts = self.get_words_from_text(text)
-        if auto:
-            otexts = list(texts)
-            if not otexts:
-                autotext = text.strip()
-                texts = list(auto.search(autotext))
-            else:
-                autotext = otexts[-1]
-                texts = otexts[:-1]
-                N = len(texts)
-                texts.extend(auto.search(autotext))
-                if len(texts) == N:
-                    texts = otexts
-        words = Word.objects.filter(id__in =\
-                     [m for m in self.get_metaphones(texts)])
-        processed = set()
-        if words:
-            items = WordItem.objects.filter(word__in = words)
-            if include:
-                if isinstance(include,(list,tuple)):
-                    items = items.filter(model_type__in = include)
-                else:
-                    items = items.filter(model_type = include)
-            if exclude:
-                if isinstance(include,(list,tuple)):
-                    items = items.exclude(model_type__in = exclude)
-                else:
-                    items = items.exclude(model_type = exclude)
-            for item in items:
-                yield item.object
-        else:
-            raise StopIteration
-        
-    def reindex(self, *models):
-        '''Reindex models by removing items in
-:class:`stdnet.contrib.searchengine.WordItem` and rebuilding them by iterating
-through all the instances of model provided.
-If models are not provided, it reindex all models registered
-with the search engine.'''
-        if not models:
-            models = self.REGISTERED_MODELS
-        for model in models:
-            if model in self.REGISTERED_MODELS:
-                WordItem.objects.filter(model_type = model).delete()
-                for obj in model.objects.all():
-                    self.index_item(obj,True)
         
 
 

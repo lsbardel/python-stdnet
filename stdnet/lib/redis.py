@@ -103,11 +103,11 @@ def float_or_none(response):
         return None
     return float(response)
 
-def bytes_to_string(result, encoding = None):
+def bytes_to_string(result, encoding = 'utf-8'):
     if isinstance(result,list):
         return [res.decode(encoding) for res in result]
     else:
-        return res.decode(encoding)
+        return result.decode(encoding)
 
 
 class Redis(object):
@@ -557,7 +557,7 @@ can be one of: refcount, encoding, idletime.'''
         return self.execute_command('RPUSH', name, value)
 
     def sort(self, name, start=None, num=None, by=None, get=None,
-            desc=False, alpha=False, store=None):
+            desc=False, alpha=False, store=None, storeset=None):
         """
         Sort and return the list, set or sorted set at ``name``.
 
@@ -599,7 +599,10 @@ can be one of: refcount, encoding, idletime.'''
             pieces.append('DESC')
         if alpha:
             pieces.append('ALPHA')
-        if store is not None:
+        if storeset is not None:
+            pieces.append('STORESET')
+            pieces.append(storeset)
+        elif store is not None:
             pieces.append('STORE')
             pieces.append(store)
         return self.execute_command('SORT', *pieces)

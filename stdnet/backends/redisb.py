@@ -109,15 +109,25 @@ class RedisQuery(BeckendQuery):
             for q in qargs:
                 sha.write(q.__repr__().encode())
                 if q.unique:
-                    keys.append(self._unique_set(q.name, q.values))
+                    if q.lookup == 'in':
+                        keys.append(self._unique_set(q.name, q.values))
+                    else:
+                        raise ValueError('Not available')
                 elif len(q.values) == 1:
                     keys.append(meta.basekey(IDX,q.name,q.values[0]))
                 else:
                     insersept = [meta.basekey(IDX,q.name,value)\
                                   for value in q.values]
                     tkey = self.meta.tempkey()
-                    self.union(tkey,insersept).expire(tkey,self.expire)
+                    if q.lookup == 'in':
+                        self.union(tkey,insersept).expire(tkey,self.expire)
+                    #elif q.lookup == 'contains':
+                    #    self.intersect(tkey,insersept).expire(tkey,self.expire)
+                    else:
+                        raise ValueError('Lookup {0} Not available'\
+                                         .format(q.lookup))    
                     keys.append(tkey)
+                    
         
         if extra:
             for id in extra:
@@ -141,21 +151,33 @@ class RedisQuery(BeckendQuery):
     def sism(self, r):
         return r
     
-    def build_from_query(self, query, field):
+    def build_from_query(self, queries):
         '''Build a set of ids from an external query (a query on a
 different model) which has a *field* containing current model ids.'''
-        skey = self.meta.tempkey()
-        qkey = query.query_set
-        okey = query._meta.basekey(OBJ,'*->{0}'.format(field))
-        pipe = self.server.redispy.pipeline()
-        pipe.sort(qset, by = 'nosort', get = okey, store = skey)\
-                .expire(skey,self.expire).execute()
-        self.query_set = skey
+        keys = []
+        pipe = self.pipe
+        sha = self._sha
+        for q in queries:
+            sha.write(q.__repr__().encode())
+            query = q.query 
+            query._buildquery()
+            qset = query.qset.query_set
+            skey = self.meta.tempkey()
+            okey = query._meta.basekey(OBJ,'*->{0}'.format(q.field))
+            pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\
+                    .expire(skey,self.expire)
+            keys.append(skey)
+        if len(keys) == 1:
+            tkey = keys[0]
+        else:
+            tkey = self.meta.tempkey()
+            self.intersect(tkey,keys).expire(tkey,self.expire)
+        return tkey
     
-    def build(self, fargs, eargs):
+    def build(self, fargs, eargs, queries):
         meta = self.meta
         server = self.server
-        self.idset = meta.basekey('id')
+        self.idset = idset = meta.basekey('id')
         p = 'z' if meta.ordering else 's'
         self.pipe = pipe = server.redispy.pipeline()
         if p == 'z':
@@ -169,7 +191,6 @@ different model) which has a *field* containing current model ids.'''
         
         if self.qs.simple:
             allids = []
-            idset = self.idset
             for q in fargs:
                 if q.name == 'id':
                     ids = q.values
@@ -188,8 +209,9 @@ different model) which has a *field* containing current model ids.'''
             self.diff = setattr(pipe,p,'diffstore')
             self.card = setattr(server.redispy,p,'card')
             self.add = add2set(server,pipe,meta)
-            key1 = self._query(fargs,self.intersect,self.idset,
-                               self.qs.filter_sets)
+            if queries:
+                idset = self.build_from_query(queries)
+            key1 = self._query(fargs,self.intersect,idset,self.qs.filter_sets)
             key2 = self._query(eargs,self.union)
             if key2:
                 key = meta.tempkey()

@@ -72,6 +72,8 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
 
 '''
     VALATTR = '_validation'
+    searchengine = None
+    
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None,

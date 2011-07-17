@@ -185,8 +185,8 @@ function users should never call.'''
     
     def serialize(self, value, transaction = None):
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
-an object to the remote data server. It return s a serializable
-representation of *value*.
+an object to the remote data server. It returns a representation of *value*
+to store in the database.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         return self.scorefun(value)
     

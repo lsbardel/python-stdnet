@@ -9,6 +9,15 @@ from stdnet.utils import zip, to_bytestring
 queryarg = namedtuple('queryarg','name values unique lookup')
 field_query = namedtuple('field_query','query field')
 
+class EmptySet(frozenset):
+    query_set = ''
+    
+    def items(self, slic):
+        raise StopIteration
+    
+    def count(self):
+        return len(self)
+    
 
 class QuerySet(object):
     '''A QuerySet is not created on its but instead using the model manager.
@@ -24,7 +33,7 @@ For example::
     
     def __init__(self, meta, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
-                 queries = None):
+                 queries = None, empty = False):
         '''A query set is  initialized with
         
         * *meta* an model instance meta attribute,
@@ -32,13 +41,15 @@ For example::
         * *eargs* dictionary containing the lookup parameters to exclude.
         '''
         self._meta  = meta
-        self.model  = meta.model
+        self.model  = meta.model            
         self.fargs  = fargs
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
         self.queries = queries
         self.clear()
+        if empty:
+            self.qset = EmptySet()
         
     def clear(self):
         self.simple = False
@@ -133,6 +144,10 @@ receive any data from the server. It construct the queries and count the
 objects on the server side.'''
         self._buildquery()
         return self.qset.count()
+    
+    def querykey(self):
+        self.count()
+        return self.qset.query_set
         
     def __contains__(self, val):
         if isinstance(val,self.model):
@@ -269,6 +284,9 @@ class Manager(object):
     
     def search(self, text):
         return QuerySet(self._meta).search(text)
+    
+    def empty(self):
+        return QuerySet(self._meta, empty = True)
     
     def all(self):
         '''Return a :class:`QuerySet` which retrieve all instances\

@@ -1,5 +1,6 @@
 from itertools import chain
 from inspect import isgenerator
+from datetime import datetime
 
 from .models import StdModel
 from .fields import DateTimeField
@@ -33,14 +34,14 @@ search engine.
         if self.last_indexed not in model._meta.dfields:
             field = DateTimeField(required = False)
             field.register_with_model('last_indexed',model)
-        model._index_related = related
+        model._index_related = related or ()
         update_model = UpdateSE(self)
         delete_model = RemoveFromSE(self)
         self.REGISTERED_MODELS[model] = (update_model,delete_model)
         post_save.connect(update_model, sender = model)
         post_delete.connect(delete_model, sender = model)
             
-    def words_from_text(self, text):
+    def words_from_text(self, text, for_search = False):
         '''Generator of indexable words in *text*.
 This functions loop through the :attr:`word_middleware` attribute
 to process the text.
@@ -50,11 +51,13 @@ to process the text.
 return a list of cleaned words.
 '''
         if not text:
-            raise StopIteration
+            return []
         
         word_gen = self.split_text(text)
         
-        for middleware in self.word_middleware:
+        for middleware,fors in self.word_middleware:
+            if for_search and not fors:
+                continue
             word_gen = middleware(word_gen)
         
         if isgenerator(word_gen):
@@ -71,9 +74,9 @@ Can and should be reimplemented by subclasses.'''
         if processor not in self.ITEM_PROCESSORS:
             self.ITEM_PROCESSORS.append(processor)
 
-    def add_word_middleware(self, middleware):
+    def add_word_middleware(self, middleware, for_search = True):
         if hasattr(middleware,'__call__'):
-            self.word_middleware.append(middleware)
+            self.word_middleware.append((middleware,for_search))
     
     def index_item(self, item, skipremove = False):
         """This is the main function for indexing items.
@@ -142,6 +145,8 @@ class UpdateSE(object):
     def __call__(self, instance, **kwargs):
         if not instance.last_indexed:
             self.se.index_item(instance)
+            instance.last_indexed = datetime.now()
+            instance.save(skip_signal = True)
         
         
 class RemoveFromSE(object):
@@ -150,7 +155,7 @@ class RemoveFromSE(object):
         self.se = se
         
     def __call__(self, instance, **kwargs):
-        self.se.remove_item(instance)       
+        self.se.remove_item(instance)
         
 
 class stdnet_processor(object):
@@ -164,6 +169,8 @@ which return an iterable over text.'''
     def field_iterator(self, item):
         related = getattr(item,'_index_related',())
         for field in item._meta.fields:
+            if field.hidden:
+                continue
             if field.type == 'text':
                 value = getattr(item,field.attname)
                 if value:

@@ -249,9 +249,6 @@ class RedisInfo(object):
             
     def db(self,n):
         return self.info['db{0}'.format(n)]
-    
-    def makekeys(self):
-        self._makekeys(self.info)
         
     def _makekeys(self, kdata):
         rd = RedisData(version = self.version)
@@ -259,29 +256,21 @@ class RedisInfo(object):
         databases = []
         for k,n,data in self.dbs(kdata):
             keydb = data['keys']
-            rd.append(rpy = self.rpy, db = n, keys = data['keys'], expires = data['expires'])
+            rd.append(rpy = self.rpy, db = n, keys = data['keys'],
+                      expires = data['expires'])
         self.databases = rd
     
+    def makekeys(self):
+        raise NotImplementedError
+    
     def fill(self):
-        info = self.info
-        format_int = self.formatter.format_int
-        nicetimedelta = self.formatter.format_timedelta
-        nicedate = self.formatter.format_date
-        server = self._panels['Server'] = []
-        niceadd(server, 'Redis version', self.version)
-        niceadd(server, 'Process id', info['process_id'])
-        niceadd(server, 'Total keys', format_int(self.databases.totkeys))
-        niceadd(server, 'Memory used', info['used_memory_human'])
-        niceadd(server, 'Up time', nicetimedelta(info['uptime_in_seconds']))
-        niceadd(server, 'Append Only File', 'yes' if info.get('aof_enabled',False) else 'no')
-        niceadd(server, 'Virtual Memory enabled', 'yes' if info['vm_enabled'] else 'no')
-        niceadd(server, 'Last save', nicedate(info['last_save_time']))
-        niceadd(server, 'Commands processed', format_int(info['total_commands_processed']))
-        niceadd(server, 'Connections received', format_int(info['total_connections_received']))
+        raise NotImplementedError
     
 
 class RedisInfo22(RedisInfo):
-    names = ('Server','Memory','Persistence','Diskstore','Replication','Clients','Stats','CPU')
+    names = ('Server','Memory','Persistence','Diskstore',
+             'Replication','Clients','Stats','CPU')
+    converters = {'last_save_time': 'date'}
     
     def makekeys(self):
         return self._makekeys(self.info['Keyspace'])
@@ -292,9 +281,14 @@ class RedisInfo22(RedisInfo):
         nicebool = self.formatter.format_bool
         boolval = (0,1)
         for k,v in iteritems(self.info[name]):
-            if v in boolval:
+            if k in self.converters:
+                formatter = getattr(self.formatter,
+                                    'format_{0}'.format(self.converters[k]))
+                v = formatter(v)
+            elif v in boolval:
                 v = nicebool(v)
-            pa.append({'name':nicename(k),'value':v})
+            pa.append({'name':nicename(k),
+                       'value':v})
             
     def fill(self):
         info = self.info
@@ -309,5 +303,5 @@ def redis_info(rpy, formatter = None):
     if StrictVersion(version) >= StrictVersion('2.2.0'):
         return RedisInfo22(rpy,version,info,formatter)
     else:
-        return RedisInfo(rpy,version,info,formatter)
+        raise NotImplementedError('Redis must be of version 2.2 or higher')
     

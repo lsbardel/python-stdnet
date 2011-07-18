@@ -41,6 +41,18 @@ from .processors.metaphone import dm as double_metaphone
 from .processors.porter import PorterStemmer
 
 
+class stopwords:
+    
+    def __init__(self, stp):
+        self.stp = stp
+        
+    def __call__(self, words):
+        stp = self.stp
+        for word in words:
+            if word not in stp:
+                yield word
+        
+        
 def metaphone_processor(words):
     '''Double metaphone word processor'''
     for word in words:
@@ -119,13 +131,15 @@ https://gist.github.com/389875
                  stemming = True, splitters = None):
         super(SearchEngine,self).__init__()
         self.MIN_WORD_LENGTH = min_word_length
-        self.STOP_WORDS = stop_words if stop_words is not None else STOP_WORDS
+        stop_words = stop_words if stop_words is not None else STOP_WORDS
         splitters = splitters if splitters is not None else PUNCTUATION_CHARS
         if splitters: 
             self.punctuation_regex = re.compile(\
                                     r"[%s]" % re.escape(splitters))
         else:
             self.punctuation_regex = None
+        if stop_words:
+            self.add_word_middleware(stopwords(stop_words),False)
         if stemming:
             self.add_word_middleware(stemming_processor)
         if metaphone:
@@ -136,12 +150,10 @@ https://gist.github.com/389875
         if self.punctuation_regex:
             text = self.punctuation_regex.sub(" ", text)
         mwl = self.MIN_WORD_LENGTH
-        stp = self.STOP_WORDS
         for word in text.split():
             if len(word) >= mwl:
                 word = word.lower()
-                if word not in stp:
-                    yield word
+                yield word
     
     def flush(self, full = False):
         WordItem.flush()
@@ -175,13 +187,16 @@ Remove indexes for *item*.
                                          object_id = item.id)
         wi.delete()
     
-    def words(self, text):
+    def words(self, text, for_search = False):
         '''Given a text string,
 return a list of :class:`stdnet.contrib.searchengine.Word` instances
 associated with it. The word items can be used to perform search
-on registered models.''' 
-        texts = self.words_from_text(text)
-        return list(Word.objects.filter(id__in = texts))
+on registered models.'''
+        texts = self.words_from_text(text,for_search)
+        if texts:
+            return list(Word.objects.filter(id__in = texts))
+        else:
+            return None
     
     def search(self, text, include = None, exclude = None):
         '''Full text search'''
@@ -190,9 +205,11 @@ on registered models.'''
     def search_model(self, model, text):
         '''Return a query for ids of model instances containing
 words in text.'''
-        words = self.words(text)
-        if not words:
+        words = self.words(text,for_search=True)
+        if words is None:
             return model.objects.all()
+        elif not words:
+            return model.objects.empty()
         
         qs = WordItem.objects.filter(model_type = model)
         qsets = []

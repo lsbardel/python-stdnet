@@ -21,6 +21,7 @@ class Keys(object):
         
         
 class BeckendQuery(object):
+    query_set = None
     
     def __init__(self, qs, fargs = None, eargs = None, timeout = 0,
                  queries = None):

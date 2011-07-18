@@ -79,7 +79,6 @@ class add2set(object):
         
 class RedisQuery(BeckendQuery):
     result = None
-    query_set = None
     _count = None
         
     def _unique_set(self, name, values):

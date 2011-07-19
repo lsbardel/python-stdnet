@@ -22,7 +22,7 @@ OBJECT_VERSION = StrictVersion('2.4.0')
 
 class RedisStats(object):
     
-    def __init__(self, rpy, version):
+    def __init__(self, rpy, version = None):
         self.version = version
         self.r = rpy
         self.data = init_data.copy()
@@ -104,6 +104,7 @@ class RedisStats(object):
             self.incr_count(typ)
         else:
             self.incr_count('unknown')
+            typ = None
             l = None
         return typ,l,tt[1],enc
 

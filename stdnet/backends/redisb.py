@@ -161,6 +161,12 @@ different model) which has a *field* containing current model ids.'''
             query = q.query 
             query._buildquery()
             qset = query.qset.query_set
+            db = query._meta.cursor.redispy.db
+            if db != pipe.db:
+                raise ValueError('Indexes in a different database')
+                # In a different redis database. We need to move the set
+                query._meta.cursor.redispy.move(qset,pipe.db)
+                pipe.expire(qset,self.expire)
             skey = self.meta.tempkey()
             okey = query._meta.basekey(OBJ,'*->{0}'.format(q.field))
             pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\

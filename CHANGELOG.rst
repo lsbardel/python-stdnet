@@ -33,6 +33,8 @@ Ver. 0.6.0 - Development
 * Added ``as_string`` parameter to :class:`stdnet.orm.JSONField` for
   specifying the storage method.
 * Moved testing functions into the :mod:`stdnet.test` module.
+* Added ``hidden`` attribute to :class:`stdnet.orm.Field`.
+  Used in the search algorithm.
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
 * **289 regression tests** with **78%** coverage.

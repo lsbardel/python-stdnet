@@ -100,7 +100,13 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: charset
 
-    The cahrset used for encoding decoding text.
+    The charset used for encoding decoding text.
+    
+.. attribute:: hidden
+
+    If ``True`` the field will be hidden from search algorithms.
+    
+    Default ``False``.
 '''
     default = None
     type = None

@@ -60,12 +60,13 @@ class BeckendQuery(object):
     
 
 class BackendDataServer(object):
-    '''Generic interface for a backend database:
+    '''\
+Generic interface for a backend database:
     
-    * *name* name of database, such as **redis**, **couchdb**, etc..
-    * *params* dictionary of configuration parameters
-    * *pickler* calss for serializing and unserializing data. It must implement the *loads* and *dumps* methods.
-    '''
+:parameter name: name of database, such as **redis**, **couchdb**, etc..
+:parameter params: dictionary of configuration parameters
+:parameter pickler: calss for serializing and unserializing data.
+It must implement the *loads* and *dumps* methods.'''
     Transaction = None
     Query = None
     structure_module = None
@@ -114,7 +115,8 @@ class BackendDataServer(object):
         '''\
 Save or updated an instance of a model to the back-end database:
         
-:parameter obj: instance of :ref:`StdModel <model-model>` to add/update to the database
+:parameter obj: instance of :ref:`StdModel <model-model>`
+                to add/update to the database
 :parameer transaction: optional transaction instance.'''
         commit = False
         if not transaction:
@@ -125,7 +127,8 @@ Save or updated an instance of a model to the back-end database:
         if not obj.is_valid():
             raise FieldError(json.dumps(obj.errors))
         
-        # We are updating the object, therefore we need to clean up indexes first
+        # We are updating the object,
+        # therefore we need to clean up indexes first
         if obj.id:
             try:
                 pobj = obj.__class__.objects.get(id = obj.id)
@@ -219,10 +222,8 @@ Called to clear a model instance.
         return new_value
 
     def decr(self, key, delta=1):
-        """
-        Subtract delta from value in the cache. If the key does not exist, raise
-        a ValueError exception.
-        """
+        """Subtract delta from value in the cache.
+If the key does not exist, raise a ValueError exception."""
         return self.incr(key, -delta)
 
     def __contains__(self, key):
@@ -281,12 +282,14 @@ Called to clear a model instance.
     def list(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.List`
 for a given *id*.'''
-        return self.structure_module.List(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.List(self, id,
+                                          timeout = timeout, **kwargs)
     
     def hash(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        return self.structure_module.HashTable(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.HashTable(self, id,
+                                               timeout = timeout, **kwargs)
     
     def ts(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
@@ -296,11 +299,13 @@ for a given *id*.'''
     def unordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.Set` structure
 for a given *id*.'''
-        return self.structure_module.Set(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.Set(self, id,
+                                         timeout = timeout, **kwargs)
     
     def ordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.OrderedSet` structure
 for a given *id*.'''
-        return self.structure_module.OrderedSet(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.OrderedSet(self, id,
+                                                timeout = timeout, **kwargs)
     
 

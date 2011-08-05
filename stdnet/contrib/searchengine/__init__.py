@@ -228,7 +228,7 @@ words in text.'''
     '''
         linked = []
         link = self._link_item_and_word
-        for word in self.get_words_from_text(text):
+        for word in self.words_from_text(text):
             ctag = self.get_or_create(word, tag = True)
             linked.append(link(item, ctag))
         return linked

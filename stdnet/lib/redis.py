@@ -970,6 +970,20 @@ can be one of: refcount, encoding, idletime.'''
             if message_type == 'unsubscribe' and message == 0:
                 self.subscribed = False
 
+    # Scripting
+    def eval(self, body, **kwargs):
+        num_keys = len(kwargs)
+        if num_keys:
+            keys = []
+            args = []
+            for k,v in iteritems(kwargs):
+                keys.append(k)
+                args.append(v)
+            keys.extend(args)
+        else:
+            keys = ()
+        return self.execute_command('EVAL', body, num_keys, *keys)
+    
 
 class Pipeline(Redis):
     """

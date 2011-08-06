@@ -277,6 +277,8 @@ class RedisInfo22(RedisInfo):
         return self._makekeys(self.info['Keyspace'])
         
     def makepanel(self, name):
+        if name not in self.info:
+            return
         pa = self._panels[name] = []
         nicename = self.formatter.format_name
         nicebool = self.formatter.format_bool

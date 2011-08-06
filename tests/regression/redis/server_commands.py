@@ -15,13 +15,6 @@ to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
 
 
-def get_version(info):
-    if 'redis_version' in info:
-        return info['redis_version']
-    else:
-        return info['Server']['redis_version']
-
-
 class ServerCommandsTestCase(BaseTest):
 
     def setUp(self):

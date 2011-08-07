@@ -173,7 +173,8 @@ Called to clear a model instance.
         make_object = meta.maker
         for id,fields in zip(ids,data):
             obj = make_object()
-            fields = dict(((k.decode(),v) for (k,v) in fields))
+            fields = dict(fields)
+            #fields = dict(((k.decode(),v) for (k,v) in fields))
             obj.__setstate__((id,fields))
             yield obj
         

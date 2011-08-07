@@ -92,7 +92,7 @@ related keys (keys which are related to the instance rather than the model).'''
         # Lets add data
         self.adddata(obj)
         # The field id should be in the server keys
-        lkeys = [k.decode() for k in obj._meta.cursor.keys()]
+        lkeys = obj._meta.cursor.keys()
         self.assertTrue(field.id in lkeys)
         obj.delete()
         lkeys = list(obj._meta.cursor.keys())

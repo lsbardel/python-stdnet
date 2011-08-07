@@ -48,10 +48,11 @@ def dict_merge(*dicts):
     return merged
 
 
-def parse_info(response):
+def parse_info(response, encoding = 'utf-8'):
     '''Parse the result of Redis's INFO command into a Python dict.
 In doing so, convert byte data into unicode.'''
     info = {}
+    response = response.decode(encoding)
     def get_value(value):
         if ',' not in value:
             return value
@@ -77,12 +78,14 @@ In doing so, convert byte data into unicode.'''
             info[line[2:]] = data
     return info
 
-def pairs_to_dict(response):
+
+def pairs_to_dict(response, encoding = 'utf-8'):
     "Create a dict given a list of key/value pairs"
     if response:
-        return zip(response[::2], response[1::2])
+        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
     else:
         return ()
+
 
 def zset_score_pairs(response, **options):
     """
@@ -93,21 +96,26 @@ def zset_score_pairs(response, **options):
         return response
     return zip(response[::2], map(float, response[1::2]))
 
+
 def int_or_none(response):
     if response is None:
         return None
     return int(response)
+
 
 def float_or_none(response):
     if response is None:
         return None
     return float(response)
 
+
 def bytes_to_string(result, encoding = 'utf-8'):
     if isinstance(result,list):
         return [res.decode(encoding) for res in result]
-    else:
+    elif result is not None:
         return result.decode(encoding)
+    else:
+        return result
 
 
 class Redis(object):
@@ -122,16 +130,16 @@ class Redis(object):
     """
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
-            'KEYS RANDOMKEY TYPE OBJECT',
+            'KEYS RANDOMKEY TYPE OBJECT HKEYS',
             bytes_to_string
             ),
         string_keys_to_dict(
-            'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX TSEXISTS'
-            'RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
+            'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
+            'TSEXISTS RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
             bool
             ),
         string_keys_to_dict(
-            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD'
+            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             int
             ),
@@ -160,7 +168,6 @@ class Redis(object):
             'INFO': parse_info,
             'LASTSAVE': timestamp_to_datetime,
             'PING': lambda r: r == b'PONG',
-            'RANDOMKEY': lambda r: r and r or None,
             'TTL': lambda r: r != -1 and r or None,
             'ZRANK': int_or_none,
         }

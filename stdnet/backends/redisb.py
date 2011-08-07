@@ -130,7 +130,7 @@ class RedisQuery(BeckendQuery):
         
         if extra:
             for id in extra:
-                sha.write(id)
+                sha.write(id.encode('utf-8'))
                 keys.append(id)
         
         if keys:
@@ -242,7 +242,7 @@ different model) which has a *field* containing current model ids.'''
         if self.qs.ordering:
             sort_by = self.qs.ordering
             skey = self.meta.tempkey()
-            okey = self.meta.basekey(OBJ,'*->')+sort_by.name.encode()
+            okey = self.meta.basekey(OBJ,'*->{0}'.format(sort_by.name))
             pipe = self.server.redispy.pipeline()
             pipe.sort(self.query_set,
                       by = okey,

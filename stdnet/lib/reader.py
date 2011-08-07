@@ -58,7 +58,8 @@ class redisReadTask(object):
                 if response is False:
                     stack.append(self)
                     return False
-            self.response = self.connection.decode(response)
+            #self.response = self.connection.decode(response)
+            self.response = response
         elif self.type == REDIS_REPLY_ARRAY:
             length = self.length
             if length == -1:
@@ -132,7 +133,7 @@ class RedisPythonReader(object):
     def __init__(self, connection):
         self._stack = []
         self._inbuffer = BytesIO()
-        self.decode = connection.decode
+        #self.decode = connection.decode
     
     def read(self, length = None):
         """

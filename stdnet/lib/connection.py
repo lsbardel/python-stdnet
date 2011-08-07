@@ -77,10 +77,10 @@ class Connection(object):
         self.encoding = encoding
         self.encoding_errors = encoding_errors
         self._sock = None
-        if decode:
-            self.decode = self._decode
-        else:
-            self.decode = lambda x : x
+        #if decode:
+        #    self.decode = self._decode
+        #else:
+        #    self.decode = lambda x : x
         if parser_class is None:
             if settings.REDIS_PARSER == 'python':
                 parser_class = PythonParser

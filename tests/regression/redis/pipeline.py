@@ -20,11 +20,11 @@ class PipelineTestCase(BaseTest):
         self.assertEquals(vals,
             [
                 True,
-                'a1',
+                b'a1',
                 True,
                 True,
                 2.0,
-                [('z1', 2.0), ('z2', 4)],
+                [(b'z1', 2.0), (b'z2', 4)],
             ]
             )
 
@@ -36,25 +36,25 @@ class PipelineTestCase(BaseTest):
         result = pipe.execute()
 
         self.assertEquals(result[0], True)
-        self.assertEquals(self.client['a'], '1')
+        self.assertEquals(self.client['a'], b'1')
         self.assertEquals(result[1], True)
-        self.assertEquals(self.client['b'], '2')
+        self.assertEquals(self.client['b'], b'2')
         # we can't lpush to a key that's a string value, so this should
         # be a ResponseError exception
         self.assert_(isinstance(result[2], ResponseError))
-        self.assertEquals(self.client['c'], 'a')
+        self.assertEquals(self.client['c'], b'a')
         self.assertEquals(result[3], True)
-        self.assertEquals(self.client['d'], '4')
+        self.assertEquals(self.client['d'], b'4')
 
         # make sure the pipe was restored to a working state
         self.assertEquals(pipe.set('z', 'zzz').execute(), [True])
-        self.assertEquals(self.client['z'], 'zzz')
+        self.assertEquals(self.client['z'], b'zzz')
 
     def test_pipeline_no_transaction(self):
         pipe = self.client.pipeline(transaction=False)
         pipe.set('a', 'a1').set('b', 'b1').set('c', 'c1')
         self.assertEquals(pipe.execute(), [True, True, True])
-        self.assertEquals(self.client['a'], 'a1')
-        self.assertEquals(self.client['b'], 'b1')
-        self.assertEquals(self.client['c'], 'c1')
+        self.assertEquals(self.client['a'], b'a1')
+        self.assertEquals(self.client['b'], b'b1')
+        self.assertEquals(self.client['c'], b'c1')
 

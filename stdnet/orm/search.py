@@ -8,12 +8,27 @@ from .signals import post_save, post_delete
 
 
 class SearchEngine(object):
-    """Stdnet search engine driver.
+    """Stdnet search engine driver. This is an abstract class which
+expose the base functionalities for full text-search on model instances.
     
-:attribute word_middleware: a list of functions for preprocessing text
-                            to be indexed. Middleware function
-                            must accept an iterable of words and
-                            return iterable of words.
+.. attribute:: word_middleware
+    
+    A list of functions for preprocessing text
+    to be indexed. Middleware function
+    must accept an iterable of words and
+    return iterable of words. Word middleware functions
+    are added to the search engine via the
+    :meth:`stdnet.orm.SearchEngine.add_word_middleware`. For example
+    this function remove a group of words from the index::
+    
+        se = SearchEngine()
+        
+        def stopwords(words):
+            for word in words:
+                if word not in ('this','that','and'):
+                    yield word
+        
+        se.add_word_middleware(stopwords)
 """
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
@@ -25,10 +40,11 @@ class SearchEngine(object):
         
     def register(self, model, related = None):
         '''Register a model to the search engine. By registering a model,
-every time an instance is updated or created, it will be indexed by the
+every time an instance is created, it will be indexed by the
 search engine.
 
 :parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter related: a list of related fields to include in the index.
 '''
         model._meta.searchengine = self
         if self.last_indexed not in model._meta.dfields:
@@ -75,6 +91,7 @@ Can and should be reimplemented by subclasses.'''
             self.ITEM_PROCESSORS.append(processor)
 
     def add_word_middleware(self, middleware, for_search = True):
+        '''Add a *middleware* function for preprocessing words to be indexed.'''
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
     

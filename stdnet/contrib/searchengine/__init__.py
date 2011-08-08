@@ -1,5 +1,6 @@
 '''\
-An application for building a search-engine on ``stdnet`` models.
+An implementation of :class:`stdnet.orm.SearchEngine`
+based on stdnet models.
 
 Usage
 ===========
@@ -10,14 +11,12 @@ Somewhere in your application create the search engine singletone::
      
     engine = SearchEngine(...)
  
-The engine works by registering models to it or by indexing instances. If
-you go down the registering route, the simplest one, everything is done for
-you, all you need to do is to register a model with the search engine. 
+The engine works by registering models to it.
 For example::
 
     engine.register(MyModel)
 
-From now on, every time and instance of ``MyModel`` is updated/created,
+From now on, every time and instance of ``MyModel`` is created,
 the search engine will updated its indexes.
 
 To search, issue the command::

@@ -78,11 +78,17 @@ Manager
    :member-order: bysource
    
 
+Search Engine
+=====================
+.. autoclass:: stdnet.orm.SearchEngine
+   :members:
+   :member-order: bysource
+
 .. _signal-api:
 
 Signals
 =====================
-Django includes a “signal dispatcher” which helps allow decoupled
+Stdnet includes a signal dispatcher which helps allow decoupled
 applications get notified when actions occur elsewhere in the framework.
 In a nutshell, signals allow certain senders to notify a set of receivers
 that some action has taken place.

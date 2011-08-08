@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Python StdNet'
-copyright = u'2010-2011, Luca Sbardella'
+project = 'Python StdNet'
+copyright = '2010-2011, Luca Sbardella'
 
 html_theme = 'celery'
 
@@ -51,7 +51,8 @@ templates_path = ['_templates']
 html_static_path = ['_static']
 html_theme_path = ["_theme"]
 html_sidebars = {
-    'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
+    'index': ['sidebarlogo.html', 'sidebarintro.html',
+              'sourcelink.html', 'searchbox.html'],
     '**': ['sidebarlogo.html', 'localtoc.html', 'relations.html',
            'sourcelink.html', 'searchbox.html'],
 }
@@ -75,8 +76,8 @@ if stdnet.sphinxtogithub:
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PythonStdNet.tex', u'Python StdNet Documentation',
-   u'Luca Sbardella', 'manual'),
+  ('index', 'PythonStdNet.tex', 'Python StdNet Documentation',
+   'Luca Sbardella', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

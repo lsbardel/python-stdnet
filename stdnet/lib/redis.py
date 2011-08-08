@@ -139,7 +139,7 @@ class Redis(object):
             bool
             ),
         string_keys_to_dict(
-            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN TSADD '
+            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             int
             ),

@@ -611,6 +611,10 @@ registered in the model hash table, it can be used.'''
     
     def serialize(self, value):
         if value is not None:
+            if not hasattr(value,'_meta'):
+                value = self.to_python(value)
+                if not hasattr(value,'_meta'):
+                    return
             value = value._meta.hash
             return self.encoder.dumps(value)
 

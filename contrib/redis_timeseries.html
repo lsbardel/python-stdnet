@@ -6,22 +6,22 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Redis timeseries API &mdash; Python StdNet v0.5.5 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <title>Redis timeseries API &mdash; Python StdNet v0.6.0 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.5',
+        VERSION:     '0.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.5 documentation" href="../index.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
     <link rel="up" title="Battery Included" href="index.html" />
     <link rel="next" title="Examples" href="../examples/index.html" />
     <link rel="prev" title="Timeseries Models" href="timeseries.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="timeseries.html" title="Timeseries Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Battery Included</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,7 +54,6 @@
             
   <div class="section" id="redis-timeseries-api">
 <span id="redis-timeseries"></span><h1>Redis timeseries API<a class="headerlink" href="#redis-timeseries-api" title="Permalink to this headline">¶</a></h1>
-<p><strong>An implementation of a timeseries data structure in</strong> <a class="reference external" href="http://redis.io/">redis</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -68,17 +67,13 @@
 <p>Timeseries is an important data-structure not yet supported in redis,
 it is represented by a unique sorted associative container,
 that is to say it associates ordered unique times to values.</p>
-<p>Values, which can be anything you like, are ordered with respect to times (double values),
+<p>Values, which can be anything you like, are ordered with respect to double values (times),
 and can be accessed by times or rank (the order of times in the timeseries).
-Times are unique, that is to say in a timeseries
-there will be only one value associated with a time.</p>
-<p>Internally, values are added to a hash table mapping them to times.
-At the same time they are added to a skip list to maintain
+Times are unique so that there will be only one value associated with a given time.</p>
+<p>Internally, values are added to a skip list which maintain
 sorting with respect to times.</p>
-<p>Implementation is almost equivalent to zsets, and they look like zsets. But they are not zsets!</p>
 <p>Performance:</p>
-<div class="highlight-python"><pre>O(log(N)) on INSERT and REMOVE operations
-O(1) on RETRIEVAL via times</pre>
+<div class="highlight-python"><pre>O(log(N)) on INSERT REMOVE and RETRIEVAL via times</pre>
 </div>
 <p><strong>Contents</strong></p>
 <div class="contents local topic" id="contents">
@@ -91,12 +86,10 @@ O(1) on RETRIEVAL via times</pre>
 <li><a class="reference internal" href="#tsrange" id="id7">TSRANGE</a></li>
 <li><a class="reference internal" href="#tsrangebytime" id="id8">TSRANGEBYTIME</a></li>
 <li><a class="reference internal" href="#tscount" id="id9">TSCOUNT</a></li>
-<li><a class="reference internal" href="#tsunion" id="id10">TSUNION</a></li>
-<li><a class="reference internal" href="#tsinterception" id="id11">TSINTERCEPTION</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#use-cases" id="id12">Use cases</a></li>
-<li><a class="reference internal" href="#source-code-changes" id="id13">Source code changes</a></li>
+<li><a class="reference internal" href="#use-cases" id="id10">Use cases</a></li>
+<li><a class="reference internal" href="#source-code-changes" id="id11">Source code changes</a></li>
 </ul>
 </div>
 <div class="section" id="commands">
@@ -144,7 +137,7 @@ tsrange key start end novalues  -&gt; return times</pre>
 <div class="section" id="tsrangebytime">
 <h3><a class="toc-backref" href="#id8">TSRANGEBYTIME</a><a class="headerlink" href="#tsrangebytime" title="Permalink to this headline">¶</a></h3>
 <p>Range by times:</p>
-<div class="highlight-python"><pre>tsrangebytime time_start time_end &lt;flag&gt;</pre>
+<div class="highlight-python"><pre>tsrangebytime key time_start time_end &lt;flag&gt;</pre>
 </div>
 <p>Where <tt class="docutils literal"><span class="pre">time_start</span></tt> and <tt class="docutils literal"><span class="pre">time_end</span></tt> are double (timestaps) and <tt class="docutils literal"><span class="pre">&lt;flag&gt;</span></tt>
 is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span></tt>.</p>
@@ -152,20 +145,12 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 <div class="section" id="tscount">
 <h3><a class="toc-backref" href="#id9">TSCOUNT</a><a class="headerlink" href="#tscount" title="Permalink to this headline">¶</a></h3>
 <p>Count element in range by <tt class="docutils literal"><span class="pre">time</span></tt>:</p>
-<div class="highlight-python"><pre>tscount time_start,time_end</pre>
+<div class="highlight-python"><pre>tscount key time_start,time_end</pre>
 </div>
-</div>
-<div class="section" id="tsunion">
-<h3><a class="toc-backref" href="#id10">TSUNION</a><a class="headerlink" href="#tsunion" title="Permalink to this headline">¶</a></h3>
-<p><strong>Not implemented</strong></p>
-</div>
-<div class="section" id="tsinterception">
-<h3><a class="toc-backref" href="#id11">TSINTERCEPTION</a><a class="headerlink" href="#tsinterception" title="Permalink to this headline">¶</a></h3>
-<p><strong>Not implemented</strong></p>
 </div>
 </div>
 <div class="section" id="use-cases">
-<h2><a class="toc-backref" href="#id12">Use cases</a><a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id10">Use cases</a><a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Store and manipulate financial timeseries:</p>
 <div class="highlight-python"><pre>tsadd goog</pre>
@@ -176,7 +161,7 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 </ul>
 </div>
 <div class="section" id="source-code-changes">
-<h2><a class="toc-backref" href="#id13">Source code changes</a><a class="headerlink" href="#source-code-changes" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">Source code changes</a><a class="headerlink" href="#source-code-changes" title="Permalink to this headline">¶</a></h2>
 <p>I have tried, as much as possible, not to be intrusive so that it should be relatively straightforward to
 track changes. In a nut shell, these are the additions/changes:</p>
 <ul class="simple">
@@ -200,9 +185,11 @@ track changes. In a nut shell, these are the additions/changes:</p>
         </div>
       </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
-  <img class="logo" width="128" height="128" src="" alt="Logo"/>
-</a></p>
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="128" height="128" src="../_static/net.jpg" alt="Logo"/>
+</a>
+</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Redis timeseries API</a><ul>
@@ -214,8 +201,6 @@ track changes. In a nut shell, these are the additions/changes:</p>
 <li><a class="reference internal" href="#tsrange">TSRANGE</a></li>
 <li><a class="reference internal" href="#tsrangebytime">TSRANGEBYTIME</a></li>
 <li><a class="reference internal" href="#tscount">TSCOUNT</a></li>
-<li><a class="reference internal" href="#tsunion">TSUNION</a></li>
-<li><a class="reference internal" href="#tsinterception">TSINTERCEPTION</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#use-cases">Use cases</a></li>
@@ -232,7 +217,7 @@ track changes. In a nut shell, these are the additions/changes:</p>
                         title="next chapter">Examples</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/contrib/redis_timeseries.txt"
+    <li><a href="../_sources/contrib/redis_timeseries.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -267,7 +252,7 @@ track changes. In a nut shell, these are the additions/changes:</p>
         <li class="right" >
           <a href="timeseries.html" title="Timeseries Models"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Battery Included</a> &raquo;</li> 
       </ul>
     </div>

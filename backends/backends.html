@@ -6,25 +6,25 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Database backend interface &mdash; Python StdNet v0.5.5 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <title>Redis Database backend &mdash; Python StdNet v0.6.0 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.5',
+        VERSION:     '0.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.5 documentation" href="../index.html" />
-    <link rel="up" title="Data Structure and BackEnds" href="index.html" />
-    <link rel="next" title="Internals and Utilities" href="../utility.html" />
-    <link rel="prev" title="Structures" href="structures.html" /> 
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
+    <link rel="up" title="Backend Server and Structures" href="index.html" />
+    <link rel="next" title="Remote Structure" href="structures.html" />
+    <link rel="prev" title="Backend Server and Structures" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,13 +37,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../utility.html" title="Internals and Utilities"
+          <a href="structures.html" title="Remote Structure"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="structures.html" title="Structures"
+          <a href="index.html" title="Backend Server and Structures"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Data Structure and BackEnds</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,17 +52,80 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="database-backend-interface">
-<span id="base-backend"></span><h1>Database backend interface<a class="headerlink" href="#database-backend-interface" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="redis-database-backend">
+<span id="base-backend"></span><h1>Redis Database backend<a class="headerlink" href="#redis-database-backend" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://redis.io/">Redis</a> is an advanced key-value store where each key is associated with a value.
+What makes Redis different from many other key-value databases, is that values can
+be of different types:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Strings</li>
+<li>Lists</li>
+<li>Sets</li>
+<li>Sorted Sets</li>
+<li>Hash tables</li>
+<li>Timeseries if you use the redis branch from <a class="reference external" href="https://github.com/lsbardel/redis">lsbardel</a>.</li>
+</ul>
+</div></blockquote>
+<p>In other words, you can look at redis as a data structures server,
+the networked equivalent of the
+<a class="reference external" href="http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html">standard template library in C++</a>.
+And that is where stdnet get its name from,
+<em>std</em> from the standard template library
+and <em>net</em> from networked.</p>
+<p>Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
+since at the same time it is saved on disk, so that when the server is restarted
+data can be loaded back in memory. If you need speed, Redis is great solution.</p>
+<div class="section" id="model-data">
+<h2>Model data<a class="headerlink" href="#model-data" title="Permalink to this headline">¶</a></h2>
+<p>Each <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance is mapped to a redis <strong>Hash table</strong>.
+The hash table key is uniquely evaluated by the model hash and
+the <em>id</em> of the model instance.</p>
+<p>The hash fields and values are given by the field name and values of the
+model instance.</p>
+</div>
+<div class="section" id="indexes">
+<h2>Indexes<a class="headerlink" href="#indexes" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="ordered-fields">
+<h2>Ordered Fields<a class="headerlink" href="#ordered-fields" title="Permalink to this headline">¶</a></h2>
+<p>When a model contains ordered fields
+(fields with the <a class="reference internal" href="../model/fields.html#stdnet.orm.Field.ordered" title="stdnet.orm.Field.ordered"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.Field.ordered</span></tt></a> set to <tt class="xref docutils literal"><span class="pre">True</span></tt>),
+stdnet create as many extra hash tables as the number of ordered fields.
+The hash tables have keys given by instances ids and values given by the
+field value. This allowed the construction of the sorting algorithm:</p>
+<div class="highlight-python"><pre>SORT idset BY</pre>
+</div>
+</div>
+<div class="section" id="structured-fields">
+<h2>Structured Fields<a class="headerlink" href="#structured-fields" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.BackendDataServer">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>params</em>, <em>pickler=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>pickler=None</em>, <em>charset='utf-8'</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generic interface for a backend database:</p>
-<ul class="simple">
-<li><em>name</em> name of database, such as <strong>redis</strong>, <strong>couchdb</strong>, etc..</li>
-<li><em>params</em> dictionary of configuration parameters</li>
-<li><em>pickler</em> calss for serializing and unserializing data. It must implement the <em>loads</em> and <em>dumps</em> methods.</li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; name of database, such as <strong>redis</strong>, <strong>couchdb</strong>, etc..</li>
+<li><strong>params</strong> &#8211; dictionary of configuration parameters</li>
+<li><strong>pickler</strong> &#8211; calss for serializing and unserializing data.</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>It must implement the <em>loads</em> and <em>dumps</em> methods.</p>
+<dl class="method">
+<dt id="stdnet.BackendDataServer.disconnect">
+<tt class="descname">disconnect</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect the connection.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="stdnet.BackendDataServer.isempty">
 <tt class="descname">isempty</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.isempty" title="Permalink to this definition">¶</a></dt>
@@ -70,49 +133,53 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.delete">
-<tt class="descname">delete</tt><big>(</big><em>*key</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete one or more keys specified by <tt class="docutils literal"><span class="pre">keys</span></tt></p>
+<dt id="stdnet.BackendDataServer.instance_keys">
+<tt class="descname">instance_keys</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.instance_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of database keys used by instance <em>obj</em></p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.commit">
-<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.commit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Commit cache objects to database.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.get_object">
-<tt class="descname">get_object</tt><big>(</big><em>meta</em>, <em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.get_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrive an object from the database. If object is not available, it raises
-an <a class="reference internal" href="../utility.html#stdnet.exceptions.ObjectNotFound" title="stdnet.exceptions.ObjectNotFound"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.exceptions.ObjectNotFound</span></tt></a> exception.</p>
-<blockquote>
-<div><ul class="simple">
-<li><em>meta</em> <a class="reference internal" href="../model/models.html#database-metaclass"><em>database metaclass</em></a> or model</li>
-<li><em>name</em> name of field (must be unique)</li>
-<li><em>value</em> value of field to search.</li>
-</ul>
-</div></blockquote>
+<dt id="stdnet.BackendDataServer.transaction">
+<tt class="descname">transaction</tt><big>(</big><em>pipelined=True</em>, <em>cachepipes=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a transaction instance</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="stdnet.BackendDataServer.save_object">
-<tt class="descname">save_object</tt><big>(</big><em>obj</em>, <em>commit=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.save_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save a model object to the database:</p>
-<ul class="simple">
-<li><em>obj</em> instance of <a class="reference internal" href="../model/models.html#model-model"><em>StdModel</em></a> to add to database</li>
-<li><em>commit</em> If True, <em>obj</em> is saved to database, otherwise it remains in local cache.</li>
-</ul>
+<tt class="descname">save_object</tt><big>(</big><em>obj</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.save_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save or updated an instance of a model to the back-end database:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obj</strong> &#8211; instance of <a class="reference internal" href="../model/models.html#model-model"><em>StdModel</em></a>
+to add/update to the database</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Parameer transaction:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">optional transaction instance.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="stdnet.BackendDataServer.delete_object">
-<tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>deleted=None</em>, <em>multi_field=True</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete an object from the data server and clean up indices.
 Called to clear a model instance.
 :parameter obj: instance of <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
-:parameter deleted: a list or <tt class="xref docutils literal"><span class="pre">None</span></tt>. If a list, deleted keys will be appended to it.
-:parameter multi_field: if <tt class="xref docutils literal"><span class="pre">True</span></tt> the multifield ids (if any) will be removed. Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+:parameter deleted: a list or <tt class="xref docutils literal"><span class="pre">None</span></tt>. If a list, deleted keys</p>
+<blockquote>
+<div>will be appended to it.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>multi_field</strong> &#8211; if <tt class="xref docutils literal"><span class="pre">True</span></tt> the multifield ids (if any)
+will be removed. Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -140,8 +207,8 @@ ValueError exception.</p>
 <dl class="method">
 <dt id="stdnet.BackendDataServer.decr">
 <tt class="descname">decr</tt><big>(</big><em>key</em>, <em>delta=1</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.decr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtract delta from value in the cache. If the key does not exist, raise
-a ValueError exception.</p>
+<dd><p>Subtract delta from value in the cache.
+If the key does not exist, raise a ValueError exception.</p>
 </dd></dl>
 
 <dl class="method">
@@ -195,27 +262,6 @@ for a given <em>id</em>.</p>
 
 </dd></dl>
 
-<div class="section" id="redis-backend">
-<span id="id1"></span><h2>Redis backend<a class="headerlink" href="#redis-backend" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="http://code.google.com/p/redis/">Redis</a> is an advanced key-value store where each key is associated with a value.
-What makes Redis different from many other key-value databases, is that values can
-be of different types:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Strings</li>
-<li>Lists</li>
-<li>Sets</li>
-<li>Sorted Sets</li>
-<li>Hash tables</li>
-</ul>
-</div></blockquote>
-<p>In other words, you can look at redis as a data structures server,
-the networked equivalent of the
-<a class="reference external" href="http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html">standard template library in C++</a></p>
-<p>Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
-since at the same time it is saved on disk, so that when the server is restarted
-data can be loaded back in memory.</p>
-<p>If you need speed, Redis is by far the best solution.</p>
 </div>
 </div>
 
@@ -224,26 +270,32 @@ data can be loaded back in memory.</p>
         </div>
       </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
-  <img class="logo" width="128" height="128" src="" alt="Logo"/>
-</a></p>
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="128" height="128" src="../_static/net.jpg" alt="Logo"/>
+</a>
+</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Database backend interface</a><ul>
-<li><a class="reference internal" href="#redis-backend">Redis backend</a></li>
+<li><a class="reference internal" href="#">Redis Database backend</a><ul>
+<li><a class="reference internal" href="#model-data">Model data</a></li>
+<li><a class="reference internal" href="#indexes">Indexes</a></li>
+<li><a class="reference internal" href="#ordered-fields">Ordered Fields</a></li>
+<li><a class="reference internal" href="#structured-fields">Structured Fields</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="structures.html"
-                        title="previous chapter">Structures</a></p>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Backend Server and Structures</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../utility.html"
-                        title="next chapter">Internals and Utilities</a></p>
+  <p class="topless"><a href="structures.html"
+                        title="next chapter">Remote Structure</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/backends/backends.txt"
+    <li><a href="../_sources/backends/backends.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -273,13 +325,13 @@ data can be loaded back in memory.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../utility.html" title="Internals and Utilities"
+          <a href="structures.html" title="Remote Structure"
              >next</a> |</li>
         <li class="right" >
-          <a href="structures.html" title="Structures"
+          <a href="index.html" title="Backend Server and Structures"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Data Structure and BackEnds</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

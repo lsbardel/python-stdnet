@@ -6,22 +6,22 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python StdNet &mdash; Python StdNet v0.5.5 documentation</title>
-    <link rel="stylesheet" href="static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <title>Python StdNet &mdash; Python StdNet v0.6.0 documentation</title>
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5.5',
+        VERSION:     '0.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="static/jquery.js"></script>
-    <script type="text/javascript" src="static/underscore.js"></script>
-    <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.5 documentation" href="#" />
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.6.0 documentation" href="#" />
     <link rel="next" title="Object Relational Mapper" href="model/index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="model/index.html" title="Object Relational Mapper"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="#">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,16 +55,18 @@ Simple to use and configure.</p>
 <p>It includes a modified version of <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> compatible with <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt>.
 There are no dependencies
 and the library requires <tt class="docutils literal"><span class="pre">python</span> <span class="pre">2.6</span></tt> or above, including <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt>.
-There are over 200 tests with a coverage of about 75%.</p>
+There are over 250 tests with a coverage of about 75%.</p>
 <p>The library is stable, used in production and continuously maintained.</p>
 <div class="section" id="first-steps">
 <h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
 <p><strong>From scratch:</strong>
-<a class="reference internal" href="overview.html#intro-overview"><em>Overview and Installation</em></a></p>
-<p><strong>Models and QuerySets:</strong>
-<a class="reference internal" href="model/query.html#model-query"><em>Executing queries</em></a> | <a class="reference internal" href="model/models.html#model-model"><em>Model API</em></a></p>
+<a class="reference internal" href="overview.html#intro-overview"><em>Overview and Installation</em></a> |
+<a class="reference internal" href="tutorial.html#tutorial"><em>Tutorial</em></a></p>
+<p><strong>The API:</strong>
+<a class="reference internal" href="model/models.html#model-model"><em>Model API</em></a> |
+<a class="reference internal" href="model/fields.html#model-field"><em>Fields API</em></a></p>
 <p><strong>Examples:</strong>
-<a class="reference internal" href="examples/timeseries.html#timeseries-example"><em>Timeseries</em></a> | <a class="reference internal" href="examples/portfolio.html#portfolio-example"><em>Portfolio</em></a> |
+<a class="reference internal" href="examples/timeseries.html#timeseries-example"><em>Timeseries</em></a> |
 <a class="reference internal" href="examples/twitter.html#twitter-example"><em>Twitter Clone</em></a></p>
 </div>
 <div class="section" id="contents">
@@ -72,12 +74,12 @@ There are over 200 tests with a coverage of about 75%.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="model/index.html">Object Relational Mapper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="backends/index.html">Data Structure and BackEnds</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utility.html">Internals and Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends/index.html">Backend Server and Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contrib/index.html">Battery Included</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/index.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utility.html">Internals and Utilities</a></li>
 </ul>
 </div>
 </div>
@@ -96,16 +98,24 @@ There are over 200 tests with a coverage of about 75%.</p>
         </div>
       </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper"><h3>Python StdNet</h3>
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="#">
+  <img class="logo" width="128" height="128" src="_static/net.jpg" alt="Logo"/>
+</a>
+</p><h3>Python StdNet</h3>
 <p>
-  StdNet is an Python Object Relational Mapper for Redis.
+  StdNet is a Python 3 compatible object relational mapper for the 
+  Redis datastructure server.
+  It is designed to be fast with an API similar to django.
 </p>
-<p class="logo"><a href="#">
-  <img width="128" height="128" class="logo" src="" alt="Logo"/>
-</a></p>
+<h3>Useful Links</h3>
+<ul>
+  <li><a href="http://pypi.python.org/pypi/python-stdnet/0.5.3">Stdnet @ PyPI</a></li>
+  <li><a href="https://github.com/lsbardel/python-stdnet">Stdnet @ github</a></li>
+</ul>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="sources/index.txt"
+    <li><a href="_sources/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -137,7 +147,7 @@ There are over 200 tests with a coverage of about 75%.</p>
         <li class="right" >
           <a href="model/index.html" title="Object Relational Mapper"
              >next</a> |</li>
-        <li><a href="#">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="#">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -6,24 +6,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; Python StdNet v0.5.5 documentation</title>
-    <link rel="stylesheet" href="static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <title>Internals and Utilities &mdash; Python StdNet v0.6.0 documentation</title>
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5.5',
+        VERSION:     '0.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="static/jquery.js"></script>
-    <script type="text/javascript" src="static/underscore.js"></script>
-    <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.5 documentation" href="index.html" />
-    <link rel="next" title="Battery Included" href="contrib/index.html" />
-    <link rel="prev" title="Database backend interface" href="backends/backends.html" /> 
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.6.0 documentation" href="index.html" />
+    <link rel="prev" title="Contributing" href="contributing.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,12 +35,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="contrib/index.html" title="Battery Included"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="backends/backends.html" title="Database backend interface"
+          <a href="contributing.html" title="Contributing"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -76,7 +72,8 @@ in the <tt class="docutils literal"><span class="pre">models</span></tt> module 
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; An iterable over python dotted-paths where models are defined.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; An iterable over python dotted-paths
+where models are defined.</td>
 </tr>
 </tbody>
 </table>
@@ -98,7 +95,11 @@ in the <tt class="docutils literal"><span class="pre">models</span></tt> module 
 <dl class="function">
 <dt id="stdnet.orm.register_application_models">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_application_models</tt><big>(</big><em>applications</em>, <em>models=None</em>, <em>app_defaults=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_application_models" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a generator which register models in <tt class="docutils literal"><span class="pre">application</span></tt>.</p>
+<dd><p>An higher level registration functions for group of models located
+on application modules. It uses the <em class="xref std std-ref">model_iterator</em>
+functions to iterate through all the models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
+and register them using the <em class="xref std std-ref">register</em> function.
+It return a generator.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -140,6 +141,57 @@ It removes all keys associated with models.</p>
 
 <span class="target" id="module-stdnet.utils"></span></div>
 </div>
+<div class="section" id="serialization">
+<span id="serialize-models"></span><h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
+<p>Stdnet comes with a bunch of extendible utilities for serializing model data into
+different formats.</p>
+<div class="section" id="get-serializer">
+<h3>Get serializer<a class="headerlink" href="#get-serializer" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.get_serializer">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">get_serializer</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.orm.get_serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a serializer register as <em>name</em>. If the serializer is not
+available an exception will raise. A common use usage pattern:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&#39;json&#39;</span><span class="p">)</span>
+<span class="n">s</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="register-serializer">
+<h3>Register serializer<a class="headerlink" href="#register-serializer" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.register_serializer">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_serializer</tt><big>(</big><em>name</em>, <em>serializer</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a new serializer to the library.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; serializer name (it can override existing serializers).</li>
+<li><strong>serializer</strong> &#8211; an instance or a derived class of a <a class="reference internal" href="#stdnet.orm.Serializer" title="stdnet.orm.Serializer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Serializer</span></tt></a>
+class or a callable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="serializer">
+<h3>Serializer<a class="headerlink" href="#serializer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Serializer">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Serializer</tt><a class="headerlink" href="#stdnet.orm.Serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The stdnet serializer base class.</p>
+</dd></dl>
+
+</div>
+</div>
 <div class="section" id="miscellaneous">
 <h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="populate">
@@ -147,8 +199,9 @@ It removes all keys associated with models.</p>
 <dl class="function">
 <dt id="stdnet.utils.populate">
 <tt class="descclassname">stdnet.utils.</tt><tt class="descname">populate</tt><big>(</big><em>datatype='string'</em>, <em>size=10</em>, <em>start=None</em>, <em>end=None</em>, <em>converter=None</em>, <em>choice_from=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.utils.populate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Utility function for populating lists with random data. Useful for populating
-database with data for testing. Supported data-types</p>
+<dd><p>Utility function for populating lists with random data.
+Useful for populating database with data for fuzzy testing.
+Supported data-types</p>
 <blockquote>
 <div><ul>
 <li><dl class="first docutils">
@@ -169,7 +222,8 @@ with random length between 3 and 10</p>
 <span class="n">populate</span><span class="p">(</span><span class="s">&#39;date&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">1997</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">end</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="last">create a 200 elements list with random datetime.date objects between <em>start</em> and <em>end</em></p>
+<p class="last">create a 200 elements list with random datetime.date objects
+between <em>start</em> and <em>end</em></p>
 </dd>
 </dl>
 </li>
@@ -213,68 +267,50 @@ with random length between 3 and 10</p>
 <dl class="class">
 <dt id="stdnet.PipeLine">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">PipeLine</tt><big>(</big><em>pipe</em>, <em>method</em>, <em>timeout</em><big>)</big><a class="headerlink" href="#stdnet.PipeLine" title="Permalink to this definition">¶</a></dt>
-<dd><p>A pipeline utility class. Used to hold data in <a class="reference internal" href="backends/basestructure.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a> before it is saved into the data server.</p>
+<dd><p>A pipeline utility class. Used to hold data in <a class="reference internal" href="backends/structures.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a> before it is saved into the data server.</p>
 </dd></dl>
 
 </div>
 </div>
-<div class="section" id="module-stdnet.exceptions">
-<span id="exceptions"></span><h2>Exceptions<a class="headerlink" href="#module-stdnet.exceptions" title="Permalink to this headline">¶</a></h2>
-<dl class="exception">
-<dt id="stdnet.exceptions.StdNetException">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">StdNetException</tt><a class="headerlink" href="#stdnet.exceptions.StdNetException" title="Permalink to this definition">¶</a></dt>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.StdNetException">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">StdNetException</tt><a class="headerlink" href="#stdnet.StdNetException" title="Permalink to this definition">¶</a></dt>
 <dd><p>A general StdNet exception</p>
 </dd></dl>
 
-<dl class="exception">
-<dt id="stdnet.exceptions.ModelNotRegistered">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.exceptions.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
+<dl class="class">
+<dt id="stdnet.ImproperlyConfigured">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised when stdnet is somehow improperly configured</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.ModelNotRegistered">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
 registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> for details.</p>
 </dd></dl>
 
-<dl class="exception">
-<dt id="stdnet.exceptions.ObjectNotValidated">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ObjectNotValidated</tt><a class="headerlink" href="#stdnet.exceptions.ObjectNotValidated" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> fails to validate
-(probably required <a class="reference internal" href="model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> are missing from the instance).</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="stdnet.exceptions.ImproperlyConfigured">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.exceptions.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
-<dd><p>stdnet is somehow improperly configured</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="stdnet.exceptions.FieldError">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">FieldError</tt><a class="headerlink" href="#stdnet.exceptions.FieldError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic Field error</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="stdnet.exceptions.MultiFieldError">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">MultiFieldError</tt><a class="headerlink" href="#stdnet.exceptions.MultiFieldError" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.exceptions.FieldError" title="stdnet.exceptions.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">FieldError</span></tt></a> for :class:stdnet.orm.MultiField`.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="stdnet.exceptions.FieldValueError">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.exceptions.FieldValueError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raised when passing a wrong value to a field method</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="stdnet.exceptions.QuerySetError">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.exceptions.QuerySetError" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.exceptions.StdNetException" title="stdnet.exceptions.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised during a <a class="reference internal" href="model/query.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
+<dl class="class">
+<dt id="stdnet.QuerySetError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.QuerySetError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised during a <a class="reference internal" href="model/models.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
 evaluation.</p>
 </dd></dl>
 
-<dl class="exception">
-<dt id="stdnet.exceptions.ObjectNotFound">
-<em class="property">exception </em><tt class="descclassname">stdnet.exceptions.</tt><tt class="descname">ObjectNotFound</tt><a class="headerlink" href="#stdnet.exceptions.ObjectNotFound" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.exceptions.QuerySetError" title="stdnet.exceptions.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">QuerySetError</span></tt></a> raised when an object is not found.</p>
+<dl class="class">
+<dt id="stdnet.FieldError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldError</tt><a class="headerlink" href="#stdnet.FieldError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic Field error</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.FieldValueError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.FieldValueError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.FieldError" title="stdnet.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldError</span></tt></a> raised when passing a wrong
+value to a field method</p>
 </dd></dl>
 
 </div>
@@ -285,9 +321,11 @@ evaluation.</p>
         </div>
       </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
-  <img class="logo" width="128" height="128" src="" alt="Logo"/>
-</a></p>
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="index.html">
+  <img class="logo" width="128" height="128" src="_static/net.jpg" alt="Logo"/>
+</a>
+</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Internals and Utilities</a><ul>
@@ -298,25 +336,28 @@ evaluation.</p>
 <li><a class="reference internal" href="#flush-models">Flush Models</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#serialization">Serialization</a><ul>
+<li><a class="reference internal" href="#get-serializer">Get serializer</a></li>
+<li><a class="reference internal" href="#register-serializer">Register serializer</a></li>
+<li><a class="reference internal" href="#serializer">Serializer</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
 <li><a class="reference internal" href="#populate">Populate</a></li>
 <li><a class="reference internal" href="#pipeline">Pipeline</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-stdnet.exceptions">Exceptions</a></li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="backends/backends.html"
-                        title="previous chapter">Database backend interface</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="contrib/index.html"
-                        title="next chapter">Battery Included</a></p>
+  <p class="topless"><a href="contributing.html"
+                        title="previous chapter">Contributing</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="sources/utility.txt"
+    <li><a href="_sources/utility.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -346,12 +387,9 @@ evaluation.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="contrib/index.html" title="Battery Included"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="backends/backends.html" title="Database backend interface"
+          <a href="contributing.html" title="Contributing"
              >previous</a> |</li>
-        <li><a href="index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

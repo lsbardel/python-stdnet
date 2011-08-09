@@ -6,23 +6,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Object Relational Mapper &mdash; Python StdNet v0.5.5 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <title>Object Relational Mapper &mdash; Python StdNet v0.6.0 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.5.5',
+        VERSION:     '0.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.5.5 documentation" href="../index.html" />
-    <link rel="next" title="StdNet Models" href="models.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
+    <link rel="next" title="Model and Query API" href="models.html" />
     <link rel="prev" title="Python StdNet" href="../index.html" /> 
   </head>
   <body>
@@ -36,12 +36,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="StdNet Models"
+          <a href="models.html" title="Model and Query API"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../index.html" title="Python StdNet"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,7 +55,7 @@
 <p><a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> (ORM) in
 computer software is a programming technique for converting data between incompatible
 type systems in databases and object-oriented programming languages.</p>
-<p>There are two famous ORM for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
+<p>There are two well known ORMs for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
 Both of them are fully feature open-source libraries with an incredible community
 of users and developers.
 At the moment, they are best suited for traditional
@@ -67,36 +67,19 @@ where several applications will be added.</p>
 <p><strong>Contents</strong></p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="models.html">StdNet Models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models.html#creating-models">Creating Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#register-a-model">Register A Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#data-server-metaclass">Data Server Metaclass</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model and Query API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#registration">Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#query">Query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#search-engine">Search Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#signals">Signals</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="fields.html">Scalar Fields</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#field-base-class">Field Base Class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#atomfield">AtomField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#integerfield">IntegerField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#booleanfield">BooleanField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#autofield">AutoField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#floatfield">FloatField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#datefield">DateField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#symbolfield">SymbolField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#charfield">CharField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#foreignkey">ForeignKey</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="structure.html">Data-structure Fields</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="structure.html#listfield">ListField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structure.html#setfield">SetField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structure.html#hashfield">HashField</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structure.html#manytomanyfield">ManyToManyField</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="query.html">Executing Queries</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="query.html#creating-objects">Creating objects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="query.html#retrieving-objects">Retrieving objects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="query.html#queryset-api-reference">QuerySet API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#base-classes">Base Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#atom-fields">Atom Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#object-type-fields">Object Type Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#data-structure-fields">Data-structure Fields</a></li>
 </ul>
 </li>
 </ul>
@@ -108,18 +91,20 @@ where several applications will be added.</p>
         </div>
       </div>
       <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
-  <img class="logo" width="128" height="128" src="" alt="Logo"/>
-</a></p>
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="128" height="128" src="../_static/net.jpg" alt="Logo"/>
+</a>
+</p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="../index.html"
                         title="previous chapter">Python StdNet</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="models.html"
-                        title="next chapter">StdNet Models</a></p>
+                        title="next chapter">Model and Query API</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/index.txt"
+    <li><a href="../_sources/model/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -149,12 +134,12 @@ where several applications will be added.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="StdNet Models"
+          <a href="models.html" title="Model and Query API"
              >next</a> |</li>
         <li class="right" >
           <a href="../index.html" title="Python StdNet"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.5.5 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

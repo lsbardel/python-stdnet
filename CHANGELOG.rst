@@ -1,4 +1,4 @@
-Ver. 0.6.0 - Development
+Ver. 0.6.0 - 2011 Aug 9
 ============================
 * **New database schema incompatible with previous versions**.
 * This is a major release which brings into production a vast array
@@ -83,8 +83,7 @@ Ver. 0.5.2 - 2011 Mar 31
 * This version brings some important bug fixes with tests and preliminary work on C extensions
   based on ``hiredis``.
 * Bug fix in :meth:`stdnet.orm.IntegerField.to_python`.
-* Added registration utilities in :mod:`stdnet.orm`. Check :ref:`the documentation <utility-registration>`
-  for more information.
+* Added registration utilities in :mod:`stdnet.orm`.
 * Bug fix in :class:`stdnet.orm.StdModel` class caused by the lack of a ``__ne__`` operator.
 * Added ``__hash__`` operator, unique across different models, not just instances.
 * Added experimental :mod:`stdnet.contrib.searchengine` application. Very much alpha.

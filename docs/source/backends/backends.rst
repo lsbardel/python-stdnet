@@ -13,6 +13,7 @@ be of different types:
 	* Sets
 	* Sorted Sets
 	* Hash tables
+	* Timeseries if you use the redis branch from lsbardel_.
 	
 In other words, you can look at redis as a data structures server,
 the networked equivalent of the
@@ -28,12 +29,12 @@ data can be loaded back in memory. If you need speed, Redis is great solution.
 Model data
 ===============
 
-Each :class:`stdnet.orm.StdModel` class is mapped to a redis **Hash table**.
-The hash table key is uniquely evaluated by the model hash.
-The hash fields are the model instances ids while values are JSON_
-representation of the :ref:`scalar fields <atomfields>` and
-:ref:`atom fields <objectfields>`.
-Therefore, retrieving a model instance from its `id` is a O(1) operation.
+Each :class:`stdnet.orm.StdModel` instance is mapped to a redis **Hash table**.
+The hash table key is uniquely evaluated by the model hash and
+the *id* of the model instance.
+
+The hash fields and values are given by the field name and values of the
+model instance.
 
 
 Indexes
@@ -65,3 +66,4 @@ API
 
 .. _Redis: http://redis.io/
 .. _JSON: http://www.json.org/
+.. _lsbardel: https://github.com/lsbardel/redis

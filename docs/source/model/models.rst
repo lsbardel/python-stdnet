@@ -11,10 +11,8 @@ Model
 
 The StdNet Object Relational Mapper presents a method of
 associating user-defined Python classes, referred as **models**,
-with :class:`stdnet.HashTable` structures in
-a :class:`stdnet.BackendDataServer`.
-These python classes
-are referred as **models** and are subclasses of
+with data in a :class:`stdnet.BackendDataServer`.
+These python classes are subclasses of
 :class:`stdnet.orm.StdModel`.
 
 

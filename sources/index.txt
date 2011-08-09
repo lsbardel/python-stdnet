@@ -12,7 +12,7 @@ Python StdNet
 It includes a modified version of redis-py_ compatible with ``python 3``.
 There are no dependencies
 and the library requires ``python 2.6`` or above, including ``python 3``.
-There are over 200 tests with a coverage of about 75%.
+There are over 250 tests with a coverage of about 75%.
 
 The library is stable, used in production and continuously maintained.
 
@@ -22,13 +22,15 @@ First steps
 ===============
 
 **From scratch:**
-:ref:`Overview and Installation <intro-overview>`
+:ref:`Overview and Installation <intro-overview>` |
+:ref:`Tutorial <tutorial>`
 
-**Models and QuerySets:**
-:ref:`Executing queries <model-query>` | :ref:`Model API <model-model>`  
+**The API:**
+:ref:`Model API <model-model>` |
+:ref:`Fields API <model-field>`
 
 **Examples:**
-:ref:`Timeseries <timeseries-example>` | :ref:`Portfolio <portfolio-example>` |
+:ref:`Timeseries <timeseries-example>` |
 :ref:`Twitter Clone<twitter-example>`
 
 .. _contents:
@@ -41,11 +43,11 @@ Contents
    
    model/index
    backends/index
-   utility
    contrib/index
    examples/index
    changelog
    contributing
+   utility
 
 Indices and tables
 ==================

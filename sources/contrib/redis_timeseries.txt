@@ -4,30 +4,23 @@
 Redis timeseries API
 =============================
 
-**An implementation of a timeseries data structure in** redis_.
-
 :Source: https://github.com/lsbardel/redis
 :Python Client: http://lsbardel.github.com/python-stdnet/
 
 Timeseries is an important data-structure not yet supported in redis,
 it is represented by a unique sorted associative container,
-that is to say it associates ordered unique times to values. 
+that is to say it associates ordered unique times to values.
 
-Values, which can be anything you like, are ordered with respect to times (double values),
+Values, which can be anything you like, are ordered with respect to double values (times),
 and can be accessed by times or rank (the order of times in the timeseries).
-Times are unique, that is to say in a timeseries
-there will be only one value associated with a time.
+Times are unique so that there will be only one value associated with a given time.
 
-Internally, values are added to a hash table mapping them to times.
-At the same time they are added to a skip list to maintain
+Internally, values are added to a skip list which maintain
 sorting with respect to times.
-
-Implementation is almost equivalent to zsets, and they look like zsets. But they are not zsets!
 
 Performance::
 
-	O(log(N)) on INSERT and REMOVE operations
-	O(1) on RETRIEVAL via times
+	O(log(N)) on INSERT REMOVE and RETRIEVAL via times
 
 **Contents**
 
@@ -39,7 +32,7 @@ Commands
 ================
 There are currently seven commands which cover the basic operations of a timeseries. I tried to keep them to a minimum
 but there is scope to add more.
- 
+
 TSLEN
 ----------
 Size of timeseries at ``key``, that is the number of ``rows`` in the timeseries::
@@ -85,7 +78,7 @@ TSRANGEBYTIME
 ------------------
 Range by times::
 
-    tsrangebytime time_start time_end <flag>
+    tsrangebytime key time_start time_end <flag>
  
 Where ``time_start`` and ``time_end`` are double (timestaps) and ``<flag>``
 is the same as in ``TSRANGE``.
@@ -94,17 +87,8 @@ TSCOUNT
 ------------------
 Count element in range by ``time``::
 
-	tscount time_start,time_end
+	tscount key time_start,time_end
 	
-	
-TSUNION
------------------------------------------
-**Not implemented**	
-	
-TSINTERCEPTION
------------------------------------------
-**Not implemented**
-
 
 Use cases
 ================

@@ -13,5 +13,4 @@ available in :mod:`stdnet`.
    :maxdepth: 1
    
    timeseries
-   portfolio
    twitter

@@ -2,7 +2,6 @@ include LICENSE
 include MANIFEST.in
 include README.rst
 include CHANGELOG.rst
-include requirements.txt
 include runtests.py
 include docs/make.bat
 include docs/Makefile

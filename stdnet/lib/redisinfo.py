@@ -20,21 +20,45 @@ init_data = {'set':{'count':0,'size':0},
 OBJECT_VERSION = StrictVersion('2.4.0')
 
 
+class RedisKeyData(orm.FakeModel):
+    
+    def __init__(self, key, typ, len, ttl, enc):
+        self.key = key
+        self.type = typ
+        self.length = len
+        self.time_to_expiry = ttl
+        self.encoding = enc
+        
+    def __unicode__(self):
+        return self.key
+    
+    def delete(self):
+        pass
+
+
 class RedisStats(object):
     
     def __init__(self, rpy, version = None):
         self.version = version
         self.r = rpy
-        self.data = init_data.copy()
+        self._data = init_data.copy()
 
+    @property
+    def data(self):
+        self.all()
+        return self._data
+      
+    @property
     def keys(self):
-        return self.r.keys()
+        if not hasattr(self,'_keys'):
+            self._keys = self.r.keys()
+        return self._keys
     
     def size(self):
         return self.r.dbsize()
     
     def incr_count(self, t, s = 0):
-        d = self.data[t]
+        d = self._data[t]
         d['count'] += 1
         d['size'] += s
         
@@ -44,29 +68,24 @@ class RedisStats(object):
     def __iter__(self):
         return iter(self.data)
     
-    def cached_data(self):
-        if not hasattr(self,'_data'):
-            self._data = self.keys()
-        return self._data
-    
     def _iterate(self, data):
-        type_length = self.type_length
+        get_key = self.get_key
+        rpy = self.r
         for key in data:
             keys = key.decode()
-            typ,len,ttl,enc = type_length(key)
-            if ttl == -1:
-                ttl = False
-            yield (keys,typ,len,ttl)
+            yield get_key(key)
     
     def all(self):
         '''Return a generator over info on all keys'''
-        return self._iterate(self.cached_data())
+        if not hasattr(self,'_all'):
+            self._all = list(self._iterate(self.keys))
+        return self._all
     
     def __getitem__(self, slic):
         data = self.cached_data()[slic]
         return self._iterate(data)
     
-    def type_length(self, key):
+    def get_key(self, key):
         '''Retrive the type and length of a redis key.
         '''
         r = self.r
@@ -106,7 +125,10 @@ class RedisStats(object):
             self.incr_count('unknown')
             typ = None
             l = None
-        return typ,l,tt[1],enc
+        ttl = tt[1]
+        if ttl == -1:
+            ttl = False
+        return RedisKeyData(key,typ,l,ttl,enc)
 
     
 class RedisDbData(orm.FakeModel):
@@ -134,13 +156,15 @@ class RedisDbData(orm.FakeModel):
         
     @property
     def db(self):
-        return self
+        return self.id
     
     def __unicode__(self):
         return '{0}'.format(self.id)
     
     def stats(self):
-        return RedisStats(self.rpy, self.version)
+        if not hasattr(self,'_stats'):
+            self._stats = RedisStats(self.rpy, self.version)
+        return self._stats
 
 
 class RedisData(list):

@@ -1,3 +1,8 @@
+Ver. 0.6.1 - Development
+============================
+* Refactored redisinfo for a better redis monitor.
+* **289 regression tests** with **78%** coverage.
+
 Ver. 0.6.0 - 2011 Aug 9
 ============================
 * **New database schema incompatible with previous versions**.

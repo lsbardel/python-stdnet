@@ -14,10 +14,7 @@ def get_model_from_hash(hash):
 def hashmodel(model, library = None):
     '''Calculate the Hash id of metaclass ``meta``'''
     library = library or 'python-stdnet'
-    if hasattr(model,'_meta'):
-        meta = model._meta
-    else:
-        meta = model
+    meta = model._meta
     sha = hashlib.sha1(to_bytestring('{0}({1})'.format(library,meta)))
     hash = sha.hexdigest()[:8]
     meta.hash = hash

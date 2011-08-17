@@ -44,7 +44,8 @@ class keyconverter(object):
     
     
 class PipeLine(object):
-    '''A pipeline utility class. Used to hold data in :class:`stdnet.Structure` before it is saved into the data server.'''
+    '''A pipeline utility class. Used to hold data in :class:`stdnet.Structure`
+ before it is saved into the data server.'''
     def __init__(self, pipe, method, timeout):
         self.pipe = pipe
         self.method = method
@@ -53,21 +54,26 @@ class PipeLine(object):
     def __repr__(self):
         return self.pipe.__repr__()
         
+        
 class HashPipe(PipeLine):
     def __init__(self, timeout):
         super(HashPipe,self).__init__({},'hash',timeout)
+        
         
 class TsPipe(PipeLine):
     def __init__(self, timeout):
         super(TsPipe,self).__init__({},'ts',timeout)
 
+
 class SetPipe(PipeLine):
     def __init__(self, timeout):
         super(SetPipe,self).__init__(set(),'unordered_set',timeout)
+
         
 class OsetPipe(PipeLine):
     def __init__(self, timeout):
         super(OsetPipe,self).__init__(set(),'ordered_set',timeout)        
+
     
 class ListPipe(PipeLine):
     def __init__(self, timeout):

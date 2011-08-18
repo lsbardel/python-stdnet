@@ -295,7 +295,9 @@ class RedisInfo(object):
 class RedisInfo22(RedisInfo):
     names = ('Server','Memory','Persistence','Diskstore',
              'Replication','Clients','Stats','CPU')
-    converters = {'last_save_time': 'date'}
+    converters = {'last_save_time': ('date',None),
+                  'uptime_in_seconds': ('timedelta','uptime'),
+                  'uptime_in_days':None}
     
     def makekeys(self):
         return self._makekeys(self.info['Keyspace'])
@@ -308,14 +310,21 @@ class RedisInfo22(RedisInfo):
         nicebool = self.formatter.format_bool
         boolval = (0,1)
         for k,v in iteritems(self.info[name]):
+            add = True
             if k in self.converters:
-                formatter = getattr(self.formatter,
-                                    'format_{0}'.format(self.converters[k]))
-                v = formatter(v)
+                fdata = self.converters[k]
+                if fdata:
+                    formatter = getattr(self.formatter,
+                                        'format_{0}'.format(fdata[0]))
+                    k = fdata[1] or k
+                    v = formatter(v)
+                else:
+                    add = False
             elif v in boolval:
                 v = nicebool(v)
-            pa.append({'name':nicename(k),
-                       'value':v})
+            if add:
+                pa.append({'name':nicename(k),
+                           'value':v})
             
     def fill(self):
         info = self.info

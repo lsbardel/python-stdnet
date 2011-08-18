@@ -1,3 +1,10 @@
+**A Python 3 compatible object relational mapper for Redis remote data structures.**
+
+The data is owned by different, configurable back-end databases and it is accessed using a
+light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 
+The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
+
+--
 
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
@@ -6,13 +13,6 @@
 :Mailing List: https://groups.google.com/group/python-stdnet
 :Keywords: server, database, cache, redis, orm
 
---
-
-**A Python 3 compatible object relational mapper for Redis remote data structures.**
-
-The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 
-The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
 __ http://github.com/lsbardel/python-stdnet
 __ http://lsbardel.github.com/python-stdnet/

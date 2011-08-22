@@ -590,6 +590,7 @@ which can be rather useful.
 class ByteField(CharField):
     '''A field which contains binary data.
 In python this is converted to `bytes`.'''
+    type = 'bytes'
     internal_type = 'bytes'
     
     def get_encoder(self, params):

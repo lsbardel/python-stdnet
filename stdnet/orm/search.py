@@ -3,7 +3,7 @@ from inspect import isgenerator
 from datetime import datetime
 
 from .models import StdModel
-from .fields import DateTimeField
+from .fields import DateTimeField, CharField
 from .signals import post_save, post_delete
 
 
@@ -38,7 +38,7 @@ expose the base functionalities for full text-search on model instances.
         self.word_middleware = []
         self.add_processor(stdnet_processor())
         
-    def register(self, model, related = None):
+    def register(self, model, related = None, tag_field = 'tags'):
         '''Register a model to the search engine. By registering a model,
 every time an instance is created, it will be indexed by the
 search engine.
@@ -50,6 +50,10 @@ search engine.
         if self.last_indexed not in model._meta.dfields:
             field = DateTimeField(required = False)
             field.register_with_model('last_indexed',model)
+        if tag_field:
+            field = CharField()
+            field.register_with_model(tag_field,model)
+        model._tag_field = tag_field
         model._index_related = related or ()
         update_model = UpdateSE(self)
         delete_model = RemoveFromSE(self)

@@ -83,8 +83,8 @@ def autocomplete_processor(words):
             texts.extend(auto.search(autotext))
             if len(texts) == N:
                 texts = otexts
-
-
+    
+    
 class SearchEngine(orm.SearchEngine):
     """Search engine driver.
 Adapted from
@@ -217,7 +217,7 @@ words in text.'''
         return model.objects.from_queries(qsets)
         
     def add_tag(self, item, text):
-        '''A a tag to an object.
+        '''Add a tag to an object.
     If the object already has the tag associated with it do nothing.
     
     :parameter item: instance of :class:`stdnet.orm.StdModel`.
@@ -289,8 +289,7 @@ words in text.'''
                 return w
         except Word.DoesNotExist:
             return Word(id = word, tag = tag).save()
-        
-        
+   
 
 
 

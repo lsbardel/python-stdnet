@@ -552,7 +552,10 @@ which can be rather useful.
             if not value:
                 value = {}
             else:
-                value = self.loads(value)
+                try:
+                    value = self.loads(value)
+                except:
+                    value = None
         return value
     
     def serialize(self, value, transaction = None):

@@ -1,7 +1,9 @@
 Ver. 0.6.1 - Development
 ============================
+* Fixed bug in :class:`stdnet.orm.Field` when using default values. Default values
+  are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
-* **289 regression tests** with **78%** coverage.
+* **290 regression tests** with **78%** coverage.
 
 Ver. 0.6.0 - 2011 Aug 9
 ============================

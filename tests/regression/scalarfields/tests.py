@@ -145,6 +145,14 @@ class TestDateData(TestScalarBase):
         self.assertEqual(v.dt1,None)
         self.assertEqual(v.dt2.date(),date.today())
         
+    def testDefaultdate(self):
+        v = DateData().save()
+        self.assertEqual(v.dt1,None)
+        self.assertEqual(v.dt2.date(),date.today())
+        v.dt2 = None
+        v.save()
+        self.assertEqual(v.dt2.date(),date.today())
+        
 
 class TestBoolField(TestScalarBase):
     model = NumericData

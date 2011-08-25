@@ -84,30 +84,36 @@ For example::
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the\
  given lookup parameters.'''
-        if self.fargs:
-            c = self.fargs.copy()
-            c.update(kwargs)
-            kwargs = c
-        return self.__class__(self._meta,
-                              fargs=kwargs,
-                              eargs=self.eargs,
-                              filter_sets=self.filter_sets,
-                              ordering=self.ordering,
-                              queries=self.queries)
+        if kwargs:
+            if self.fargs:
+                c = self.fargs.copy()
+                c.update(kwargs)
+                kwargs = c
+            return self.__class__(self._meta,
+                                  fargs=kwargs,
+                                  eargs=self.eargs,
+                                  filter_sets=self.filter_sets,
+                                  ordering=self.ordering,
+                                  queries=self.queries)
+        else:
+            return self
     
     def exclude(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that do not match\
  the given lookup parameters.'''
-        if self.eargs:
-            c = self.eargs.copy()
-            c.update(kwargs)
-            kwargs = c
-        return self.__class__(self._meta,
-                              fargs=self.fargs,
-                              eargs=kwargs,
-                              filter_sets=self.filter_sets,
-                              ordering=self.ordering,
-                              queries=self.queries)
+        if kwargs:
+            if self.eargs:
+                c = self.eargs.copy()
+                c.update(kwargs)
+                kwargs = c
+            return self.__class__(self._meta,
+                                  fargs=self.fargs,
+                                  eargs=kwargs,
+                                  filter_sets=self.filter_sets,
+                                  ordering=self.ordering,
+                                  queries=self.queries)
+        else:
+            return self
     
     def sort_by(self, ordering):
         '''Sort the query by the given field'''

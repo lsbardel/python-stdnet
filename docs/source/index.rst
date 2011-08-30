@@ -1,7 +1,7 @@
 .. _stdnet-doc:
 
 ======================
-Python StdNet
+Python Stdnet
 ======================
 
 .. rubric:: An object relational mapper library for remote data-structures.

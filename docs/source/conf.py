@@ -76,7 +76,7 @@ if stdnet.sphinxtogithub:
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PythonStdNet.tex', 'Python StdNet Documentation',
+  ('index', 'PythonStdNet.tex', 'Python Stdnet Documentation',
    'Luca Sbardella', 'manual'),
 ]
 

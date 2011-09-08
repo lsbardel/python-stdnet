@@ -221,12 +221,8 @@ will enumerate the number of object to delete. without deleting them.'''
         field = meta.pk
         setattr(self,'id',field.to_python(id))
         for field in meta.scalarfields:
-            name = field.attname
-            if name in data:
-                value = data[name]
-            else:
-                value = field.value_from_data(data)
-            setattr(self,name,field.to_python(value))
+            value = field.value_from_data(data)
+            setattr(self,field.attname,field.to_python(value))
         self.afterload()
     
 

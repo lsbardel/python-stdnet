@@ -117,7 +117,9 @@ Save or updated an instance of a model to the back-end database:
         
 :parameter obj: instance of :ref:`StdModel <model-model>`
                 to add/update to the database
-:parameer transaction: optional transaction instance.'''
+:parameer transaction: optional transaction instance.
+
+Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         commit = False
         if not transaction:
             commit = True
@@ -125,7 +127,7 @@ Save or updated an instance of a model to the back-end database:
             
         # Save the object in the back-end
         if not obj.is_valid():
-            raise FieldError(json.dumps(obj.errors))
+            raise FieldValueError(json.dumps(obj.errors))
         
         # We are updating the object,
         # therefore we need to clean up indexes first

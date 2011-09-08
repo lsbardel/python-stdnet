@@ -65,7 +65,20 @@ Serializer
 .. autoclass:: stdnet.orm.Serializer
    :members:
    :member-order: bysource
+   
+   
+JSON utilities
+~~~~~~~~~~~~~~~~~~~~~~
 
+.. autoclass:: stdnet.utils.jsontools.JSONDateDecimalEncoder
+   :members:
+   :member-order: bysource
+
+
+.. autoclass:: stdnet.utils.jsontools.date_decimal_hook
+   :members:
+   :member-order: bysource
+      
 
 Miscellaneous
 ============================

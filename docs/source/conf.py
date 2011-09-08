@@ -42,7 +42,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Python StdNet'
+project = 'python stdnet'
 copyright = '2010-2011, Luca Sbardella'
 
 html_theme = 'celery'

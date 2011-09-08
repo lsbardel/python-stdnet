@@ -19,11 +19,8 @@ def makeoptions():
                       action="store",
                       dest="test_type",
                       default='regression',
-                      help="Test type, possible choices are:\n\
-                      * regression (default)\n\
-                      * bench\n\
-                      * profile\n\
-                      * fuzzy")
+                      help="Test type, possible choices are:\
+ regression (default), bench, profile, fuzzy.")
     parser.add_option("-f", "--fail",
                       action="store_false",
                       dest="can_fail",

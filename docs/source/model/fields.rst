@@ -11,6 +11,14 @@ is the list of database fields it defines. Fields are specified by class attribu
 They are the equivalent to django Fields and therefore
 the equivalent of columns in a traditional relational databases.
 
+.. note:: There is an important difference between stdnet fields and fields
+    in a traditional relational database. Stdnet fields can be added, removed or
+    changed without requiring any time consuming database migration!
+    
+    This is an added bonus which can be of high importance when prototyping but
+    it can lead to loss of data if a user abuses it.
+ 
+
 .. _fieldbaseclasses:
 
 Base Classes

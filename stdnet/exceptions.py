@@ -33,7 +33,8 @@ class MultiFieldError(StdNetException):
 
 class FieldValueError(FieldError):
     '''A :class:`stdnet.FieldError` raised when passing a wrong
-value to a field method'''
+value to a field. This exception is cought during the model instance
+validation algorithm in :meth:`stdnet.orm.base.Metaclass.is_valid`.'''
     pass
 
 class QuerySetError(StdNetException):

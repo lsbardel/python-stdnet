@@ -42,13 +42,17 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: index
 
-    If ``True``, the field will create indexes for fast search.
-    An index is implemented as a :class:`stdnet.Set`
-    in the :class:`stdnet.BackendDataServer`. If you don't need to search
-    the field you should set this value to ``False``.
+    If ``True``, the field will create indexes for queries.
+    An index is implemented as a :class:`stdnet.Set` 
+    in the :class:`stdnet.BackendDataServer`.
+    if the :attr:`stdnet.orm.base.Metaclass.ordering` attribute is set
+    the indexes are implemented using :class:`stdnet.OrderedSet`.
+    
+    If you don't need to query the field you should set this value to
+    ``False``, it will save you memory.
     
     .. note:: if ``index`` is set to ``False`` executing queries
-              againsT the field will
+              against the field will
               throw a :class:`stdnet.QuerySetError` exception.
               No database queries are allowed for non indexed fields
               as a design decision (excplicit better than implicit).
@@ -60,13 +64,6 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     If ``True``, the field must be unique throughout the model.
     In this case :attr:`Field.index` is also ``True``.
     Enforced at :class:`stdnet.BackendDataServer` level.
-    
-    Default ``False``.
-
-.. attribute:: ordered
-
-    If ``True``, the field will creates an ordering structure in the
-    backend server.
     
     Default ``False``.
     
@@ -163,7 +160,8 @@ Returns the converted value. Subclasses should override this."""
         return value
     
     def value_from_data(self, data):
-        return None
+        if self.attname in data:
+            return data[self.attname]
     
     def register_with_model(self, name, model):
         '''Called during the creation of a the :class:`stdnet.orm.StdModel`
@@ -494,22 +492,30 @@ the relation from the related object back to self. For example::
     
     
 class JSONField(CharField):
-    '''A JSON field which implements automatic converion to
-and form a dictionary of data.
+    '''A JSON field which implements automatic conversion to
+and from an object and a JSON string. It is the responsability of the
+user making sure the object is JSON serializable.
+
 There are few extra parameters which can be used to customize the
-behaviour and the storage of the JSON data.
+behaviour and how the field is stored in the back-end server.
 
 :parameter encoder_class: The JSON class used for encoding.
-                          A sensible default is available.
+
+    Default: :class:`stdnet.utils.jsontools.JSONDateDecimalEncoder`.
+    
 :parameter decoder_hook: A JSON decoder function.
-                          A sensible default is available.
-:parameter sep: A string separator for building nested JSON data.
+
+    Default: :class:`stdnet.utils.jsontools.date_decimal_hook`.
+    
+:parameter nested: If ``True`` a nested JSON dictionary is build by
+    separating fields with the `__` double underscore separator.
+    This flag is used when saving data to the database. 
                 
                 Default ``None``.
-:parameter as_string: a boolean indicating if data should be serialized
-                      into a string.
-                      If the value is set to ``False``,
-                      the JSON data is stored as a field
+                
+:parameter as_string: a flag indicating how data should be serialized
+    into a string. If the value is set to ``False`` the JSON data
+    is stored as a field
                       of the instance prefixed with the field name
                       and double underscore.
                       If ``True`` it is stored as a json string.
@@ -524,17 +530,18 @@ For example, lets consider the following::
     
 And::
 
-    >>> m = MyModel(name='bla',data={'mean':1,'std':3.5})
+    >>> m = MyModel(name='bla',pv={'': 0.5, 'mean': 1, 'std': 3.5})
     >>> m.cleaned_data
-    {'name':'bla','data__mean':'1','data__std':'3.5'}
+    {'name': 'bla', 'pv': 0.5, 'pv__mean': '1', 'pv__std': '3.5'}
     >>>
     
-The only reason for setting ``as_string`` to ``False`` in a JSONfield
-is that it enables sorting of instances with respect to its fields::
+The reason for setting ``as_string`` to ``False`` is to enable
+sorting of instances with respect to its fields::
 
-    >>> MyModel.objects.all().sort_by('data__std')
+    >>> MyModel.objects.all().sort_by('data__pv__std')
+    >>> MyModel.objects.all().sort_by('-data__pv')
 
-which can be rather useful.
+which can be rather useful feature.
 '''
     type = 'json object'
     internal_type = 'serialized'
@@ -542,7 +549,7 @@ which can be rather useful.
         kwargs['default'] = kwargs.get('default',{})
         self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
         self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
-        self.sep = kwargs.pop('sep',None)
+        self.sep = JSPLITTER if kwargs.pop('sep',None) else None
         self.as_string = kwargs.pop('as_string',True)
         super(JSONField,self).__init__(*args, **kwargs)
         
@@ -558,6 +565,16 @@ which can be rather useful.
                     value = None
         return value
     
+    def _flatgen(self, value, prefix):
+        sp = JSPLITTER
+        if not isinstance(value,dict):
+            yield prefix,self.dumps(value)
+        else:
+            for field,v1 in iteritems(value):
+                key = '{0}{1}{2}'.format(prefix,sp,field) if field else prefix
+                for k,v2 in self._flatgen(v1,key):
+                    yield k,v2
+                    
     def serialize(self, value, transaction = None):
         if value is not None:
             if is_bytes_or_string(value):
@@ -565,26 +582,36 @@ which can be rather useful.
             if self.as_string:
                 value = self.dumps(json_compact(value,self.sep))
             else:
-                name = self.name
-                dumps = self.dumps
-                value = dict((('{0}{1}{2}'.\
-                               format(name,JSPLITTER,field),dumps(v))\
-                              for field,v in iteritems(value)))
+                value = dict(self._flatgen(value, self.name))
         return value
     
     def value_from_data(self, data):
-        if not self.as_string:
-            name = self.name
+        name = self.attname
+        if self.as_string:
+            return data.get(name,None)
+        else:
             loads = self.loads
+            sp = JSPLITTER
             val = {}
             for k,v in iteritems(data):
-                ks = k.split(JSPLITTER)
-                if len(ks) > 1 and ks[0] == name:
-                    val[JSPLITTER.join(ks[1:])] = loads(to_string(v))
+                ks = k.split(sp)
+                if ks[0] == name:
+                    d = val
+                    if len(ks) == 1:
+                        d[''] = loads(v)
+                    else:
+                        for k in ks[1:-1]:
+                            if k not in d:
+                                d[k] = {}
+                            d = d[k]
+                        d[ks[-1]] = loads(v)
             return val
     
     def dumps(self, value):
-        return json.dumps(value, cls=self.encoder_class)
+        try:
+            return json.dumps(value, cls=self.encoder_class)
+        except TypeError as e:
+            raise FieldValueError(str(e))
     
     def loads(self, svalue):
         return json.loads(svalue, object_hook = self.decoder_hook)

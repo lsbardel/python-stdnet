@@ -204,7 +204,7 @@ class Statistics(orm.StdModel):
     
 class Statistics2(orm.StdModel):
     dt = orm.DateField()
-    data = orm.JSONField(sep = '__')
+    data = orm.JSONField(sep = True)
     
     
 class Statistics3(orm.StdModel):

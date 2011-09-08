@@ -41,6 +41,7 @@ Contents
 .. toctree::
    :maxdepth: 1
    
+   overview
    model/index
    backends/index
    contrib/index

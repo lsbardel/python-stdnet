@@ -7,7 +7,6 @@ from decimal import Decimal
 import stdnet
 from stdnet import test
 from stdnet.utils import populate, zip, is_string, to_string, unichr, ispy3k
-from stdnet.exceptions import FieldError
 
 from examples.models import TestDateModel, Statistics, Statistics2,\
                             Page, SimpleModel, Environment, NumericData,\
@@ -106,7 +105,7 @@ class TestNumericData(TestScalarBase):
         self.assertEqual(d.gamma,None)
         
     def testFieldError(self):
-        self.assertRaises(stdnet.FieldError,NumericData().save)
+        self.assertRaises(stdnet.FieldValueError,NumericData().save)
                 
         
 class TestIntegerField(TestScalarBase):
@@ -125,7 +124,7 @@ class TestIntegerField(TestScalarBase):
     def testNotValidated(self):
         p = Page().save()
         p = Page(in_navigation = 'bla')
-        self.assertRaises(FieldError,p.save)
+        self.assertRaises(stdnet.FieldValueError,p.save)
         
     def testZeroValue(self):
         p = Page(in_navigation = 0)
@@ -226,6 +225,12 @@ class TestJsonField(test.TestCase):
         a = Statistics.objects.get(id = a.id)
         self.assertEqual(a.data,{})
         
+    def testValueError(self):
+        a = Statistics(dt = date.today(),
+                       data = {'mean': self})
+        self.assertFalse(a.is_valid())
+        self.assertRaises(stdnet.FieldValueError,a.save)
+        
 
 class TestJsonFieldSep(test.TestCase):
     
@@ -263,15 +268,24 @@ class TestJsonFieldSep(test.TestCase):
         
 
 class TestJsonFieldAsData(TestScalarBase):
-    '''Test a model with a JSONField which expand as instance fields.'''
+    '''Test a model with a JSONField which expand as instance fields.
+The `as_string` atttribute is set to ``False``.'''
     model = Statistics3
-    
-    def make(self):
-        data = {'mean': 1.0,
+    def_data = {'mean': 1.0,
                 'std': 5.78,
                 'pv': 3.2,
                 'name': 'bla',
                 'dt': date.today()}
+    
+    def_data2 = {'': 3.2,
+                 'ts': {'a':[1,2,3,4,5,6,7],
+                        'b':[10,11,12]},
+                 'mean': {'1y':1.0,'2y':1.1},
+                 'std': {'1y':4.0,'2y':5.1},
+                 'dt': datetime.now()}
+    
+    def make(self, data = None):
+        data = data or self.def_data
         return self.model(name = 'bla', data = data)
         
     def testMeta(self):
@@ -295,6 +309,24 @@ class TestJsonFieldAsData(TestScalarBase):
         self.assertEqual(m.data['pv'],3.2)
         self.assertEqual(m.data['dt'],date.today())
         self.assertEqual(m.data['name'],'bla')
+        
+    def testmakeEmpty(self):
+        '''Here we test when we have a key which is empty.'''
+        m = self.make(self.def_data2)
+        self.assertTrue(m.is_valid())
+        cdata = m.cleaned_data
+        self.assertEqual(len(cdata),9)
+        self.assertTrue('data' in cdata)
+        self.assertEqual(cdata['data__mean__1y'],'1.0')
+        obj = m.save()
+        obj = self.model.objects.get(id = obj.id)
+        self.assertEqual(obj.data['dt'].date(),date.today())
+        
+    def testmakeEmpty2(self):
+        m = self.make([1,2,3,4])
+        obj = m.save()
+        obj = self.model.objects.get(id = obj.id)
+        self.assertEqual(obj.data,{'':[1,2,3,4]})
         
     
 class TestByteField(test.TestCase):

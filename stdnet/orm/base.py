@@ -163,8 +163,9 @@ The key is an encoded binary string. For example::
         return self.basekey('ids')
     
     def is_valid(self, instance):
-        '''Perform validation and stores serialized data, indexes and errors.
-Return ``True`` is the instance is ready to be saved to database.'''
+        '''Perform validation for *instance* and stores serialized data,
+indexes and errors into local cache.
+Return ``True`` if the instance is ready to be saved to database.'''
         v = {}
         setattr(instance,self.VALATTR,v)
         data = v['data'] = {}
@@ -177,17 +178,22 @@ Return ``True`` is the instance is ready to be saved to database.'''
             if value is None:
                 value = field.get_default()
                 setattr(instance,name,value)
-            svalue = field.serialize(value)
-            if (svalue is None or svalue is '') and field.required:
-                errors[name] = "Field '{0}' is required for '{1}'.".format(name,self)
+            try:
+                svalue = field.serialize(value)
+            except FieldValueError as e:
+                errors[name] = str(e)
             else:
-                if isinstance(svalue, dict):
-                    data.update(svalue)
+                if (svalue is None or svalue is '') and field.required:
+                    errors[name] = "Field '{0}' is required for '{1}'."\
+                                    .format(name,self)
                 else:
-                    if svalue is not None:
-                        data[name] = svalue
-                    if field.index:
-                        indexes.append((field,svalue))
+                    if isinstance(svalue, dict):
+                        data.update(svalue)
+                    else:
+                        if svalue is not None:
+                            data[name] = svalue
+                        if field.index:
+                            indexes.append((field,svalue))
         return len(errors) == 0
                 
     def table(self, transaction = None):

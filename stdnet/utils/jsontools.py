@@ -34,9 +34,12 @@ def json_compact(data, sep = '_'):
     
     
 class JSONDateDecimalEncoder(json.JSONEncoder):
-    """
-    Provide custom serializers for JSON-RPC.
-    """
+    """The default JSON encoder used by stdnet. It provides
+JSON serialization for three additional object, `datetime.date`,
+`datetime.datetime` and `decimal.Decimal` from the standard library.
+
+.. seealso:: It is the default encoder for :class:`stdnet.orm.JSONField`
+"""
     def default(self, obj):
         if isinstance(obj,datetime):
             return {'__datetime__':totimestamp2(obj)}
@@ -45,10 +48,12 @@ class JSONDateDecimalEncoder(json.JSONEncoder):
         elif isinstance(obj, Decimal):
             return {'__decimal__':str(obj)}
         else:
-            raise ValueError("%r is not JSON serializable" % (obj,))
+            return super(JSONDateDecimalEncoder,self).default(obj)
 
 
 def date_decimal_hook(dct):
+    '''The default JSON decoder hook. It is the inverse of
+:class:`stdnet.utils.jsontools.JSONDateDecimalEncoder`.'''
     if '__datetime__' in dct:
         return todatetime(dct['__datetime__'])
     elif '__date__' in dct:
@@ -70,5 +75,6 @@ class JSONRPCEncoder(json.JSONEncoder):
         if isinstance(obj, date) or isinstance(obj, datetime):
             return date2timestamp(obj)
         else:
-            raise exceptions.JSONEncodeException("%r is not JSON serializable" % (obj,))
+            raise exceptions.JSONEncodeException(\
+                            "%r is not JSON serializable" % (obj,))
         

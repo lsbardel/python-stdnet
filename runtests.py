@@ -1,47 +1,40 @@
 #!/usr/bin/env python
-
 import os
 import sys
-from optparse import OptionParser
+import argparse
 
 import stdnet
 
 
 def makeoptions():
-    parser = OptionParser()
-    parser.add_option("-v", "--verbosity",
-                      type = int,
-                      action="store",
-                      dest="verbosity",
-                      default=1,
-                      help="Tests verbosity level, one of 0, 1, 2 or 3")
-    parser.add_option("-t", "--type",
-                      action="store",
-                      dest="test_type",
-                      default='regression',
-                      help="Test type, possible choices are:\
- regression (default), bench, profile, fuzzy.")
-    parser.add_option("-f", "--fail",
-                      action="store_false",
-                      dest="can_fail",
-                      default=True,
-                      help="If set, the tests won't run if there is\
- an import error in tests")
-    parser.add_option("-s", "--server",
-                      action="store",
-                      dest="server",
-                      default='',
-                      help="Backend server where to run tests")
-    parser.add_option("-p", "--parser",
-                      action="store",
-                      dest="parser",
-                      default='',
-                      help="Specify the python parser.")
-    parser.add_option("-i", "--include",
-                      action="store",
-                      dest="itags",
-                      default='',
-                      help="Include develepment tags, comma separated")
+    parser = argparse.ArgumentParser(description='______ STDNET TEST SUITE',
+                                     epilog="Have fun!")
+    parser.add_argument('labels',nargs='*',
+                        help='Optional test labels to run. If not provided\
+ all tests are run. To see available labels use the -l option.')
+    parser.add_argument('-v', '--verbosity', type=int, dest='verbosity',
+                        default=1, action='store',
+                        help='Tests verbosity level, one of 0, 1, 2 or 3')
+    parser.add_argument('-t', '--type', dest='test_type',
+                        default='regression', action='store',
+                        help='Test type, possible choices are:\
+ regression (default), bench, profile, fuzzy.')
+    parser.add_argument('-f', '--fail', action="store_false",
+                        dest="can_fail", default=True,
+                        help="If set, the tests won't run if there is\
+ an import error in tests. Useful for checking import errors.")
+    parser.add_argument("-s", "--server", action="store",
+                        dest="server", default='',
+                        help="Backend server where to run tests")
+    parser.add_argument("-l", "--list", action="store_true",
+                        dest="list_labels", default=False,
+                        help="List all test labels without performing tests.")
+    parser.add_argument("-p", "--parser", action="store",
+                        dest="parser", default='',
+                        help="Specify the python parser.")
+    parser.add_argument("-i", "--include", action="store",
+                        dest="itags", default='', nargs='*',
+                        help="Include develepment tags, comma separated")
     return parser
 
     
@@ -63,20 +56,20 @@ def addpath(test_type):
     
 
 if __name__ == '__main__':
-    options, tags = makeoptions().parse_args()
-    test_type = options.test_type
-    paths = addpath(test_type)
+    options = makeoptions().parse_args()
+    paths = addpath(options.test_type)
     
     from stdnet.conf import settings
     from stdnet.test import run
-    itags  = options.itags.replace(' ','')
-    itags  = None if not itags else itags.split(',')
     settings.REDIS_PARSER = options.parser
+    
     run(paths,
-        tags = tags,
+        tags = options.labels,
         library = 'stdnet',
         test_type = options.test_type,
-        itags=itags,
+        itags=options.itags,
         verbosity=options.verbosity,
-        backend=options.server)
+        backend=options.server,
+        list_labels=options.list_labels,
+        can_fail=options.can_fail)
 

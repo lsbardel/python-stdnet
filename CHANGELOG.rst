@@ -3,12 +3,16 @@ Ver. 0.6.1 - Development
 * This is a minor release which brings an improved documentation,
   better support for the :class:`stdnet.orm.JSONField` and some minor
   bug fixes.
+* Test suite parsing is done using the new python ``argparse`` module since the
+  ``optparse`` is now deprecated. Always up to speed.
+* Started work on ``lua extensions`` and added a development test tag ``script``.
+* Added ``google analytics`` to the documentation web site.
 * The instance validation algorithm catches :class:`stdnet.FieldValueError`
   exceptions and stores them into the errors dictionary.
 * Fixed bug in :class:`stdnet.orm.Field` when using default values. Default values
   are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
-* **293 regression tests** with **78%** coverage.
+* **294 regression tests** with **78%** coverage.
 
 Ver. 0.6.0 - 2011 Aug 9
 ============================

@@ -109,13 +109,18 @@ an interable over modules'''
         """Return a suite of all tests cases contained in the given module"""
         itags = itags or []
         tests = []
-        for module in modules:
+        self.all_tags = all_tags = set()
+        self.all_itags = all_itags = set()
+        for module,tag in modules:
+            all_tags.add(tag)
             for name in dir(module):
                 obj = getattr(module, name)
                 if (isclass(obj) and issubclass(obj, self.testClass)):
                     tag = getattr(obj,'tag',None)
-                    if tag and not tag in itags:
-                        continue
+                    if tag:
+                        all_itags.add(tag)
+                        if not tag in itags:
+                            continue
                     tests.append(self.loadTestsFromTestCase(obj))
         return self.suiteClass(tests)
         

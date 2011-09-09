@@ -555,7 +555,6 @@ which can be rather useful feature.
         
     def to_python(self, value):
         if value is not None and not isinstance(value,dict):
-            value = to_string(value)
             if not value:
                 value = {}
             else:
@@ -614,6 +613,7 @@ which can be rather useful feature.
             raise FieldValueError(str(e))
     
     def loads(self, svalue):
+        svalue = to_string(svalue,self.charset)
         return json.loads(svalue, object_hook = self.decoder_hook)
 
 

@@ -4,7 +4,8 @@ Ver. 0.6.1 - Development
   better support for the :class:`stdnet.orm.JSONField` and some minor
   bug fixes.
 * Test suite parsing is done using the new python ``argparse`` module since the
-  ``optparse`` is now deprecated. Always up to speed.
+  ``optparse`` is now deprecated. Ceck :ref:`running tests <runningtests>`
+  for more information.
 * Started work on ``lua extensions`` and added a development test tag ``script``.
 * Added ``google analytics`` to the documentation web site.
 * The instance validation algorithm catches :class:`stdnet.FieldValueError`
@@ -28,6 +29,7 @@ Ver. 0.6.0 - 2011 Aug 9
       fashion, therefore no overhead is required for the sorting step.
     * *Explicit* by using the ``sort_by`` method in
       a :class:`stdnet.orm.query.QuerySet` object.
+  
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
   are now indexed via redis_ hash tables which maps the field value to the

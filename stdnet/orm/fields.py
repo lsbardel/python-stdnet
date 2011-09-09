@@ -511,16 +511,15 @@ behaviour and how the field is stored in the back-end server.
     separating fields with the `__` double underscore separator.
     This flag is used when saving data to the database. 
                 
-                Default ``None``.
+    Default ``None``.
                 
-:parameter as_string: a flag indicating how data should be serialized
-    into a string. If the value is set to ``False`` the JSON data
-    is stored as a field
-                      of the instance prefixed with the field name
-                      and double underscore.
-                      If ``True`` it is stored as a json string.
+:parameter as_string: a flag indicating if data should be serialized
+    into a JSON string. If the value is set to ``False`` the JSON data
+    is stored as a field of the instance prefixed with the field name
+    and double underscore ``__``. If ``True`` it is stored as a 
+    standard JSON string on the field.
                     
-                    Default ``True``.
+    Default ``True``.
 
 For example, lets consider the following::
 

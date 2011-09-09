@@ -60,7 +60,7 @@ It removes all keys associated with models.'''
 
 def register(model, backend = None, keyprefix = None, timeout = None,
              ignore_duplicates = True):
-    '''Register a :class:`stdnet.orm.StdModel`
+    '''Low level function for registering a :class:`stdnet.orm.StdModel`
 model with a :class:`stdnet.backends.BackendDataServer` data server.
     
 :parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
@@ -174,10 +174,14 @@ def register_application_models(applications,
                                 app_defaults=None,
                                 default=None):
     '''\
-An higher level registration functions for group of models located
-on application modules. It uses the :ref:`model_iterator`
-functions to iterate through all the models available in ``applications``
-and register them using the :ref:`register` function.
+A higher level registration functions for group of models located
+on application modules.
+
+It uses the :func:`stdnet.orm.model_iterator` function to iterate
+through all :class:`stdnet.orm.StdModel` models available in ``applications``
+and register them using the :func:`stdnet.orm.register` low
+level function.
+
 It return a generator.
 
 :parameter application: A String or a list of strings which represent
@@ -209,7 +213,8 @@ For example::
 
 def register_applications(applications, **kwargs):
     '''A simple convenience wrapper around the
-:func:`register_application_models` generator.
+:func:`stdnet.orm.register_application_models` generator.
+
 It return s a list of registered models.'''
     return list(register_application_models(applications,**kwargs))
 

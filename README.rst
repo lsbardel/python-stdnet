@@ -22,7 +22,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 Requirements
 =================
 * You need access to a Redis_ server.
-* Python 2.6 or above, including Python 3.
+* Python 2.6 or above, including Python 3 series.
 
 Installing 
 ================================
@@ -52,8 +52,10 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.5.1'
+	'0.6.1'
 
+
+.. _runningtests:
 
 Running Tests
 ======================
@@ -63,12 +65,17 @@ windows and want to save yourself a headache you can download precompiled binari
 
 __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
+If you are running python 2.6, 3 and 3.1 you need to install the argparse_ package,
+which is a standard in python 2.7 and python >= 3.2.
 Once done that, open a shell and launch Redis. On another shell, from the package directory,
 type::
 
 	python runtests.py
 	
-**BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW**
+To change the server and database where to run tests pass the ``-s`` options
+to runtests. For more information type::
+
+    python runtests.py -h 
 
 
 To access coverage of tests you need to install the coverage_ package and run the tests using::
@@ -78,25 +85,6 @@ To access coverage of tests you need to install the coverage_ package and run th
 and to check out the coverage report::
 
 	coverage report -m
-
-	
-Default settings
-=========================
-Running tests with the above commands assumes your Redis_ server
-is running on the same machine and it will use the database ``13``.
-
-StdNet comes with two default settings.
-
-	>>> from stdnet.conf import settings
-	>>> settings.__dict__
-	{'DEFAULT_BACKEND': 'redis://127.0.0.1:6379/?db=7', 'DEFAULT_KEYPREFIX': 'stdnet'}
-
-If your redis server runs on a different machine, or you would like to use a different database number,
-you need to setup a	script file along these lines::
-	
-	if __name__ == '__main__':
-	    import stdnet
-	    stdnet.runtests('redis://your.server.url:6379/?db=10')
 
 
 Backends
@@ -208,3 +196,4 @@ file in the top distribution directory for the full license text.
 .. _BSD: http://www.opensource.org/licenses/bsd-license.php
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _coverage: http://nedbatchelder.com/code/coverage/
+.. _argparse: http://pypi.python.org/pypi/argparse

@@ -82,7 +82,7 @@ def run(tests_paths, tags = None, test_type = None,
         
         if l.all_itags:
             print(('\nYou can also run {0} development test labels.\nThey are\
- not run with the test suite unless you specify so them with the -i (--include)\
+ not run with the test suite unless you specify so with the -i (--include)\
  option:\n'.\
                format(len(l.all_itags))))
             for tag in sorted(l.all_itags):

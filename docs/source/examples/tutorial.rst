@@ -17,7 +17,7 @@ advanced configuration parameters and functionalities can be investigated.
 Creating Models
 ==========================
 
-Defining stdnet models is achieved by subclassing the
+Defining stdnet *models* is achieved by subclassing the
 :class:`stdnet.orm.StdModel` class. The following
 snipped implements two models, ``Author`` and ``Book``::
 
@@ -30,12 +30,22 @@ snipped implements two models, ``Author`` and ``Book``::
         title  = orm.CharField()
         author = orm.ForeignKey(Author, related_name = 'books')
 
+The API should look familiar if you have come across django_
+web framework. :ref:`Fields <model-field>` (name in the Author model,
+title and author in the Book model) are specified as attribute of models.
+But while fields in django are the python representation of the columns in the
+backend database table, fields in stdnet are the fields of a redis hash table
+which represents an instance of a model.
+
+Information is available regarding how models instances are mapped into
+:ref:`the redis backend <redis-backend>`.
+ 
 
 An application
 ~~~~~~~~~~~~~~~~~~~~~~
 
-This tutorial will try explain how to use the API by developing an application
-which run a small Hedge Fund. You never know it may become useful in the future.
+Let's start with tutorial application: a small hedge fund.
+You never know it may become useful in the future!
 
 The application uses the following three models::
 
@@ -54,7 +64,7 @@ The application uses the following three models::
         name = orm.SymbolField(unique = True)
         ccy = orm.SymbolField()
         type = orm.SymbolField()
-        prices = orm.HashField()
+        prices = orm.ListField()
         
         def __unicode__(self):
             return self.name
@@ -74,6 +84,9 @@ The application uses the following three models::
             
 If you are familiar with django_ you will see several similarities and you should be able to understand,
 with a certain degree of confidence, what it is going on.
+The only difference is the ``prices`` :class:`stdnet.orm.ListField`
+in the ``Instrument`` model which is
+not available in a traditional relational database.
 
 
 Registering Models

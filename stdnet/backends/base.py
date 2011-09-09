@@ -66,6 +66,7 @@ Generic interface for a backend database:
 :parameter name: name of database, such as **redis**, **couchdb**, etc..
 :parameter params: dictionary of configuration parameters
 :parameter pickler: calss for serializing and unserializing data.
+
 It must implement the *loads* and *dumps* methods.'''
     Transaction = None
     Query = None
@@ -151,6 +152,7 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
     def delete_object(self, obj, transaction = None):
         '''Delete an object from the data server and clean up indices.
 Called to clear a model instance.
+
 :parameter obj: instance of :class:`stdnet.orm.StdModel`
 :parameter deleted: a list or ``None``. If a list, deleted keys
                     will be appended to it.

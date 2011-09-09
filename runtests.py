@@ -4,6 +4,9 @@ import sys
 import argparse
 
 import stdnet
+from stdnet import contrib
+from stdnet.test import run
+from stdnet.conf import settings
 
 
 def makeoptions():
@@ -25,7 +28,8 @@ def makeoptions():
  an import error in tests. Useful for checking import errors.")
     parser.add_argument("-s", "--server", action="store",
                         dest="server", default='',
-                        help="Backend server where to run tests")
+                        help='Backend server where to run tests. By default\
+ tests are run on "{0}"'.format(settings.DEFAULT_BACKEND))
     parser.add_argument("-l", "--list", action="store_true",
                         dest="list_labels", default=False,
                         help="List all test labels without performing tests.")
@@ -45,7 +49,6 @@ def addpath(test_type):
     if CUR_DIR not in sys.path:
         sys.path.insert(0, CUR_DIR)
     
-    from stdnet import contrib
     CONTRIB_DIR  = os.path.dirname(contrib.__file__)
     TEST_DIR = p.join(CUR_DIR,'tests')
     if TEST_DIR not in sys.path:
@@ -58,9 +61,6 @@ def addpath(test_type):
 if __name__ == '__main__':
     options = makeoptions().parse_args()
     paths = addpath(options.test_type)
-    
-    from stdnet.conf import settings
-    from stdnet.test import run
     settings.REDIS_PARSER = options.parser
     
     run(paths,

@@ -8,7 +8,8 @@ __all__ = ['PipeLine',
            'List',
            'Set',
            'OrderedSet',
-           'HashTable']
+           'HashTable',
+           'TS']
 
 default_score = lambda x : 1
 

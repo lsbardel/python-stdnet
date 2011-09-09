@@ -160,8 +160,7 @@ Returns the converted value. Subclasses should override this."""
         return value
     
     def value_from_data(self, data):
-        if self.attname in data:
-            return data[self.attname]
+        return data.pop(self.attname,None)
     
     def register_with_model(self, name, model):
         '''Called during the creation of a the :class:`stdnet.orm.StdModel`
@@ -586,24 +585,29 @@ which can be rather useful feature.
     def value_from_data(self, data):
         name = self.attname
         if self.as_string:
-            return data.get(name,None)
+            return data.pop(name,None)
         else:
             loads = self.loads
             sp = JSPLITTER
             val = {}
-            for k,v in iteritems(data):
-                ks = k.split(sp)
-                if ks[0] == name:
+            for key in tuple(data):
+                keys = key.split(sp)
+                if keys.pop(0) == name:
+                    v = data.pop(key)
                     d = val
-                    if len(ks) == 1:
-                        d[''] = loads(v)
-                    else:
-                        for k in ks[1:-1]:
-                            if k not in d:
-                                d[k] = {}
-                            d = d[k]
-                        d[ks[-1]] = loads(v)
-            return val
+                    lk = keys[-1] if keys else ''
+                    for k in keys[:-1]:
+                        if k not in d:
+                            nd = {}
+                            d[k] = nd
+                        else:
+                            nd = d[k]
+                            if not isinstance(nd,dict):
+                                nd = {'':nd}
+                                d[k] = nd
+                        d = nd
+                    d[lk] = loads(v)
+            return val if val else None
     
     def dumps(self, value):
         try:
@@ -647,4 +651,5 @@ registered in the model hash table, it can be used.'''
                     return
             value = value._meta.hash
             return self.encoder.dumps(value)
+
 

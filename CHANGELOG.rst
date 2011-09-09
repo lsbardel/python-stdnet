@@ -4,7 +4,7 @@ Ver. 0.6.1 - Development
   better support for the :class:`stdnet.orm.JSONField` and some minor
   bug fixes.
 * Test suite parsing is done using the new python ``argparse`` module since the
-  ``optparse`` is now deprecated. Ceck :ref:`running tests <runningtests>`
+  ``optparse`` is now deprecated. Check :ref:`running tests <runningtests>`
   for more information.
 * Started work on ``lua extensions`` and added a development test tag ``script``.
 * Added ``google analytics`` to the documentation web site.

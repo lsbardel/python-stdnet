@@ -72,11 +72,14 @@ type::
 
 	python runtests.py
 	
-To change the server and database where to run tests pass the ``-s`` options
-to runtests. For more information type::
+Tests are run against a local redis server on port 6379 and database 7 by default.
+To change the server and database where to run tests pass the ``-s`` option as follow::
+
+    python runtests.py -s redis://myserver.com:6450/?db=12
+
+For more information type::
 
     python runtests.py -h 
-
 
 To access coverage of tests you need to install the coverage_ package and run the tests using::
 

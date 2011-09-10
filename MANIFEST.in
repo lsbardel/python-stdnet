@@ -3,10 +3,18 @@ include MANIFEST.in
 include README.rst
 include CHANGELOG.rst
 include runtests.py
+include .coveragerc
 include docs/make.bat
 include docs/Makefile
 include docs/source/conf.py
 include stdnet/dispatch/license.txt
-recursive-include vendor *
-recursive-include tests *
+recursive-include vendor *.py
+recursive-include vendor *.c
+recursive-include vendor *.h
+recursive-include vendor *.pxd
+recursive-include vendor *.pyx
+include vendor/hiredis/COPYING
+include vendor/hiredis/README.md
+include vendor/hiredis/TODO
+recursive-include tests *.py
 recursive-include docs *.rst

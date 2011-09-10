@@ -6,7 +6,7 @@ from stdnet.conf import settings
 from stdnet.utils.importer import import_module
 
 from .test import TestCase, TestMultiFieldMixin, TestSuiteRunner,\
-                    TestLoader, setup_logging
+                    TestModelBase, TestLoader, setup_logging
 from .bench import BenchMark, BenchSuiteRunner
 from .profile import ProfileTest, ProfileSuiteRunner
 

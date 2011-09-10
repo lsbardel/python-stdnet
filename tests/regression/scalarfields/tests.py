@@ -8,27 +8,15 @@ import stdnet
 from stdnet import test
 from stdnet.utils import populate, zip, is_string, to_string, unichr, ispy3k
 
-from examples.models import TestDateModel, Statistics, Statistics2,\
-                            Page, SimpleModel, Environment, NumericData,\
-                            DateData, Statistics3
+from examples.models import TestDateModel, DateData,\
+                             Page, SimpleModel, Environment, NumericData
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
 dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 
 
-class TestScalarBase(test.TestCase):
-    model = None
-    
-    def register(self):
-        self.orm.register(self.model)
-        self.meta = self.model._meta
-    
-    def unregister(self):
-        self.orm.unregister(self.model)
-
-
-class TestAtomFields(TestScalarBase):
+class TestAtomFields(test.TestModelBase):
     model = TestDateModel
         
     def create(self):
@@ -70,7 +58,7 @@ class TestAtomFields(TestScalarBase):
         self.assertEqual(keys[0],self.meta.autoid())
         
 
-class TestCharFields(TestScalarBase):
+class TestCharFields(test.TestModelBase):
     model = SimpleModel
     
     def testUnicode(self):
@@ -87,7 +75,7 @@ class TestCharFields(TestScalarBase):
         self.assertEqual(m.code,unicode_string)
         
     
-class TestNumericData(TestScalarBase):
+class TestNumericData(test.TestModelBase):
     model = NumericData
         
     def testDefaultValue(self):
@@ -108,7 +96,7 @@ class TestNumericData(TestScalarBase):
         self.assertRaises(stdnet.FieldValueError,NumericData().save)
                 
         
-class TestIntegerField(TestScalarBase):
+class TestIntegerField(test.TestModelBase):
     model = Page
             
     def testDefaultValue(self):
@@ -135,7 +123,7 @@ class TestIntegerField(TestScalarBase):
         self.assertEqual(p.in_navigation,0)
                
 
-class TestDateData(TestScalarBase):
+class TestDateData(test.TestModelBase):
     model = DateData
         
     def testDateindateTime(self):
@@ -153,7 +141,7 @@ class TestDateData(TestScalarBase):
         self.assertEqual(v.dt2.date(),date.today())
         
 
-class TestBoolField(TestScalarBase):
+class TestBoolField(test.TestModelBase):
     model = NumericData
     
     def testMeta(self):
@@ -173,161 +161,7 @@ class TestBoolField(TestScalarBase):
         d.save()
         d = self.model.objects.get(id = d.id)
         self.assertEqual(d.ok,True)
-        
-    
-class TestJsonField(test.TestCase):
-    
-    def setUp(self):
-        self.orm.register(Statistics)
-    
-    def unregister(self):
-        self.orm.unregister(Statistics)
-        
-    def testMetaData(self):
-        field = Statistics._meta.dfields['data']
-        self.assertEqual(field.sep,None)
-        
-    def testCreate(self):
-        mean = Decimal('56.4')
-        started = date(2010,1,1)
-        timestamp = datetime.now()
-        a = Statistics(dt = date.today(), data = {'mean': mean,
-                                                  'std': 5.78,
-                                                  'started': started,
-                                                  'timestamp':timestamp}).save()
-        self.assertEqual(a.data['mean'],mean)
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(len(a.data),4)
-        self.assertEqual(a.data['mean'],mean)
-        self.assertEqual(a.data['started'],started)
-        self.assertEqual(a.data['timestamp'],timestamp)
-        
-    def testCreateFromString(self):
-        mean = 'mean'
-        timestamp = time.time()
-        data = {'mean': mean,
-                'std': 5.78,
-                'timestamp':timestamp}
-        datas = json.dumps(data)
-        a = Statistics(dt = date.today(), data = datas).save()
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data['mean'],mean)
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(len(a.data),3)
-        self.assertEqual(a.data['mean'],mean)
-        self.assertEqual(a.data['timestamp'],timestamp)
-        
-    def testEmpty(self):
-        a = Statistics(dt = date.today())
-        self.assertEqual(a.data,{})
-        a.save()
-        self.assertEqual(a.data,{})
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data,{})
-        
-    def testValueError(self):
-        a = Statistics(dt = date.today(),
-                       data = {'mean': self})
-        self.assertFalse(a.is_valid())
-        self.assertRaises(stdnet.FieldValueError,a.save)
-        
-
-class TestJsonFieldSep(test.TestCase):
-    
-    def register(self):
-        self.orm.register(Statistics2)
-    
-    def unregister(self):
-        self.orm.unregister(Statistics2)
-        
-    def testMetaData(self):
-        field = Statistics2._meta.dfields['data']
-        self.assertEqual(field.sep,'__')
-        
-    def testCreate(self):
-        mean = Decimal('56.4')
-        started = date(2010,1,1)
-        timestamp = datetime.now()
-        a = Statistics2(dt = date.today(),
-                        data = {'stat__mean': mean,
-                                'stat__std': 5.78,
-                                'stat__secondary__ar': 0.1,
-                                'date__started': started,
-                                'date__timestamp':timestamp}).save()
-        a = Statistics2.objects.get(id = a.id)
-        self.assertEqual(len(a.data),2)
-        stat = a.data['stat']
-        dt   = a.data['date']
-        self.assertEqual(len(stat),3)
-        self.assertEqual(len(dt),2)
-
-        self.assertEqual(stat['mean'],mean)
-        self.assertEqual(stat['secondary']['ar'],0.1)
-        self.assertEqual(dt['started'],started)
-        self.assertEqual(dt['timestamp'],timestamp)
-        
-
-class TestJsonFieldAsData(TestScalarBase):
-    '''Test a model with a JSONField which expand as instance fields.
-The `as_string` atttribute is set to ``False``.'''
-    model = Statistics3
-    def_data = {'mean': 1.0,
-                'std': 5.78,
-                'pv': 3.2,
-                'name': 'bla',
-                'dt': date.today()}
-    
-    def_data2 = {'': 3.2,
-                 'ts': {'a':[1,2,3,4,5,6,7],
-                        'b':[10,11,12]},
-                 'mean': {'1y':1.0,'2y':1.1},
-                 'std': {'1y':4.0,'2y':5.1},
-                 'dt': datetime.now()}
-    
-    def make(self, data = None):
-        data = data or self.def_data
-        return self.model(name = 'bla', data = data)
-        
-    def testMeta(self):
-        field = self.meta.dfields['data']
-        self.assertFalse(field.as_string)
-        
-    def testMake(self):
-        m = self.make()
-        self.assertTrue(m.is_valid())
-        data = m.cleaned_data
-        self.assertEqual(len(data),6)
-        self.assertEqual(float(data['data__mean']),1.0)
-        self.assertEqual(float(data['data__std']),5.78)
-        self.assertEqual(float(data['data__pv']),3.2)
-        
-    def testGet(self):
-        m = self.make().save()
-        m = self.model.objects.get(id = m.id)
-        self.assertEqual(m.data['mean'],1.0)
-        self.assertEqual(m.data['std'],5.78)
-        self.assertEqual(m.data['pv'],3.2)
-        self.assertEqual(m.data['dt'],date.today())
-        self.assertEqual(m.data['name'],'bla')
-        
-    def testmakeEmpty(self):
-        '''Here we test when we have a key which is empty.'''
-        m = self.make(self.def_data2)
-        self.assertTrue(m.is_valid())
-        cdata = m.cleaned_data
-        self.assertEqual(len(cdata),9)
-        self.assertTrue('data' in cdata)
-        self.assertEqual(cdata['data__mean__1y'],'1.0')
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqual(obj.data['dt'].date(),date.today())
-        
-    def testmakeEmpty2(self):
-        m = self.make([1,2,3,4])
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqual(obj.data,{'':[1,2,3,4]})
-        
+          
     
 class TestByteField(test.TestCase):
     

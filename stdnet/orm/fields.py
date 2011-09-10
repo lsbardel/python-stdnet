@@ -9,7 +9,7 @@ from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, novalue, to_string, is_string,\
                          to_bytestring, is_bytes_or_string, iteritems,\
-                         encoders
+                         encoders, flat_to_nested, dict_flat_generator
 
 from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
@@ -159,7 +159,7 @@ can't be converted.
 Returns the converted value. Subclasses should override this."""
         return value
     
-    def value_from_data(self, data):
+    def value_from_data(self, instance, data):
         return data.pop(self.attname,None)
     
     def register_with_model(self, name, model):
@@ -561,16 +561,6 @@ which can be rather useful feature.
                 except:
                     value = None
         return value
-    
-    def _flatgen(self, value, prefix):
-        sp = JSPLITTER
-        if not isinstance(value,dict):
-            yield prefix,self.dumps(value)
-        else:
-            for field,v1 in iteritems(value):
-                key = '{0}{1}{2}'.format(prefix,sp,field) if field else prefix
-                for k,v2 in self._flatgen(v1,key):
-                    yield k,v2
                     
     def serialize(self, value, transaction = None):
         if value is not None:
@@ -579,35 +569,17 @@ which can be rather useful feature.
             if self.as_string:
                 value = self.dumps(json_compact(value,self.sep))
             else:
-                value = dict(self._flatgen(value, self.name))
+                value = dict(dict_flat_generator(self.attname, value,
+                                                 JSPLITTER, self.dumps,
+                                                 error = FieldValueError))
         return value
     
-    def value_from_data(self, data):
-        name = self.attname
+    def value_from_data(self, instance, data):
         if self.as_string:
-            return data.pop(name,None)
+            return data.pop(self.attname,None)
         else:
-            loads = self.loads
-            sp = JSPLITTER
-            val = {}
-            for key in tuple(data):
-                keys = key.split(sp)
-                if keys.pop(0) == name:
-                    v = data.pop(key)
-                    d = val
-                    lk = keys[-1] if keys else ''
-                    for k in keys[:-1]:
-                        if k not in d:
-                            nd = {}
-                            d[k] = nd
-                        else:
-                            nd = d[k]
-                            if not isinstance(nd,dict):
-                                nd = {'':nd}
-                                d[k] = nd
-                        d = nd
-                    d[lk] = loads(v)
-            return val if val else None
+            return flat_to_nested(instance,self.attname,data,
+                                  JSPLITTER,self.loads)
     
     def dumps(self, value):
         try:

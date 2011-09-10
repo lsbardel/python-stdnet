@@ -22,13 +22,3 @@ def hashmodel(model, library = None):
     meta.hash = hash
     _model_dict[hash] = model
     
-
-def nested_json_value(instance, attname):
-    '''Extract a value from a nested dictionary'''
-    fields = attname.split(JSPLITTER)
-    data = getattr(instance,fields[0])
-    for field in fields[1:]:
-        data = data[field]
-    if isinstance(data,dict):
-        data = data['']
-    return data

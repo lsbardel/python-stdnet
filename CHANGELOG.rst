@@ -1,4 +1,4 @@
-Ver. 0.6.1 - Development
+Ver. 0.6.1 - 2011 Sep 10
 ============================
 * This is a minor release which brings an improved documentation,
   better support for the :class:`stdnet.orm.JSONField` and some minor
@@ -13,7 +13,7 @@ Ver. 0.6.1 - Development
 * Fixed bug in :class:`stdnet.orm.Field` when using default values. Default values
   are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
-* **294 regression tests** with **78%** coverage.
+* **297 regression tests** with **78%** coverage.
 
 Ver. 0.6.0 - 2011 Aug 9
 ============================

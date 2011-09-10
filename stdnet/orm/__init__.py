@@ -4,7 +4,7 @@ from .mapper import *
 from .fields import *
 from .std import *
 from .signals import *
-from .globals import hashmodel, JSPLITTER, nested_json_value
+from .globals import hashmodel, JSPLITTER
 from .utils import *
 from .search import SearchEngine
 

@@ -1,7 +1,7 @@
 .. _intro-example:
 
 ======================
-Examples
+Tutorial & Examples
 ======================
 
 Collection of examples which are available in the :mod:`stdnet.tests.examples.models`
@@ -12,5 +12,6 @@ available in :mod:`stdnet`.
 .. toctree::
    :maxdepth: 1
    
+   tutorial
    timeseries
    twitter

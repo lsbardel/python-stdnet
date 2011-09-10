@@ -25,7 +25,6 @@ where several applications will be added.
 .. toctree::
    :maxdepth: 2
    
-   query
    models
    fields
 

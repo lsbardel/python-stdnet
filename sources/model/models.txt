@@ -52,7 +52,13 @@ Register
 Register application models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.register_application_models   
+.. autofunction:: stdnet.orm.register_application_models  
+
+
+Register applications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.register_applications
 
    
 Query

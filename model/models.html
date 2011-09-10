@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Model and Query API &mdash; Python StdNet v0.6.0 documentation</title>
+    <title>Model and Query API &mdash; python stdnet v0.6.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.0',
+        VERSION:     '0.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Fields API" href="fields.html" />
     <link rel="prev" title="Object Relational Mapper" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -104,7 +104,7 @@ otherwise a <a class="reference internal" href="../utility.html#stdnet.ModelNotR
 It can be useful when saving
 several object together (it guarantees atomicity
 and it is much faster).
-Check the <a class="reference internal" href="../tutorial.html#model-transactions"><em>transaction</em></a>
+Check the <a class="reference internal" href="../examples/tutorial.html#model-transactions"><em>transaction</em></a>
 documentation for more information.</p>
 <p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </li>
@@ -198,7 +198,7 @@ An instance is initiated when <a class="reference internal" href="#stdnet.orm.St
 <tt class="descname">ordering</tt><a class="headerlink" href="#stdnet.orm.models.Metaclass.ordering" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optional name of a <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> in the <a class="reference internal" href="#stdnet.orm.models.Metaclass.model" title="stdnet.orm.models.Metaclass.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a>.
 If provided, indeces will be sorted with respect the value of the field specidied.
-Check the <a class="reference internal" href="../tutorial.html#sorting"><em>sorting</em></a> documentation for more details.</p>
+Check the <a class="reference internal" href="../examples/tutorial.html#sorting"><em>sorting</em></a> documentation for more details.</p>
 <p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
@@ -255,8 +255,9 @@ The key is an encoded binary string. For example:</p>
 <dl class="method">
 <dt id="stdnet.orm.base.Metaclass.is_valid">
 <tt class="descname">is_valid</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.is_valid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Perform validation and stores serialized data, indexes and errors.
-Return <tt class="xref docutils literal"><span class="pre">True</span></tt> is the instance is ready to be saved to database.</p>
+<dd><p>Perform validation for <em>instance</em> and stores serialized data,
+indexes and errors into local cache.
+Return <tt class="xref docutils literal"><span class="pre">True</span></tt> if the instance is ready to be saved to database.</p>
 </dd></dl>
 
 <dl class="method">
@@ -285,7 +286,7 @@ registered with a back-end database.</p>
 <dl class="function">
 <dt id="stdnet.orm.register">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>keyprefix=None</em>, <em>timeout=None</em>, <em>ignore_duplicates=True</em><big>)</big><a class="headerlink" href="#stdnet.orm.register" title="Permalink to this definition">¶</a></dt>
-<dd><p>Register a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
+<dd><p>Low level function for registering a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
 model with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt> data server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -332,11 +333,13 @@ on the same redis instance).</p>
 <dl class="function">
 <dt id="stdnet.orm.register_application_models">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_application_models</tt><big>(</big><em>applications</em>, <em>models=None</em>, <em>app_defaults=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_application_models" title="Permalink to this definition">¶</a></dt>
-<dd><p>An higher level registration functions for group of models located
-on application modules. It uses the <em class="xref std std-ref">model_iterator</em>
-functions to iterate through all the models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
-and register them using the <em class="xref std std-ref">register</em> function.
-It return a generator.</p>
+<dd><p>A higher level registration functions for group of models located
+on application modules.</p>
+<p>It uses the <a class="reference internal" href="../utility.html#stdnet.orm.model_iterator" title="stdnet.orm.model_iterator"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.model_iterator()</span></tt></a> function to iterate
+through all <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
+and register them using the <a class="reference internal" href="#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> low
+level function.</p>
+<p>It return a generator.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -356,6 +359,17 @@ Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</l
 <div class="highlight-python"><div class="highlight"><pre><span class="n">register_application_models</span><span class="p">(</span><span class="s">&#39;mylib.myapp&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+</div>
+<div class="section" id="register-applications">
+<h3>Register applications<a class="headerlink" href="#register-applications" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.register_applications">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_applications</tt><big>(</big><em>applications</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_applications" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simple convenience wrapper around the
+<a class="reference internal" href="#stdnet.orm.register_application_models" title="stdnet.orm.register_application_models"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register_application_models()</span></tt></a> generator.</p>
+<p>It return s a list of registered models.</p>
 </dd></dl>
 
 </div>
@@ -482,7 +496,7 @@ this function remove a group of words from the index:</p>
 
 <dl class="method">
 <dt id="stdnet.orm.SearchEngine.register">
-<tt class="descname">register</tt><big>(</big><em>model</em>, <em>related=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">register</tt><big>(</big><em>model</em>, <em>related=None</em>, <em>tag_field='tags'</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register a model to the search engine. By registering a model,
 every time an instance is created, it will be indexed by the
 search engine.</p>
@@ -603,7 +617,7 @@ the same events.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo">
 <a href="../index.html">
-  <img class="logo" width="128" height="128" src="../static/net.jpg" alt="Logo"/>
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
 </a>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
@@ -617,6 +631,7 @@ the same events.</p>
 <li><a class="reference internal" href="#registration">Registration</a><ul>
 <li><a class="reference internal" href="#register">Register</a></li>
 <li><a class="reference internal" href="#register-application-models">Register application models</a></li>
+<li><a class="reference internal" href="#register-applications">Register applications</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#query">Query</a><ul>
@@ -673,13 +688,28 @@ the same events.</p>
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>
+
     <div class="footer">
         &copy; Copyright 2010-2011, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
   </body>
 </html>

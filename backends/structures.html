@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Remote Structure &mdash; Python StdNet v0.6.0 documentation</title>
+    <title>Remote Structure &mdash; python stdnet v0.6.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.0',
+        VERSION:     '0.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
     <link rel="up" title="Backend Server and Structures" href="index.html" />
     <link rel="next" title="Battery Included" href="../contrib/index.html" />
     <link rel="prev" title="Redis Database backend" href="backends.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="backends.html" title="Redis Database backend"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>  
@@ -270,6 +270,24 @@ exception.</p>
 </div>
 <div class="section" id="ts">
 <h2>TS<a class="headerlink" href="#ts" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.TS">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">TS</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.TS" title="Permalink to this definition">¶</a></dt>
+<dd><p>A timeseries <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.</p>
+<dl class="method">
+<dt id="stdnet.TS.range">
+<tt class="descname">range</tt><big>(</big><em>start</em>, <em>end</em><big>)</big><a class="headerlink" href="#stdnet.TS.range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a range between start and end key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.TS.irange">
+<tt class="descname">irange</tt><big>(</big><em>start=0</em>, <em>end=-1</em><big>)</big><a class="headerlink" href="#stdnet.TS.irange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a range between start and end key.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -280,7 +298,7 @@ exception.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo">
 <a href="../index.html">
-  <img class="logo" width="128" height="128" src="../static/net.jpg" alt="Logo"/>
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
 </a>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
@@ -339,13 +357,28 @@ exception.</p>
         <li class="right" >
           <a href="backends.html" title="Redis Database backend"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>
+
     <div class="footer">
         &copy; Copyright 2010-2011, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
   </body>
 </html>

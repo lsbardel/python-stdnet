@@ -1,4 +1,4 @@
-.. _base-backend:
+.. _redis-backend:
 
 ============================
 Redis Database backend

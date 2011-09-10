@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Fields API &mdash; Python StdNet v0.6.0 documentation</title>
+    <title>Fields API &mdash; python stdnet v0.6.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.0',
+        VERSION:     '0.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.6.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Backend Server and Structures" href="../backends/index.html" />
     <link rel="prev" title="Model and Query API" href="models.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,6 +58,14 @@
 is the list of database fields it defines. Fields are specified by class attributes.
 They are the equivalent to django Fields and therefore
 the equivalent of columns in a traditional relational databases.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>There is an important difference between stdnet fields and fields
+in a traditional relational database. Stdnet fields can be added, removed or
+changed without requiring any time consuming database migration!</p>
+<p class="last">This is an added bonus which can be of high importance when prototyping but
+it can lead to loss of data if a user abuses it.</p>
+</div>
 <div class="section" id="base-classes">
 <span id="fieldbaseclasses"></span><h2>Base Classes<a class="headerlink" href="#base-classes" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> class is the base class for all fields and contains all
@@ -73,14 +81,17 @@ Each field is specified as a <a class="reference internal" href="models.html#std
 <dl class="attribute">
 <dt id="stdnet.orm.Field.index">
 <tt class="descname">index</tt><a class="headerlink" href="#stdnet.orm.Field.index" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field will create indexes for fast search.
-An index is implemented as a <a class="reference internal" href="../backends/structures.html#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>
-in the <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>. If you don&#8217;t need to search
-the field you should set this value to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field will create indexes for queries.
+An index is implemented as a <a class="reference internal" href="../backends/structures.html#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a> 
+in the <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
+if the <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.base.Metaclass.ordering</span></tt> attribute is set
+the indexes are implemented using <a class="reference internal" href="../backends/structures.html#stdnet.OrderedSet" title="stdnet.OrderedSet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.OrderedSet</span></tt></a>.</p>
+<p>If you don&#8217;t need to query the field you should set this value to
+<tt class="xref docutils literal"><span class="pre">False</span></tt>, it will save you memory.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">if <tt class="docutils literal"><span class="pre">index</span></tt> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> executing queries
-againsT the field will
+against the field will
 throw a <a class="reference internal" href="../utility.html#stdnet.QuerySetError" title="stdnet.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.QuerySetError</span></tt></a> exception.
 No database queries are allowed for non indexed fields
 as a design decision (excplicit better than implicit).</p>
@@ -94,14 +105,6 @@ as a design decision (excplicit better than implicit).</p>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
 In this case <a class="reference internal" href="#stdnet.orm.Field.index" title="stdnet.orm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
 Enforced at <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.orm.Field.ordered">
-<tt class="descname">ordered</tt><a class="headerlink" href="#stdnet.orm.Field.ordered" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field will creates an ordering structure in the
-backend server.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
@@ -406,31 +409,32 @@ the relation from the related object back to self. For example:</p>
 <dl class="class">
 <dt id="stdnet.orm.JSONField">
 <em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">JSONField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.JSONField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A JSON field which implements automatic converion to
-and form a dictionary of data.
-There are few extra parameters which can be used to customize the
-behaviour and the storage of the JSON data.</p>
+<dd><p>A JSON field which implements automatic conversion to
+and from an object and a JSON string. It is the responsability of the
+user making sure the object is JSON serializable.</p>
+<p>There are few extra parameters which can be used to customize the
+behaviour and how the field is stored in the back-end server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>encoder_class</strong> &#8211; The JSON class used for encoding.
-A sensible default is available.</li>
-<li><strong>decoder_hook</strong> &#8211; A JSON decoder function.
-A sensible default is available.</li>
-<li><strong>sep</strong> &#8211; <p>A string separator for building nested JSON data.</p>
+<li><strong>encoder_class</strong> &#8211; <p>The JSON class used for encoding.</p>
+<p>Default: <a class="reference internal" href="../utility.html#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="stdnet.utils.jsontools.JSONDateDecimalEncoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt></a>.</p>
+</li>
+<li><strong>decoder_hook</strong> &#8211; <p>A JSON decoder function.</p>
+<p>Default: <a class="reference internal" href="../utility.html#stdnet.utils.jsontools.date_decimal_hook" title="stdnet.utils.jsontools.date_decimal_hook"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.date_decimal_hook</span></tt></a>.</p>
+</li>
+<li><strong>nested</strong> &#8211; <p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> a nested JSON dictionary is build by
+separating fields with the <cite>__</cite> double underscore separator.
+This flag is used when saving data to the database.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </li>
-<li><strong>as_string</strong> &#8211; <dl class="docutils">
-<dt>a boolean indicating if data should be serialized</dt>
-<dd>into a string.
-If the value is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>,
-the JSON data is stored as a field
-of the instance prefixed with the field name
-and double underscore.
-If <tt class="xref docutils literal"><span class="pre">True</span></tt> it is stored as a json string.</dd>
-</dl>
+<li><strong>as_string</strong> &#8211; <p>a flag indicating if data should be serialized
+into a JSON string. If the value is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> the JSON data
+is stored as a field of the instance prefixed with the field name
+and double underscore <tt class="docutils literal"><span class="pre">__</span></tt>. If <tt class="xref docutils literal"><span class="pre">True</span></tt> it is stored as a 
+standard JSON string on the field.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 </ul>
@@ -445,18 +449,19 @@ If <tt class="xref docutils literal"><span class="pre">True</span></tt> it is st
 </pre></div>
 </div>
 <p>And:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;bla&#39;</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;mean&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;std&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">})</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;bla&#39;</span><span class="p">,</span><span class="n">pv</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s">&#39;mean&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;std&#39;</span><span class="p">:</span> <span class="mf">3.5</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">cleaned_data</span>
-<span class="go">{&#39;name&#39;:&#39;bla&#39;,&#39;data__mean&#39;:&#39;1&#39;,&#39;data__std&#39;:&#39;3.5&#39;}</span>
+<span class="go">{&#39;name&#39;: &#39;bla&#39;, &#39;pv&#39;: 0.5, &#39;pv__mean&#39;: &#39;1&#39;, &#39;pv__std&#39;: &#39;3.5&#39;}</span>
 <span class="go">&gt;&gt;&gt;</span>
 </pre></div>
 </div>
-<p>The only reason for setting <tt class="docutils literal"><span class="pre">as_string</span></tt> to <tt class="xref docutils literal"><span class="pre">False</span></tt> in a JSONfield
-is that it enables sorting of instances with respect to its fields:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;data__std&#39;</span><span class="p">)</span>
+<p>The reason for setting <tt class="docutils literal"><span class="pre">as_string</span></tt> to <tt class="xref docutils literal"><span class="pre">False</span></tt> is to enable
+sorting of instances with respect to its fields:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;data__pv__std&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;-data__pv&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>which can be rather useful.</p>
+<p>which can be rather useful feature.</p>
 </dd></dl>
 
 </div>
@@ -606,7 +611,7 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo">
 <a href="../index.html">
-  <img class="logo" width="128" height="128" src="../static/net.jpg" alt="Logo"/>
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
 </a>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
@@ -691,13 +696,28 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              >previous</a> |</li>
-        <li><a href="../index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>
+
     <div class="footer">
         &copy; Copyright 2010-2011, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
   </body>
 </html>

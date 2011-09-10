@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview &mdash; Python StdNet v0.6.0 documentation</title>
+    <title>Overview &mdash; python stdnet v0.6.1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.0',
+        VERSION:     '0.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,9 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Python StdNet v0.6.0 documentation" href="index.html" /> 
+    <link rel="top" title="python stdnet v0.6.1 documentation" href="index.html" />
+    <link rel="next" title="Object Relational Mapper" href="model/index.html" />
+    <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +35,13 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="model/index.html" title="Object Relational Mapper"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Python Stdnet"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -44,6 +52,11 @@
             
   <div class="section" id="overview">
 <span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p><strong>A Python 3 compatible object relational mapper for Redis remote data structures.</strong></p>
+<p>The data is owned by different, configurable back-end databases and it is accessed using a
+light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) inspired by <a class="reference external" href="http://www.djangoproject.com/">Django</a> and <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>.
+The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
+<p>&#8211;</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -62,16 +75,11 @@
 </tr>
 </tbody>
 </table>
-<p>&#8211;</p>
-<p><strong>A Python 3 compatible object relational mapper for Redis remote data structures.</strong></p>
-<p>The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) inspired by <a class="reference external" href="http://www.djangoproject.com/">Django</a> and <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>.
-The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>You need access to a <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server.</li>
-<li>Python 2.6 or above, including Python 3.</li>
+<li>Python 2.6 or above, including Python 3 series.</li>
 </ul>
 </div>
 <div class="section" id="installing">
@@ -98,43 +106,33 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <p>To know which version you have installed:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
-<span class="go">&#39;0.5.1&#39;</span>
+<span class="go">&#39;0.6.1&#39;</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="running-tests">
-<h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
+<span id="runningtests"></span><h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
 <p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.
 If you are using linux, it can be achieved simply by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
 windows and want to save yourself a headache you can download precompiled binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
-<p>Once done that, open a shell and launch Redis. On another shell, from the package directory,
+<p>If you are running python 2.6, 3 and 3.1 you need to install the <a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> package,
+which is a standard in python 2.7 and python &gt;= 3.2.
+Once done that, open a shell and launch Redis. On another shell, from the package directory,
 type:</p>
 <div class="highlight-python"><pre>python runtests.py</pre>
 </div>
-<p><strong>BE WARNED! RUNNING TESTS WILL DESTROY ANYTHING IN LOCALHOST REDIS DATABASE 13. MAKE SURE YOU DONT HAVE ANYTHING ON DATABASE 13 OTHERWISE FOLLOW INSTRUCTIONS BELOW</strong></p>
+<p>Tests are run against a local redis server on port 6379 and database 7 by default.
+To change the server and database where to run tests pass the <tt class="docutils literal"><span class="pre">-s</span></tt> option as follow:</p>
+<div class="highlight-python"><pre>python runtests.py -s redis://myserver.com:6450/?db=12</pre>
+</div>
+<p>For more information type:</p>
+<div class="highlight-python"><pre>python runtests.py -h</pre>
+</div>
 <p>To access coverage of tests you need to install the <a class="reference external" href="http://nedbatchelder.com/code/coverage/">coverage</a> package and run the tests using:</p>
 <div class="highlight-python"><pre>coverage run runtests.py</pre>
 </div>
 <p>and to check out the coverage report:</p>
 <div class="highlight-python"><pre>coverage report -m</pre>
-</div>
-</div>
-<div class="section" id="default-settings">
-<h2>Default settings<a class="headerlink" href="#default-settings" title="Permalink to this headline">¶</a></h2>
-<p>Running tests with the above commands assumes your <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server
-is running on the same machine and it will use the database <tt class="docutils literal"><span class="pre">13</span></tt>.</p>
-<p>StdNet comes with two default settings.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">settings</span><span class="o">.</span><span class="n">__dict__</span>
-<span class="go">{&#39;DEFAULT_BACKEND&#39;: &#39;redis://127.0.0.1:6379/?db=7&#39;, &#39;DEFAULT_KEYPREFIX&#39;: &#39;stdnet&#39;}</span>
-</pre></div>
-</div>
-<p>If your redis server runs on a different machine, or you would like to use a different database number,
-you need to setup a     script file along these lines:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">stdnet</span>
-    <span class="n">stdnet</span><span class="o">.</span><span class="n">runtests</span><span class="p">(</span><span class="s">&#39;redis://your.server.url:6379/?db=10&#39;</span><span class="p">)</span>
-</pre></div>
 </div>
 </div>
 <div class="section" id="backends">
@@ -242,7 +240,7 @@ file in the top distribution directory for the full license text.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo">
 <a href="index.html">
-  <img class="logo" width="128" height="128" src="static/net.jpg" alt="Logo"/>
+  <img class="logo" width="200" src="static/net.jpg" alt="Logo"/>
 </a>
 </p>
   <h3><a href="index.html">Table Of Contents</a></h3>
@@ -253,7 +251,6 @@ file in the top distribution directory for the full license text.</p>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 <li><a class="reference internal" href="#version-check">Version Check</a></li>
 <li><a class="reference internal" href="#running-tests">Running Tests</a></li>
-<li><a class="reference internal" href="#default-settings">Default settings</a></li>
 <li><a class="reference internal" href="#backends">Backends</a></li>
 <li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
 <li><a class="reference internal" href="#kudos">Kudos</a></li>
@@ -263,6 +260,12 @@ file in the top distribution directory for the full license text.</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Python Stdnet</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="model/index.html"
+                        title="next chapter">Object Relational Mapper</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/overview.txt"
@@ -294,12 +297,33 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Python StdNet v0.6.0 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="model/index.html" title="Object Relational Mapper"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Python Stdnet"
+             >previous</a> |</li>
+        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
+
     <div class="footer">
         &copy; Copyright 2010-2011, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
   </body>
 </html>

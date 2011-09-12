@@ -20,7 +20,7 @@ class ConnectionError(RedisError):
 class ResponseError(RedisError):
     pass
     
-class InvalidResponse(RedisError):
+class InvalidResponse(ResponseError):
     pass
     
 class InvalidData(RedisError):

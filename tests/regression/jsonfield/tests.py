@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from random import random, randint
@@ -13,20 +14,32 @@ from stdnet.utils.populate import populate
 from examples.models import Statistics, Statistics2, Statistics3
 
 
-def make_random(size = 5, maxsize = 10, nesting = 1, level = 0):
-    keys = populate(size = size)
-    if level:
-        keys.append('')
-    level += 1
-    for key in keys:
-        if nesting:
-            yield key,dict(make_random(size = randint(0,maxsize),
-                                       maxsize = maxsize,
-                                       nesting = nesting - 1,
-                                       level = level))
-        else:
-            yield key,random()
-
+class make_random(object):
+    
+    def __init__(self):
+        self.count = 0
+        
+    def make(self, size = 5, maxsize = 10, nesting = 1, level = 0,
+             docount = True):
+        keys = populate(size = size)
+        #if level:
+        #    keys.append('')
+        level += 1
+        for key in keys:
+            next_docount = docount
+            if not key:
+                next_docount = False
+            if nesting:
+                yield key,dict(self.make(size = randint(0,maxsize),
+                                         maxsize = maxsize,
+                                         nesting = nesting - 1,
+                                         level = level,
+                                         docount = next_docount))
+            else:
+                if docount:
+                    self.count += 1
+                yield key,random()
+    
     
 class TestJsonField(test.TestModelBase):
     model = Statistics
@@ -184,12 +197,42 @@ The `as_string` atttribute is set to ``False``.'''
         obj = m.save()
         obj = self.model.objects.get(id = obj.id)
         self.assertEqual(obj.data,{'ts':[1,2,3,4]})
-        
-    def testFuzzy(self):
-        data = dict(make_random(nesting = 3))
-        m = self.make(data)
+    
+    def testFuzzySmall(self):
+        r = make_random()
+        data = dict(r.make(nesting = 0))
+        m = self.make(deepcopy(data))
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
+        self.assertEqual(len(cdata),r.count+1)
+        for k in cdata:
+            if k is not 'name':
+                self.assertTrue(k.startswith('data__'))
+        obj = m.save()
+        obj = self.model.objects.get(id = obj.id)
+        self.assertEqualDict(data,obj.data)
+        
+    def testFuzzyMedium(self):
+        r = make_random()
+        data = dict(r.make(nesting = 1))
+        m = self.make(deepcopy(data))
+        self.assertTrue(m.is_valid())
+        cdata = m.cleaned_data
+        self.assertEqual(len(cdata),r.count+1)
+        for k in cdata:
+            if k is not 'name':
+                self.assertTrue(k.startswith('data__'))
+        obj = m.save()
+        obj = self.model.objects.get(id = obj.id)
+        self.assertEqualDict(data,obj.data)
+        
+    def testFuzzy(self):
+        r = make_random()
+        data = dict(r.make(nesting = 3))
+        m = self.make(deepcopy(data))
+        self.assertTrue(m.is_valid())
+        cdata = m.cleaned_data
+        self.assertEqual(len(cdata),r.count+1)
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
@@ -200,7 +243,7 @@ The `as_string` atttribute is set to ``False``.'''
     def assertEqualDict(self,data1,data2):
         for k in list(data1):
             v1 = data1.pop(k)
-            v2 = data2.pop(k)
+            v2 = data2.pop(k,{})
             if isinstance(v1,dict):
                 self.assertEqualDict(v1,v2)
             else:

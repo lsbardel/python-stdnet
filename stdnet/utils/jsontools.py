@@ -143,4 +143,4 @@ def dict_flat_generator(attname, value, splitter, dumps,
                         raise error('Cannot assign an empty key at top level\
  to dictionary to be flattened')
                     name = '{0}{1}{2}'.format(attname,splitter,prefix)
-                    yield name,dumps(value)
+                    yield name,dumps(value[field])

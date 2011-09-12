@@ -12,6 +12,7 @@ from datetime import datetime
 from itertools import starmap
 
 from stdnet.utils import zip, is_int, iteritems, is_string
+from stdnet.dispatch import Signal
 
 from .connection import ConnectionPool
 from .exceptions import *
@@ -192,6 +193,8 @@ class Redis(object):
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
+        self.signal_on_send = Signal()
+        self.signal_on_received = Signal()
 
     def _get_db(self):
         return self.connection_pool.db
@@ -209,7 +212,9 @@ between the client and server.
             self.connection_pool,
             self.response_callbacks,
             transaction,
-            shard_hint)
+            shard_hint,
+            self.signal_on_send,
+            self.signal_on_received)
 
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def execute_command(self, *args, **options):
@@ -1011,11 +1016,13 @@ ResponseError exceptions, such as those raised when issuing a command
 on a key of a different datatype.
 """
     def __init__(self, connection_pool, response_callbacks, transaction,
-                 shard_hint):
+                 shard_hint,signal_on_send,signal_on_received):
         self.connection_pool = connection_pool
         self.response_callbacks = response_callbacks
         self.transaction = transaction
         self.shard_hint = shard_hint
+        self.signal_on_send = signal_on_send
+        self.signal_on_received = signal_on_received
         self.reset()
 
     def reset(self):
@@ -1041,18 +1048,23 @@ which will execute all commands queued in the pipe.
     def _execute_transaction(self, connection, commands, with_callbacks):
         all_cmds = b''.join(starmap(connection.pack_command,
                                    (args for args, options in commands)))
-        connection.send_packed_command(all_cmds)
         # we don't care about the multi/exec any longer
         commands = commands[1:-1]
+        self.signal_on_send.send(self, raw_command = all_cmds,
+                                 commands = commands)
+        connection.send_packed_command(all_cmds)
         # parse off the response for MULTI and all commands prior to EXEC.
         # the only data we care about is the response the EXEC
         # which is the last command
-        parse_response = self.parse_response 
+        parse_response = self.parse_response
         for i in range(len(commands)+1):
             parse_response(connection, '_')
         # parse the EXEC.
         response = parse_response(connection, '_')
-
+        
+        self.signal_on_received.send(self, raw_command = all_cmds,
+                                     response = response)
+        
         if response is None:
             raise WatchError("Watched variable changed.")
 
@@ -1094,5 +1106,8 @@ which will execute all commands queued in the pipe.
         except ConnectionError:
             conn.disconnect()
             return execute(conn, stack, with_callbacks)
+        except ResponseError:
+            conn.disconnect()
+            raise
         finally:
             self.connection_pool.release(conn)

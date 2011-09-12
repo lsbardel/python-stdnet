@@ -34,11 +34,12 @@ For example::
     def __init__(self, meta, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
                  queries = None, empty = False):
-        '''A query set is  initialized with
+        '''\
+Initialize a queryset, usually by calling the manager queryset methods
         
-        * *meta* an model instance meta attribute,
-        * *fargs* dictionary containing the lookup parameters to include.
-        * *eargs* dictionary containing the lookup parameters to exclude.
+:parameter meta: an model instance meta attribute,
+:parameter fargs: dictionary containing the lookup parameters to include.
+:parameter eargs: dictionary containing the lookup parameters to exclude.
         '''
         self._meta  = meta
         self.model  = meta.model            

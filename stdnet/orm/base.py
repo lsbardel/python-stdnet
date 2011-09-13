@@ -231,7 +231,7 @@ the model table'''
                 return orderinginfo(f.name,f,desc)
             sortbys = sortby.split(JSPLITTER)
             s0 = sortbys[0]
-            if len(sortbys) == 2 and s0 in self.dfields:
+            if len(sortbys) > 1 and s0 in self.dfields:
                 f = self.dfields[s0]
                 return orderinginfo(sortby,f,desc)
         if not s:

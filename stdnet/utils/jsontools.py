@@ -3,6 +3,8 @@ from datetime import date, datetime
 from decimal import Decimal
 import json
 
+JSPLITTER = '__'
+
 date2timestamp = lambda dte : int(time.mktime(dte.timetuple()))
 
 
@@ -13,25 +15,7 @@ def totimestamp2(dte):
     return totimestamp(dte) + 0.000001*dte.microsecond
 
 def todatetime(tstamp):
-    return datetime.fromtimestamp(tstamp)
-    
-    
-def json_compact(data, sep = '_'):
-    if not sep:
-        return data
-    d = {}
-    for k,v in data.items():
-        rdata = d
-        keys = k.split(sep)
-        for key in keys[:-1]:
-            kd = rdata.get(key,None)
-            if kd is None:
-                kd = {}
-                rdata[key] = kd
-            rdata = kd
-        rdata[keys[-1]] = v
-    return d
-    
+    return datetime.fromtimestamp(tstamp)    
     
 class JSONDateDecimalEncoder(json.JSONEncoder):
     """The default JSON encoder used by stdnet. It provides
@@ -93,54 +77,65 @@ def nested_json_value(instance, attname, separator):
     return data
 
 
-def flat_to_nested(instance, attname, data, separator, loads):
+def flat_to_nested(data, instance = None, attname = None,
+                   separator = JSPLITTER, loads = None):
+    '''Convert a flat representation of a dictionary to
+a nested representation. Fields in the flat representation are separated
+by the *splitter* parameters.
+
+:parameter data: a flat dictionary of key value pairs.
+:parameter instance: optional instance of a model.
+:parameter attribute: optional attribute of a model.
+:parameter loads: optional data unserializer.
+:rtype: a nested dictionary'''
     val = {}
-    for key in tuple(data):
+    for key in data:
         keys = key.split(separator)
         # first key equal to the attribute name
-        if keys.pop(0) == attname:
-            v = loads(data.pop(key))
+        if attname:
+            if keys.pop(0) != attname:
+                continue
+        v = loads(data[key]) if loads else data[key]
+        # if an instance is available, inject the flat attribute
+        if instance:
             setattr(instance,key,v)
-            d = val
-            lk = keys[-1]
-            for k in keys[:-1]:
-                if k not in d:
-                    nd = {}
+        d = val
+        lk = keys[-1]
+        for k in keys[:-1]:
+            if k not in d:
+                nd = {}
+                d[k] = nd
+            else:
+                nd = d[k]
+                if not isinstance(nd,dict):
+                    nd = {'':nd}
                     d[k] = nd
-                else:
-                    nd = d[k]
-                    if not isinstance(nd,dict):
-                        nd = {'':nd}
-                        d[k] = nd
-                d = nd
+            d = nd
+        if lk not in d:
             d[lk] = v
+        else:
+            d[lk][''] = v
     return val
 
 
-def dict_flat_generator(attname, value, splitter, dumps,
-                        prefix = None, error = ValueError):
-        if not isinstance(value,dict):
-            if not prefix:
-                raise error('Cannot assign a non dictionary to\
- a JSON field')
-            else:
-                name = '{0}{1}{2}'.format(attname,splitter,prefix)
-                yield name,dumps(value)
+def dict_flat_generator(value, attname = None, splitter = JSPLITTER,
+                        dumps = None, prefix = None, error = ValueError,
+                        recursive = True):
+    if not isinstance(value,dict) or not recursive:
+        if not prefix:
+            raise error('Cannot assign a non dictionary to a JSON field')
         else:
-            # loop over dictionary
-            for field in value:
-                if field:
-                    key = '{0}{1}{2}'.format(prefix,splitter,field)\
-                                 if prefix else field
-                    for k,v2 in dict_flat_generator(attname,value[field],
-                                                    splitter,dumps,key,error):
-                        yield k,v2
-                else:
-                    # The field is empty. Empty fields are special. We do
-                    # not continue to flatten the value, instead we just
-                    # yield its serialized value
-                    if not prefix:
-                        raise error('Cannot assign an empty key at top level\
- to dictionary to be flattened')
-                    name = '{0}{1}{2}'.format(attname,splitter,prefix)
-                    yield name,dumps(value[field])
+            name = '{0}{1}{2}'.format(attname,splitter,prefix)\
+                         if attname else prefix
+            yield name,dumps(value) if dumps else value
+    else:
+        # loop over dictionary
+        for field in value:
+            val = value[field]
+            key = prefix
+            if field:
+                key = '{0}{1}{2}'.format(prefix,splitter,field)\
+                             if prefix else field
+            for k,v2 in dict_flat_generator(val,attname,splitter,dumps,
+                                            key,error, field):
+                yield k,v2

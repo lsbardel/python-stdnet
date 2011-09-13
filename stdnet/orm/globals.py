@@ -1,9 +1,7 @@
 import hashlib
 
 from stdnet.utils import to_bytestring
-
-
-JSPLITTER = '__'
+from stdnet.utils import JSPLITTER
 
 
 _model_dict = {}

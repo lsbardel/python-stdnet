@@ -11,7 +11,7 @@ from stdnet import test
 from stdnet.utils import zip, is_string, to_string, unichr, ispy3k
 from stdnet.utils.populate import populate
 
-from examples.models import Statistics, Statistics2, Statistics3
+from examples.models import Statistics, Statistics3
 
 
 class make_random(object):
@@ -22,18 +22,20 @@ class make_random(object):
     def make(self, size = 5, maxsize = 10, nesting = 1, level = 0,
              docount = True):
         keys = populate(size = size)
-        #if level:
-        #    keys.append('')
-        level += 1
+        if level:
+            keys.append('')
         for key in keys:
             next_docount = docount
-            if not key:
+            # First level with an empty key.
+            if level == 1 and not key:
                 next_docount = False
+                if nesting:
+                    self.count += 1
             if nesting:
                 yield key,dict(self.make(size = randint(0,maxsize),
                                          maxsize = maxsize,
                                          nesting = nesting - 1,
-                                         level = level,
+                                         level = level + 1,
                                          docount = next_docount))
             else:
                 if docount:
@@ -46,7 +48,7 @@ class TestJsonField(test.TestModelBase):
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
-        self.assertEqual(field.sep,None)
+        self.assertEqual(field.as_string,True)
         
     def testCreate(self):
         mean = Decimal('56.4')
@@ -91,36 +93,6 @@ class TestJsonField(test.TestModelBase):
                        data = {'mean': self})
         self.assertFalse(a.is_valid())
         self.assertRaises(stdnet.FieldValueError,a.save)
-        
-
-class TestJsonFieldSep(test.TestModelBase):
-    model = Statistics2
-    
-    def testMetaData(self):
-        field = self.model._meta.dfields['data']
-        self.assertEqual(field.sep,'__')
-        
-    def testCreate(self):
-        mean = Decimal('56.4')
-        started = date(2010,1,1)
-        timestamp = datetime.now()
-        a = self.model(dt = date.today(),
-                        data = {'stat__mean': mean,
-                                'stat__std': 5.78,
-                                'stat__secondary__ar': 0.1,
-                                'date__started': started,
-                                'date__timestamp':timestamp}).save()
-        a = Statistics2.objects.get(id = a.id)
-        self.assertEqual(len(a.data),2)
-        stat = a.data['stat']
-        dt   = a.data['date']
-        self.assertEqual(len(stat),3)
-        self.assertEqual(len(dt),2)
-
-        self.assertEqual(stat['mean'],mean)
-        self.assertEqual(stat['secondary']['ar'],0.1)
-        self.assertEqual(dt['started'],started)
-        self.assertEqual(dt['timestamp'],timestamp)
         
 
 class TestJsonFieldAsData(test.TestModelBase):
@@ -201,7 +173,7 @@ The `as_string` atttribute is set to ``False``.'''
     def testFuzzySmall(self):
         r = make_random()
         data = dict(r.make(nesting = 0))
-        m = self.make(deepcopy(data))
+        m = self.make(data)
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
         self.assertEqual(len(cdata),r.count+1)

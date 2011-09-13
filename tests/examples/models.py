@@ -202,11 +202,6 @@ class Statistics(orm.StdModel):
     data = orm.JSONField()
     
     
-class Statistics2(orm.StdModel):
-    dt = orm.DateField()
-    data = orm.JSONField(sep = True)
-    
-    
 class Statistics3(orm.StdModel):
     name = orm.SymbolField()
     data = orm.JSONField(as_string = False)

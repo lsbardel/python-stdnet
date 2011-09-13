@@ -5,7 +5,7 @@ import time
 from datetime import date, datetime
 
 from stdnet.exceptions import *
-from stdnet.utils import pickle, json, json_compact, DefaultJSONEncoder,\
+from stdnet.utils import pickle, json, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, novalue, to_string, is_string,\
                          to_bytestring, is_bytes_or_string, iteritems,\
@@ -505,18 +505,13 @@ behaviour and how the field is stored in the back-end server.
 :parameter decoder_hook: A JSON decoder function.
 
     Default: :class:`stdnet.utils.jsontools.date_decimal_hook`.
-    
-:parameter nested: If ``True`` a nested JSON dictionary is build by
-    separating fields with the `__` double underscore separator.
-    This flag is used when saving data to the database. 
-                
-    Default ``None``.
                 
 :parameter as_string: a flag indicating if data should be serialized
     into a JSON string. If the value is set to ``False`` the JSON data
     is stored as a field of the instance prefixed with the field name
     and double underscore ``__``. If ``True`` it is stored as a 
     standard JSON string on the field.
+    When set to ``True`` it is the opposite of ``nested`` flag.
                     
     Default ``True``.
 
@@ -547,7 +542,6 @@ which can be rather useful feature.
         kwargs['default'] = kwargs.get('default',{})
         self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
         self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
-        self.sep = JSPLITTER if kwargs.pop('sep',None) else None
         self.as_string = kwargs.pop('as_string',True)
         super(JSONField,self).__init__(*args, **kwargs)
         
@@ -567,10 +561,10 @@ which can be rather useful feature.
             if is_bytes_or_string(value):
                 value = self.to_python(value)
             if self.as_string:
-                value = self.dumps(json_compact(value,self.sep))
+                value = self.dumps(value)
             else:
-                value = dict(dict_flat_generator(self.attname, value,
-                                                 JSPLITTER, self.dumps,
+                value = dict(dict_flat_generator(value, attname = self.attname,
+                                                 dumps = self.dumps,
                                                  error = FieldValueError))
         return value
     
@@ -578,8 +572,9 @@ which can be rather useful feature.
         if self.as_string:
             return data.pop(self.attname,None)
         else:
-            return flat_to_nested(instance,self.attname,data,
-                                  JSPLITTER,self.loads)
+            return flat_to_nested(data, instance = instance,
+                                  attname = self.attname,
+                                  loads = self.loads)
     
     def dumps(self, value):
         try:

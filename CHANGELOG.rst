@@ -1,3 +1,8 @@
+Ver. 0.6.2 - Development
+============================
+* Added :mod:`stdnet.utils.dates`.
+* **297 regression tests** with **78%** coverage.
+
 Ver. 0.6.1 - 2011 Sep 10
 ============================
 * This is a minor release which brings an improved documentation,

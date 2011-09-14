@@ -1,6 +1,6 @@
 '''Interfaces for supported data-structures'''
 import stdnet
-from stdnet.utils import iteritems
+from stdnet.utils import iteritems, missing_intervals
 
 __all__ = ['PipeLine',
            'pipelines',
@@ -551,6 +551,14 @@ class TS(HashTable):
         loads    = self.pickler.loads
         for key,val in self._irange(start,end):
             yield tovalue(key),loads(val)
+            
+    def intervals(self, startdate, enddate, parseinterval = None,
+                    dateconverter = None):
+        start = self.front()
+        end = self.back()
+        return missing_intervals(startdate, enddate, start, end,
+                                 parseinterval = parseinterval,
+                                 dateconverter = dateconverter)
             
     def _count(self, start, end):
         raise NotImplementedError

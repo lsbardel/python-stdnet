@@ -1,7 +1,6 @@
 from stdnet import orm
-from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate
-
-from .utils import default_parse_interval
+from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate,\
+                         missing_intervals
 
 
 class DateTimeConverter(object):
@@ -34,7 +33,7 @@ class HashTimeSeriesField(orm.HashField):
         
         
 class TimeSeriesField(orm.MultiField):
-    '''A new timeseries field based on TS data structure in Redis.
+    '''A timeseries field based on TS data structure in Redis.
 To be used with subclasses of :class:`TimeSeriesBase`'''
     type = 'ts'
     
@@ -49,7 +48,7 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
         self.converter = model.converter
         super(TimeSeriesField,self).register_with_model(name, model)
         
-
+        
 class TimeSeriesBase(orm.StdModel):
     '''Timeseries base model class'''
     converter = DateTimeConverter
@@ -70,48 +69,10 @@ class TimeSeriesBase(orm.StdModel):
 from which data is not available. It return a list of two-dimensional tuples
 containing start and end date for the interval. The list could countain 0,1 or 2
 tuples.'''
-        parseinterval = parseinterval or default_parse_interval
-        start     = self.data_start
-        end       = self.data_end
-        todate    = self.todate
-        startdate = todate(parseinterval(startdate,0))
-        enddate   = max(startdate,todate(parseinterval(enddate,0)))
-
-        calc_intervals = []
-        # we have some history already
-        if start:
-            # the startdate is already in the database
-            if startdate < start:
-                calc_start = startdate
-                calc_end = parseinterval(start, -1)
-                if calc_end >= calc_start:
-                    calc_intervals.append((calc_start, calc_end))
-
-            if enddate > end:
-                calc_start = parseinterval(end, 1)
-                calc_end = enddate
-                if calc_end >= calc_start:
-                    calc_intervals.append((calc_start, calc_end))
-        else:
-            start = startdate
-            end = enddate
-            calc_intervals.append((startdate, enddate))
-
-        if calc_intervals:
-            # There are calculation intervals, which means the
-            # start and aned date have changed
-            N = len(calc_intervals)
-            start1 = calc_intervals[0][0]
-            end1 = calc_intervals[N - 1][1]
-            if start:
-                start = min(start, start1)
-                end = max(end, end1)
-            else:
-                start = start1
-                end = end1
-
-        return calc_intervals 
-        
+        return missing_intervals(startdate, enddate, self.data_start,
+                                 self.data_end, dateconverter = self.todate,
+                                 parseinterval = parseinterval)        
+    
     
 class TimeSeries(TimeSeriesBase):
     '''Timeseries model'''

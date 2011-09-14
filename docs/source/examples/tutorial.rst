@@ -266,8 +266,8 @@ call ``sort_by`` method.
 Transactions
 ==========================
 
-Since version 0.5.6, stdnet perform server updates via transactions.
-Transaction are important for two reasons:
+Since version 0.5.6, stdnet performs server updates via transactions.
+Transactions are important for two reasons:
 
 * To guarantee atomicity and therefore consistency of model instances when updating/deleting.
 * To speed up updating/deleting of several instances at once.
@@ -278,6 +278,18 @@ A tipical usage to speed up the creation of several instances of a model ``MyMod
         for kwargs in data:
             MyModel(**kwargs).save(t)
 
+Or for more than one model::
 
+    from stdnet import orm
+    
+    with orm.transaction(MyModel1,MyModel2,...,ModelN) as t:
+        for kwargs in data1:
+            MyModel1(**kwargs).save(t)
+        for kwargs in data2:
+            MyModel2(**kwargs).save(t)
+        ...
+        
+
+        
    
 .. _django: http://www.djangoproject.com/

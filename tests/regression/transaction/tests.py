@@ -34,6 +34,11 @@ class TestTransactions(test.TestCase):
         s = SimpleModel(code = 'test', description = 'just a test').save()
         self.assertEqual(SimpleModel.objects.get(id = s.id),s)
         s.delete()
-        self.assertRaises(SimpleModel.DoesNotExist,SimpleModel.objects.get,id=s.id)
+        self.assertRaises(SimpleModel.DoesNotExist,
+                          SimpleModel.objects.get,id=s.id)
+        
+    
+class TestTransactionMultiFields(test.TestCase):
+    pass
     
         

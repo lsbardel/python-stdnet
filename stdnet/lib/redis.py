@@ -694,9 +694,10 @@ can be one of: refcount, encoding, idletime.'''
 
 
     #### SORTED SET COMMANDS ####
-    def zadd(self, name, value, score):
-        "Add member ``value`` with score ``score`` to sorted set ``name``"
-        return self.execute_command('ZADD', name, score, value)
+    def zadd(self, name, args):
+        '''Add member the iterable over two dimensional elements ``args``.
+The first element is the score and the second is the value.'''
+        return self.execute_command('ZADD', name, args)
 
     def zcard(self, name):
         "Return the number of elements in the sorted set ``name``"

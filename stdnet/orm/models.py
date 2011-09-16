@@ -202,13 +202,17 @@ will enumerate the number of object to delete. without deleting them.'''
         return cls._meta.flush(count)
     
     @classmethod
-    def transaction(cls):
+    def transaction(cls, *models, **kwargs):
         '''Return a transaction instance.'''
         c = cls._meta.cursor
         if not c:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot start a transaction.".format(cls._meta))
-        return c.transaction()
+        for model in models:
+            if model._meta.cursor != c:
+                raise InvalidTransaction("Models {0} and {0} are registered\
+ with a different databases. Cannot create transaction")
+        return c.transaction(**kwargs)
     
     # PICKLING SUPPORT
     

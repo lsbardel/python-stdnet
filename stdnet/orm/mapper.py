@@ -19,7 +19,8 @@ __all__ = ['clearall',
            'register_applications',
            'register_application_models',
            'Manager',
-           'UnregisteredManager']
+           'UnregisteredManager',
+           'transaction']
 
     
 def clearall(exclude = None):
@@ -217,6 +218,13 @@ def register_applications(applications, **kwargs):
 
 It return s a list of registered models.'''
     return list(register_application_models(applications,**kwargs))
+
+
+def transaction(*models, **kwargs):
+    '''Create a transaction'''
+    if not models:
+        raise ValueError('Cannot create transaction with no models')
+    return models[0].transaction(*models[1:],**kwargs)
 
 
 _GLOBAL_REGISTRY = {}

@@ -57,27 +57,27 @@ class PipeLine(object):
         
         
 class HashPipe(PipeLine):
-    def __init__(self, timeout):
+    def __init__(self, timeout = 0):
         super(HashPipe,self).__init__({},'hash',timeout)
         
         
 class TsPipe(PipeLine):
-    def __init__(self, timeout):
+    def __init__(self, timeout = 0):
         super(TsPipe,self).__init__({},'ts',timeout)
 
 
 class SetPipe(PipeLine):
-    def __init__(self, timeout):
+    def __init__(self, timeout = 0):
         super(SetPipe,self).__init__(set(),'unordered_set',timeout)
 
         
 class OsetPipe(PipeLine):
-    def __init__(self, timeout):
+    def __init__(self, timeout = 0):
         super(OsetPipe,self).__init__(set(),'ordered_set',timeout)        
 
     
 class ListPipe(PipeLine):
-    def __init__(self, timeout):
+    def __init__(self, timeout = 0):
         super(ListPipe,self).__init__(listPipeline(),'list',timeout)
         
 
@@ -132,25 +132,22 @@ class Structure(object):
 
     '''
     struct = None
-    def __init__(self, cursor, id, timeout = 0,
+    def __init__(self, server, id, timeout = 0,
                  pickler = None, cachepipes = None,
-                 scorefun = None, transaction = None,
-                 **kwargs):
+                 scorefun = None, **kwargs):
+        self.server = server
         self.scorefun = scorefun
-        self.transaction = transaction
         self.pickler = pickler if pickler is not None else cursor.pickler
         self.id = id
         self._cache = None
-        if not transaction:
-            self.transaction = cursor.transaction(pipelined = False,
-                                                  cachepipes = cachepipes)
         self.timeout = timeout
-        self.cursor = self.transaction.pipe
     
     def __get_pipeline(self):
-        pipeline = self.transaction._get_pipe(self.id,self.struct,self.timeout)
-        self.timeout = pipeline.timeout
-        return pipeline.pipe
+        if not hasattr(self,'_pipeline'):
+            self.transaction = self.server.transaction(pipelined = False,
+                                                       cachepipes = cachepipes)
+            self._pipeline = self.transaction.structure_pipe(self)
+        return self._pipeline            
     pipeline = property(__get_pipeline)
     
     def __repr__(self):
@@ -162,13 +159,6 @@ class Structure(object):
         
     def __str__(self):
         return self.__repr__()
-    
-    #def __get_pipeline(self):
-    #    if self._pipeline is not None:
-    #        return self._pipeline
-    #    else:
-    #        return self.cursor._get_pipe(self.id,self.struct,self.timeout).pipe
-    #pipeline = property(__get_pipeline)
         
     def size(self):
         '''Number of elements in structure'''
@@ -200,8 +190,11 @@ class Structure(object):
     
     def save(self):
         pipeline = self.pipeline
+        return self.save_from_pipeline(self.transaction.cursor,pipeline)
+        
+    def save_from_pipeline(self, cursor, pipeline):
         if pipeline:
-            self._save()
+            self._save(cursor, pipeline)
             pipeline.clear()
             if self.timeout:
                 self.add_expiry()
@@ -210,7 +203,7 @@ class Structure(object):
         
     # PURE VIRTUAL METHODS
         
-    def _save(self):
+    def _save(self, cursor, pipeline):
         raise NotImplementedError("Could not save")
     
     def add_expiry(self):
@@ -395,9 +388,9 @@ This structure is important since it is used in two different parts of the libra
         k = self.converter.tokey(key)
         self.delete(k)
         
-    def add(self, key, value):
+    def add(self, key, value, transaction = None):
         '''Add ``key`` - ``value`` pair to hashtable.'''
-        self.update({key:value})
+        self.update({key:value},transaction)
     __setitem__ = add
     
     def addnx(self, field, value):
@@ -409,11 +402,15 @@ exception.'''
         if not self._addnx(key,value):
             raise stdnet.FieldValueError('Field {0} already in hash table {1}'.format(field,self))
     
-    def update(self, mapping):
-        '''Add *mapping* dictionary to hashtable. Equivalent to python dictionary update method.'''
+    def update(self, mapping, transaction = None):
+        '''Add *mapping* dictionary to hashtable.
+Equivalent to python dictionary update method.
+
+:parameter mapping: a dictionary of field values,
+:parameter transaction: a optional :class:`stadnet.Transaction` instance.'''
         tokey = self.converter.tokey
         dumps = self.pickler.dumps
-        p     = self.pipeline
+        p = transaction.structure_pipe(self) if transaction else self.pipeline
         for key,value in iteritems(mapping):
             p[tokey(key)] = dumps(value)
     

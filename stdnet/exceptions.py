@@ -8,6 +8,11 @@ class ModelNotRegistered(StdNetException):
 registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.orm.register` for details.'''
     pass
 
+class InvalidTransaction(StdNetException):
+    '''A :class:`StdNetException` raised when trying to create a transaction
+with models registered with different backends.'''
+    pass
+
 class AlreadyRegistered(StdNetException):
     pass
 

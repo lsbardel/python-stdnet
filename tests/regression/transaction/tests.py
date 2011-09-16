@@ -1,8 +1,8 @@
 import random
 
 import stdnet
-from stdnet import test
-from examples.models import SimpleModel
+from stdnet import test, orm
+from examples.models import SimpleModel, Dictionary
 from stdnet.utils import populate
 
 LEN = 100
@@ -37,3 +37,26 @@ class TestTransactions(test.TestCase):
         self.assertRaises(SimpleModel.DoesNotExist,SimpleModel.objects.get,id=s.id)
     
         
+        
+class TestMultiFieldTransaction(test.TestModelBase):
+    model = Dictionary
+    
+    def make(self):
+        with orm.transaction(self.model, name = 'create models') as t:
+            self.assertEqual(t.name, 'create models')
+            for name in names:
+                self.model(name = name).save(t)
+            self.assertFalse(t._cachepipes)
+    
+    def testSaveSimple(self):
+        self.make()
+        
+    def testHashField(self):
+        self.make()
+        d = self.model.objects.get(id = 1)
+        with d.transaction() as t:
+            d.data.add('ciao','hello in Italian',t)
+            d.data.add('wine','drink to enjoy with or without food',t)
+            self.assertTrue(t._cachepipes)
+        self.assertEqual(d.data['ciao'],'hello in Italian')
+        self.assertEqual(d.data['wine'],'drink to enjoy with or without food')

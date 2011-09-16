@@ -4,7 +4,7 @@ from stdnet.utils import encoders
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from .fields import Field, RelatedObject
-from .query import M2MRelatedManager, GetStructureMixin
+from .query import M2MRelatedManager
 
 
 __all__ = ['ManyFieldManagerProxy',
@@ -16,7 +16,7 @@ __all__ = ['ManyFieldManagerProxy',
            'ManyToManyField']
 
 
-class ManyFieldManagerProxy(GetStructureMixin):
+class ManyFieldManagerProxy(object):
     
     def __init__(self, name, stype, pickler, converter, scorefun):
         self.name    = name
@@ -44,6 +44,16 @@ class ManyFieldManagerProxy(GetStructureMixin):
         
     def get_related_manager(self, instance):
         return self.get_structure(instance)
+    
+    def get_structure(self, instance):
+        meta = instance._meta
+        #pipe = pipelines(self.stype,meta.timeout)
+        st = getattr(meta.cursor,self.stype)
+        return st(meta.basekey('id',instance.id,self.name),
+                  timeout = meta.timeout,
+                  pickler = self.pickler,
+                  converter = self.converter,
+                  scorefun = self.scorefun)
 
 
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
@@ -162,7 +172,7 @@ It can be used in the following way::
     '''
     type = 'set'
     def get_pipeline(self):
-        return 'oset' if self.ordered else 'set'
+        return 'ordered_set' if self.ordered else 'unordered_set'
     
 
 class ListField(MultiField):
@@ -236,7 +246,7 @@ This field is implemented as a double Set field.
 '''
     type = 'many-to-many'
     def get_pipeline(self):
-        return 'set'
+        return 'unordered_set'
     
     def register_with_model(self, name, model):
         Field.register_with_model(self, name, model)

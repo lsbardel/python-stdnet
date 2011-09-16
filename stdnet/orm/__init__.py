@@ -23,3 +23,4 @@ If not an the instance is not the same an exception is raised.'''
         exception = exception or model.DoesNotValidate
         raise exception('An instance with {0} {1} \
  is already available'.format(fieldname,value))
+        

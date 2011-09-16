@@ -2,7 +2,6 @@ from collections import namedtuple
 
 import stdnet
 from stdnet.utils import iteritems, to_string, map
-from stdnet import BackendDataServer, ImproperlyConfigured, BeckendQuery
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis, connection
 
@@ -18,40 +17,18 @@ redis_connection = namedtuple('redis_connection',
                               'host port db password socket_timeout decode')
  
 
-class RedisTransaction(object):
-    
-    def __init__(self, server, pipelined = True, cachepipes = None):
-        self.server = server
-        if pipelined:
-            self.pipe = server.redispy.pipeline()
-        else:
-            self.pipe = server.redispy
-        self._cachepipes = cachepipes if cachepipes is not None else {}
-        
-    def _get_pipe(self, id, typ, timeout):
-        '''Return a pipeline object'''
-        cachepipes  = self._cachepipes
-        if id not in cachepipes:
-            cvalue = typ(timeout)
-            cachepipes[id] = cvalue
-        return cachepipes[id]
+class RedisTransaction(stdnet.Transaction):
+    default_name = 'redis-transaction'
     
     def commit(self):
         '''Commit cache objects to database.'''
         cachepipes = self._cachepipes
-        pipe = self.pipe
+        cursor = self.cursor
         for id,cachepipe in iteritems(cachepipes):
-            el = getattr(self.server,cachepipe.method)(id, transaction = self)
-            el.save()        
-        if hasattr(pipe,'execute'):
-            return pipe.execute()
-       
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, type, value, traceback):
-        if type is None:
-            self.commit()
+            el = getattr(self.server,cachepipe.method)(id)
+            el.save_from_pipeline(cursor, cachepipe.pipe)        
+        if hasattr(cursor,'execute'):
+            return cursor.execute()
 
 
 class add2set(object):
@@ -77,7 +54,7 @@ class add2set(object):
         return score
         
         
-class RedisQuery(BeckendQuery):
+class RedisQuery(stdnet.BeckendQuery):
     result = None
     _count = None
         
@@ -338,6 +315,9 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.clear           = redispy.flushdb
         self.delete          = redispy.delete
         self.keys            = redispy.keys
+    
+    def cursor(self, pipelined = False):
+        return self.redispy.pipeline() if pipelined else self.redispy
     
     def disconnect(self):
         self.redispy.connection_pool.disconnect()

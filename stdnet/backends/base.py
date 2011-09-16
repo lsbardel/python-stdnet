@@ -6,7 +6,7 @@ from stdnet.utils import zip, pickle, iteritems, BytesIO, encoders
 
 from .structures import Structure
 
-__all__ = ['BackendDataServer', 'BeckendQuery']
+__all__ = ['BackendDataServer', 'BeckendQuery', 'Transaction']
 
 
 class Keys(object):
@@ -19,6 +19,33 @@ class Keys(object):
     def add(self, value):
         self.value = value
         
+        
+class Transaction(object):
+    default_name = 'transaction'
+    
+    def __init__(self, server, cursor, cachepipes = None, name = None):
+        self.name = name or self.default_name
+        self.server = server
+        self.cursor = cursor
+        self._cachepipes = cachepipes if cachepipes is not None else {}
+        
+    def structure_pipe(self, structure):
+        '''Create a pipeline for a structured datafield'''
+        id = structure.id
+        if id not in self._cachepipes:
+            self._cachepipes[id] = structure.struct()
+        return self._cachepipes[id].pipe
+    
+    def commit(self):
+        raise NotImplementedError
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            self.commit()
+
         
 class BeckendQuery(object):
     query_set = None
@@ -84,6 +111,9 @@ It must implement the *loads* and *dumps* methods.'''
     def name(self):
         return self.__name
     
+    def cursor(self, pipelined = False):
+        return self
+    
     def disconnect(self):
         '''Disconnect the connection.'''
         pass
@@ -108,9 +138,9 @@ It must implement the *loads* and *dumps* methods.'''
         '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError
     
-    def transaction(self, pipelined = True, cachepipes = None):
+    def transaction(self, pipelined = True, **kwargs):
         '''Return a transaction instance'''
-        return self.Transaction(self,pipelined,cachepipes)
+        return self.Transaction(self,self.cursor(pipelined),**kwargs)
 
     def save_object(self, obj, transaction = None):
         '''\

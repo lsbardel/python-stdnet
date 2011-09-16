@@ -11,9 +11,15 @@ def riteritems(self, com, *rargs):
         return zip(res[::2], res[1::2])
     else:
         return res
+    
+    
+class CommonMixin(object):
+    
+    def add_expiry(self, cursor):
+        cursor.execute_command('EXPIRE', self.id, self.timeout)
 
 
-class List(structures.List):
+class List(CommonMixin,structures.List):
     
     def _size(self):
         '''Size of map'''
@@ -45,17 +51,18 @@ class List(structures.List):
     def _all(self):
         return self.cursor.execute_command('LRANGE', self.id, 0, -1)
     
-    def _save(self):
+    def _save(self, cursor, pipeline):
         s  = 0
         id = self.id
-        c = self.cursor.execute_command
-        for value in self.pipeline.back:
-            c('RPUSH', id, value)
-        for value in self.pipeline.front:
-            c('LPUSH', id, value)
-    
-    def add_expiry(self):
-        self.cursor.execute_command('EXPIRE', self.id, self.timeout)
+        c = cursor.execute_command
+        if pipeline.back:
+            c('RPUSH', id, pipeline.back)
+        if pipeline.front:
+            c('LPUSH', id, pipeline.front)
+        #for value in pipeline.back:
+        #    c('RPUSH', id, value)
+        #for value in pipeline.front:
+        #    c('LPUSH', id, value)
         
 
 class Set(structures.Set):
@@ -73,11 +80,10 @@ class Set(structures.Set):
     def _discard(self, elem):
         return self.cursor.execute_command('SREM', self.id, elem)
     
-    def _save(self):
+    def _save(self, cursor, pipeline):
         id = self.id
         s  = 0
-        cursor = self.cursor
-        for value in self.pipeline:
+        for value in pipeline:
             cursor = cursor.execute_command('SADD', id, value)
     
     def _contains(self, value):
@@ -92,35 +98,31 @@ class Set(structures.Set):
     
 class OrderedSet(structures.OrderedSet):
     
-    def _size(self):
+    def _size(self, cursor):
         '''Size of set'''
-        return self.cursor.execute_command('ZCARD', self.id)
+        return cursor.execute_command('ZCARD', self.id)
     
-    def _discard(self, elem):
-        return self.cursor.execute_command('ZREM', self.id, elem)
+    def _discard(self, cursor, elem):
+        return cursor.execute_command('ZREM', self.id, elem)
     
-    def _contains(self, value):
-        return self.cursor.execute_command('ZSCORE', self.id, value) is not None
+    def _contains(self, cursor, value):
+        return cursor.execute_command('ZSCORE', self.id, value) is not None
     
-    def _rank(self, elem):
-        return self.cursor.execute_command('ZRANK', self.id, elem)
+    def _rank(self, cursor, elem):
+        return cursor.execute_command('ZRANK', self.id, elem)
         
-    def _all(self, desc = False, withscores = False):
-        return self.range(0, -1, desc = desc, withscores = withscores)
+    def _all(self, cursor, desc = False, withscores = False):
+        return self.range(cursor, 0, -1, desc = desc, withscores = withscores)
     
-    def range(self, start, end = -1, desc = False, withscores = False):
-        return self.cursor.execute_command('ZRANGE', self.id, start, end,
-                                           desc = desc,
-                                           withscores = withscores)
+    def range(self, cursor, start, end = -1, desc = False, withscores = False):
+        return cursor.execute_command('ZRANGE', self.id, start, end,
+                                      desc = desc, withscores = withscores)
     
-    def _save(self):
-        id = self.id
-        s  = 0
-        for score,value in self.pipeline:
-            self.cursor.execute_command('ZADD', id, score, value)
+    def _save(self, cursor, pipeline):
+        cursor.execute_command('ZADD', self.id, pipeline)
 
-    def add_expiry(self):
-        self.cursor.execute_command('EXPIRE', self.id, self.timeout)
+    def add_expiry(self, cursor):
+        cursor.execute_command('EXPIRE', self.id, self.timeout)
 
 
 class HashTable(structures.HashTable):
@@ -157,9 +159,9 @@ class HashTable(structures.HashTable):
         for ky,val in self.items():
             yield val
             
-    def _save(self):
+    def _save(self, cursor, pipeline):
         items = []
-        [items.extend(item) for item in iteritems(self.pipeline)]
+        [items.extend(item) for item in iteritems(pipeline)]
         self.cursor.execute_command('HMSET',self.id,*items)
         
     def _addnx(self, field, value):
@@ -170,7 +172,8 @@ class HashTable(structures.HashTable):
         
 
 class TS(structures.TS):
-    '''Requires Redis Map structure which is not yet implemented in redis (and I don't know if it will).
+    '''Requires Redis Map structure which is not yet implemented in redis
+(and I don't know if it will).
 It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
     def _size(self):
         return self.cursor.execute_command('TSLEN', self.id)
@@ -203,13 +206,16 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return self.cursor.execute_command('TSCOUNT', self.id, start, end)
     
     def _front(self):
-        return self._getdate(self.cursor.execute_command('TSRANGE', self.id, 0, 0, 'novalues'))
+        return self._getdate(self.cursor.execute_command(\
+                                    'TSRANGE', self.id, 0, 0, 'novalues'))
     
     def _back(self):
-        return self._getdate(self.cursor.execute_command('TSRANGE', self.id, -1, -1, 'novalues'))
+        return self._getdate(self.cursor.execute_command(\
+                                    'TSRANGE', self.id, -1, -1, 'novalues'))
         
     def _keys(self):
-        return self.cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues')
+        return self.cursor.execute_command(\
+                                    'TSRANGE', self.id, 0, -1, 'novalues')
     
     def _items(self):
         return riteritems(self, 'TSRANGE', 0, -1, 'withtimes')
@@ -218,9 +224,9 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         for ky,val in self.items():
             yield val
             
-    def _save(self):
+    def _save(self, cursor, pipeline):
         items = []
-        [items.extend(item) for item in iteritems(self.pipeline)]
+        [items.extend(item) for item in iteritems(pipeline)]
         return self.cursor.execute_command('TSADD',self.id,*items)
     
     def add_expiry(self):

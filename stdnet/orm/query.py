@@ -335,22 +335,6 @@ to a :class:`stdnet.orm.ForeignKey`.'''
             return QuerySet(self.to._meta, kwargs)
         else:
             raise QuerySetError('Related manager has no object')
-            
-
-class GetStructureMixin(object):
-    
-    def get_structure(self, instance):
-        meta = instance._meta
-        transaction = getattr(instance,'_transaction',None)
-        pipe = pipelines(self.stype,meta.timeout)
-        st = getattr(meta.cursor,pipe.method)
-        return st(meta.basekey('id',instance.id,self.name),
-                  timeout = meta.timeout,
-                  pickler = self.pickler,
-                  converter = self.converter,
-                  scorefun = self.scorefun,
-                  cachepipes = instance._cachepipes,
-                  transaction = transaction)
         
 
 class M2MRelatedManager(Manager):

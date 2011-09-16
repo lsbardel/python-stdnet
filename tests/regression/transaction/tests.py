@@ -58,10 +58,26 @@ class TestMultiFieldTransaction(test.TestModelBase):
         
     def testHashField(self):
         self.make()
-        d = self.model.objects.get(id = 1)
-        with d.transaction() as t:
-            d.data.add('ciao','hello in Italian',t)
-            d.data.add('wine','drink to enjoy with or without food',t)
+        d1 = self.model.objects.get(id = 1)
+        d2 = self.model.objects.get(id = 2)
+        with orm.transaction(self.model) as t:
+            d1.data.add('ciao','hello in Italian',t)
+            d1.data.add('bla',10000,t)
+            d2.data.add('wine','drink to enjoy with or without food',t)
+            d2.data.add('foo',98,t)
             self.assertTrue(t._cachepipes)
-        self.assertEqual(d.data['ciao'],'hello in Italian')
-        self.assertEqual(d.data['wine'],'drink to enjoy with or without food')
+            # We should have two entries in the cachepipes
+            self.assertTrue(len(t._cachepipes),2)
+            for c in t._cachepipes:
+                self.assertEqual(len(t._cachepipes[c].pipe),2)
+            
+        self.assertTrue(len(t._cachepipes),2)
+        for c in t._cachepipes:
+            self.assertEqual(len(t._cachepipes[c].pipe),0)
+            
+        d1 = self.model.objects.get(id = 1)
+        d2 = self.model.objects.get(id = 2)
+        self.assertEqual(d1.data['ciao'],'hello in Italian')
+        self.assertEqual(d2.data['wine'],'drink to enjoy with or without food')
+    
+    

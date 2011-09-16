@@ -122,9 +122,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         
     def maker(self):
         model = self.model
-        m = model.__new__(model)
-        m.afterload()
-        return m
+        return model.__new__(model)
         
     def __repr__(self):
         if self.app_label:

@@ -2,7 +2,6 @@ from copy import copy
 from collections import namedtuple
 
 from stdnet.exceptions import *
-from stdnet import pipelines
 from stdnet.utils import zip, to_bytestring
 
 

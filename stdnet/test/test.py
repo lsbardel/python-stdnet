@@ -63,15 +63,20 @@ to perform cleanup, registration and unregistration.
         
 
 class TestModelBase(TestCase):
+    models = None
     model = None
     
     def register(self):
-        self.orm.register(self.model)
+        self.models = self.models or (self.model,)
+        for model in self.models:
+            self.orm.register(model)
         self.meta = self.model._meta
     
     def unregister(self):
-        self.orm.unregister(self.model)
-        
+        self.models = self.models or (self.model,)
+        for model in self.models:
+            self.orm.unregister(model)
+                    
         
 class TestMultiFieldMixin(object):
     '''Test class which add a couple of tests for multi fields. You need to implement the

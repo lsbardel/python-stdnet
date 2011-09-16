@@ -694,10 +694,13 @@ can be one of: refcount, encoding, idletime.'''
 
 
     #### SORTED SET COMMANDS ####
-    def zadd(self, name, args):
+    def zadd(self, name, *args):
         '''Add member the iterable over two dimensional elements ``args``.
 The first element is the score and the second is the value.'''
-        return self.execute_command('ZADD', name, args)
+        if len(args) % 2:
+            raise RedisError(\
+                    "ZADD requires an equal number of values and scores")
+        return self.execute_command('ZADD', name, *args)
 
     def zcard(self, name):
         "Return the number of elements in the sorted set ``name``"

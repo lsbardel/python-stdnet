@@ -1,5 +1,4 @@
 from stdnet.exceptions import *
-from stdnet import pipelines
 from stdnet.utils import encoders
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
@@ -18,11 +17,11 @@ __all__ = ['ManyFieldManagerProxy',
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, stype, pickler, converter, scorefun):
-        self.name    = name
-        self.stype   = stype
+    def __init__(self, name, stype, pickler, value_pickler, scorefun):
+        self.name = name
+        self.stype = stype
         self.pickler = pickler
-        self.converter = converter
+        self.value_pickler = value_pickler
         self.scorefun  = scorefun
         
     def get_cache_name(self):
@@ -47,12 +46,12 @@ class ManyFieldManagerProxy(object):
     
     def get_structure(self, instance):
         meta = instance._meta
-        #pipe = pipelines(self.stype,meta.timeout)
         st = getattr(meta.cursor,self.stype)
         return st(meta.basekey('id',instance.id,self.name),
+                  instance = instance,
                   timeout = meta.timeout,
                   pickler = self.pickler,
-                  converter = self.converter,
+                  value_pickler = self.value_pickler,
                   scorefun = self.scorefun)
 
 
@@ -70,7 +69,16 @@ class Many2ManyManagerProxy(ManyFieldManagerProxy):
 
 
 class MultiField(Field):
-    '''Virtual class for data-structure fields:
+    '''Virtual class for data-structure fields. These fields are proxies to
+:ref:`remote structures <structures-backend>` in the backend data server.
+By defining structured fields in a model, instances of that model can access
+stand alone structures in the back-end server with very little effort.
+
+:parameter model: an optional :class:`stdnet.orm.StdModel` class. If
+    specified, the structured will contains id of instances of the model.
+    It is saved in the :attr:`relmodel` attribute.
+    
+
     
 .. attribute:: relmodel
 
@@ -83,16 +91,15 @@ class MultiField(Field):
     
 .. attribute:: pickler
 
-    a module/class/objects used to serialize values.
+    a object used to serialize and userialize data.
+    It must contains the ``dumps`` and ``loads`` methods.
     
     Default ``None``.
     
-.. attribute:: converter
+.. attribute:: value_pickler
 
-    a module/class/objects used to convert keys to suitable string to use
-    as keys in :class:`stdnet.HashTable` structures.
-    It must implement two methods, ``tokey`` to convert key to a suitable key
-    for the database backend and ``tovalue`` the inverse operation.
+    Same as the :attr:`pickler` attribute, this serializer is applaied to values
+    (used by hash table)
     
     Default: ``None``.
 '''
@@ -104,7 +111,7 @@ class MultiField(Field):
     def __init__(self,
                  model = None,
                  pickler = None,
-                 converter = None,
+                 value_pickler = None,
                  required = False,
                  related_name = None,
                  scorefun = None,
@@ -112,14 +119,14 @@ class MultiField(Field):
         # Force required to be false
         super(MultiField,self).__init__(required = False,
                                         **kwargs)
-        self.relmodel     = model
-        self.index        = False
-        self.unique       = False
-        self.primary_key  = False
-        self.pickler      = pickler
+        self.relmodel = model
+        self.index = False
+        self.unique = False
+        self.primary_key = False
+        self.pickler = pickler
         self.related_name = related_name
-        self.converter    = converter
-        self.scorefun     = scorefun
+        self.value_pickler = value_pickler or self.pickler
+        self.scorefun = scorefun
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
@@ -134,10 +141,11 @@ class MultiField(Field):
             field.pickler = ModelFieldPickler(related)
         if not field.pickler:
             field.pickler = self.default_pickler
+        field.value_pickler = field.value_pickler or field.pickler
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,self.get_pipeline(),
-                                      self.pickler,self.converter,
+                                      self.pickler,self.value_pickler,
                                       self.scorefun))
 
     def add_to_fields(self):

@@ -26,7 +26,7 @@ CLASSIFIERS = [
                ]
 
 
-sphinxtogithub = True
+sphinxtogithub = False
 
 from .exceptions import *
 from .backends import *

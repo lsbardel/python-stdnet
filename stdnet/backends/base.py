@@ -23,11 +23,11 @@ class Keys(object):
 class Transaction(object):
     default_name = 'transaction'
     
-    def __init__(self, server, cursor, cachepipes = None, name = None):
+    def __init__(self, server, cursor, name = None):
         self.name = name or self.default_name
         self.server = server
         self.cursor = cursor
-        self._cachepipes = cachepipes if cachepipes is not None else {}
+        self._cachepipes = {}
         
     def structure_pipe(self, structure):
         '''Create a pipeline for a structured datafield'''
@@ -154,7 +154,7 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         commit = False
         if not transaction:
             commit = True
-            transaction = self.transaction(cachepipes = obj._cachepipes)
+            transaction = obj.local_transaction()
             
         # Save the object in the back-end
         if not obj.is_valid():
@@ -317,30 +317,31 @@ If the key does not exist, raise a ValueError exception."""
     def list(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.List`
 for a given *id*.'''
-        return self.structure_module.List(self, id,
+        return self.structure_module.List(self, id, 'list',
                                           timeout = timeout, **kwargs)
     
     def hash(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        return self.structure_module.HashTable(self, id,
+        return self.structure_module.HashTable(self, id, 'hash',
                                                timeout = timeout, **kwargs)
     
     def ts(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.HashTable` structure
 for a given *id*.'''
-        return self.structure_module.TS(self, id, timeout = timeout, **kwargs)
+        return self.structure_module.TS(self, id, 'ts',
+                                        timeout = timeout, **kwargs)
     
     def unordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.Set` structure
 for a given *id*.'''
-        return self.structure_module.Set(self, id,
+        return self.structure_module.Set(self, id, 'unordered_set',
                                          timeout = timeout, **kwargs)
     
     def ordered_set(self, id, timeout = 0, **kwargs):
         '''Return an instance of :class:`stdnet.OrderedSet` structure
 for a given *id*.'''
-        return self.structure_module.OrderedSet(self, id,
+        return self.structure_module.OrderedSet(self, id, 'ordered_set',
                                                 timeout = timeout, **kwargs)
     
 

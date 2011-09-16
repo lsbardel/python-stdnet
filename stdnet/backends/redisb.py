@@ -24,10 +24,11 @@ class RedisTransaction(stdnet.Transaction):
         '''Commit cache objects to database.'''
         cachepipes = self._cachepipes
         cursor = self.cursor
+        execute = hasattr(cursor,'execute')
         for id,cachepipe in iteritems(cachepipes):
             el = getattr(self.server,cachepipe.method)(id)
-            el.save_from_pipeline(cursor, cachepipe.pipe)        
-        if hasattr(cursor,'execute'):
+            el._save_from_pipeline(cursor, cachepipe.pipe)        
+        if execute:
             return cursor.execute()
 
 
@@ -348,7 +349,7 @@ class BackendDataServer(stdnet.BackendDataServer):
 
     def _save_object(self, obj, transaction):        
         # Add object data to the model hash table
-        pipe = transaction.pipe
+        pipe = transaction.cursor
         meta = obj._meta
         obid = obj.id
         bkey = meta.basekey
@@ -373,7 +374,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         obj.is_valid()
         meta = obj._meta
         obid = obj.id
-        pipe = transaction.pipe
+        pipe = transaction.cursor
         bkey = meta.basekey
         keys = self.redispy.keys(meta.tempkey('*'))
         pipe.delete(bkey(OBJ,obid),*keys)
@@ -389,12 +390,12 @@ class BackendDataServer(stdnet.BackendDataServer):
                     rem(bkey(IDX,field.name,value), obid)
     
     def _delete_object(self, obj, transaction):
+        # Check for multifields and remove them
         mfs = obj._meta.multifields
         if mfs:
-            pipe = transaction.pipe
             fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
             if fids:
-                pipe.delete(*fids)
+                transaction.cursor.delete(*fids)
     
     def flush(self, meta, count):
         '''Flush all model keys from the database'''

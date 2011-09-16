@@ -3,8 +3,10 @@ from random import uniform
 
 from stdnet import test
 from stdnet.utils import populate, todate, zip
-from stdnet.contrib.timeseries.utils import dategenerator, default_parse_interval
-from stdnet.contrib.timeseries.tests.models import HashTimeSeries, DateHashTimeSeries
+from stdnet.contrib.timeseries.utils import dategenerator,\
+                                             default_parse_interval
+from stdnet.contrib.timeseries.tests.models import HashTimeSeries,\
+                                                 DateHashTimeSeries
 
 
 NUM_DATES = 300
@@ -19,13 +21,11 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
+class TestHashTimeSeries(test.TestModelBase,test.TestMultiFieldMixin):
     model   = HashTimeSeries
     mkdate  = datetime
     
     def setUp(self):
-        self.orm.register(self.model)
-        #self.orm.clearall()
         self.model(ticker = 'GOOG').save()
         
     def get_object_and_field(self, ticker = 'GOOG'):
@@ -197,6 +197,7 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         ts.data.add(dt,56)
         ts.data[dt2] = 78
         ts.save()
+        self.assertEqual(ts.size(),2)
         self.assertEqual(ts.data.get(dt),56)
         self.assertEqual(ts.data[dt2],78)
         self.assertRaises(KeyError,lambda : ts.data[mkdate(2010,3,1)])

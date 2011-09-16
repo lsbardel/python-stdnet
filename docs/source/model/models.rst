@@ -61,7 +61,7 @@ Register applications
 .. autofunction:: stdnet.orm.register_applications
 
    
-Query
+Queries
 ==============================
 
 
@@ -81,6 +81,25 @@ Manager
    :members:
    :member-order: bysource
    
+
+.. _transactions-api:
+
+Transactions
+====================
+
+Transaction class
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.Transaction
+   :members:
+   :member-order: bysource
+
+
+transaction
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.transaction
+
 
 Search Engine
 =====================

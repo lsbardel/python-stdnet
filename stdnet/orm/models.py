@@ -86,10 +86,6 @@ the :attr:`StdModel._meta` attribute.
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
-        self.afterload()
-        
-    def afterload(self):
-        self._cachepipes = {}
     
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
@@ -185,6 +181,11 @@ If the instance is not available (it does not have an id) and
                 odict[field.name] = value
         return odict
     
+    def local_transaction(self, **kwargs):
+        if not hasattr(self,'_local_transaction'):
+            self._local_transaction = self._meta.cursor.transaction(**kwargs)
+        return self._local_transaction
+    
     # UTILITY METHODS
     
     def instance_keys(self):
@@ -227,7 +228,6 @@ will enumerate the number of object to delete. without deleting them.'''
         for field in meta.scalarfields:
             value = field.value_from_data(self,data)
             setattr(self,field.attname,field.to_python(value))
-        self.afterload()
     
 
 def from_uuid(uuid):

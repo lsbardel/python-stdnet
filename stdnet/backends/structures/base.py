@@ -1,9 +1,9 @@
 '''Interfaces for supported data-structures'''
 import stdnet
-from stdnet.utils import iteritems, missing_intervals
+from stdnet.utils import iteritems, missing_intervals, encoders
+from stdnet.lib import zset
 
 __all__ = ['PipeLine',
-           'pipelines',
            'Structure',
            'List',
            'Set',
@@ -11,8 +11,8 @@ __all__ = ['PipeLine',
            'HashTable',
            'TS']
 
-default_score = lambda x : 1
 
+default_score = lambda x : 1
 
 
 class listPipeline(object):
@@ -33,17 +33,6 @@ class listPipeline(object):
         return len(self.back) + len(self.front)
     
 
-class keyconverter(object):
-    
-    @classmethod
-    def tokey(cls, value):
-        return value
-
-    @classmethod
-    def tovalue(cls, value):
-        return value
-    
-    
 class PipeLine(object):
     '''A pipeline utility class. Used to hold data in :class:`stdnet.Structure`
  before it is saved into the data server.'''
@@ -73,7 +62,7 @@ class SetPipe(PipeLine):
         
 class OsetPipe(PipeLine):
     def __init__(self, timeout = 0):
-        super(OsetPipe,self).__init__(set(),'ordered_set',timeout)        
+        super(OsetPipe,self).__init__(zset(),'ordered_set',timeout)        
 
     
 class ListPipe(PipeLine):
@@ -84,26 +73,48 @@ class ListPipe(PipeLine):
 _pipelines = {'list':ListPipe,
               'hash': HashPipe,
               'ts': TsPipe,
-              'set': SetPipe,
-              'oset': OsetPipe}
-
-
-def pipelines(typ, timeout):
-    global _pipelines
-    pip = _pipelines[typ]
-    return pip(timeout)
+              'unordered_set': SetPipe,
+              'ordered_set': OsetPipe}
 
 
 class Structure(object):
-    '''Base class for remote data-structures.
+    '''Base class for remote data-structures. Remote structures are the
+backend of :ref:`structured fields <model-field-structure>` but they
+can also be used as stand alone objects. For example::
+
+    import stdnet
+    db = stdnet.getdb(...)
+    mylist = db.list('bla')
+    
+:parameter server: instance of the remote server where the structure is stored.
+:parameter id: structure id
+:parameter pipetype: check the :attr:`pipetype`. Specified by the server.
+:parameter instance: Optional :class:`stdnet.orm.StdModel` instance to which
+    the structure belongs to via a
+    :ref:`structured field <model-field-structure>`.
+    This field is specified when accessing remote structures via the object
+    relational mapper.
+
         
-.. attribute:: cursor
+.. attribute:: server
 
     instance of a :class:`stdnet.BackendDataServer`.
+    
+.. attribute:: pipetype
+
+    one of ``list``, ``hash``, ``ordered_set``, ``unordered_set``, ``ts``.
     
 .. attribute:: id
 
     unique *id* for the structure
+    
+.. attribute:: instance
+
+    An optional :class:`stdnet.orm.StdModel` instance to which
+    the structure belongs to via a
+    :ref:`structured field <model-field-structure>`.
+    
+    Defaulr ``None``.
     
 .. attribute:: timeout
 
@@ -114,14 +125,10 @@ class Structure(object):
 
 .. attribute:: pickler
 
-    Class used for serialize and unserialize values. If ``None`` the :attr:`cursor`
-    pickler will be used. If ``False`` no pikler will be used.
+    Class used for serialize and unserialize values.
+    If ``None`` the :attr:`server` pickler will be used.
     
     Default ``None``.
-        
-.. attribute:: pipeline
-
-    An instance of :class:`stdnet.PipeLine`.
     
 .. attribute:: scorefun
 
@@ -131,25 +138,39 @@ class Structure(object):
     Default ``None``.
 
     '''
-    struct = None
-    def __init__(self, server, id, timeout = 0,
-                 pickler = None, cachepipes = None,
-                 scorefun = None, **kwargs):
+    def __init__(self, server, id,  pipetype, instance = None,
+                 timeout = 0, pickler = None,
+                 value_pickler = None, scorefun = None,
+                 **kwargs):
+        self.pipetype = pipetype
         self.server = server
         self.scorefun = scorefun
-        self.pickler = pickler if pickler is not None else cursor.pickler
+        self.instance = instance
+        self.pickler = pickler if pickler is not None else server.pickler
+        self.value_pickler = value_pickler if value_pickler is not None\
+                                 else server.pickler
         self.id = id
         self._cache = None
         self.timeout = timeout
+
+    @property
+    def struct(self):
+        return _pipelines[self.pipetype]
     
-    def __get_pipeline(self):
-        if not hasattr(self,'_pipeline'):
-            self.transaction = self.server.transaction(pipelined = False,
-                                                       cachepipes = cachepipes)
-            self._pipeline = self.transaction.structure_pipe(self)
-        return self._pipeline            
-    pipeline = property(__get_pipeline)
-    
+    def pipe(self, transaction = None):
+        '''Return a structure pipe given a *transaction*.
+The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
+
+:parameter transaction: Optional :class:`stdnet.Transaction` instance.
+:rtype: a local strcuture to hold data before it is safe into
+    the backend database.'''
+        return transaction.structure_pipe(self) if transaction\
+             else self._pipe()
+        
+    def cursor(self, transaction = None):
+        '''Return the backend cursor given a *transaction*.'''
+        return transaction.cursor if transaction else self._cursor()
+        
     def __repr__(self):
         base = '%s:%s' % (self.__class__.__name__,self.id)
         if self._cache is None:
@@ -159,40 +180,71 @@ class Structure(object):
         
     def __str__(self):
         return self.__repr__()
-        
-    def size(self):
-        '''Number of elements in structure'''
+    
+    def __iter__(self):
         if self._cache is None:
-            return self._size()
+            cache = []
+            loads = self.pickler.loads
+            for item in self._all(self.server.cursor()):
+                item = loads(item)
+                cache.append(item)
+                yield item
+            self.cache = cache
+        else:
+            for item in self.cache:
+                yield item
+
+    def save(self, transaction = None):
+        return self.save_from_pipeline(self.cursor(transaction),
+                                       self.pipe(transaction))
+        
+    def size(self, transaction = None):
+        '''Number of elements in structure. If no transaction is
+supplied, use the server default cursor.'''
+        if self._cache is None:
+            if transaction:
+                return self._size(self.cursor(transaction))
+            else:
+                return self._size(self.server.cursor())
         else:
             return len(self._cache)
     
-    def __iter__(self):
-        raise NotImplementedError()
-    
-    def _all(self):
-        raise NotImplementedError
-    
-    def _size(self):
-        raise NotImplementedError
-    
-    def delete(self):
-        '''Delete structure from remote server.'''
-        raise NotImplementedError
+    def __contains__(self, value):
+        return self.has(value)
     
     def __len__(self):
         return self.size()
     
-    def _unwind(self):
+    def has(self, value, transaction = None):
+        '''Check if *value* is in the structure. Pass a transaction
+if you would like ti pipeline the command.'''
         if self._cache is None:
-            self._cache = self._all()
-        return self._cache
-    
-    def save(self):
-        pipeline = self.pipeline
-        return self.save_from_pipeline(self.transaction.cursor,pipeline)
+            value = self.pickler.dumps(value)
+            return self._unpicklefrom(self._has, transaction, False, None,
+                                      value)
+        else:
+            return value in self._cache
         
-    def save_from_pipeline(self, cursor, pipeline):
+    # INTERNAL METHODS
+    
+    def _pipe(self):
+        self._setup()
+        return self._pipe_
+    
+    def _cursor(self):
+        self._setup()
+        return self._transaction.cursor
+    
+    def _setup(self):
+        if not hasattr(self,'_pipe_'):
+            if self.instance:
+                transaction = self.instance.local_transaction()
+            else:
+                transaction = self.server.transaction()
+            self._transaction = transaction
+            self._pipe_ = self._transaction.structure_pipe(self)
+            
+    def _save_from_pipeline(self, cursor, pipeline):
         if pipeline:
             self._save(cursor, pipeline)
             pipeline.clear()
@@ -201,51 +253,80 @@ class Structure(object):
         else:
             return 0
         
-    # PURE VIRTUAL METHODS
+    def _unpicklefrom(self, func, transaction, default, pickler,
+                      *args, **kwargs):
+        '''invoke remote function in the server and if
+we are not using a pipeline, unpickle the result.'''
+        if transaction:
+            return func(self.cursor(transaction), *args, **kwargs)
+        else:
+            res = func(self.server.cursor(), *args, **kwargs)
+            if res:
+                if pickler:
+                    return pickler.loads(res)
+                else:
+                    return res
+            else:
+                return default
         
+    # PURE VIRTUAL METHODS
+    
+    def _has(self, cursor, value):
+        raise NotImplementedError()
+    
+    def __iter__(self, cursor):
+        raise NotImplementedError()
+    
+    def _all(self, cursor):
+        raise NotImplementedError
+    
+    def _size(self, cursor):
+        raise NotImplementedError
+    
+    def _remove(self, cursor, items):
+        # Remove items form the structures
+        raise NotImplementedError
+    
+    def _delete(self, cursor):
+        '''Delete structure from remote server.'''
+        raise NotImplementedError
+    
     def _save(self, cursor, pipeline):
         raise NotImplementedError("Could not save")
     
-    def add_expiry(self):
-        '''Internal method called if a timeout is set. This needs to implemented.'''
+    def add_expiry(self, cursor, timeout):
+        '''Internal method called if a timeout is set.
+This needs to implemented.'''
         raise NotImplementedError("Could not save")
 
 
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
-    struct = ListPipe
-    def __iter__(self):
-        if not self._cache:
-            cache = []
-            loads = self.pickler.loads
-            for item in self._all():
-                item = loads(item)
-                cache.append(item)
-                yield item
-            self.cache = cache
-        else:
-            for item in self.cache:
-                yield item
+    def pop_back(self, transaction = None):
+        return self._unpicklefrom(self._pop_back, transaction, None,
+                                  self.pickler)
     
-    def pop_back(self):
-        raise NotImplementedError
-    
-    def pop_front(self):
-        raise NotImplementedError
+    def pop_front(self, transaction = None):
+        return self._unpicklefrom(self._pop_front, transaction, None,
+                                  self.pickler)
     
     def block_pop_back(self, timeout = None):
-        raise NotImplementedError
+        return self._unpicklefrom(self._block_pop_back, transaction, None,
+                                  self.pickler,
+                                  timeout)
     
     def block_pop_front(self, timeout = None):
-        raise NotImplementedError
+        return self._unpicklefrom(self._block_pop_front, transaction, None,
+                                  self.pickler,
+                                  timeout)
     
-    def push_back(self, value):
+    def push_back(self, value, transaction = None):
         '''Appends a copy of *value* to the end of the remote list.'''
-        self.pipeline.push_back(self.pickler.dumps(value))
+        self.pipe(transaction).push_back(self.pickler.dumps(value))
     
-    def push_front(self, value):
+    def push_front(self, value, transaction = None):
         '''Appends a copy of *value* to the beginning of the remote list.'''
-        self.pipeline.push_front(self.pickler.dumps(value))
+        self.pipe(transaction).push_front(self.pickler.dumps(value))
 
 
 class Set(Structure):
@@ -256,84 +337,49 @@ This structure is used for in two different parts of the library.
 * It is the structure upon which indexes are built, therefore each :class:`stdnet.orm.Field`
   which has ``index`` set to ``True`` will have an associated
   Set structure in the data server backend.
-* It is also used as :class:`stdnet.orm.SetField`.'''
-    struct = SetPipe
-    def __iter__(self):
-        if not self._cache:
-            cache = []
-            loads = self.pickler.loads
-            for item in self._all():
-                item = loads(item)
-                cache.append(item)
-                yield item
-            self.cache = cache
-        else:
-            for item in self.cache:
-                yield item
-    
-    def __contains__(self, value):
-        if self.pickler:
-            value = self.pickler.dumps(value)
-        if self._cache is None:
-            return self._contains(value)
-        else:
-            return value in self._cache
-                    
-    def add(self, value):
+* It is also used as :class:`stdnet.orm.SetField`.'''                    
+    def add(self, value, transaction = None):
         '''Add *value* to the set'''
-        self.pipeline.add(self.pickler.dumps(value))
+        self.pipe(transaction).update((self.pickler.dumps(value),))
 
-    def update(self, values):
+    def update(self, values, transaction = None):
         '''Add iterable *values* to the set'''
-        pipeline = self.pipeline
-        for value in values:
-            pipeline.add(self.pickler.dumps(value))
+        d = self.pickler.dumps
+        self.pipe(transaction).update((d(v) for v in values))
             
-    # PURE VIRTUAL METHODS
-    
-    def _contains(self, value):
-        raise NotImplementedError
-    
-    def discard(self, elem):
+    def discard(self, value, transaction = None):
         '''Remove an element from a set if it is a member'''
-        self._discard(self.pickler.dumps(elem))
-    
-    def _discard(self, value):
-        raise NotImplementedError
+        return self.remove((value,),transaction)
+        
+    def remove(self, values, transaction = None):
+        '''Remove elements from a set if they are members'''
+        return self._unpicklefrom(self._remove, transaction, None, self.pickler,
+                                  values)
 
 
 class OrderedSet(Set):
     '''An ordered version of :class:`stdnet.Set`.'''
-    struct = OsetPipe
-    
+
+    def add(self, value, transaction = None):
+        '''Add *value* to the set'''
+        score = self.scorefun(value)
+        self.pipe(transaction).add(score,self.pickler.dumps(value))
+
+    def update(self, values, transaction = None):
+        '''Add iterable *values* to the set'''
+        s = self.scorefun
+        d = self.pickler.dumps
+        self.pipe(transaction).update(((s(v),d(v)) for v in values))
+            
     def rank(self, value):
         if self.pickler:
             value = self.pickler.dumps(value)
         return self._rank(value)
-        
-    def __iter__(self):
-        if not self._cache:
-            self.cache = cache = []
-            if self.pickler:
-                loads = self.pickler.loads
-                for item in self._all():
-                    item = loads(item)
-                    cache.append(item)
-                    yield item
-            else:
-                for item in self._all():
-                    cache.append(item)
-                    yield item
-        else:
-            for item in self.cache:
-                yield item
-                
-    def add(self, value):
-        '''Add *value* to the set'''
-        score = self.scorefun(value)
+    
+    def range(self, start, stop):
         if self.pickler:
             value = self.pickler.dumps(value)
-        self.pipeline.add((score,value))
+        return self._rank(value)
         
     # VIRTUAL FUNCTIONS
     
@@ -343,64 +389,29 @@ class OrderedSet(Set):
     def _rank(self, value):
         raise NotImplementedError
 
-
-class KeyValueStructure(Structure):
-    '''Base class for :class:`HashTable`'''
-    def __init__(self, *args, **kwargs):
-        self.converter = kwargs.pop('converter',None) or keyconverter
-        super(KeyValueStructure,self).__init__(*args, **kwargs)
-    
-    def __contains__(self, key):
-        value = self.converter.tokey(key)
-        if self._cache is None:
-            return self._contains(value)
-        else:
-            return value in self._cache
-
     
 class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`.
-The networked equivalent to a Python ``dict``.
-    
-This structure is important since it is used in two different parts of the library.
-
-* It is the structure which holds instances for a :class:`stdnet.orm.StdModel` class.
-  Therefore each model is represented as a HashTable structure.
-  The keys are the model instances ids and the values are the 
-  serialised version of the instances.
-
-* It is also used as field (:class:`stdnet.orm.HashField`) like all other 
-  class:`stdnet.Structure`.'''
-    struct = HashPipe
-
-    def __init__(self, *args, **kwargs):
-        self.converter = kwargs.pop('converter',None) or keyconverter
-        super(HashTable,self).__init__(*args, **kwargs)
-    
-    def __contains__(self, key):
-        value = self.converter.tokey(key)
-        if self._cache is None:
-            return self._contains(value)
-        else:
-            return value in self._cache
-        
+The networked equivalent to a Python ``dict``.'''
     def __delitem__(self, key):
-        k = self.converter.tokey(key)
-        self.delete(k)
+        self.pop(key)
+        
+    def pop(self, key, transaction = None, default = None):
+        key = self.pickler.dumps(key)
+        return self._unpicklefrom(self._pop, transaction, default,
+                                  self.value_pickler, key)
         
     def add(self, key, value, transaction = None):
         '''Add ``key`` - ``value`` pair to hashtable.'''
         self.update({key:value},transaction)
     __setitem__ = add
     
-    def addnx(self, field, value):
+    def addnx(self, field, value, transaction = None):
         '''Set the value of a hash field only if the field
-does not exist. Otherwise it raises a :class:`stdnet.FieldValueError`
-exception.'''
-        key = self.converter.tokey(field)
-        value = self.pickler.dumps(value)
-        if not self._addnx(key,value):
-            raise stdnet.FieldValueError('Field {0} already in hash table {1}'.format(field,self))
+does not exist.'''
+        return self._addnx(self.cursor(transaction),
+                           self.pickler.dumps(key),
+                           self.pickler_value.dumps(value))
     
     def update(self, mapping, transaction = None):
         '''Add *mapping* dictionary to hashtable.
@@ -408,19 +419,25 @@ Equivalent to python dictionary update method.
 
 :parameter mapping: a dictionary of field values,
 :parameter transaction: a optional :class:`stadnet.Transaction` instance.'''
-        tokey = self.converter.tokey
-        dumps = self.pickler.dumps
-        p = transaction.structure_pipe(self) if transaction else self.pipeline
+        tokey = self.pickler.dumps
+        dumps = self.value_pickler.dumps
+        pipe = self.pipe(transaction)
         for key,value in iteritems(mapping):
-            p[tokey(key)] = dumps(value)
+            pipe[tokey(key)] = dumps(value)
     
-    def get(self, key, default = None):
-        kv = self.converter.tokey(key)
-        value = self._get(kv)
-        if value is not None:
-            return self.pickler.loads(value)
-        else:
-            return default
+    def get(self, key, default = None, transaction = None):
+        '''Retrieve a single element from the hashtable.
+If the element is not available return the default value (only
+when not using a transaction).
+
+:parameter key: lookup field
+:parameter default: default value when the field is not available.
+:parameter transaction: an optional transaction instance.
+rtype: a value in the hashtable or a pipeline depending if a
+    transaction has been used.'''
+        key = self.pickler.dumps(key)
+        return self._unpicklefrom(self._get, transaction, default,
+                                  self.value_pickler, key)
     
     def __getitem__(self, key):
         v = self.get(key)
@@ -429,28 +446,41 @@ Equivalent to python dictionary update method.
         else:
             return v
     
-    def mget(self, keys):
-        '''Return a generator of key-value pairs for the ``keys`` requested'''
-        if not keys:
-            raise StopIteration
-        tokey = self.converter.tokey
-        objs  = self._mget([tokey(key) for key in keys])
-        loads = self.pickler.loads
-        for obj in objs:
-            yield loads(obj)
-    
     def keys(self, desc = False):
-        '''Return a generator of all keys.'''
-        tovalue  = self.converter.tovalue
-        for key in self._keys():
-            yield tovalue(key)
+        '''Return a generator of all keys. No transactions involved.'''
+        kloads = self.pickler.loads
+        for key in self._keys(self.server.cursor()):
+            yield kloads(key)
 
-    def items(self):
-        '''Generator over all key-value items'''
-        loads    = self.pickler.loads
-        tovalue  = self.converter.tovalue
-        for key,val in self._items():
-            yield tovalue(key),loads(val)
+    def items(self, keys = None):
+        '''Generator over key-values.
+If keys is not supplied, it is a generator over all key-value items.
+No transaction involved in this function.'''
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        if keys:
+            dumps = self.pickler.dumps
+            keys = [dumps(k) for k in keys]
+            items = zip(keys,self._items(self.server.cursor(),keys))
+        else:
+            items = self._items(self.server.cursor(),keys)
+        for key,val in items:
+            yield kloads(key),vloads(val)
+            
+    def values(self, keys = None):
+        '''Generator overvalues.
+If keys is not supplied, it is a generator over value items.
+No transaction involved in this function.'''
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        if keys:
+            dumps = self.pickler.dumps
+            keys = [dumps(k) for k in keys]
+            for item in self._items(self.server.cursor(),keys):
+                yield vloads(item)
+        else:
+            for key,val in self._items(self.server.cursor(),keys):
+                yield vloads(val)
             
     def range(self, start, end, desc = False):
         '''Return a generator of ordered items between start and end.'''
@@ -480,74 +510,62 @@ Equivalent to python dictionary update method.
     
     # PURE VIRTUAL METHODS
     
-    def clear(self):
-        '''Clear the Hash table. Equivalent to ``dict.clear`` method in Python.'''
-        raise NotImplementedError
-    
     def _addnx(self, field, value):
         raise NotImplementedError
     
-    def _contains(self, value):
+    def _contains(self, cursor, value):
         raise NotImplementedError
     
-    def _get(self, key):
+    def _get(self, cursor, key):
         raise NotImplementedError
     
-    def _keys(self):
+    def _keys(self, cursor):
         raise NotImplementedError
     
-    def _items(self):
+    def _items(self, cursor, keys):
         raise NotImplementedError
     
-    def _mget(self, keys):
-        raise NotImplementedError
-    
-    def delete(self, key):
+    def _pop(self, cursor, key):
         raise NotImplementedError
 
     
 class TS(HashTable):
     '''A timeseries :class:`stdnet.Structure`.
 '''
-    struct = TsPipe
-        
-    def update(self, mapping):
-        tokey = self.converter.tokey
-        dumps = self.pickler.dumps
-        p     = self.pipeline
-        for key,value in iteritems(mapping):
-            p[tokey(key)] = dumps(value)
-    
     def front(self):
+        '''Return the front key of timeseries'''
         try:
-            return self.converter.tovalue(self._front())
-        except:
+            return self.pickler.loads(self._front(self.server.cursor()))
+        except TypeError:
             return None
         
     def back(self):
+        '''Return the back key of timeseries'''
         try:
-            return self.converter.tovalue(self._back())
-        except:
+            return self.pickler.loads(self._back(self.server.cursor()))
+        except TypeError:
             return None
         
     def range(self, start, end):
-        '''Return a range between start and end key.'''
-        tokey    = self.converter.tokey
-        tovalue  = self.converter.tovalue
-        loads    = self.pickler.loads
-        for key,val in self._range(tokey(start),tokey(end)):
-            yield tovalue(key),loads(val)
+        '''Return a generator of a range between start and end key.'''
+        tokey = self.pickler.dumps
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        cursor = self.server.cursor()
+        for key,val in self._range(cursor,tokey(start),tokey(end)):
+            yield kloads(key),vloads(val)
             
     def count(self, start, end):
-        tokey    = self.converter.tokey
-        return self._count(tokey(start),tokey(end))
+        tokey    = self.pickler.dumps
+        return self._count(self.server.cursor(),
+                           tokey(start),tokey(end))
             
     def irange(self, start = 0, end = -1):
         '''Return a range between start and end key.'''
-        tovalue  = self.converter.tovalue
-        loads    = self.pickler.loads
-        for key,val in self._irange(start,end):
-            yield tovalue(key),loads(val)
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        for key,val in self._irange(self.server.cursor(),start,end):
+            yield kloads(key),vloads(val)
             
     def intervals(self, startdate, enddate, parseinterval = None,
                     dateconverter = None):
@@ -557,18 +575,20 @@ class TS(HashTable):
                                  parseinterval = parseinterval,
                                  dateconverter = dateconverter)
             
-    def _count(self, start, end):
+    # PURE VIRTUAL METHODS
+    
+    def _count(self, cursor, start, end):
         raise NotImplementedError
     
-    def _range(self, start, end):
+    def _range(self, cursor, start, end):
         raise NotImplementedError
     
-    def _irange(self, start, end):
+    def _irange(self, cursor, start, end):
         raise NotImplementedError
     
-    def _front(self):
+    def _front(self, cursor):
         raise NotImplementedError
     
-    def _back(self):
+    def _back(self, cursor):
         raise NotImplementedError
         

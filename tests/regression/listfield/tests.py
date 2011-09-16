@@ -9,24 +9,20 @@ from examples.models import SimpleList
 elems = populate('string', 100)
 
 
-class BaseTestListField(test.TestCase,test.TestMultiFieldMixin):
+class BaseTestListField(test.TestModelBase,test.TestMultiFieldMixin):
+    model = SimpleList
     
     def get_object_and_field(self):
         d = SimpleList().save()
         return d,d.names
     
     def adddata(self,li):
+        '''Add elements to a list without using transactions.'''
         names = li.names
         for elem in elems:
             names.push_back(elem)
         li.save()
         self.assertEqual(li.names.size(),len(elems))
-    
-    def setUp(self):
-        self.orm.register(SimpleList)
-        
-    def unregister(self):
-        self.orm.unregister(SimpleList)
 
 
 class TestListField(BaseTestListField):

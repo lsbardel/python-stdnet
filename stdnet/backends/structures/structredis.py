@@ -5,8 +5,8 @@ from stdnet.utils import zip, iteritems
 from stdnet.backends.structures import base as structures
 
 
-def riteritems(self, com, *rargs):
-    res = self.cursor.execute_command(com, self.id, *rargs)
+def riteritems(cursor, id, com, *rargs):
+    res = cursor.execute_command(com, id, *rargs)
     if res:
         return zip(res[::2], res[1::2])
     else:
@@ -14,6 +14,9 @@ def riteritems(self, com, *rargs):
     
     
 class CommonMixin(object):
+    '''Implements common functions to all Redis structures.'''
+    def _delete(self, cursor):
+        return cursor.execute_command('DEL', self.id)
     
     def add_expiry(self, cursor):
         cursor.execute_command('EXPIRE', self.id, self.timeout)
@@ -21,92 +24,77 @@ class CommonMixin(object):
 
 class List(CommonMixin,structures.List):
     
-    def _size(self):
+    def _size(self, cursor):
         '''Size of map'''
-        return self.cursor.execute_command('LLEN', self.id)
+        return cursor.execute_command('LLEN', self.id)
     
-    def delete(self):
-        return self.cursor.execute_command('DEL', self.id)
+    def _pop_back(self, cursor):
+        return cursor.execute_command('RPOP', self.id)
     
-    def pop_back(self):
-        v = self.cursor.execute_command('RPOP', self.id)
-        if v:
-            return self.pickler.loads(v)
+    def _pop_front(self, cursor):
+        return cursor.execute_command('LPOP', self.id)
     
-    def pop_front(self):
-        v = self.cursor.execute_command('LPOP', self.id)
-        if v:
-            return self.pickler.loads(v)
+    def _block_pop_back(self, cursor, timeout = 0):
+        v = cursor.execute_command('BRPOP', self.id, timeout)
     
-    def block_pop_back(self, timeout = 0):
-        v = self.cursor.execute_command('BRPOP', self.id, timeout)
-        if v:
-            return self.pickler.loads(v[1])
+    def _block_pop_front(self, cursor, timeout = 0):
+        v = cursor.execute_command('BLPOP', self.id, timeout)
     
-    def block_pop_front(self, timeout = 0):
-        v = self.cursor.execute_command('BLPOP', self.id, timeout)
-        if v:
-            return self.pickler.loads(v[1])
-    
-    def _all(self):
-        return self.cursor.execute_command('LRANGE', self.id, 0, -1)
+    def _all(self, cursor):
+        return cursor.execute_command('LRANGE', self.id, 0, -1)
     
     def _save(self, cursor, pipeline):
         s  = 0
         id = self.id
         c = cursor.execute_command
-        if pipeline.back:
-            c('RPUSH', id, pipeline.back)
-        if pipeline.front:
-            c('LPUSH', id, pipeline.front)
-        #for value in pipeline.back:
-        #    c('RPUSH', id, value)
-        #for value in pipeline.front:
-        #    c('LPUSH', id, value)
+        b,f=None,None
+        # Redis 2.4
+        #if pipeline.back:
+        #    b = c('RPUSH', id, pipeline.back)
+        #if pipeline.front:
+        #    f = c('LPUSH', id, pipeline.front)
+        #return b,f
+        for value in pipeline.back:
+            c('RPUSH', id, value)
+        for value in pipeline.front:
+            c('LPUSH', id, value)
         
-
-class Set(structures.Set):
+        
+class Set(CommonMixin, structures.Set):
     
-    def _size(self):
+    def _size(self, cursor):
         '''Size of set'''
-        return self.cursor.execute_command('SCARD', self.id)
+        return cursor.execute_command('SCARD', self.id)
     
-    def delete(self):
-        return self.cursor.execute_command('DEL', self.id)
-    
-    def clear(self):
-        return self.delete()
-    
-    def _discard(self, elem):
-        return self.cursor.execute_command('SREM', self.id, elem)
+    def _discard(self, cursor, elem):
+        return cursor.execute_command('SREM', self.id, elem)
     
     def _save(self, cursor, pipeline):
         id = self.id
-        s  = 0
         for value in pipeline:
             cursor = cursor.execute_command('SADD', id, value)
+        #TODO >= 2.4
+        #cursor.execute_command('SADD', id, value)
     
-    def _contains(self, value):
-        return self.cursor.execute_command('SISMEMBER', self.id, value)
+    def _contains(self, cursor, value):
+        return cursor.execute_command('SISMEMBER', self.id, value)
     
-    def _all(self):
-        return self.cursor.execute_command('SMEMBERS', self.id)
-    
-    def add_expiry(self):
-        self.cursor.execute_command('EXPIRE', self.id, self.timeout)
+    def _all(self, cursor):
+        return cursor.execute_command('SMEMBERS', self.id)
     
     
-class OrderedSet(structures.OrderedSet):
+class OrderedSet(CommonMixin,structures.OrderedSet):
     
     def _size(self, cursor):
         '''Size of set'''
         return cursor.execute_command('ZCARD', self.id)
     
+    def _has(self, cursor, value):
+        res = cursor.execute_command('ZSCORE', self.id, value)
+        return False if res is None else res
+    
     def _discard(self, cursor, elem):
         return cursor.execute_command('ZREM', self.id, elem)
-    
-    def _contains(self, cursor, value):
-        return cursor.execute_command('ZSCORE', self.id, value) is not None
     
     def _rank(self, cursor, elem):
         return cursor.execute_command('ZRANK', self.id, elem)
@@ -121,114 +109,88 @@ class OrderedSet(structures.OrderedSet):
     def _save(self, cursor, pipeline):
         cursor.execute_command('ZADD', self.id, pipeline)
 
-    def add_expiry(self, cursor):
-        cursor.execute_command('EXPIRE', self.id, self.timeout)
 
-
-class HashTable(structures.HashTable):
+class HashTable(CommonMixin,structures.HashTable):
     
-    def _size(self):
-        return self.cursor.execute_command('HLEN', self.id)
+    def _size(self, cursor):
+        return cursor.execute_command('HLEN', self.id)
     
-    def clear(self):
-        return self.cursor.execute_command('DEL', self.id)
+    def _has(self, cursor, value):
+        return True if cursor.execute_command('HEXISTS', self.id, value)\
+                 else False
+                 
+    def _get(self, cursor, key):
+        return cursor.execute_command('HGET', self.id, key)
     
-    def _get(self, key):
-        return self.cursor.execute_command('HGET', self.id, key)
-    
-    def _mget(self, keys):
-        return self.cursor.execute_command('HMGET', self.id, *keys)
-    
-    def delete(self, key):
-        return self.cursor.execute_command('HDEL', self.id, key)
-    
-    def _contains(self, value):
-        if self.cursor.execute_command('HEXISTS', self.id, value):
-            return True
-        else:
-            return False
+    def _pop(self, cursor, key):
+        return cursor.execute_command('HDEL', self.id, key)
         
-    def _keys(self):
-        return self.cursor.execute_command('HKEYS', self.id)
+    def _keys(self, cursor):
+        return cursor.execute_command('HKEYS', self.id)
     
-    def _items(self):
-        return self.cursor.execute_command('HGETALL', self.id)
-        #return riteritems(self, 'HGETALL', self.id)
-
-    def values(self):
-        for ky,val in self.items():
-            yield val
-            
+    def _items(self, cursor, keys):
+        if keys:
+            return cursor.execute_command('HMGET', self.id, *keys)
+        else:
+            return cursor.execute_command('HGETALL', self.id)
+    
     def _save(self, cursor, pipeline):
         items = []
         [items.extend(item) for item in iteritems(pipeline)]
-        self.cursor.execute_command('HMSET',self.id,*items)
+        cursor.execute_command('HMSET',self.id,*items)
         
-    def _addnx(self, field, value):
-        return self.cursor.execute_command('HSETNX', self.id, field, value)
-    
-    def add_expiry(self):
-        self.cursor.execute_command('EXPIRE', self.id, self.timeout)
+    def _addnx(self, cursor, field, value):
+        return cursor.execute_command('HSETNX', self.id, field, value)
         
 
-class TS(structures.TS):
+class TS(CommonMixin,structures.TS):
     '''Requires Redis Map structure which is not yet implemented in redis
 (and I don't know if it will).
 It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
-    def _size(self):
-        return self.cursor.execute_command('TSLEN', self.id)
+    def _size(self, cursor):
+        return cursor.execute_command('TSLEN', self.id)
+
+    def _has(self, cursor, key):
+        return cursor.execute_command('TSEXISTS', self.id, key)
     
-    def clear(self):
-        return self.cursor.execute_command('DEL', self.id)
+    def _get(self, cursor, key):
+        return cursor.execute_command('TSGET', self.id, key)
     
-    def _get(self, key):
-        return self.cursor.execute_command('TSGET', self.id, key)
-    
-    def _mget(self, keys):
-        return self.cursor.execute_command('TMGET', self.id, *keys)
-    
-    def delete(self, key):
-        return self.cursor.execute_command('TSDEL', self.id, key)
-    
-    def _contains(self, key):
-        return self.cursor.execute_command('TSEXISTS', self.id, key)
+    def _pop(self, cursor, key):
+        return cursor.execute_command('TSDEL', self.id, key)
         
     def _getdate(self, val):
         return None if not val else val[0]
         
-    def _irange(self, start, end):
-        return riteritems(self, 'TSRANGE', start, end, 'withtimes')
+    def _irange(self, cursor, start, end):
+        return riteritems(cursor, self.id, 'TSRANGE', start, end, 'withtimes')
     
-    def _range(self, start, end):
-        return riteritems(self, 'TSRANGEBYTIME', start, end, 'withtimes')
+    def _range(self, cursor, start, end):
+        return riteritems(cursor, self.id, 'TSRANGEBYTIME', start, end,
+                          'withtimes')
     
-    def _count(self, start, end):
-        return self.cursor.execute_command('TSCOUNT', self.id, start, end)
+    def _count(self, cursor, start, end):
+        return cursor.execute_command('TSCOUNT', self.id, start, end)
     
-    def _front(self):
-        return self._getdate(self.cursor.execute_command(\
+    def _front(self, cursor):
+        return self._getdate(cursor.execute_command(\
                                     'TSRANGE', self.id, 0, 0, 'novalues'))
     
-    def _back(self):
-        return self._getdate(self.cursor.execute_command(\
+    def _back(self, cursor):
+        return self._getdate(cursor.execute_command(\
                                     'TSRANGE', self.id, -1, -1, 'novalues'))
         
-    def _keys(self):
-        return self.cursor.execute_command(\
-                                    'TSRANGE', self.id, 0, -1, 'novalues')
+    def _keys(self, cursor):
+        return cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues')
     
-    def _items(self):
-        return riteritems(self, 'TSRANGE', 0, -1, 'withtimes')
-
-    def values(self):
-        for ky,val in self.items():
-            yield val
+    def _items(self, cursor, keys):
+        if keys:
+            return cursor.execute_command('TMGET', self.id, *keys)
+        else:
+            return riteritems(cursor, self.id, 'TSRANGE', 0, -1, 'withtimes')
             
     def _save(self, cursor, pipeline):
         items = []
         [items.extend(item) for item in iteritems(pipeline)]
-        return self.cursor.execute_command('TSADD',self.id,*items)
+        return cursor.execute_command('TSADD',self.id,*items)
     
-    def add_expiry(self):
-        self.cursor.execute_command('EXPIRE', self.id, self.timeout)
-        

@@ -94,7 +94,7 @@ class DateValue(orm.StdModel):
         "implement the score function for sorting in the ordered set"
         return int(1000*time.mktime(instance.dt.timetuple()))
     
-    
+
 class Calendar(orm.StdModel):
     name   = orm.SymbolField(unique = True)
     data   = orm.SetField(DateValue, ordered = True,
@@ -153,7 +153,12 @@ class Node(orm.StdModel):
 class Page(orm.StdModel):
     in_navigation = orm.IntegerField(default = 1)
     
+
+class Collection(orm.StdModel):
+    numbers = orm.SetField()
+    groups = orm.SetField(model = Group)
     
+        
 
 #############################################################
 ## TWITTER CLONE MODELS

@@ -9,25 +9,28 @@ from itertools import islice
 __all__ = ['skiplist']
 
 class Node(object):
-    __slots__ = 'value', 'next', 'width'
-    def __init__(self, value, next, width):
-        self.value, self.next, self.width = value, next, width
+    __slots__ = ('score', 'value', 'next', 'width')
+    def __init__(self, score, value, next, width):
+        self.score, self.value, self.next, self.width =\
+                         score, value, next, width
 
 class End(object):
     'Sentinel object that always compares greater than another object'
     def __cmp__(self, other):
         return 1
 
-NIL = Node(End(), [], [])               # Singleton terminator node
+# Singleton terminator node
+NIL = Node(End(), None, [], [])
 
 
 class skiplist:
-    'Sorted collection supporting O(lg n) insertion, removal, and lookup by rank.'
+    '''Sorted collection supporting O(lg n) insertion, removal,
+and lookup by rank.'''
 
     def __init__(self, expected_size=1000000):
         self.size = 0
         self.maxlevels = int(1 + log(expected_size, 2))
-        self.head = Node('HEAD', [NIL]*self.maxlevels, [1]*self.maxlevels)
+        self.head = Node('HEAD', None, [NIL]*self.maxlevels, [1]*self.maxlevels)
 
     def __repr__(self):
         return list(self).__repr__()
@@ -47,20 +50,20 @@ class skiplist:
                 node = node.next[level]
         return node.value
 
-    def insert(self, value):
-        # find first node on each level where node.next[levels].value > value
+    def insert(self, score, value):
+        # find first node on each level where node.next[levels].score > score
         chain = [None] * self.maxlevels
         steps_at_level = [0] * self.maxlevels
         node = self.head
         for level in reversed(range(self.maxlevels)):
-            while node.next[level].value <= value:
+            while node.next[level].score <= score:
                 steps_at_level[level] += node.width[level]
                 node = node.next[level]
             chain[level] = node
 
         # insert a link to the newnode at each level
         d = min(self.maxlevels, 1 - int(log(random(), 2.0)))
-        newnode = Node(value, [None]*d, [None]*d)
+        newnode = Node(score, value, [None]*d, [None]*d)
         steps = 0
         for level in range(d):
             prevnode = chain[level]
@@ -73,15 +76,15 @@ class skiplist:
             chain[level].width[level] += 1
         self.size += 1
 
-    def remove(self, value):
-        # find first node on each level where node.next[levels].value >= value
+    def remove(self, score):
+        # find first node on each level where node.next[levels].score >= score
         chain = [None] * self.maxlevels
         node = self.head
         for level in reversed(range(self.maxlevels)):
-            while node.next[level].value < value:
+            while node.next[level].score < score:
                 node = node.next[level]
             chain[level] = node
-        if value != chain[0].next[0].value:
+        if score != chain[0].next[0].score:
             raise KeyError('Not Found')
 
         # remove one link at each level
@@ -98,5 +101,5 @@ class skiplist:
         'Iterate over values in sorted order'
         node = self.head.next[0]
         while node is not NIL:
-            yield node.value
+            yield node.score,node.value
             node = node.next[0]

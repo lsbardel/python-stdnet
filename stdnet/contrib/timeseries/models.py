@@ -5,23 +5,16 @@ from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate,\
 
 class DateTimeConverter(object):
     
-    @classmethod
-    def tokey(cls, value):
+    def dumps(self, value):
         return date2timestamp(value)
     
-    @classmethod
-    def tovalue(cls, value):
+    def loads(self, value):
         return timestamp2date(value)
     
 
-class DateConverter(object):
+class DateConverter(DateTimeConverter):
     
-    @classmethod
-    def tokey(cls, value):
-        return date2timestamp(value)
-    
-    @classmethod
-    def tovalue(cls, value):
+    def loads(self, value):
         return timestamp2date(value).date()
 
 
@@ -29,7 +22,7 @@ class HashTimeSeriesField(orm.HashField):
     '''To be used with subclasses of :class:`TimeSeriesBase`.'''
     def register_with_model(self, name, model):
         super(HashTimeSeriesField,self).register_with_model(name, model)
-        self.converter = model.converter
+        self.pickler = model.converter
         
         
 class TimeSeriesField(orm.MultiField):
@@ -45,13 +38,13 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
         
     def register_with_model(self, name, model):
          # must be set before calling super method
-        self.converter = model.converter
+        self.pickler = model.converter
         super(TimeSeriesField,self).register_with_model(name, model)
         
         
 class TimeSeriesBase(orm.StdModel):
     '''Timeseries base model class'''
-    converter = DateTimeConverter
+    converter = DateTimeConverter()
     '''Class responsable for converting Python dates into unix timestamps'''
     
     def todate(self, v):
@@ -94,7 +87,7 @@ class TimeSeries(TimeSeriesBase):
     
 
 class DateTimeSeries(TimeSeries):
-    converter = DateConverter
+    converter = DateConverter()
     
     def todate(self, v):
         return todate(v)
@@ -143,7 +136,7 @@ class HashTimeSeries(TimeSeriesBase):
 
 
 class DateHashTimeSeries(HashTimeSeries):
-    converter = DateConverter
+    converter = DateConverter()
     data_start = orm.DateField(required = False, index = False)
     data_end = orm.DateField(required = False, index = False)
     

@@ -188,7 +188,7 @@ Licence
 This software is licensed under the New BSD_ License. See the LICENSE
 file in the top distribution directory for the full license text.
 
-.. _Redis: http://code.google.com/p/redis/
+.. _Redis: http://redis.io/
 .. _Django: http://www.djangoproject.com/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _redis-py: http://github.com/andymccurdy/redis-py

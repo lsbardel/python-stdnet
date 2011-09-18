@@ -1,4 +1,5 @@
 from inspect import isclass
+from uuid import uuid4
 
 from stdnet.conf import settings
 from stdnet.utils import urlparse, encoders
@@ -73,4 +74,45 @@ class CacheClass(object):
         self.set     = self.db.set
         self.delete  = self.db.delete
         self.has_key = self.db.has_key
-        self.clear   = self.db.clear    
+        self.clear   = self.db.clear
+        
+
+class make_struct(object):
+    _structs = set()
+    
+    def __init__(self, name):
+        self._name = name
+    
+    def __call__(self, server = None, id = None, timeout = 0):
+        db = getdb(server)
+        s = getattr(db,self._name)(self._id(id),timeout)
+        self._structs.add(s)
+        return s
+        
+    def _id(self, id):
+        return id or 'stdnet-{0}'.format(str(uuid4())[:8])
+    
+    def clear(self):
+        for s in self._structs:
+            s.delete()
+            
+    
+class Structures(object):
+    '''Create stdnet remote structures'''
+    ids = set()
+    
+    list = make_struct('list')
+    hash = make_struct('hash')
+    set = make_struct('unordered_set')
+    zset = make_struct('ordered_set')
+    ts = make_struct('ts')
+        
+    def clear(self, *ids):
+        make_struct.clear(ids)
+    
+    def all(self):
+        return make_struct._structs
+        
+    
+    
+struct = Structures()

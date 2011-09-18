@@ -3,7 +3,7 @@
 .. module:: stdnet.backends.structures
 
 ==============================
-Remote Structure
+Remote Data Structures
 ==============================
 
 

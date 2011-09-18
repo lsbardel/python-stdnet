@@ -3,7 +3,7 @@ import threading
 import time
 from distutils.version import StrictVersion
 
-from stdnet.utils import to_string, ispy3k, iteritems, range
+from stdnet.utils import to_string, ispy3k, iteritems, range, flatzset
 
 if not ispy3k:
     chr = unichr
@@ -223,7 +223,7 @@ class ServerCommandsTestCase(BaseTest):
         self.client.sadd('a', '1')
         self.assertEquals(self.client.type('a'), 'set')
         del self.client['a']
-        self.client.zadd('a', '1', 1)
+        self.client.zadd('a', 1, '1')
         self.assertEquals(self.client.type('a'), 'zset')
 
     # LISTS
@@ -614,8 +614,7 @@ class ServerCommandsTestCase(BaseTest):
 
     # SORTED SETS
     def make_zset(self, name, d):
-        for k,v in d.items():
-            self.client.zadd(name, k, v)
+        self.client.zadd(name, *flatzset(kwargs=d))
 
     def test_zadd(self):
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})

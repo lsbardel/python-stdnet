@@ -37,7 +37,15 @@ class zset(object):
             add(score,value)
             
     def clear(self):
-        self._sl = skiplist()
+        self._sl = fallback.skiplist()
         self._dict = {}
+        
+    def _flat(self):
+        for el in self:
+            yield el[0]
+            yield el[1]
+            
+    def flat(self):
+        return tuple(self._flat())
             
             

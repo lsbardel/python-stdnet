@@ -82,10 +82,13 @@ class PickleSupport(test.TestCase):
         
     def testSimple2(self):
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
+        self.assertTrue(inst._local_transaction)
+        self.assertFalse(inst._local_transaction._cachepipes)
         p = pickle.dumps(inst)
         inst2 = pickle.loads(p)
-        self.assertTrue(isinstance(inst2._cachepipes,dict))
-        self.assertFalse(inst2._cachepipes)
+        self.assertFalse(hasattr(inst2,'_local_transaction'))
+        inst2.save()
+        self.assertTrue(inst._local_transaction)
         
 
 class TestRegistration(test.TestCase):

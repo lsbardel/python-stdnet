@@ -49,7 +49,7 @@ class add2set(object):
                 # A two way trip here.
                 idset = self.meta.basekey('id')
                 score = self.server.redispy.zscore(idset,id)
-            self.pipe.zadd(key, id, score)
+            self.pipe.zadd(key, score, id)
         else:
             self.pipe.sadd(key, id)
         return score

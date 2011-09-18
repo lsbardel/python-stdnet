@@ -2,9 +2,8 @@ from datetime import date, datetime
 from random import uniform
 
 from stdnet import test
-from stdnet.utils import populate, todate, zip
-from stdnet.contrib.timeseries.utils import dategenerator,\
-                                             default_parse_interval
+from stdnet.utils import populate, todate, zip, dategenerator,\
+                             default_parse_interval
 from stdnet.contrib.timeseries.tests.models import HashTimeSeries,\
                                                  DateHashTimeSeries
 

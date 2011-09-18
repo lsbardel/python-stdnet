@@ -12,8 +12,9 @@ class PipelineTestCase(BaseTest):
 
     def test_pipeline(self):
         pipe = self.client.pipeline()
-        pipe.set('a', 'a1').get('a').zadd('z', 'z1', 1).zadd('z', 'z2', 4)
-        pipe.zincrby('z', 'z1').zrange('z', 0, 5, withscores=True)
+        pipe.set('a', 'a1').get('a').zadd('z', 1, 'z1', -4, 'z2', 5, 'z3')\
+                                    .zadd('z', -10, 'z4')
+        pipe.zincrby('z', 'z1', 2).zrange('z', 0, 5, withscores=True)
         vals = pipe.execute()
         self.assertEqual(len(vals),6)
         vals[5] = list(vals[5])
@@ -23,8 +24,8 @@ class PipelineTestCase(BaseTest):
                 b'a1',
                 True,
                 True,
-                2.0,
-                [(b'z1', 2.0), (b'z2', 4)],
+                3.0,
+                [(b'z4', -10.0), (b'z2', -4.0), (b'z1', 3.0), (b'z3', 5.0)],
             ]
             )
 

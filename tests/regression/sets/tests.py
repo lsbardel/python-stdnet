@@ -1,7 +1,8 @@
 from datetime import datetime
+from itertools import chain
 
-from stdnet import test, getdb
-from stdnet.utils import populate, zip
+from stdnet import test, getdb, struct
+from stdnet.utils import populate, zip, flatzset
 from stdnet.lib import zset
 
 from examples.models import Calendar, DateValue, Collection, Group
@@ -12,7 +13,16 @@ dates = populate('date',NUM_DATES)
 values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
 
 
-class TestSetStructure(test.TestModelBase):
+class TestSetStructure(test.TestCase):
+    
+    def testAdd(self):
+        s = struct.set()
+        s.update((1,2,3,4,5,5))
+        s.save()
+        self.assertEqual(s.size(),5)
+    
+    
+class TestSetField(test.TestModelBase):
     models = (Collection,Group)
     model = Collection
     
@@ -45,17 +55,15 @@ class TestCommands(test.TestCase):
         self.rpy = getdb().redispy
         
     def fill(self, key, *vals):
-        pipe = self.rpy.pipeline()
-        for x in vals:
-            pipe.zadd(key,x,0)
-        pipe.execute()
+        vals = flatzset(zip([0]*len(vals),vals))
+        self.rpy.zadd(key,*vals)
         
     def testDiffStore(self):
         rpy = self.rpy
-        self.fill('a','a','b','c','d')
-        self.fill('b','a','b','c')
-        r = self.rpy.zdiffstore('c1',('a','b'))
-        self.assertEqual(rpy.zcard('c1'),1)
+        self.fill('s1','a','b','c','d')
+        self.fill('s2','a','b','c')
+        r = self.rpy.zdiffstore('s3',('s1','s2'))
+        self.assertEqual(rpy.zcard('s3'),1)
         
     
 class TestOrderedSet(test.TestModelBase):

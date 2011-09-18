@@ -57,6 +57,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _Redis: http://code.google.com/p/redis/
+.. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py
 

@@ -73,8 +73,8 @@ class TestListField(BaseTestListField):
 class TestErrorListFields(BaseTestListField):
     
     def testPushNoSave(self):
-        '''Push a new value to a list field should rise an error if the object is not
-saved on databse.'''
+        '''Push a new value to a list field should rise an error if the object
+is not saved on databse.'''
         obj = SimpleList()
         push_back  = lambda : obj.names.push_back('this should fail')
         push_front = lambda : obj.names.push_front('this should also fail')

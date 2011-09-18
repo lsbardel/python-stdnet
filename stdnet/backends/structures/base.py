@@ -14,7 +14,7 @@ __all__ = ['PipeLine',
 
 default_score = lambda x : 1
 
-
+        
 class listPipeline(object):
     def __init__(self):
         self.clear()
@@ -181,6 +181,9 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
     def __str__(self):
         return self.__repr__()
     
+    def __hash__(self):
+        return hash(self.id)
+    
     def __iter__(self):
         if self._cache is None:
             cache = []
@@ -195,8 +198,10 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
                 yield item
 
     def save(self, transaction = None):
-        return self.save_from_pipeline(self.cursor(transaction),
-                                       self.pipe(transaction))
+        cursor = self.cursor(transaction) if transaction else\
+                     self.server.cursor()
+        return self._save_from_pipeline(cursor,
+                                        self.pipe(transaction))
         
     def size(self, transaction = None):
         '''Number of elements in structure. If no transaction is
@@ -253,7 +258,7 @@ if you would like ti pipeline the command.'''
         else:
             return 0
         
-    def _unpicklefrom(self, func, transaction, default, pickler,
+    def _unpicklefrom(self, func, transaction, default, loads,
                       *args, **kwargs):
         '''invoke remote function in the server and if
 we are not using a pipeline, unpickle the result.'''
@@ -262,8 +267,8 @@ we are not using a pipeline, unpickle the result.'''
         else:
             res = func(self.server.cursor(), *args, **kwargs)
             if res:
-                if pickler:
-                    return pickler.loads(res)
+                if loads:
+                    return loads(res)
                 else:
                     return res
             else:
@@ -272,9 +277,6 @@ we are not using a pipeline, unpickle the result.'''
     # PURE VIRTUAL METHODS
     
     def _has(self, cursor, value):
-        raise NotImplementedError()
-    
-    def __iter__(self, cursor):
         raise NotImplementedError()
     
     def _all(self, cursor):
@@ -304,20 +306,20 @@ class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
     def pop_back(self, transaction = None):
         return self._unpicklefrom(self._pop_back, transaction, None,
-                                  self.pickler)
+                                  self.pickler.loads)
     
     def pop_front(self, transaction = None):
         return self._unpicklefrom(self._pop_front, transaction, None,
-                                  self.pickler)
+                                  self.pickler.loads)
     
-    def block_pop_back(self, timeout = None):
+    def block_pop_back(self, timeout = None, transaction = None):
         return self._unpicklefrom(self._block_pop_back, transaction, None,
-                                  self.pickler,
+                                  lambda x : self.pickler.loads(x[1]),
                                   timeout)
     
-    def block_pop_front(self, timeout = None):
+    def block_pop_front(self, timeout = None, transaction = None):
         return self._unpicklefrom(self._block_pop_front, transaction, None,
-                                  self.pickler,
+                                  lambda x : self.pickler.loads(x[1]),
                                   timeout)
     
     def push_back(self, value, transaction = None):
@@ -353,8 +355,10 @@ This structure is used for in two different parts of the library.
         
     def remove(self, values, transaction = None):
         '''Remove elements from a set if they are members'''
-        return self._unpicklefrom(self._remove, transaction, None, self.pickler,
-                                  values)
+        dumps = self.pickler.dumps
+        values = tuple((dumps(v) for v in values))
+        return self._unpicklefrom(self._remove, transaction, None,
+                                  self.pickler.loads, values)
 
 
 class OrderedSet(Set):
@@ -399,7 +403,7 @@ The networked equivalent to a Python ``dict``.'''
     def pop(self, key, transaction = None, default = None):
         key = self.pickler.dumps(key)
         return self._unpicklefrom(self._pop, transaction, default,
-                                  self.value_pickler, key)
+                                  self.value_pickler.loads, key)
         
     def add(self, key, value, transaction = None):
         '''Add ``key`` - ``value`` pair to hashtable.'''
@@ -437,7 +441,7 @@ rtype: a value in the hashtable or a pipeline depending if a
     transaction has been used.'''
         key = self.pickler.dumps(key)
         return self._unpicklefrom(self._get, transaction, default,
-                                  self.value_pickler, key)
+                                  self.value_pickler.loads, key)
     
     def __getitem__(self, key):
         v = self.get(key)

@@ -3,8 +3,8 @@ from stdnet import orm
 
 
 class Queue(orm.StdModel):
-    '''E Redis queue object which exposes exactly the same functionalities as a python
-multiprocessing Queue. To use it::
+    '''E Redis queue object which exposes exactly the same functionalities
+as a python multiprocessing Queue. To use it::
 
     >>> q = Queue('test-queue').save()
     >>> q.id

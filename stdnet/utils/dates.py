@@ -1,9 +1,10 @@
 import time
+from time import mktime
 from datetime import datetime, timedelta, date
 
 
 def date2timestamp(dte):
-    return time.mktime(dte.timetuple())
+    return mktime(dte.timetuple())
 
 
 def timestamp2date(tstamp):
@@ -81,6 +82,7 @@ The list could countain 0,1 or 2 tuples.'''
 
 
 def dategenerator(start, end, step = 1, desc = False):
+    '''Generates dates between *atrt* and *end*.'''
     delta = timedelta(abs(step))
     end = max(start,end)
     if desc:

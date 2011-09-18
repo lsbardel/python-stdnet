@@ -1,20 +1,21 @@
-import datetime
+from datetime import date, datetime
 
 from stdnet import test, QuerySetError, orm
 from stdnet.utils import populate, zip, range
 
-from examples.models import SportAtDate, SportAtDate2, Person, TestDateModel, Group
+from examples.models import SportAtDate, SportAtDate2, Person,\
+                             TestDateModel, Group
 
 NUM_DATES = 200
 
 dates = populate('date',NUM_DATES,
-                 start=datetime.date(2005,6,1),
-                 end=datetime.date(2010,6,6))
+                 start=date(2005,6,1),
+                 end=date(2010,6,6))
 
 groups = populate('choice',NUM_DATES,
-                  choice_from=['football','rugby','swimming','running','cycling'])
+            choice_from=['football','rugby','swimming','running','cycling'])
 persons = populate('choice',NUM_DATES,
-                   choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
+            choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
  
     
 class TestSort(test.TestCase):
@@ -87,6 +88,7 @@ class ExplicitOrderingMixin(object):
 
 
 class TestOrderingModel(TestSort):
+    '''Test a model wich is always sorted by the ordering meta attribute.'''
     model = SportAtDate
     
     def testMeta(self):
@@ -96,6 +98,11 @@ class TestOrderingModel(TestSort):
         self.assertEqual(ordering.name,'dt')
         self.assertEqual(ordering.field.name,'dt')
         self.assertEqual(ordering.desc,self.desc)
+    
+    def testAdd(self):
+        a = self.model(person='luca',name='football',dt=date.today()).save()
+        b = self.model(person='luca',name='football',dt=date.today()).save()
+        self.assertEqual(self.model.objects.all().count(),2)
         
     def testSimple(self):
         self.checkOrder(self.fill(),'dt')

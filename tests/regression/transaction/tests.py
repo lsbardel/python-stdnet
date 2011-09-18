@@ -20,7 +20,8 @@ class TestTransactions(test.TestCase):
     def testSave(self):
         with SimpleModel.transaction() as t:
             self.assertEqual(t.server,SimpleModel._meta.cursor)
-            s = SimpleModel(code = 'test', description = 'just a test').save(transaction = t)
+            s = SimpleModel(code = 'test', description = 'just a test')\
+                            .save(transaction = t)
             self.assertTrue(s.id)
             self.assertRaises(SimpleModel.DoesNotExist,SimpleModel.objects.get,id=s.id)
             s2 = SimpleModel(code = 'test2', description = 'just a test').save(transaction = t)

@@ -32,13 +32,11 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
     
     def get_pipeline(self):
         return 'ts'
-    
-    def __init__(self, *args, **kwargs):
-        super(TimeSeriesField,self).__init__(*args, **kwargs)
         
     def register_with_model(self, name, model):
          # must be set before calling super method
         self.pickler = model.converter
+        self.value_pickler = self.value_pickler or self.default_pickler
         super(TimeSeriesField,self).register_with_model(name, model)
         
         

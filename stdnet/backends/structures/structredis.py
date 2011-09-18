@@ -35,10 +35,10 @@ class List(CommonMixin,structures.List):
         return cursor.execute_command('LPOP', self.id)
     
     def _block_pop_back(self, cursor, timeout = 0):
-        v = cursor.execute_command('BRPOP', self.id, timeout)
+        return cursor.execute_command('BRPOP', self.id, timeout)
     
     def _block_pop_front(self, cursor, timeout = 0):
-        v = cursor.execute_command('BLPOP', self.id, timeout)
+        return cursor.execute_command('BLPOP', self.id, timeout)
     
     def _all(self, cursor):
         return cursor.execute_command('LRANGE', self.id, 0, -1)
@@ -66,17 +66,13 @@ class Set(CommonMixin, structures.Set):
         '''Size of set'''
         return cursor.execute_command('SCARD', self.id)
     
-    def _discard(self, cursor, elem):
-        return cursor.execute_command('SREM', self.id, elem)
+    def _remove(self, cursor, values):
+        return cursor.execute_command('SREM', self.id, *values)
     
     def _save(self, cursor, pipeline):
-        id = self.id
-        for value in pipeline:
-            cursor = cursor.execute_command('SADD', id, value)
-        #TODO >= 2.4
-        #cursor.execute_command('SADD', id, value)
+        return cursor.execute_command('SADD', self.id, *pipeline)
     
-    def _contains(self, cursor, value):
+    def _has(self, cursor, value):
         return cursor.execute_command('SISMEMBER', self.id, value)
     
     def _all(self, cursor):
@@ -107,7 +103,7 @@ class OrderedSet(CommonMixin,structures.OrderedSet):
                                       desc = desc, withscores = withscores)
     
     def _save(self, cursor, pipeline):
-        cursor.execute_command('ZADD', self.id, pipeline)
+        cursor.execute_command('ZADD', self.id, *pipeline.flat())
 
 
 class HashTable(CommonMixin,structures.HashTable):

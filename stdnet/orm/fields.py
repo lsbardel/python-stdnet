@@ -7,7 +7,7 @@ from datetime import date, datetime
 from stdnet.exceptions import *
 from stdnet.utils import pickle, json, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, novalue, to_string, is_string,\
+                         UnicodeMixin, to_string, is_string,\
                          to_bytestring, is_bytes_or_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator
 

@@ -18,6 +18,16 @@ class End(object):
     'Sentinel object that always compares greater than another object'
     def __cmp__(self, other):
         return 1
+    def __ge__(self, other):
+        return 1
+    def __gt__(self, other):
+        return 1
+    def __lt__(self, other):
+        return 0
+    def __eq__(self, other):
+        return 0
+    def __le__(self, other):
+        return 0
 
 # Singleton terminator node
 NIL = Node(End(), None, [], [])

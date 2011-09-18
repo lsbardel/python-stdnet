@@ -69,8 +69,10 @@ class Many2ManyManagerProxy(ManyFieldManagerProxy):
 
 
 class MultiField(Field):
-    '''Virtual class for data-structure fields. These fields are proxies to
-:ref:`remote structures <structures-backend>` in the backend data server.
+    '''Virtual class for fields which are proxies to remote
+:ref:`data structures <structures-backend>` such as :class:`stdnet.List`,
+:class:`stdnet.Set`, :class:`stdnet.OrderedSet` and :class:`stdnet.HashTable`.
+
 By defining structured fields in a model, instances of that model can access
 stand alone structures in the back-end server with very little effort.
 

@@ -1,4 +1,5 @@
 from .structures import * 
 from .base import *
-from .main import getdb, getcache, CacheClass
+from .main import getdb, getcache, CacheClass, struct
+
 

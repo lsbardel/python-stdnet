@@ -1,9 +1,10 @@
 Ver. 0.6.2 - Development
 ============================
+* Remote data strauctures
 * Refactored :ref:`transactions <model-transactions>` to include
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.
-* **297 regression tests** with **78%** coverage.
+* **306 regression tests** with **78%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

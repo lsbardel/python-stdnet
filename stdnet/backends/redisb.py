@@ -309,17 +309,22 @@ class BackendDataServer(stdnet.BackendDataServer):
         else:
             connection_pool = redis.ConnectionPool(**cp._asdict())
             self.connection_pools[cp] = connection_pool 
-        redispy = redis.Redis(connection_pool = connection_pool)
-        self.redispy = redispy
-        self.execute_command = redispy.execute_command
-        self.incr            = redispy.incr
-        self.clear           = redispy.flushdb
-        self.delete          = redispy.delete
-        self.keys            = redispy.keys
+        self.redispy = redis.Redis(connection_pool = connection_pool)
+        self.execute_command = self.redispy.execute_command
+        self.incr            = self.redispy.incr
+        self.clear           = self.redispy.flushdb
+        self.delete          = self.redispy.delete
+        self.keys            = self.redispy.keys
     
     def cursor(self, pipelined = False):
         return self.redispy.pipeline() if pipelined else self.redispy
     
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            return self.redispy == other.redispy
+        else:
+            return False
+        
     def disconnect(self):
         self.redispy.connection_pool.disconnect()
     

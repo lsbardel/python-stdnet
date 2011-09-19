@@ -1,10 +1,13 @@
 Ver. 0.7.0 - Development
 ============================
-* Remote :ref:`remote data structures <data_structures>`
-* Refactored :ref:`transactions <model-transactions>` to include
+* Requires redis_ 2.4 or higher.
+* Remote :ref:`remote data structures <structures-backend>` can be accessed
+  via the :attr:`stdnet.struct`.
+* Refactored :ref:`transactions <model-transactions>` to be used with
+  :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.
-* **306 regression tests** with **78%** coverage.
+* **314 regression tests** with **78%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

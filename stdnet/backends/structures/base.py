@@ -1,4 +1,6 @@
 '''Interfaces for supported data-structures'''
+from collections import namedtuple
+
 import stdnet
 from stdnet.utils import iteritems, missing_intervals, encoders
 from stdnet.lib import zset
@@ -77,6 +79,9 @@ _pipelines = {'list':ListPipe,
               'ordered_set': OsetPipe}
 
 
+strcuturemeta = namedtuple('strcuturemeta','cursor')
+
+
 class Structure(object):
     '''Base class for remote data-structures. Remote structures are the
 backend of :ref:`structured fields <model-field-structure>` but they
@@ -143,7 +148,7 @@ can also be used as stand alone objects. For example::
                  value_pickler = None, scorefun = None,
                  **kwargs):
         self.pipetype = pipetype
-        self.server = server
+        self._meta = strcuturemeta(server)
         self.scorefun = scorefun
         self.instance = instance
         self.pickler = pickler if pickler is not None else server.pickler
@@ -153,6 +158,10 @@ can also be used as stand alone objects. For example::
         self._cache = None
         self.timeout = timeout
 
+    @property
+    def server(self):
+        return self._meta.cursor
+    
     @property
     def struct(self):
         return _pipelines[self.pipetype]

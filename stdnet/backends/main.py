@@ -6,6 +6,9 @@ from stdnet.utils import urlparse, encoders
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
 
+from .base import BackendDataServer
+
+
 parse_qsl = urlparse.parse_qsl
 
 
@@ -49,6 +52,8 @@ def _getdb(scheme, host, params):
 
 
 def getdb(backend_uri = None, **kwargs):
+    if isinstance(backend_uri,BackendDataServer):
+        return backend_uri
     backend_uri = backend_uri or settings.DEFAULT_BACKEND
     if not backend_uri:
         return None

@@ -4,11 +4,13 @@
 Python Stdnet
 ======================
 
-.. rubric:: An object relational mapper library for remote data-structures.
-  Design to work with Redis_ data-store, but implemented so that
-  other storage systems can be supported in the future.
-  Simple to use and configure.
-
+.. rubric:: A networked data structures manager design to to work with Redis_
+  data-store, but implemented so that other storage systems can be supported
+  in the future.
+  
+  
+It is shipped with an object relational mapper which greatly facilitates the
+management and retrieval of large data-sets.
 It includes a modified version of redis-py_ compatible with ``python 3``.
 There are no dependencies
 and the library requires ``python 2.6`` or above, including ``python 3``.
@@ -25,7 +27,8 @@ First steps
 :ref:`Overview and Installation <intro-overview>` |
 :ref:`Tutorial <tutorial>`
 
-**The API:**
+**API:**
+:ref:`Structures <structures-backend>` |
 :ref:`Model API <model-model>` |
 :ref:`Fields API <model-field>`
 

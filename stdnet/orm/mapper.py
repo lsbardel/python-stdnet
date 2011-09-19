@@ -2,7 +2,7 @@ import copy
 import logging
 
 from stdnet.utils import is_bytes_or_string
-from stdnet import getdb
+from stdnet import getdb, InvalidTransaction
 from stdnet.utils.importer import import_module
 
 from .query import Manager, UnregisteredManager
@@ -224,7 +224,18 @@ def transaction(*models, **kwargs):
     '''Create a transaction'''
     if not models:
         raise ValueError('Cannot create transaction with no models')
-    return models[0].transaction(*models[1:],**kwargs)
+    cursor = None
+    for model in models:
+        c = model._meta.cursor
+        if not c:
+            raise ModelNotRegistered("Model '{0}' is not registered with a\
+ backend database. Cannot start a transaction.".format(model))
+        if cursor and cursor != c:
+            raise InvalidTransaction("Models {0} are registered\
+ with a different databases. Cannot create transaction"\
+            .format(', '.join(('{0}'.format(m) for m in models))))
+        cursor = c
+    return cursor.transaction(**kwargs)
 
 
 _GLOBAL_REGISTRY = {}

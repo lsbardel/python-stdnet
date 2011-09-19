@@ -240,6 +240,12 @@ class ConnectionPool(object):
     def encoding(self):
         return self.connection_kwargs['encoding']
     
+    def __eq__(self, other):
+        c1 = self.connection_kwargs
+        c2 = other.connection_kwargs
+        return c1['host'] == c2['host'] and c1['port'] == c2['port'] and\
+               self.db == other.db
+    
     def get_connection(self, command_name, *keys, **options):
         "Get a connection from the pool"
         try:

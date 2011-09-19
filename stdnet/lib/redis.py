@@ -200,6 +200,9 @@ class Redis(object):
         return self.connection_pool.db
     db = property(_get_db)
     
+    def __eq__(self, other):
+        return self.connection_pool == other.connection_pool
+    
     def pipeline(self, transaction=True, shard_hint=None):
         """
 Return a new pipeline object that can queue multiple commands for

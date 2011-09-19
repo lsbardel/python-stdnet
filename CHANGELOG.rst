@@ -1,6 +1,6 @@
-Ver. 0.6.2 - Development
+Ver. 0.7.0 - Development
 ============================
-* Remote data strauctures
+* Remote :ref:`remote data structures <data_structures>`
 * Refactored :ref:`transactions <model-transactions>` to include
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.

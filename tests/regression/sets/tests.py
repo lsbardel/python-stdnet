@@ -50,7 +50,7 @@ class TestPythonZset(test.TestCase):
         
     
 class TestCommands(test.TestCase):
-    
+    tag  = 'zdiffstore'
     def setUp(self):
         self.rpy = getdb().redispy
         

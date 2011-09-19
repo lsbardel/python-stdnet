@@ -89,6 +89,7 @@ class ExplicitOrderingMixin(object):
 
 class TestOrderingModel(TestSort):
     '''Test a model wich is always sorted by the ordering meta attribute.'''
+    
     model = SportAtDate
     
     def testMeta(self):
@@ -106,10 +107,6 @@ class TestOrderingModel(TestSort):
         
     def testSimple(self):
         self.checkOrder(self.fill(),'dt')
-        
-    def testExclude(self):
-        qs = self.fill().exclude(name='rugby')
-        self.checkOrder(qs,'dt')
         
 
 class TestOrderingModel2(TestOrderingModel):
@@ -153,3 +150,17 @@ class TestSortByForeignKeyField(TestSort):
     #def testSortByFK(self):
     #    self.checkOrder(self.fill().sort_by('group__name'),'group__name')
         
+
+class TestOrderingModel_zdiffstore(TestOrderingModel):
+    '''Test a model wich is always sorted by the ordering meta attribute.'''
+    tag = 'zdiffstore'
+    
+    def testExclude(self):
+        qs = self.fill().exclude(name='rugby')
+        self.checkOrder(qs,'dt')
+        
+        
+class TestOrderingModel2_zdiffstore(TestOrderingModel_zdiffstore):
+    model = SportAtDate2
+    desc = True
+    tag = 'zdiffstore'

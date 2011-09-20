@@ -204,7 +204,7 @@ the model table'''
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''
         for rel in self.related.values():
-            rmeta = rel.to._meta
+            rmeta = rel._meta
             # This avoid circular reference
             if rmeta is not self:
                 rmeta.flush(count)
@@ -222,7 +222,7 @@ the model table'''
             sortby = sortby[1:]
         if sortby == 'id':
             f = self.pk
-            s = orderinginfo(f.name,f,desc)
+            return orderinginfo(f.name,f,desc)
         else:
             if sortby in self.dfields:
                 f = self.dfields[sortby]
@@ -232,8 +232,7 @@ the model table'''
             if len(sortbys) > 1 and s0 in self.dfields:
                 f = self.dfields[s0]
                 return orderinginfo(sortby,f,desc)
-        if not s:
-            raise errorClass('Cannot Order by attribute "{0}".\
+        raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
 
 class FakeMeta(object):

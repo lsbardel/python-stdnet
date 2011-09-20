@@ -2,7 +2,7 @@ import copy
 import logging
 
 from stdnet.utils import is_bytes_or_string
-from stdnet import getdb, InvalidTransaction
+from stdnet import getdb, struct
 from stdnet.utils.importer import import_module
 
 from .query import Manager, UnregisteredManager
@@ -19,8 +19,7 @@ __all__ = ['clearall',
            'register_applications',
            'register_application_models',
            'Manager',
-           'UnregisteredManager',
-           'transaction']
+           'UnregisteredManager']
 
     
 def clearall(exclude = None):
@@ -29,6 +28,7 @@ def clearall(exclude = None):
     for meta in _GLOBAL_REGISTRY.values():
         if not meta.name in exclude:
             meta.cursor.clear()
+    struct.clear()
 
 
 def models_from_names(names):
@@ -219,23 +219,6 @@ def register_applications(applications, **kwargs):
 It return s a list of registered models.'''
     return list(register_application_models(applications,**kwargs))
 
-
-def transaction(*models, **kwargs):
-    '''Create a transaction'''
-    if not models:
-        raise ValueError('Cannot create transaction with no models')
-    cursor = None
-    for model in models:
-        c = model._meta.cursor
-        if not c:
-            raise ModelNotRegistered("Model '{0}' is not registered with a\
- backend database. Cannot start a transaction.".format(model))
-        if cursor and cursor != c:
-            raise InvalidTransaction("Models {0} are registered\
- with a different databases. Cannot create transaction"\
-            .format(', '.join(('{0}'.format(m) for m in models))))
-        cursor = c
-    return cursor.transaction(**kwargs)
 
 
 _GLOBAL_REGISTRY = {}

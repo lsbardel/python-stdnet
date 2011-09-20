@@ -6,7 +6,7 @@ from stdnet import dispatch
 
 from .base import StdNetType, FakeModelType
 from .globals import get_model_from_hash
-from .mapper import transaction
+from .transactions import transaction, attr_local_transaction
 from .signals import *
 
 
@@ -183,9 +183,11 @@ If the instance is not available (it does not have an id) and
         return odict
     
     def local_transaction(self, **kwargs):
-        if not hasattr(self,'_local_transaction'):
-            self._local_transaction = self._meta.cursor.transaction(**kwargs)
-        return self._local_transaction
+        '''Create a transaction for this instance.'''
+        if not hasattr(self,attr_local_transaction):
+            setattr(self,attr_local_transaction,
+                    self._meta.cursor.transaction(**kwargs))
+        return getattr(self,attr_local_transaction)
     
     # UTILITY METHODS
     

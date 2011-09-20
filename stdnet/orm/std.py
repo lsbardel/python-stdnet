@@ -2,7 +2,7 @@ from stdnet.exceptions import *
 from stdnet.utils import encoders
 from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
-from .fields import Field, RelatedObject
+from .fields import Field
 from .query import M2MRelatedManager
 
 
@@ -17,15 +17,14 @@ __all__ = ['ManyFieldManagerProxy',
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, stype, pickler, value_pickler, scorefun):
+    def __init__(self, name, cache_name, stype, pickler,
+                 value_pickler, scorefun):
         self.name = name
+        self.cache_name = cache_name
         self.stype = stype
         self.pickler = pickler
         self.value_pickler = value_pickler
         self.scorefun  = scorefun
-        
-    def get_cache_name(self):
-        return '_%s_cache' % self.name
     
     def __get__(self, instance, instance_type=None):
         if instance is None:
@@ -33,7 +32,7 @@ class ManyFieldManagerProxy(object):
         if instance.id is None:
             raise MultiFieldError('id for %s is not available.\
  Call save on instance before accessing %s.' % (instance._meta,self.name))
-        cache_name = self.get_cache_name()
+        cache_name = self.cache_name
         try:
             return getattr(instance, cache_name)
         except AttributeError:
@@ -57,15 +56,16 @@ class ManyFieldManagerProxy(object):
 
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
     
-    def __init__(self, name, stype, to_name, to):
-        super(Many2ManyManagerProxy,self).__init__(
-                        name, stype, ModelFieldPickler(to), None, None)
+    def __init__(self, name, cache_name, stype, to_name, to):
+        super(Many2ManyManagerProxy,self).__init__(name, cache_name, stype,
+                                    ModelFieldPickler(to), None, None)
         self.to_name = to_name
-        self.to = to
+        self.model = to
         
     def get_related_manager(self, instance):
         st = self.get_structure(instance)
-        return M2MRelatedManager(instance,self.to,st,self.to_name)
+        return M2MRelatedManager(self.model,
+                                 st, self.to_name, instance = instance)
 
 
 class MultiField(Field):
@@ -79,8 +79,6 @@ stand alone structures in the back-end server with very little effort.
 :parameter model: an optional :class:`stdnet.orm.StdModel` class. If
     specified, the structured will contains id of instances of the model.
     It is saved in the :attr:`relmodel` attribute.
-    
-
     
 .. attribute:: relmodel
 
@@ -146,7 +144,9 @@ stand alone structures in the back-end server with very little effort.
         field.value_pickler = field.value_pickler or field.pickler
         setattr(self.model,
                 self.name,
-                ManyFieldManagerProxy(self.name,self.get_pipeline(),
+                ManyFieldManagerProxy(self.name,
+                                      self.get_cache_name(),
+                                      self.get_pipeline(),
                                       self.pickler,self.value_pickler,
                                       self.scorefun))
 
@@ -258,6 +258,9 @@ This field is implemented as a double Set field.
     def get_pipeline(self):
         return 'unordered_set'
     
+    def get_related_cache_name(self, related_name):
+        return '_%s_cache' % related_name
+    
     def register_with_model(self, name, model):
         Field.register_with_model(self, name, model)
         add_lazy_relation(self,self.relmodel,self._register_related_model)
@@ -268,8 +271,14 @@ This field is implemented as a double Set field.
         self.related_name = related_name
         field.relmodel = related
         stype = self.get_pipeline()
-        setattr(self.model, self.name, Many2ManyManagerProxy(self.name,
-                            stype, related_name, related))
-        setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name,
-                                        stype, self.name, self.model))
+        
+        cn = self.get_cache_name()
+        rcn = self.get_related_cache_name(related_name)
+        
+        m2m = Many2ManyManagerProxy(self.name, cn, stype,
+                                    related_name, related)
+        r2r = Many2ManyManagerProxy(related_name, rcn, stype,
+                                    self.name, self.model)
+        setattr(self.model, self.name, m2m)
+        setattr(self.relmodel,related_name,r2r)
            

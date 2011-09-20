@@ -2,8 +2,9 @@ from inspect import isclass
 from uuid import uuid4
 
 from stdnet.conf import settings
-from stdnet.utils import urlparse, encoders
+from stdnet.utils import urlparse, encoders, itervalues
 from stdnet.utils.importer import import_module
+from stdnet.lib.exceptions import ConnectionError 
 from stdnet.exceptions import *
 
 from .base import BackendDataServer
@@ -83,23 +84,37 @@ class CacheClass(object):
         
 
 class make_struct(object):
-    _structs = set()
+    _structs = {}
     
     def __init__(self, name):
         self._name = name
     
-    def __call__(self, server = None, id = None, timeout = 0):
+    def __call__(self, server = None, id = None, **kwargs):
         db = getdb(server)
-        s = getattr(db,self._name)(self._id(id),timeout)
-        self._structs.add(s)
+        s = getattr(db,self._name)(self._id(id),**kwargs)
+        self._structs[s.id] = s
         return s
         
     def _id(self, id):
         return id or 'stdnet-{0}'.format(str(uuid4())[:8])
     
-    def clear(self):
-        for s in self._structs:
-            s.delete()
+    @classmethod
+    def clear(cls, ids):
+        if ids:
+            for id in ids:
+                s = self._structs.pop(id,None)
+                if s:
+                    try:
+                        s.delete()
+                    except ConnectionError:
+                        pass
+        else:
+            for s in itervalues(cls._structs):
+                try:
+                    s.delete()
+                except ConnectionError:
+                    pass
+            cls._structs.clear()
             
     
 class Structures(object):

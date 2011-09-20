@@ -24,8 +24,11 @@ First steps
 ===============
 
 **From scratch:**
-:ref:`Overview and Installation <intro-overview>` |
-:ref:`Tutorial <tutorial>`
+:ref:`Overview and Installation <intro-overview>`
+
+**Tutorials:**
+:ref:`Tutorial 1 <tutorial>` |
+:ref:`Tutorial 2 <tutorial2>`
 
 **API:**
 :ref:`Structures <structures-backend>` |

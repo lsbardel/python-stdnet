@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from random import uniform
 
-from stdnet import test
+from stdnet import test, orm
 from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
 from stdnet.contrib.timeseries.tests.models import HashTimeSeries,\
@@ -209,6 +209,19 @@ class TestHashTimeSeries(test.TestModelBase,test.TestMultiFieldMixin):
         d2 = date(2009,11,1)
         data = list(ts.data.range(d1,d2))
         self.assertTrue(data)
+        
+    def testloadrelated(self):
+        self.model(ticker = 'AMZN').save()
+        m1,m2 = tuple(self.model.objects.all())
+        with orm.transaction(self.model) as t:
+            m1.data.update(testdata,t)
+            m2.data.update(testdata2,t)
+        
+        cache = self.model._meta.dfields['data'].get_cache_name()
+        for m in self.model.objects.all().load_related():
+            data = getattr(m,cache,None)
+            self.assertTrue(data)
+            self.assertTrue(data.cache)
         
 
 class TestDateHashTimeSeries(TestHashTimeSeries):

@@ -64,6 +64,12 @@ Register applications
 Queries
 ==============================
 
+Manager
+~~~~~~~~~~~~~~~
+.. autoclass:: stdnet.orm.query.Manager
+   :members:
+   :member-order: bysource
+   
 
 QuerySet
 ~~~~~~~~~~~~~~~
@@ -74,14 +80,21 @@ here's the formal declaration of a QuerySet.
    :members:
    :member-order: bysource
    
+RelatedManager
+~~~~~~~~~~~~~~~~~~
 
-Manager
-~~~~~~~~~~~~~~~
-.. autoclass:: stdnet.orm.query.Manager
+.. autoclass:: stdnet.orm.query.RelatedManager
    :members:
    :member-order: bysource
    
+M2MRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~
 
+.. autoclass:: stdnet.orm.query.M2MRelatedManager
+   :members:
+   :member-order: bysource
+   
+   
 .. _transactions-api:
 
 Transactions

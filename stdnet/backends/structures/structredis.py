@@ -162,8 +162,8 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return riteritems(cursor, self.id, 'TSRANGE', start, end, 'withtimes')
     
     def _range(self, cursor, start, end):
-        return riteritems(cursor, self.id, 'TSRANGEBYTIME', start, end,
-                          'withtimes')
+        return cursor.execute_command('TSRANGEBYTIME', self.id, start, end,
+                                      'withtimes', withtimes = True)
     
     def _count(self, cursor, start, end):
         return cursor.execute_command('TSCOUNT', self.id, start, end)
@@ -183,7 +183,8 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         if keys:
             return cursor.execute_command('TMGET', self.id, *keys)
         else:
-            return riteritems(cursor, self.id, 'TSRANGE', 0, -1, 'withtimes')
+            return cursor.execute_command('TSRANGE', self.id, 0, -1,
+                                          'withtimes', withtimes = True)
             
     def _save(self, cursor, pipeline):
         items = []

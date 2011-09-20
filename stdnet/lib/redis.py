@@ -87,7 +87,12 @@ def pairs_to_dict(response, encoding = 'utf-8'):
     else:
         return ()
 
-
+def ts_pairs(response, **options):
+    if not response or not options.get('withtimes'):
+        return response
+    return zip(response[::2], response[1::2])
+    
+    
 def zset_score_pairs(response, **options):
     """
     If ``withscores`` is specified in the options, return the response as
@@ -160,7 +165,7 @@ class Redis(object):
             lambda r: set(r)
             ),
         string_keys_to_dict('ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
-        #string_keys_to_dict('TSRANGE TSRANGEBYTIME', zset_score_pairs),
+        string_keys_to_dict('TSRANGE TSRANGEBYTIME', ts_pairs),
         {
             'BGREWRITEAOF': lambda r: \
                 r == 'Background rewriting of AOF file started',
@@ -1002,6 +1007,7 @@ The first element is the score and the second is the value.'''
         else:
             keys = ()
         return self.execute_command('EVAL', body, num_keys, *keys)
+    
     
 
 class Pipeline(Redis):

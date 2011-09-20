@@ -68,6 +68,7 @@ class TestListField(BaseTestListField):
         li.save()
         for el,ne in zip(elems,names):
             self.assertEqual(el,ne)
+    
 
 
 class TestErrorListFields(BaseTestListField):

@@ -2,7 +2,7 @@ import json
 from hashlib import sha1
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, pickle, iteritems, BytesIO, encoders
+from stdnet.utils import zip, pickle, iteritems, itervalues, BytesIO, encoders
 
 from .structures import Structure
 
@@ -29,6 +29,26 @@ class Transaction(object):
         self.cursor = cursor
         self._cachepipes = {}
         
+    def merge(self, other):
+        '''Merge two transaction together'''
+        if self.server == other.server:
+            if not other.empty():
+                raise NotImplementedError()
+        else:
+            raise InvalidTransaction('Cannot merge transactions.')
+        
+    def empty(self):
+        '''Check if the transaction contains query data or not.
+If there is no query data the transaction does not perform any
+operation in the database.'''
+        for c in itervalues(self._cachepipes):
+            if c.pipe:
+                return False
+        return self.emptypipe()
+                
+    def emptypipe(self):
+        raise NotImplementederror
+            
     def structure_pipe(self, structure):
         '''Create a pipeline for a structured datafield'''
         id = structure.id
@@ -45,13 +65,15 @@ class Transaction(object):
     def __exit__(self, type, value, traceback):
         if type is None:
             self.commit()
+        else:
+            self.result = value
 
         
 class BeckendQuery(object):
     query_set = None
     
-    def __init__(self, qs, fargs = None, eargs = None, timeout = 0,
-                 queries = None):
+    def __init__(self, qs, fargs = None, eargs = None,
+                 timeout = 0, queries = None):
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
@@ -85,6 +107,27 @@ class BeckendQuery(object):
     def items(self, slic):
         raise NotImplementedError
     
+    def load_related(self, result):
+        '''load related fields into the query results.'''
+        if self.qs._select_related:
+            meta = self.qs._meta
+            for field in self.qs._select_related:
+                name = field.name
+                attname = field.attname
+                vals = [getattr(r,attname) for r in result]
+                if field in meta.scalarfields:
+                    related = field.relmodel.objects.filter(id__in = vals)
+                    for r,val in zip(result,related):
+                        setattr(r,name,val)
+                else:
+                    with meta.model.transaction() as t:
+                        for val in vals:
+                            val.reload(t)
+                    for val,r in zip(vals,t.results):
+                        val.set_cache(r)
+                        
+        return result
+    
 
 class BackendDataServer(object):
     '''\
@@ -110,6 +153,18 @@ It must implement the *loads* and *dumps* methods.'''
     @property
     def name(self):
         return self.__name
+    
+    def __ne__(self, other):
+        return not self == other
+    
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            return self.issame(other)
+        else:
+            return False
+        
+    def issame(self, other):
+        return False
     
     def cursor(self, pipelined = False):
         return self

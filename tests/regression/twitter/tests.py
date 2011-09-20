@@ -1,7 +1,7 @@
 from datetime import datetime
 from random import randint
 
-from stdnet.test import TestCase
+from stdnet import orm, test
 from stdnet.utils import populate, zip
 
 from examples.models import User, Post
@@ -14,11 +14,10 @@ usernames = populate('string',NUM_USERS, min_len = 5, max_len = 20)
 passwords = populate('string',NUM_USERS, min_len = 8, max_len = 20)
 
 
-class TestTwitter(TestCase):
+class TestTwitter(test.TestModelBase):
+    models = (User,Post)
 
     def setUp(self):
-        self.orm.register(User)
-        self.orm.register(Post)
         with User.transaction() as t:
             for username,password in zip(usernames,passwords):
                 User(username = username, password = password).save(t)
@@ -41,12 +40,36 @@ class TestTwitter(TestCase):
         users = list(User.objects.all())
         N = len(users)
         
+        count = []
         # Follow users
         for user in users:
             n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
+            uset = set()
             for tofollow in populate('choice',n, choice_from = users):
+                uset.add(tofollow)
                 user.following.add(tofollow)
+            count.append(len(uset))
             self.assertTrue(user.following.all().count()>0)
+        
+        for user,N in zip(users,count):
+            all_following = user.following.all()
+            self.assertEqual(all_following.count(),N)
+            for following in all_following:
+                self.assertTrue(user in following.followers.all())
+                
+    def testFollowersTransaction(self):
+        '''Add followers to a user'''
+        # unwind queryset here since we are going to use it in a double loop
+        users = list(User.objects.all())
+        N = len(users)
+        
+        # Follow users
+        with orm.transaction(User) as t:
+            for user in users:
+                n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
+                following = user.following
+                for tofollow in populate('choice',n, choice_from = users):
+                    following.add(tofollow, transaction = t)
         
         for user in users:
             for following in user.following.all():

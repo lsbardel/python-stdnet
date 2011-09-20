@@ -99,8 +99,7 @@ class TestMultiFieldTransaction(test.TestModelBase):
         
     def testHashField(self):
         self.make()
-        d1 = self.model.objects.get(id = 1)
-        d2 = self.model.objects.get(id = 2)
+        d1,d2 = tuple(self.model.objects.filter(id__in = (1,2)))
         with orm.transaction(self.model) as t:
             d1.data.add('ciao','hello in Italian',t)
             d1.data.add('bla',10000,t)
@@ -112,14 +111,9 @@ class TestMultiFieldTransaction(test.TestModelBase):
             for c in t._cachepipes:
                 self.assertEqual(len(t._cachepipes[c].pipe),2)
                 
-                
-            
-        self.assertTrue(len(t._cachepipes),2)
-        for c in t._cachepipes:
-            self.assertEqual(len(t._cachepipes[c].pipe),0)
-            
-        d1 = self.model.objects.get(id = 1)
-        d2 = self.model.objects.get(id = 2)
+        self.assertEqual(len(t._cachepipes),2)
+        self.assertTrue(t.empty())
+        d1,d2 = tuple(self.model.objects.all().sort_by('id'))[:2]
         self.assertEqual(d1.data['ciao'],'hello in Italian')
         self.assertEqual(d2.data['wine'],'drink to enjoy with or without food')
     

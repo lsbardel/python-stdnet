@@ -1,17 +1,22 @@
 .. _intro-example:
 
 ======================
-Tutorial & Examples
+Tutorials & Examples
 ======================
 
-Collection of examples which are available in the :mod:`stdnet.tests.examples.models`
-module. They illustrate the use of the different :ref:`scalar <model-field>`
+Collection of tutorials examples available in the :mod:`stdnet.tests.examples.models`
+module.
+
+They illustrate the use of the different :ref:`scalar <model-field>`
 and :ref:`data structure <model-field-structure>` fields
 available in :mod:`stdnet`.
+
+**Tutorials**
 
 .. toctree::
    :maxdepth: 1
    
    tutorial
+   tutorial2
    timeseries
    twitter

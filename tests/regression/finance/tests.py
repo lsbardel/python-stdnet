@@ -6,7 +6,8 @@ from stdnet import test
 from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
-from examples.models import Instrument, Fund, Position, PortfolioView, UserDefaultView
+from examples.models import Instrument, Fund, Position, PortfolioView,\
+                             UserDefaultView
 
 
 INST_LEN    = 100
@@ -154,7 +155,6 @@ class TestFinanceApplication(BaseFinance):
             for fund in flist:
                 positions = instrument.positions.filter(fund = fund)
                 self.assertEqual(len(positions),funds[fund.id])
-            
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
@@ -178,28 +178,3 @@ class TestFinanceApplication(BaseFinance):
         self.assertFalse(instruments.count())
         self.assertFalse(Position.objects.all().count())
         
-    def __testNestedLookUp(self):
-        # Create Portfolio views
-        funds = Fund.objects.all()
-        N     = funds.count()
-        with PortfolioView.transaction() as t:
-            for name in view_names:
-                fund = funds[randint(0,N-1)] 
-                PortfolioView(name = name, portfolio = fund).save(t)
-        views = PortfolioView.objects.all()
-        N = views.count()
-        with UserDefaultView.transaction() as t:
-            for user in users:
-                for i in range(0,FUND_LEN): 
-                    view = views[randint(0,N-1)]
-                    user = UserDefaultView(user = user, view = view).save(t)
-        #
-        #Finally do the filtering
-        N = 0
-        for fund in funds:
-            res = UserDefaultView.objects.filter(view__portfolio = fund)
-            N += res.count()
-            
-        
-         
-

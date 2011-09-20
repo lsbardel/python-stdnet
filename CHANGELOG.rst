@@ -1,13 +1,15 @@
 Ver. 0.7.0 - Development
 ============================
 * Requires redis_ 2.4 or higher.
+* Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
+  fields of a queryset with a single database query.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct`.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.
-* **314 regression tests** with **78%** coverage.
+* **330 regression tests** with **78%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

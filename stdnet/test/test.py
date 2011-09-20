@@ -70,7 +70,8 @@ class TestModelBase(TestCase):
         self.models = self.models or (self.model,)
         for model in self.models:
             self.orm.register(model)
-        self.meta = self.model._meta
+        self.meta = self.model._meta if self.model else None
+            
     
     def unregister(self):
         self.models = self.models or (self.model,)

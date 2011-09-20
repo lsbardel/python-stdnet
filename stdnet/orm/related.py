@@ -19,7 +19,8 @@ class ModelFieldPickler(object):
     
 
 def add_lazy_relation(field, relation, operation):
-    '''Adapted from django. Adds a lookup on ``cls`` when a related field is defined using a string.'''
+    '''Adapted from django. Adds a lookup on ``cls`` when a related
+field is defined using a string.'''
     # Check for recursive relations
     relmodel = None
     if relation == RECURSIVE_RELATIONSHIP_CONSTANT:
@@ -43,8 +44,8 @@ def add_lazy_relation(field, relation, operation):
         
         
 def do_pending_lookups(sender, **kwargs):
-    """Handle any pending relations to the sending model. Sent from class_prepared.
-    """
+    """Handle any pending relations to the sending model.
+Sent from class_prepared."""
     key = (sender._meta.app_label, sender.__name__)
     for field, operation in pending_lookups.pop(key, []):
         operation(field, sender)
@@ -61,25 +62,24 @@ class ReverseSingleRelatedObjectDescriptor(object):
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
-
-        cache_name = self.field.get_cache_name()
+        field = self.field
+        cache_name = field.get_cache_name()
         try:
             return getattr(instance, cache_name)
         except AttributeError:
-            val = getattr(instance, self.field.attname)
+            val = getattr(instance, field.attname)
             if val is None:
                 return None
-            rel_obj = self.field.rel.get_related_object(val)
+            
+            rel_obj = field.rel.get_related_object(field.relmodel,val)
             setattr(instance, cache_name, rel_obj)
             return rel_obj
 
     def __set__(self, instance, value):
         if instance is None:
-            raise AttributeError("%s must be accessed via instance" % self._field.name)
+            raise AttributeError("%s must be accessed via instance"\
+                                  % self._field.name)
         field = self.field
-
-        #if value is None and field.required:
-        #    raise ValueError('Cannot assign None: "%s" does not allow null values.' % field)
         if value is not None and not isinstance(value, field.relmodel):
             raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
@@ -123,7 +123,7 @@ def _register_related(field, related):
     related_name = field.related_name or '%s_set' % field.model._meta.name
     if related_name not in meta.related and related_name not in meta.dfields:
         field.related_name = related_name
-        manager = field.relmanager(related,field.model,field.name)
+        manager = field.relmanager(field.model,field.name)
         setattr(related,field.related_name,manager)
         meta.related[related_name] = manager
         field.rel = manager

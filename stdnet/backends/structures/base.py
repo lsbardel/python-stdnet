@@ -2,7 +2,7 @@
 from collections import namedtuple
 
 import stdnet
-from stdnet.utils import iteritems, missing_intervals, encoders
+from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
 from stdnet.lib import zset
 
 __all__ = ['PipeLine',
@@ -14,7 +14,7 @@ __all__ = ['PipeLine',
            'TS']
 
 
-default_score = lambda x : 1
+default_score = lambda x : x
 
         
 class listPipeline(object):
@@ -149,7 +149,7 @@ can also be used as stand alone objects. For example::
                  **kwargs):
         self.pipetype = pipetype
         self._meta = strcuturemeta(server)
-        self.scorefun = scorefun
+        self.scorefun = scorefun or default_score
         self.instance = instance
         self.pickler = pickler if pickler is not None else server.pickler
         self.value_pickler = value_pickler if value_pickler is not None\
@@ -165,6 +165,10 @@ can also be used as stand alone objects. For example::
     @property
     def struct(self):
         return _pipelines[self.pipetype]
+    
+    @property
+    def cache(self):
+        return self._cache
     
     def pipe(self, transaction = None):
         '''Return a structure pipe given a *transaction*.
@@ -201,16 +205,25 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
                 item = loads(item)
                 cache.append(item)
                 yield item
-            self.cache = cache
+            self._cache = cache
         else:
             for item in self.cache:
                 yield item
+                
+    def reload(self, transaction = None):
+        '''Fill data from the server'''
+        return self._all(self.cursor(transaction))
 
     def save(self, transaction = None):
         cursor = self.cursor(transaction) if transaction else\
                      self.server.cursor()
         return self._save_from_pipeline(cursor,
                                         self.pipe(transaction))
+        
+    def delete(self, transaction = None):
+        cursor = self.cursor(transaction) if transaction else\
+                     self.server.cursor()
+        return self._delete(cursor)
         
     def size(self, transaction = None):
         '''Number of elements in structure. If no transaction is
@@ -285,6 +298,10 @@ we are not using a pipeline, unpickle the result.'''
         
     # PURE VIRTUAL METHODS
     
+    def set_cache(self, r):
+        # Called by the server when preloading data
+        raise NotimplementedError()
+    
     def _has(self, cursor, value):
         raise NotImplementedError()
     
@@ -313,6 +330,10 @@ This needs to implemented.'''
 
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
+    def set_cache(self, r):
+        loads = self.pickler.loads
+        self._cache = list((loads(v) for v in r))
+        
     def pop_back(self, transaction = None):
         return self._unpicklefrom(self._pop_back, transaction, None,
                                   self.pickler.loads)
@@ -348,7 +369,12 @@ This structure is used for in two different parts of the library.
 * It is the structure upon which indexes are built, therefore each :class:`stdnet.orm.Field`
   which has ``index`` set to ``True`` will have an associated
   Set structure in the data server backend.
-* It is also used as :class:`stdnet.orm.SetField`.'''                    
+* It is also used as :class:`stdnet.orm.SetField`.'''
+    
+    def set_cache(self, r):
+        loads = self.pickler.loads
+        self._cache = set((loads(v) for v in r))
+                            
     def add(self, value, transaction = None):
         '''Add *value* to the set'''
         self.pipe(transaction).update((self.pickler.dumps(value),))
@@ -372,7 +398,10 @@ This structure is used for in two different parts of the library.
 
 class OrderedSet(Set):
     '''An ordered version of :class:`stdnet.Set`.'''
-
+    def set_cache(self, r):
+        loads = self.pickler.loads
+        self._cache = list((loads(v) for v in r))
+        
     def add(self, value, transaction = None):
         '''Add *value* to the set'''
         score = self.scorefun(value)
@@ -406,6 +435,11 @@ class OrderedSet(Set):
 class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`.
 The networked equivalent to a Python ``dict``.'''
+    def set_cache(self, items):
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        self._cache = dict(((kloads(k),vloads(v)) for k,v in items))
+        
     def __delitem__(self, key):
         self.pop(key)
         
@@ -469,31 +503,55 @@ rtype: a value in the hashtable or a pipeline depending if a
         '''Generator over key-values.
 If keys is not supplied, it is a generator over all key-value items.
 No transaction involved in this function.'''
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        if keys:
-            dumps = self.pickler.dumps
-            keys = [dumps(k) for k in keys]
-            items = zip(keys,self._items(self.server.cursor(),keys))
+        if self.cache:
+            if self.keys:
+                cache = self.cache.get
+                for key in keys:
+                    yield key,cache(key)
+            else:
+                for item in iteritems(self.cache):
+                    yield item
         else:
-            items = self._items(self.server.cursor(),keys)
-        for key,val in items:
-            yield kloads(key),vloads(val)
+            kloads = self.pickler.loads
+            vloads = self.value_pickler.loads
+            if keys:
+                dumps = self.pickler.dumps
+                keys = [dumps(k) for k in keys]
+                items = zip(keys,self._items(self.server.cursor(),keys))
+                for key,val in items:
+                    yield kloads(key),vloads(val)
+            else:
+                cache = {}
+                items = self._items(self.server.cursor(),keys)
+                for key,val in items:
+                    k,v = kloads(key),vloads(val)
+                    cache[k] = v
+                    yield k,v
+                self._cache = cache
             
     def values(self, keys = None):
         '''Generator overvalues.
 If keys is not supplied, it is a generator over value items.
 No transaction involved in this function.'''
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        if keys:
-            dumps = self.pickler.dumps
-            keys = [dumps(k) for k in keys]
-            for item in self._items(self.server.cursor(),keys):
-                yield vloads(item)
+        if self.cache:
+            if self.keys:
+                cache = self.cache.get
+                for key in keys:
+                    yield cache(key)
+            else:
+                for item in itervalues(self.cache):
+                    yield item
         else:
-            for key,val in self._items(self.server.cursor(),keys):
-                yield vloads(val)
+            kloads = self.pickler.loads
+            vloads = self.value_pickler.loads
+            if keys:
+                dumps = self.pickler.dumps
+                keys = [dumps(k) for k in keys]
+                for item in self._items(self.server.cursor(),keys):
+                    yield vloads(item)
+            else:
+                for key,val in self._items(self.server.cursor(),keys):
+                    yield vloads(val)
             
     def range(self, start, end, desc = False):
         '''Return a generator of ordered items between start and end.'''
@@ -507,6 +565,7 @@ No transaction involved in this function.'''
             yield value
     
     def __iter__(self):
+        # overrite the __iter__ method
         return self.keys()
     
     def sortedkeys(self, desc = True):
@@ -520,6 +579,9 @@ No transaction involved in this function.'''
         if not desc:
             items = reversed(items)
         return items
+    
+    def _all(self, cursor):
+        return self._items(cursor, None)
     
     # PURE VIRTUAL METHODS
     
@@ -545,6 +607,11 @@ No transaction involved in this function.'''
 class TS(HashTable):
     '''A timeseries :class:`stdnet.Structure`.
 '''
+    def set_cache(self, r):
+        kloads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        self._cache = list(((kloads(k),vloads(v)) for k,v in r))
+        
     def front(self):
         '''Return the front key of timeseries'''
         try:

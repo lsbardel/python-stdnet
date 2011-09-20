@@ -2,7 +2,7 @@
 
 
 ============================
-Tutorial
+Tutorial 1
 ============================
 
 In this section we will walk you though all the main aspects of the library,
@@ -40,6 +40,8 @@ which represents an instance of a model.
 Information is available regarding how models instances are mapped into
 :ref:`the redis backend <redis-backend>`.
  
+
+.. _tutorial-application:
 
 An application
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -260,42 +262,5 @@ call ``sort_by`` method.
           time complexity algorithm). Instead, the order is maintained by using
           sorted sets as indices rather than sets.
 
-
-.. _model-transactions:
-
-Transactions
-==========================
-
-Since version 0.5.6, stdnet performs server updates via transactions.
-Transactions are pivotal for two reasons:
-
-* They guarantee atomicity and therefore consistency of model instances when updating/deleting.
-* To speed up updating/deleting of several instances at once.
-
-For certain type of operations, the use of transactions becomes almost compulsory
-as the speed up achived can be of 2 to 3 order of magnitude.
-A tipical usage to speed up the creation of several instances of
-a model ``MyModel``::
-
-    with MyModel.transaction() as t:
-        for kwargs in data:
-            MyModel(**kwargs).save(t)
-
-Or for more than one model::
-
-    from stdnet import orm
-    
-    with orm.transaction(MyModel1,MyModel2,...,ModelN) as t:
-        for kwargs in data1:
-            MyModel1(**kwargs).save(t)
-        for kwargs in data2:
-            MyModel2(**kwargs).save(t)
-        ...
-        
-The :func:`stdnet.orm.transaction` creates an instance of
-:class:`stdnet.Transaction` which aggregate all queries and updates without
-communicating with the server.
-
-        
    
 .. _django: http://www.djangoproject.com/

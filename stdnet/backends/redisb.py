@@ -10,7 +10,7 @@ MIN_FLOAT =-1.e99
 OBJ = 'obj'
 UNI = 'uni'
 IDX = 'idx'
-setattr = lambda pipe,p,name : getattr(pipe,p+name)
+pipeattr = lambda pipe,p,name : getattr(pipe,p+name)
 
 
 redis_connection = namedtuple('redis_connection',
@@ -22,14 +22,22 @@ class RedisTransaction(stdnet.Transaction):
     
     def commit(self):
         '''Commit cache objects to database.'''
-        cachepipes = self._cachepipes
         cursor = self.cursor
-        execute = hasattr(cursor,'execute')
-        for id,cachepipe in iteritems(cachepipes):
+        for id,cachepipe in iteritems(self._cachepipes):
             el = getattr(self.server,cachepipe.method)(id)
-            el._save_from_pipeline(cursor, cachepipe.pipe)        
-        if execute:
-            return cursor.execute()
+            el._save_from_pipeline(cursor, cachepipe.pipe)
+            cachepipe.pipe.clear()
+                    
+        if not self.emptypipe():
+            self.results = cursor.execute()
+        else:
+            self.results = None
+        
+    def emptypipe(self):
+        if hasattr(self.cursor,'execute'):
+            return len(self.cursor.command_stack) <= 1
+        else:
+            return True
 
 
 class add2set(object):
@@ -162,14 +170,14 @@ different model) which has a *field* containing current model ids.'''
         server = self.server
         self.idset = idset = meta.basekey('id')
         p = 'z' if meta.ordering else 's'
-        self.pipe = pipe = server.redispy.pipeline()
+        self.pipe = pipe = self.server.redispy.pipeline()
         if p == 'z':
-            pismember =  setattr(pipe,'','zrank')
-            self.ismember =  setattr(server.redispy,'','zrank')
+            pismember =  pipeattr(pipe,'','zrank')
+            self.ismember =  pipeattr(server.redispy,'','zrank')
             chk = self.zism
         else:
-            pismember =  setattr(pipe,'','sismember')
-            self.ismember =  setattr(server.redispy,'','sismember')
+            pismember =  pipeattr(pipe,'','sismember')
+            self.ismember =  pipeattr(server.redispy,'','sismember')
             chk = self.sism
         
         if self.qs.simple:
@@ -187,10 +195,10 @@ different model) which has a *field* containing current model ids.'''
             self.result = [id for (id,r) in zip(allids,pipe.execute())\
                            if chk(r)]
         else:
-            self.intersect = setattr(pipe,p,'interstore')
-            self.union = setattr(pipe,p,'unionstore')
-            self.diff = setattr(pipe,p,'diffstore')
-            self.card = setattr(server.redispy,p,'card')
+            self.intersect = pipeattr(pipe,p,'interstore')
+            self.union = pipeattr(pipe,p,'unionstore')
+            self.diff = pipeattr(pipe,p,'diffstore')
+            self.card = pipeattr(server.redispy,p,'card')
             self.add = add2set(server,pipe,meta)
             if queries:
                 idset = self.build_from_query(queries)
@@ -256,6 +264,7 @@ different model) which has a *field* containing current model ids.'''
         return start,stop
     
     def items(self, slic):
+        # Unwind the database query
         if self.qs.simple:
             ids = self.result
             if slic:
@@ -283,7 +292,9 @@ different model) which has a *field* containing current model ids.'''
             hgetall = pipe.hgetall
             for id in ids:
                 hgetall(bkey(OBJ,to_string(id)))
-            return list(self.server.make_objects(self.meta,ids,pipe.execute()))
+            result = list(self.server.make_objects(self.meta,ids,
+                                                   pipe.execute()))
+            return self.load_related(result)
         else:
             return ids
     
@@ -319,11 +330,8 @@ class BackendDataServer(stdnet.BackendDataServer):
     def cursor(self, pipelined = False):
         return self.redispy.pipeline() if pipelined else self.redispy
     
-    def __eq__(self, other):
-        if self.__class__ == other.__class__:
-            return self.redispy == other.redispy
-        else:
-            return False
+    def issame(self, other):
+        return self.redispy == other.redispy
         
     def disconnect(self):
         self.redispy.connection_pool.disconnect()
@@ -385,7 +393,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         pipe.delete(bkey(OBJ,obid),*keys)
             
         if obj.indices:
-            rem = setattr(pipe,'z' if meta.ordering else 's','rem')
+            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
             rem(bkey('id'), obid)
             
             for field,value in obj.indices:

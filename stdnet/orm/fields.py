@@ -445,22 +445,27 @@ or :class:`JSONField` fields as more general alternatives.'''
     
 
 class ForeignKey(Field, RelatedObject):
-    '''A field defining a one-to-many objects relationship.
+    '''A field defining a :ref:`one-to-many <one-to-many>` objects relationship.
 Requires a positional argument: the class to which the model is related.
-To create a recursive relationship, an object that has a many-to-one
-relationship with itself use::
-
-    orm.ForeignKey('self')
-
-It accepts **related_name** as extra argument. It is the name to use for
-the relation from the related object back to self. For example::
+For example::
 
     class Folder(orm.StdModel):
         name = orm.SymobolField()
     
     class File(orm.StdModel):
         folder = orm.ForeignKey(Folder, related_name = 'files')
-        
+                
+To create a recursive relationship, an object that has a many-to-one
+relationship with itself use::
+
+    orm.ForeignKey('self')
+
+Behind the scenes, stdnet appends "_id" to the field name to create
+its field name in the back-end data-server. In the above example,
+the database field for the ``File`` model will have a ``folder_id`` field.
+
+It accepts **related_name** as extra argument. It is the name to use for
+the relation from the related object back to self.        
 '''
     type = 'related object'
     internal_type = 'numeric'

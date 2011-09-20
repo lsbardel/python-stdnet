@@ -480,7 +480,7 @@ when not using a transaction).
 :parameter key: lookup field
 :parameter default: default value when the field is not available.
 :parameter transaction: an optional transaction instance.
-rtype: a value in the hashtable or a pipeline depending if a
+:rtype: a value in the hashtable or a pipeline depending if a
     transaction has been used.'''
         key = self.pickler.dumps(key)
         return self._unpicklefrom(self._get, transaction, default,
@@ -605,8 +605,9 @@ No transaction involved in this function.'''
 
     
 class TS(HashTable):
-    '''A timeseries :class:`stdnet.Structure`.
-'''
+    '''A timeseries :class:`stdnet.Structure`. This is an experimental structure
+not available with vanilla redis. Check the
+:ref:`timeseries documentation <contrib-timeserie>` for further information.'''
     def set_cache(self, r):
         kloads = self.pickler.loads
         vloads = self.value_pickler.loads

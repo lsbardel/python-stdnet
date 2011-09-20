@@ -87,6 +87,7 @@ def pairs_to_dict(response, encoding = 'utf-8'):
     else:
         return ()
 
+
 def ts_pairs(response, **options):
     if not response or not options.get('withtimes'):
         return response

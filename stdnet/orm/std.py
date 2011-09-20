@@ -73,11 +73,22 @@ class MultiField(Field):
 :ref:`data structures <structures-backend>` such as :class:`stdnet.List`,
 :class:`stdnet.Set`, :class:`stdnet.OrderedSet` and :class:`stdnet.HashTable`.
 
-By defining structured fields in a model, instances of that model can access
-stand alone structures in the back-end server with very little effort.
+Sometimes you want to structure your data model without breaking it up
+into multiple entities. For example, you might want to define model
+that contains a list of messages an instance receive::
+
+    from stdnet import orm
+    
+    class MyModel(orm.StdModel):
+        ...
+        messages = orm.ListField()
+
+By defining structured fields in a model, an instance of that model can access
+a stand alone structure in the back-end server with very little effort.
+
 
 :parameter model: an optional :class:`stdnet.orm.StdModel` class. If
-    specified, the structured will contains id of instances of the model.
+    specified, the structured will contains ids of instances of the model.
     It is saved in the :attr:`relmodel` attribute.
     
 .. attribute:: relmodel
@@ -91,10 +102,10 @@ stand alone structures in the back-end server with very little effort.
     
 .. attribute:: pickler
 
-    a object used to serialize and userialize data.
-    It must contains the ``dumps`` and ``loads`` methods.
+    an instance of :class:`stdnet.utils.encoders.Encoder` used to serialize
+    and userialize data. It contains the ``dumps`` and ``loads`` methods.
     
-    Default ``None``.
+    Default :class:`stdnet.utils.encoders.Json`.
     
 .. attribute:: value_pickler
 
@@ -104,6 +115,7 @@ stand alone structures in the back-end server with very little effort.
     Default: ``None``.
 '''
     default_pickler = encoders.Json()
+    default_value_pickler = None
     
     def get_pipeline(self):
         raise NotImplementedError
@@ -125,7 +137,7 @@ stand alone structures in the back-end server with very little effort.
         self.primary_key = False
         self.pickler = pickler
         self.related_name = related_name
-        self.value_pickler = value_pickler or self.pickler
+        self.value_pickler = value_pickler
         self.scorefun = scorefun
         
     def register_with_model(self, name, model):
@@ -137,11 +149,7 @@ stand alone structures in the back-end server with very little effort.
             
     def _register_related_model(self, field, related):
         field.relmodel = related
-        if related and not field.pickler:
-            field.pickler = ModelFieldPickler(related)
-        if not field.pickler:
-            field.pickler = self.default_pickler
-        field.value_pickler = field.value_pickler or field.pickler
+        self._install_encoders()
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,
@@ -149,6 +157,13 @@ stand alone structures in the back-end server with very little effort.
                                       self.get_pipeline(),
                                       self.pickler,self.value_pickler,
                                       self.scorefun))
+    
+    def _install_encoders(self):
+        if self.relmodel and not self.pickler:
+            self.pickler = ModelFieldPickler(self.relmodel)
+        self.pickler = self.pickler or self.default_pickler
+        self.value_pickler = self.value_pickler or self.default_value_pickler\
+                             or self.pickler
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -221,8 +236,17 @@ Keys are string while values are string/numeric.
 it returns an instance of :class:`stdnet.HashTable` structure.
 '''
     type = 'hash'
+    default_pickler = encoders.NoEncoder()
+    default_value_pickler = encoders.Json()
+    
     def get_pipeline(self):
         return 'hash'
+    
+    def _install_encoders(self):
+        if self.relmodel and not self.value_pickler:
+            self.value_pickler = ModelFieldPickler(relmodel)
+        self.pickler = self.pickler or self.default_pickler
+        self.value_pickler = self.value_pickler or self.default_value_pickler
 
 
 class ManyToManyField(MultiField):

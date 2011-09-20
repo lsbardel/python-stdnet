@@ -1,7 +1,5 @@
 .. _structures-backend:
 
-.. module:: stdnet.backends.structures
-
 ==============================
 Remote Data Structures
 ==============================
@@ -39,9 +37,7 @@ The struct object
         h = struct.hash()
         t = struct.ts()
     
-   
 
-.. module:: stdnet.backends.structures
 Low level API
 ======================
 

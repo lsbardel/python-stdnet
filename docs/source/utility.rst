@@ -72,6 +72,58 @@ JSON utilities
    :member-order: bysource
       
 
+.. _encoders:
+
+.. module:: stdnet.utils.encoders
+
+Encoders
+=======================
+
+.. autoclass:: stdnet.utils.encoders.Encoder
+   :members:
+   :member-order: bysource
+
+
+No Encoder
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.utils.encoders.NoEncoder
+   :members:
+   :member-order: bysource
+
+
+Default
+~~~~~~~~~~~~~~~~~~~~
+   
+.. autoclass:: stdnet.utils.encoders.Default
+   :members:
+   :member-order: bysource
+
+
+Bytes
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.utils.encoders.Bytes
+   :members:
+   :member-order: bysource
+
+
+Json
+~~~~~~~~~~~~~~~~~~~~
+   
+.. autoclass:: stdnet.utils.encoders.Json
+   :members:
+   :member-order: bysource
+
+
+Python Pickle
+~~~~~~~~~~~~~~~~~~~~
+   
+.. autoclass:: stdnet.utils.encoders.PythonPickle
+   :members:
+   :member-order: bysource
+
+
 Miscellaneous
 ============================
 

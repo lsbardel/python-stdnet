@@ -1,6 +1,6 @@
 from random import randint
 
-from stdnet import test
+from stdnet import test, orm
 from stdnet.utils import populate, zip, range
 
 from examples.models import SimpleModel
@@ -14,10 +14,11 @@ SIZE = len(codes)
 groups = populate('choice',SIZE,choice_from=sports)
 codes = list(codes)
 
-class TestUniqueFilter(test.TestCase):
+
+class TestUniqueFilter(test.TestModelBase):
+    model = SimpleModel
     
     def setUp(self):
-        self.orm.register(SimpleModel)
         with SimpleModel.transaction() as t:
             for n,g in zip(codes,groups):
                 SimpleModel(code = n, group = g).save(t)
@@ -38,4 +39,13 @@ class TestUniqueFilter(test.TestCase):
             r = SimpleModel.objects.exclude(code = code)
             self.assertEqual(r.count(),SIZE-1)
             self.assertFalse(code in set((o.code for o in r)))
+            
+    def testTestUnique(self):
+        self.assertEqual(orm.test_unique('code',self.model,'xxxxxxxxxxxx'),
+                         'xxxxxxxxxxxx')
+        m = self.model.objects.get(id = 1)
+        self.assertEqual(orm.test_unique('code',self.model,m.code,m),m.code)
+        m2 = self.model.objects.get(id = 2)
+        self.assertRaises(ValueError,orm.test_unique,
+                          'code',self.model,m.code,m2,ValueError)
 

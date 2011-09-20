@@ -39,6 +39,11 @@ First steps
 :ref:`Timeseries <timeseries-example>` |
 :ref:`Twitter Clone<twitter-example>`
 
+**Miscellaneous:**
+:ref:`Tests <runningtests>` |
+:ref:`Changelog <changelog>` |
+:ref:`Kudos <kudos>`
+
 .. _contents:
 
 Contents

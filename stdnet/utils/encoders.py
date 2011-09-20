@@ -5,8 +5,22 @@ from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\
                          ispy3k
     
+
+class Encoder(object):
+    '''Virtaul class for encoding data in
+:ref:`remote strcutures <structures-backend>`. It exposes two methods
+for serializing and loading data to and from the data server.'''
+    def dumps(self, x):
+        '''Serialize data for database'''
+        raise NotImplementedError
     
-class Default(object):
+    def loads(self, x):
+        '''Unserialize data from database'''
+        raise NotImplementedError
+    
+        
+    
+class Default(Encoder):
     '''The default unicode encoder'''
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
         self.charset = charset
@@ -37,7 +51,7 @@ class Default(object):
             return x.decode(self.charset,self.encoding_errors)
     
     
-class Bytes(object):
+class Bytes(Encoder):
     '''The binary unicode encoder'''
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
         self.charset = charset
@@ -51,7 +65,7 @@ class Bytes(object):
     loads = dumps
 
 
-class NoEncoder(object):
+class NoEncoder(Encoder):
     '''A dummy encoder class'''
     def dumps(self, x):
         return x
@@ -60,7 +74,7 @@ class NoEncoder(object):
         return x
     
     
-class PythonPickle(object):
+class PythonPickle(Encoder):
     '''A safe pickle serializer.'''
     def dumps(self, x):
         if x is not None:
@@ -82,15 +96,16 @@ class PythonPickle(object):
     
 
 class Json(Default):
-    
+    '''A JSON encoder for maintaning python types when dealing with
+remote data structures.'''
     def __init__(self,
                  charset = 'utf-8',
                  encoding_errors = 'strict',
-                 json_encoder = JSONDateDecimalEncoder,
-                 object_hook = DefaultJSONHook):
+                 json_encoder = None,
+                 object_hook = None):
         super(Json,self).__init__(charset, encoding_errors)
-        self.json_encoder = JSONDateDecimalEncoder
-        self.object_hook = object_hook
+        self.json_encoder = json_encoder or JSONDateDecimalEncoder
+        self.object_hook = object_hook or DefaultJSONHook
         
     def dumps(self, x):
         s = json.dumps(x, cls=self.json_encoder)

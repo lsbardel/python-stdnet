@@ -1,4 +1,5 @@
 from stdnet import test, struct
+from stdnet.utils import encoders
 
 
 class zsetfunc(object):
@@ -23,7 +24,17 @@ class TestStruct(test.TestCase):
         self.assertEqual(l.size(),0)
         l.save()
         self.assertEqual(l.size(),2)
-        self.assertEqual(list(l),['3','save'])
+        self.assertEqual(list(l),[b'3',b'save'])
+        
+    def testJsonList(self):
+        l = struct.list(pickler = encoders.Json())
+        self.assertEqual(l.size(),0)
+        l.push_back(3)
+        l.push_back('save')
+        self.assertEqual(l.size(),0)
+        l.save()
+        self.assertEqual(l.size(),2)
+        self.assertEqual(list(l),[3,'save'])
         
     def testSet(self):
         l = struct.set()
@@ -32,6 +43,12 @@ class TestStruct(test.TestCase):
     def testHash(self):
         l = struct.hash()
         self.assertEqual(l.size(),0)
+        l['bla'] = 'foo'
+        l['pluto'] = 3
+        l.save()
+        self.assertEqual(l.size(),2)
+        d = dict(l)
+        self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
         
     def testZset(self):
         '''test a very simple zset with integer'''
@@ -45,7 +62,7 @@ class TestStruct(test.TestCase):
         self.assertFalse(l._cache)
         r = list(l)
         self.assertTrue(l._cache)
-        self.assertEqual(r,['-5','5','45','56','78'])
+        self.assertEqual(r,[b'-5',b'5',b'45',b'56',b'78'])
         
     def testZsetWithScore(self):
         '''test a very simple zset with integer'''
@@ -61,5 +78,5 @@ class TestStruct(test.TestCase):
         self.assertFalse(l._cache)
         r = list(l)
         self.assertTrue(l._cache)
-        self.assertEqual(r,['joshua','gaia','luca','jo'])
+        self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
     

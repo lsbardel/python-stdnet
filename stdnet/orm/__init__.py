@@ -11,8 +11,9 @@ from .search import SearchEngine
 
 
 def test_unique(fieldname, model, value, instance = None, exception = None):
-    '''Test if a given fieldvalue is unique in the model table.
-If not an the instance is not the same an exception is raised.'''
+    '''Test if a given field *fieldname* has a unique *value*
+in *model*. The field must be an index of the model. If the field value is not
+unique and the *instance* is not the same an exception is raised.'''
     try:
         r = model.objects.get(**{fieldname:value})
     except model.DoesNotExist:

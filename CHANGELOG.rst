@@ -9,7 +9,7 @@ Ver. 0.7.0 - Development
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.
-* **330 regression tests** with **78%** coverage.
+* **332 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

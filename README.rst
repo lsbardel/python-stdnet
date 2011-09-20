@@ -163,6 +163,9 @@ And play with the API::
 	>>> f = Fund(name="pluto,description="The super pluto fund",ccy="EUR").save()
 	Fund: pluto
 
+
+.. _kudos:
+
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.

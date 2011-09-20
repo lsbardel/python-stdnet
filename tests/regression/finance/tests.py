@@ -37,16 +37,12 @@ users      = populate('string', NUM_USERS, min_len = 8, max_len = 14)
 view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
 
 
-class BaseFinance(test.TestCase):
+class BaseFinance(test.TestModelBase):
+    models = (Instrument,Fund,Position,PortfolioView,UserDefaultView)
+    model = Instrument
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
-        orm = self.orm
-        orm.register(Instrument)
-        orm.register(Fund)
-        orm.register(Position)
-        orm.register(PortfolioView)
-        orm.register(UserDefaultView)
         with Instrument.transaction() as t:
             for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
                 Instrument(name = name, type = typ, ccy = ccy).save(t)

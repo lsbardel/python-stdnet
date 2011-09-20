@@ -32,13 +32,15 @@ For example::
     
     def __init__(self, meta, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
-                 queries = None, empty = False):
+                 queries = None, empty = False,
+                 transaction = None):
         '''\
 Initialize a queryset, usually by calling the manager queryset methods
         
 :parameter meta: an model instance meta attribute,
 :parameter fargs: dictionary containing the lookup parameters to include.
 :parameter eargs: dictionary containing the lookup parameters to exclude.
+:parameter transaction: optional :class:`stdnet.Transaction` instance.
         '''
         self._meta  = meta
         self.model  = meta.model            
@@ -47,6 +49,7 @@ Initialize a queryset, usually by calling the manager queryset methods
         self.ordering = ordering
         self.filter_sets = filter_sets
         self.queries = queries
+        self.transaction = transaction
         self.clear()
         if empty:
             self.qset = EmptySet()
@@ -94,7 +97,8 @@ Initialize a queryset, usually by calling the manager queryset methods
                                   eargs=self.eargs,
                                   filter_sets=self.filter_sets,
                                   ordering=self.ordering,
-                                  queries=self.queries)
+                                  queries=self.queries,
+                                  transaction=self.transaction)
         else:
             return self
     
@@ -111,7 +115,8 @@ Initialize a queryset, usually by calling the manager queryset methods
                                   eargs=kwargs,
                                   filter_sets=self.filter_sets,
                                   ordering=self.ordering,
-                                  queries=self.queries)
+                                  queries=self.queries,
+                                  transaction=self.transaction)
         else:
             return self
     
@@ -279,14 +284,14 @@ class Manager(object):
             created = True
         return res,created
     
-    def filter(self, **kwargs):
-        return QuerySet(self._meta, fargs = kwargs)
+    def filter(self, transaction = None, **kwargs):
+        return QuerySet(self._meta, fargs = kwargs, transaction = transaction)
     
     def from_queries(self, queries):
         return QuerySet(self._meta, queries = queries)
     
-    def exclude(self, **kwargs):
-        return QuerySet(self._meta, eargs = kwargs)
+    def exclude(self, transaction = None, **kwargs):
+        return QuerySet(self._meta, eargs = kwargs, transaction = transaction)
     
     def search(self, text):
         return QuerySet(self._meta).search(text)
@@ -294,10 +299,10 @@ class Manager(object):
     def empty(self):
         return QuerySet(self._meta, empty = True)
     
-    def all(self):
+    def all(self, transaction = None):
         '''Return a :class:`QuerySet` which retrieve all instances\
  of the model.'''
-        return self.filter()
+        return self.filter(transaction = transaction)
     
     def _setmodel(self, model):
         meta = model._meta

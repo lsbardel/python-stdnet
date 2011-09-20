@@ -5,7 +5,8 @@ from stdnet.utils import zip, UnicodeMixin
 from stdnet import dispatch
 
 from .base import StdNetType, FakeModelType
-from .globals import get_model_from_hash 
+from .globals import get_model_from_hash
+from .mapper import transaction
 from .signals import *
 
 
@@ -205,15 +206,7 @@ will enumerate the number of object to delete. without deleting them.'''
     @classmethod
     def transaction(cls, *models, **kwargs):
         '''Return a transaction instance.'''
-        c = cls._meta.cursor
-        if not c:
-            raise ModelNotRegistered("Model '{0}' is not registered with a\
- backend database. Cannot start a transaction.".format(cls._meta))
-        for model in models:
-            if model._meta.cursor != c:
-                raise InvalidTransaction("Models {0} and {0} are registered\
- with a different databases. Cannot create transaction")
-        return c.transaction(**kwargs)
+        return transaction(cls,*models,**kwargs)
     
     # PICKLING SUPPORT
     

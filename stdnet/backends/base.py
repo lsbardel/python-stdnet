@@ -59,7 +59,10 @@ class BeckendQuery(object):
         raise NotImplementedError
     
     def load_related(self, result):
-        '''load related fields into the query results.'''
+        '''load related fields into the query result.
+
+:parameter result: a result from a queryset.
+:rtype: the same queryset qith related models loaded.'''
         if self.qs._select_related:
             meta = self.qs._meta
             for field in self.qs._select_related:
@@ -74,7 +77,7 @@ class BeckendQuery(object):
                     with meta.model.transaction() as t:
                         for val in vals:
                             val.reload(t)
-                    for val,r in zip(vals,t.results):
+                    for val,r in zip(vals,t.get_result()):
                         val.set_cache(r)
                         
         return result

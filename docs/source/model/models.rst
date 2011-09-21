@@ -93,25 +93,6 @@ M2MRelatedManager
 .. autoclass:: stdnet.orm.query.M2MRelatedManager
    :members:
    :member-order: bysource
-   
-   
-.. _transactions-api:
-
-Transactions
-====================
-
-Transaction class
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.Transaction
-   :members:
-   :member-order: bysource
-
-
-transaction
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: stdnet.orm.transaction
 
 
 Search Engine
@@ -119,6 +100,7 @@ Search Engine
 .. autoclass:: stdnet.orm.SearchEngine
    :members:
    :member-order: bysource
+
 
 .. _signal-api:
 

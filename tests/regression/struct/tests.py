@@ -99,7 +99,7 @@ class TestTimeserie(test.TestCase):
         with transaction(ts) as t:
             ts.front(t)
             ts.back(t)
-        for r in t.results:
+        for r in t.get_result():
             self.assertEqual(r,None)
         self.assertEqual(ts.size(),0)
         

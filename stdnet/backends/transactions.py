@@ -1,6 +1,7 @@
 from inspect import isgenerator
 
 from stdnet.exceptions import InvalidTransaction, ModelNotRegistered
+from stdnet.utils import itervalues
 
 
 all__ = ['transaction','attr_local_transaction','Transaction']
@@ -39,6 +40,22 @@ def transaction(*models, **kwargs):
 
 class Transaction(object):
     '''Transaction class for pipelining commands to the back-end server.
+An instance of this class is usally obtained by using the high level
+:func:`stdnet.transaction` function.
+
+.. attribute:: name
+
+    Transaction name
+    
+.. attribute:: server
+
+    Instance of a :class:`stdnet.BackendDataServer` to which the transaction
+    is beeing performed.
+    
+.. attribute:: cursor
+
+    The server cursor which manages the transaction.
+    
     '''
     default_name = 'transaction'
     
@@ -50,13 +67,14 @@ class Transaction(object):
         self._callbacks = []
     
     def add(self, func, args, kwargs, callback = None):
-        '''Add an operation to the transaction. This is how operation
-are added to a transaction.
+        '''Add an new operation to the transaction.
 
-:parameter func: function to call which tackes the cursor as first argument
-:parameter args: tuple or varing arguments
-:parameter kwargs: dictionary or key-values arguments
-:parameter callback: optional callback function with arity 1.'''
+:parameter func: function to call which accept :attr:`stdnet.Transaction.cursor`
+    as its first argument.
+:parameter args: tuple or varying arguments to pass to *func*.
+:parameter kwargs: dictionary or key-values arguments to pass to *func*.
+:parameter callback: optional callback function with arity 1 which process
+    the result wonce back from the server.'''
         res = func(self.cursor,*args,**kwargs)
         callback = callback or default_callback
         self._callbacks.append(callback)

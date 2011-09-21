@@ -234,6 +234,8 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
         return self._all(self.cursor(transaction))
 
     def save(self, transaction = None):
+        '''Save the data in the back-end server. If a transaction is
+specified, the data is pipelined and executed when the transaction completes.'''
         cursor = transaction.cursor if transaction else self.server.cursor()
         return self._save_from_pipeline(cursor, self.pipe(transaction))
         

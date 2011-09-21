@@ -2,11 +2,11 @@ import json
 from hashlib import sha1
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, pickle, iteritems, itervalues, BytesIO, encoders
+from stdnet.utils import zip, iteritems, itervalues, BytesIO, encoders
 
 from .structures import Structure
 
-__all__ = ['BackendDataServer', 'BeckendQuery', 'Transaction']
+__all__ = ['BackendDataServer', 'BeckendQuery']
 
 
 class Keys(object):
@@ -19,76 +19,7 @@ class Keys(object):
     def add(self, value):
         self.value = value
         
-
-default_callback = lambda x : x
-
-class Transaction(object):
-    default_name = 'transaction'
     
-    def __init__(self, server, cursor, name = None):
-        self.name = name or self.default_name
-        self.server = server
-        self.cursor = cursor
-        self._cachepipes = {}
-        self._callbacks = []
-    
-    def add(self, func, args, kwargs, callback = None):
-        '''Add an operation to the transaction. This is how operation
-are added to a transaction.
-
-:parameter func: function to call which tackes the cursor as first argument
-:parameter args: tuple or varing arguments
-:parameter kwargs: dictionary or key-values arguments
-:parameter callback: optional callback function with arity 1.'''
-        res = func(self.cursor,*args,**kwargs)
-        callback = callback or default_callback
-        self._callbacks.append(callback)
-        
-    def merge(self, other):
-        '''Merge two transaction together'''
-        if self.server == other.server:
-            if not other.empty():
-                raise NotImplementedError()
-        else:
-            raise InvalidTransaction('Cannot merge transactions.')
-        
-    def empty(self):
-        '''Check if the transaction contains query data or not.
-If there is no query data the transaction does not perform any
-operation in the database.'''
-        for c in itervalues(self._cachepipes):
-            if c.pipe:
-                return False
-        return self.emptypipe()
-                
-    def emptypipe(self):
-        raise NotImplementederror
-            
-    def structure_pipe(self, structure):
-        '''Create a pipeline for a structured datafield'''
-        id = structure.id
-        if id not in self._cachepipes:
-            self._cachepipes[id] = structure.struct()
-        return self._cachepipes[id].pipe
-    
-    def commit(self):
-        raise NotImplementedError
-    
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, type, value, traceback):
-        if type is None:
-            results = self.commit() or ()
-            if len(results) and len(self._callbacks):
-                self.results = ((cb(r) for cb,r in\
-                                       zip(self._callbacks,results)))
-            else:
-                self.results = results
-        else:
-            self.result = value
-
-        
 class BeckendQuery(object):
     query_set = None
     

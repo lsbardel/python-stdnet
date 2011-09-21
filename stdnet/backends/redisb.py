@@ -20,7 +20,7 @@ redis_connection = namedtuple('redis_connection',
 class RedisTransaction(stdnet.Transaction):
     default_name = 'redis-transaction'
     
-    def commit(self):
+    def _execute(self):
         '''Commit cache objects to database.'''
         cursor = self.cursor
         for id,cachepipe in iteritems(self._cachepipes):

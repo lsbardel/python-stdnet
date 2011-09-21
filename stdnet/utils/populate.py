@@ -44,10 +44,10 @@ Supported data-types
         
         create a 200 elements list with random int between *start* and *end*
         
-    * *floats*
+    * *float*
         For example::
             
-            populate('integer',200, start = 0, end = 10)
+            populate('float', 200, start = 0, end = 10)
         
         create a 200 elements list with random floats between *start* and *end*
 

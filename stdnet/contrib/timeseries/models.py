@@ -1,21 +1,6 @@
 from stdnet import orm
-from stdnet.utils import date2timestamp, timestamp2date, todatetime, todate,\
-                         missing_intervals
+from stdnet.utils import encoders, todatetime, todate, missing_intervals
 
-
-class DateTimeConverter(object):
-    
-    def dumps(self, value):
-        return date2timestamp(value)
-    
-    def loads(self, value):
-        return timestamp2date(value)
-    
-
-class DateConverter(DateTimeConverter):
-    
-    def loads(self, value):
-        return timestamp2date(value).date()
 
 
 class HashTimeSeriesField(orm.HashField):
@@ -42,8 +27,8 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
         
 class TimeSeriesBase(orm.StdModel):
     '''Timeseries base model class'''
-    converter = DateTimeConverter()
     '''Class responsable for converting Python dates into unix timestamps'''
+    converter = encoders.DateTimeConverter()
     
     def todate(self, v):
         return todatetime(v)
@@ -85,7 +70,7 @@ class TimeSeries(TimeSeriesBase):
     
 
 class DateTimeSeries(TimeSeries):
-    converter = DateConverter()
+    converter = encoders.DateConverter()
     
     def todate(self, v):
         return todate(v)
@@ -134,7 +119,7 @@ class HashTimeSeries(TimeSeriesBase):
 
 
 class DateHashTimeSeries(HashTimeSeries):
-    converter = DateConverter()
+    converter = encoders.DateConverter()
     data_start = orm.DateField(required = False, index = False)
     data_end = orm.DateField(required = False, index = False)
     

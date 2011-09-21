@@ -1,17 +1,9 @@
 '''Two different implementation of a redis::map, a networked
 ordered associative container
 '''
-from stdnet.utils import zip, iteritems
+from stdnet.utils import iteritems
 from stdnet.backends.structures import base as structures
 
-
-def riteritems(cursor, id, com, *rargs):
-    res = cursor.execute_command(com, id, *rargs)
-    if res:
-        return zip(res[::2], res[1::2])
-    else:
-        return res
-    
     
 class CommonMixin(object):
     '''Implements common functions to all Redis structures.'''
@@ -159,7 +151,8 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return None if not val else val[0]
         
     def _irange(self, cursor, start, end):
-        return riteritems(cursor, self.id, 'TSRANGE', start, end, 'withtimes')
+        return cursor.execute_command('TSRANGE', self.id, start, end,
+                                      'withtimes', withtimes = True)
     
     def _range(self, cursor, start, end):
         return cursor.execute_command('TSRANGEBYTIME', self.id, start, end,
@@ -169,15 +162,16 @@ It is implemented on my redis-fork at https://github.com/lsbardel/redis'''
         return cursor.execute_command('TSCOUNT', self.id, start, end)
     
     def _front(self, cursor):
-        return self._getdate(cursor.execute_command(\
-                                    'TSRANGE', self.id, 0, 0, 'novalues'))
+        return cursor.execute_command('TSRANGE', self.id, 0, 0, 'novalues',
+                                      novalues = True, single = True)
     
     def _back(self, cursor):
-        return self._getdate(cursor.execute_command(\
-                                    'TSRANGE', self.id, -1, -1, 'novalues'))
+        return cursor.execute_command('TSRANGE', self.id, -1, -1, 'novalues',
+                                      novalues = True, single = True)
         
     def _keys(self, cursor):
-        return cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues')
+        return cursor.execute_command('TSRANGE', self.id, 0, -1, 'novalues',
+                                      novalues = True)
     
     def _items(self, cursor, keys):
         if keys:

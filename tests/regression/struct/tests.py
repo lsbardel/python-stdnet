@@ -1,5 +1,12 @@
-from stdnet import test, struct
-from stdnet.utils import encoders
+from datetime import date
+
+from stdnet import test, struct, transaction
+from stdnet.utils import encoders, zip
+from stdnet.utils.populate import populate
+
+
+dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
+values = populate('float',len(dates),start=0,end=1000)
 
 
 class zsetfunc(object):
@@ -79,4 +86,32 @@ class TestStruct(test.TestCase):
         r = list(l)
         self.assertTrue(l._cache)
         self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
+        
+        
+class TestTimeserie(test.TestCase):
+    tag = 'ts'
+    
+    def testEmpty(self):
+        ts = struct.ts()
+        self.assertEqual(ts.front(),None)
+        self.assertEqual(ts.back(),None)
+        # lets try with a transaction
+        with transaction(ts) as t:
+            ts.front(t)
+            ts.back(t)
+        for r in t.results:
+            self.assertEqual(r,None)
+        self.assertEqual(ts.size(),0)
+        
+    def testData(self):
+        ts = struct.ts()
+        ts.update(zip(dates,values))
+        ts.save()
+        self.assertEqual(ts.size(),len(dates))
+        front = ts.front()
+        back = ts.back()
+        self.assertTrue(back>front)
+        range = list(ts.range(date(2009,10,1),date(2010,5,1)))
+        self.assertTrue(range)
+        
     

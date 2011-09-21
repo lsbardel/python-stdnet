@@ -29,9 +29,7 @@ class RedisTransaction(stdnet.Transaction):
             cachepipe.pipe.clear()
                     
         if not self.emptypipe():
-            self.results = cursor.execute()
-        else:
-            self.results = None
+            return cursor.execute()
         
     def emptypipe(self):
         if hasattr(self.cursor,'execute'):

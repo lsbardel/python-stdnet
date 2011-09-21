@@ -19,7 +19,9 @@ class Keys(object):
     def add(self, value):
         self.value = value
         
-        
+
+default_callback = lambda x : x
+
 class Transaction(object):
     default_name = 'transaction'
     
@@ -28,6 +30,19 @@ class Transaction(object):
         self.server = server
         self.cursor = cursor
         self._cachepipes = {}
+        self._callbacks = []
+    
+    def add(self, func, args, kwargs, callback = None):
+        '''Add an operation to the transaction. This is how operation
+are added to a transaction.
+
+:parameter func: function to call which tackes the cursor as first argument
+:parameter args: tuple or varing arguments
+:parameter kwargs: dictionary or key-values arguments
+:parameter callback: optional callback function with arity 1.'''
+        res = func(self.cursor,*args,**kwargs)
+        callback = callback or default_callback
+        self._callbacks.append(callback)
         
     def merge(self, other):
         '''Merge two transaction together'''
@@ -64,7 +79,12 @@ operation in the database.'''
     
     def __exit__(self, type, value, traceback):
         if type is None:
-            self.commit()
+            results = self.commit() or ()
+            if len(results) and len(self._callbacks):
+                self.results = ((cb(r) for cb,r in\
+                                       zip(self._callbacks,results)))
+            else:
+                self.results = results
         else:
             self.result = value
 

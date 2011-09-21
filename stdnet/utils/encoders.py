@@ -3,7 +3,7 @@ import json
 
 from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\
-                         ispy3k
+                         ispy3k, date2timestamp, timestamp2date
     
 
 class Encoder(object):
@@ -115,3 +115,18 @@ remote data structures.'''
         s = x.decode(self.charset,self.encoding_errors)
         return json.loads(s, object_hook=self.object_hook)
 
+
+class DateTimeConverter(Encoder):
+    '''Convert to and from datetime.datetime and unix timestamps'''
+    def dumps(self, value):
+        return date2timestamp(value)
+    
+    def loads(self, value):
+        return timestamp2date(value)
+    
+
+class DateConverter(DateTimeConverter):
+    '''Convert to and from datetime.date and unix timestamps'''
+    def loads(self, value):
+        return timestamp2date(value).date()
+    

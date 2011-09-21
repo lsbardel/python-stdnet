@@ -2,11 +2,10 @@ import copy
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, UnicodeMixin
-from stdnet import dispatch
+from stdnet import dispatch, transaction, attr_local_transaction
 
 from .base import StdNetType, FakeModelType
 from .globals import get_model_from_hash
-from .transactions import transaction, attr_local_transaction
 from .signals import *
 
 

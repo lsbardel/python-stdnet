@@ -1,7 +1,7 @@
 from datetime import datetime
 from random import randint
 
-from stdnet import orm, test
+from stdnet import orm, test, transaction
 from stdnet.utils import populate, zip
 
 from examples.models import User, Post
@@ -64,7 +64,7 @@ class TestTwitter(test.TestModelBase):
         N = len(users)
         
         # Follow users
-        with orm.transaction(User) as t:
+        with transaction(User) as t:
             for user in users:
                 n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
                 following = user.following

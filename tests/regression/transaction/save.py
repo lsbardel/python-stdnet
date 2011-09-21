@@ -1,7 +1,7 @@
 import random
 
 import stdnet
-from stdnet import test, orm, InvalidTransaction
+from stdnet import test, orm, InvalidTransaction, transaction
 from examples.models import SimpleModel, Dictionary
 from stdnet.utils import populate
 
@@ -47,15 +47,15 @@ class TestTransactions(test.TestModelBase):
     def testIncompatibleModels(self):
         l = stdnet.struct.list('redis://localhost:6379/?db=9')
         s = stdnet.struct.set('redis://localhost:6379/?db=8')
-        self.assertRaises(InvalidTransaction,orm.transaction,l,s)
+        self.assertRaises(InvalidTransaction,transaction,l,s)
         l = stdnet.struct.list('redis://localhost:6379/?db=9')
         s = stdnet.struct.set('redis://localhost:6378/?db=9')
-        self.assertRaises(InvalidTransaction,orm.transaction,l,s)
-        self.assertRaises(InvalidTransaction,orm.transaction,SimpleModel,s)
+        self.assertRaises(InvalidTransaction,transaction,l,s)
+        self.assertRaises(InvalidTransaction,transaction,SimpleModel,s)
         
     def testCompatibleModels(self):
         s = stdnet.struct.set(SimpleModel._meta.cursor)
-        t = orm.transaction(SimpleModel,s, name = 'test-transaction')
+        t = transaction(SimpleModel,s, name = 'test-transaction')
         self.assertEqual(t.server,SimpleModel._meta.cursor)
         self.assertEqual(t.name,'test-transaction')
         
@@ -67,7 +67,7 @@ class TestTransactions(test.TestModelBase):
         r = TransactionReceiver()
         db.redispy.signal_on_send.connect(r)
         db.redispy.signal_on_received.connect(r)
-        with orm.transaction(s,l,h,SimpleModel) as t:
+        with transaction(s,l,h,SimpleModel) as t:
             m = SimpleModel(code = 'test', description = 'just a test')
             h.add('test','bla',t)
             l.push_back(5,t)
@@ -88,7 +88,7 @@ class TestMultiFieldTransaction(test.TestModelBase):
     model = Dictionary
     
     def make(self):
-        with orm.transaction(self.model, name = 'create models') as t:
+        with transaction(self.model, name = 'create models') as t:
             self.assertEqual(t.name, 'create models')
             for name in names:
                 self.model(name = name).save(t)
@@ -100,7 +100,7 @@ class TestMultiFieldTransaction(test.TestModelBase):
     def testHashField(self):
         self.make()
         d1,d2 = tuple(self.model.objects.filter(id__in = (1,2)))
-        with orm.transaction(self.model) as t:
+        with transaction(self.model) as t:
             d1.data.add('ciao','hello in Italian',t)
             d1.data.add('bla',10000,t)
             d2.data.add('wine','drink to enjoy with or without food',t)

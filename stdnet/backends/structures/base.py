@@ -82,6 +82,23 @@ _pipelines = {'list':ListPipe,
 strcuturemeta = namedtuple('strcuturemeta','cursor')
 
 
+class ResultCallback(object):
+    __slots__ = ('default','loads')
+    
+    def __init__(self, default, loads):
+        self.default = default
+        self.loads = loads
+    
+    def __call__(self, res):
+        if res:
+            if self.loads:
+                return self.loads(res)
+            else:
+                return res
+        else:
+            return self.default
+
+
 class Structure(object):
     '''Base class for remote data-structures. Remote structures are the
 backend of :ref:`structured fields <model-field-structure>` but they
@@ -143,6 +160,8 @@ can also be used as stand alone objects. For example::
     Default ``None``.
 
     '''
+    pickler = None
+    value_pickler = None
     def __init__(self, server, id,  pipetype, instance = None,
                  timeout = 0, pickler = None,
                  value_pickler = None, scorefun = None,
@@ -151,9 +170,9 @@ can also be used as stand alone objects. For example::
         self._meta = strcuturemeta(server)
         self.scorefun = scorefun or default_score
         self.instance = instance
-        self.pickler = pickler if pickler is not None else server.pickler
-        self.value_pickler = value_pickler if value_pickler is not None\
-                                 else server.pickler
+        self.pickler = pickler or self.pickler or server.pickler
+        self.value_pickler = value_pickler or self.value_pickler or\
+                                 server.pickler
         self.id = id
         self._cache = None
         self.timeout = timeout
@@ -215,10 +234,8 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
         return self._all(self.cursor(transaction))
 
     def save(self, transaction = None):
-        cursor = self.cursor(transaction) if transaction else\
-                     self.server.cursor()
-        return self._save_from_pipeline(cursor,
-                                        self.pipe(transaction))
+        cursor = transaction.cursor if transaction else self.server.cursor()
+        return self._save_from_pipeline(cursor, self.pipe(transaction))
         
     def delete(self, transaction = None):
         cursor = self.cursor(transaction) if transaction else\
@@ -284,18 +301,12 @@ if you would like ti pipeline the command.'''
                       *args, **kwargs):
         '''invoke remote function in the server and if
 we are not using a pipeline, unpickle the result.'''
+        rk = ResultCallback(default,loads)
         if transaction:
-            return func(self.cursor(transaction), *args, **kwargs)
+            transaction.add(func, args, kwargs, callback = rk)
         else:
-            res = func(self.server.cursor(), *args, **kwargs)
-            if res:
-                if loads:
-                    return loads(res)
-                else:
-                    return res
-            else:
-                return default
-        
+            return rk(func(self.server.cursor(), *args, **kwargs))
+            
     # PURE VIRTUAL METHODS
     
     def set_cache(self, r):
@@ -469,8 +480,9 @@ Equivalent to python dictionary update method.
         tokey = self.pickler.dumps
         dumps = self.value_pickler.dumps
         pipe = self.pipe(transaction)
-        for key,value in iteritems(mapping):
-            pipe[tokey(key)] = dumps(value)
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        pipe.update(dict(((tokey(k),dumps(v)) for k,v in mapping)))
     
     def get(self, key, default = None, transaction = None):
         '''Retrieve a single element from the hashtable.
@@ -608,24 +620,23 @@ class TS(HashTable):
     '''A timeseries :class:`stdnet.Structure`. This is an experimental structure
 not available with vanilla redis. Check the
 :ref:`timeseries documentation <contrib-timeserie>` for further information.'''
+    pickler = encoders.DateTimeConverter()
+    value_pickler = encoders.Json()
+    
     def set_cache(self, r):
         kloads = self.pickler.loads
         vloads = self.value_pickler.loads
         self._cache = list(((kloads(k),vloads(v)) for k,v in r))
         
-    def front(self):
+    def front(self, transaction = None):
         '''Return the front key of timeseries'''
-        try:
-            return self.pickler.loads(self._front(self.server.cursor()))
-        except TypeError:
-            return None
+        return self._unpicklefrom(self._front, transaction, None,
+                                  self.pickler.loads)
         
-    def back(self):
+    def back(self, transaction = None):
         '''Return the back key of timeseries'''
-        try:
-            return self.pickler.loads(self._back(self.server.cursor()))
-        except TypeError:
-            return None
+        return self._unpicklefrom(self._back, transaction, None,
+                                  self.pickler.loads)
         
     def range(self, start, end):
         '''Return a generator of a range between start and end key.'''

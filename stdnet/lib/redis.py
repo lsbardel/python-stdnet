@@ -89,9 +89,15 @@ def pairs_to_dict(response, encoding = 'utf-8'):
 
 
 def ts_pairs(response, **options):
-    if not response or not options.get('withtimes'):
+    '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
+    if not response:
         return response
-    return zip(response[::2], response[1::2])
+    elif options.get('withtimes'):
+        return zip(response[::2], response[1::2])
+    elif options.get('single') and len(response) == 1:
+        return response[0]
+    else:
+        return response
     
     
 def zset_score_pairs(response, **options):

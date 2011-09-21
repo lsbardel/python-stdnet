@@ -3,8 +3,7 @@ from collections import namedtuple
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, to_bytestring
-
-from .transactions import transaction as get_transaction
+from stdnet import transaction as get_transaction
 
 
 queryarg = namedtuple('queryarg','name values unique lookup')

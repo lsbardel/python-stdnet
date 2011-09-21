@@ -1,6 +1,6 @@
 from stdnet.exceptions import InvalidTransaction, ModelNotRegistered
 
-all__ = ['transaction']
+all__ = ['transaction','attr_local_transaction']
 
 
 attr_local_transaction = '_local_transaction'

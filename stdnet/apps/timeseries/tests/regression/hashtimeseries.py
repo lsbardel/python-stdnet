@@ -4,7 +4,7 @@ from random import uniform
 from stdnet import test, orm, transaction
 from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
-from stdnet.contrib.timeseries.tests.models import HashTimeSeries,\
+from stdnet.apps.timeseries.tests.models import HashTimeSeries,\
                                                  DateHashTimeSeries
 
 

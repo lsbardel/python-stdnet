@@ -39,7 +39,7 @@ def import_tests(tags, test_type, tests_path, library, can_fail):
             continue
         logger.debug("Try to import tests for %s" % app)
         test_module = '{0}.{1}.tests'.format(loc,app)
-        if loc == 'contrib' and library:
+        if loc == 'apps' and library:
             test_module = '{0}.{1}.{2}'.format(library,test_module,test_type)
             
         try:

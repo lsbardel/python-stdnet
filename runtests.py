@@ -4,7 +4,7 @@ import sys
 import argparse
 
 import stdnet
-from stdnet import contrib
+from stdnet import apps
 from stdnet.test import run
 from stdnet.conf import settings
 
@@ -49,7 +49,7 @@ def addpath(test_type):
     if CUR_DIR not in sys.path:
         sys.path.insert(0, CUR_DIR)
     
-    CONTRIB_DIR  = os.path.dirname(contrib.__file__)
+    CONTRIB_DIR  = os.path.dirname(apps.__file__)
     TEST_DIR = p.join(CUR_DIR,'tests')
     if TEST_DIR not in sys.path:
         sys.path.insert(0, TEST_DIR)

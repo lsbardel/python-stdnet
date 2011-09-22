@@ -1,6 +1,7 @@
 Ver. 0.7.0 - Development
 ============================
 * Requires redis_ 2.4 or higher.
+* Moved the contrib module to the ``apps`` renamed the tasks application grid.
 * Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
   fields of a queryset with a single database query.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed

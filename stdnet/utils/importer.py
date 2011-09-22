@@ -34,7 +34,7 @@ def import_modules(modules):
                 pass
             
 
-def module_attribute(dotpath, default = None):
+def module_attribute(dotpath, default = None, safe = False):
     '''
     Load an attribute from a module.
     If the module or the attriubute is not available,
@@ -46,6 +46,12 @@ def module_attribute(dotpath, default = None):
             module = import_module('.'.join(bits[:-1]))
             return getattr(module,bits[-1],default)
         except Exception as e:
-            return default
+            if safe:
+                return default
+            else:
+                raise
     else:
-        return default
+        if safe:
+            return default
+        else:
+            raise

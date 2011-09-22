@@ -2,7 +2,6 @@ from stdnet import orm
 from stdnet.utils import encoders, todatetime, todate, missing_intervals
 
 
-
 class HashTimeSeriesField(orm.HashField):
     '''To be used with subclasses of :class:`TimeSeriesBase`.'''
     def register_with_model(self, name, model):

@@ -7,7 +7,7 @@ Usage
 
 Somewhere in your application create the search engine singletone::
 
-    from stdnet.contrib.searchengine import SearchEngine
+    from stdnet.apps.searchengine import SearchEngine
      
     engine = SearchEngine(...)
  
@@ -97,7 +97,7 @@ https://gist.github.com/389875
                             
 :parameter stop_words: list of words not included in the search engine.
 
-                       Default ``stdnet.contrib.searchengine.ignore.STOP_WORDS``
+                       Default ``stdnet.apps.searchengine.ignore.STOP_WORDS``
                         
 :parameter autocomplete: Name for the autocomplete sorted set.
                          If ``None`` `autocomplete` functionality won't
@@ -118,7 +118,7 @@ https://gist.github.com/389875
                       Splitting will always occur on white spaces.
                       
                       Default
-                      ``stdnet.contrib.searchengine.ignore.PUNCTUATION_CHARS``.
+                      ``stdnet.apps.searchengine.ignore.PUNCTUATION_CHARS``.
 
 .. _metaphone: http://en.wikipedia.org/wiki/Metaphone
 """
@@ -188,7 +188,7 @@ Remove indexes for *item*.
     
     def words(self, text, for_search = False):
         '''Given a text string,
-return a list of :class:`stdnet.contrib.searchengine.Word` instances
+return a list of :class:`stdnet.apps.searchengine.Word` instances
 associated with it. The word items can be used to perform search
 on registered models.'''
         texts = self.words_from_text(text,for_search)

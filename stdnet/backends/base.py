@@ -173,6 +173,8 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         # therefore we need to clean up indexes first
         if obj.id:
             try:
+                #TODO. THIS IS NOT GOOD, WE ARE GETTING THE WHOLE OBJECT
+                #JUST TO CHECK IT ACTUALLY EXISTS.
                 pobj = obj.__class__.objects.get(id = obj.id)
             except obj.DoesNotExist:
                 pass
@@ -212,13 +214,16 @@ Called to clear a model instance.
             
         return 1
     
-    def make_objects(self, meta, ids, data):
+    def make_objects(self, meta, ids, data, loadedfields = None):
         make_object = meta.maker
         for id,fields in zip(ids,data):
             obj = make_object()
-            fields = dict(fields)
-            #fields = dict(((k.decode(),v) for (k,v) in fields))
+            if loadedfields:
+                fields = dict(zip(loadedfields,fields))
+            else:
+                fields = dict(fields)
             obj.__setstate__((id,fields))
+            obj._loadedfields = loadedfields
             yield obj
         
     def set(self, id, value, timeout = None):

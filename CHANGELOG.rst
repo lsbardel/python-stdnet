@@ -1,5 +1,7 @@
 Ver. 0.7.0 - Development
 ============================
+* Lots of new features manly geared towards improved performance via custom
+  query options and transactions.
 * Requires redis_ 2.4 or higher.
 * Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application to grid.
 * Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
@@ -10,7 +12,7 @@ Ver. 0.7.0 - Development
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
 * Added :mod:`stdnet.utils.dates`.
-* **336 regression tests** with **80%** coverage.
+* **342 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

@@ -99,6 +99,19 @@ class ResultCallback(object):
             return self.default
 
 
+class KeyValueCallback(object):
+    __slots__ = ('loads','vloads')
+    
+    def __init__(self, loads, vloads):
+        self.loads = loads
+        self.vloads = vloads
+    
+    def __call__(self, result):
+        kloads = self.loads
+        vloads = self.vloads
+        return ((kloads(k),vloads(v)) for k,v in result)
+
+
 class Structure(object):
     '''Base class for remote data-structures. Remote structures are the
 backend of :ref:`structured fields <model-field-structure>` but they
@@ -453,6 +466,16 @@ The networked equivalent to a Python ``dict``.'''
         vloads = self.value_pickler.loads
         self._cache = dict(((kloads(k),vloads(v)) for k,v in items))
         
+    def keyvaluedata(self, func, transaction, *args, **kwargs):
+        '''invoke remote function in the server and if
+we are not using a pipeline, unpickle the result.'''
+        rk = KeyValueCallback(self.pickler.loads,
+                              self.value_pickler.loads)
+        if transaction:
+            transaction.add(func, args, kwargs, callback = rk)
+        else:
+            return rk(func(self.server.cursor(), *args, **kwargs))
+        
     def __delitem__(self, key):
         self.pop(key)
         
@@ -640,34 +663,22 @@ not available with vanilla redis. Check the
         return self._unpicklefrom(self._back, transaction, None,
                                   self.pickler.loads)
         
-    def range(self, start, end):
+    def range(self, start, end, transaction = None):
         '''Return a generator of a range between start and end key.'''
         tokey = self.pickler.dumps
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        cursor = self.server.cursor()
-        for key,val in self._range(cursor,tokey(start),tokey(end)):
-            yield kloads(key),vloads(val)
+        return self.keyvaluedata(self._range,transaction,
+                                 tokey(start),
+                                 tokey(end))
+            
+    def irange(self, start = 0, end = -1, transaction = None):
+        '''Return a range between start and end key.'''
+        return self.keyvaluedata(self._irange,transaction,
+                                 start, end)
             
     def count(self, start, end):
         tokey    = self.pickler.dumps
         return self._count(self.server.cursor(),
                            tokey(start),tokey(end))
-            
-    def irange(self, start = 0, end = -1):
-        '''Return a range between start and end key.'''
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        for key,val in self._irange(self.server.cursor(),start,end):
-            yield kloads(key),vloads(val)
-            
-    def intervals(self, startdate, enddate, parseinterval = None,
-                    dateconverter = None):
-        start = self.front()
-        end = self.back()
-        return missing_intervals(startdate, enddate, start, end,
-                                 parseinterval = parseinterval,
-                                 dateconverter = dateconverter)
             
     # PURE VIRTUAL METHODS
     

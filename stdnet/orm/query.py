@@ -21,12 +21,14 @@ class EmptySet(frozenset):
     
 
 class QuerySet(object):
-    '''A QuerySet is not created on its but instead using the model manager.
-For example::
+    '''A QuerySet is not created using its constructor but instead using
+the model manager via :meth:`Manager.filter` or,
+:meth:`Manager.exclude` or :meth:`Manager.all`. For example::
 
-    qs = MyModel.objects.filter(field = 'bla)
+    qs = MyModel.objects.filter(field = 'bla')
     
-``qs`` is a queryset instance for model ``MyModel``.
+``qs`` is a :class:`QuerySet` instance for model ``MyModel`` and in this case
+it refers to all instances which have *field* set to ``bla``.
 '''
     start = None
     stop = None
@@ -64,6 +66,7 @@ instances of queryset are constructued using the
         self.filter_sets = filter_sets
         self.queries = queries
         self._select_related = None
+        self.fields = None
         self.clear()
         if empty:
             self.qset = EmptySet()
@@ -146,12 +149,14 @@ for this function to be available.'''
                                 .format(self.model))
             
     def load_related(self, *fields):
-        '''Return a new ``QuerySet`` that automatically follow foreign-key
+        '''It returns a new ``QuerySet`` that automatically follows foreign-key
 relationships, selecting that additional related-object data when it executes
-its query.
+its query. This is :ref:`performance boost <increase-performance>` when
+accessing the related fields of all (most) objects in your queryset.
 
 :parameter fields: fields to include in the loading. If not provided all
-    foreign key will be loaded.
+    foreign keys and :ref:`structured fields <model-field-structure>`
+    in the model will be loaded.
 :rtype: an instance of a :class:`stdnet.orm.query.Queryset`.'''
         if not fields:
             fields = []
@@ -162,6 +167,18 @@ its query.
         else:
             fields = [self._meta.dfields[field] for field in fields]
         self._select_related = fields
+        return self
+    
+    def load_only(self, *fields):
+        '''This is provides a :ref:`performance boost <increase-performance>`
+in cases when you need to load a subset of fields of your model. The boost
+achieved is less than the one obtained when using
+:meth:`QuerySet.load_related`, since it does not reduce the number of requests
+to the database. However, it can save you lots of bandwidth when excluding
+data intensive fields you don't need.
+'''
+        dfields = self._meta.dfields
+        self.fields = tuple((field for field in fields if field in dfields))
         return self
     
     def get(self):

@@ -42,11 +42,14 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: index
 
-    If ``True``, the field will create indexes for queries.
+    Probably the most important field attribute, it establish if
+    the field creates indexes for queries.
     An index is implemented as a :class:`stdnet.Set` 
-    in the :class:`stdnet.BackendDataServer`.
-    if the :attr:`stdnet.orm.base.Metaclass.ordering` attribute is set
-    the indexes are implemented using :class:`stdnet.OrderedSet`.
+    in the :class:`stdnet.BackendDataServer` unless the
+    the :attr:`stdnet.orm.base.Metaclass.ordering` attribute is set
+    to a model field, in which case indexes are implemented using
+    :class:`stdnet.OrderedSet`. More information on the
+    :ref:`sorting <sorting>` documentation.
     
     If you don't need to query the field you should set this value to
     ``False``, it will save you memory.
@@ -70,7 +73,12 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 .. attribute:: primary_key
 
     If ``True``, this field is the primary key for the model.
-    In this case :attr:`Field.unique` is also ``True``.
+    A primary key field has the following properties:
+    
+    * :attr:`Field.unique` is also ``True``.
+    * There can be only one in a model.
+    * It's attribute name in the model must be **id**.
+    * If not specified a :class:`stdnet.orm.AutoField` will be added.
     
     Default ``False``.
     
@@ -82,7 +90,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: default
 
-    Default value for this field. It can be a callable attribute.
+    Default value for this field. It can be a callable attribute with arity 0.
     
     Default ``None``.
     

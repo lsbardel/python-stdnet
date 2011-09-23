@@ -1,6 +1,5 @@
 .. _model-model:
 
-.. module:: stdnet.orm.models
 
 ============================
 Model and Query API
@@ -24,6 +23,7 @@ StdModel Class
    :member-order: bysource
 
  
+ 
 .. _database-metaclass:
 
 Data Server Metaclass
@@ -32,7 +32,6 @@ Data Server Metaclass
 .. autoclass:: stdnet.orm.base.Metaclass
    :members:
    :member-order: bysource
-
 
         
 .. _register-model:
@@ -65,6 +64,8 @@ Register applications
 
 .. autofunction:: stdnet.orm.register_applications
 
+
+.. module:: stdnet.orm.query
    
 Queries
 ==============================

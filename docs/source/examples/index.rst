@@ -18,5 +18,6 @@ available in :mod:`stdnet`.
    
    tutorial
    tutorial2
+   performance
    timeseries
    twitter

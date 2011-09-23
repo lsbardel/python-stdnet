@@ -284,14 +284,23 @@ different model) which has a *field* containing current model ids.'''
                 if slic:
                     ids = ids[slic]
         
+        # Load data
         if ids:
             bkey = self.meta.basekey
             pipe = self.server.redispy.pipeline()
-            hgetall = pipe.hgetall
-            for id in ids:
-                hgetall(bkey(OBJ,to_string(id)))
-            result = list(self.server.make_objects(self.meta,ids,
-                                                   pipe.execute()))
+            fields = self.qs.fields or None
+            if fields:
+                hmget = pipe.hmget
+                for id in ids:
+                    hmget(bkey(OBJ,to_string(id)),fields)
+            else:
+                hgetall = pipe.hgetall
+                for id in ids:
+                    hgetall(bkey(OBJ,to_string(id)))
+            result = list(self.server.make_objects(self.meta,
+                                                   ids,
+                                                   pipe.execute(),
+                                                   fields))
             return self.load_related(result)
         else:
             return ids

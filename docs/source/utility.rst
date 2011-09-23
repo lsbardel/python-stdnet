@@ -157,15 +157,6 @@ Populate
 .. autofunction:: stdnet.utils.populate
 
 
-
-Pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.PipeLine
-   :members:
-   :member-order: bysource
-
-
 Exceptions
 ============================
 

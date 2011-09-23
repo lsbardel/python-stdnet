@@ -1,11 +1,11 @@
 Ver. 0.7.0 - Development
 ============================
 * Requires redis_ 2.4 or higher.
-* Moved the contrib module to the ``apps`` renamed the tasks application grid.
+* Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application to grid.
 * Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
   fields of a queryset with a single database query.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
-  via the :attr:`stdnet.struct`.
+  via the :attr:`stdnet.struct` singleton.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.

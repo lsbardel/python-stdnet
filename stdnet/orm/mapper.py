@@ -61,8 +61,8 @@ It removes all keys associated with models.'''
 
 def register(model, backend = None, keyprefix = None, timeout = None,
              ignore_duplicates = True):
-    '''Low level function for registering a :class:`stdnet.orm.StdModel`
-model with a :class:`stdnet.backends.BackendDataServer` data server.
+    '''The low level function for registering a :class:`stdnet.orm.StdModel`
+classes with a :class:`stdnet.backends.BackendDataServer` data server.
     
 :parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
 

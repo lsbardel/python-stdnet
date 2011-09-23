@@ -37,39 +37,82 @@ class Metaclass(object):
     '''Utility class used for storing all information
 which maps a :class:`stdnet.orm.StdModel` model into an object in the
 in the remote :class:`stdnet.BackendDataServer`.
-An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
+An instance is initiated when :class:`stdnet.orm.StdModel` class is created.
 
+To override default behaviour you can specify the ``Meta`` class as an inner
+class of :class:`stdnet.orm.StdModel` in the following way::
+
+    from datetime import datetime
+    from stdnet import orm
+    
+    class MyModel(orm.StdModel):
+        timestamp = orm.DateTimeField(default = datetime.now)
+        ...
+        
+        class Meta:
+            ordering = '-timestamp'
+            modelkey = 'custom'
+            
+
+:parameter abstract: Check the :attr:`abstract` attribute.
+:parameter ordering: Check the :attr:`ordering` attribute.
+:parameter app_label: Check the :attr:`app_label` attribute.
+:parameter keyprefix: Check the :attr:`keyprefix` attribute.
+:parameter modelkey: Check the :attr:`modelkey` attribute.
+
+**Attributes and methods**:
+
+This is the list of attributes and methods available. All attributes,
+but the ones mantioned above, are initialized by the object relational
+mapper.
+
+.. attribute:: abstract
+
+    If ``True``, it represents an abstract model and no database elements
+    are created.
+
+.. attribute:: app_label
+
+    Unless specified it is the name of the directory or file
+    (if at top level) containing the
+    :class:`stdnet.orm.StdModel` definition.
+    
 .. attribute:: model
 
-    a subclass of :class:`stdnet.orm.StdModel`.
+    a subclass of :class:`stdnet.orm.StdModel`. Set by the ``orm``.
     
 .. attribute:: ordering
 
     Optional name of a :class:`stdnet.orm.Field` in the :attr:`model`.
-    If provided, indeces will be sorted with respect the value of the field specidied.
+    If provided, indeces will be sorted with respect the value of the
+    field specidied.
     Check the :ref:`sorting <sorting>` documentation for more details.
     
     Default: ``None``.
     
-.. attribute:: fields
+.. attribute:: dfields
 
     dictionary of :class:`stdnet.orm.Field` instances.
     
-.. attribute:: abstract
+.. attribute:: fields
 
-    if ``True``, it represents an abstract model and no database elements are created.
-
+    list of :class:`stdnet.orm.Field` instances.
+    
 .. attribute:: keyprefix
 
-    prefix for the database table. By default it is given by ``settings.DEFAULT_KEYPREFIX``,
-    where ``settings`` is obtained by::
+    Override the :ref:`settings.DEFAULT_KEYPREFIX <settings>` value.
     
-        from dynts.conf import settings
+    Default ``None``.
     
+.. attribute:: modelkey
+
+    Override the modelkey which is by default given by ``app_label.name``
+    
+    Default ``None``.
+        
 .. attribute:: pk
 
-    primary key ::class:`stdnet.orm.Field`
-
+    The primary key :class:`stdnet.orm.Field`
 '''
     VALATTR = '_validation'
     searchengine = None
@@ -77,7 +120,8 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
                  app_label = '', verbose_name = None,
-                 ordering = None, **kwargs):
+                 ordering = None, modelkey = None,
+                 **kwargs):
         self.abstract = abstract
         self.keyprefix = keyprefix
         self.model = model
@@ -91,6 +135,7 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         self.timeout = 0
         self.related = {}
         self.verbose_name = verbose_name or self.name
+        self.modelkey = modelkey or '{0}.{1}'.format(self.app_label,self.name)
         model._meta = self
         hashmodel(model)
         
@@ -134,27 +179,22 @@ An instance is initiated when :class:`stdnet.orm.StdModel` class is created:
         return self.__repr__()
         
     def basekey(self, *args):
-        """Calculate the key to access model data in
-the backend server.
-The key is an encoded binary string. For example::
+        """Calculate the key to access model data in the backend server.
+For example::
         
     >>> from examples.models import User
     >>> from orm import register
     >>> register(User)
     'redis db 7 on 127.0.0.1:6379'
     >>> User._meta.basekey()
-    b'stdnet.examples.user'
+    'stdnet.examples.user'
 """
-        key = '%s%s' % (self.keyprefix,self)
-        for arg in args:
-            if arg is not None:
-                key = '%s:%s' % (key,arg)
-        return key
+        key = '{0}{1}'.format(self.keyprefix,self.modelkey)
+        postfix = ':'.join((str(p) for p in args if p is not None))
+        return '{0}:{1}'.format(key,postfix) if postfix else key
     
     def tempkey(self, name = None):
-        if not name:
-            name = str(uuid4())[:8]
-        return self.basekey('tmp',name)
+        return self.basekey('tmp',name or str(uuid4())[:8])
     
     def autoid(self):
         '''The id for autoincrements ids'''
@@ -198,8 +238,10 @@ Return ``True`` if the instance is ready to be saved to database.'''
         '''Return an instance of :class:`stdnet.HashTable` holding
 the model table'''
         if not self.cursor:
-            raise ModelNotRegistered('%s not registered. Call orm.register(model_class) to solve the problem.' % self)
-        return self.cursor.hash(self.basekey(),self.timeout,transaction=transaction)
+            raise ModelNotRegistered('%s not registered.\
+ Call orm.register(model_class) to solve the problem.' % self)
+        return self.cursor.hash(self.basekey(),self.timeout,
+                                transaction=transaction)
     
     def flush(self, count = None):
         '''Fast method for clearing the whole table including related tables'''
@@ -299,10 +341,12 @@ def meta_options(abstract = False,
                  keyprefix = None,
                  app_label = None,
                  ordering = None,
+                 modelkey = None,
                  **kwargs):
     return {'abstract': abstract,
             'keyprefix': keyprefix,
             'app_label':app_label,
-            'ordering':ordering}
+            'ordering':ordering,
+            'modelkey':modelkey}
     
 

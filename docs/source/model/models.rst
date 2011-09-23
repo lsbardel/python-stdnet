@@ -41,7 +41,12 @@ Registration
 ======================
 
 Once a model is defined, in order to use it in an application it needs to be
-registered with a back-end database.
+registered with a back-end database. Unregistered models cannot be used to save
+data and they will raise exceptions.
+
+Stdnet comes with two fucntions for
+registration, a low level and a higher level one which can be used to register
+several models at once.
 
 Register
 ~~~~~~~~~~~~~~~~

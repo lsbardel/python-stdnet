@@ -174,15 +174,17 @@ Kudos
 * Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
 
+.. _contributing:
+
 Contributing
 =================
-Development of StdNet happens at Github: http://github.com/lsbardel/python-stdnet
+Development of stdnet happens at Github: http://github.com/lsbardel/python-stdnet
 
-You are highly encouraged to participate in the development. Here how to do it:
+We very much welcome your contribution of course. To do so, simply follow these guidelines:
 
 1. Fork python-stdnet on github
-2. Create a topic branch (git checkout -b my_branch)
-3. Push to your branch (git push origin my_branch)
+2. Create a topic branch ``git checkout -b my_branch``
+3. Push to your branch ``git push origin my_branch``
 4. Create an issue at https://github.com/lsbardel/python-stdnet/issues with a link to your patch
 
 

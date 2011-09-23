@@ -1,11 +1,11 @@
-.. _contrib-timeserie:
+.. _apps-timeserie:
 
 
-.. module:: stdnet.contrib.timeseries
+.. module:: stdnet.apps.timeseries
 
-============================
+==========================
 Timeseries Models
-============================
+==========================
 
 This is an experimental module which requires ``redis-timeseries`` branch of redis_.
 For more information check the :ref:`redis timeseries API <redis-timeseries>`.
@@ -18,7 +18,7 @@ To run the ``timeseries`` tests::
 Timeseries base model
 =========================
 
-.. autoclass:: stdnet.contrib.timeseries.models.TimeSeriesBase
+.. autoclass:: stdnet.apps.timeseries.models.TimeSeriesBase
    :members:
    :member-order: bysource
 
@@ -26,7 +26,7 @@ Timeseries base model
 Timeseries model
 =========================
 
-.. autoclass:: stdnet.contrib.timeseries.models.TimeSeries
+.. autoclass:: stdnet.apps.timeseries.models.TimeSeries
    :members:
    :member-order: bysource
    
@@ -34,7 +34,7 @@ Timeseries model
 Timeseries Model Field
 ===============================
 
-.. autoclass:: stdnet.contrib.timeseries.models.TimeSeriesField
+.. autoclass:: stdnet.apps.timeseries.models.TimeSeriesField
    :members:
    :member-order: bysource
 

@@ -621,7 +621,7 @@ No transaction involved in this function.'''
 class TS(HashTable):
     '''A timeseries :class:`stdnet.Structure`. This is an experimental structure
 not available with vanilla redis. Check the
-:ref:`timeseries documentation <contrib-timeserie>` for further information.'''
+:ref:`timeseries documentation <apps-timeserie>` for further information.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
     

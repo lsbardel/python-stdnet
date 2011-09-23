@@ -1,16 +1,16 @@
-.. _contrib-searchengine:
+.. _apps-searchengine:
 
 =========================================
 A Search Engine for Stdnet Models
 =========================================
 
-.. automodule:: stdnet.contrib.searchengine
+.. automodule:: stdnet.apps.searchengine
 
 
 API
-============
+==========
 
-.. autoclass:: stdnet.contrib.searchengine.SearchEngine
+.. autoclass:: stdnet.apps.searchengine.SearchEngine
    :members:
    :member-order: bysource
 

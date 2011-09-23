@@ -1,8 +1,8 @@
 .. _redis-timeseries:
 
-=============================
+==========================
 Redis timeseries API
-=============================
+==========================
 
 :Source: https://github.com/lsbardel/redis
 :Python Client: http://lsbardel.github.com/python-stdnet/

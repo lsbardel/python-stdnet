@@ -40,6 +40,7 @@ First steps
 :ref:`Twitter Clone<twitter-example>`
 
 **Miscellaneous:**
+:ref:`Contributing <contributing>` |
 :ref:`Tests <runningtests>` |
 :ref:`Changelog <changelog>` |
 :ref:`Kudos <kudos>`
@@ -55,10 +56,9 @@ Contents
    overview
    model/index
    backends/index
-   contrib/index
+   apps/index
    examples/index
    changelog
-   contributing
    utility
 
 Indices and tables

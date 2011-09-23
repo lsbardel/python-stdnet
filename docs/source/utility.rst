@@ -4,6 +4,13 @@
 Internals and Utilities
 ============================
 
+.. _settings:
+
+Default Settings
+=========================
+
+.. automodule:: stdnet.conf
+
 
 .. module:: stdnet.orm
 

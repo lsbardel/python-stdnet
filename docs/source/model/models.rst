@@ -101,13 +101,6 @@ M2MRelatedManager
    :member-order: bysource
 
 
-Search Engine
-=====================
-.. autoclass:: stdnet.orm.SearchEngine
-   :members:
-   :member-order: bysource
-
-
 .. _signal-api:
 
 Signals

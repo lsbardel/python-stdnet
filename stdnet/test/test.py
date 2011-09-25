@@ -50,8 +50,8 @@ to perform cleanup, registration and unregistration.
         self.register()
         orm.clearall()
         super(TestCase, self).__call__(result)
-        self.unregister()
         orm.clearall()
+        self.unregister()
         
     def cleankeys(self, meta):
         tmp = meta.basekey('tmp')
@@ -136,8 +136,9 @@ an interable over modules'''
                     tag = getattr(obj,'tag',None)
                     if tag:
                         all_itags.add(tag)
-                        if not tag in itags:
-                            continue
+                        if itags is not True:
+                            if not tag in itags:
+                                continue
                     tests.append(self.loadTestsFromTestCase(obj))
         return self.suiteClass(tests)
         

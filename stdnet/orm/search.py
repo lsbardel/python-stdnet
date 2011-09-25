@@ -10,13 +10,15 @@ from .signals import post_save, post_delete
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
 expose the base functionalities for full text-search on model instances.
+Stdnet also provides a :ref:`python implementation <apps-searchengine>`
+of this interface.
     
 .. attribute:: word_middleware
     
-    A list of functions for preprocessing text
-    to be indexed. Middleware function
-    must accept an iterable of words and
-    return iterable of words. Word middleware functions
+    A list of middleware functions for preprocessing text
+    to be indexed. A middleware function has arity 1 by
+    accepting an iterable of words and
+    returning an iterable of words. Word middleware functions
     are added to the search engine via the
     :meth:`stdnet.orm.SearchEngine.add_word_middleware`. For example
     this function remove a group of words from the index::
@@ -133,8 +135,13 @@ If autocomplete is enabled, it adds indexes for it too.
         raise NotImplementedError
     
     def search_model(self, model, text):
-        '''Return a query for ids of model instances containing
-words in text.'''
+        '''Search *text* in *model* instances. This is the functions
+needing implementation by custom serach engines.
+
+:parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter text: text to search
+:rtype: A :class:`stdnet.orm.query.QuerySet` of model instances containing the
+    text to search.'''
         raise NotImplementedError
     
     def reindex(self, full = True):

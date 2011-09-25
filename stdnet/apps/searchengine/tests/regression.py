@@ -151,7 +151,8 @@ class TestMeta(TestCase):
         
         
 class TestSearchEngine(TestCase):
-
+    tag = 'search'
+    
     def testSimpleAdd(self):
         self.simpleadd()
         

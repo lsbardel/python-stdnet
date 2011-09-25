@@ -39,6 +39,9 @@ def makeoptions():
     parser.add_argument("-i", "--include", action="store",
                         dest="itags", default='', nargs='*',
                         help="Include develepment tags, comma separated")
+    parser.add_argument("-a", "--all", action="store_true",
+                        dest="all_itags", default=False,
+                        help="Run all tests including all development tags")
     return parser
 
     
@@ -67,7 +70,7 @@ if __name__ == '__main__':
         tags = options.labels,
         library = 'stdnet',
         test_type = options.test_type,
-        itags=options.itags,
+        itags=options.itags or options.all_itags,
         verbosity=options.verbosity,
         backend=options.server,
         list_labels=options.list_labels,

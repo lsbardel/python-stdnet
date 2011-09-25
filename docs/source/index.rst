@@ -58,8 +58,9 @@ Contents
    backends/index
    apps/index
    examples/index
-   changelog
    utility
+   stdnetredis
+   changelog
 
 Indices and tables
 ==================

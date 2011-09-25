@@ -7,8 +7,7 @@
 Timeseries Models
 ==========================
 
-This is an experimental module which requires ``redis-timeseries`` branch of redis_.
-For more information check the :ref:`redis timeseries API <redis-timeseries>`.
+This is an experimental module which requires :ref:`stdnet redis branch <stdnetredis>`.
 To run the ``timeseries`` tests::
 
     python runtests.py timeseries -i ts

@@ -232,6 +232,7 @@ To obtained a sorted query on dates for a given person::
 
 The negative sign in front of ``dt`` indicates descending order.
 
+.. _implicit-sorting:
 
 Implicit Sorting
 ~~~~~~~~~~~~~~~~~~~~

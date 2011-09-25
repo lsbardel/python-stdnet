@@ -25,6 +25,7 @@ they are known. It is also a lightweight module, which deal only with ORM and no
    
    models
    fields
+   search
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/   
 .. _Django: http://docs.djangoproject.com/en/dev/ref/models/instances/

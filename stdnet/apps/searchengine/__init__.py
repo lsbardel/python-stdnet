@@ -1,6 +1,10 @@
 '''\
-An implementation of :class:`stdnet.orm.SearchEngine`
-based on stdnet models.
+This is a pure python implementation of the :class:`stdnet.orm.SearchEngine`
+interface. It is an experimental application which currentely requires the
+:ref:`stdnet redis <stdnetredis>` branch.
+
+This is not intended to be the most full-featured text search available, but
+it does the job. For that, look into Sphinx_, Solr, or other alternatives.
 
 Usage
 ===========
@@ -26,6 +30,9 @@ To search, issue the command::
 If you would like to limit the search to some specified models::
 
     search_result = engine.search(sometext, include = (model1,model2,...))
+    
+    
+.. _Sphinx: http://sphinxsearch.com/
 '''
 import re
 from inspect import isclass
@@ -86,9 +93,8 @@ def autocomplete_processor(words):
     
     
 class SearchEngine(orm.SearchEngine):
-    """Search engine driver.
-Adapted from
-https://gist.github.com/389875
+    """A python implementation for the :class:`stdnet.orm.SearchEngine`
+driver.
     
 :parameter min_word_length: minimum number of words required by the engine
                             to work.
@@ -202,8 +208,7 @@ on registered models.'''
         return list(self.items_from_text(text,include,exclude))
     
     def search_model(self, model, text):
-        '''Return a query for ids of model instances containing
-words in text.'''
+        '''Implements :meth:`stdnet.orm.SearchEngine.search_model`'''
         words = self.words(text,for_search=True)
         if words is None:
             return model.objects.all()

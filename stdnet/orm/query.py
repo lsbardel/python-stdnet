@@ -363,6 +363,8 @@ where or limit in a SQL select statement.
                         filter_sets = filter_sets)
     
     def from_queries(self, queries):
+        '''Build a new query from a list of :class:`field_query`
+independent queries.'''
         return QuerySet(self._meta, queries = queries)
     
     def exclude(self, **kwargs):

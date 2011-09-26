@@ -87,7 +87,20 @@ the :attr:`StdModel._meta` attribute.
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
-    
+
+    def loadedfields(self):
+        '''Iterator over fields which have been loaded (usually all of them).
+Check the :ref:`load_only <performance-loadonly>` query function for more
+details.'''
+        loadedfields = self._loadedfields
+        if loadedfields:
+            for field in self._meta.scalarfields:
+                if field.name in loadedfields:
+                    yield field
+        else:
+            for field in self._meta.scalarfields:
+                yield field
+                
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`

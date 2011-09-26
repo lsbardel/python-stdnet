@@ -204,35 +204,38 @@ For example::
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
-        v = {}
-        setattr(instance,self.VALATTR,v)
-        data = v['data'] = {}
-        indexes = v['indices'] = []
-        errors = v['errors'] = {}
-        #Loop over scalar fields first
-        for field in self.scalarfields:
-            name = field.attname
-            value = getattr(instance,name,None)
-            if value is None:
-                value = field.get_default()
-                setattr(instance,name,value)
-            try:
-                svalue = field.serialize(value)
-            except FieldValueError as e:
-                errors[name] = str(e)
-            else:
-                if (svalue is None or svalue is '') and field.required:
-                    errors[name] = "Field '{0}' is required for '{1}'."\
-                                    .format(name,self)
+        override = True
+        if not hasattr(instance,self.VALATTR) or override:
+            v = {}
+            setattr(instance,self.VALATTR,v)
+            data = v['data'] = {}
+            indexes = v['indices'] = []
+            errors = v['errors'] = {}
+            #Loop over scalar fields first
+            for field in instance.loadedfields():
+                name = field.attname
+                value = getattr(instance,name,None)
+                if value is None:
+                    value = field.get_default()
+                    setattr(instance,name,value)
+                try:
+                    svalue = field.serialize(value)
+                except FieldValueError as e:
+                    errors[name] = str(e)
                 else:
-                    if isinstance(svalue, dict):
-                        data.update(svalue)
+                    if (svalue is None or svalue is '') and field.required:
+                        errors[name] = "Field '{0}' is required for '{1}'."\
+                                        .format(name,self)
                     else:
-                        if svalue is not None:
-                            data[name] = svalue
-                        if field.index:
-                            indexes.append((field,svalue))
-        return len(errors) == 0
+                        if isinstance(svalue, dict):
+                            data.update(svalue)
+                        else:
+                            if svalue is not None:
+                                data[name] = svalue
+                            if field.index:
+                                indexes.append((field,svalue))
+        v = getattr(instance,self.VALATTR)
+        return len(v['errors']) == 0
                 
     def table(self, transaction = None):
         '''Return an instance of :class:`stdnet.HashTable` holding

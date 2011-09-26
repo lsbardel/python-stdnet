@@ -397,12 +397,11 @@ class BackendDataServer(stdnet.BackendDataServer):
         pipe = transaction.cursor
         bkey = meta.basekey
         keys = self.redispy.keys(meta.tempkey('*'))
-        pipe.delete(bkey(OBJ,obid),*keys)
+        if keys:
+            pipe.delete(*keys)
             
         if obj.indices:
-            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
-            rem(bkey('id'), obid)
-            
+            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')            
             for field,value in obj.indices:
                 if field.unique:
                     pipe.hdel(bkey(UNI,field.name),value)
@@ -411,6 +410,14 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _delete_object(self, obj, transaction):
         # Check for multifields and remove them
+        meta = obj._meta
+        pipe = transaction.cursor
+        rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
+        #remove the hash table
+        pipe.delete(meta.basekey(OBJ,obj.id))
+        #remove the id from set
+        rem(meta.basekey('id'), obj.id)
+        # Remove multifields
         mfs = obj._meta.multifields
         if mfs:
             fids = [fid for fid in (field.id(obj) for field in mfs) if fid]

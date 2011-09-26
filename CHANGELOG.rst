@@ -4,8 +4,14 @@ Ver. 0.7.0 - Development
   query options and transactions.
 * Requires redis_ 2.4 or higher.
 * Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application to grid.
+* Added :meth:`stdnet.orm.query.QuerySet.load_only` method for loading a subset
+  of a model fields. This can improve performance by reducing the amount of
+  data transferred from the server to the client.
+  Check the :ref:`performance tips <performance-loadonly>` regarding the new feature.
 * Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
-  fields of a queryset with a single database query.
+  fields of a queryset with a single database query. This can have huge
+  :ref:`performance benefits <performance-loadrelated>` when you know you are going to
+  access the related field in your model.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.
 * Refactored :ref:`transactions <model-transactions>` to be used with

@@ -172,9 +172,9 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         # We are updating the object,
         # therefore we need to clean up indexes first
         if obj.id:
+            #TODO maybe we should cache the previous state so that we don't
+            # need to do to get the previous object
             try:
-                #TODO. THIS IS NOT GOOD, WE ARE GETTING THE WHOLE OBJECT
-                #JUST TO CHECK IT ACTUALLY EXISTS.
                 pobj = obj.__class__.objects.get(id = obj.id)
             except obj.DoesNotExist:
                 pass
@@ -205,7 +205,6 @@ Called to clear a model instance.
             commit = True
             transaction = self.transaction()
         
-
         self._remove_indexes(obj, transaction)
         self._delete_object(obj, transaction)
         

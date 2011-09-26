@@ -11,7 +11,7 @@ which are based on :mod:`stdnet` but are not part of the
 core library.
 They don't have external dependencies but some of the requires
 a :ref:`non vanilla redis <stdnetredis>` implementation and are here
-mainly as a use cases. In the future they may be removed
+mainly as use cases. In the future they may be removed
 and placed into their own installable packages. 
 
 .. toctree::

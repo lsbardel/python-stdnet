@@ -9,11 +9,15 @@ Use transactions
 ========================
 
 
+.. _performance-loadrelated:
+
 Use load_related
 ====================
 
 
 
+
+.. _performance-loadonly:
 
 Use load_only
 ================

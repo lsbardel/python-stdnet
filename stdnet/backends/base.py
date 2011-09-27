@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from hashlib import sha1
 
 from stdnet.exceptions import *
@@ -174,12 +175,11 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         if obj.id:
             #TODO maybe we should cache the previous state so that we don't
             # need to do to get the previous object
-            try:
-                pobj = obj.__class__.objects.get(id = obj.id)
-            except obj.DoesNotExist:
-                pass
-            else:
-                self._remove_indexes(pobj, transaction)
+            pobj = obj.__class__.objects.filter(id = obj.id)
+            if pobj:
+                if obj._loadedfields:
+                    pobj = pobj.load_only(*obj._loadedfields)
+                self._remove_indexes(pobj[0], transaction)
         else:
             obj.id = obj._meta.pk.serialize(obj.id)
             
@@ -221,6 +221,7 @@ Called to clear a model instance.
                 fields = dict(zip(loadedfields,fields))
             else:
                 fields = dict(fields)
+            fields['__dbdata__'] = deepcopy(fields)
             obj.__setstate__((id,fields))
             obj._loadedfields = loadedfields
             yield obj

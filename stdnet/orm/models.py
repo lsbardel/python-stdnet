@@ -75,6 +75,7 @@ the :attr:`StdModel._meta` attribute.
 '''
     is_base_class = True
     _loadedfields = None
+    _dbdata = None
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
@@ -193,6 +194,8 @@ If the instance is not available (it does not have an id) and
             value = field.serialize(value)
             if value:
                 odict[field.name] = value
+        if self._dbdata:
+            odict['__dbdata__'] = self._dbdata
         return odict
     
     def local_transaction(self, **kwargs):
@@ -236,6 +239,7 @@ will enumerate the number of object to delete. without deleting them.'''
         for field in meta.scalarfields:
             value = field.value_from_data(self,data)
             setattr(self,field.attname,field.to_python(value))
+        self._dbdata = data.get('__dbdata__')
     
 
 def from_uuid(uuid):

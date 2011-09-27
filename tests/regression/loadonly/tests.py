@@ -30,10 +30,13 @@ class testLoadOnly(test.TestModelBase):
             
     def testSave(self):
         original = [m.group for m in self.model.objects.all()]
+        self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
         qs = self.model.objects.all().load_only('code')
         for m in qs:
             m.save()
         qs = self.model.objects.all()
         for m,g in zip(qs,original):
             self.assertEqual(m.group,g)
+        # No check indexes
+        self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
         

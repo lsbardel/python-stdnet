@@ -502,6 +502,12 @@ the relation from the related object back to self.
         except:
             return value
     
+    def to_python(self, value):
+        try:
+            return int(value)
+        except:
+            return value
+    
     
 class JSONField(CharField):
     '''A JSON field which implements automatic conversion to

@@ -32,7 +32,7 @@ if ispy3k: # Python 3
     range = range
     
     from urllib import parse as urlparse
-    from io import StringIO
+    from io import StringIO, BytesIO
     
     class UnicodeMixin(object):
         
@@ -55,6 +55,7 @@ else: # Python 2
     
     import urlparse
     from cStringIO import StringIO
+    BytesIO = StringIO
     
     class UnicodeMixin(object):
         

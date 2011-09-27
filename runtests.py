@@ -35,7 +35,8 @@ def makeoptions():
                         help="List all test labels without performing tests.")
     parser.add_argument("-p", "--parser", action="store",
                         dest="parser", default='',
-                        help="Specify the python parser.")
+                        help="Specify the redis parser. Set to `python` for\
+ forcing the python parser")
     parser.add_argument("-i", "--include", action="store",
                         dest="itags", default='', nargs='*',
                         help="Include develepment tags, comma separated")
@@ -61,7 +62,7 @@ def addpath(test_type):
             lambda test_type : CONTRIB_DIR)
     
 
-if __name__ == '__main__':
+def runtests():
     options = makeoptions().parse_args()
     paths = addpath(options.test_type)
     settings.REDIS_PARSER = options.parser
@@ -76,3 +77,6 @@ if __name__ == '__main__':
         list_labels=options.list_labels,
         can_fail=options.can_fail)
 
+
+if __name__ == '__main__':
+    runtests()

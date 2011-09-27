@@ -1,6 +1,9 @@
-from stdnet.utils import BytesIO
+from stdnet.lib.py2py3 import BytesIO
 
-from .exceptions import *
+from stdnet.lib.exceptions import *
+
+
+__all__ = ['Reader']
 
 
 REDIS_REPLY_STRING = 1
@@ -128,32 +131,30 @@ otherwise read ``length`` bytes"""
         return task.gets(recursive=recursive)
     
     
-class RedisPythonReader(object):
+class Reader(object):
 
-    def __init__(self, connection):
+    def __init__(self, protocolError, responseError):
+        self.protocolError = protocolError
+        self.responseError = responseError
         self._stack = []
         self._inbuffer = BytesIO()
         #self.decode = connection.decode
     
     def read(self, length = None):
         """
-        Read a line from the socket is no length is specified,
+        Read a line from the buffer is no length is specified,
         otherwise read ``length`` bytes. Always strip away the newlines.
         """
-        try:
-            if length is not None:
-                chunk = self._inbuffer.read(length+2)
+        if length is not None:
+            chunk = self._inbuffer.read(length+2)
+        else:
+            chunk = self._inbuffer.readline()
+        if chunk:
+            if chunk[-2:] == b'\r\n':
+                return chunk[:-2]
             else:
-                chunk = self._inbuffer.readline()
-            if chunk:
-                if chunk[-2:] == b'\r\n':
-                    return chunk[:-2]
-                else:
-                    self._inbuffer = BytesIO(chunk)
-            return False
-        except (socket.error, socket.timeout) as e:
-            raise ConnectionError("Error while reading from socket: %s" % \
-                (e.args,))
+                self._inbuffer = BytesIO(chunk)
+        return False
     
     def feed(self, buffer):
         buffer = self._inbuffer.read(-1) + buffer

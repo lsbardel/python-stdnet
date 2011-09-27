@@ -391,18 +391,18 @@ class BackendDataServer(stdnet.BackendDataServer):
         return obj
     
     def _remove_indexes(self, obj, transaction):
-        obj.is_valid()
+        indices = obj.indices
         meta = obj._meta
-        obid = obj.id
         pipe = transaction.cursor
-        bkey = meta.basekey
         keys = self.redispy.keys(meta.tempkey('*'))
         if keys:
             pipe.delete(*keys)
             
-        if obj.indices:
+        if indices:
+            obid = obj.id
+            bkey = meta.basekey
             rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')            
-            for field,value in obj.indices:
+            for field,value in indices:
                 if field.unique:
                     pipe.hdel(bkey(UNI,field.name),value)
                 else:

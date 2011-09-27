@@ -89,19 +89,30 @@ the :attr:`StdModel._meta` attribute.
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
 
+    @property
     def loadedfields(self):
-        '''Iterator over fields which have been loaded (usually all of them).
+        '''Tuple of fields loaded when the instance was obtained from the
+database. If ``None`` all fields are available.'''
+        return self._loadedfields
+    
+    def loadedfieldsvalues(self):
+        '''Generator of fields,values pairs. Fields correspond to
+the ones which have been loaded (usually all of them) or
+not loaded but modified.
 Check the :ref:`load_only <performance-loadonly>` query function for more
 details.'''
-        loadedfields = self._loadedfields
+        loadedfields = self.loadedfields
         if loadedfields:
+            nl = []
             for field in self._meta.scalarfields:
-                if field.name in loadedfields:
-                    yield field
+                name = field.attname
+                value = getattr(self,name,None)
+                if name in loadedfields or value:
+                    yield field,value
         else:
             for field in self._meta.scalarfields:
-                yield field
-                
+                yield field,getattr(self,field.attname,None)
+    
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
@@ -139,13 +150,16 @@ The method return ``self``.
         return r
     
     def is_valid(self):
-        '''Return ``True`` if the model validates.
-It check all fields agains their respective validation algorithm.'''
+        '''Kick off the validation algorithm by checking oll
+:attr:`StdModel.loadedfields` agains their respective validation algorithm.
+
+:rtype: Boolean indicating if the model validates.'''
         return self._meta.is_valid(self)
 
     def _valattr(self, name):
-        if hasattr(self,self._meta.VALATTR):
-            return getattr(self,self._meta.VALATTR)[name]
+        if not hasattr(self,'_validation'):
+            self.is_valid()
+        return getattr(self,'_validation')[name]
             
     @property
     def cleaned_data(self):
@@ -158,6 +172,10 @@ It check all fields agains their respective validation algorithm.'''
     @property
     def indices(self):
         return self._valattr('indices')
+    
+    @property
+    def toload(self):
+        return self._valattr('toload')
     
     def delete(self, transaction = None):
         '''Delete an instance from database.

@@ -175,10 +175,9 @@ Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
         if obj.id:
             #TODO maybe we should cache the previous state so that we don't
             # need to do to get the previous object
-            pobj = obj.__class__.objects.filter(id = obj.id)
+            pobj = obj.__class__.objects.filter(id = obj.id)\
+                                .load_only(*obj.toload)
             if pobj:
-                if obj._loadedfields:
-                    pobj = pobj.load_only(*obj._loadedfields)
                 self._remove_indexes(pobj[0], transaction)
         else:
             obj.id = obj._meta.pk.serialize(obj.id)

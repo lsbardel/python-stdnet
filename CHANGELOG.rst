@@ -1,24 +1,29 @@
 Ver. 0.7.0 - Development
 ============================
 * Lots of new features manly geared towards improved performance via custom
-  query options and transactions.
+  query options, transactions and a new ``C`` parser shipped with the library.
 * Requires redis_ 2.4 or higher.
-* Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application to grid.
+* If you have cython_ installed in your python path, the setup.py script will
+  build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added :meth:`stdnet.orm.query.QuerySet.load_only` method for loading a subset
   of a model fields. This can improve performance by reducing the amount of
   data transferred from the server to the client.
-  Check the :ref:`performance tips <performance-loadonly>` regarding the new feature.
+  Check the :ref:`performance tips <performance-loadonly>` regarding the
+  new feature.
 * Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
   fields of a queryset with a single database query. This can have huge
-  :ref:`performance benefits <performance-loadrelated>` when you know you are going to
-  access the related field in your model.
+  :ref:`performance benefits <performance-loadrelated>` when you know you are
+  going to access the related field in your model.
+* Refactored the save and delete method of model instances.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
+* Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application
+  to ``grid``.
 * Added :mod:`stdnet.utils.dates`.
-* **342 regression tests** with **80%** coverage.
+* **343 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================
@@ -238,6 +243,7 @@ Ver. 0.2.0  - 2010 Jun 21
 * **8 tests**
 
 
+.. _cython: http://cython.org/
 .. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
 .. _django: http://www.djangoproject.com/

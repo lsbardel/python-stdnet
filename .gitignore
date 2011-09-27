@@ -3,6 +3,9 @@
 *.so
 *.prof
 dist/*
+lib/src/hr.c
+stdnet/lib/hr.pyd
+stdnet/lib/hr.so
 build/*
 .settings/*
 docs/build/*

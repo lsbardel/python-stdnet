@@ -1,3 +1,0 @@
-[submodule "vendor/hiredis"]
-	path = vendor/hiredis
-	url = https://github.com/antirez/hiredis.git

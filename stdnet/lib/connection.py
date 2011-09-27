@@ -18,17 +18,20 @@ from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
                          to_string
 
 from .exceptions import *
-from .reader import RedisPythonReader
+from .base import Reader, fallback
 
 
-class PythonParser(object):
+class Parser(object):
+    
+    def __init__(self, rcls = None):
+        self.rcls = rcls or Reader
 
-    def createReader(self, connection):
-        return RedisPythonReader(connection)
+    def createReader(self):
+        return self.rcls(InvalidResponse, ResponseError)
     
     def on_connect(self, connection):
         self._sock = connection._sock
-        self._reader = self.createReader(connection)
+        self._reader = self.createReader()
 
     def on_disconnect(self):
         self._sock = None
@@ -49,25 +52,11 @@ class PythonParser(object):
         return response
 
 
-class HiredisParser(PythonParser):
-    
-    def createReader(self, connection):
-        return hiredis.Reader(protocolError=InvalidResponse,
-                              replyError=ResponseError)
-
-
-try:
-    import hiredis
-    DefaultParser = HiredisParser
-except ImportError:
-    DefaultParser = PythonParser
-
-
 class Connection(object):
     "Manages TCP communication to and from a Redis server"
     def __init__(self, host='localhost', port=6379, db=0, password=None,
                  socket_timeout=None, encoding='utf-8',
-                 encoding_errors='strict', parser_class=None,
+                 encoding_errors='strict', reader_class=None,
                  decode = False):
         self.host = host
         self.port = port
@@ -81,12 +70,12 @@ class Connection(object):
         #    self.decode = self._decode
         #else:
         #    self.decode = lambda x : x
-        if parser_class is None:
+        if reader_class is None:
             if settings.REDIS_PARSER == 'python':
-                parser_class = PythonParser
+                reader_class = fallback.Reader
             else:
-                parser_class = DefaultParser
-        self._parser = parser_class()
+                reader_class = Reader
+        self._parser = Parser(reader_class)
 
     def connect(self):
         "Connects to the Redis server if not already connected"

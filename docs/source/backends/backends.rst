@@ -55,17 +55,26 @@ Indexes are obtained by using sets or sorted sets.
 Parser
 ~~~~~~~~~~~~~
 
-Stdnet is shipped with a redis parser written in python. In addition it
-supports hiredis-py_, a python extension module that wraps the priotocol
-parsing code in hiredis_.
+Stdnet is shipped with a redis parser written in python and a faster version
+written in C. In order to use the C parser you need to have installed
+cython_.
+The C parser wraps the priotocol parsing code in hiredis_ and it is available
+for both windows and linux. To compile the exenstions::
 
-To install hiredis-py::
+    python setup.py build_ext
 
-    pip install hiredis
+If extensions are is installed the C parser will be the default parser
+unless you override the :ref:`settings.REDIS_PARSER <settings>` value
+and set it to ``python`` (you would want to do that mainly
+for benchmarking reasons).
 
-If pyredis is installed it will be the default parser unless you override the
-:ref:`settings.REDIS_PARSER <settings>` value and set it to ``python`` (you
-would want to do that mainly for benchmarking reasons).
+To check if the extensions are available::
+
+    >>> from stdnet import lib
+    >>> lib.hasextensions
+    True
+    >>> _
+    
 
 
 API
@@ -82,5 +91,5 @@ Backend data server
 .. _Redis: http://redis.io/
 .. _JSON: http://www.json.org/
 .. _lsbardel: https://github.com/lsbardel/redis
-.. _hiredis-py: https://github.com/pietern/hiredis-py
+.. _cython: http://cython.org/
 .. _hiredis: https://github.com/antirez/hiredis

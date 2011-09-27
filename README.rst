@@ -1,7 +1,7 @@
-**A Python 3 compatible object relational mapper for Redis remote data structures.**
+**A stand-alone Python 3 compatible data manager for Redis remote data structures.**
 
 The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (ORM_) inspired by Django_ and SQLAlchemy_. 
+light-weight Object Relational Mapper (ORM_) with similar API to Django_. 
 The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
 --
@@ -21,8 +21,9 @@ __ http://pypi.python.org/pypi/python-stdnet/
 
 Requirements
 =================
-* You need access to a Redis_ server.
 * Python 2.6 or above, including Python 3 series.
+* Optional Cython_ for faster redis protocol parser.
+* You need access to a Redis_ server.
 
 Installing 
 ================================
@@ -170,6 +171,7 @@ Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
 * redis-py_ for the Redis Python client initial implementation which has been subsequently modified.
+* hiredis-py_ for some parts of the C parser.
 * Django_ for some ideas and the ``dispatch`` module.
 * Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
@@ -193,7 +195,9 @@ Licence
 This software is licensed under the New BSD_ License. See the LICENSE
 file in the top distribution directory for the full license text.
 
+.. _Cython: http://cython.org/
 .. _Redis: http://redis.io/
+.. _hiredis-py: https://github.com/pietern/hiredis-py
 .. _Django: http://www.djangoproject.com/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _redis-py: http://github.com/andymccurdy/redis-py

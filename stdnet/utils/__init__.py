@@ -1,14 +1,12 @@
 from itertools import chain
 
-from stdnet.lib.py2py3.py2py3 import *
+from stdnet.lib.py2py3 import *
 
 if ispy3k:
     import pickle
-    from io import BytesIO
     unichr = chr
 else:
     import cPickle as pickle
-    from cStringIO import StringIO as BytesIO
     unichr = unichr 
     
 from .jsontools import *

@@ -40,3 +40,22 @@ class testLoadOnly(test.TestModelBase):
         # No check indexes
         self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
         
+    def testChangeNotLoaded(self):
+        '''We load an object with only one field nad modify a field not
+loaded. The correct behavior should be to updated the field and indexes.'''
+        original = [m.group for m in self.model.objects.all()]
+        qs = self.model.objects.all().load_only('code')
+        for m in qs:
+            m.group = 'group4'
+            m.save()
+        qs = self.model.objects.filter(group = 'group1')
+        self.assertEqual(qs.count(),0)
+        qs = self.model.objects.filter(group = 'group2')
+        self.assertEqual(qs.count(),0)
+        qs = self.model.objects.filter(group = 'group3')
+        self.assertEqual(qs.count(),0)
+        qs = self.model.objects.filter(group = 'group4')
+        self.assertEqual(qs.count(),5)
+        for m in qs:
+            self.assertEqual(m.group,'group4')
+        

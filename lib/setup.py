@@ -15,14 +15,13 @@ except Importerror:
     include_dirs = []
 
 ext_modules  = Extension('stdnet.lib.hr', ['lib/src/hr.pyx',
-                                           'lib/hiredismin/hiredis.c',
-                                           'lib/hiredismin/sds.c',
+                                           'lib/hiredis/hiredis.c',
+                                           'lib/hiredis/sds.c',
                                            'lib/src/reader.c'])
 
 base_path = os.path.split(os.path.abspath(__file__))[0]
-include_dirs.append(os.path.join(base_path,'hiredismin'))
-include_dirs.append(ext_include = os.path.join(base_path,'src'))
-
+include_dirs.append(os.path.join(base_path,'hiredis'))
+include_dirs.append(os.path.join(base_path,'src'))
 
 libparams = {
              'ext_modules': [ext_modules],

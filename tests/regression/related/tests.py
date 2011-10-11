@@ -6,7 +6,7 @@ from stdnet.orm import query
 
 from examples.models import Node, Role, Profile, Dictionary
 
-from regression.finance.tests import BaseFinance, Position
+from regression.finance.tests import BaseFinance, Position, Instrument, Fund
 
 STEPS   = 10
 
@@ -49,6 +49,18 @@ class TestSelfForeignKey(test.TestModelBase):
             self.assertEqual(child.parent,root)
 
 
+class TestRelatedManager(BaseFinance):
+    
+    def testExclude(self):
+        self.makePositions()
+        inst = Instrument.objects.get(id = 1)
+        fund = Fund.objects.get(id = 1)
+        pos = fund.positions.exclude(instrument = inst)
+        for p in pos:
+            self.assertFalse(p.instrument == inst)
+            self.assertEqual(p.fund,fund)
+            
+        
 class TestRelatedQueries(BaseFinance):
     
     def testSelectRelated(self):

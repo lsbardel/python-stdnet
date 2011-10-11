@@ -14,6 +14,7 @@ Ver. 0.7.0 - Development
   fields of a queryset with a single database query. This can have huge
   :ref:`performance benefits <performance-loadrelated>` when you know you are
   going to access the related field in your model.
+* Fixed bug in related managers. The ``exclude`` method was not implemented.
 * Refactored the save and delete method of model instances.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.

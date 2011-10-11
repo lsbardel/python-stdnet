@@ -426,8 +426,11 @@ via a simple attribute of the model.'''
             kwargs[self.related_fieldname] = self.related_instance
             return super(RelatedManager,self).filter(**kwargs)
         else:
-            raise QuerySetError('Related manager can be accessd only from\
+            raise QuerySetError('Related manager can be accessed only from\
  an instance of its related model.')
+            
+    def exclude(self, **kwargs):
+        return self.filter().exclude(**kwargs)
         
 
 class M2MRelatedManager(BaseRelatedManager):
@@ -476,6 +479,9 @@ elements contained by the field.'''
         kwargs['filter_sets'] = [self.st.id]
         return super(M2MRelatedManager,self).filter(**kwargs)
         
+    def exclude(self, **kwargs):
+        return self.filter().exclude(**kwargs)
+    
 
 class UnregisteredManager(object):
     

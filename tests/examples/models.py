@@ -56,7 +56,7 @@ class Fund(Base):
 
 class Position(orm.StdModel):
     instrument = orm.ForeignKey(Instrument, related_name = 'positions')
-    fund       = orm.ForeignKey(Fund)
+    fund       = orm.ForeignKey(Fund, related_name = 'positions')
     dt         = orm.DateField()
     size       = orm.FloatField(default = 1)
     

@@ -1,8 +1,9 @@
 Ver. 0.7.0 - Development
 ============================
-* Lots of new features manly geared towards improved performance via custom
-  query options, transactions and a new ``C`` parser shipped with the library.
-* Requires redis_ 2.4 or higher.
+* A superset of the :ref:`0.6 series <vers06>` with tons of new features manly geared
+  towards improved performance via custom query options, transactions and
+  a new ``C`` parser shipped with the library.
+* It requires redis_ 2.4 or higher.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added :meth:`stdnet.orm.query.QuerySet.load_only` method for loading a subset
@@ -24,7 +25,7 @@ Ver. 0.7.0 - Development
 * Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application
   to ``grid``.
 * Added :mod:`stdnet.utils.dates`.
-* **343 regression tests** with **80%** coverage.
+* **345 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================
@@ -42,6 +43,8 @@ Ver. 0.6.1 - 2011 Sep 10
   are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
 * **297 regression tests** with **78%** coverage.
+
+.. _vers06:
 
 Ver. 0.6.0 - 2011 Aug 9
 ============================
@@ -150,7 +153,7 @@ Ver. 0.5.1 - 2011 Feb 27
 
 Ver. 0.5.0 - 2011 Feb 24
 ===========================
-* Ported to ``Python 3`` and dropped support for ``python 2.5``. Way to go.
+* **Ported to python 3 and dropped support for python 2.5**.
 * Removed dependency from ``redis-py`` for python 3 compatibility.
 * Refactored the object relational mapper, including several bug fixes.
 * Added benchmark and profile to tests. To run benchmarks or profile::
@@ -158,7 +161,6 @@ Ver. 0.5.0 - 2011 Feb 24
     python runtests.py -t bench
     python runtests.py -t bench tag1 tag2
     python runtests.py -t profile
-    
 * Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
 * Added :mod:`stdnet.contrib.sessions` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.

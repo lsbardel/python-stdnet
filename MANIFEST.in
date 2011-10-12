@@ -13,6 +13,6 @@ recursive-include lib/hiredis *
 include lib/src/reader.c
 include lib/src/reader.h
 include lib/src/hr.pyx
-include lib/src/common.pyd
+include lib/src/common.pxd
 recursive-include tests *.py
 recursive-include docs *.rst

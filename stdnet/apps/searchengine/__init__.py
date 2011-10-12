@@ -60,13 +60,28 @@ class stopwords:
         
         
 def metaphone_processor(words):
-    '''Double metaphone word processor'''
+    '''Double metaphone word processor.'''
     for word in words:
         for w in double_metaphone(word):
             if w:
                 w = w.strip()
                 if w:
                     yield w
+                    
+
+def tolerant_metaphone_processor(words):
+    '''Double metaphone word processor slightly modified so that when no
+words are returned by the algorithm, the original word is returned.'''
+    for word in words:
+        r = 0
+        for w in double_metaphone(word):
+            if w:
+                w = w.strip()
+                if w:
+                    r += 1
+                    yield w
+        if not r:
+            yield word
                 
                 
 def stemming_processor(words):
@@ -112,9 +127,10 @@ driver.
                          Default ``None``.
                          
 :parameter metaphone: If ``True`` the double metaphone_ algorithm will be
-                      used to store and search for words.
+    used to store and search for words. The metaphone should be the last
+    world middleware to be added.
                       
-                      Default ``True``.
+    Default ``True``.
 
 :parameter splitters: string whose characters are used to split text
                       into words. If this parameter is set to `"_-"`,
@@ -148,7 +164,7 @@ driver.
         if stemming:
             self.add_word_middleware(stemming_processor)
         if metaphone:
-            self.add_word_middleware(metaphone_processor)
+            self.add_word_middleware(tolerant_metaphone_processor)
         self._autocomplete = autocomplete
         
     def split_text(self, text):

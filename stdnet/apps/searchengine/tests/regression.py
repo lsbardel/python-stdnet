@@ -108,7 +108,7 @@ below will derive from this class.'''
     def make_item(self,name='python',counter=10,content=None,related=None):
         return Item(name=name,
                     counter = counter,
-                    content=content or python_content,
+                    content=content if content is not None else python_content,
                     related= related).save()
     
     def sometags(self, num = 10, minlen = 3):
@@ -148,6 +148,12 @@ class TestMeta(TestCase):
         Word(id = 'bla').save()
         w = Word.objects.get(id = 'bla')
         self.assertFalse(isinstance(w.id,bytes))
+        
+    def testAddWithNumbers(self):
+        item,wi = self.simpleadd(name = '20y', content = '')
+        self.assertEqual(len(wi),1)
+        wi = wi[0]
+        self.assertEqual(str(wi.word),'20y')
         
         
 class TestSearchEngine(TestCase):

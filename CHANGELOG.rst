@@ -16,6 +16,8 @@ Ver. 0.7.0 - Development
   :ref:`performance benefits <performance-loadrelated>` when you know you are
   going to access the related field in your model.
 * Fixed bug in related managers. The ``exclude`` method was not implemented.
+* :class:`stdnet.orm.PickleObjectField` uses the pickle protocol 2 for compatibility
+  between python 2 and python 3.
 * Refactored the save and delete method of model instances.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.

@@ -206,6 +206,7 @@ If the instance is not available (it does not have an id) and
                 yield obj
     
     def todict(self):
+        '''Return a dictionary of serialized scalar field for pickling'''
         odict = {}
         for field in self._meta.scalarfields:
             value = getattr(self,field.attname,None)

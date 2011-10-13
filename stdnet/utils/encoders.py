@@ -10,11 +10,11 @@ class Encoder(object):
     '''Virtaul class for encoding data in
 :ref:`remote strcutures <structures-backend>`. It exposes two methods
 for serializing and loading data to and from the data server.'''
-    def dumps(self, x):
+    def dumps(self, x, logger = None):
         '''Serialize data for database'''
         raise NotImplementedError
     
-    def loads(self, x):
+    def loads(self, x, logger = None):
         '''Unserialize data from database'''
         raise NotImplementedError
     
@@ -27,25 +27,25 @@ class Default(Encoder):
         self.encoding_errors = encoding_errors
         
     if ispy3k:
-        def dumps(self, x):
+        def dumps(self, x, logger = None):
             if isinstance(x,bytes):
                 return x
             else:
                 return str(x).encode(self.charset,self.encoding_errors)
             
-        def loads(self, x):
+        def loads(self, x, logger = None):
             if isinstance(x,bytes):
                 return x.decode(self.charset,self.encoding_errors)
             else:
                 return str(x)
     
     else:
-        def dumps(self, x):
+        def dumps(self, x, logger = None):
             if not isinstance(x,unicode):
                 x = str(x)
             return x.encode(self.charset,self.encoding_errors)
             
-        def loads(self, x):
+        def loads(self, x, logger = None):
             if not isinstance(x,unicode):
                 x = str(x)
             return x.decode(self.charset,self.encoding_errors)
@@ -57,7 +57,7 @@ class Bytes(Encoder):
         self.charset = charset
         self.encoding_errors = encoding_errors
         
-    def dumps(self, x):
+    def dumps(self, x, logger = None):
         if not isinstance(x,bytes):
             x = x.encode(self.charset,self.encoding_errors)
         return x
@@ -67,23 +67,25 @@ class Bytes(Encoder):
 
 class NoEncoder(Encoder):
     '''A dummy encoder class'''
-    def dumps(self, x):
+    def dumps(self, x, logger = None):
         return x
     
-    def loads(self, x):
+    def loads(self, x, logger = None):
         return x
     
     
 class PythonPickle(Encoder):
     '''A safe pickle serializer.'''
-    def dumps(self, x):
+    def dumps(self, x, logger = None):
         if x is not None:
             try:
                 return pickle.dumps(x)
             except:
-                pass
+                if logger:
+                    logger.error('Could not serialize {0}'.format(x),
+                                 exc_info = True)
     
-    def loads(self,x):
+    def loads(self, x, logger = None):
         if x is None:
             return x
         elif isinstance(x, bytes):
@@ -107,26 +109,26 @@ remote data structures.'''
         self.json_encoder = json_encoder or JSONDateDecimalEncoder
         self.object_hook = object_hook or DefaultJSONHook
         
-    def dumps(self, x):
+    def dumps(self, x, logger = None):
         s = json.dumps(x, cls=self.json_encoder)
         return s.encode(self.charset,self.encoding_errors)
     
-    def loads(self, x):
+    def loads(self, x, logger = None):
         s = x.decode(self.charset,self.encoding_errors)
         return json.loads(s, object_hook=self.object_hook)
 
 
 class DateTimeConverter(Encoder):
     '''Convert to and from datetime.datetime and unix timestamps'''
-    def dumps(self, value):
+    def dumps(self, value, logger = None):
         return date2timestamp(value)
     
-    def loads(self, value):
+    def loads(self, value, logger = None):
         return timestamp2date(value)
     
 
 class DateConverter(DateTimeConverter):
     '''Convert to and from datetime.date and unix timestamps'''
-    def loads(self, value):
+    def loads(self, value, logger = None):
         return timestamp2date(value).date()
     

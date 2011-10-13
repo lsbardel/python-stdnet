@@ -1,4 +1,5 @@
 import json
+import logging
 from copy import copy
 from hashlib import sha1
 import time
@@ -15,6 +16,8 @@ from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
 from .query import RelatedManager
 from .globals import get_model_from_hash, JSPLITTER
 
+
+logger = logging.getLogger('stdnet.orm')
 
 __all__ = ['Field',
            'AutoField',
@@ -276,7 +279,7 @@ or other entities. They are indexes by default.'''
         
     def serialize(self, value, transaction = None):
         if value is not None:
-            return self.encoder.dumps(value)
+            return self.encoder.dumps(value, logger = logger)
     
     def index_value(self):
         return sha1(self.value)
@@ -449,7 +452,7 @@ or :class:`JSONField` fields as more general alternatives.'''
         return self.encoder.loads(value)
     
     def scorefun(self, value):
-        return self.encoder.dumps(value)
+        return self.encoder.dumps(value, protocol = 2)
     
 
 class ForeignKey(Field, RelatedObject):

@@ -217,6 +217,12 @@ If the instance is not available (it does not have an id) and
             odict['__dbdata__'] = self._dbdata
         return odict
     
+    def tojson(self):
+        '''return a JSON serializable dictionary representation.''' 
+        d = self.todict()
+        d['id'] = self.id
+        return d
+    
     def local_transaction(self, **kwargs):
         '''Create a transaction for this instance.'''
         if not hasattr(self,attr_local_transaction):

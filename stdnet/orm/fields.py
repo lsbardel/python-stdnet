@@ -207,6 +207,11 @@ to store in the database.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         return self.scorefun(value)
     
+    def json_serialize(self, value):
+        '''Return a representation of this field which is compatible with
+ JSON.'''
+        return None
+    
     def add(self, *args, **kwargs):
         raise NotImplementedError("Cannot add to field")
     
@@ -255,7 +260,8 @@ value with a specific data type. it can be of four different types:
 * floating point
 * symbol
 '''
-    pass
+    def json_serialize(self, value):
+        return value
 
 
 class SymbolField(AtomField):
@@ -372,6 +378,9 @@ a :class:`datetime.date` instance.'''
     ordered = True
     default = None
     
+    def json_serialize(self, value):
+        return self.scorefun(value)
+    
     def scorefun(self, value):
         if value is not None:
             if isinstance(value,date):
@@ -445,6 +454,9 @@ or :class:`JSONField` fields as more general alternatives.'''
     type = 'object'
     internal_type = 'bytes'
     
+    def json_serialize(self, value):
+        return None
+    
     def get_encoder(self, params):
         return encoders.PythonPickle()
     
@@ -495,6 +507,9 @@ the relation from the related object back to self.
         if not model._meta.abstract:
             setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
             self.register_with_related_model()
+    
+    def json_serialize(self, value):
+        return None
     
     def scorefun(self, value):
         raise NotImplementedError
@@ -615,6 +630,9 @@ In python this is converted to `bytes`.'''
     type = 'bytes'
     internal_type = 'bytes'
     
+    def json_serialize(self, value):
+        return None
+    
     def get_encoder(self, params):
         return encoders.Bytes(self.charset)
         
@@ -627,6 +645,10 @@ registered in the model hash table, it can be used.'''
     type = 'model'
     internal_type = 'text'
     
+    def json_serialize(self, value):
+       if value:
+           return  value._meta.hash
+       
     def to_python(self, value):
         if value:
             value = self.encoder.loads(value)

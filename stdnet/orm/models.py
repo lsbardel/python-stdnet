@@ -217,11 +217,18 @@ If the instance is not available (it does not have an id) and
             odict['__dbdata__'] = self._dbdata
         return odict
     
+    def _to_json(self):
+        if self.id:
+            yield 'id',self.id
+            for field in self._meta.scalarfields:
+                value = getattr(self,field.attname,None)
+                value = field.json_serialize(value)
+                if value is not None:
+                    yield field.name,value
+            
     def tojson(self):
-        '''return a JSON serializable dictionary representation.''' 
-        d = self.todict()
-        d['id'] = self.id
-        return d
+        '''return a JSON serializable dictionary representation.'''
+        return dict(self._to_json())
     
     def local_transaction(self, **kwargs):
         '''Create a transaction for this instance.'''

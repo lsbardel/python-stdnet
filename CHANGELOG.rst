@@ -21,6 +21,8 @@ Ver. 0.7.0 - Development
 * Refactored the save and delete method of model instances.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.
+* Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
+  of model instances.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.

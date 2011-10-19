@@ -2,6 +2,10 @@ import time
 from datetime import date, datetime
 from decimal import Decimal
 import json
+try:
+    from numpy import ndarray
+except ImportError:
+    ndarray = None
 
 JSPLITTER = '__'
 
@@ -31,6 +35,8 @@ JSON serialization for three additional object, `datetime.date`,
             return {'__date__':totimestamp(obj)}
         elif isinstance(obj, Decimal):
             return {'__decimal__':str(obj)}
+        elif ndarray and isinstance(obj,ndarray):
+            return obj.tolist()
         else:
             return super(JSONDateDecimalEncoder,self).default(obj)
 

@@ -66,7 +66,7 @@ class ServerCommandsTestCase(BaseTest):
         info = self.client.info()
         self.assert_(isinstance(info, dict))
         version = get_version(info)
-        if StrictVersion(version) >= StrictVersion('2.2.0'):
+        if 'Keyspace' in info:
             keyspace = info['Keyspace']
         else:
             keyspace = info

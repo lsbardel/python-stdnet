@@ -300,7 +300,10 @@ class RedisInfo22(RedisInfo):
                   'uptime_in_days':None}
     
     def makekeys(self):
-        return self._makekeys(self.info['Keyspace'])
+        if 'Keyspace' in self.info:
+            return self._makekeys(self.info['Keyspace'])
+        else:
+            return self._makekeys(self.info)
         
     def makepanel(self, name):
         if name not in self.info:

@@ -2,7 +2,7 @@
 
 
 ============================
-Tutorial
+Tutorial 1
 ============================
 
 In this section we will walk you though all the main aspects of the library,
@@ -40,6 +40,8 @@ which represents an instance of a model.
 Information is available regarding how models instances are mapped into
 :ref:`the redis backend <redis-backend>`.
  
+
+.. _tutorial-application:
 
 An application
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -230,6 +232,7 @@ To obtained a sorted query on dates for a given person::
 
 The negative sign in front of ``dt`` indicates descending order.
 
+.. _implicit-sorting:
 
 Implicit Sorting
 ~~~~~~~~~~~~~~~~~~~~
@@ -259,25 +262,6 @@ call ``sort_by`` method.
           since there is no sorting step involved (which is a ``N log(N)``
           time complexity algorithm). Instead, the order is maintained by using
           sorted sets as indices rather than sets.
-
-
-.. _model-transactions:
-
-Transactions
-==========================
-
-Since version 0.5.6, stdnet perform server updates via transactions.
-Transaction are important for two reasons:
-
-* To guarantee atomicity and therefore consistency of model instances when updating/deleting.
-* To speed up updating/deleting of several instances at once.
-
-A tipical usage to speed up the creation of several instances of a model ``MyModel``::
-
-    with MyModel.transaction() as t:
-        for kwargs in data:
-            MyModel(**kwargs).save(t)
-
 
    
 .. _django: http://www.djangoproject.com/

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Overview &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" />
     <link rel="next" title="Object Relational Mapper" href="model/index.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,9 +52,9 @@
             
   <div class="section" id="overview">
 <span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
-<p><strong>A Python 3 compatible object relational mapper for Redis remote data structures.</strong></p>
+<p><strong>A stand-alone Python 3 compatible data manager for Redis remote data structures.</strong></p>
 <p>The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) inspired by <a class="reference external" href="http://www.djangoproject.com/">Django</a> and <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>.
+light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) with similar API to <a class="reference external" href="http://www.djangoproject.com/">Django</a>.
 The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
 <p>&#8211;</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -78,8 +78,9 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>You need access to a <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> server.</li>
 <li>Python 2.6 or above, including Python 3 series.</li>
+<li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for faster redis protocol parser.</li>
+<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server.</li>
 </ul>
 </div>
 <div class="section" id="installing">
@@ -112,7 +113,7 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 </div>
 <div class="section" id="running-tests">
 <span id="runningtests"></span><h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
-<p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.
+<p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://redis.io/">Redis</a>.
 If you are using linux, it can be achieved simply by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
 windows and want to save yourself a headache you can download precompiled binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
 <p>If you are running python 2.6, 3 and 3.1 you need to install the <a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> package,
@@ -141,10 +142,10 @@ To change the server and database where to run tests pass the <tt class="docutil
 while the Object Relational Mapper the syntactic sugar.
 Currently the list of back-ends is limited to</p>
 <ul class="simple">
-<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a>.</li>
+<li><a class="reference external" href="http://redis.io/">Redis</a>.</li>
 <li>Local memory (planned). For testing purposes.</li>
 </ul>
-<p><strong>Only</strong> <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> <strong>is operational.</strong></p>
+<p><strong>Only</strong> <a class="reference external" href="http://redis.io/">Redis</a> <strong>is operational.</strong></p>
 </div>
 <div class="section" id="object-relational-mapper">
 <h2>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h2>
@@ -207,22 +208,23 @@ safe to use:</p>
 </div>
 </div>
 <div class="section" id="kudos">
-<h2>Kudos<a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h2>
+<span id="id5"></span><h2>Kudos<a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference external" href="http://code.google.com/p/redis/">Redis</a> simply because this library uses its awesome features.</li>
+<li><a class="reference external" href="http://redis.io/">Redis</a> simply because this library uses its awesome features.</li>
 <li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> for the Redis Python client initial implementation which has been subsequently modified.</li>
+<li><a class="reference external" href="https://github.com/pietern/hiredis-py">hiredis-py</a> for some parts of the C parser.</li>
 <li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for some ideas and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
 <li>Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.</li>
 </ul>
 </div>
 <div class="section" id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
-<p>Development of StdNet happens at Github: <a class="reference external" href="http://github.com/lsbardel/python-stdnet">http://github.com/lsbardel/python-stdnet</a></p>
-<p>You are highly encouraged to participate in the development. Here how to do it:</p>
+<span id="id6"></span><h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>Development of stdnet happens at Github: <a class="reference external" href="http://github.com/lsbardel/python-stdnet">http://github.com/lsbardel/python-stdnet</a></p>
+<p>We very much welcome your contribution of course. To do so, simply follow these guidelines:</p>
 <ol class="arabic simple">
 <li>Fork python-stdnet on github</li>
-<li>Create a topic branch (git checkout -b my_branch)</li>
-<li>Push to your branch (git push origin my_branch)</li>
+<li>Create a topic branch <tt class="docutils literal"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">my_branch</span></tt></li>
+<li>Push to your branch <tt class="docutils literal"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">my_branch</span></tt></li>
 <li>Create an issue at <a class="reference external" href="https://github.com/lsbardel/python-stdnet/issues">https://github.com/lsbardel/python-stdnet/issues</a> with a link to your patch</li>
 </ol>
 </div>
@@ -303,7 +305,7 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

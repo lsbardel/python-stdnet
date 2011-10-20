@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Time Series &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Time Series &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
-    <link rel="up" title="Tutorial &amp; Examples" href="index.html" />
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Twitter Clone Example" href="twitter.html" />
-    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+    <link rel="prev" title="Performance" href="performance.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="twitter.html" title="Twitter Clone Example"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="performance.html" title="Performance"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Tutorial &amp; Examples</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,12 +54,12 @@
             
   <div class="section" id="time-series">
 <span id="timeseries-example"></span><h1>Time Series<a class="headerlink" href="#time-series" title="Permalink to this headline">¶</a></h1>
-<p>A very simple example on how to manage <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> data.
-It requires the <tt class="docutils literal"><span class="pre">quantredis</span></tt> branch of redis
-(see <a class="reference internal" href="../contrib/redis_timeseries.html#redis-timeseries"><em>redis timeseries API</em></a>).</p>
+<p>A very simple example on how to manage <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> data whcih requires the
+<a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>stdnet redis branch</em></a>. For more vanilla example look at the
+<a class="reference internal" href="twitter.html#twitter-example"><em>twitter clone</em></a>.</p>
 <div class="section" id="define-the-model">
 <h2>Define the model<a class="headerlink" href="#define-the-model" title="Permalink to this headline">¶</a></h2>
-<p>A simple model derived from <a class="reference internal" href="../contrib/timeseries.html#stdnet.contrib.timeseries.models.TimeSeries" title="stdnet.contrib.timeseries.models.TimeSeries"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.timeseries.models.TimeSeries</span></tt></a></p>
+<p>A simple model derived from <tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.timeseries.models.TimeSeries</span></tt></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
@@ -125,8 +125,8 @@ It requires the <tt class="docutils literal"><span class="pre">quantredis</span>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="tutorial.html"
-                        title="previous chapter">Tutorial</a></p>
+  <p class="topless"><a href="performance.html"
+                        title="previous chapter">Performance</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="twitter.html"
                         title="next chapter">Twitter Clone Example</a></p>
@@ -165,10 +165,10 @@ It requires the <tt class="docutils literal"><span class="pre">quantredis</span>
           <a href="twitter.html" title="Twitter Clone Example"
              >next</a> |</li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="performance.html" title="Performance"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Tutorial &amp; Examples</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
 

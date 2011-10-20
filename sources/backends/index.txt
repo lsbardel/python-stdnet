@@ -13,6 +13,7 @@ Currently only Redis_ back-end is implemented.
    :maxdepth: 2
    
    backends
+   transactions
    structures
    
    

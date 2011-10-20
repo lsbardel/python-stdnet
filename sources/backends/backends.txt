@@ -1,8 +1,14 @@
 .. _redis-backend:
 
 ============================
-Redis Database backend
+Database Backends
 ============================
+
+Behind the scenes is the database. Currently stdnet has support for Redis_ only but
+an open door is left for including other backends.
+
+Redis
+==============
 
 Redis_ is an advanced key-value store where each key is associated with a value.
 What makes Redis different from many other key-value databases, is that values can
@@ -27,7 +33,7 @@ since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.
 
 Model data
-===============
+~~~~~~~~~~~~~~~~~~
 
 Each :class:`stdnet.orm.StdModel` instance is mapped to a redis **Hash table**.
 The hash table key is uniquely evaluated by the model hash and
@@ -38,26 +44,48 @@ model instance.
 
 
 Indexes
-==========
+~~~~~~~~~~~~~~~~~
+
+Indexes are obtained by using sets or sorted sets.
 
 
-Ordered Fields
-==================
-When a model contains ordered fields
-(fields with the :attr:`stdnet.orm.Field.ordered` set to ``True``),
-stdnet create as many extra hash tables as the number of ordered fields.
-The hash tables have keys given by instances ids and values given by the
-field value. This allowed the construction of the sorting algorithm::
 
-    SORT idset BY 
+.. _redis-parser:
 
+Parser
+~~~~~~~~~~~~~
 
-Structured Fields
-====================
+Stdnet is shipped with a redis parser written in python and a faster version
+written in C. In order to use the C parser you need to have installed
+cython_.
+The C parser wraps the protocol parsing code in hiredis_ and it is available
+for both windows and linux. To compile the exenstions::
+
+    python setup.py build_ext
+    
+For windows you need to install mingw_ and type::
+
+    python setup.py build_ext -c mingw32
+
+If extensions are installed, the C parser will be the default parser
+unless you override the :ref:`settings.REDIS_PARSER <settings>` value
+and set it to ``python`` (you would want to do that mainly
+for benchmarking reasons).
+
+To check if the extensions are available::
+
+    >>> from stdnet import lib
+    >>> lib.hasextensions
+    True
+    >>> _
+    
 
 
 API
-=========
+===========
+
+Backend data server
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: stdnet.BackendDataServer
    :members:
@@ -67,3 +95,6 @@ API
 .. _Redis: http://redis.io/
 .. _JSON: http://www.json.org/
 .. _lsbardel: https://github.com/lsbardel/redis
+.. _cython: http://cython.org/
+.. _hiredis: https://github.com/antirez/hiredis
+.. _mingw: http://www.mingw.org/

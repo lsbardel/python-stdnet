@@ -1,6 +1,5 @@
 .. _model-model:
 
-.. module:: stdnet.orm.models
 
 ============================
 Model and Query API
@@ -24,6 +23,7 @@ StdModel Class
    :member-order: bysource
 
  
+ 
 .. _database-metaclass:
 
 Data Server Metaclass
@@ -33,7 +33,6 @@ Data Server Metaclass
    :members:
    :member-order: bysource
 
-
         
 .. _register-model:
         
@@ -41,7 +40,12 @@ Registration
 ======================
 
 Once a model is defined, in order to use it in an application it needs to be
-registered with a back-end database.
+registered with a back-end database. Unregistered models cannot be used to save
+data and they will raise exceptions.
+
+Stdnet comes with two fucntions for
+registration, a low level and a higher level one which can be used to register
+several models at once.
 
 Register
 ~~~~~~~~~~~~~~~~
@@ -60,10 +64,18 @@ Register applications
 
 .. autofunction:: stdnet.orm.register_applications
 
+
+.. module:: stdnet.orm.query
    
-Query
+Queries
 ==============================
 
+Manager
+~~~~~~~~~~~~~~~
+.. autoclass:: stdnet.orm.query.Manager
+   :members:
+   :member-order: bysource
+   
 
 QuerySet
 ~~~~~~~~~~~~~~~
@@ -74,19 +86,20 @@ here's the formal declaration of a QuerySet.
    :members:
    :member-order: bysource
    
+RelatedManager
+~~~~~~~~~~~~~~~~~~
 
-Manager
-~~~~~~~~~~~~~~~
-.. autoclass:: stdnet.orm.query.Manager
+.. autoclass:: stdnet.orm.query.RelatedManager
    :members:
    :member-order: bysource
    
+M2MRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Search Engine
-=====================
-.. autoclass:: stdnet.orm.SearchEngine
+.. autoclass:: stdnet.orm.query.M2MRelatedManager
    :members:
    :member-order: bysource
+
 
 .. _signal-api:
 

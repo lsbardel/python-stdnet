@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Redis Database backend &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Database Backends &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
     <link rel="up" title="Backend Server and Structures" href="index.html" />
-    <link rel="next" title="Remote Structure" href="structures.html" />
+    <link rel="next" title="Transactions" href="transactions.html" />
     <link rel="prev" title="Backend Server and Structures" href="index.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="structures.html" title="Remote Structure"
+          <a href="transactions.html" title="Transactions"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Backend Server and Structures"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,8 +52,12 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="redis-database-backend">
-<span id="redis-backend"></span><h1>Redis Database backend<a class="headerlink" href="#redis-database-backend" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="database-backends">
+<span id="redis-backend"></span><h1>Database Backends<a class="headerlink" href="#database-backends" title="Permalink to this headline">¶</a></h1>
+<p>Behind the scenes is the database. Currently stdnet has support for <a class="reference external" href="http://redis.io/">Redis</a> only but
+an open door is left for including other backends.</p>
+<div class="section" id="redis">
+<h2>Redis<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="http://redis.io/">Redis</a> is an advanced key-value store where each key is associated with a value.
 What makes Redis different from many other key-value databases, is that values can
 be of different types:</p>
@@ -77,7 +81,7 @@ and <em>net</em> from networked.</p>
 since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.</p>
 <div class="section" id="model-data">
-<h2>Model data<a class="headerlink" href="#model-data" title="Permalink to this headline">¶</a></h2>
+<h3>Model data<a class="headerlink" href="#model-data" title="Permalink to this headline">¶</a></h3>
 <p>Each <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance is mapped to a redis <strong>Hash table</strong>.
 The hash table key is uniquely evaluated by the model hash and
 the <em>id</em> of the model instance.</p>
@@ -85,23 +89,38 @@ the <em>id</em> of the model instance.</p>
 model instance.</p>
 </div>
 <div class="section" id="indexes">
-<h2>Indexes<a class="headerlink" href="#indexes" title="Permalink to this headline">¶</a></h2>
+<h3>Indexes<a class="headerlink" href="#indexes" title="Permalink to this headline">¶</a></h3>
+<p>Indexes are obtained by using sets or sorted sets.</p>
 </div>
-<div class="section" id="ordered-fields">
-<h2>Ordered Fields<a class="headerlink" href="#ordered-fields" title="Permalink to this headline">¶</a></h2>
-<p>When a model contains ordered fields
-(fields with the <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.Field.ordered</span></tt> set to <tt class="xref docutils literal"><span class="pre">True</span></tt>),
-stdnet create as many extra hash tables as the number of ordered fields.
-The hash tables have keys given by instances ids and values given by the
-field value. This allowed the construction of the sorting algorithm:</p>
-<div class="highlight-python"><pre>SORT idset BY</pre>
+<div class="section" id="parser">
+<span id="redis-parser"></span><h3>Parser<a class="headerlink" href="#parser" title="Permalink to this headline">¶</a></h3>
+<p>Stdnet is shipped with a redis parser written in python and a faster version
+written in C. In order to use the C parser you need to have installed
+<a class="reference external" href="http://cython.org/">cython</a>.
+The C parser wraps the protocol parsing code in <a class="reference external" href="https://github.com/antirez/hiredis">hiredis</a> and it is available
+for both windows and linux. To compile the exenstions:</p>
+<div class="highlight-python"><pre>python setup.py build_ext</pre>
+</div>
+<p>For windows you need to install <a class="reference external" href="http://www.mingw.org/">mingw</a> and type:</p>
+<div class="highlight-python"><pre>python setup.py build_ext -c mingw32</pre>
+</div>
+<p>If extensions are installed, the C parser will be the default parser
+unless you override the <a class="reference internal" href="../utility.html#settings"><em>settings.REDIS_PARSER</em></a> value
+and set it to <tt class="docutils literal"><span class="pre">python</span></tt> (you would want to do that mainly
+for benchmarking reasons).</p>
+<p>To check if the extensions are available:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">lib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lib</span><span class="o">.</span><span class="n">hasextensions</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span>
+</pre></div>
 </div>
 </div>
-<div class="section" id="structured-fields">
-<h2>Structured Fields<a class="headerlink" href="#structured-fields" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="api">
 <h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="backend-data-server">
+<h3>Backend data server<a class="headerlink" href="#backend-data-server" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.BackendDataServer">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>pickler=None</em>, <em>charset='utf-8'</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
@@ -140,7 +159,7 @@ field value. This allowed the construction of the sorting algorithm:</p>
 
 <dl class="method">
 <dt id="stdnet.BackendDataServer.transaction">
-<tt class="descname">transaction</tt><big>(</big><em>pipelined=True</em>, <em>cachepipes=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.transaction" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">transaction</tt><big>(</big><em>pipelined=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.transaction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a transaction instance</p>
 </dd></dl>
 
@@ -267,6 +286,7 @@ for a given <em>id</em>.</p>
 
 </div>
 </div>
+</div>
 
 
           </div>
@@ -280,12 +300,17 @@ for a given <em>id</em>.</p>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Redis Database backend</a><ul>
+<li><a class="reference internal" href="#">Database Backends</a><ul>
+<li><a class="reference internal" href="#redis">Redis</a><ul>
 <li><a class="reference internal" href="#model-data">Model data</a></li>
 <li><a class="reference internal" href="#indexes">Indexes</a></li>
-<li><a class="reference internal" href="#ordered-fields">Ordered Fields</a></li>
-<li><a class="reference internal" href="#structured-fields">Structured Fields</a></li>
-<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#parser">Parser</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#backend-data-server">Backend data server</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -294,8 +319,8 @@ for a given <em>id</em>.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Backend Server and Structures</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="structures.html"
-                        title="next chapter">Remote Structure</a></p>
+  <p class="topless"><a href="transactions.html"
+                        title="next chapter">Transactions</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/backends/backends.txt"
@@ -328,12 +353,12 @@ for a given <em>id</em>.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="structures.html" title="Remote Structure"
+          <a href="transactions.html" title="Transactions"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Backend Server and Structures"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Backend Server and Structures</a> &raquo;</li> 
       </ul>
     </div>

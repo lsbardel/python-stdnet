@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Tutorial 1 &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
-    <link rel="up" title="Tutorial &amp; Examples" href="index.html" />
-    <link rel="next" title="Time Series" href="timeseries.html" />
-    <link rel="prev" title="Tutorial &amp; Examples" href="index.html" /> 
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Tutorial 2" href="tutorial2.html" />
+    <link rel="prev" title="Tutorials &amp; Examples" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,13 +37,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="timeseries.html" title="Time Series"
+          <a href="tutorial2.html" title="Tutorial 2"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Tutorial &amp; Examples"
+          <a href="index.html" title="Tutorials &amp; Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Tutorial &amp; Examples</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,15 +52,15 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="tutorial">
-<span id="id1"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="tutorial-1">
+<span id="tutorial"></span><h1>Tutorial 1<a class="headerlink" href="#tutorial-1" title="Permalink to this headline">¶</a></h1>
 <p>In this section we will walk you though all the main aspects of the library,
 following a simple application as example.
 We will refer back to the <a class="reference internal" href="../model/index.html#model-index"><em>library API</em></a>
 as much as possible so that
 advanced configuration parameters and functionalities can be investigated.</p>
 <div class="section" id="creating-models">
-<span id="id2"></span><h2>Creating Models<a class="headerlink" href="#creating-models" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2>Creating Models<a class="headerlink" href="#creating-models" title="Permalink to this headline">¶</a></h2>
 <p>Defining stdnet <em>models</em> is achieved by subclassing the
 <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. The following
 snipped implements two models, <tt class="docutils literal"><span class="pre">Author</span></tt> and <tt class="docutils literal"><span class="pre">Book</span></tt>:</p>
@@ -83,7 +83,7 @@ which represents an instance of a model.</p>
 <p>Information is available regarding how models instances are mapped into
 <a class="reference internal" href="../backends/backends.html#redis-backend"><em>the redis backend</em></a>.</p>
 <div class="section" id="an-application">
-<h3>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h3>
+<span id="tutorial-application"></span><h3>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h3>
 <p>Let&#8217;s start with tutorial application: a small hedge fund.
 You never know it may become useful in the future!</p>
 <p>The application uses the following three models:</p>
@@ -229,7 +229,7 @@ Lets create few other objects in the same line as above and try:</p>
 </div>
 </div>
 <div class="section" id="sorting">
-<span id="id3"></span><h2>Sorting<a class="headerlink" href="#sorting" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2>Sorting<a class="headerlink" href="#sorting" title="Permalink to this headline">¶</a></h2>
 <p>Since version 0.6.0, stdnet provides sorting using two different ways:</p>
 <ul class="simple">
 <li>Explicit sorting using the <a class="reference internal" href="../model/models.html#stdnet.orm.query.QuerySet.sort_by" title="stdnet.orm.query.QuerySet.sort_by"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.query.QuerySet.sort_by</span></tt></a> attribute
@@ -254,7 +254,7 @@ method with a field name as parameter. Lets consider the following model:</p>
 <p>The negative sign in front of <tt class="docutils literal"><span class="pre">dt</span></tt> indicates descending order.</p>
 </div>
 <div class="section" id="implicit-sorting">
-<h3>Implicit Sorting<a class="headerlink" href="#implicit-sorting" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3>Implicit Sorting<a class="headerlink" href="#implicit-sorting" title="Permalink to this headline">¶</a></h3>
 <p>Implicit sorting is achieved by setting the <tt class="docutils literal"><span class="pre">ordering</span></tt> attribute in the model Meta class.
 Let&#8217;s consider the following Log model example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Log</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
@@ -284,21 +284,6 @@ sorted sets as indices rather than sets.</p>
 </div>
 </div>
 </div>
-<div class="section" id="transactions">
-<span id="model-transactions"></span><h2>Transactions<a class="headerlink" href="#transactions" title="Permalink to this headline">¶</a></h2>
-<p>Since version 0.5.6, stdnet perform server updates via transactions.
-Transaction are important for two reasons:</p>
-<ul class="simple">
-<li>To guarantee atomicity and therefore consistency of model instances when updating/deleting.</li>
-<li>To speed up updating/deleting of several instances at once.</li>
-</ul>
-<p>A tipical usage to speed up the creation of several instances of a model <tt class="docutils literal"><span class="pre">MyModel</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-        <span class="n">MyModel</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
 </div>
 
 
@@ -313,7 +298,7 @@ Transaction are important for two reasons:</p>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#">Tutorial 1</a><ul>
 <li><a class="reference internal" href="#creating-models">Creating Models</a><ul>
 <li><a class="reference internal" href="#an-application">An application</a></li>
 <li><a class="reference internal" href="#registering-models">Registering Models</a></li>
@@ -331,17 +316,16 @@ Transaction are important for two reasons:</p>
 <li><a class="reference internal" href="#implicit-sorting">Implicit Sorting</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#transactions">Transactions</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Tutorial &amp; Examples</a></p>
+                        title="previous chapter">Tutorials &amp; Examples</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="timeseries.html"
-                        title="next chapter">Time Series</a></p>
+  <p class="topless"><a href="tutorial2.html"
+                        title="next chapter">Tutorial 2</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/examples/tutorial.txt"
@@ -374,13 +358,13 @@ Transaction are important for two reasons:</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="timeseries.html" title="Time Series"
+          <a href="tutorial2.html" title="Tutorial 2"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Tutorial &amp; Examples"
+          <a href="index.html" title="Tutorials &amp; Examples"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Tutorial &amp; Examples</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
 

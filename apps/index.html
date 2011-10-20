@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Object Relational Mapper &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Applications &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -22,8 +22,8 @@
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
-    <link rel="next" title="Model and Query API" href="models.html" />
-    <link rel="prev" title="Overview" href="../overview.html" /> 
+    <link rel="next" title="A Search Engine for Stdnet Models" href="searchengine.html" />
+    <link rel="prev" title="Remote Data Structures" href="../backends/structures.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,10 +36,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Model and Query API"
+          <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../overview.html" title="Overview"
+          <a href="../backends/structures.html" title="Remote Data Structures"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
@@ -50,39 +50,29 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="object-relational-mapper">
-<span id="model-index"></span><h1>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> (ORM) in
-computer software is a programming technique for converting data between incompatible
-type systems in databases and object-oriented programming languages.</p>
-<p>There are two well known ORMs for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
-Both of them are fully feature open-source libraries with an incredible community
-of users and developers.
-At the moment, they are best suited for traditional
-<a class="reference external" href="http://en.wikipedia.org/wiki/Relational_database">relational databases</a> back-ends.</p>
-<p>On the other hand, <tt class="docutils literal"><span class="pre">stdnet</span></tt> is geared towards non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
-they are known. It is also a lightweight module, which deal only with ORM and nothing else.</p>
-<p><strong>Contents</strong></p>
+  <span class="target" id="module-stdnet.apps"><span id="contrib-index"></span></span><div class="section" id="applications">
+<h1>Applications<a class="headerlink" href="#applications" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-stdnet.apps" title="stdnet.apps"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps</span></tt></a> module contains applications
+which are based on <a class="reference internal" href="../backends/structures.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> but are not part of the
+core library.
+They don&#8217;t have external dependencies but some of the requires
+a <a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>non vanilla redis</em></a> implementation and are here
+mainly as use cases. In the future they may be removed
+and placed into their own installable packages.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="models.html">Model and Query API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models.html#model">Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#registration">Registration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#queries">Queries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#signals">Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searchengine.html">A Search Engine for Stdnet Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="searchengine.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="searchengine.html#api">API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#base-classes">Base Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#atom-fields">Atom Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#object-type-fields">Object Type Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#data-structure-fields">Data-structure Fields</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Timeseries Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-base-model">Timeseries base model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model">Timeseries model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model-field">Timeseries Model Field</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="search.html">Search</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="search.html#search-engine-interface">Search Engine Interface</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="grid.html">Grid Computing</a></li>
 </ul>
 </div>
 </div>
@@ -98,14 +88,14 @@ they are known. It is also a lightweight module, which deal only with ORM and no
 </a>
 </p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../overview.html"
-                        title="previous chapter">Overview</a></p>
+  <p class="topless"><a href="../backends/structures.html"
+                        title="previous chapter">Remote Data Structures</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="models.html"
-                        title="next chapter">Model and Query API</a></p>
+  <p class="topless"><a href="searchengine.html"
+                        title="next chapter">A Search Engine for Stdnet Models</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/index.txt"
+    <li><a href="../sources/apps/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -135,10 +125,10 @@ they are known. It is also a lightweight module, which deal only with ORM and no
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Model and Query API"
+          <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >next</a> |</li>
         <li class="right" >
-          <a href="../overview.html" title="Overview"
+          <a href="../backends/structures.html" title="Remote Data Structures"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>

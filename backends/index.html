@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Server and Structures &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Backend Server and Structures &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="../index.html" />
-    <link rel="next" title="Redis Database backend" href="backends.html" />
-    <link rel="prev" title="Fields API" href="../model/fields.html" /> 
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="next" title="Database Backends" href="backends.html" />
+    <link rel="prev" title="Search" href="../model/search.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,12 +36,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="backends.html" title="Redis Database backend"
+          <a href="backends.html" title="Database Backends"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../model/fields.html" title="Fields API"
+          <a href="../model/search.html" title="Search"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,21 +56,19 @@
 Currently only <a class="reference external" href="http://redis.io/">Redis</a> back-end is implemented.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="backends.html">Redis Database backend</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="backends.html#model-data">Model data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="backends.html#indexes">Indexes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="backends.html#ordered-fields">Ordered Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="backends.html#structured-fields">Structured Fields</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Database Backends</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="backends.html#redis">Redis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="backends.html#api">API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="structures.html">Remote Structure</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#structure-base-class">Structure Base Class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#list">List</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#set">Set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#orderedset">OrderedSet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#hashtable">HashTable</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structures.html#ts">TS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transactions.html">Transactions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transactions.html#transaction">transaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transactions.html#transaction-class">Transaction class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="structures.html">Remote Data Structures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="structures.html#creating-structures">Creating Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structures.html#low-level-api">Low level API</a></li>
 </ul>
 </li>
 </ul>
@@ -88,11 +86,11 @@ Currently only <a class="reference external" href="http://redis.io/">Redis</a> b
 </a>
 </p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../model/fields.html"
-                        title="previous chapter">Fields API</a></p>
+  <p class="topless"><a href="../model/search.html"
+                        title="previous chapter">Search</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="backends.html"
-                        title="next chapter">Redis Database backend</a></p>
+                        title="next chapter">Database Backends</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/backends/index.txt"
@@ -125,12 +123,12 @@ Currently only <a class="reference external" href="http://redis.io/">Redis</a> b
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="backends.html" title="Redis Database backend"
+          <a href="backends.html" title="Database Backends"
              >next</a> |</li>
         <li class="right" >
-          <a href="../model/fields.html" title="Fields API"
+          <a href="../model/search.html" title="Search"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

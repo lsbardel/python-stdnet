@@ -22,9 +22,9 @@
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
-    <link rel="up" title="Battery Included" href="index.html" />
+    <link rel="up" title="Applications" href="index.html" />
     <link rel="next" title="Timeseries Models" href="timeseries.html" />
-    <link rel="prev" title="Battery Included" href="index.html" /> 
+    <link rel="prev" title="Applications" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="timeseries.html" title="Timeseries Models"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Battery Included"
+          <a href="index.html" title="Applications"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Battery Included</a> &raquo;</li> 
+          <li><a href="index.html" accesskey="U">Applications</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,14 +52,17 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-stdnet.contrib.searchengine">
-<span id="a-search-engine-for-stdnet-models"></span><span id="contrib-searchengine"></span><h1>A Search Engine for Stdnet Models<a class="headerlink" href="#module-stdnet.contrib.searchengine" title="Permalink to this headline">¶</a></h1>
-<p>An implementation of <a class="reference internal" href="../model/models.html#stdnet.orm.SearchEngine" title="stdnet.orm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.SearchEngine</span></tt></a>
-based on stdnet models.</p>
+  <div class="section" id="module-stdnet.apps.searchengine">
+<span id="a-search-engine-for-stdnet-models"></span><span id="apps-searchengine"></span><h1>A Search Engine for Stdnet Models<a class="headerlink" href="#module-stdnet.apps.searchengine" title="Permalink to this headline">¶</a></h1>
+<p>This is a pure python implementation of the <a class="reference internal" href="../model/search.html#stdnet.orm.SearchEngine" title="stdnet.orm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.SearchEngine</span></tt></a>
+interface. It is an experimental application which currentely requires the
+<a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>stdnet redis</em></a> branch.</p>
+<p>This is not intended to be the most full-featured text search available, but
+it does the job. For that, look into <a class="reference external" href="http://sphinxsearch.com/">Sphinx</a>, Solr, or other alternatives.</p>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>Somewhere in your application create the search engine singletone:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.contrib.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
  
 <span class="n">engine</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
@@ -83,11 +86,10 @@ the search engine will updated its indexes.</p>
 <div class="section" id="api">
 <h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="stdnet.contrib.searchengine.SearchEngine">
-<em class="property">class </em><tt class="descclassname">stdnet.contrib.searchengine.</tt><tt class="descname">SearchEngine</tt><big>(</big><em>min_word_length=3</em>, <em>stop_words=None</em>, <em>autocomplete=None</em>, <em>metaphone=True</em>, <em>stemming=True</em>, <em>splitters=None</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Search engine driver.
-Adapted from
-<a class="reference external" href="https://gist.github.com/389875">https://gist.github.com/389875</a></p>
+<dt id="stdnet.apps.searchengine.SearchEngine">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.searchengine.</tt><tt class="descname">SearchEngine</tt><big>(</big><em>min_word_length=3</em>, <em>stop_words=None</em>, <em>autocomplete=None</em>, <em>metaphone=True</em>, <em>stemming=True</em>, <em>splitters=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>A python implementation for the <a class="reference internal" href="../model/search.html#stdnet.orm.SearchEngine" title="stdnet.orm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.SearchEngine</span></tt></a>
+driver.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -98,7 +100,7 @@ to work.</p>
 <p>Default <tt class="docutils literal"><span class="pre">3</span></tt>.</p>
 </li>
 <li><strong>stop_words</strong> &#8211; <p>list of words not included in the search engine.</p>
-<p>Default <tt class="docutils literal"><span class="pre">stdnet.contrib.searchengine.ignore.STOP_WORDS</span></tt></p>
+<p>Default <tt class="docutils literal"><span class="pre">stdnet.apps.searchengine.ignore.STOP_WORDS</span></tt></p>
 </li>
 <li><strong>autocomplete</strong> &#8211; <p>Name for the autocomplete sorted set.
 If <tt class="xref docutils literal"><span class="pre">None</span></tt> <cite>autocomplete</cite> functionality won&#8217;t
@@ -106,7 +108,8 @@ be available.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </li>
 <li><strong>metaphone</strong> &#8211; <p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the double <a class="reference external" href="http://en.wikipedia.org/wiki/Metaphone">metaphone</a> algorithm will be
-used to store and search for words.</p>
+used to store and search for words. The metaphone should be the last
+world middleware to be added.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 <li><strong>splitters</strong> &#8211; <p>string whose characters are used to split text
@@ -116,7 +119,7 @@ be split into <cite>bla</cite>, <cite>pippo</cite>, <cite>ciao</cite> and <cite>
 Set to empty string for no splitting.
 Splitting will always occur on white spaces.</p>
 <p>Default
-<tt class="docutils literal"><span class="pre">stdnet.contrib.searchengine.ignore.PUNCTUATION_CHARS</span></tt>.</p>
+<tt class="docutils literal"><span class="pre">stdnet.apps.searchengine.ignore.PUNCTUATION_CHARS</span></tt>.</p>
 </li>
 </ul>
 </td>
@@ -124,8 +127,8 @@ Splitting will always occur on white spaces.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.remove_item">
-<tt class="descname">remove_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.apps.searchengine.SearchEngine.remove_item">
+<tt class="descname">remove_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove indexes for <em>item</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -138,30 +141,29 @@ Splitting will always occur on white spaces.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.words">
-<tt class="descname">words</tt><big>(</big><em>text</em>, <em>for_search=False</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.words" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.apps.searchengine.SearchEngine.words">
+<tt class="descname">words</tt><big>(</big><em>text</em>, <em>for_search=False</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.words" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a text string,
-return a list of <tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.searchengine.Word</span></tt> instances
+return a list of <tt class="xref py py-class docutils literal"><span class="pre">stdnet.apps.searchengine.Word</span></tt> instances
 associated with it. The word items can be used to perform search
 on registered models.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.search">
-<tt class="descname">search</tt><big>(</big><em>text</em>, <em>include=None</em>, <em>exclude=None</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.search" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.apps.searchengine.SearchEngine.search">
+<tt class="descname">search</tt><big>(</big><em>text</em>, <em>include=None</em>, <em>exclude=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.search" title="Permalink to this definition">¶</a></dt>
 <dd><p>Full text search</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.search_model">
-<tt class="descname">search_model</tt><big>(</big><em>model</em>, <em>text</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a query for ids of model instances containing
-words in text.</p>
+<dt id="stdnet.apps.searchengine.SearchEngine.search_model">
+<tt class="descname">search_model</tt><big>(</big><em>model</em>, <em>text</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements <a class="reference internal" href="../model/search.html#stdnet.orm.SearchEngine.search_model" title="stdnet.orm.SearchEngine.search_model"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.SearchEngine.search_model()</span></tt></a></p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.add_tag">
-<tt class="descname">add_tag</tt><big>(</big><em>item</em>, <em>text</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.add_tag" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.apps.searchengine.SearchEngine.add_tag">
+<tt class="descname">add_tag</tt><big>(</big><em>item</em>, <em>text</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.add_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a tag to an object.
 If the object already has the tag associated with it do nothing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -180,8 +182,8 @@ If the object already has the tag associated with it do nothing.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.contrib.searchengine.SearchEngine.alltags">
-<tt class="descname">alltags</tt><big>(</big><em>*models</em><big>)</big><a class="headerlink" href="#stdnet.contrib.searchengine.SearchEngine.alltags" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.apps.searchengine.SearchEngine.alltags">
+<tt class="descname">alltags</tt><big>(</big><em>*models</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.alltags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a dictionary where keys are tag names and values are integers
 representing how many times the corresponding tag has been used against
 the Model classes in question.</p>
@@ -213,13 +215,13 @@ the Model classes in question.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Battery Included</a></p>
+                        title="previous chapter">Applications</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="timeseries.html"
                         title="next chapter">Timeseries Models</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/contrib/searchengine.txt"
+    <li><a href="../sources/apps/searchengine.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -252,10 +254,10 @@ the Model classes in question.</p>
           <a href="timeseries.html" title="Timeseries Models"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Battery Included"
+          <a href="index.html" title="Applications"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Battery Included</a> &raquo;</li> 
+          <li><a href="index.html" >Applications</a> &raquo;</li> 
       </ul>
     </div>
 

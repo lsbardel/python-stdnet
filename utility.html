@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet v0.6.1 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.1',
+        VERSION:     '0.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +21,9 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.6.1 documentation" href="index.html" />
-    <link rel="prev" title="Contributing" href="contributing.html" /> 
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Stdnet Redis branch" href="stdnetredis.html" />
+    <link rel="prev" title="Twitter Clone Example" href="examples/twitter.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,9 +36,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="contributing.html" title="Contributing"
+          <a href="stdnetredis.html" title="Stdnet Redis branch"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="examples/twitter.html" title="Twitter Clone Example"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -46,8 +50,55 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-stdnet.orm">
-<span id="internals-and-utilities"></span><span id="utility-index"></span><h1>Internals and Utilities<a class="headerlink" href="#module-stdnet.orm" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="internals-and-utilities">
+<span id="utility-index"></span><h1>Internals and Utilities<a class="headerlink" href="#internals-and-utilities" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-stdnet.conf">
+<span id="default-settings"></span><span id="settings"></span><h2>Default Settings<a class="headerlink" href="#module-stdnet.conf" title="Permalink to this headline">¶</a></h2>
+<p>Stdnet comes with a singleton setting instance which can be accessed by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+</pre></div>
+</div>
+<p>The setting instance contains few default parameters used in throughout
+the library. This parameters can be changed by the user by simply
+overriding them.</p>
+<dl class="attribute">
+<dt id="stdnet.conf.settings.DEFAULT_BACKEND">
+<tt class="descclassname">settings.</tt><tt class="descname">DEFAULT_BACKEND</tt><a class="headerlink" href="#stdnet.conf.settings.DEFAULT_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd><p>the default <a class="reference internal" href="backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> connection string. Check
+the <a class="reference internal" href="model/models.html#register-model"><em>registering models</em></a> documentation.</p>
+<p>Default <tt class="docutils literal"><span class="pre">&quot;redis://127.0.0.1:6379/?db=7&quot;</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.conf.DEFAULT_KEYPREFIX">
+<tt class="descclassname">stdnet.conf.</tt><tt class="descname">DEFAULT_KEYPREFIX</tt><a class="headerlink" href="#stdnet.conf.DEFAULT_KEYPREFIX" title="Permalink to this definition">¶</a></dt>
+<dd><p>The prefix to prepend to all keys.</p>
+<p>Default <tt class="docutils literal"><span class="pre">&quot;stdnet&quot;</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.conf.settings.REDIS_PARSER">
+<tt class="descclassname">settings.</tt><tt class="descname">REDIS_PARSER</tt><a class="headerlink" href="#stdnet.conf.settings.REDIS_PARSER" title="Permalink to this definition">¶</a></dt>
+<dd><p>The redis parser to choose. By default it is set to <tt class="xref docutils literal"><span class="pre">None</span></tt> which causes
+the library to choose the best possible available. More information
+is contained in the <a class="reference internal" href="backends/backends.html#redis-parser"><em>redis parser</em></a> documentation.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.conf.settings.MAX_CONNECTIONS">
+<tt class="descclassname">settings.</tt><tt class="descname">MAX_CONNECTIONS</tt><a class="headerlink" href="#stdnet.conf.settings.MAX_CONNECTIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximim number of connections to have opened at the same time.</p>
+<p>Default <tt class="docutils literal"><span class="pre">unlimited</span></tt>.</p>
+</dd></dl>
+
+<p>To change settings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+
+<span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_BACKEND</span> <span class="o">=</span> <span class="s">&#39;redis://127.0.0.1:6379/?db=5&#39;</span>
+</pre></div>
+</div>
+<span class="target" id="module-stdnet.orm"></span></div>
 <div class="section" id="model-utilities">
 <h2>Model Utilities<a class="headerlink" href="#model-utilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="instance-form-uuid">
@@ -158,7 +209,9 @@ class or a callable.</li>
 <em class="property">class </em><tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON encoder used by stdnet. It provides
 JSON serialization for three additional object, <cite>datetime.date</cite>,
-<cite>datetime.datetime</cite> and <cite>decimal.Decimal</cite> from the standard library.</p>
+<cite>datetime.datetime</cite> and <cite>decimal.Decimal</cite> from the standard library.
+In addition if <a class="reference external" href="http://numpy.scipy.org/">numpy</a> is installed, it also provides serialization
+of the <tt class="docutils literal"><span class="pre">ndarray</span></tt> into nested lists using the <tt class="docutils literal"><span class="pre">aslist</span></tt> function.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">It is the default encoder for <a class="reference internal" href="model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a></p>
@@ -170,6 +223,93 @@ JSON serialization for three additional object, <cite>datetime.date</cite>,
 <em class="property">class </em><tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">date_decimal_hook</tt><a class="headerlink" href="#stdnet.utils.jsontools.date_decimal_hook" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON decoder hook. It is the inverse of
 <a class="reference internal" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="stdnet.utils.jsontools.JSONDateDecimalEncoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt></a>.</p>
+</dd></dl>
+
+<span class="target" id="module-stdnet.utils.encoders"><span id="encoders"></span></span></div>
+</div>
+<div class="section" id="id1">
+<h2>Encoders<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.utils.encoders.Encoder">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Encoder</tt><a class="headerlink" href="#stdnet.utils.encoders.Encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Virtaul class for encoding data in
+<a class="reference internal" href="backends/structures.html#structures-backend"><em>remote strcutures</em></a>. It exposes two methods
+for serializing and loading data to and from the data server.</p>
+<dl class="method">
+<dt id="stdnet.utils.encoders.Encoder.dumps">
+<tt class="descname">dumps</tt><big>(</big><em>x</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Encoder.dumps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize data for database</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.utils.encoders.Encoder.loads">
+<tt class="descname">loads</tt><big>(</big><em>x</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Encoder.loads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unserialize data from database</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="no-encoder">
+<h3>No Encoder<a class="headerlink" href="#no-encoder" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.NoEncoder">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">NoEncoder</tt><a class="headerlink" href="#stdnet.utils.encoders.NoEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dummy encoder class</p>
+</dd></dl>
+
+</div>
+<div class="section" id="default">
+<h3>Default<a class="headerlink" href="#default" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.Default">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Default</tt><big>(</big><em>charset='utf-8'</em>, <em>encoding_errors='strict'</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Default" title="Permalink to this definition">¶</a></dt>
+<dd><p>The default unicode encoder</p>
+</dd></dl>
+
+</div>
+<div class="section" id="bytes">
+<h3>Bytes<a class="headerlink" href="#bytes" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.Bytes">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Bytes</tt><big>(</big><em>charset='utf-8'</em>, <em>encoding_errors='strict'</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The binary unicode encoder</p>
+</dd></dl>
+
+</div>
+<div class="section" id="json">
+<h3>Json<a class="headerlink" href="#json" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.Json">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Json</tt><big>(</big><em>charset='utf-8'</em>, <em>encoding_errors='strict'</em>, <em>json_encoder=None</em>, <em>object_hook=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Json" title="Permalink to this definition">¶</a></dt>
+<dd><p>A JSON encoder for maintaning python types when dealing with
+remote data structures.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="python-pickle">
+<h3>Python Pickle<a class="headerlink" href="#python-pickle" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.PythonPickle">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">PythonPickle</tt><a class="headerlink" href="#stdnet.utils.encoders.PythonPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>A safe pickle serializer.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="datetimeconverter">
+<h3>DateTimeConverter<a class="headerlink" href="#datetimeconverter" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.DateTimeConverter">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">DateTimeConverter</tt><a class="headerlink" href="#stdnet.utils.encoders.DateTimeConverter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to and from datetime.datetime and unix timestamps</p>
+</dd></dl>
+
+</div>
+<div class="section" id="dateconverter">
+<h3>DateConverter<a class="headerlink" href="#dateconverter" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.utils.encoders.DateConverter">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">DateConverter</tt><a class="headerlink" href="#stdnet.utils.encoders.DateConverter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to and from datetime.date and unix timestamps</p>
 </dd></dl>
 
 </div>
@@ -220,9 +360,9 @@ between <em>start</em> and <em>end</em></p>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><em>floats</em></dt>
+<dt><em>float</em></dt>
 <dd><p class="first">For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;integer&#39;</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;float&#39;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="last">create a 200 elements list with random floats between <em>start</em> and <em>end</em></p>
@@ -241,16 +381,6 @@ between <em>start</em> and <em>end</em></p>
 </li>
 </ul>
 </div></blockquote>
-</dd></dl>
-
-</div>
-<div class="section" id="pipeline">
-<h3>Pipeline<a class="headerlink" href="#pipeline" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.PipeLine">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">PipeLine</tt><big>(</big><em>pipe</em>, <em>method</em>, <em>timeout</em><big>)</big><a class="headerlink" href="#stdnet.PipeLine" title="Permalink to this definition">¶</a></dt>
-<dd><p>A pipeline utility class. Used to hold data in <a class="reference internal" href="backends/structures.html#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>
-before it is saved into the data server.</p>
 </dd></dl>
 
 </div>
@@ -313,6 +443,7 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Internals and Utilities</a><ul>
+<li><a class="reference internal" href="#module-stdnet.conf">Default Settings</a></li>
 <li><a class="reference internal" href="#model-utilities">Model Utilities</a><ul>
 <li><a class="reference internal" href="#instance-form-uuid">Instance form UUID</a></li>
 <li><a class="reference internal" href="#model-iterator">Model Iterator</a></li>
@@ -326,9 +457,18 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
 <li><a class="reference internal" href="#json-utilities">JSON utilities</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#id1">Encoders</a><ul>
+<li><a class="reference internal" href="#no-encoder">No Encoder</a></li>
+<li><a class="reference internal" href="#default">Default</a></li>
+<li><a class="reference internal" href="#bytes">Bytes</a></li>
+<li><a class="reference internal" href="#json">Json</a></li>
+<li><a class="reference internal" href="#python-pickle">Python Pickle</a></li>
+<li><a class="reference internal" href="#datetimeconverter">DateTimeConverter</a></li>
+<li><a class="reference internal" href="#dateconverter">DateConverter</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
 <li><a class="reference internal" href="#populate">Populate</a></li>
-<li><a class="reference internal" href="#pipeline">Pipeline</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#exceptions">Exceptions</a></li>
@@ -337,8 +477,11 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="contributing.html"
-                        title="previous chapter">Contributing</a></p>
+  <p class="topless"><a href="examples/twitter.html"
+                        title="previous chapter">Twitter Clone Example</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="stdnetredis.html"
+                        title="next chapter">Stdnet Redis branch</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/utility.txt"
@@ -371,9 +514,12 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="contributing.html" title="Contributing"
+          <a href="stdnetredis.html" title="Stdnet Redis branch"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="examples/twitter.html" title="Twitter Clone Example"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.6.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

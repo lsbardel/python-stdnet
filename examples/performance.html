@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Object Relational Mapper &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Performance &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -22,8 +22,9 @@
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
-    <link rel="next" title="Model and Query API" href="models.html" />
-    <link rel="prev" title="Overview" href="../overview.html" /> 
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Time Series" href="timeseries.html" />
+    <link rel="prev" title="Tutorial 2" href="tutorial2.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,12 +37,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Model and Query API"
+          <a href="timeseries.html" title="Time Series"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../overview.html" title="Overview"
+          <a href="tutorial2.html" title="Tutorial 2"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,40 +52,21 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="object-relational-mapper">
-<span id="model-index"></span><h1>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> (ORM) in
-computer software is a programming technique for converting data between incompatible
-type systems in databases and object-oriented programming languages.</p>
-<p>There are two well known ORMs for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
-Both of them are fully feature open-source libraries with an incredible community
-of users and developers.
-At the moment, they are best suited for traditional
-<a class="reference external" href="http://en.wikipedia.org/wiki/Relational_database">relational databases</a> back-ends.</p>
-<p>On the other hand, <tt class="docutils literal"><span class="pre">stdnet</span></tt> is geared towards non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
-they are known. It is also a lightweight module, which deal only with ORM and nothing else.</p>
-<p><strong>Contents</strong></p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="models.html">Model and Query API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models.html#model">Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#registration">Registration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#queries">Queries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#signals">Signals</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#base-classes">Base Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#atom-fields">Atom Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#object-type-fields">Object Type Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fields.html#data-structure-fields">Data-structure Fields</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="search.html">Search</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="search.html#search-engine-interface">Search Engine Interface</a></li>
-</ul>
-</li>
-</ul>
+  <div class="section" id="performance">
+<span id="increase-performance"></span><h1>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="use-transactions">
+<h2>Use transactions<a class="headerlink" href="#use-transactions" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="use-load-related">
+<span id="performance-loadrelated"></span><h2>Use load_related<a class="headerlink" href="#use-load-related" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="use-load-only">
+<span id="performance-loadonly"></span><h2>Use load_only<a class="headerlink" href="#use-load-only" title="Permalink to this headline">¶</a></h2>
+<p>For example I need to load all my <cite>EUR</cite> Funds but I don&#8217;t need to
+see the description and documentation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&quot;EUR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">load_only</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -97,15 +80,25 @@ they are known. It is also a lightweight module, which deal only with ORM and no
   <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
 </a>
 </p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Performance</a><ul>
+<li><a class="reference internal" href="#use-transactions">Use transactions</a></li>
+<li><a class="reference internal" href="#use-load-related">Use load_related</a></li>
+<li><a class="reference internal" href="#use-load-only">Use load_only</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../overview.html"
-                        title="previous chapter">Overview</a></p>
+  <p class="topless"><a href="tutorial2.html"
+                        title="previous chapter">Tutorial 2</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="models.html"
-                        title="next chapter">Model and Query API</a></p>
+  <p class="topless"><a href="timeseries.html"
+                        title="next chapter">Time Series</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/index.txt"
+    <li><a href="../sources/examples/performance.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -135,12 +128,13 @@ they are known. It is also a lightweight module, which deal only with ORM and no
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Model and Query API"
+          <a href="timeseries.html" title="Time Series"
              >next</a> |</li>
         <li class="right" >
-          <a href="../overview.html" title="Overview"
+          <a href="tutorial2.html" title="Tutorial 2"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
 

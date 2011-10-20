@@ -1,5 +1,4 @@
 import datetime
-import logging
 from random import randint
 
 from stdnet import test

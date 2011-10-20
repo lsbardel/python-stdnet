@@ -253,6 +253,8 @@ specified, the data is pipelined and executed when the transaction completes.'''
         return self._save_from_pipeline(cursor, self.pipe(transaction))
         
     def delete(self, transaction = None):
+        '''Delete the structure from the remote server. If a transaction is
+specified, the data is pipelined and executed when the transaction completes.'''
         cursor = self.cursor(transaction) if transaction else\
                      self.server.cursor()
         return self._delete(cursor)

@@ -15,16 +15,21 @@ date2timestamp = lambda dte : int(time.mktime(dte.timetuple()))
 def totimestamp(dte):
     return time.mktime(dte.timetuple())
 
+
 def totimestamp2(dte):
     return totimestamp(dte) + 0.000001*dte.microsecond
 
+
 def todatetime(tstamp):
     return datetime.fromtimestamp(tstamp)    
+    
     
 class JSONDateDecimalEncoder(json.JSONEncoder):
     """The default JSON encoder used by stdnet. It provides
 JSON serialization for three additional object, `datetime.date`,
 `datetime.datetime` and `decimal.Decimal` from the standard library.
+In addition if numpy_ is installed, it also provides serialization
+of the ``ndarray`` into nested lists using the ``aslist`` function.
 
 .. seealso:: It is the default encoder for :class:`stdnet.orm.JSONField`
 """

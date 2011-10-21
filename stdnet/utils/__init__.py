@@ -67,7 +67,7 @@ class PPath(object):
         return self.local_path
     __str__ = __repr__
         
-    def add(self, module = None, up = 0, down = None):
+    def add(self, module = None, up = 0, down = None, front = False):
         '''Add a directory to the python path.
         
 :parameter module: Optional module name to try to import once we have found
@@ -75,7 +75,9 @@ class PPath(object):
 :parameter up: number of level to go up the directory three from
     :attr:`local_path`.
 :parameter down: Optional tuple of directory names to travel down once we have
-    gone *up* levels.'''
+    gone *up* levels.
+:parameter front: Boolean indicating if we want to insert the new path at the
+    front of ``sys.path`` using ``sys.path.insert(0,path)``.'''
         if module:
             try:
                 __import__(module)
@@ -89,7 +91,10 @@ class PPath(object):
         added = False
         if os.path.isdir(dir):
             if dir not in sys.path:
-                sys.path.insert(0,dir)
+                if front:
+                    sys.path.insert(0,dir)
+                else:
+                    sys.path.append(dir)
                 added = True
             else:
                 raise ValueError('Directory {0} not available'.format(dir))

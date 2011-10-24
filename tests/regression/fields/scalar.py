@@ -53,7 +53,7 @@ class TestAtomFields(test.TestCase):
         self.assertEqual(all.count(),0)
         
         # The only key remaining is the ids key for the AutoField
-        keys = self.cleankeys(self.meta)
+        keys = self.cleankeys(self.model._meta)
         self.assertEqual(len(keys),1)
         self.assertEqual(keys[0],self.meta.autoid())
         
@@ -145,8 +145,8 @@ class TestBoolField(test.TestCase):
     model = NumericData
     
     def testMeta(self):
-        self.assertEqual(len(self.meta.indices),1)
-        index = self.meta.indices[0]
+        self.assertEqual(len(self.model._meta.indices),1)
+        index = self.model._meta.indices[0]
         self.assertEqual(index.type,'bool')
         self.assertEqual(index.scorefun(True),1)
         self.assertEqual(index.scorefun(False),0)

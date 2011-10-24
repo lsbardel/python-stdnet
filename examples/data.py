@@ -10,11 +10,11 @@ INSTS_TYPES = ['equity','bond','future','cash','option','bond option']
 
 
 class finance_data(object):
-    sizes = {'tiny': (20,3,10,1),
-             'small': (100,10,30,2),
-             'normal': (500,20,100,3),
-             'big': (2000,30,500,5),
-             'huge': (10000,100,1000,10)}
+    sizes = {'tiny': (20,3,10,1), # positions = 20*100*3 = 30
+             'small': (100,10,30,2), # positions = 20*100*3 = 600
+             'normal': (500,20,100,3), # positions = 20*100*3 = 6,000
+             'big': (2000,30,200,5), # positions = 30*200*5 = 30,000
+             'huge': (10000,50,300,8)}# positions = 50*300*8 = 120,000
     
     def __init__(self,
                  size = 'normal',

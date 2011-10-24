@@ -1,7 +1,3 @@
-Development
-=======================
-* Test suite based on pulsar.
-
 Ver. 0.7.0 - Development
 ============================
 * A superset of the :ref:`0.6 series <vers06>` with tons of new features manly geared

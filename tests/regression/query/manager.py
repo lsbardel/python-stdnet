@@ -1,21 +1,17 @@
 import random
 
 import stdnet
-from stdnet import test
-from examples.models import SimpleModel
+from stdnet import orm, test
 from stdnet.utils import populate
+
+from examples.models import SimpleModel
 
 LEN = 100
 names = populate('string',LEN, min_len = 5, max_len = 20)
 
 
 class TestManager(test.TestCase):
-    
-    def register(self):
-        self.orm.register(SimpleModel)
-    
-    def unregister(self):
-        self.orm.unregister(SimpleModel)
+    model = SimpleModel
     
     def fill(self):
         with SimpleModel.transaction() as t:

@@ -31,7 +31,7 @@ class ScriptingCommandsTestCase(BaseTest):
         self.assertFalse(c.exists('bla1'))
         self.assertFalse(c.exists('bla2'))
         self.assertFalse(c.exists('blaaaaaaaaaaaaaa'))
-        self.assertEqual(c.get('xxxx'),'moon')
+        self.assertEqual(c.get('xxxx'),b'moon')
         N = c.delpattern('x*')
         self.assertEqual(N,2)
         

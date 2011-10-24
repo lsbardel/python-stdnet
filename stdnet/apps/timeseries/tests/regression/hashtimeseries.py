@@ -20,7 +20,7 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestHashTimeSeries(test.TestModelBase,test.TestMultiFieldMixin):
+class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
     model   = HashTimeSeries
     mkdate  = datetime
     

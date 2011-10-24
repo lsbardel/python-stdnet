@@ -1,11 +1,12 @@
 from stdnet import test
 from stdnet.utils import populate, zip
 
-from examples.models import Instrument, Instrument2
+from examples.models import Instrument
 from examples.data import FinanceTest
 
 
 class TestFilter(FinanceTest):
+    model = Instrument
     
     def setUp(self):
         self.data.create()
@@ -124,6 +125,3 @@ class TestFilter(FinanceTest):
         for inst in insts:
             self.assertEqual(inst.type,'bond option')
 
-
-#class TestFilter2(TestFilter):
-#    model = Instrument2

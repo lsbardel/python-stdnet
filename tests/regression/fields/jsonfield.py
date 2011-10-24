@@ -123,7 +123,7 @@ The `as_string` atttribute is set to ``False``.'''
         return self.model(name = 'bla', data = data)
         
     def testMeta(self):
-        field = self.meta.dfields['data']
+        field = self.model._meta.dfields['data']
         self.assertFalse(field.as_string)
         
     def testMake(self):

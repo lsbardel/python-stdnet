@@ -22,7 +22,7 @@ class FuzzyTest(test.TestCase):
         d2 = populate('string',size,min_len=min_len,max_len=max_len)
         return k,g,d1,d2
     
-    def testSetBig(self):
+    def __testSetBig(self):
         data = self.fuzzydata(1000,10000,100000)
         with SimpleModel.transaction() as t:
             for c,g,d1,d2 in zip(*data):

@@ -5,7 +5,7 @@ import logging
 from inspect import isclass
 
 from stdnet import orm
-from stdnet.utils import to_string
+from stdnet.utils import to_string, gen_unique_id
 
 
 TextTestRunner = unittest.TextTestRunner
@@ -40,18 +40,24 @@ class TestCase(unittest.TestCase):
     def register(self):
         pass
     
-    def unregister(self):
-        pass
+    def _pre_setup(self):
+        self.register()
+        for model in orm.registered_models():
+            model._meta.keyprefix = 'test-'+gen_unique_id()+'.'
+        
+    def _post_teardown(self):
+        for model in orm.registered_models():
+            model.flush()
+        #orm.clearall()
+        orm.unregister()
     
     def __call__(self, result=None):
         """Wrapper around default __call__ method
 to perform cleanup, registration and unregistration.
         """
-        self.register()
-        orm.clearall()
+        self._pre_setup()
         super(TestCase, self).__call__(result)
-        orm.clearall()
-        self.unregister()
+        self._post_teardown()
         
     def cleankeys(self, meta):
         tmp = meta.basekey('tmp')

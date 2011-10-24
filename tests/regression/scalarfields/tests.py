@@ -163,14 +163,9 @@ class TestBoolField(test.TestModelBase):
         self.assertEqual(d.ok,True)
           
     
-class TestByteField(test.TestCase):
+class TestByteField(test.TestModelBase):
+    model = SimpleModel
     
-    def setUp(self):
-        self.orm.register(SimpleModel)
-    
-    def unregister(self):
-        self.orm.unregister(SimpleModel)
-        
     def testMetaData(self):
         field = SimpleModel._meta.dfields['somebytes']
         
@@ -193,14 +188,9 @@ class TestByteField(test.TestCase):
         self.assertEqual(v.somebytes,b)
 
 
-class TestPickleObjectField(test.TestCase):
+class TestPickleObjectField(test.TestModelBase):
+    model = Environment
     
-    def setUp(self):
-        self.orm.register(Environment)
-    
-    def unregister(self):
-        self.orm.unregister(Environment)
-        
     def testOkObject(self):
         v = Environment(data = ['ciao','pippo']).save()
         self.assertEqual(v.data, ['ciao','pippo'])

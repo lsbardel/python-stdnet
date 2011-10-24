@@ -2,19 +2,14 @@ import sys
 import copy
 import hashlib
 from collections import namedtuple
-from uuid import uuid4
 
-from stdnet.utils import zip, to_bytestring, to_string
+from stdnet.utils import zip, to_bytestring, to_string, gen_unique_id
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
 from .globals import hashmodel, JSPLITTER
 from .query import UnregisteredManager
 from .fields import Field, AutoField
-
-
-def gen_unique_id():
-    return str(uuid4())[:8]
 
 
 def get_fields(bases, attrs):
@@ -193,10 +188,10 @@ For example::
         return '{0}:{1}'.format(key,postfix) if postfix else key
     
     def tempkey(self, name = None):
-        return self.basekey('tmp',name or str(uuid4())[:8])
+        return self.basekey('tmp',name or gen_unique_id())
     
     def autoid(self):
-        '''The id for autoincrements ids'''
+        '''The id for auto-increments ids'''
         return self.basekey('ids')
     
     def is_valid(self, instance):

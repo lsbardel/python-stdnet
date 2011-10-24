@@ -1,6 +1,7 @@
 import os
 import sys
 from itertools import chain
+from uuid import uuid4
 
 from stdnet.lib.py2py3 import *
 
@@ -14,6 +15,10 @@ else:
 from .jsontools import *
 from .populate import populate
 from .dates import *
+
+
+def gen_unique_id():
+    return str(uuid4())[:8]
 
 
 def _flat2d_gen(iterable):

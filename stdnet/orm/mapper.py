@@ -11,10 +11,12 @@ from .base import StdNetType, AlreadyRegistered
 
 logger = logging.getLogger('stdnet.mapper')
 
+
 __all__ = ['clearall',
            'flush_models',
            'register',
            'unregister',
+           'registered_models',
            'model_iterator',
            'register_applications',
            'register_application_models',
@@ -125,10 +127,22 @@ on the same redis instance).'''
     return str(meta.cursor)
 
 
-def unregister(model):
-    global _GLOBAL_REGISTRY 
-    _GLOBAL_REGISTRY.pop(model,None)
-    model._meta.cursor = None
+def unregister(model = None):
+    '''Unregister a *model* if provided, otherwise it unregister all
+registered models.'''
+    global _GLOBAL_REGISTRY
+    if model is not None:
+        _GLOBAL_REGISTRY.pop(model,None)
+        model._meta.cursor = None
+    else:
+        for model in _GLOBAL_REGISTRY:
+            model._meta.cursor = None
+        _GLOBAL_REGISTRY.clear()
+        
+
+def registered_models():
+    '''Iterator over registered models'''
+    return (m for m in _GLOBAL_REGISTRY)
     
     
 def model_iterator(application):

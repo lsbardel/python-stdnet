@@ -1,3 +1,4 @@
+'''Delete objects and queries'''
 import datetime
 from random import randint
 

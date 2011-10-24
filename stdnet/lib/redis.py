@@ -17,6 +17,8 @@ from stdnet.dispatch import Signal
 from .connection import ConnectionPool
 from .exceptions import *
 
+from . import scripts
+
 
 tuple_list = (tuple,list)
 
@@ -285,6 +287,10 @@ between the client and server.
         "Delete one or more keys specified by ``names``"
         return self.execute_command('DEL', *names)
     __delitem__ = delete
+    
+    def delpattern(self, pattern):
+        "delete all keys matching *pattern*."
+        return self.execute_command('EVAL', scripts.delpattern, 1, pattern)
 
     def flushall(self):
         "Delete all keys in all databases on the current host"

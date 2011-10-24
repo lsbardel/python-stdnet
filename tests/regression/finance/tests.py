@@ -38,7 +38,7 @@ users      = populate('string', NUM_USERS, min_len = 8, max_len = 14)
 view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
 
 
-class BaseFinance(test.TestModelBase):
+class BaseFinance(test.TestCase):
     models = (Instrument,Fund,Position,PortfolioView,UserDefaultView)
     model = Instrument
     

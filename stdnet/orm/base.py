@@ -110,6 +110,7 @@ mapper.
     The primary key :class:`stdnet.orm.Field`
 '''
     searchengine = None
+    connection_string = None
     
     def __init__(self, model, fields,
                  abstract = False, keyprefix = None,
@@ -238,15 +239,17 @@ the model table'''
         return self.cursor.hash(self.basekey(),self.timeout,
                                 transaction=transaction)
     
-    def flush(self, count = None):
+    def flush(self):
         '''Fast method for clearing the whole table including related tables'''
+        N = 0
         for rel in self.related.values():
             rmeta = rel._meta
             # This avoid circular reference
             if rmeta is not self:
-                rmeta.flush(count)
+                N += rmeta.flush()
         if self.cursor:
-            self.cursor.flush(self, count)
+            N += self.cursor.flush(self)
+        return N
 
     def database(self):
         return self.cursor

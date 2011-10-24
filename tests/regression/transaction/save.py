@@ -18,7 +18,7 @@ class TransactionReceiver(object):
             self.requests[raw_command] = kwargs
         
 
-class TestTransactions(test.TestModelBase):
+class TestTransactions(test.TestCase):
     model = SimpleModel
         
     def testSave(self):
@@ -84,7 +84,7 @@ class TestTransactions(test.TestModelBase):
         self.assertEqual(len(r.requests),1)
         
         
-class TestMultiFieldTransaction(test.TestModelBase):
+class TestMultiFieldTransaction(test.TestCase):
     model = Dictionary
     
     def make(self):

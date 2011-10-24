@@ -10,7 +10,7 @@ from pulsar.apps.test.plugins import bench
 
 class TestServer(TestOptionPlugin):
     name = "server"
-    cli = ["-s", "--server"]
+    flags = ["-s", "--server"]
     desc = 'Backend server where to run tests.'
     default = settings.DEFAULT_BACKEND
     

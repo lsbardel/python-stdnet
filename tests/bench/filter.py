@@ -9,7 +9,7 @@ ccys_types  = ['EUR','GBP','AUD','USD','CHF','JPY']
 insts_types = ['equity','bond','future','cash','option']
 
 
-class FilterTest(test.TestModelBase):
+class QueryTest(test.TestModelBase):
     __number__ = 10
     model = Instrument
     sizes = {'tiny': 100,
@@ -31,7 +31,12 @@ class FilterTest(test.TestModelBase):
         f = Instrument.objects.filter(ccy = 'EUR')
         n = f.count()
 
-    def testList(self):
+    def testSimpleFilter(self):
         f = Instrument.objects.filter(ccy = 'EUR')
+        v = list(f)
+        f.count()
+        
+    def testInFilter(self):
+        f = Instrument.objects.filter(ccy__in = ('JPY','USD'))
         v = list(f)
         f.count()

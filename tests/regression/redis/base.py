@@ -1,3 +1,4 @@
+__test__ = False
 from stdnet.lib import redis
 from stdnet import test, getdb
 from stdnet.conf import settings

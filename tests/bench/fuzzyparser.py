@@ -10,6 +10,11 @@ groups = lambda N : populate('choice',N,
                                           'running','cycling'])
 
 class FuzzyTest(test.TestCase):
+    sizes = {'tiny': 100,
+             'small': 500,
+             'normal': 1000,
+             'big': 5000,
+             'huge': 10000}
     
     def register(self):
         self.orm.register(SimpleModel)

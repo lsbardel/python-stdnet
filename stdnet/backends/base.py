@@ -319,7 +319,7 @@ If the key does not exist, raise a ValueError exception."""
     def _set_keys(self):
         raise NotImplementedError
     
-    def flush(self, meta, count = None):
+    def flush(self, meta):
         raise NotImplementedError
             
     # DATASTRUCTURES

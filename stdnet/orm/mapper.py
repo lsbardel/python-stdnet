@@ -118,6 +118,7 @@ on the same redis instance).'''
     #if meta.cursor:
     #    meta.cursor.disconnect()
     meta.cursor = getdb(backend)
+    meta.connection_string = backend 
     params = meta.cursor.params
     meta.keyprefix = keyprefix if keyprefix is not None else\
                         params.get('prefix',settings.DEFAULT_KEYPREFIX)

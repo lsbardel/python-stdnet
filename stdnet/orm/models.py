@@ -246,12 +246,12 @@ is however available in other keys (indices and other backend containers).'''
         return self._meta.cursor.instance_keys(self)
     
     @classmethod
-    def flush(cls, count = None):
+    def flush(cls):
         '''Flush the model table and all related tables including all indexes.
 Calling flush will erase everything about the model
 instances in the remote server. If count is a dictionary, the method
 will enumerate the number of object to delete. without deleting them.'''
-        return cls._meta.flush(count)
+        return cls._meta.flush()
     
     @classmethod
     def transaction(cls, *models, **kwargs):

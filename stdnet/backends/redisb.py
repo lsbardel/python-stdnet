@@ -394,9 +394,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         indices = obj.indices
         meta = obj._meta
         pipe = transaction.cursor
-        keys = self.redispy.keys(meta.tempkey('*'))
-        if keys:
-            pipe.delete(*keys)
+        pipe.delpattern(meta.tempkey('*'))
             
         if indices:
             obid = obj.id
@@ -424,14 +422,11 @@ class BackendDataServer(stdnet.BackendDataServer):
             if fids:
                 transaction.cursor.delete(*fids)
     
-    def flush(self, meta, count):
+    def flush(self, meta):
         '''Flush all model keys from the database'''
-        #TODO: this should become a Lua script
-        if count is not None:
-            count[str(meta)] = meta.table().size()
-        keys = self.keys('{0}*'.format(meta.basekey()))
-        if keys:
-            self.delete(*keys)
+        # The scripting delete
+        pattern = '{0}*'.format(meta.basekey())
+        return self.redispy.delpattern(pattern)
             
     def instance_keys(self, obj):
         meta = obj._meta

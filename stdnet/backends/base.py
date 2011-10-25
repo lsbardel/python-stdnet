@@ -212,18 +212,28 @@ Called to clear a model instance.
             
         return 1
     
-    def make_objects(self, meta, ids, data, loadedfields = None):
+    def make_objects(self, meta, ids, data = None, loadedfields = None):
         make_object = meta.maker
-        for id,fields in zip(ids,data):
-            obj = make_object()
-            if loadedfields:
-                fields = dict(zip(loadedfields,fields))
-            else:
-                fields = dict(fields)
-            fields['__dbdata__'] = deepcopy(fields)
-            obj.__setstate__((id,fields))
-            obj._loadedfields = loadedfields
-            yield obj
+        if data is None:
+            for id in ids:
+                obj = make_object()
+                fields = {'__dbdata__': {'id':id}}
+                obj.__setstate__((id,fields))
+                obj._loadedfields = None
+                yield obj
+        else:
+            for id,fields in zip(ids,data):
+                obj = make_object()
+                if loadedfields:
+                    fields = dict(zip(loadedfields,fields))
+                else:
+                    fields = dict(fields)
+                db = deepcopy(fields)
+                db['id'] = id
+                fields['__dbdata__'] = db
+                obj.__setstate__((id,fields))
+                obj._loadedfields = loadedfields
+                yield obj
         
     def set(self, id, value, timeout = None):
         timeout = timeout or 0

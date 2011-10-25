@@ -4,7 +4,7 @@ from stdnet.utils import zip
 from examples.models import SimpleModel
 
 
-class testLoadOnly(test.TestCase):
+class LoadOnly(test.TestCase):
     model = SimpleModel
     
     def setUp(self):
@@ -13,6 +13,14 @@ class testLoadOnly(test.TestCase):
         self.model(code = 'c', group = 'group1', description = 'blabla').save()
         self.model(code = 'd', group = 'group3', description = 'blabla').save()
         self.model(code = 'e', group = 'group1', description = 'blabla').save()
+        
+    def test_idonly(self):
+        qs = self.model.objects.all().load_only('id')
+        for m in qs:
+            self.assertEqual(m._loadedfields,None)
+            self.assertFalse(m.code)
+            self.assertFalse(m.group)
+            self.assertFalse(m.description)
         
     def testSimple(self):
         qs = self.model.objects.all().load_only('code')

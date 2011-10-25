@@ -287,20 +287,27 @@ different model) which has a *field* containing current model ids.'''
         # Load data
         if ids:
             bkey = self.meta.basekey
-            pipe = self.server.redispy.pipeline()
+            pipe = None
             fields = self.qs.fields or None
             if fields:
-                hmget = pipe.hmget
-                for id in ids:
-                    hmget(bkey(OBJ,to_string(id)),fields)
+                if 'id' in fields:
+                    fields = list(fields)
+                    fields.remove('id')
+                if fields:
+                    pipe = self.server.redispy.pipeline()
+                    hmget = pipe.hmget
+                    for id in ids:
+                        hmget(bkey(OBJ,to_string(id)),fields)
             else:
+                pipe = self.server.redispy.pipeline()
                 hgetall = pipe.hgetall
                 for id in ids:
                     hgetall(bkey(OBJ,to_string(id)))
-            result = list(self.server.make_objects(self.meta,
-                                                   ids,
-                                                   pipe.execute(),
-                                                   fields))
+            if pipe is not None:
+                result = self.server.make_objects(self.meta, ids,
+                                            pipe.execute(), fields)
+            else:
+                result = self.server.make_objects(self.meta, ids)
             return self.load_related(result)
         else:
             return ids

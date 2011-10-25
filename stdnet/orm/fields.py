@@ -620,8 +620,9 @@ which can be rather useful feature.
             raise FieldValueError(str(e))
     
     def loads(self, svalue):
-        svalue = to_string(svalue,self.charset)
-        return json.loads(svalue, object_hook = self.decoder_hook)
+        if svalue is not None:
+            svalue = to_string(svalue,self.charset)
+            return json.loads(svalue, object_hook = self.decoder_hook)
 
 
 class ByteField(CharField):

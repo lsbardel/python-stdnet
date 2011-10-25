@@ -1,3 +1,6 @@
+'''\
+A specialized test case class for stdnet
+'''
 import os
 import sys
 import unittest

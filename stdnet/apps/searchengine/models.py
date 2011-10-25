@@ -2,6 +2,7 @@
 Search Engine and Tagging models. Just two of them, one for storing Words and
 one for linking other objects to Words.
 '''
+__test__ = False
 from stdnet import orm
 from stdnet.utils import range, to_string
 

@@ -21,17 +21,30 @@ class Load(FinanceTest):
         
         
         
-class Save(FinanceTest):
+class SaveIdOnly(FinanceTest):
     
     def setUp(self):
         self.data.create()
         self.insts = list(Instrument.objects.all().load_only('id'))
         
-    def testSave(self):
+    def test_SaveNoIndex(self):
         for inst in self.insts:
+            inst.description = 'bla'
             inst.save()
             
-    def testSaveTransaction(self):
+    def test_SaveNoIndexTransaction(self):
         with transaction(Instrument) as t:
             for inst in self.insts:
+                inst.description = 'bla'
+                inst.save(t)
+    
+    def test_SaveIndex(self):
+        for inst in self.insts:
+            inst.name = 'bla'
+            inst.save()
+            
+    def test_SaveIndexTransaction(self):
+        with transaction(Instrument) as t:
+            for inst in self.insts:
+                inst.name = 'bla'
                 inst.save(t)

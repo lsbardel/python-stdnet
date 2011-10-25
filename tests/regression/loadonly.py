@@ -1,4 +1,4 @@
-from stdnet import test
+from stdnet import test, transaction
 from stdnet.utils import zip
 
 from examples.models import SimpleModel
@@ -17,24 +17,44 @@ class LoadOnly(test.TestCase):
     def test_idonly(self):
         qs = self.model.objects.all().load_only('id')
         for m in qs:
-            self.assertEqual(m._loadedfields,None)
-            self.assertFalse(m.code)
-            self.assertFalse(m.group)
+            self.assertEqual(m._loadedfields,())
+            self.assertEqual(tuple(m.loadedfields()),())
+            self.assertFalse(hasattr(m,'code'))
+            self.assertFalse(hasattr(m,'group'))
+            self.assertFalse(hasattr(m,'description'))
+            self.assertTrue('id' in m._dbdata)
+            self.assertEqual(int(m._dbdata['id']),m.id)
+            
+    def test_idonly_None(self):
+        qs = self.model.objects.all().load_only('id')
+        with transaction(self.model) as t:
+            for m in qs:
+                self.assertFalse(hasattr(m,'description'))
+                m.description = None
+                m.save(t)
+        # Check that description are empty
+        for m in self.model.objects.all().load_only('description'):
             self.assertFalse(m.description)
+            
+    def test_idonly_delete(self):
+        qs = self.model.objects.all().load_only('id')
+        qs.delete()
+        qs = self.model.objects.filter(group = 'group1')
+        self.assertEqual(qs.count(),0)
         
     def testSimple(self):
         qs = self.model.objects.all().load_only('code')
         for m in qs:
             self.assertEqual(m._loadedfields,('code',))
             self.assertTrue(m.code)
-            self.assertFalse(m.group)
-            self.assertFalse(m.description)
+            self.assertFalse(hasattr(m,'group'))
+            self.assertFalse(hasattr(m,'description'))
         qs = self.model.objects.all().load_only('code','group')
         for m in qs:
             self.assertEqual(m._loadedfields,('code','group'))
             self.assertTrue(m.code)
             self.assertTrue(m.group)
-            self.assertFalse(m.description)
+            self.assertFalse(hasattr(m,'description'))
             
     def testSave(self):
         original = [m.group for m in self.model.objects.all()]
@@ -49,7 +69,7 @@ class LoadOnly(test.TestCase):
         self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
         
     def testChangeNotLoaded(self):
-        '''We load an object with only one field nad modify a field not
+        '''We load an object with only one field and modify a field not
 loaded. The correct behavior should be to updated the field and indexes.'''
         original = [m.group for m in self.model.objects.all()]
         qs = self.model.objects.all().load_only('code')

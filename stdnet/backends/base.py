@@ -9,7 +9,12 @@ from .structures import Structure
 
 __all__ = ['BackendDataServer', 'BeckendQuery']
 
-
+def intid(id):
+    try:
+        return int(id)
+    except ValueError:
+        return id
+        
 class Keys(object):
     
     def __init__(self,id,timeout,pipeline):
@@ -161,31 +166,30 @@ Save or updated an instance of a model to the back-end database:
 :parameer transaction: optional transaction instance.
 
 Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
+        if not obj.is_valid():
+            raise FieldValueError(json.dumps(obj.errors))
+        
         commit = False
         if not transaction:
             commit = True
             transaction = obj.local_transaction()
-            
-        # Save the object in the back-end
-        if not obj.is_valid():
-            raise FieldValueError(json.dumps(obj.errors))
+        dbdata = obj._dbdata
+        idnew = True
         
-        # We are updating the object,
-        # therefore we need to clean up indexes first
-        if obj.id:
-            #TODO maybe we should cache the previous state so that we don't
-            # need to do to get the previous object
-            pobj = obj.__class__.objects.filter(id = obj.id)\
-                                .load_only(*obj.toload)
-            if pobj:
-                self._remove_indexes(pobj[0], transaction)
-        else:
+        # This is an object we got from the database
+        if  obj.id and 'id' in dbdata:
+            idnew = obj.id != dbdata['id']
+            if idnew:
+                raise ValueError('Id has changed from {0} to {1}.'\
+                                 .format(obj.id,dbdata['id']))
+        elif not obj.id:
             obj.id = obj._meta.pk.serialize(obj.id)
             
-        obj = self._save_object(obj, transaction)
-        
+        obj = self._save_object(obj, idnew, transaction)
         if commit:
             transaction.commit()
+            obj._dbdata.update(obj.cleaned_data)
+            obj._dbdata['id'] = obj.id
         
         return obj
         
@@ -199,12 +203,14 @@ Called to clear a model instance.
 :parameter multi_field: if ``True`` the multifield ids (if any)
                         will be removed. Default ``True``.
         '''
+        if 'id' not in obj._dbdata:
+            return 0
+        
         commit = False
         if not transaction:
             commit = True
             transaction = self.transaction()
         
-        self._remove_indexes(obj, transaction)
         self._delete_object(obj, transaction)
         
         if commit:
@@ -213,26 +219,30 @@ Called to clear a model instance.
         return 1
     
     def make_objects(self, meta, ids, data = None, loadedfields = None):
+        '''Generator of :class:`stdnet.orm.StdModel` instances with data
+from database.
+
+:parameter meta: instance of model :class:`stdnet.orm.base.Metaclass`.
+:parameter ids: Iterator over ids.
+'''
         make_object = meta.maker
         if data is None:
             for id in ids:
                 obj = make_object()
-                fields = {'__dbdata__': {'id':id}}
-                obj.__setstate__((id,fields))
-                obj._loadedfields = None
+                obj.__setstate__((id,(),{'__dbdata__': {}}))
+                obj._dbdata['id'] = obj.id
                 yield obj
         else:
+            loadedfields = tuple(loadedfields) if loadedfields else None 
             for id,fields in zip(ids,data):
                 obj = make_object()
                 if loadedfields:
                     fields = dict(zip(loadedfields,fields))
                 else:
                     fields = dict(fields)
-                db = deepcopy(fields)
-                db['id'] = id
-                fields['__dbdata__'] = db
-                obj.__setstate__((id,fields))
-                obj._loadedfields = loadedfields
+                fields['__dbdata__'] = deepcopy(fields)
+                obj.__setstate__((id,loadedfields,fields))
+                obj._dbdata['id'] = obj.id
                 yield obj
         
     def set(self, id, value, timeout = None):
@@ -308,7 +318,7 @@ If the key does not exist, raise a ValueError exception."""
         """Remove *all* values from the database at once."""
         raise NotImplementedError
     
-    def _save_object(self, obj, transaction):
+    def _save_object(self, obj, idchange, transaction):
         raise NotImplementedError
     
     def _remove_indexes(self, obj, transaction):

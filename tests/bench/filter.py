@@ -9,7 +9,7 @@ ccys_types  = ['EUR','GBP','AUD','USD','CHF','JPY']
 insts_types = ['equity','bond','future','cash','option']
 
 
-class QueryTest(test.TestModelBase):
+class QueryTest(test.TestCase):
     __number__ = 10
     model = Instrument
     sizes = {'tiny': 100,

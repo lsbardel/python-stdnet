@@ -24,8 +24,7 @@ if __name__ == '__main__':
     p.add(module = 'pulsar', up = 1, down = ('pulsar',))
     
     suite = TestSuite(description = 'Stdnet Asynchronous test suite',
-                      modules = ('tests',
-                                 ('stdnet.apps','tests')),
+                      modules = ('tests','stdnet.apps'),
                       plugins = (TestServer(),bench.BenchMark(),)
                       )
     

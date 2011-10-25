@@ -1,7 +1,7 @@
 import copy
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, UnicodeMixin
+from stdnet.utils import zip, UnicodeMixin, JSPLITTER
 from stdnet import dispatch, transaction, attr_local_transaction
 
 from .base import StdNetType, FakeModelType
@@ -75,7 +75,7 @@ the :attr:`StdModel._meta` attribute.
 '''
     is_base_class = True
     _loadedfields = None
-    _dbdata = None
+    _dbdata = {}
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
@@ -89,29 +89,38 @@ the :attr:`StdModel._meta` attribute.
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
 
-    @property
     def loadedfields(self):
-        '''Tuple of fields loaded when the instance was obtained from the
-database. If ``None`` all fields are available.'''
-        return self._loadedfields
+        '''Generator of fields loaded from database'''
+        if self._loadedfields is None:
+            for field in self._meta.scalarfields:
+                yield field
+        else:
+            fields = self._meta.dfields
+            processed = set()
+            for name in self._loadedfields:
+                if name in processed:
+                    continue
+                if name in fields:
+                    processed.add(name)
+                    yield fields[name]
+                else:
+                    name = name.split(JSPLITTER)[0]
+                    if name in fields and name not in processed:
+                        field = fields[name]
+                        if field.type == 'json object':
+                            processed.add(name)
+                            yield field
     
-    def loadedfieldsvalues(self):
+    def fieldvalue_pairs(self):
         '''Generator of fields,values pairs. Fields correspond to
 the ones which have been loaded (usually all of them) or
 not loaded but modified.
 Check the :ref:`load_only <performance-loadonly>` query function for more
 details.'''
-        loadedfields = self.loadedfields
-        if loadedfields:
-            nl = []
-            for field in self._meta.scalarfields:
-                name = field.attname
-                value = getattr(self,name,None)
-                if name in loadedfields or value:
-                    yield field,value
-        else:
-            for field in self._meta.scalarfields:
-                yield field,getattr(self,field.attname,None)
+        for field in self._meta.scalarfields:
+            name = field.attname
+            if hasattr(self,name):
+                yield field,getattr(self,name)
     
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
@@ -208,8 +217,7 @@ If the instance is not available (it does not have an id) and
     def todict(self):
         '''Return a dictionary of serialized scalar field for pickling'''
         odict = {}
-        for field in self._meta.scalarfields:
-            value = getattr(self,field.attname,None)
+        for field,value in self.fieldvalue_pairs():
             value = field.serialize(value)
             if value:
                 odict[field.name] = value
@@ -220,8 +228,7 @@ If the instance is not available (it does not have an id) and
     def _to_json(self):
         if self.id:
             yield 'id',self.id
-            for field in self._meta.scalarfields:
-                value = getattr(self,field.attname,None)
+            for field,value in self.fieldvalue_pairs():
                 value = field.json_serialize(value)
                 if value is not None:
                     yield field.name,value
@@ -261,17 +268,19 @@ will enumerate the number of object to delete. without deleting them.'''
     # PICKLING SUPPORT
     
     def __getstate__(self):
-        return (self.id, self.todict())
+        return (self.id, self._loadedfields, self.todict())
     
     def __setstate__(self, state):
-        id,data = state
+        id,loadedfields,data = state
         meta = self._meta
         field = meta.pk
         setattr(self,'id',field.to_python(id))
-        for field in meta.scalarfields:
+        self._loadedfields = loadedfields
+        fields = meta.dfields
+        for field in self.loadedfields():
             value = field.value_from_data(self,data)
             setattr(self,field.attname,field.to_python(value))
-        self._dbdata = data.get('__dbdata__')
+        self._dbdata = data.get('__dbdata__',{})
     
 
 def from_uuid(uuid):

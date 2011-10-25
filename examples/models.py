@@ -41,6 +41,7 @@ class Base(orm.StdModel):
 
 class Instrument(Base):
     type = orm.SymbolField()
+    description = orm.CharField()
 
 
 class Instrument2(Base):

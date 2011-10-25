@@ -202,11 +202,15 @@ Return ``True`` if the instance is ready to be saved to database.'''
         v = {}
         setattr(instance,'_validation',v)
         data = v['data'] = {}
-        indexes = v['indices'] = []
         errors = v['errors'] = {}
         toload = v['toload'] = []
+        indices = v['indices'] = []
+        id = instance.id
+        dbdata = instance._dbdata
+        idnew = not (id and id == dbdata.get('id'))
+        
         #Loop over scalar fields first
-        for field,value in instance.loadedfieldsvalues():
+        for field,value in instance.fieldvalue_pairs():
             name = field.attname
             if value is None:
                 value = field.get_default()
@@ -225,9 +229,20 @@ Return ``True`` if the instance is ready to be saved to database.'''
                     else:
                         if svalue is not None:
                             data[name] = svalue
+                        # if the field is an index add it
                         if field.index:
-                            indexes.append((field,svalue))
-                            toload.append(name)
+                            if idnew:
+                                indices.append((field,svalue,None))
+                            else:
+                                if field.name in dbdata:
+                                    oldvalue = dbdata[field.name]
+                                    if svalue != oldvalue:
+                                        indices.append((field,svalue,oldvalue))
+                                else:
+                                    # The field was not loaded
+                                    toload.append(field.name)
+                                    indices.append((field,svalue,None))
+                                
         return len(errors) == 0
                 
     def table(self, transaction = None):

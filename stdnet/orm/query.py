@@ -2,7 +2,7 @@ from copy import copy
 from collections import namedtuple
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, to_bytestring
+from stdnet.utils import zip, to_bytestring, JSPLITTER
 from stdnet import transaction as get_transaction
 
 
@@ -178,9 +178,20 @@ to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
         dfields = self._meta.dfields
-        self.fields = tuple((field for field in fields if field in dfields))
+        self.fields = tuple(set(self._load_only(fields)))
         return self
     
+    def _load_only(self, fields):
+        dfields = self._meta.dfields
+        for name in fields:
+            if name in dfields:
+                yield name
+            else:
+                # It may be a JSONFiled
+                na = name.split(JSPLITTER)[0]
+                if na in dfields and dfields[na].type == 'json object':
+                    yield name
+            
     def get(self):
         items = self.aslist()
         if items:

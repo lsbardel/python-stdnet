@@ -6,6 +6,7 @@ from stdnet.backends.structures import structredis
 from stdnet.lib import redis, connection
 
 MIN_FLOAT =-1.e99
+EMPTY_DICT = {}
 
 OBJ = 'obj'
 UNI = 'uni'
@@ -45,7 +46,7 @@ class add2set(object):
         self.pipe = pipe
         self.meta = meta
     
-    def __call__(self, key, id, score = None, obj = None):
+    def __call__(self, key, id, score = None, obj = None, idsave = True):
         ordering = self.meta.ordering
         if ordering:
             if obj is not None:
@@ -55,8 +56,9 @@ class add2set(object):
                 # A two way trip here.
                 idset = self.meta.basekey('id')
                 score = self.server.redispy.zscore(idset,id)
-            self.pipe.zadd(key, score, id)
-        else:
+            if idsave:
+                self.pipe.zadd(key, score, id)
+        elif idsave:
             self.pipe.sadd(key, id)
         return score
         
@@ -373,61 +375,91 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _get(self, id):
         return self.execute_command('GET', id)
+    
+    def _loadfields(self, obj, toload):
+        if toload:
+            fields = self.redispy.hmget(obj._meta.basekey(OBJ,obj.id), toload)
+            return dict(zip(toload,fields))
+        else:
+            return EMPTY_DICT
 
-    def _save_object(self, obj, transaction):        
+    def _save_object(self, obj, newid, transaction):        
         # Add object data to the model hash table
         pipe = transaction.cursor
-        meta = obj._meta
         obid = obj.id
+        meta = obj._meta
         bkey = meta.basekey
         data = obj.cleaned_data
+        indices = obj.indices
         if data:
             pipe.hmset(bkey(OBJ,obid),data)
         #hash.addnx(objid, data)
         
-        add = add2set(self,pipe,meta)
-        score = add(bkey('id'), obid, obj=obj)
-        
-        # Create indexes
-        for field,value in obj.indices:
-            if field.unique:
-                pipe.hset(bkey(UNI,field.name),value,obid)
-            else:
-                add(bkey(IDX,field.name,value), obid, score = score)
+        if newid or indices:
+            add = add2set(self,pipe,meta)
+            score = add(bkey('id'), obid, obj=obj, idsave=newid)
+            fields = self._loadfields(obj,obj.toload)
+            
+        if indices:
+            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
+            if not newid:
+                pipe.delpattern(meta.tempkey('*'))
+            
+            # Create indexes
+            for field,value,oldvalue in indices:
+                name = field.name
+                if field.unique:
+                    name = bkey(UNI,name)
+                    if not newid:
+                        oldvalue = fields.get(field.name,oldvalue)
+                        pipe.hdel(name, oldvalue)
+                    pipe.hset(name, value, obid)
+                else:
+                    if not newid:
+                        oldvalue = fields.get(field.name,oldvalue)
+                        rem(bkey(IDX,name,oldvalue), obid)
+                    add(bkey(IDX,name,value), obid, score = score)
                         
         return obj
     
-    def _remove_indexes(self, obj, transaction):
-        indices = obj.indices
-        meta = obj._meta
-        pipe = transaction.cursor
-        pipe.delpattern(meta.tempkey('*'))
-            
-        if indices:
-            obid = obj.id
-            bkey = meta.basekey
-            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')            
-            for field,value in indices:
-                if field.unique:
-                    pipe.hdel(bkey(UNI,field.name),value)
-                else:
-                    rem(bkey(IDX,field.name,value), obid)
-    
     def _delete_object(self, obj, transaction):
+        dbdata = obj._dbdata
+        id = dbdata['id']
         # Check for multifields and remove them
         meta = obj._meta
+        bkey = meta.basekey
         pipe = transaction.cursor
         rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
         #remove the hash table
-        pipe.delete(meta.basekey(OBJ,obj.id))
+        pipe.delete(meta.basekey(OBJ,id))
         #remove the id from set
-        rem(meta.basekey('id'), obj.id)
+        rem(bkey('id'), id)
         # Remove multifields
         mfs = obj._meta.multifields
         if mfs:
             fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
             if fids:
                 transaction.cursor.delete(*fids)
+        # Remove indices
+        if meta.indices:
+            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
+            toload = []
+            for field in meta.indices:
+                name = field.name
+                if name not in dbdata:
+                    toload.append(name)
+                else:
+                    if field.unique:
+                        pipe.hdel(bkey(UNI,name), dbdata[name])
+                    else:
+                        rem(bkey(IDX,name,dbdata[name]), id)
+            fields = self._loadfields(obj,toload)
+            for name,value in iteritems(fields):
+                field = meta.dfields[name]
+                if field.unique:
+                    pipe.hdel(bkey(UNI,name), value)
+                else:
+                    rem(bkey(IDX,name,value), id)
     
     def flush(self, meta):
         '''Flush all model keys from the database'''

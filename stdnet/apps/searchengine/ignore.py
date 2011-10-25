@@ -1,4 +1,4 @@
-
+__test__ = False
 # from
 # http://www.textfixer.com/resources/common-english-words.txt
 STOP_WORDS = set('''a,able,about,across,after,all,almost,also,am,among,an,and,\

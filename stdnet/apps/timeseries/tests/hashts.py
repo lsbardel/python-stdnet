@@ -4,8 +4,8 @@ from random import uniform
 from stdnet import test, orm, transaction
 from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
-from stdnet.apps.timeseries.tests.models import HashTimeSeries,\
-                                                 DateHashTimeSeries
+                             
+from .models import HashTimeSeries, DateHashTimeSeries
 
 
 NUM_DATES = 300

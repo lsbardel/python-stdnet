@@ -1,14 +1,15 @@
 from datetime import date, datetime
 
 from stdnet.utils import todate
-from stdnet.apps.timeseries.tests.models import TimeSeries, DateTimeSeries
-from stdnet.apps.timeseries.tests.regression import hashtimeseries
 
-testdata  = hashtimeseries.testdata
-testdata2 = hashtimeseries.testdata2
+from .models import TimeSeries, DateTimeSeries
+from . import hashts
+
+testdata  = hashts.testdata
+testdata2 = hashts.testdata2
 
 
-class TestDateTimeSeriesTS(hashtimeseries.TestHashTimeSeries):
+class TestDateTimeSeriesTS(hashts.TestHashTimeSeries):
     tag         = 'ts'
     default_run = False
     model       = TimeSeries

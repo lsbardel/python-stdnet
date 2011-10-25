@@ -4,9 +4,9 @@ from stdnet.utils.populate import populate
 from stdnet.apps.searchengine import PUNCTUATION_CHARS, Word, WordItem,\
                                         AutoComplete, SearchEngine
 
-from stdnet.apps.searchengine.tests.testsearch.models import Item
-
+from .testsearch.models import Item
 from .basicwords import basic_english_words
+from . import regression
 
 
 def text_gen(N):
@@ -34,13 +34,8 @@ def index(engine):
         engine.index_item(item,skipremove=True)
         
 
-class SearchEngineTest(test.TestCase):
-    
-    def register(self):
-        self.engine = SearchEngine(autocomplete = False)
-        self.orm.register(Word)
-        self.orm.register(Item)
-        self.orm.register(WordItem)
+class SearchEngineTest(regression.TestCase):
+    autocomplete = False
         
     def testSmall(self):
         '''Make 100 items with 200 text words each'''

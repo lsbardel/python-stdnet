@@ -75,9 +75,9 @@ the :attr:`StdModel._meta` attribute.
 '''
     is_base_class = True
     _loadedfields = None
-    _dbdata = {}
     
     def __init__(self, **kwargs):
+        self._dbdata = {}
         for field in self._meta.scalarfields:
             name = field.name
             value = kwargs.pop(name,None)

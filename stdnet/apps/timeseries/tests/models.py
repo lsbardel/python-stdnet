@@ -1,3 +1,4 @@
+__test__ = False
 from stdnet import orm
 from stdnet.utils import encoders
 

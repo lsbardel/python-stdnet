@@ -1,22 +1,15 @@
 import inspect
 
-from stdnet import test
+from stdnet import test, orm
 from stdnet.utils import populate, pickle
 from stdnet.exceptions import QuerySetError
 from stdnet.orm import model_to_dict, model_iterator
 from stdnet.orm.base import StdNetType
 
-from examples.models import Instrument, Fund, Position
+from examples.data import FinanceTest, Instrument, Fund, Position
 
 
-class TestInspectionAndComparison(test.TestCase):
-    
-    def setUp(self):
-        '''Create Instruments and Funds'''
-        orm = self.orm
-        orm.register(Instrument)
-        orm.register(Fund)
-        orm.register(Position)
+class TestInspectionAndComparison(FinanceTest):
         
     def testSimple(self):
         d = model_to_dict(Instrument)
@@ -65,11 +58,7 @@ class TestInspectionAndComparison(test.TestCase):
 
 
 class PickleSupport(test.TestCase):
-    
-    def setUp(self):
-        '''Create Instruments and Funds'''
-        orm = self.orm
-        orm.register(Instrument)
+    model = Instrument
         
     def testSimple(self):
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()

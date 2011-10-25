@@ -1,3 +1,4 @@
+__benchmark__ = True
 from datetime import datetime, date
 
 from stdnet import test
@@ -16,7 +17,7 @@ alldata2  = zip(dates2,values)
 testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
-class UpdateTimeSerie(test.BenchMark):
+class UpdateTimeSerie(test.TestCase):
     model = TimeSeries
     number = 100
     tag    = 'ts'

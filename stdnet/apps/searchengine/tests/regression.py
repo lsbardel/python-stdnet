@@ -8,7 +8,6 @@ from stdnet.apps.searchengine.models import Word, WordItem, AutoComplete
 from stdnet.utils import populate
 
 from .basicwords import basic_english_words
-
 from .testsearch.models import Item, RelatedItem
 
 
@@ -80,23 +79,15 @@ just registration and some utility functions. All searchengine tests
 below will derive from this class.'''
     metaphone = True
     autocomplete = None
+    stemming = True
+    models = (AutoComplete,Word,WordItem,Item,RelatedItem)
         
     def register(self):
+        super(TestCase,self).register()
         self.engine = SearchEngine(metaphone = self.metaphone,
+                                   stemming = self.stemming,
                                    autocomplete = self.autocomplete)
-        self.orm.register(AutoComplete)
-        self.orm.register(Word)
-        self.orm.register(WordItem)
-        self.orm.register(Item)
-        self.orm.register(RelatedItem)
         self.engine.register(Item,('related',))
-    
-    def unregister(self):
-        self.orm.unregister(AutoComplete)
-        self.orm.unregister(Word)
-        self.orm.unregister(WordItem)
-        self.orm.unregister(Item)
-        self.orm.unregister(RelatedItem)
     
     def simpleadd(self,name='python',counter=10,content=None,related=None):
         engine = self.engine

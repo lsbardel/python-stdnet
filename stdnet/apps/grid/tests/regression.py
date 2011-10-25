@@ -23,7 +23,7 @@ def timeit(f, *args, **kwargs):
     return v,t
 
 
-class TestQueue(test.TestModelBase):
+class TestQueue(test.TestCase):
     model = grid.Queue
     
     def setUp(self):
@@ -69,7 +69,7 @@ class TestQueue(test.TestModelBase):
         t2.join()
         
         
-class TestTaskQueue(test.TestModelBase):
+class TestTaskQueue(test.TestCase):
     models = (TaskQueue,Task)
     
     def setUp(self):
@@ -81,3 +81,4 @@ class TestTaskQueue(test.TestModelBase):
         self.assertEqual(q.qsize(),1)
         t = q.get()
         self.assertTrue(isinstance(t,Task))
+

@@ -1,3 +1,4 @@
+__test__ = False
 basic_english_words = 'a,able,about,account,acid,across,act,addition,\
 adjustment,advertisement,after,again,against,agreement,air,all,almost,\
 among,amount,amusement,and,angle,angry,animal,answer,ant,any,apparatus,\

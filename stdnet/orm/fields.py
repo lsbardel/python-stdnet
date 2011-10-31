@@ -548,7 +548,6 @@ behaviour and how the field is stored in the back-end server.
     is stored as a field of the instance prefixed with the field name
     and double underscore ``__``. If ``True`` it is stored as a 
     standard JSON string on the field.
-    When set to ``True`` it is the opposite of ``nested`` flag.
                     
     Default ``True``.
 
@@ -560,9 +559,11 @@ For example, lets consider the following::
     
 And::
 
-    >>> m = MyModel(name='bla',pv={'': 0.5, 'mean': 1, 'std': 3.5})
+    >>> m = MyModel(name = 'bla',
+                    data = {pv: {'': 0.5, 'mean': 1, 'std': 3.5}})
     >>> m.cleaned_data
-    {'name': 'bla', 'pv': 0.5, 'pv__mean': '1', 'pv__std': '3.5'}
+    {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
+ 'data__pv__std': '3.5', 'data': '""'}
     >>>
     
 The reason for setting ``as_string`` to ``False`` is to enable
@@ -598,11 +599,23 @@ which can be rather useful feature.
             if is_bytes_or_string(value):
                 value = self.to_python(value)
             if self.as_string:
+                # dump as a string
                 value = self.dumps(value)
             else:
+                # unwind as a dictionary
                 value = dict(dict_flat_generator(value, attname = self.attname,
                                                  dumps = self.dumps,
                                                  error = FieldValueError))
+                # If the dictionary is empty we modify so that
+                # an update is possible.
+                if not value:
+                    value = {self.attname: self.dumps(None)}
+                elif value.get(self.attname,None) is None:
+                    # TODO Better implementation of this is a ack!
+                    # set the root value to an empty string to distinguish
+                    # from None.
+                    value[self.attname] = self.dumps('')
+                    
         return value
     
     def value_from_data(self, instance, data):

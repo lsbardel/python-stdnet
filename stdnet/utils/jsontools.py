@@ -6,6 +6,8 @@ try:
     from numpy import ndarray
 except ImportError:
     ndarray = None
+    
+from stdnet.lib.py2py3 import iteritems
 
 JSPLITTER = '__'
 
@@ -100,6 +102,7 @@ by the *splitter* parameters.
 :parameter loads: optional data unserializer.
 :rtype: a nested dictionary'''
     val = {}
+    flat_vals = {}
     for key in data:
         keys = key.split(separator)
         # first key equal to the attribute name
@@ -108,8 +111,15 @@ by the *splitter* parameters.
                 continue
         v = loads(data[key]) if loads else data[key]
         # if an instance is available, inject the flat attribute
-        if instance:
-            setattr(instance,key,v)
+        if not keys:
+            if v is None:
+                val = flat_vals = {}
+                break
+            else:
+                continue
+        else:
+            flat_vals[key] = v
+        
         d = val
         lk = keys[-1]
         for k in keys[:-1]:
@@ -126,12 +136,18 @@ by the *splitter* parameters.
             d[lk] = v
         else:
             d[lk][''] = v
+            
+    if instance and flat_vals:
+        for k,v in iteritems(flat_vals):
+            setattr(instance,k,v)
+            
     return val
 
 
 def dict_flat_generator(value, attname = None, splitter = JSPLITTER,
                         dumps = None, prefix = None, error = ValueError,
                         recursive = True):
+    '''Convert a nested dictionary into a flat dictionary representation'''
     if not isinstance(value,dict) or not recursive:
         if not prefix:
             raise error('Cannot assign a non dictionary to a JSON field')

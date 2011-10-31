@@ -21,6 +21,9 @@ class TestCase(unittest.TestCase):
             self.models = (self.model,)
         for model in self.models:
             orm.register(model)
+        
+    def unregister(self):
+        orm.unregister()
     
     def _pre_setup(self):
         self.prefix = 'test-'+gen_unique_id()+'.'
@@ -32,7 +35,7 @@ class TestCase(unittest.TestCase):
         for model in orm.registered_models():
             model.flush()
         #orm.clearall()
-        orm.unregister()
+        self.unregister()
     
     def __call__(self, result=None):
         """Wrapper around default __call__ method

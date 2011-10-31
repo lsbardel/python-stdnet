@@ -60,7 +60,7 @@ Supported data-types
     '''
     data = []
     converter = converter or def_converter
-    if datatype == 'string':
+    if datatype == 'string' and not choice_from:
         for s in range(size):
             data.append(converter(random_string(**kwargs)))
     elif datatype == 'date':
@@ -79,7 +79,7 @@ Supported data-types
         end = end or 10
         for s in range(size):
             data.append(converter(uniform(start,end)))
-    elif datatype == 'choice':
+    elif datatype == 'choice' or choice_from:
         for s in range(size):
             data.append(choice(choice_from))
     else:

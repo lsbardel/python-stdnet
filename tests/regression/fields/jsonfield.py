@@ -130,6 +130,7 @@ The `as_string` atttribute is set to ``False``.'''
         m = self.make()
         self.assertTrue(m.is_valid())
         data = m.cleaned_data
+        data.pop('data')
         self.assertEqual(len(data),6)
         self.assertEqual(float(data['data__mean']),1.0)
         self.assertEqual(float(data['data__std']),5.78)
@@ -154,8 +155,8 @@ The `as_string` atttribute is set to ``False``.'''
         m = self.make(self.def_data2)
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
-        self.assertEqual(len(cdata),9)
-        self.assertFalse('data' in cdata)
+        self.assertEqual(len(cdata),10)
+        self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
         obj = m.save()
         obj = self.model.objects.get(id = obj.id)
@@ -175,6 +176,7 @@ The `as_string` atttribute is set to ``False``.'''
         m = self.make(data)
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
+        cdata.pop('data')
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
@@ -188,6 +190,7 @@ The `as_string` atttribute is set to ``False``.'''
         m = self.make(data)
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
+        cdata.pop('data')
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
@@ -201,12 +204,30 @@ The `as_string` atttribute is set to ``False``.'''
         m = self.make(deepcopy(data))
         self.assertTrue(m.is_valid())
         cdata = m.cleaned_data
+        cdata.pop('data')
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
         obj = m.save()
         obj = self.model.objects.get(id = obj.id)
         #self.assertEqualDict(data,obj.data)
+        
+    def testEmpty(self):
+        r = self.model(name = 'bla', data = {'bla':'ciao'}).save()
+        self.assertEqual(r.data, {'bla':'ciao'})
+        r.data = None
+        r.save()
+        r = self.model.objects.get(id = r.id)
+        self.assertEqual(r.data, {})
+        
+    def testFromEmpty(self):
+        '''Test the change of a data jsonfield from empty to populated.'''
+        r = self.model(name = 'bla').save()
+        self.assertEqual(r.data, {})
+        r.data = {'bla':'ciao'}
+        r.save()
+        r = self.model.objects.get(id = r.id)
+        self.assertEqual(r.data, {'bla':'ciao'})
     
     def assertEqualDict(self,data1,data2):
         for k in list(data1):

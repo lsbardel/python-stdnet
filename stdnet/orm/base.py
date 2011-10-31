@@ -225,6 +225,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                                     .format(name,self)
                 else:
                     if isinstance(svalue, dict):
+                        #data[name] = svalue
                         data.update(svalue)
                     else:
                         if svalue is not None:

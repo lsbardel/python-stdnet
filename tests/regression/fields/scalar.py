@@ -1,3 +1,4 @@
+'''Scalar fields such as Char, Integer, Float and Date, DateTime, Byte fields'''
 import os
 import json
 import time

@@ -4,7 +4,12 @@ from datetime import datetime, timedelta, date
 
 
 def date2timestamp(dte):
-    return mktime(dte.timetuple())
+    '''Convert a *dte* into a valid unix timestamp.'''
+    seconds = mktime(dte.timetuple())
+    if isinstance(dte,datetime):
+        return seconds + dte.microsecond / 1000000.0
+    else:
+        return int(seconds)
 
 
 def timestamp2date(tstamp):

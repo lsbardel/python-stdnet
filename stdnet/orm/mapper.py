@@ -1,6 +1,5 @@
 import copy
 import logging
-
 from stdnet.utils import is_bytes_or_string
 from stdnet import getdb, struct
 from stdnet.utils.importer import import_module

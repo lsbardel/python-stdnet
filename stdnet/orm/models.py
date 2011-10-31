@@ -158,6 +158,14 @@ The method return ``self``.
                            instance = r)
         return r
     
+    def save_as_new(self, id = None, transaction = None, skip_signal = False):
+        if self._loadedfields is not None:
+            raise ValueError('Cannot save as new a partially loaded instance')
+        self.id = id
+        self.on_save_as_new()
+        self._dbdata = {}
+        return self.save(transaction = transaction, skip_signal = skip_signal)
+    
     def is_valid(self):
         '''Kick off the validation algorithm by checking oll
 :attr:`StdModel.loadedfields` agains their respective validation algorithm.
@@ -243,6 +251,13 @@ If the instance is not available (it does not have an id) and
             setattr(self,attr_local_transaction,
                     self._meta.cursor.transaction(**kwargs))
         return getattr(self,attr_local_transaction)
+    
+    # HOOKS
+    
+    def on_save_as_new(self):
+        '''Callback by :meth:`save_as_new` just before saving an instance as a
+new object in the database'''
+        pass
     
     # UTILITY METHODS
     

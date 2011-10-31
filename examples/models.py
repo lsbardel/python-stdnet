@@ -236,3 +236,16 @@ class DateData(orm.StdModel):
     dt1 = orm.DateField(required = False)
     dt2 = orm.DateTimeField(default = datetime.now)
     
+    
+####################################################
+# Custom ID
+class Task(orm.StdModel):
+    id = orm.SymbolField(primary_key = True)
+    timestamp = orm.DateTimeField(default = datetime.now)
+    
+    class Meta:
+        ordering = '-timestamp'
+        
+    def on_save_as_new(self):
+        self.timestamp = None
+    

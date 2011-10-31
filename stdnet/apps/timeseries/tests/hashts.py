@@ -39,9 +39,6 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         data = obj.data
         self.assertEqual(data.size(),len(data))
         
-    def unregister(self):
-        self.orm.unregister(self.model)
-        
     def get(self, ticker = 'GOOG'):
         return self.get_object_and_field(ticker)[0]
         

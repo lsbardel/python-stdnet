@@ -29,7 +29,7 @@ Ver. 0.7.0 - Development
 * Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application
   to ``grid``.
 * Added :mod:`stdnet.utils.dates`.
-* **345 regression tests** with **80%** coverage.
+* **355 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

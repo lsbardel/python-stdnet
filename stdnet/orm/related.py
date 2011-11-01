@@ -83,7 +83,8 @@ class ReverseSingleRelatedObjectDescriptor(object):
         if value is not None and not isinstance(value, field.relmodel):
             raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
-
+        
+        cache_name = self.field.get_cache_name()
         # If we're setting the value of a OneToOneField to None, we need to clear
         # out the cache on any old related object. Otherwise, deleting the
         # previously-related object will also cause this object to be deleted,
@@ -91,30 +92,16 @@ class ReverseSingleRelatedObjectDescriptor(object):
         if value is None:
             # Look up the previously-related object, which may still be available
             # since we've not yet cleared out the related field.
-            # Use the cache directly, instead of the accessor; if we haven't
-            # populated the cache, then we don't care - we're only accessing
-            # the object to invalidate the accessor cache, so there's no
-            # need to populate the cache just to expire it again.
-            related = getattr(instance, self.field.get_cache_name(), None)
-
-            # If we've got an old related object, we need to clear out its
-            # cache. This cache also might not exist if the related object
-            # hasn't been accessed yet.
+            related = getattr(instance, cache_name, None)
             if related:
-                cache_name = self.field.related.get_cache_name()
                 try:
-                    delattr(related, cache_name)
+                    delattr(instance, cache_name)
                 except AttributeError:
                     pass
-
-        # Set the value of the related field
-        try:
-            val = value.id
-        except AttributeError:
-            val = None
-        setattr(instance, self.field.attname, val)
-
-        setattr(instance, self.field.get_cache_name(), value)
+            setattr(instance, self.field.attname, None)
+        else:
+            setattr(instance, self.field.attname, value.id)
+            setattr(instance, cache_name, value)
 
 
 def _register_related(field, related):

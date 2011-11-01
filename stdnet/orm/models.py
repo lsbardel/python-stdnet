@@ -166,10 +166,9 @@ The method return ``self``.
     parameters *kwargs*, otherwise no save performed.
 :rtype: an instance of this class
 '''
-        if self._loadedfields is not None:
-            raise ValueError('Cannot save as new a partially loaded instance')
-        self.id = id
         self.on_save_as_new()
+        self._loadedfields  = None
+        self.id = id
         self._dbdata = {}
         if commit:
             return self.save(**kwargs)

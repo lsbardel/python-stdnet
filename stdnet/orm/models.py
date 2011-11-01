@@ -158,13 +158,23 @@ The method return ``self``.
                            instance = r)
         return r
     
-    def save_as_new(self, id = None, transaction = None, skip_signal = False):
+    def save_as_new(self, id = None, commit = True, **kwargs):
+        '''Utility method for saving the instance as a new object.
+        
+:parameter id: Optional new id.
+:parameter commit: If ``True`` the :meth:`save` method will be called with
+    parameters *kwargs*, otherwise no save performed.
+:rtype: an instance of this class
+'''
         if self._loadedfields is not None:
             raise ValueError('Cannot save as new a partially loaded instance')
         self.id = id
         self.on_save_as_new()
         self._dbdata = {}
-        return self.save(transaction = transaction, skip_signal = skip_signal)
+        if commit:
+            return self.save(**kwargs)
+        else:
+            return self
     
     def is_valid(self):
         '''Kick off the validation algorithm by checking oll

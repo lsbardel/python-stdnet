@@ -70,6 +70,8 @@ class BeckendQuery(object):
 :parameter result: a result from a queryset.
 :rtype: the same queryset qith related models loaded.'''
         if self.qs._select_related:
+            if not hasattr(result,'__len__'):
+                result = list(result)
             meta = self.qs._meta
             for field in self.qs._select_related:
                 name = field.name

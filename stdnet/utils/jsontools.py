@@ -91,7 +91,7 @@ def nested_json_value(instance, attname, separator):
 
 
 def flat_to_nested(data, instance = None, attname = None,
-                   separator = JSPLITTER, loads = None):
+                   separator = None, loads = None):
     '''Convert a flat representation of a dictionary to
 a nested representation. Fields in the flat representation are separated
 by the *splitter* parameters.
@@ -99,8 +99,10 @@ by the *splitter* parameters.
 :parameter data: a flat dictionary of key value pairs.
 :parameter instance: optional instance of a model.
 :parameter attribute: optional attribute of a model.
+:parameter separator: optional separator. Default ``"__"``.
 :parameter loads: optional data unserializer.
 :rtype: a nested dictionary'''
+    separator = separator or JSPLITTER
     val = {}
     flat_vals = {}
     for key in data:

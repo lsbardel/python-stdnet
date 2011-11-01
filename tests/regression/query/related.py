@@ -60,7 +60,7 @@ class TestRelatedManager(FinanceTest):
             self.assertEqual(p.fund,fund)
             
         
-class TestRelatedQueries(FinanceTest):
+class load_related(FinanceTest):
     
     def testSelectRelated(self):
         self.data.makePositions()
@@ -83,6 +83,8 @@ class TestRelatedQueries(FinanceTest):
         self.assertTrue(len(pos._select_related),1)
         fund = Position._meta.dfields['fund']
         inst = Position._meta.dfields['instrument']
+        pos = list(pos)
+        self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
             val = getattr(p,cache,None)

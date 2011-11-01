@@ -41,7 +41,7 @@ from stdnet import orm
 from stdnet.utils import to_string, iteritems
 from stdnet.orm.query import field_query
 
-from .models import Word, WordItem, AutoComplete
+from .models import Word, WordItem, AutoComplete, Tag
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS
 from .processors.metaphone import dm as double_metaphone
 from .processors.porter import PorterStemmer

@@ -314,7 +314,7 @@ of fields names and a list of field attribute names.'''
                     field = dfields[bname]
                     if field.type == 'json object':
                         processed.add(name)
-                        ames.append(name)
+                        names.append(name)
                         atts.append(name)
         return names,atts
 

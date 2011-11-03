@@ -101,6 +101,12 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 
     Field name, created by the ``orm`` at runtime.
     
+.. attribute:: attname
+
+    The attribute name for the field, created by the :meth:`get_attname` method
+    at runtime. For most field, its value is the same as the :attr:`name`.
+    It is the field sorted in the backend database.
+    
 .. attribute:: model
 
     The :class:`stdnet.orm.StdModel` holding the field.
@@ -195,6 +201,7 @@ function users should never call.'''
         self.model._meta.scalarfields.append(self)
     
     def get_attname(self):
+        '''Generate the :attr:`attname` at runtime'''
         return self.name
     
     def get_cache_name(self):

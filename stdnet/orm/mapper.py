@@ -177,6 +177,7 @@ For example::
         except ImportError:
             raise StopIteration
         
+        label = getattr(mod_models,'app_label',label)
         for name in dir(mod_models):
             model = getattr(mod_models,name)
             if isinstance(model,StdNetType) and hasattr(model,'_meta'):
@@ -212,7 +213,8 @@ For example::
 '''
     app_defaults = app_defaults or {}
     for obj in model_iterator(applications):
-        name = obj._meta.name
+        meta = obj._meta
+        name = meta.name
         if models and name not in models:
             continue
         name = str(obj._meta)

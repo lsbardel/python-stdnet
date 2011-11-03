@@ -220,7 +220,8 @@ Called to clear a model instance.
             
         return 1
     
-    def make_objects(self, meta, ids, data = None, loadedfields = None):
+    def make_objects(self, meta, ids, data = None, loadedfields = None,
+                     loadedfields_attributes = None):
         '''Generator of :class:`stdnet.orm.StdModel` instances with data
 from database.
 
@@ -239,7 +240,7 @@ from database.
             for id,fields in zip(ids,data):
                 obj = make_object()
                 if loadedfields:
-                    fields = dict(zip(loadedfields,fields))
+                    fields = dict(zip(loadedfields_attributes,fields))
                 else:
                     fields = dict(fields)
                 fields['__dbdata__'] = deepcopy(fields)

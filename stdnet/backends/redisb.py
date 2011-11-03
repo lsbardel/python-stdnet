@@ -291,15 +291,14 @@ different model) which has a *field* containing current model ids.'''
             bkey = self.meta.basekey
             pipe = None
             fields = self.qs.fields or None
+            fields_attributes = None
             if fields:
-                if 'id' in fields:
-                    fields = list(fields)
-                    fields.remove('id')
+                fields, fields_attributes = self.meta.server_fields(fields)
                 if fields:
                     pipe = self.server.redispy.pipeline()
                     hmget = pipe.hmget
                     for id in ids:
-                        hmget(bkey(OBJ,to_string(id)),fields)
+                        hmget(bkey(OBJ,to_string(id)),fields_attributes)
             else:
                 pipe = self.server.redispy.pipeline()
                 hgetall = pipe.hgetall
@@ -307,7 +306,8 @@ different model) which has a *field* containing current model ids.'''
                     hgetall(bkey(OBJ,to_string(id)))
             if pipe is not None:
                 result = self.server.make_objects(self.meta, ids,
-                                            pipe.execute(), fields)
+                                            pipe.execute(), fields,
+                                            fields_attributes)
             else:
                 result = self.server.make_objects(self.meta, ids)
             return self.load_related(result)

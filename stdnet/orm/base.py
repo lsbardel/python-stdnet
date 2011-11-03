@@ -290,6 +290,33 @@ the model table'''
                 return orderinginfo(sortby,f,desc)
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
+        
+    def server_fields(self, fields):
+        '''Return a tuple containing a list
+of fields names and a list of field attribute names.'''
+        dfields = self.dfields
+        processed = set()
+        names = []
+        atts = []
+        for name in fields:
+            if name == 'id':
+                continue
+            if name in processed:
+                continue
+            if name in dfields:
+                processed.add(name)
+                field = dfields[name]
+                names.append(field.name)
+                atts.append(field.attname)
+            else:
+                bname = name.split(JSPLITTER)[0]
+                if bname in dfields:
+                    field = dfields[bname]
+                    if field.type == 'json object':
+                        processed.add(name)
+                        ames.append(name)
+                        atts.append(name)
+        return names,atts
 
 class FakeMeta(object):
     pass

@@ -1,7 +1,7 @@
 from stdnet import test, transaction
 from stdnet.utils import zip
 
-from examples.models import SimpleModel
+from examples.models import SimpleModel, Person, Group
 
 
 class LoadOnly(test.TestCase):
@@ -87,3 +87,28 @@ loaded. The correct behavior should be to updated the field and indexes.'''
         for m in qs:
             self.assertEqual(m.group,'group4')
         
+        
+class LoadOnlyRelated(test.TestCase):
+    models = (Person, Group)
+    
+    def setUp(self):
+        g1 = Group(name = 'bla').save()
+        g2 = Group(name = 'foo').save()
+        with transaction(Person) as t:
+            Person(name = 'luca', group = g1).save(t)
+            Person(name = 'carl', group = g1).save(t)
+            Person(name = 'bob', group = g1).save(t)
+            
+    def test_simple(self):
+        qs = Person.objects.all().load_only('group')
+        for m in qs:
+            self.assertEqual(m._loadedfields,('group',))
+            self.assertFalse(hasattr(m,'name'))
+            self.assertTrue(hasattr(m,'group_id'))
+            self.assertTrue(m.group_id)
+            self.assertTrue('id' in m._dbdata)
+            self.assertEqual(int(m._dbdata['id']),m.id)
+            g = m.group
+            self.assertTrue(isinstance(g,Group))
+            
+            

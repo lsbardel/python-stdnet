@@ -1,6 +1,12 @@
 from .models import *
 
 
+def queue(name):
+    try:
+        return Queue.objets.get(name = name)
+    except:
+        return Queue(name = name).save()
+
 class TaskQueueManager(object):
     
     def opensession(self,

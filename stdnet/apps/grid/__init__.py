@@ -3,9 +3,9 @@ from .models import *
 
 def queue(name):
     try:
-        return Queue.objets.get(name = name)
-    except:
-        return Queue(name = name).save()
+        return Queue.objects.get(id = name)
+    except Queue.DoesNotExist:
+        return Queue(id = name).save()
 
 class TaskQueueManager(object):
     

@@ -21,11 +21,11 @@ as a python multiprocessing Queue. To use it::
     >>> q.put('world')
     >>> q.get()
 '''
-    name = orm.CharField(required = False)
+    id = orm.SymbolField(primary_key = True)
     queue = orm.ListField()
     
     def __unicode__(self):
-        return self.name
+        return self.id
     
     def put(self, elem):
         '''Put item into the queue.'''

@@ -28,10 +28,14 @@ def todatetime(tstamp):
     
 class JSONDateDecimalEncoder(json.JSONEncoder):
     """The default JSON encoder used by stdnet. It provides
-JSON serialization for three additional object, `datetime.date`,
-`datetime.datetime` and `decimal.Decimal` from the standard library.
-In addition if numpy_ is installed, it also provides serialization
-of the ``ndarray`` into nested lists using the ``aslist`` function.
+JSON serialization for four additional classes:
+
+ * `datetime.date`,
+ * `datetime.datetime`
+ * `decimal.Decimal`
+ * `numpy.ndarray` if numpy_ is installed.
+  
+The ``ndarray`` is serialized into nested lists using the ``aslist`` function.
 
 .. seealso:: It is the default encoder for :class:`stdnet.orm.JSONField`
 """
@@ -59,8 +63,8 @@ def date_decimal_hook(dct):
         return Decimal(dct['__decimal__'])
     else:
         return dct
-    
-    
+
+
 DefaultJSONEncoder = JSONDateDecimalEncoder
 DefaultJSONHook = date_decimal_hook
     

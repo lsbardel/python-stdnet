@@ -71,6 +71,9 @@ class PPath(object):
     def __repr__(self):
         return self.local_path
     __str__ = __repr__
+    
+    def join(self, path):
+        return os.path.join(self.local_path,path)
         
     def add(self, module = None, up = 0, down = None, front = False):
         '''Add a directory to the python path.

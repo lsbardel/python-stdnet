@@ -27,7 +27,7 @@ class TestQueue(test.TestCase):
     model = grid.Queue
     
     def setUp(self):
-        self.q = self.model(name = 'test').save()
+        self.q = self.model(id = 'test').save()
         
     def testPutGet(self):
         N = len(names)
@@ -73,7 +73,7 @@ class TestTaskQueue(test.TestCase):
     models = (TaskQueue,Task)
     
     def setUp(self):
-        self.q = TaskQueue(name = 'test').save()
+        self.q = TaskQueue(id = 'test').save()
         
     def testPutGet(self):
         q = self.q

@@ -1,9 +1,12 @@
+
+.. _vers07:
+
 Ver. 0.7.0 - Development
 ============================
 * A superset of the :ref:`0.6 series <vers06>` with tons of new features manly geared
   towards improved performance via custom query options, transactions and
   a new ``C`` parser shipped with the library.
-* It requires redis_ 2.4 or higher.
+* It requires redis_ 2.6 or higher.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added :meth:`stdnet.orm.query.QuerySet.load_only` method for loading a subset
@@ -26,10 +29,12 @@ Ver. 0.7.0 - Development
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
+* pulsar_ is required to run the test suite and unittest2_ is required if
+  using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application
   to ``grid``.
 * Added :mod:`stdnet.utils.dates`.
-* **355 regression tests** with **80%** coverage.
+* **358 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================
@@ -255,3 +260,5 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _djpcms: http://djpcms.com
 .. _django: http://www.djangoproject.com/
 .. _hiredis: https://github.com/pietern/hiredis-py
+.. _pulsar: http://packages.python.org/pulsar/
+.. _unittest2: http://pypi.python.org/pypi/unittest2

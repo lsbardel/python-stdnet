@@ -7,6 +7,7 @@ def queue(name):
     except Queue.DoesNotExist:
         return Queue(id = name).save()
 
+
 class TaskQueueManager(object):
     
     def opensession(self,

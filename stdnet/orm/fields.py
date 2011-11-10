@@ -595,10 +595,7 @@ which can be rather useful feature.
             if not value:
                 value = {}
             else:
-                try:
-                    value = self.loads(value)
-                except:
-                    value = None
+                value = self.loads(value)
         return value
                     
     def serialize(self, value, transaction = None):
@@ -641,8 +638,13 @@ which can be rather useful feature.
     
     def loads(self, svalue):
         if svalue is not None:
-            svalue = to_string(svalue,self.charset)
-            return json.loads(svalue, object_hook = self.decoder_hook)
+            try:
+                svalue = to_string(svalue,self.charset)
+                return json.loads(svalue, object_hook = self.decoder_hook)
+            except:
+                logger.critical('Unhandled exception while loading Json\
+ field {0}'.format(self), exc_info = True)
+                
 
 
 class ByteField(CharField):
@@ -683,5 +685,5 @@ registered in the model hash table, it can be used.'''
                     return
             value = value._meta.hash
             return self.encoder.dumps(value)
-
+    
 

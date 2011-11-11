@@ -36,6 +36,14 @@ overriding them.
     
     Default ``unlimited``.
     
+    
+.. attribute:: settings.RedisConnectionClass
+
+    The Redis Connection class. If not set the
+    :class:`stdnet.lib.connection.Connection` will be used.
+    
+    Default ``None``
+    
 
 To change settings::
     
@@ -52,6 +60,7 @@ class Settings(object):
         self.CHARSET = 'utf-8'
         self.REDIS_PARSER = None
         self.MAX_CONNECTIONS = 2**31
+        self.RedisConnectionClass = None
         
         
 settings = Settings()

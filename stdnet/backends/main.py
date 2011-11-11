@@ -29,7 +29,6 @@ def parse_backend_uri(backend_uri):
     scheme, rest = backend_uri.split(':', 1)
     if not rest.startswith('//'):
         raise ImproperlyConfigured("Backend URI must start with scheme://")
-
     host = rest[2:]
     qpos = rest.find('?')
     if qpos != -1:
@@ -58,9 +57,9 @@ def getdb(backend_uri = None, **kwargs):
     backend_uri = backend_uri or settings.DEFAULT_BACKEND
     if not backend_uri:
         return None
-    scheme, host, params = parse_backend_uri(backend_uri)
+    scheme, address, params = parse_backend_uri(backend_uri)
     params.update(kwargs)
-    return _getdb(scheme, host, params)
+    return _getdb(scheme, address, params)
 
 
 def getcache(backend_uri = None, encoder = encoders.PythonPickle, **kwargs):

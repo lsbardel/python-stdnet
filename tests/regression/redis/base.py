@@ -9,8 +9,8 @@ RedisError = redis.RedisError
 
 
 def makeredis(pool = None):
-    cursor = getdb(format(settings.DEFAULT_BACKEND), decode = 1)
-    return cursor.redispy
+    db = getdb(format(settings.DEFAULT_BACKEND), decode = 1)
+    return db.client
 
 
 def get_version(info):

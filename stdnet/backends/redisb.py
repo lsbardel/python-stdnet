@@ -55,7 +55,7 @@ class add2set(object):
             elif score is None:
                 # A two way trip here.
                 idset = self.meta.basekey('id')
-                score = self.server.redispy.zscore(idset,id)
+                score = self.server.client.zscore(idset,id)
             if idsave:
                 self.pipe.zadd(key, score, id)
         elif idsave:
@@ -77,7 +77,7 @@ class RedisQuery(stdnet.BeckendQuery):
                 add(key,id)
         else:
             bkey = self.meta.basekey
-            rpy = self.server.redispy
+            rpy = self.server.client
             for value in values:
                 hkey = bkey(UNI,name)
                 id = rpy.hget(hkey, value)
@@ -147,11 +147,11 @@ different model) which has a *field* containing current model ids.'''
             query = q.query 
             query._buildquery()
             qset = query.qset.query_set
-            db = query._meta.cursor.redispy.db
+            db = query._meta.cursor.client.db
             if db != pipe.db:
                 raise ValueError('Indexes in a different database')
                 # In a different redis database. We need to move the set
-                query._meta.cursor.redispy.move(qset,pipe.db)
+                query._meta.cursor.client.move(qset,pipe.db)
                 pipe.expire(qset,self.expire)
             skey = self.meta.tempkey()
             okey = query._meta.basekey(OBJ,'*->{0}'.format(q.field))
@@ -170,14 +170,14 @@ different model) which has a *field* containing current model ids.'''
         server = self.server
         self.idset = idset = meta.basekey('id')
         p = 'z' if meta.ordering else 's'
-        self.pipe = pipe = self.server.redispy.pipeline()
+        self.pipe = pipe = self.server.client.pipeline()
         if p == 'z':
             pismember =  pipeattr(pipe,'','zrank')
-            self.ismember =  pipeattr(server.redispy,'','zrank')
+            self.ismember =  pipeattr(server.client,'','zrank')
             chk = self.zism
         else:
             pismember =  pipeattr(pipe,'','sismember')
-            self.ismember =  pipeattr(server.redispy,'','sismember')
+            self.ismember =  pipeattr(server.client,'','sismember')
             chk = self.sism
         
         if self.qs.simple:
@@ -187,7 +187,7 @@ different model) which has a *field* containing current model ids.'''
                     ids = q.values
                 else:
                     key = meta.basekey(UNI,q.name)
-                    ids = server.redispy.hmget(key, q.values)
+                    ids = server.client.hmget(key, q.values)
                 for id in ids:
                     if id is not None:
                         allids.append(id)
@@ -198,7 +198,7 @@ different model) which has a *field* containing current model ids.'''
             self.intersect = pipeattr(pipe,p,'interstore')
             self.union = pipeattr(pipe,p,'unionstore')
             self.diff = pipeattr(pipe,p,'diffstore')
-            self.card = pipeattr(server.redispy,p,'card')
+            self.card = pipeattr(server.client,p,'card')
             self.add = add2set(server,pipe,meta)
             if queries:
                 idset = self.build_from_query(queries)
@@ -216,7 +216,7 @@ different model) which has a *field* containing current model ids.'''
         if sha:
             if self.timeout:
                 key = self.meta.tempkey(sha)
-                if not self.server.redispy.exists(key):
+                if not self.server.client.exists(key):
                     self.pipe.rename(self.query_set,key)
                     self.result = self.pipe.execute()
                 self.query_set = key
@@ -229,7 +229,7 @@ different model) which has a *field* containing current model ids.'''
             sort_by = self.qs.ordering
             skey = self.meta.tempkey()
             okey = self.meta.basekey(OBJ,'*->{0}'.format(sort_by.name))
-            pipe = self.server.redispy.pipeline()
+            pipe = self.server.client.pipeline()
             pipe.sort(self.query_set,
                       by = okey,
                       desc = sort_by.desc,
@@ -273,16 +273,16 @@ different model) which has a *field* containing current model ids.'''
             skey = self.order()
             if skey:
                 start,stop = self.get_redis_slice(slic)
-                ids = self.server.redispy.lrange(skey,start,stop)
+                ids = self.server.client.lrange(skey,start,stop)
             elif self.meta.ordering:
                 start,stop = self.get_redis_slice(slic)
                 if self.meta.ordering.desc:
-                    command = self.server.redispy.zrevrange
+                    command = self.server.client.zrevrange
                 else:
-                    command = self.server.redispy.zrange
+                    command = self.server.client.zrange
                 ids = command(self.query_set,start,stop)
             else:
-                ids = list(self.server.redispy.smembers(self.query_set))
+                ids = list(self.server.client.smembers(self.query_set))
                 if slic:
                     ids = ids[slic]
         
@@ -295,12 +295,12 @@ different model) which has a *field* containing current model ids.'''
             if fields:
                 fields, fields_attributes = self.meta.server_fields(fields)
                 if fields:
-                    pipe = self.server.redispy.pipeline()
+                    pipe = self.server.client.pipeline()
                     hmget = pipe.hmget
                     for id in ids:
                         hmget(bkey(OBJ,to_string(id)),fields_attributes)
             else:
-                pipe = self.server.redispy.pipeline()
+                pipe = self.server.client.pipeline()
                 hgetall = pipe.hgetall
                 for id in ids:
                     hgetall(bkey(OBJ,to_string(id)))
@@ -321,36 +321,35 @@ class BackendDataServer(stdnet.BackendDataServer):
     structure_module = structredis
     connection_pools = {}
     _redis_clients = {}
-    
-    def __init__(self, name, server, db = 0,
-                 password = None, socket_timeout = None,
-                 decode = None, **params):
-        super(BackendDataServer,self).__init__(name,**params)
-        servs = server.split(':')
-        host = servs[0] if servs[0] is not 'localhost' else '127.0.0.1'
-        port = int(servs[1]) if len(servs) == 2 else 6379
-        socket_timeout = int(socket_timeout) if socket_timeout else None
-        cp = redis_connection(host, port, db, password, socket_timeout, decode)
+        
+    def setup_connection(self, address, **params):
+        addr = address.split(':')
+        if len(addr) == 2:
+            try:
+                address = (addr[0],int(addr[1]))
+            except:
+                pass
+        cp = redis.ConnectionPool(address, **params)
         if cp in self.connection_pools:
-            connection_pool = self.connection_pools[cp]
+            cp = self.connection_pools[cp]
         else:
-            connection_pool = redis.ConnectionPool(**cp._asdict())
-            self.connection_pools[cp] = connection_pool 
-        self.redispy = redis.Redis(connection_pool = connection_pool)
-        self.execute_command = self.redispy.execute_command
-        self.incr            = self.redispy.incr
-        self.clear           = self.redispy.flushdb
-        self.delete          = self.redispy.delete
-        self.keys            = self.redispy.keys
+            self.connection_pools[cp] = cp
+        rpy = redis.Redis(connection_pool = cp)
+        self.execute_command = rpy.execute_command
+        self.incr = rpy.incr
+        self.clear = rpy.flushdb
+        self.delete = rpy.delete
+        self.keys = rpy.keys
+        return rpy
     
     def cursor(self, pipelined = False):
-        return self.redispy.pipeline() if pipelined else self.redispy
+        return self.client.pipeline() if pipelined else self.client
     
     def issame(self, other):
-        return self.redispy == other.redispy
+        return self.client == other.client
         
     def disconnect(self):
-        self.redispy.connection_pool.disconnect()
+        self.client.connection_pool.disconnect()
     
     def unwind_query(self, meta, qset):
         '''Unwind queryset'''
@@ -378,7 +377,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _loadfields(self, obj, toload):
         if toload:
-            fields = self.redispy.hmget(obj._meta.basekey(OBJ,obj.id), toload)
+            fields = self.client.hmget(obj._meta.basekey(OBJ,obj.id), toload)
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
@@ -465,7 +464,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         '''Flush all model keys from the database'''
         # The scripting delete
         pattern = '{0}*'.format(meta.basekey())
-        return self.redispy.delpattern(pattern)
+        return self.client.delpattern(pattern)
             
     def instance_keys(self, obj):
         meta = obj._meta

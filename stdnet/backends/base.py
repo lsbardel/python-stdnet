@@ -104,13 +104,18 @@ It must implement the *loads* and *dumps* methods.'''
     Query = None
     structure_module = None
     
-    def __init__(self, name, pickler = None, charset = 'utf-8', **params):
+    def __init__(self, name, address, pickler = None,
+                 charset = 'utf-8', **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
         self.charset = charset
         self.pickler = pickler or encoders.NoEncoder()
         self.params = params
+        self.client = self.setup_connection(address, **params)
+        
+    def setup_connection(self, address, **params):
+        raise NotImplementedError
 
     @property
     def name(self):

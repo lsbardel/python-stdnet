@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+'''Stdnet asynchronous test suite. Requires pulsar_.
+
+.. _pulsar: 
+'''
 from stdnet.utils import PPath
 from stdnet.conf import settings
 

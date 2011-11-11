@@ -236,25 +236,11 @@ between the client and server.
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
-        pool = self.connection_pool
-        command_name = args[0]
-        connection = pool.get_connection(command_name, **options)
-        try:
-            connection.send_command(*args)
-            return self.parse_response(connection, command_name, **options)
-        except ConnectionError:
-            connection.disconnect()
-            connection.send_command(*args)
-            return self.parse_response(connection, command_name, **options)
-        except:
-            connection.disconnect()
-            raise
-        finally:
-            pool.release(connection)
+        connection = self.connection_pool.get_connection()
+        return connection.execute_command(self.parse_response, *args, **options)
 
-    def parse_response(self, connection, command_name, **options):
+    def parse_response(self, response, command_name, **options):
         "Parses a response from the Redis server"
-        response = connection.read_response()
         if command_name in self.response_callbacks:
             return self.response_callbacks[command_name](response, **options)
         return response

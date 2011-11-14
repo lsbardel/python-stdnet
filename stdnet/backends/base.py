@@ -164,12 +164,11 @@ Called to clear a model instance.
             commit = True
             transaction = self.transaction()
         
-
         self._remove_indexes(obj, transaction)
         self._delete_object(obj, transaction)
         
         if commit:
-            transaction.commit()
+            res = transaction.commit()
             
         return 1
     

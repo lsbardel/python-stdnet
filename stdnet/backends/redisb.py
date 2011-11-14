@@ -395,13 +395,14 @@ class BackendDataServer(stdnet.BackendDataServer):
         obid = obj.id
         pipe = transaction.pipe
         bkey = meta.basekey
+        rem = setattr(pipe,'z' if meta.ordering else 's','rem')
         keys = self.redispy.keys(meta.tempkey('*'))
+        #remove the hash table and temp keys
         pipe.delete(bkey(OBJ,obid),*keys)
+        #remove the id from set
+        rem(bkey('id'), obid)
             
-        if obj.indices:
-            rem = setattr(pipe,'z' if meta.ordering else 's','rem')
-            rem(bkey('id'), obid)
-            
+        if obj.indices:            
             for field,value in obj.indices:
                 if field.unique:
                     pipe.hdel(bkey(UNI,field.name),value)
@@ -409,12 +410,9 @@ class BackendDataServer(stdnet.BackendDataServer):
                     rem(bkey(IDX,field.name,value), obid)
     
     def _delete_object(self, obj, transaction):
-        mfs = obj._meta.multifields
-        if mfs:
-            pipe = transaction.pipe
-            fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
-            if fids:
-                pipe.delete(*fids)
+        fids = obj._meta.multifields_ids_todelete(obj)
+        if fids:
+            transaction.pipe.delete(*fids)
     
     def flush(self, meta, count):
         '''Flush all model keys from the database'''

@@ -24,8 +24,8 @@ def makeoptions():
  regression (default), bench, profile, fuzzy.')
     parser.add_argument('-f', '--fail', action="store_false",
                         dest="can_fail", default=True,
-                        help="If set, the tests won't run if there is\
- an import error in tests. Useful for checking import errors.")
+                        help="If set, tests will run even if there is\
+ an import error in tests.")
     parser.add_argument("-s", "--server", action="store",
                         dest="server", default='',
                         help='Backend server where to run tests. By default\

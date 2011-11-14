@@ -139,6 +139,9 @@ class MultiField(Field):
     def id(self, obj):
         return getattr(obj,self.attname).id
 
+    def todelete(self):
+        return True
+
 
 class SetField(MultiField):
     '''A field maintaining an unordered collection of values. It is initiated
@@ -252,4 +255,6 @@ This field is implemented as a double Set field.
                             stype, related_name, related))
         setattr(self.relmodel,related_name,Many2ManyManagerProxy(related_name,
                                         stype, self.name, self.model))
-           
+    
+    def todelete(self):
+        return False

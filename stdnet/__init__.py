@@ -1,5 +1,5 @@
 '''An object relational mapper library for Redis remote data structures.'''
-VERSION = (0, 6, 1)
+VERSION = (0, 6, 2)
  
 def get_version():
     return '.'.join(map(str,VERSION))

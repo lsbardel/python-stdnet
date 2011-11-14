@@ -54,16 +54,41 @@ class TestManyToMany(test.TestCase):
         self.orm.unregister(Role)
         self.orm.unregister(Profile)
         
-    def testAdd(self):
+    def addsome(self):
         profile = Profile().save()
-        role,created = Role.objects.get_or_create(name='admin')
-        self.assertTrue(role.id)
-        profile.roles.add(role)
-        profiles = role.profiles.all()
-        self.assertEqual(profiles.count(),1)
-        p2 = profiles.filter(id = profile.id)[0]
+        role1 = Role(name='admin').save()
+        profile.roles.add(role1)
+        self.assertEqual(role1.profiles.all().count(),1)
+        
+        role2 = Role(name='coder').save()
+        profile.roles.add(role2)
+        self.assertEqual(role2.profiles.all().count(),1)
+        
+        p2 = role1.profiles.filter(id = profile.id)[0]
         self.assertEqual(p2,profile)
+        
+    def testAdd(self):
+        self.addsome()
     
+    def testDelete1(self):
+        self.addsome()
+        profile = Profile.objects.get(id = 1)
+        self.assertEqual(profile.roles.all().count(),2)
+        profile.delete()
+        self.assertEqual(Profile.objects.all().count(),0)
+        for role in Role.objects.all():
+            self.assertEqual(role.profiles.all().count(),0)
+    
+    def testDelete2(self):
+        self.addsome()
+        roles = Role.objects.all()
+        self.assertEqual(roles.count(),2)
+        roles.delete()
+        self.assertEqual(Role.objects.all().count(),0)
+        profile = Profile.objects.get(id = 1)
+        self.assertEqual(profile.roles.all().count(),0)
+        profile.delete()
+        
     def testRemove(self):
         p1 = Profile().save()
         p2 = Profile().save()

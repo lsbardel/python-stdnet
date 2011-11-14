@@ -1,3 +1,10 @@
+Ver. 0.6.2 - 2011 Nov 14
+============================
+* A bug fix release.
+* Critical bug fix in ``delete`` method when a model has no indices.
+* Critical bug fix in `ManyToManyField`.
+* **299 regression tests**.
+
 Ver. 0.6.1 - 2011 Sep 10
 ============================
 * This is a minor release which brings an improved documentation,

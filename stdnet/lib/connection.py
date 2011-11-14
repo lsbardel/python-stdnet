@@ -63,6 +63,7 @@ class RedisRequest(object):
         self.args = args
         self.parse_response = parse_response
         self.options = options
+        self.response = connection.parser.gets()
         command = connection.pack_command(command_name,*args)
         self.send(command)
         
@@ -100,19 +101,40 @@ class RedisRequest(object):
         
     def close(self):
         c = self.connection
+        response = self.response
         try:
-            "Read the response from a previously sent command"
-            response = c._parser.read_response()
-            if response.__class__ == ResponseError:
+            if isinstance(response,ResponseError):
                 raise response
-            return self.parse_response(response, self.command_name,
-                                       **self.options)
+            self.response = self.parse_response(response, self.command_name,
+                                                **self.options)
         except:
             c.disconnect()
             raise
         finally:
             self.connection_pool.release(c)
 
+    def read_response(self):
+        reader = self.connection.reader
+        response = reader.gets()
+        while response is False:
+            try:
+                stream = self._sock.recv(4096)
+            except (socket.error, socket.timeout) as e:
+                raise ConnectionError("Error while reading from socket: %s" % \
+                    (e.args,))
+            if not stream:
+                raise ConnectionError("Socket closed on remote end")
+            self._reader.feed(stream)
+            response = self._reader.gets()
+        return response
+        
+    def parse(self, data):
+        parser = self.connection.parser
+        parser.feed(data)
+        self.response = parser.gets()
+        if self.response is not False:
+            self.close()
+        
 
 class Connection(object):
     ''''Manages TCP or UNIX communication to and from a Redis server.
@@ -147,7 +169,7 @@ This class should not be directly initialized. Insteady use the
                 reader_class = fallback.Reader
             else:
                 reader_class = Reader
-        self._parser = Parser(reader_class)
+        self.parser = reader_class(InvalidResponse, ResponseError)
 
     @property
     def address(self):

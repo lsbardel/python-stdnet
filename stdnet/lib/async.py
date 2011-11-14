@@ -16,13 +16,18 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
     def send(self, command):
         c = self.connection.connect()
         if c:
-            c.add_callback(lambda r : self._send(command,r))
+            return c.add_callback(lambda r : self._send(command,r), True)
         else:
-            self._send(command)
+            return self._send(command)
         
     def _send(self, command, conn_result = None):
-        return self.connection.stream.write(command)\
-                   .add_callback(self.callback)
+        stream = self.connection.stream
+        return stream.write(command,
+                    lambda num_bytes : stream.read(self.parse))
+                   
+    def close(self):
+        super(AsyncRedisRequest,self).close()
+        self.callback(self.response)
     
     def add_errback(self, expected, error):
         return self.add_callback(partial(self.check_result,
@@ -45,8 +50,6 @@ class AsyncRedisConnection(connection.Connection):
         
     def on_connect(self, result = None):
         "Initialize the connection, authenticate and select a database"
-        self._parser.on_connect(self)
-
         # if a password is specified, authenticate
         r = None
         if self.password:

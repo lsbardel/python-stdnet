@@ -57,13 +57,20 @@ class Parser(object):
 class RedisRequest(object):
     '''A redis request'''
     def __init__(self, connection, command_name, args,
-                 options, parse_response = None):
+                 parse_response = None, **options):
         self.connection = connection
         self.command_name = command_name
+        self.args = args
         self.parse_response = parse_response
         self.options = options
         command = connection.pack_command(command_name,*args)
         self.send(command)
+        
+    def __str__(self):
+        return '{0}{1}'.format(self.command_name,self.args)
+    
+    def __repr__(self):
+        return self.__str__()
         
     def _send(self, command):
         "Send the command to the socket"
@@ -122,7 +129,7 @@ This class should not be directly initialized. Insteady use the
     instance of the :class:`ConnectionPool` managing the connection
 '''
     blocking = True
-    request = RedisRequest
+    request_class = RedisRequest
     
     "Manages TCP communication to and from a Redis server"
     def __init__(self, pool, password=None,
@@ -168,7 +175,7 @@ This class should not be directly initialized. Insteady use the
         if self._sock:
             return
         try:
-            sock = self._connect()
+            return self._connect()
         except socket.error as e:
             raise ConnectionError(self._error_message(e))
 
@@ -186,9 +193,9 @@ This class should not be directly initialized. Insteady use the
             sock.settimeout(self.socket_timeout)
             sock.connect(self.address)
             self._sock = sock
-            self.on_connect()
+            return self.on_connect()
         else:
-            self.async_connect(sock)
+            return self.async_connect(sock)
 
     def async_connect(self, sock):
         raise NotImplementedError
@@ -261,9 +268,12 @@ This class should not be directly initialized. Insteady use the
         "Pack a series of arguments into a value Redis command"
         return b''.join(self.__pack_gen(args))
     
+    def request(self, command_name, *args, **options):
+        return self.request_class(self, command_name, args, **options)
+        
     def execute_command(self, parse_response, command_name, *args, **options):
-        return self.request(self, command_name, args, options,
-                            parse_response = parse_response)
+        options['parse_response'] = parse_response
+        return self.request(command_name, *args, **options)
 
 
 ConnectionClass = None

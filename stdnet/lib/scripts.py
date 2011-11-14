@@ -1,4 +1,7 @@
-
+# This just works
+countpattern = '''\
+return table.getn(redis.call('keys',KEYS[1]))
+'''
 # Delete all keys from a pattern and return the total number of keys deleted
 # This fails when there are too many keys
 delpattern = '''\

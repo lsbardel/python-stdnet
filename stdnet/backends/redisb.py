@@ -435,11 +435,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         #remove the id from set
         rem(bkey('id'), id)
         # Remove multifields
-        mfs = obj._meta.multifields
-        if mfs:
-            fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
-            if fids:
-                transaction.cursor.delete(*fids)
+
+        fids = obj._meta.multifields_ids_todelete(obj)
+        if fids:
+            transaction.cursor.delete(*fids)
         # Remove indices
         if meta.indices:
             rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')

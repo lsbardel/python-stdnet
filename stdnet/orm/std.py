@@ -117,6 +117,7 @@ a stand alone structure in the back-end server with very little effort.
     default_pickler = encoders.Json()
     default_value_pickler = None
     
+    
     def get_pipeline(self):
         raise NotImplementedError
     
@@ -173,6 +174,9 @@ a stand alone structure in the back-end server with very little effort.
     
     def id(self, obj):
         return getattr(obj,self.attname).id
+
+    def todelete(self):
+        return True
 
 
 class SetField(MultiField):
@@ -305,4 +309,6 @@ This field is implemented as a double Set field.
                                     self.name, self.model)
         setattr(self.model, self.name, m2m)
         setattr(self.relmodel,related_name,r2r)
-           
+    
+    def todelete(self):
+        return False

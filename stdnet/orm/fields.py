@@ -253,7 +253,10 @@ the ordering alorithm'''
         field.model = None
         field.meta = None
         return field
-            
+    
+    def todelete(self):
+        return False
+    
 
 class AtomField(Field):
     '''The base class for fields containing ``atoms``.

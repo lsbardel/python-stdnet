@@ -21,7 +21,7 @@ Ver. 0.7.0 - Development
 * Fixed bug in related managers. The ``exclude`` method was not implemented.
 * :class:`stdnet.orm.PickleObjectField` uses the pickle protocol 2 for compatibility
   between python 2 and python 3.
-* Refactored the save and delete method of model instances.
+* Refactored the ``save`` and ``delete`` method of model instances.
 * Remote :ref:`remote data structures <structures-backend>` can be accessed
   via the :attr:`stdnet.struct` singleton.
 * Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
@@ -31,10 +31,11 @@ Ver. 0.7.0 - Development
   :ref:`structured fields <model-field-structure>`.
 * pulsar_ is required to run the test suite and unittest2_ is required if
   using python 2.6.
-* Moved the contrib module to :mod:`stdnet.apps` renamed the tasks application
-  to ``grid``.
+* Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **358 regression tests** with **80%** coverage.
+* Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
+  model ``delete`` method to crash.
+* **360 regression tests** with **80%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

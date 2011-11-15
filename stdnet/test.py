@@ -33,7 +33,7 @@ class TestCase(unittest.TestCase):
         
     def _post_teardown(self):
         for model in orm.registered_models():
-            model.flush()
+            model.objects.flush()
         #orm.clearall()
         self.unregister()
     

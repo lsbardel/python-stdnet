@@ -34,7 +34,7 @@ it refers to all instances which have *field* set to ``bla``.
     stop = None
     lookups = ('in','contains')
     
-    def __init__(self, meta, fargs = None, eargs = None,
+    def __init__(self, meta, backend, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
                  queries = None, empty = False):
         '''\
@@ -59,7 +59,7 @@ instances of queryset are constructued using the
     optional ordering field.
 '''
         self._meta  = meta
-        self.model  = meta.model
+        self.backend = backend
         self.fargs  = fargs
         self.eargs  = eargs
         self.ordering = ordering
@@ -70,6 +70,10 @@ instances of queryset are constructued using the
         self.clear()
         if empty:
             self.qset = EmptySet()
+        
+    @property
+    def model(self):
+        return self._meta.model
         
     def clear(self):
         self.simple = False
@@ -101,6 +105,7 @@ instances of queryset are constructued using the
     
     def _clone(self, fargs, eargs):
         return self.__class__(self._meta,
+                              self.backend,
                               fargs=fargs,
                               eargs=eargs,
                               filter_sets=self.filter_sets,
@@ -247,8 +252,8 @@ objects on the server side.'''
             eargs = None
         if self.queries:
             self.simple = False
-        self.qset = self._meta.cursor.Query(self, fargs, eargs,
-                                            queries = self.queries)
+        self.qset = self.backend.Query(self, fargs, eargs,
+                                       queries = self.queries)
     
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -314,7 +319,7 @@ objects on the server side.'''
             commit = False
             if not transaction:
                 commit = True
-                transaction = self._meta.cursor.transaction()
+                transaction = self.backend.transaction()
             for el in self:
                 el.delete(transaction)
             if commit:
@@ -370,13 +375,14 @@ where or limit in a SQL select statement.
     Used by the :class:`stdnet.orm.query.M2MRelatedManager`.
 :parameter kwargs: dictionaris of limiting clauses.
 :rtype: a :class:`stdnet.orm.query.QuerySet` instance.'''
-        return QuerySet(self._meta, fargs = kwargs,
+        return QuerySet(self._meta, self.cursor,
+                        fargs = kwargs,
                         filter_sets = filter_sets)
     
     def from_queries(self, queries):
         '''Build a new query from a list of :class:`field_query`
 independent queries.'''
-        return QuerySet(self._meta, queries = queries)
+        return QuerySet(self._meta, self.cursor, queries = queries)
     
     def exclude(self, **kwargs):
         '''Create a new :class:`QuerySet` containing objects that do not
@@ -387,11 +393,11 @@ match the given lookup parameters *kwargs*.
         return QuerySet(self._meta, eargs = kwargs)
     
     def search(self, text):
-        return QuerySet(self._meta).search(text)
+        return QuerySet(self._meta, self.cursor).search(text)
     
     def empty(self):
         ''''''
-        return QuerySet(self._meta, empty = True)
+        return QuerySet(self._meta, self.cursor, empty = True)
     
     def all(self):
         '''Return a :class:`QuerySet` which retrieve all instances\
@@ -399,7 +405,8 @@ match the given lookup parameters *kwargs*.
  used without parameters.'''
         return self.filter()
     
-    def _setmodel(self, model):
+    def _setmodel(self, model, cursor = None):
+        self.cursor = cursor
         self.model = model
         self._meta = model._meta
     

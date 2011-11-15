@@ -1,6 +1,7 @@
 '''Object Relational Mapper for remote data structures.'''
 from .mapper import *
 from .models import *
+from .session import *
 from .fields import *
 from .std import *
 from .signals import *

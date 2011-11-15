@@ -1054,24 +1054,21 @@ which will execute all commands queued in the pipe.
         return self
         
     def parse_response(self, response, commands, **kwargs):
-        # parse off the response for MULTI and all commands prior to EXEC.
-        # the only data we care about is the response the EXEC
-        # which is the last command
-        self.signal_on_received.send(self, commands = commands,
-                                     response = response)
+        return list(self._parse_response(response[-1], commands[1:-1]))
         
+    def _parse_response(self, response, commands):
+        self.signal_on_received.send(self,
+                                     commands = commands,
+                                     response = response)
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
                 "pipeline execution")
-            
         parse_response = super(Pipeline,self).parse_response
-        data = []
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
                 args, options = cmd
                 r = parse_response(r,args[0],**options)
-            data.append(r)
-        return data
+            yield r
 
     def execute(self, with_callbacks = True):
         "Execute all the commands in the current pipeline"

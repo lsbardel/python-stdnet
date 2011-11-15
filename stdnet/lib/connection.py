@@ -1,10 +1,11 @@
 '''
 This file was originally forked from redis-py in January 2011.
-Since than it has moved on a different direction.
 
 Original Copyright
 Copyright (c) 2010 Andy McCurdy
     BSD License
+
+Since than it has moved on a different direction.
 
 Copyright (c) 2011 Luca Sbardella
     BSD License
@@ -12,6 +13,7 @@ Copyright (c) 2011 Luca Sbardella
 '''
 import errno
 import socket
+import io
 from itertools import chain, starmap
 
 from stdnet.conf import settings
@@ -20,7 +22,7 @@ from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
 
 from .exceptions import *
 from .base import Reader, fallback
-        
+
 
 class RedisRequest(object):
     '''A redis request'''
@@ -33,6 +35,7 @@ class RedisRequest(object):
         self.parse_response = parse_response
         self.release_connection = release_connection
         self.options = options
+        self._response = None
         self.response = connection.parser.gets()
         if not self.command_name:
             self.response = []
@@ -94,9 +97,11 @@ class RedisRequest(object):
             if isinstance(self.response,ResponseError):
                 raise self.response
             if self.parse_response:
-                self.response = self.parse_response(self.response,
+                self._response = self.parse_response(self.response,
                                             self.command_name or self.args,
                                             **self.options)
+            else:
+                self._response = self.response
         except:
             c.disconnect()
             raise
@@ -130,14 +135,14 @@ class SyncRedisRequest(RedisRequest):
         sock = self.connection.sock
         while not self.done:
             try:
-                stream = sock.recv(4096)
+                stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             except (socket.error, socket.timeout) as e:
                 raise ConnectionError("Error while reading from socket: %s" % \
                     (e.args,))
             if not stream:
                 raise ConnectionError("Socket closed on remote end")
             self.parse(stream)
-        return self.response
+        return self._response
     
     def finish(self):
         return self.read_response()

@@ -207,7 +207,7 @@ function users should never call.'''
     def get_cache_name(self):
         return '_%s_cache' % self.name
     
-    def serialize(self, value, transaction = None):
+    def serialize(self, value, backend = None):
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It returns a representation of *value*
 to store in the database.
@@ -290,7 +290,7 @@ or other entities. They are indexes by default.'''
         else:
             return self.default
         
-    def serialize(self, value, transaction = None):
+    def serialize(self, value, backend = None):
         if value is not None:
             return self.encoder.dumps(value, logger = logger)
     
@@ -348,10 +348,10 @@ will automatically be added to your model
 if you don't specify otherwise.
     '''
     type = 'auto'
-    def serialize(self, value, transaction = None):
-        if not value:
-            value = self.meta.cursor.incr(self.meta.autoid())
-        return super(AutoField,self).serialize(value)
+    def serialize(self, value, backend = None):
+        if not value and backend:
+            value = backend.autoid(self.meta)
+        return super(AutoField,self).serialize(value, backend)
 
 
 class FloatField(AtomField):
@@ -521,7 +521,7 @@ the relation from the related object back to self.
     def scorefun(self, value):
         raise NotImplementedError
     
-    def serialize(self, value, transaction = None):
+    def serialize(self, value, backend = None):
         try:
             return value.id
         except:

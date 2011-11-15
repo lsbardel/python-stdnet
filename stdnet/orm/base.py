@@ -3,13 +3,13 @@ import copy
 import hashlib
 from collections import namedtuple
 
-from stdnet.utils import zip, to_bytestring, to_string, gen_unique_id
+from stdnet.utils import zip, to_bytestring, to_string
 from stdnet.orm import signals
 from stdnet.exceptions import *
 
 from .globals import hashmodel, JSPLITTER
-from .query import UnregisteredManager
 from .fields import Field, AutoField
+from .session import Manager
 
 
 def get_fields(bases, attrs):
@@ -172,30 +172,8 @@ mapper.
     
     def __str__(self):
         return self.__repr__()
-        
-    def basekey(self, *args):
-        """Calculate the key to access model data in the backend server.
-For example::
-        
-    >>> from examples.models import User
-    >>> from orm import register
-    >>> register(User)
-    'redis db 7 on 127.0.0.1:6379'
-    >>> User._meta.basekey()
-    'stdnet.examples.user'
-"""
-        key = '{0}{1}'.format(self.keyprefix,self.modelkey)
-        postfix = ':'.join((str(p) for p in args if p is not None))
-        return '{0}:{1}'.format(key,postfix) if postfix else key
     
-    def tempkey(self, name = None):
-        return self.basekey('tmp',name or gen_unique_id())
-    
-    def autoid(self):
-        '''The id for auto-increments ids'''
-        return self.basekey('ids')
-    
-    def is_valid(self, instance):
+    def is_valid(self, instance, backend):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
@@ -216,7 +194,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                 value = field.get_default()
                 setattr(instance,name,value)
             try:
-                svalue = field.serialize(value)
+                svalue = field.serialize(value, backend)
             except FieldValueError as e:
                 errors[name] = str(e)
             else:
@@ -291,7 +269,7 @@ the model table'''
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
         
-    def server_fields(self, fields):
+    def backend_fields(self, fields):
         '''Return a tuple containing a list
 of fields names and a list of field attribute names.'''
         dfields = self.dfields
@@ -356,8 +334,13 @@ class StdNetType(type):
         # remove and build field list
         fields    = get_fields(bases, attrs)        
         # create the new class
-        objects   = attrs.pop('objects',None)
         new_class = super_new(cls, name, bases, attrs)
+        objects = getattr(new_class,'objects',None)
+        if objects is None:
+            objects = Manager()
+        else:
+            objects = copy.copy(objects)
+        objects.register(new_class)
         new_class.objects = objects
         app_label = kwargs.pop('app_label')
         
@@ -369,8 +352,6 @@ class StdNetType(type):
                 app_label = ''
         
         meta = Metaclass(new_class,fields,app_label=app_label,**kwargs)
-        if objects is None:
-            new_class.objects = UnregisteredManager(new_class)
         signals.class_prepared.send(sender=new_class)
         return new_class
     

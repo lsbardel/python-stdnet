@@ -2,10 +2,9 @@ import time
 from datetime import datetime, date
 
 from stdnet import orm
-from stdnet.orm import query
 
 
-class CustomManager(query.Manager):
+class CustomManager(orm.Manager):
     
     def something(self):
         return "I'm a custom manager"

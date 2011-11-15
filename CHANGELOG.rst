@@ -1,3 +1,6 @@
+Ver. 0.8.0
+============================
+* Removed backend server instance from model metaclass.
 
 .. _vers07:
 

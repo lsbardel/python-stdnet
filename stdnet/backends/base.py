@@ -34,14 +34,20 @@ class BeckendQuery(object):
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
-        self.server = qs._meta.cursor
-        self.meta = qs._meta
         self._sha = BytesIO()
         self.build(fargs, eargs, queries)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
         self.execute()
 
+    @property
+    def meta(self):
+        return self.qs._meta
+    
+    @property
+    def backend(self):
+        return self.qs.backend
+    
     @property
     def sha(self):
         return self._sha
@@ -72,7 +78,7 @@ class BeckendQuery(object):
         if self.qs._select_related:
             if not hasattr(result,'__len__'):
                 result = list(result)
-            meta = self.qs._meta
+            meta = self.meta
             for field in self.qs._select_related:
                 name = field.name
                 attname = field.attname
@@ -105,12 +111,14 @@ It must implement the *loads* and *dumps* methods.'''
     structure_module = None
     
     def __init__(self, name, address, pickler = None,
-                 charset = 'utf-8', **params):
+                 charset = 'utf-8', connection_string = '',
+                 **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
         self.charset = charset
         self.pickler = pickler or encoders.NoEncoder()
+        self.connection_string = connection_string
         self.params = params
         self.client = self.setup_connection(address, **params)
         
@@ -163,42 +171,6 @@ It must implement the *loads* and *dumps* methods.'''
     def transaction(self, pipelined = True, **kwargs):
         '''Return a transaction instance'''
         return self.Transaction(self,self.cursor(pipelined),**kwargs)
-
-    def save_object(self, obj, transaction = None):
-        '''\
-Save or updated an instance of a model to the back-end database:
-        
-:parameter obj: instance of :ref:`StdModel <model-model>`
-                to add/update to the database
-:parameer transaction: optional transaction instance.
-
-Raises :class:`stdnet.FieldValueError` if the instance is not valid.'''
-        if not obj.is_valid():
-            raise FieldValueError(json.dumps(obj.errors))
-        
-        commit = False
-        if not transaction:
-            commit = True
-            transaction = obj.local_transaction()
-        dbdata = obj._dbdata
-        idnew = True
-        
-        # This is an object we got from the database
-        if  obj.id and 'id' in dbdata:
-            idnew = obj.id != dbdata['id']
-            if idnew:
-                raise ValueError('Id has changed from {0} to {1}.'\
-                                 .format(obj.id,dbdata['id']))
-        elif not obj.id:
-            obj.id = obj._meta.pk.serialize(obj.id)
-            
-        obj = self._save_object(obj, idnew, transaction)
-        if commit:
-            transaction.commit()
-            obj._dbdata.update(obj.cleaned_data)
-            obj._dbdata['id'] = obj.id
-        
-        return obj
         
     def delete_object(self, obj, transaction = None):
         '''Delete an object from the data server and clean up indices.
@@ -326,7 +298,10 @@ If the key does not exist, raise a ValueError exception."""
         """Remove *all* values from the database at once."""
         raise NotImplementedError
     
-    def _save_object(self, obj, idchange, transaction):
+    def autoid(self, meta):
+        raise NotImplementedError
+    
+    def save_object(self, obj, idnew, transaction):
         raise NotImplementedError
     
     def _remove_indexes(self, obj, transaction):

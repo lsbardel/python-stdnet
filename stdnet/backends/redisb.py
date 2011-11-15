@@ -1,16 +1,23 @@
 from collections import namedtuple
 
 import stdnet
-from stdnet.utils import iteritems, to_string, map
+from stdnet.conf import settings
+from stdnet.utils import iteritems, to_string, map, gen_unique_id
 from stdnet.backends.structures import structredis
 from stdnet.lib import redis, connection
 
 MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
 
+################################################################################
+#    prefixes for data
+IDS = 'ids'
 OBJ = 'obj'
 UNI = 'uni'
 IDX = 'idx'
+TMP = 'tmp'
+################################################################################
+
 pipeattr = lambda pipe,p,name : getattr(pipe,p+name)
 
 
@@ -25,7 +32,7 @@ class RedisTransaction(stdnet.Transaction):
         '''Commit cache objects to database.'''
         cursor = self.cursor
         for id,cachepipe in iteritems(self._cachepipes):
-            el = getattr(self.server,cachepipe.method)(id)
+            el = getattr(self.backend,cachepipe.method)(id)
             el._save_from_pipeline(cursor, cachepipe.pipe)
             cachepipe.pipe.clear()
                     
@@ -41,8 +48,8 @@ class RedisTransaction(stdnet.Transaction):
 
 class add2set(object):
 
-    def __init__(self, server, pipe, meta):
-        self.server = server
+    def __init__(self, backend, pipe, meta):
+        self.backend = backend
         self.pipe = pipe
         self.meta = meta
     
@@ -54,8 +61,8 @@ class add2set(object):
                 score = MIN_FLOAT if v is None else ordering.field.scorefun(v)
             elif score is None:
                 # A two way trip here.
-                idset = self.meta.basekey('id')
-                score = self.server.client.zscore(idset,id)
+                idset = self.backend.basekey(self.meta,'id')
+                score = self.backend.client.zscore(idset,id)
             if idsave:
                 self.pipe.zadd(key, score, id)
         elif idsave:
@@ -69,17 +76,18 @@ class RedisQuery(stdnet.BeckendQuery):
         
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
-        key = self.meta.tempkey()
+        meta = self.meta
+        key = self.backend.tempkey(meta)
         pipe = self.pipe
         add = self.add
         if name == 'id':
             for id in values:
                 add(key,id)
         else:
-            bkey = self.meta.basekey
-            rpy = self.server.client
+            bkey = self.backend.basekey
+            rpy = self.backend.client
             for value in values:
-                hkey = bkey(UNI,name)
+                hkey = bkey(meta,UNI,name)
                 id = rpy.hget(hkey, value)
                 add(key,id)
         pipe.expire(key,self.expire)
@@ -88,6 +96,7 @@ class RedisQuery(stdnet.BeckendQuery):
     def _query(self, qargs, setoper, key = None, extra = None):
         pipe = self.pipe
         meta = self.meta
+        backend = self.backend
         keys = []
         sha  = self._sha
         if qargs:
@@ -99,9 +108,9 @@ class RedisQuery(stdnet.BeckendQuery):
                     else:
                         raise ValueError('Not available')
                 elif len(q.values) == 1:
-                    keys.append(meta.basekey(IDX,q.name,q.values[0]))
+                    keys.append(backend.basekey(meta,IDX,q.name,q.values[0]))
                 else:
-                    insersept = [meta.basekey(IDX,q.name,value)\
+                    insersept = [backend.basekey(meta,IDX,q.name,value)\
                                   for value in q.values]
                     tkey = self.meta.tempkey()
                     if q.lookup == 'in':
@@ -141,20 +150,21 @@ class RedisQuery(stdnet.BeckendQuery):
 different model) which has a *field* containing current model ids.'''
         keys = []
         pipe = self.pipe
+        backend = self.backend
         sha = self._sha
         for q in queries:
             sha.write(q.__repr__().encode())
-            query = q.query 
+            query = q.query
             query._buildquery()
             qset = query.qset.query_set
-            db = query._meta.cursor.client.db
+            db = backend.client.db
             if db != pipe.db:
                 raise ValueError('Indexes in a different database')
                 # In a different redis database. We need to move the set
                 query._meta.cursor.client.move(qset,pipe.db)
                 pipe.expire(qset,self.expire)
             skey = self.meta.tempkey()
-            okey = query._meta.basekey(OBJ,'*->{0}'.format(q.field))
+            okey = backend.basekey(meta,OBJ,'*->{0}'.format(q.field))
             pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\
                     .expire(skey,self.expire)
             keys.append(skey)
@@ -167,17 +177,17 @@ different model) which has a *field* containing current model ids.'''
     
     def build(self, fargs, eargs, queries):
         meta = self.meta
-        server = self.server
-        self.idset = idset = meta.basekey('id')
+        backend = self.backend
+        self.idset = idset = backend.basekey(meta,'id')
         p = 'z' if meta.ordering else 's'
-        self.pipe = pipe = self.server.client.pipeline()
+        self.pipe = pipe = backend.client.pipeline()
         if p == 'z':
             pismember =  pipeattr(pipe,'','zrank')
-            self.ismember =  pipeattr(server.client,'','zrank')
+            self.ismember =  pipeattr(backend.client,'','zrank')
             chk = self.zism
         else:
             pismember =  pipeattr(pipe,'','sismember')
-            self.ismember =  pipeattr(server.client,'','sismember')
+            self.ismember =  pipeattr(backend.client,'','sismember')
             chk = self.sism
         
         if self.qs.simple:
@@ -186,8 +196,8 @@ different model) which has a *field* containing current model ids.'''
                 if q.name == 'id':
                     ids = q.values
                 else:
-                    key = meta.basekey(UNI,q.name)
-                    ids = server.client.hmget(key, q.values)
+                    key = backend.basekey(meta, UNI, q.name)
+                    ids = backend.client.hmget(key, q.values)
                 for id in ids:
                     if id is not None:
                         allids.append(id)
@@ -198,8 +208,8 @@ different model) which has a *field* containing current model ids.'''
             self.intersect = pipeattr(pipe,p,'interstore')
             self.union = pipeattr(pipe,p,'unionstore')
             self.diff = pipeattr(pipe,p,'diffstore')
-            self.card = pipeattr(server.client,p,'card')
-            self.add = add2set(server,pipe,meta)
+            self.card = pipeattr(backend.client,p,'card')
+            self.add = add2set(backend,pipe,meta)
             if queries:
                 idset = self.build_from_query(queries)
             key1 = self._query(fargs,self.intersect,idset,self.qs.filter_sets)
@@ -216,7 +226,7 @@ different model) which has a *field* containing current model ids.'''
         if sha:
             if self.timeout:
                 key = self.meta.tempkey(sha)
-                if not self.server.client.exists(key):
+                if not self.backend.client.exists(key):
                     self.pipe.rename(self.query_set,key)
                     self.result = self.pipe.execute()
                 self.query_set = key
@@ -225,11 +235,13 @@ different model) which has a *field* containing current model ids.'''
     
     def order(self):
         '''Perform ordering with respect model fields.'''
+        meta=  self.meta
+        backend = self.backend
         if self.qs.ordering:
             sort_by = self.qs.ordering
-            skey = self.meta.tempkey()
-            okey = self.meta.basekey(OBJ,'*->{0}'.format(sort_by.name))
-            pipe = self.server.client.pipeline()
+            skey = backend.tempkey(meta)
+            okey = backend.basekey(meta, OBJ,'*->{0}'.format(sort_by.name))
+            pipe = backend.client.pipeline()
             pipe.sort(self.query_set,
                       by = okey,
                       desc = sort_by.desc,
@@ -265,6 +277,9 @@ different model) which has a *field* containing current model ids.'''
     
     def items(self, slic):
         # Unwind the database query
+        backend = self.backend
+        client = backend.client
+        
         if self.qs.simple:
             ids = self.result
             if slic:
@@ -273,43 +288,44 @@ different model) which has a *field* containing current model ids.'''
             skey = self.order()
             if skey:
                 start,stop = self.get_redis_slice(slic)
-                ids = self.server.client.lrange(skey,start,stop)
+                ids = self.backend.client.lrange(skey,start,stop)
             elif self.meta.ordering:
                 start,stop = self.get_redis_slice(slic)
                 if self.meta.ordering.desc:
-                    command = self.server.client.zrevrange
+                    command = client.zrevrange
                 else:
-                    command = self.server.client.zrange
+                    command = client.zrange
                 ids = command(self.query_set,start,stop)
             else:
-                ids = list(self.server.client.smembers(self.query_set))
+                ids = list(client.smembers(self.query_set))
                 if slic:
                     ids = ids[slic]
         
         # Load data
         if ids:
-            bkey = self.meta.basekey
+            meta = self.meta
+            bkey = backend.basekey
             pipe = None
             fields = self.qs.fields or None
             fields_attributes = None
             if fields:
-                fields, fields_attributes = self.meta.server_fields(fields)
+                fields, fields_attributes = meta.backend_fields(fields)
                 if fields:
-                    pipe = self.server.client.pipeline()
+                    pipe = client.pipeline()
                     hmget = pipe.hmget
                     for id in ids:
-                        hmget(bkey(OBJ,to_string(id)),fields_attributes)
+                        hmget(bkey(meta, OBJ, to_string(id)),fields_attributes)
             else:
-                pipe = self.server.client.pipeline()
+                pipe = client.pipeline()
                 hgetall = pipe.hgetall
                 for id in ids:
-                    hgetall(bkey(OBJ,to_string(id)))
+                    hgetall(bkey(meta, OBJ, to_string(id)))
             if pipe is not None:
-                result = self.server.make_objects(self.meta, ids,
-                                            pipe.execute(), fields,
-                                            fields_attributes)
+                result = backend.make_objects(meta, ids,
+                                              pipe.execute(), fields,
+                                              fields_attributes)
             else:
-                result = self.server.make_objects(self.meta, ids)
+                result = backend.make_objects(meta, ids)
             return self.load_related(result)
         else:
             return ids
@@ -323,6 +339,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     _redis_clients = {}
         
     def setup_connection(self, address, **params):
+        self.namespace = params.get('prefix',settings.DEFAULT_KEYPREFIX)
         addr = address.split(':')
         if len(addr) == 2:
             try:
@@ -336,7 +353,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             self.connection_pools[cp] = cp
         rpy = redis.Redis(connection_pool = cp)
         self.execute_command = rpy.execute_command
-        self.incr = rpy.incr
         self.clear = rpy.flushdb
         self.delete = rpy.delete
         self.keys = rpy.keys
@@ -377,26 +393,26 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _loadfields(self, obj, toload):
         if toload:
-            fields = self.client.hmget(obj._meta.basekey(OBJ,obj.id), toload)
+            fields = self.client.hmget(self.basekey(meta, OBJ, obj.id), toload)
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
 
-    def _save_object(self, obj, newid, transaction):        
+    def save_object(self, obj, newid, transaction):        
         # Add object data to the model hash table
         pipe = transaction.cursor
         obid = obj.id
         meta = obj._meta
-        bkey = meta.basekey
+        bkey = self.basekey
         data = obj.cleaned_data
         indices = obj.indices
         if data:
-            pipe.hmset(bkey(OBJ,obid),data)
+            pipe.hmset(bkey(meta,OBJ,obid),data)
         #hash.addnx(objid, data)
         
         if newid or indices:
             add = add2set(self,pipe,meta)
-            score = add(bkey('id'), obid, obj=obj, idsave=newid)
+            score = add(bkey(meta,'id'), obid, obj=obj, idsave=newid)
             fields = self._loadfields(obj,obj.toload)
             
         if indices:
@@ -408,7 +424,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             for field,value,oldvalue in indices:
                 name = field.name
                 if field.unique:
-                    name = bkey(UNI,name)
+                    name = bkey(meta,UNI,name)
                     if not newid:
                         oldvalue = fields.get(field.name,oldvalue)
                         pipe.hdel(name, oldvalue)
@@ -416,8 +432,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                 else:
                     if not newid:
                         oldvalue = fields.get(field.name,oldvalue)
-                        rem(bkey(IDX,name,oldvalue), obid)
-                    add(bkey(IDX,name,value), obid, score = score)
+                        rem(bkey(meta,IDX,name,oldvalue), obid)
+                    add(bkey(meta,IDX,name,value), obid, score = score)
                         
         return obj
     
@@ -426,13 +442,13 @@ class BackendDataServer(stdnet.BackendDataServer):
         id = dbdata['id']
         # Check for multifields and remove them
         meta = obj._meta
-        bkey = meta.basekey
+        bkey = self.basekey
         pipe = transaction.cursor
         rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
         #remove the hash table
-        pipe.delete(meta.basekey(OBJ,id))
+        pipe.delete(bkey(meta, OBJ, id))
         #remove the id from set
-        rem(bkey('id'), id)
+        rem(bkey(meta, 'id'), id)
         # Remove multifields
         mfs = obj._meta.multifields
         if mfs:
@@ -449,26 +465,39 @@ class BackendDataServer(stdnet.BackendDataServer):
                     toload.append(name)
                 else:
                     if field.unique:
-                        pipe.hdel(bkey(UNI,name), dbdata[name])
+                        pipe.hdel(bkey(meta,UNI,name), dbdata[name])
                     else:
-                        rem(bkey(IDX,name,dbdata[name]), id)
+                        rem(bkey(meta,IDX,name,dbdata[name]), id)
             fields = self._loadfields(obj,toload)
             for name,value in iteritems(fields):
                 field = meta.dfields[name]
                 if field.unique:
-                    pipe.hdel(bkey(UNI,name), value)
+                    pipe.hdel(bkey(meta,UNI,name), value)
                 else:
-                    rem(bkey(IDX,name,value), id)
+                    rem(bkey(meta,IDX,name,value), id)
     
+    def basekey(self, meta, *args):
+        """Calculate the key to access model data in the backend backend."""
+        key = '{0}{1}'.format(self.namespace,meta.modelkey)
+        postfix = ':'.join((str(p) for p in args if p is not None))
+        return '{0}:{1}'.format(key,postfix) if postfix else key
+    
+    def autoid(self, meta):
+        id = self.basekey(meta,IDS)
+        return self.client.incr(id)
+    
+    def tempkey(self, meta, name = None):
+        return self.basekey(meta, TMP, name or gen_unique_id())
+        
     def flush(self, meta):
         '''Flush all model keys from the database'''
         # The scripting delete
-        pattern = '{0}*'.format(meta.basekey())
+        pattern = '{0}*'.format(self.basekey(meta))
         return self.client.delpattern(pattern)
             
     def instance_keys(self, obj):
         meta = obj._meta
-        keys = [meta.basekey(OBJ,obj.id)]
+        keys = [meta.basekey(meta,OBJ,obj.id)]
         for field in meta.multifields:
             f = getattr(obj,field.attname)
             keys.append(f.id)

@@ -16,18 +16,15 @@ def transaction(*models, **kwargs):
     '''Create a transaction'''
     if not models:
         raise ValueError('Cannot create transaction with no models')
-    cursor = None
+    backend = None
     tra = None
     for model in models:
-        c = model._meta.cursor
-        if not c:
-            raise ModelNotRegistered("Model '{0}' is not registered with a\
- backend database. Cannot start a transaction.".format(model))
-        if cursor and cursor != c:
+        b = model.objects.backend
+        if backend and backend != b:
             raise InvalidTransaction("Models {0} are registered\
- with a different databases. Cannot create transaction"\
+ with a different backend databse. Cannot create transaction"\
             .format(', '.join(('{0}'.format(m) for m in models))))
-        cursor = c
+        backend = b
         # Check for local transactions
         if hasattr(model,attr_local_transaction):
             t = getattr(model,attr_local_transaction)
@@ -35,11 +32,11 @@ def transaction(*models, **kwargs):
                 tra.merge(t)
             else:
                 tra = t
-    return tra or cursor.transaction(**kwargs)
+    return tra or backend.transaction(**kwargs)
 
 
 class Transaction(object):
-    '''Transaction class for pipelining commands to the back-end server.
+    '''Transaction class for pipelining commands to the back-end backend.
 An instance of this class is usally obtained by using the high level
 :func:`stdnet.transaction` function.
 
@@ -47,21 +44,21 @@ An instance of this class is usally obtained by using the high level
 
     Transaction name
     
-.. attribute:: server
+.. attribute:: backend
 
     Instance of a :class:`stdnet.BackendDataServer` to which the transaction
-    is beeing performed.
+    is being performed.
     
 .. attribute:: cursor
 
-    The server cursor which manages the transaction.
+    The backend cursor which manages the transaction.
     
     '''
     default_name = 'transaction'
     
-    def __init__(self, server, cursor, name = None):
+    def __init__(self, backend, cursor, name = None):
         self.name = name or self.default_name
-        self.server = server
+        self.backend = backend
         self.cursor = cursor
         self._cachepipes = {}
         self._callbacks = []
@@ -74,14 +71,14 @@ An instance of this class is usally obtained by using the high level
 :parameter args: tuple or varying arguments to pass to *func*.
 :parameter kwargs: dictionary or key-values arguments to pass to *func*.
 :parameter callback: optional callback function with arity 1 which process
-    the result wonce back from the server.'''
+    the result wonce back from the backend.'''
         res = func(self.cursor,*args,**kwargs)
         callback = callback or default_callback
         self._callbacks.append(callback)
         
     def merge(self, other):
         '''Merge two transaction together'''
-        if self.server == other.server:
+        if self.backend == other.backend:
             if not other.empty():
                 raise NotImplementedError()
         else:
@@ -116,7 +113,7 @@ operation in the database.'''
             self._result = value
             
     def commit(self):
-        '''Close the transaction and commit commands to the server.'''
+        '''Close the transaction and commit commands to the backend.'''
         results = self._execute() or ()
         callbacks = self._callbacks
         self._callbacks = []

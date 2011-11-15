@@ -34,6 +34,8 @@ if ispy3k: # Python 3
     from urllib import parse as urlparse
     from io import StringIO, BytesIO
     
+    urlencode = urlparse.urlencode
+    
     class UnicodeMixin(object):
         
         def __unicode__(self):
@@ -54,6 +56,7 @@ else: # Python 2
     range = xrange
     
     import urlparse
+    from urllib import urlencode
     from cStringIO import StringIO
     BytesIO = StringIO
     

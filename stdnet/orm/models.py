@@ -145,14 +145,11 @@ otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
                         
 The method return ``self``.
 '''
+        session = self.objects.session
         send_signal = not transaction and not skip_signal
         if send_signal:
             pre_save.send(sender=self.__class__, instance = self)
-        meta = self._meta
-        if not meta.cursor:
-            raise ModelNotRegistered("Model '{0}' is not registered with a\
- backend database. Cannot save instance.".format(meta))
-        r = meta.cursor.save_object(self, transaction)
+        r = session.save(self, transaction)
         if send_signal:
             post_save.send(sender=self.__class__,
                            instance = r)
@@ -175,12 +172,12 @@ The method return ``self``.
         else:
             return self
     
-    def is_valid(self):
+    def is_valid(self, backend):
         '''Kick off the validation algorithm by checking oll
 :attr:`StdModel.loadedfields` agains their respective validation algorithm.
 
 :rtype: Boolean indicating if the model validates.'''
-        return self._meta.is_valid(self)
+        return self._meta.is_valid(self, backend)
 
     def _valattr(self, name):
         if not hasattr(self,'_validation'):
@@ -258,7 +255,7 @@ If the instance is not available (it does not have an id) and
         '''Create a transaction for this instance.'''
         if not hasattr(self,attr_local_transaction):
             setattr(self,attr_local_transaction,
-                    self._meta.cursor.transaction(**kwargs))
+                    self.objects.backend.transaction(**kwargs))
         return getattr(self,attr_local_transaction)
     
     # HOOKS
@@ -275,14 +272,6 @@ new object in the database'''
 this instance only. The instance id
 is however available in other keys (indices and other backend containers).'''
         return self._meta.cursor.instance_keys(self)
-    
-    @classmethod
-    def flush(cls):
-        '''Flush the model table and all related tables including all indexes.
-Calling flush will erase everything about the model
-instances in the remote server. If count is a dictionary, the method
-will enumerate the number of object to delete. without deleting them.'''
-        return cls._meta.flush()
     
     @classmethod
     def transaction(cls, *models, **kwargs):

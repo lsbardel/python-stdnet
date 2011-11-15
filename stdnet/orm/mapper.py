@@ -4,7 +4,6 @@ from stdnet.utils import is_bytes_or_string
 from stdnet import getdb, struct
 from stdnet.utils.importer import import_module
 
-from .query import Manager, UnregisteredManager
 from .base import StdNetType, AlreadyRegistered
 
 
@@ -18,9 +17,7 @@ __all__ = ['clearall',
            'registered_models',
            'model_iterator',
            'register_applications',
-           'register_application_models',
-           'Manager',
-           'UnregisteredManager']
+           'register_application_models']
 
     
 def clearall(exclude = None):
@@ -55,7 +52,7 @@ It removes all keys associated with models.'''
     flushed = []
     for model in includes:
         if model not in excludes:
-            model.flush()
+            model.objects.flush()
             flushed.append(str(model._meta))
     return flushed
             
@@ -100,31 +97,15 @@ on the same redis instance).'''
     global _GLOBAL_REGISTRY
     from stdnet.conf import settings
     backend = backend or settings.DEFAULT_BACKEND
-    meta = model._meta
     if model in _GLOBAL_REGISTRY:
         if not ignore_duplicates:  
             raise AlreadyRegistered(
                         'Model {0} is already registered'.format(meta))
         else:
             return
-    objects = getattr(model,'objects',None)
-    if objects is None or isinstance(objects,UnregisteredManager):
-        objects = Manager()
-    else:
-        objects = copy.copy(objects)
-    model.objects = objects
-    # unregister backend if already available
-    #if meta.cursor:
-    #    meta.cursor.disconnect()
-    meta.cursor = getdb(backend)
-    meta.connection_string = backend 
-    params = meta.cursor.params
-    meta.keyprefix = keyprefix if keyprefix is not None else\
-                        params.get('prefix',settings.DEFAULT_KEYPREFIX)
-    meta.timeout = timeout if timeout is not None else params.get('timeout',0)
-    objects._setmodel(model)
-    _GLOBAL_REGISTRY[model] = meta
-    return str(meta.cursor)
+    model.objects.backend = backend
+    _GLOBAL_REGISTRY[model] = model
+    return model.objects.backend
 
 
 def unregister(model = None):

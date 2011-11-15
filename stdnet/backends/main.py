@@ -2,7 +2,7 @@ from inspect import isclass
 from uuid import uuid4
 
 from stdnet.conf import settings
-from stdnet.utils import urlparse, encoders, itervalues
+from stdnet.utils import urlparse, encoders, itervalues, urlencode
 from stdnet.utils.importer import import_module
 from stdnet.lib.exceptions import ConnectionError 
 from stdnet.exceptions import *
@@ -51,7 +51,15 @@ def _getdb(scheme, host, params):
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
 
 
+def get_connection_string(scheme, address, params):
+    if isinstance(address,tuple):
+        address = ':'.join(address)
+    if params:
+        address += '?' + urlencode(params)
+    return scheme + '://' + address
+    
 def getdb(backend_uri = None, **kwargs):
+    '''get a backend database'''
     if isinstance(backend_uri,BackendDataServer):
         return backend_uri
     backend_uri = backend_uri or settings.DEFAULT_BACKEND
@@ -59,6 +67,8 @@ def getdb(backend_uri = None, **kwargs):
         return None
     scheme, address, params = parse_backend_uri(backend_uri)
     params.update(kwargs)
+    backend_uri = get_connection_string(scheme, address, params)
+    params['connection_string'] = backend_uri
     return _getdb(scheme, address, params)
 
 

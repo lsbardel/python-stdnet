@@ -1,15 +1,17 @@
 '''
 This file was originally forked from redis-py in January 2011.
-Since than it has moved on a different directions.
+Since than it has moved on a different direction.
 
+Original Copyright
 Copyright (c) 2010 Andy McCurdy
     BSD License   
 
-
+Copyright (c) 2011 Luca Sbardella
+    BSD License
 '''
 import time
 from datetime import datetime
-from itertools import starmap
+from functools import partial
 
 from stdnet.utils import zip, is_int, iteritems, is_string
 from stdnet.dispatch import Signal
@@ -217,7 +219,7 @@ class Redis(object):
     def __eq__(self, other):
         return self.connection_pool == other.connection_pool
     
-    def pipeline(self, transaction=True, shard_hint=None):
+    def pipeline(self):
         """
 Return a new pipeline object that can queue multiple commands for
 later execution. ``transaction`` indicates whether all commands
@@ -225,13 +227,10 @@ should be executed atomically. Apart from making a group of operations
 atomic, pipelines are useful for reducing the back-and-forth overhead
 between the client and server.
 """
-        return Pipeline(
-            self.connection_pool,
-            self.response_callbacks,
-            transaction,
-            shard_hint,
-            self.signal_on_send,
-            self.signal_on_received)
+        return Pipeline(self.connection_pool,
+                        self.response_callbacks,
+                        self.signal_on_send,
+                        self.signal_on_received)
 
     #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def execute_command(self, *args, **options):
@@ -1027,20 +1026,17 @@ instance of an exception as a potential value. In general, these will be
 ResponseError exceptions, such as those raised when issuing a command
 on a key of a different datatype.
 """
-    def __init__(self, connection_pool, response_callbacks, transaction,
-                 shard_hint,signal_on_send,signal_on_received):
+    def __init__(self, connection_pool,  response_callbacks,
+                 signal_on_send, signal_on_received):
         self.connection_pool = connection_pool
         self.response_callbacks = response_callbacks
-        self.transaction = transaction
-        self.shard_hint = shard_hint
         self.signal_on_send = signal_on_send
         self.signal_on_received = signal_on_received
         self.reset()
 
     def reset(self):
         self.command_stack = []
-        if self.transaction:
-            self.execute_command('MULTI')
+        self.execute_command('MULTI')
 
     def execute_command(self, *args, **options):
         """
@@ -1056,70 +1052,32 @@ which will execute all commands queued in the pipe.
 """
         self.command_stack.append((args, options))
         return self
-
-    def _execute_transaction(self, connection, commands, with_callbacks):
-        all_cmds = b''.join(starmap(connection.pack_command,
-                                   (args for args, options in commands)))
-        # we don't care about the multi/exec any longer
-        commands = commands[1:-1]
-        self.signal_on_send.send(self, raw_command = all_cmds,
-                                 commands = commands)
-        connection.send_packed_command(all_cmds)
+        
+    def parse_response(self, response, commands, **kwargs):
         # parse off the response for MULTI and all commands prior to EXEC.
         # the only data we care about is the response the EXEC
         # which is the last command
-        parse_response = self.parse_response
-        for i in range(len(commands)+1):
-            parse_response(connection, '_')
-        # parse the EXEC.
-        response = parse_response(connection, '_')
-        
-        self.signal_on_received.send(self, raw_command = all_cmds,
+        self.signal_on_received.send(self, commands = commands,
                                      response = response)
         
-        if response is None:
-            raise WatchError("Watched variable changed.")
-
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
                 "pipeline execution")
-        # We have to run response callbacks manually
+            
+        parse_response = super(Pipeline,self).parse_response
         data = []
-        response_callbacks = self.response_callbacks
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
                 args, options = cmd
-                command_name = args[0]
-                if command_name in response_callbacks:
-                    r = response_callbacks[command_name](r, **options)
+                r = parse_response(r,args[0],**options)
             data.append(r)
         return data
 
-    def _execute_pipeline(self, connection, commands, with_callbacks):
-    # build up all commands into a single request to increase network perf
-        all_cmds = b''.join(starmap(connection.pack_command,
-                                   (args for args, options in commands)))
-        connection.send_packed_command(all_cmds)
-        return [self.parse_response(connection, args[0], **options)
-                for args, options in commands]
-
     def execute(self, with_callbacks = True):
         "Execute all the commands in the current pipeline"
-        if self.transaction:
-            self.execute_command('EXEC')
-            execute = self._execute_transaction
-        else:
-            execute = self._execute_pipeline
-        stack = self.command_stack
+        self.execute_command('EXEC')
+        commands = self.command_stack
         self.reset()
-        conn = self.connection_pool.get_connection('MULTI', self.shard_hint)
-        try:
-            return execute(conn, stack, with_callbacks)
-        except ConnectionError:
-            conn.disconnect()
-            return execute(conn, stack, with_callbacks)
-        except ResponseError:
-            conn.disconnect()
-            raise
-        finally:
-            self.connection_pool.release(conn)
+        conn = self.connection_pool.get_connection()
+        return conn.execute_pipeline(self.parse_response, commands)
+

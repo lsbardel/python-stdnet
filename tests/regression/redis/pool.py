@@ -5,6 +5,7 @@ class DummyConnection(object):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
+
 class ConnectionPoolTestCase(BaseTest):
     
     def get_pool(self, connection_info=None, max_connections=None):

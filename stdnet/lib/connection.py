@@ -1,19 +1,18 @@
 '''
 This file was originally forked from redis-py in January 2011.
-Since than it has moved on a different directions.
+Since than it has moved on a different direction.
 
 Original Copyright
 Copyright (c) 2010 Andy McCurdy
     BSD License
 
 Copyright (c) 2011 Luca Sbardella
-    BSD License   
+    BSD License
 
 '''
 import errno
 import socket
-from itertools import chain
-from collections import namedtuple
+from itertools import chain, starmap
 
 from stdnet.conf import settings
 from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
@@ -26,18 +25,41 @@ from .base import Reader, fallback
 class RedisRequest(object):
     '''A redis request'''
     def __init__(self, connection, command_name, args,
-                 parse_response = None, **options):
+                 parse_response = None, release_connection = True,
+                 **options):
         self.connection = connection
         self.command_name = command_name
         self.args = args
         self.parse_response = parse_response
+        self.release_connection = release_connection
         self.options = options
         self.response = connection.parser.gets()
-        command = connection.pack_command(command_name,*args)
+        if not self.command_name:
+            self.response = []
+            command = connection.pack_pipeline(args)
+        else:
+            command = connection.pack_command(command_name,*args)
         self.send(command)
+
+    @property
+    def num_responses(self):
+        if self.command_name:
+            return 1
+        else:
+            return len(self.args)
         
+    @property
+    def done(self):
+        if self.command_name:
+            return self.response is not False
+        else:
+            return len(self.response) == self.num_responses
+                    
     def __str__(self):
-        return '{0}{1}'.format(self.command_name,self.args)
+        if self.command_name:
+            return '{0}{1}'.format(self.command_name,self.args)
+        else:
+            return 'PIPELINE{0}'.format(self.args)
     
     def __repr__(self):
         return self.__str__()
@@ -48,8 +70,6 @@ class RedisRequest(object):
         try:
             c.sock.sendall(command)
         except socket.error as e:
-            if e.args[0] == errno.EPIPE:
-                self.disconnect()
             if len(e.args) == 1:
                 _errno, errmsg = 'UNKNOWN', e.args[0]
             else:
@@ -64,38 +84,51 @@ class RedisRequest(object):
         except ConnectionError:
             # retry the command once in case the socket connection simply
             # timed out
-            self.disconnect()
+            self.connection.disconnect(release_connection = False)
             # if this _send() call fails, then the error will be raised
             self._send(command)
         
     def close(self):
         c = self.connection
-        response = self.response
         try:
-            if isinstance(response,ResponseError):
-                raise response
-            self.response = self.parse_response(response, self.command_name,
-                                                **self.options)
+            if isinstance(self.response,ResponseError):
+                raise self.response
+            if self.parse_response:
+                self.response = self.parse_response(self.response,
+                                            self.command_name or self.args,
+                                            **self.options)
         except:
             c.disconnect()
             raise
-        finally:
-            self.connection_pool.release(c)
+        if self.release_connection:
+            c.pool.release(c)
         
     def parse(self, data):
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
         parser = self.connection.parser
         parser.feed(data)
-        self.response = parser.gets()
-        if self.response is not False:
-            self.close()
+        if self.command_name:
+            self.response = parser.gets()
+            if self.response is not False:
+                self.close()
+        else:
+            while 1:
+                response = parser.gets()
+                if response is False:
+                    break
+                self.response.append(response)
+            if len(self.response) == self.num_responses:
+                self.close()
+            
+    def finish(self):
+        raise NotImplementedError
         
 
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
     def read_response(self):
         sock = self.connection.sock
-        while self.response is False:
+        while not self.done:
             try:
                 stream = sock.recv(4096)
             except (socket.error, socket.timeout) as e:
@@ -105,6 +138,9 @@ class SyncRedisRequest(RedisRequest):
                 raise ConnectionError("Socket closed on remote end")
             self.parse(stream)
         return self.response
+    
+    def finish(self):
+        return self.read_response()
     
     
 class Connection(object):
@@ -208,19 +244,19 @@ This class should not be directly initialized. Insteady use the
         # if a password is specified, authenticate
         OK = b'OK'
         if self.password:
-            r = self.request('AUTH', self.password)
+            r = self.request('AUTH', self.password, release_connection = False)
             if r.read_response() != OK:
                 raise ConnectionError('Invalid Password')
 
         # if a database is specified, switch to it
         if self.db:
-            r = self.request('SELECT', self.db)
+            r = self.request('SELECT', self.db, release_connection = False)
             if r.read_response() != OK:
                 raise ConnectionError('Invalid Database')
             
         return self
 
-    def disconnect(self):
+    def disconnect(self, release_connection = True):
         "Disconnects from the Redis server"
         if self.__sock is None:
             return
@@ -229,6 +265,8 @@ This class should not be directly initialized. Insteady use the
         except socket.error:
             pass
         self.__sock = None
+        if release_connection:
+            self.pool.release(self)
 
     if ispy3k:
         def encode(self, value):
@@ -261,12 +299,22 @@ This class should not be directly initialized. Insteady use the
         "Pack a series of arguments into a value Redis command"
         return b''.join(self.__pack_gen(args))
     
+    def pack_pipeline(self, commands):
+        pack = self.pack_command
+        return b''.join(starmap(pack, (args for args,_ in commands)))
+    
     def request(self, command_name, *args, **options):
         return self.request_class(self, command_name, args, **options)
         
     def execute_command(self, parse_response, command_name, *args, **options):
         options['parse_response'] = parse_response
-        return self.request(command_name, *args, **options)
+        r = self.request(command_name, *args, **options)
+        return r.finish()
+    
+    def execute_pipeline(self, parse_response, commands):
+        r = self.request_class(self, None, commands,
+                               parse_response = parse_response)
+        return r.finish()
 
 
 ConnectionClass = None

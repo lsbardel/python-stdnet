@@ -105,13 +105,14 @@ class RedisRequest(object):
         try:
             if isinstance(response,ResponseError):
                 raise response
-            self.response = self.parse_response(response, self.command_name,
-                                                **self.options)
+            if self.parse_response:
+                self.response = self.parse_response(response, self.command_name,
+                                                    **self.options)
         except:
             c.disconnect()
             raise
         finally:
-            self.connection_pool.release(c)
+            c.pool.release(c)
 
     def read_response(self):
         reader = self.connection.reader
@@ -250,7 +251,6 @@ This class should not be directly initialized. Insteady use the
 
     def disconnect(self):
         "Disconnects from the Redis server"
-        self._parser.on_disconnect()
         if self._sock is None:
             return
         try:

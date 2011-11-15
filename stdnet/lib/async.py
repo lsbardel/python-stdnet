@@ -31,7 +31,7 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
     
     def add_errback(self, expected, error):
         return self.add_callback(partial(self.check_result,
-                                         expected,error))
+                                         expected,error), True)
     
     def check_result(self, expected, error, result):
         if result != expected:
@@ -51,12 +51,11 @@ class AsyncRedisConnection(connection.Connection):
     def on_connect(self, result = None):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
+        OK = b'OK'
         r = None
         if self.password:
             r = self.request('AUTH', self.password)\
-                        .add_errback('OK',ConnectionError('Invalid Password'))
-            #if self.read_response() != 'OK':
-            #    raise ConnectionError('Invalid Password')
+                        .add_errback(OK,ConnectionError('Invalid Password'))
 
         # if a database is specified, switch to it
         if self.db:
@@ -66,5 +65,5 @@ class AsyncRedisConnection(connection.Connection):
         
     def select(self, result = None):
         return self.request('SELECT', self.db)\
-                .add_errback('OK', ConnectionError('Invalid Database'))
+                .add_errback(OK, ConnectionError('Invalid Database'))
         

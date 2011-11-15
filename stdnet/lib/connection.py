@@ -21,37 +21,6 @@ from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
 
 from .exceptions import *
 from .base import Reader, fallback
-
-
-class Parser(object):
-    
-    def __init__(self, rcls = None):
-        self.rcls = rcls or Reader
-
-    def createReader(self):
-        return self.rcls(InvalidResponse, ResponseError)
-    
-    def on_connect(self, connection):
-        self._sock = connection._sock
-        self._reader = self.createReader()
-
-    def on_disconnect(self):
-        self._sock = None
-        self._reader = None
-
-    def read_response(self):
-        response = self._reader.gets()
-        while response is False:
-            try:
-                stream = self._sock.recv(4096)
-            except (socket.error, socket.timeout) as e:
-                raise ConnectionError("Error while reading from socket: %s" % \
-                    (e.args,))
-            if not stream:
-                raise ConnectionError("Socket closed on remote end")
-            self._reader.feed(stream)
-            response = self._reader.gets()
-        return response
         
 
 class RedisRequest(object):
@@ -77,7 +46,7 @@ class RedisRequest(object):
         "Send the command to the socket"
         c = self.connection.connect()
         try:
-            self._sock.sendall(command)
+            c.sock.sendall(command)
         except socket.error as e:
             if e.args[0] == errno.EPIPE:
                 self.disconnect()
@@ -112,23 +81,9 @@ class RedisRequest(object):
             raise
         finally:
             self.connection_pool.release(c)
-
-    def read_response(self):
-        reader = self.connection.reader
-        response = reader.gets()
-        while response is False:
-            try:
-                stream = self._sock.recv(4096)
-            except (socket.error, socket.timeout) as e:
-                raise ConnectionError("Error while reading from socket: %s" % \
-                    (e.args,))
-            if not stream:
-                raise ConnectionError("Socket closed on remote end")
-            self._reader.feed(stream)
-            response = self._reader.gets()
-        return response
         
     def parse(self, data):
+        '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
         parser = self.connection.parser
         parser.feed(data)
         self.response = parser.gets()
@@ -136,6 +91,22 @@ class RedisRequest(object):
             self.close()
         
 
+class SyncRedisRequest(RedisRequest):
+    '''A :class:`RedisRequest` for blocking sockets.'''
+    def read_response(self):
+        sock = self.connection.sock
+        while self.response is False:
+            try:
+                stream = sock.recv(4096)
+            except (socket.error, socket.timeout) as e:
+                raise ConnectionError("Error while reading from socket: %s" % \
+                    (e.args,))
+            if not stream:
+                raise ConnectionError("Socket closed on remote end")
+            self.parse(stream)
+        return self.response
+    
+    
 class Connection(object):
     ''''Manages TCP or UNIX communication to and from a Redis server.
 This class should not be directly initialized. Insteady use the
@@ -149,9 +120,12 @@ This class should not be directly initialized. Insteady use the
 .. attribute:: pool
 
     instance of the :class:`ConnectionPool` managing the connection
+    
+.. attribute:: parser
+
+    instance of a Redis parser.
 '''
-    blocking = True
-    request_class = RedisRequest
+    request_class = SyncRedisRequest
     
     "Manages TCP communication to and from a Redis server"
     def __init__(self, pool, password=None,
@@ -163,7 +137,7 @@ This class should not be directly initialized. Insteady use the
         self.socket_timeout = socket_timeout
         self.encoding = encoding
         self.encoding_errors = encoding_errors
-        self._sock = None
+        self.__sock = None
         if reader_class is None:
             if settings.REDIS_PARSER == 'python':
                 reader_class = fallback.Reader
@@ -191,18 +165,16 @@ This class should not be directly initialized. Insteady use the
                 return 'UNIX'
             else:
                 raise ValueError('Unix socket available on posix systems only')
+    
+    @property
+    def sock(self):
+        '''Connection socket'''
+        return self.__sock
             
     def connect(self):
         "Connects to the Redis server if not already connected"
-        if self._sock:
-            return
-        try:
-            return self._connect()
-        except socket.error as e:
-            raise ConnectionError(self._error_message(e))
-
-    def _connect(self):
-        "Create a TCP socket connection"
+        if self.__sock:
+            return self
         if self.socket_type == 'TCP':
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -210,17 +182,16 @@ This class should not be directly initialized. Insteady use the
             #sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         elif self.socket_type == 'UNIX':
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            
-        if self.blocking:
-            sock.settimeout(self.socket_timeout)
-            sock.connect(self.address)
-            self._sock = sock
-            return self.on_connect()
-        else:
-            return self.async_connect(sock)
+        self.__sock = sock
+        try:
+            return self._connect()
+        except socket.error as e:
+            raise ConnectionError(self._error_message(e))
 
-    def async_connect(self, sock):
-        raise NotImplementedError
+    def _connect(self):
+        self.sock.settimeout(self.socket_timeout)
+        self.sock.connect(self.address)
+        return self.on_connect()
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -234,30 +205,30 @@ This class should not be directly initialized. Insteady use the
 
     def on_connect(self):
         "Initialize the connection, authenticate and select a database"
-        self._parser.on_connect(self)
-
         # if a password is specified, authenticate
+        OK = b'OK'
         if self.password:
-            self.send_command('AUTH', self.password)
-            if self.read_response() != 'OK':
+            r = self.request('AUTH', self.password)
+            if r.read_response() != OK:
                 raise ConnectionError('Invalid Password')
 
         # if a database is specified, switch to it
         if self.db:
-            self.send_command('SELECT', self.db)
-            if self.read_response() != OK:
+            r = self.request('SELECT', self.db)
+            if r.read_response() != OK:
                 raise ConnectionError('Invalid Database')
+            
+        return self
 
     def disconnect(self):
         "Disconnects from the Redis server"
-        self._parser.on_disconnect()
-        if self._sock is None:
+        if self.__sock is None:
             return
         try:
-            self._sock.close()
+            self.__sock.close()
         except socket.error:
             pass
-        self._sock = None
+        self.__sock = None
 
     if ispy3k:
         def encode(self, value):
@@ -302,7 +273,7 @@ ConnectionClass = None
 
 
 class ConnectionPool(object):
-    "Generic connection pool"
+    "A :class:`Connection` pool."
     default_encoding = 'utf-8'
     
     def __init__(self, address, connection_class=None, db=0,

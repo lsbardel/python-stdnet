@@ -1,3 +1,9 @@
+'''Asynchronous Redis Connection.
+
+Requires pulsar_
+
+.. _pulsar: http://packages.python.org/pulsar/
+'''
 from functools import partial
 
 from pulsar import AsyncIOStream, Deferred
@@ -40,12 +46,10 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
 
 
 class AsyncRedisConnection(connection.Connection):
-    blocking = False
     request_class = AsyncRedisRequest
     
-    def async_connect(self, sock):
-        self._sock = sock
-        self.stream = AsyncIOStream(sock)
+    def _connect(self):
+        self.stream = AsyncIOStream(self._sock)
         return self.stream.connect(self.address, self.on_connect)
         
     def on_connect(self, result = None):

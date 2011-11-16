@@ -45,10 +45,11 @@ class ManyFieldManagerProxy(object):
     
     def get_structure(self, instance):
         meta = instance._meta
-        st = getattr(meta.cursor,self.stype)
+        backend = instance.objects.backend
+        st = getattr(backend,self.stype)
         return st(meta.basekey('id',instance.id,self.name),
                   instance = instance,
-                  timeout = meta.timeout,
+                  #timeout = meta.timeout,
                   pickler = self.pickler,
                   value_pickler = self.value_pickler,
                   scorefun = self.scorefun)

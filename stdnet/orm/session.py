@@ -19,8 +19,22 @@ class Session(object):
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__,self)
     
-    def query(self, model):
-        return QuerySet(model._meta, self.backend)
+    def query(self, model, fargs=None, eargs=None):
+        return QuerySet(model._meta, self.backend, fargs=fargs, eargs=eargs)
+    
+    def get(self, model, **kwargs):
+        qs = self.query(model, fargs=kwargs)
+        return qs.get()
+    
+    def get_or_create(self, model, **kwargs):
+        '''Get an object. If it does not exists, it creates one'''
+        try:
+            res = self.get(model, **kwargs)
+            created = False
+        except model.DoesNotExist:
+            res = self.save(model(**kwargs))
+            created = True
+        return res,created
     
     def save(self, instance, transaction = None):
         '''Save instance in the backend data server.'''
@@ -79,9 +93,54 @@ class Session(object):
                     tra = t
         return tra or cursor.transaction(**kwargs)
     
+    def all(self, model):
+        return self.filter(model)
+    
+    def filter(self, model, **kwargs):
+        return self.query(model, fargs = kwargs)
+    
+    def exclude(self, model, **kwargs):
+        return self.query(model, eargs = kwargs)
+        
+    
+
+class SessionProxy(object):
+    __slots__ = ('model','session','attr')
+    
+    def __init__(self, model, session, attr):
+        self.model = model
+        self.session = session
+        self.attr = attr
+        
+    def __call__(self, *args, **kwargs):
+        return getattr(self.session,self.attr)(self.model, *args, **kwargs)
+        
     
 class Manager(object):
+    '''A manager class for models. Each :class:`stdnet.orm.StdModel`
+class contains at least one manager which can be accessed by the ``objects``
+class attribute::
+
+    class MyModel(orm.StdModel):
+        group = orm.SymbolField()
+        flag = orm.BooleanField()
+        
+    MyModel.objects
+
+Managers are used to construct queries for object retrieval.
+Queries can be constructed by selecting instances with specific fields
+using a where or limit clause, or a combination of them::
+
+    MyModel.objects.filter(group = 'bla')
     
+    MyModel.objects.filter(group__in = ['bla','foo'])
+
+    MyModel.objects.filter(group__in = ['bla','foo'], flag = True)
+    
+They can also exclude instances from the query::
+
+    MyModel.objects.exclude(group = 'bla')
+'''
     def __init__(self, model = None, backend = None):
         self.register(model,backend)
         
@@ -115,20 +174,8 @@ class Manager(object):
  a backend database. Use Session to query.'.format(self.model))
         return self._session
         
-    def get(self, **kwargs):
-        qs = self.filter(**kwargs)
-        return qs.get()
-    
-    def flush(self):
-        '''Flush the model table and all related tables including all indexes.
-Calling flush will erase everything about the model
-instances in the remote backend. If count is a dictionary, the method
-will enumerate the number of object to delete. without deleting them.'''
-        return self.session.flush(self.model)
-        
     def __getattr__(self, name):
-        qs = self.session.query(self.model)
-        return getattr(qs,name)
+        return SessionProxy(self.model,self.session,name)
     
     def __copy__(self):
         cls = self.__class__

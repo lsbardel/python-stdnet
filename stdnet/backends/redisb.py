@@ -112,7 +112,7 @@ class RedisQuery(stdnet.BeckendQuery):
                 else:
                     insersept = [backend.basekey(meta,IDX,q.name,value)\
                                   for value in q.values]
-                    tkey = self.meta.tempkey()
+                    tkey = backend.tempkey(meta)
                     if q.lookup == 'in':
                         self.union(tkey,insersept).expire(tkey,self.expire)
                     #elif q.lookup == 'contains':
@@ -132,7 +132,7 @@ class RedisQuery(stdnet.BeckendQuery):
             if key:
                 keys.append(key)
             if len(keys) > 1:
-                key = self.meta.tempkey()
+                key = backend.tempkey(meta)
                 setoper(key, keys).expire(key,self.expire)
             else:
                 key = keys[0]
@@ -215,7 +215,7 @@ different model) which has a *field* containing current model ids.'''
             key1 = self._query(fargs,self.intersect,idset,self.qs.filter_sets)
             key2 = self._query(eargs,self.union)
             if key2:
-                key = meta.tempkey()
+                key = backend.tempkey(meta)
                 self.diff(key,(key1,key2)).expire(key,self.expire)
             else:
                 key = key1

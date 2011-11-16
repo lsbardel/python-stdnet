@@ -12,8 +12,6 @@ Default Settings
 .. automodule:: stdnet.conf
 
 
-.. module:: stdnet.orm
-
 Model Utilities
 ============================
 

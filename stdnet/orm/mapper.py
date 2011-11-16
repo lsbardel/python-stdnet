@@ -5,6 +5,7 @@ from stdnet import getdb, struct
 from stdnet.utils.importer import import_module
 
 from .base import StdNetType, AlreadyRegistered
+from .session import Manager
 
 
 logger = logging.getLogger('stdnet.mapper')
@@ -23,9 +24,9 @@ __all__ = ['clearall',
 def clearall(exclude = None):
     global _GLOBAL_REGISTRY
     exclude = exclude or []
-    for meta in _GLOBAL_REGISTRY.values():
-        if not meta.name in exclude:
-            meta.cursor.clear()
+    for model in _GLOBAL_REGISTRY:
+        if not model._meta.name in exclude:
+            model.objects.flush()
     struct.clear()
 
 
@@ -104,7 +105,7 @@ on the same redis instance).'''
         else:
             return
     model.objects.backend = backend
-    _GLOBAL_REGISTRY[model] = model
+    _GLOBAL_REGISTRY.add(model)
     return model.objects.backend
 
 
@@ -113,12 +114,17 @@ def unregister(model = None):
 registered models.'''
     global _GLOBAL_REGISTRY
     if model is not None:
-        _GLOBAL_REGISTRY.pop(model,None)
-        model._meta.cursor = None
+        try:
+            _GLOBAL_REGISTRY.remove(model)
+        except KeyError:
+            return
+        for attr in dir(model):
+            elem = getattr(model,attr)
+            if isinstance(elem,Manager):
+                elem.backend = None
     else:
-        for model in _GLOBAL_REGISTRY:
-            model._meta.cursor = None
-        _GLOBAL_REGISTRY.clear()
+        for model in list(_GLOBAL_REGISTRY):
+            unregister(model)
         
 
 def registered_models():
@@ -161,8 +167,9 @@ For example::
         label = getattr(mod_models,'app_label',label)
         for name in dir(mod_models):
             model = getattr(mod_models,name)
-            if isinstance(model,StdNetType) and hasattr(model,'_meta'):
-                if model._meta.app_label == label:
+            meta = getattr(model,'_meta',None)
+            if isinstance(model,StdNetType) and meta:
+                if not meta.abstract and meta.app_label == label:
                     yield model
 
 
@@ -218,5 +225,5 @@ It return s a list of registered models.'''
 
 
 
-_GLOBAL_REGISTRY = {}
+_GLOBAL_REGISTRY = set()
 

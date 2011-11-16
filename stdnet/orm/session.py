@@ -1,7 +1,10 @@
+import json
+
 from stdnet import getdb
-from stdnet.exceptions import ModelNotRegistered
+from stdnet.exceptions import ModelNotRegistered, FieldValueError
 
 from .query import QuerySet
+from .signals import *
 
 
 __all__ = ['Session','Manager']
@@ -65,6 +68,18 @@ class Session(object):
         
         return instance
     
+    def delete(self, instance, transaction = None):
+        if not instance.id:
+            raise FieldValueError('Cannot delete object. It was never saved.')
+        T = 0
+        # Gather related objects to delete
+        pre_delete.send(sender=instance.__class__, instance = instance)
+        for obj in instance.related_objects():
+            T += self.delete(obj, transaction)
+        res = T + self.backend.delete_object(instance, transaction)
+        post_delete.send(sender=instance.__class__, instance = instance)
+        return res
+    
     def flush(self, model):
         return self.backend.flush(model._meta)
     
@@ -94,7 +109,7 @@ class Session(object):
         return tra or cursor.transaction(**kwargs)
     
     def all(self, model):
-        return self.filter(model)
+        return self.query(model)
     
     def filter(self, model, **kwargs):
         return self.query(model, fargs = kwargs)
@@ -103,7 +118,6 @@ class Session(object):
         return self.query(model, eargs = kwargs)
         
     
-
 class SessionProxy(object):
     __slots__ = ('model','session','attr')
     
@@ -115,8 +129,62 @@ class SessionProxy(object):
     def __call__(self, *args, **kwargs):
         return getattr(self.session,self.attr)(self.model, *args, **kwargs)
         
+        
+class ManagerMixin(object):
     
-class Manager(object):
+    def delete(self, *args, **kwargs):
+        return self.session.delete(*args, **kwargs)
+    
+    def save(self, *args, **kwargs):
+        return self.session.delete(*args, **kwargs)
+    
+    def _get_backend(self):
+        return self._session.backend if self._session else None
+    def _set_backend(self, backend):
+        self._session = Session(backend) if backend else None
+    backend = property(_get_backend, _set_backend)
+    
+    def __str__(self):
+        if self.model:
+            if self._session:
+                return '{0}({1} - {2})'.format(self.__class__.__name__,
+                                               self.model,
+                                               self.session)
+            else:
+                return '{0}({1})'.format(self.__class__.__name__,self.model)
+        else:
+            return self.__class__.__name__
+    __repr__ = __str__
+
+    @property
+    def session(self):
+        if not self._session:
+            raise ModelNotRegistered('Model "{0}" is not registered with\
+ a backend database. Use Session to query.'.format(self.model))
+        return self._session
+    
+    def __getattr__(self, name):
+        return SessionProxy(self.model,self.session,name)
+    
+    def __copy__(self):
+        cls = self.__class__
+        obj = cls.__new__(cls)
+        d = self.__dict__.copy()
+        d.update({'model': None, '_session': None})
+        obj.__dict__ = d
+        return obj
+    
+    
+    
+class SessionModel(ManagerMixin):
+    __slots__ = ('model','_session')
+    
+    def __init__(self, model, backend):
+        self.model = model
+        self._session = Session(backend)
+    
+    
+class Manager(ManagerMixin):
     '''A manager class for models. Each :class:`stdnet.orm.StdModel`
 class contains at least one manager which can be accessed by the ``objects``
 class attribute::
@@ -143,44 +211,9 @@ They can also exclude instances from the query::
 '''
     def __init__(self, model = None, backend = None):
         self.register(model,backend)
-        
-    def __str__(self):
-        if self.model:
-            if self._session:
-                return '{0}({1} - {2})'.format(self.__class__.__name__,
-                                               self.model,
-                                               self.session)
-            else:
-                return '{0}({1})'.format(self.__class__.__name__,self.model)
-        else:
-            return self.__class__.__name__
-    __repr__ = __str__
     
     def register(self, model, backend = None):
         '''Register the Manager with a model and a bcakend database.'''
         self.backend = backend
         self.model = model
         
-    def _get_backend(self):
-        return self._session.backend if self._session else None
-    def _set_backend(self, backend):
-        self._session = Session(backend) if backend else None
-    backend = property(_get_backend, _set_backend)
-    
-    @property
-    def session(self):
-        if not self._session:
-            raise ModelNotRegistered('Model "{0}" is not registered with\
- a backend database. Use Session to query.'.format(self.model))
-        return self._session
-        
-    def __getattr__(self, name):
-        return SessionProxy(self.model,self.session,name)
-    
-    def __copy__(self):
-        cls = self.__class__
-        obj = cls.__new__(cls)
-        d = self.__dict__.copy()
-        d.update({'model': None, 'session': None})
-        obj.__dict__ = d
-        return obj

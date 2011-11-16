@@ -393,7 +393,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _loadfields(self, obj, toload):
         if toload:
-            fields = self.client.hmget(self.basekey(meta, OBJ, obj.id), toload)
+            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id), toload)
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
@@ -418,7 +418,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         if indices:
             rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
             if not newid:
-                pipe.delpattern(meta.tempkey('*'))
+                pipe.delpattern(self.tempkey(meta,'*'))
             
             # Create indexes
             for field,value,oldvalue in indices:
@@ -487,7 +487,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.client.incr(id)
     
     def tempkey(self, meta, name = None):
-        return self.basekey(meta, TMP, name or gen_unique_id())
+        return self.basekey(meta, TMP, name if name is not None else\
+                                        gen_unique_id())
         
     def flush(self, meta):
         '''Flush all model keys from the database'''

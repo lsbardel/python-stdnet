@@ -7,6 +7,7 @@ from stdnet import dispatch, transaction, attr_local_transaction
 from .base import StdNetType, FakeModelType
 from .globals import get_model_from_hash
 from .signals import *
+from .session import SessionModel
 
 
 __all__ = ['FakeModel',
@@ -208,17 +209,8 @@ If the instance is not available (it does not have an id) and
 :parameter transaction: Optional transaction instance as in
                         :meth:`stdnet.orm.StdModel.save`.
 '''
-        meta = self._meta
-        if not self.id:
-            raise StdNetException('Cannot delete object. It was never saved.')
-        T = 0
-        # Gather related objects to delete
-        pre_delete.send(sender=self.__class__, instance = self)
-        for obj in self.related_objects():
-            T += obj.delete(transaction)
-        res = T + meta.cursor.delete_object(self, transaction)
-        post_delete.send(sender=self.__class__, instance = self)
-        return res
+        session = self.session_from_transaction(transaction)
+        return session.delete(self,transaction)
     
     def related_objects(self):
         '''A generator of related objects'''
@@ -277,6 +269,13 @@ is however available in other keys (indices and other backend containers).'''
     def transaction(cls, *models, **kwargs):
         '''Return a transaction instance.'''
         return transaction(cls,*models,**kwargs)
+    
+    @classmethod
+    def session_from_transaction(cls, transaction = None):
+        if transaction:
+            return SessionModel(cls,transaction.backend)
+        else:
+            return cls.objects
     
     # PICKLING SUPPORT
     

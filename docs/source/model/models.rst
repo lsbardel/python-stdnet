@@ -65,6 +65,18 @@ Register applications
 .. autofunction:: stdnet.orm.register_applications
 
 
+Registered models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.registered_models
+
+
+Unregister model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: stdnet.orm.unregister
+
+
 .. module:: stdnet.orm.query
    
 Queries

@@ -4,7 +4,7 @@
 Python Stdnet
 ======================
 
-.. rubric:: A networked data structures manager design to to work with Redis_
+.. rubric:: A networked data structures manager design to work with Redis_
   data-store, but implemented so that other storage systems can be supported
   in the future.
   

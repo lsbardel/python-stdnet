@@ -177,7 +177,6 @@ achieved is less than the one obtained when using
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
-        dfields = self._meta.dfields
         self.fields = tuple(set(self._load_only(fields)))
         return self
     

@@ -19,6 +19,8 @@ __all__ = ['clearall',
            'model_iterator',
            'register_applications',
            'register_application_models',
+           'register_query_for_model',
+           'get_model_query',
            'Manager',
            'UnregisteredManager']
 
@@ -236,6 +238,14 @@ It return s a list of registered models.'''
     return list(register_application_models(applications,**kwargs))
 
 
+def register_query_for_model(model, query_function):
+    _SPECIAL_QUERIES[model] = query_function
+    
+def get_model_query(model):
+    return _SPECIAL_QUERIES.get(model)
+        
 
 _GLOBAL_REGISTRY = {}
+
+_SPECIAL_QUERIES = {}
 

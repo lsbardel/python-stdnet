@@ -6,6 +6,8 @@ from stdnet.utils import zip, to_bytestring, JSPLITTER
 from stdnet import transaction as get_transaction
 
 
+__all__ = ['QuerySet']
+
 queryarg = namedtuple('queryarg','name values unique lookup')
 field_query = namedtuple('field_query','query field')
 
@@ -20,6 +22,14 @@ class EmptySet(frozenset):
         return len(self)
     
 
+def dupargs(kwargs, avail):
+    if avail:
+        fargs = avail.copy()
+        fargs.update(kwargs)
+        return fargs
+    return kwargs
+    
+    
 class QuerySet(object):
     '''A QuerySet is not created using its constructor but instead using
 the model manager via :meth:`Manager.filter` or,
@@ -103,7 +113,8 @@ instances of queryset are constructued using the
     def __iter__(self):
         return self.items()
     
-    def _clone(self, fargs, eargs):
+    def _clone(self, fargs, eargs, filter_sets = None):
+        filter_sets = filter_sets or self.filter_sets
         return self.__class__(self._meta,
                               self.backend,
                               fargs=fargs,
@@ -112,15 +123,17 @@ instances of queryset are constructued using the
                               ordering=self.ordering,
                               queries=self.queries)
         
-    def filter(self, **kwargs):
-        '''Returns a new ``QuerySet`` containing objects that match the\
- given lookup parameters.'''
-        if kwargs:
-            if self.fargs:
-                c = self.fargs.copy()
-                c.update(kwargs)
-                kwargs = c
-            return self._clone(kwargs, self.eargs)
+    def filter(self, filter_sets = None, **kwargs):
+        '''Create a new :class:`QuerySet` with limiting clauses corresponding to
+where or limit in a SQL select statement.
+
+:parameter filter_sets: optional list of set ids to filter.
+    Used by the :class:`stdnet.orm.query.M2MRelatedManager`.
+:parameter kwargs: dictionaris of limiting clauses.
+:rtype: a :class:`QuerySet` instance.'''
+        if kwargs or filter_sets:
+            fargs = dupargs(kwargs,self.fargs)
+            return self._clone(fargs, self.eargs, filter_sets = filter_sets)
         else:
             return self
     
@@ -128,11 +141,8 @@ instances of queryset are constructued using the
         '''Returns a new ``QuerySet`` containing objects that do not match\
  the given lookup parameters.'''
         if kwargs:
-            if self.eargs:
-                c = self.eargs.copy()
-                c.update(kwargs)
-                kwargs = c
-            return self._clone(self.fargs,kwargs)
+            eargs = dupargs(kwargs, self.eargs)
+            return self._clone(self.fargs,eargs)
         else:
             return self
     

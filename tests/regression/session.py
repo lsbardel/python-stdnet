@@ -10,6 +10,9 @@ class TestSession(test.TestCase):
     def testMeta(self):
         backend = getdb(settings.DEFAULT_BACKEND, prefix = 'testsession.')
         self.assertEqual(backend.namespace,'testsession.')
-        s = orm.Session(backend)
-        self.assertEqual(s.backend,backend)
+        session = orm.Session(backend)
+        self.assertEqual(session.backend,backend)
+        qs = session.query(SimpleModel)
+        self.assertTrue(isinstance(qs,orm.QuerySet))
+        
     

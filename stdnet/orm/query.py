@@ -73,11 +73,17 @@ instances of queryset are constructued using the
         
     def clear(self):
         self.simple = False
-        self.__qset   = None
-        self._seq   = None
+        self.__qset = None
+        self.__slice_cache = None
         
+    def cache(self):
+        if not self.__slice_cache:
+            self.__slice_cache = {}
+        return self.__slice_cache
+    
     def __repr__(self):
-        if self._seq is None:
+        seq = self.cache().get(None)
+        if seq is None:
             s = self.__class__.__name__
             if self.fargs:
                 s = '%s.filter(%s)' % (s,self.fargs)
@@ -85,19 +91,19 @@ instances of queryset are constructued using the
                 s = '%s.exclude(%s)' % (s,self.eargs)
             return s
         else:
-            return str(self._seq)
+            return str(seq)
     __str__ = __repr__
     
     def __getitem__(self, slic):
         if isinstance(slic,slice):
-            return self.aslist(slic)
-        return self.aslist()[slic]
+            return self.items(slic)
+        return self.items()[slic]
     
     def all(self):
         return self
     
     def __iter__(self):
-        return self.items()
+        return iter(self.items())
     
     def _clone(self, fargs, eargs):
         return self.__class__(self._meta,
@@ -192,7 +198,7 @@ data intensive fields you don't need.
                     yield name
             
     def get(self):
-        items = self.aslist()
+        items = self.items()
         if items:
             if len(items) == 1:
                 return items[0]
@@ -294,20 +300,25 @@ objects on the server side.'''
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''
-        if self._seq is not None:
-            for m in self._seq:
-                yield m
+        cache = self.cache()
+        key = None
+        seq = cache.get(None)
+        if slic:
+            if seq:
+                seq = seq[slic]
+            else:
+                key = (slic.start,slic.step,slic.stop)
+                
+        if seq is not None:
+            return seq
         else:
-            seq = self._seq = []
-            for m in self.backend_query().items(slic):
-                seq.append(m)
-                yield m
+            seq = list(self.backend_query().items(slic))
+            cache[key] = seq
+            return seq
                 
     def aslist(self, slic = None):
         '''Return python ``list`` of elements in queryset'''
-        if self._seq is None:
-            return list(self.items(slic))
-        return self._seq
+        return self.items(slic)
     
     def delete(self, transaction = None):
         '''Delete all the element in the queryset'''

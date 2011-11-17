@@ -241,11 +241,14 @@ class DateData(orm.StdModel):
 # Custom ID
 class Task(orm.StdModel):
     id = orm.SymbolField(primary_key = True)
+    name = orm.CharField()
     timestamp = orm.DateTimeField(default = datetime.now)
     
     class Meta:
         ordering = '-timestamp'
         
-    def on_save_as_new(self):
-        self.timestamp = None
+    def clone(self, **kwargs):
+        instance = super(Task,self).clone(**kwargs)
+        instance.timestamp = None
+        return instance
     

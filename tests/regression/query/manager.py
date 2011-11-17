@@ -76,6 +76,6 @@ class TestManager(test.TestCase):
         self.assertFalse('ciao' in qs)
         self.assertTrue(qs.backend_query())
         self.assertTrue(1 in qs)
-        self.assertEqual(qs._seq,None)
+        self.assertEqual(qs.cache(),{})
         
         

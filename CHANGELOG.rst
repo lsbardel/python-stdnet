@@ -26,6 +26,7 @@ Ver. 0.7.0 - Development
   via the :attr:`stdnet.struct` singleton.
 * Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
   of model instances.
+* Added :meth:`stdnet.orm.StdModel.clone` method for cloning model instances.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
@@ -36,6 +37,14 @@ Ver. 0.7.0 - Development
 * Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
   model ``delete`` method to crash.
 * **360 regression tests** with **80%** coverage.
+
+.. _vers06:
+
+Ver. 0.6.2 - 2011 Nov 14
+============================
+* Critical bug fix in ``delete`` method when a model has no indices.
+* Critical bug fix in `ManyToManyField`.
+* **299 regression tests**.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================
@@ -53,8 +62,6 @@ Ver. 0.6.1 - 2011 Sep 10
   are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
 * **297 regression tests** with **78%** coverage.
-
-.. _vers06:
 
 Ver. 0.6.0 - 2011 Aug 9
 ============================
@@ -201,7 +208,8 @@ Ver. 0.4.0 - 2010 Nov 11
 * Documentation hosted at github.
 * Added new ``contrib`` module ``djstdnet`` which uses `djpcms`_ content management system to display an admin
   interface for a :class:`stdnet.orm.StdModel`. Experimental for now.
-* Added :class:`stdnet.CacheClass` which can be used as django_ cache backend. For example, using redis database 11 as cache is obtained by::
+* Added :class:`stdnet.CacheClass` which can be used as django_ cache backend.
+  For example, using redis database 11 as cache is obtained by::
 
 	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
 	

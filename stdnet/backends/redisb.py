@@ -64,9 +64,11 @@ class add2set(object):
         
         
 class RedisQuery(stdnet.BeckendQuery):
-    result = None
-    _count = None
-        
+    
+    @property
+    def simple(self):
+        return isinstance(self.query_set,list)
+    
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
         key = self.meta.tempkey()
@@ -93,26 +95,34 @@ class RedisQuery(stdnet.BeckendQuery):
         if qargs:
             for q in qargs:
                 sha.write(q.__repr__().encode())
+                values = q.values
                 if q.unique:
                     if q.lookup == 'in':
-                        keys.append(self._unique_set(q.name, q.values))
+                        keys.append(self._unique_set(q.name, values))
                     else:
                         raise ValueError('Not available')
-                elif len(q.values) == 1:
-                    keys.append(meta.basekey(IDX,q.name,q.values[0]))
                 else:
-                    insersept = [meta.basekey(IDX,q.name,value)\
-                                  for value in q.values]
-                    tkey = self.meta.tempkey()
-                    if q.lookup == 'in':
-                        self.union(tkey,insersept).expire(tkey,self.expire)
-                    #elif q.lookup == 'contains':
-                    #    self.intersect(tkey,insersept).expire(tkey,self.expire)
+                    if isinstance(values,self.query_class):
+                        rqs = values.backend_query()
+                        if rqs.simple:
+                            values = rqs.query_set
+                        else:
+                            keys.append(rqs.query_set)
+                            continue
+                    if len(values) == 1:
+                        keys.append(meta.basekey(IDX,q.name,values[0]))
                     else:
-                        raise ValueError('Lookup {0} Not available'\
-                                         .format(q.lookup))    
-                    keys.append(tkey)
-                    
+                        insersept = [meta.basekey(IDX,q.name,value)\
+                                      for value in values]
+                        tkey = self.meta.tempkey()
+                        if q.lookup == 'in':
+                            self.union(tkey,insersept).expire(tkey,self.expire)
+                        #elif q.lookup == 'contains':
+                        #    self.intersect(tkey,insersept).expire(tkey,self.expire)
+                        else:
+                            raise ValueError('Lookup {0} Not available'\
+                                             .format(q.lookup))    
+                        keys.append(tkey)
         
         if extra:
             for id in extra:
@@ -145,14 +155,16 @@ different model) which has a *field* containing current model ids.'''
         for q in queries:
             sha.write(q.__repr__().encode())
             query = q.query 
-            query._buildquery()
-            qset = query.qset.query_set
+            qset = query.backend_query()
+            qset.execute_query()
+            qset = qset.query_set
             db = query._meta.cursor.redispy.db
             if db != pipe.db:
                 raise ValueError('Indexes in a different database')
                 # In a different redis database. We need to move the set
                 query._meta.cursor.redispy.move(qset,pipe.db)
                 pipe.expire(qset,self.expire)
+                
             skey = self.meta.tempkey()
             okey = query._meta.basekey(OBJ,'*->{0}'.format(q.field))
             pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\
@@ -192,8 +204,8 @@ different model) which has a *field* containing current model ids.'''
                     if id is not None:
                         allids.append(id)
                         pismember(idset,id)
-            self.result = [id for (id,r) in zip(allids,pipe.execute())\
-                           if chk(r)]
+            self.query_set = [id for (id,r) in zip(allids,pipe.execute())\
+                              if chk(r)]
         else:
             self.intersect = pipeattr(pipe,p,'interstore')
             self.union = pipeattr(pipe,p,'unionstore')
@@ -211,18 +223,17 @@ different model) which has a *field* containing current model ids.'''
                 key = key1
             self.query_set = key
             
-    def execute(self):
-        sha = self.sha
-        if sha:
+    def execute_query(self):
+        if not self.simple and self.sha:
             if self.timeout:
                 key = self.meta.tempkey(sha)
+                self.query_set = key
                 if not self.server.redispy.exists(key):
                     self.pipe.rename(self.query_set,key)
-                    self.result = self.pipe.execute()
-                self.query_set = key
+                    return self.pipe.execute()
             else:
-                self.result = self.pipe.execute()
-    
+                return self.pipe.execute()
+        
     def order(self):
         '''Perform ordering with respect model fields.'''
         if self.qs.ordering:
@@ -238,17 +249,15 @@ different model) which has a *field* containing current model ids.'''
                 .expire(skey,self.expire).execute()
             return skey
     
-    def count(self):
-        if self._count is None:
-            if self.qs.simple:
-                self._count = len(self.result)
-            else:
-                self._count = self.card(self.query_set)
-        return self._count
+    def _count(self):
+        if self.simple:
+            return len(self.query_set)
+        else:
+            return self.card(self.query_set)
     
-    def has(self, val):
-        if self.qs.simple:
-            return val in self.result
+    def _has(self, val):
+        if self.simple:
+            return val in self.query_set
         else:
             return True if self.ismember(self.query_set, val) else False
     
@@ -263,10 +272,10 @@ different model) which has a *field* containing current model ids.'''
             stop = -1
         return start,stop
     
-    def items(self, slic):
+    def _items(self, slic):
         # Unwind the database query
-        if self.qs.simple:
-            ids = self.result
+        if self.simple:
+            ids = self.query_set
             if slic:
                 ids = ids[slic]
         else:

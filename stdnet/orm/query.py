@@ -69,11 +69,11 @@ instances of queryset are constructued using the
         self.fields = None
         self.clear()
         if empty:
-            self.qset = EmptySet()
+            self.__qset = EmptySet()
         
     def clear(self):
         self.simple = False
-        self.qset   = None
+        self.__qset   = None
         self._seq   = None
         
     def __repr__(self):
@@ -177,7 +177,7 @@ achieved is less than the one obtained when using
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
-        self.fields = tuple(set(self._load_only(fields)))
+        self.fields = tuple(set(self._load_only(fields))) if fields else None
         return self
     
     def _load_only(self, fields):
@@ -207,12 +207,11 @@ data intensive fields you don't need.
 This method is efficient since the queryset does not
 receive any data from the server. It construct the queries and count the
 objects on the server side.'''
-        self._buildquery()
-        return self.qset.count()
+        return self.backend_query().count()
     
     def querykey(self):
         self.count()
-        return self.qset.query_set
+        return self.__qset.query_set
         
     def __contains__(self, val):
         if isinstance(val,self.model):
@@ -221,33 +220,34 @@ objects on the server side.'''
             val = to_bytestring(val)
         except:
             return False
-        self._buildquery()
-        return self.qset.has(val)
+        return self.backend_query().has(val)
         
     def __len__(self):
         return self.count()
     
-    # PRIVATE METHODS
+    def backend_query(self):
+        '''Build and return the backend query. This is a lazy method in the
+ sense that it is evaluated once only and its result stored for future
+ retrieval. It return an instance of :class:`stdnet.BeckendQuery`
+ '''
+        if self.__qset is None:
+            if self.fargs:
+                self.simple = not self.filter_sets
+                fargs = self.aggregate(self.fargs)
+            else:
+                fargs = None
+            if self.eargs:
+                self.simple = False
+                eargs = self.aggregate(self.eargs)
+            else:
+                eargs = None
+            if self.queries:
+                self.simple = False
+            self.__qset = self._meta.cursor.Query(self, fargs, eargs,
+                                                  queries = self.queries)
+        return self.__qset
     
-    def _buildquery(self):
-        # Build a queryset from filters and exclude arguments
-        if self.qset is not None:
-            return 
-        meta = self._meta
-        if self.fargs:
-            self.simple = not self.filter_sets
-            fargs = self.aggregate(self.fargs)
-        else:
-            fargs = None
-        if self.eargs:
-            self.simple = False
-            eargs = self.aggregate(self.eargs)
-        else:
-            eargs = None
-        if self.queries:
-            self.simple = False
-        self.qset = self._meta.cursor.Query(self, fargs, eargs,
-                                            queries = self.queries)
+    # PRIVATE METHODS
     
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -266,28 +266,31 @@ objects on the server side.'''
                     raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta,name))
                 field = fields[name]
-                value = (field.serialize(value),)
-                unique = field.unique
+                value = value if isinstance(value,self.__class__) else\
+                                 (field.serialize(value),)
             # group lookup filter(name_in ['pippo','luca'])
             elif N == 2 and names[1] in self.lookups:
                 name = names[0]
+                lookup = names[1]
                 if name not in fields:
                     raise QuerySetError("Could not filter.\
  Field %s not defined.".format(name))
                 field = fields[name]
-                value = tuple((field.serialize(v) for v in value))
-                unique = field.unique
-                lookup = names[1]
+                value = value if isinstance(value,self.__class__) else\
+                                tuple((field.serialize(v) for v in value))
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")
             
+            unique = field.unique
             if not field.index:
                 raise QuerySetError("Field %s is not an index.\
  Cannot query." % name)
-            elif value:
-                self.simple = self.simple and unique 
-                yield queryarg(name,value,unique,lookup)
+            #elif value:
+            #    self.simple = self.simple and unique 
+            #    yield queryarg(name,value,unique,lookup)
+            self.simple = self.simple and unique 
+            yield queryarg(name,value,unique,lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''
@@ -295,9 +298,8 @@ objects on the server side.'''
             for m in self._seq:
                 yield m
         else:
-            self._buildquery()
             seq = self._seq = []
-            for m in self.qset.items(slic):
+            for m in self.backend_query().items(slic):
                 seq.append(m)
                 yield m
                 

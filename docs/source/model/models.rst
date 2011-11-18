@@ -80,14 +80,7 @@ Unregister model
 .. module:: stdnet.orm.query
    
 Queries
-==============================
-
-Manager
-~~~~~~~~~~~~~~~
-.. autoclass:: stdnet.orm.query.Manager
-   :members:
-   :member-order: bysource
-   
+==============================   
 
 QuerySet
 ~~~~~~~~~~~~~~~
@@ -111,6 +104,7 @@ M2MRelatedManager
 .. autoclass:: stdnet.orm.query.M2MRelatedManager
    :members:
    :member-order: bysource
+
 
 
 .. _signal-api:

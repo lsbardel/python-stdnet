@@ -89,7 +89,6 @@ class TestStruct(test.TestCase):
         
         
 class TestTimeserie(test.TestCase):
-    tag = 'ts'
     
     def testEmpty(self):
         ts = struct.ts()

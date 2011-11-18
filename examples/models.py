@@ -248,3 +248,15 @@ class Task(orm.StdModel):
     def on_save_as_new(self):
         self.timestamp = None
     
+
+################################################################################
+#   Object Analytics
+class ObjectAnalytics(orm.StdModel):
+    model_type = orm.ModelField()
+    object_id = orm.SymbolField()
+    
+    @property
+    def object(self):
+        if not hasattr(self,'_object'):
+            self._object = self.model_type.objects.get(id = self.object_id)
+        return self._object

@@ -172,6 +172,11 @@ The method return ``self``.
             return self.save(**kwargs)
         else:
             return self
+        
+    def temp(self, clear = False):
+        if clear or not hasattr(self,'_temp'):
+            self._temp = {}
+        return self._temp
     
     def is_valid(self, backend):
         '''Kick off the validation algorithm by checking oll
@@ -179,23 +184,6 @@ The method return ``self``.
 
 :rtype: Boolean indicating if the model validates.'''
         return self._meta.is_valid(self, backend)
-
-    def _valattr(self, name):
-        if not hasattr(self,'_validation'):
-            self.is_valid()
-        return getattr(self,'_validation')[name]
-            
-    @property
-    def cleaned_data(self):
-        return self._valattr('data')
-        
-    @property
-    def errors(self):
-        return self._valattr('errors')
-        
-    @property
-    def indices(self):
-        return self._valattr('indices')
     
     @property
     def toload(self):

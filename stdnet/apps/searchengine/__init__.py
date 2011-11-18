@@ -231,11 +231,13 @@ on registered models.'''
         elif not words:
             return model.objects.empty()
         
-        qs = WordItem.objects.filter(model_type = model)
+        qs = WordItem.objects.filter(model_type = model, word__in = words)
+        return model.objects.filter(id__in = qs.field('object_id'))
         qsets = []
         for word in words:
             qsets.append(field_query(qs.filter(word = word),'object_id'))
         return model.objects.from_queries(qsets)
+        
         
     def add_tag(self, item, text):
         '''Add a tag to an object.

@@ -45,7 +45,7 @@ it refers to all instances which have *field* set to ``bla``.
     lookups = ('in','contains')
     
     def __init__(self, meta, backend, fargs = None, eargs = None,
-                 filter_sets = None, ordering = None,
+                 filter_sets = None, ordering = None, query_field = None,
                  queries = None, empty = False):
         '''\
 Initialize a queryset. The constructor is not called directly since
@@ -76,6 +76,7 @@ instances of queryset are constructued using the
         self.filter_sets = filter_sets
         self.queries = queries
         self._select_related = None
+        self.query_field = query_field or 'id'
         self.fields = None
         self.clear()
         if empty:
@@ -110,7 +111,7 @@ instances of queryset are constructued using the
     def all(self):
         return self
     
-    def __iter__(self):
+    def __iter__(self): 
         return self.items()
     
     def _clone(self, fargs, eargs, filter_sets = None):
@@ -229,6 +230,13 @@ objects on the server side.'''
     def querykey(self):
         self.count()
         return self.qset.query_set
+    
+    def field(self, field_name):
+        '''Select the field to be returned by the queryset. By default a
+ queryset operates on id field but in some special cases a different field
+ can be used.'''
+        self.field = field_name
+        return self
         
     def __contains__(self, val):
         if isinstance(val,self.model):

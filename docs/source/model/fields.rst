@@ -33,7 +33,7 @@ of methods.
 Field
 ~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.Field
+.. autoclass:: Field
    :members:
    :member-order: bysource
 

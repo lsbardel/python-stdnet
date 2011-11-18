@@ -14,6 +14,10 @@ One-to-many relationships
 
 The *Position* model defined in :ref:`tutorial 1 <tutorial-application>`
 contains a :class:`stdnet.orm.ForeignKey` field.
+In the context of relational databases a
+`foreign key <http://en.wikipedia.org/wiki/Foreign_key>`_ is
+a referential constraint between two tables.
+
 
 
 Behind the scenes, this functionality is implemented by Python descriptors_.

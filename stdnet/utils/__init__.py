@@ -17,8 +17,11 @@ from .populate import populate
 from .dates import *
 
 
-def gen_unique_id():
-    return str(uuid4())[:8]
+def gen_unique_id(short = True):
+    id = str(uuid4())
+    if short:
+        id = id[:8]
+    return id
 
 
 def _flat2d_gen(iterable):

@@ -404,8 +404,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         obid = obj.id
         meta = obj._meta
         bkey = self.basekey
-        data = obj.cleaned_data
-        indices = obj.indices
+        data = obj._temp['cleaned_data']
+        indices = obj._temp['indices']
         if data:
             pipe.hmset(bkey(meta,OBJ,obid),data)
         #hash.addnx(objid, data)
@@ -413,7 +413,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         if newid or indices:
             add = add2set(self,pipe,meta)
             score = add(bkey(meta,'id'), obid, obj=obj, idsave=newid)
-            fields = self._loadfields(obj,obj.toload)
+            fields = self._loadfields(obj,obj._temp['toload'])
             
         if indices:
             rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')

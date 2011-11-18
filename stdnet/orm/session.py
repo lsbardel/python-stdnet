@@ -47,11 +47,11 @@ class Session(object):
         commit = False
         if not transaction:
             commit = True
-            transaction = instance.local_transaction()
+            transaction = self.backend.transaction()
         dbdata = instance._dbdata
         idnew = True
         
-        # This is an instanceect we got from the database
+        # This is an instance we got from the database
         if  instance.id and 'id' in dbdata:
             idnew = instance.id != dbdata['id']
             if idnew:
@@ -63,7 +63,7 @@ class Session(object):
         instance = backend.save_object(instance, idnew, transaction)
         if commit:
             transaction.commit()
-            instance._dbdata.update(instance.cleaned_data)
+            instance._dbdata.update(instance._temp['cleaned_data'])
             instance._dbdata['id'] = instance.id
         
         return instance
@@ -83,7 +83,7 @@ class Session(object):
     def flush(self, model):
         return self.backend.flush(model._meta)
     
-    def transaction(*models, **kwargs):
+    def transaction(backend, **kwargs):
         '''Create a transaction'''
         if not models:
             raise ValueError('Cannot create transaction with no models')

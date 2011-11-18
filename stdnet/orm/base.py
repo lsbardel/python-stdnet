@@ -177,9 +177,8 @@ mapper.
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
-        v = {}
-        setattr(instance,'_validation',v)
-        data = v['data'] = {}
+        v = instance.temp()
+        data = v['cleaned_data'] = {}
         errors = v['errors'] = {}
         toload = v['toload'] = []
         indices = v['indices'] = []

@@ -10,7 +10,29 @@ A Search Engine for Stdnet Models
 API
 ==========
 
-.. autoclass:: stdnet.apps.searchengine.SearchEngine
+SearchEngine
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: SearchEngine
    :members:
    :member-order: bysource
+   
+   
+Word
+~~~~~~~~~~~~~~~~~~~~~~
+   
+.. autoclass:: Word
+   :members:
+   :member-order: bysource
+   
+   
+WordItem
+~~~~~~~~~~~~~~~~~~~~~~
+   
+ .. autoclass:: WordItem
+   :members:
+   :member-order: bysource
+   
+   
+   
 

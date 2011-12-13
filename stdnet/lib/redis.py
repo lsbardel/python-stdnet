@@ -17,7 +17,7 @@ from stdnet.dispatch import Signal
 from .connection import ConnectionPool
 from .exceptions import *
 
-from . import scripts
+from .scripts import nil, script_call_back, get_script
 
 
 tuple_list = (tuple,list)
@@ -185,6 +185,7 @@ class Redis(object):
             'PING': lambda r: r == b'PONG',
             'TTL': lambda r: r != -1 and r or None,
             'ZRANK': int_or_none,
+            'EVAL': script_call_back
         }
         )
 
@@ -287,10 +288,6 @@ between the client and server.
         "Delete one or more keys specified by ``names``"
         return self.execute_command('DEL', *names)
     __delitem__ = delete
-    
-    def delpattern(self, pattern):
-        "delete all keys matching *pattern*."
-        return self.execute_command('EVAL', scripts.delpattern, 1, pattern)
 
     def flushall(self):
         "Delete all keys in all databases on the current host"
@@ -951,6 +948,10 @@ The first element is the score and the second is the value.'''
         "Return the list of values within hash ``name``"
         return self.execute_command('HVALS', name)
 
+    def hpop(self, name, key):
+        '''pop the *key*. Return a two element tuple containing the element
+popped (if it existes) and a flag indicationg if it existed.'''
+        return self.script_call('hash_pop_item', 2, name, key)
 
     # channels
     def psubscribe(self, patterns):
@@ -1021,7 +1022,19 @@ The first element is the score and the second is the value.'''
             keys = ()
         return self.execute_command('EVAL', body, num_keys, *keys)
     
+    def script_call(self, name, num, *args, **options):
+        script = get_script(name)
+        if not script:
+            raise ValueError('No such script {0}'.format(name))
+        options['script'] = name
+        options['args'] = args
+        return self.execute_command('EVAL',
+                                    script.script, num, *args, **options)
     
+    def delpattern(self, pattern):
+        "delete all keys matching *pattern*."
+        return self.script_call('delpattern', 1, pattern)
+
 
 class Pipeline(Redis):
     """

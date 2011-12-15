@@ -178,6 +178,7 @@ different model) which has a *field* containing current model ids.'''
         return tkey
     
     def build(self, fargs, eargs, queries):
+        '''Entry points for queries.'''
         meta = self.meta
         server = self.server
         self.idset = idset = meta.basekey('id')

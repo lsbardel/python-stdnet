@@ -14,12 +14,12 @@ class EmptySet(frozenset):
     query_set = ''
     
     def items(self, slic):
-        raise StopIteration
+        return []
     
     def count(self):
         return len(self)
     
-
+        
 class QuerySet(object):
     '''A QuerySet is not created using its constructor but instead using
 the model manager via :meth:`Manager.filter` or,
@@ -36,7 +36,8 @@ it refers to all instances which have *field* set to ``bla``.
     
     def __init__(self, meta, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
-                 queries = None, empty = False):
+                 field_queries = None, text = None,
+                 empty = False):
         '''\
 Initialize a queryset. The constructor is not called directly since
 instances of queryset are constructued using the 
@@ -57,6 +58,10 @@ instances of queryset are constructued using the
 .. attribute:: ordering
 
     optional ordering field.
+    
+.. attribute:: text_search
+
+    optional text to filter result on.
 '''
         self._meta  = meta
         self.model  = meta.model
@@ -64,12 +69,12 @@ instances of queryset are constructued using the
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
-        self.queries = queries
+        self._field_queries = field_queries
+        self.text = text
         self._select_related = None
         self.fields = None
+        self.__empty = empty
         self.clear()
-        if empty:
-            self.__qset = EmptySet()
         
     def clear(self):
         self.simple = False
@@ -111,7 +116,8 @@ instances of queryset are constructued using the
                               eargs=eargs,
                               filter_sets=self.filter_sets,
                               ordering=self.ordering,
-                              queries=self.queries)
+                              field_queries=self._field_queries,
+                              text=self.text)
         
     def filter(self, **kwargs):
         '''Returns a new ``QuerySet`` containing objects that match the\
@@ -147,13 +153,29 @@ instances of queryset are constructued using the
     def search(self, text):
         '''Search text in model. A search engine needs to be installed
 for this function to be available.'''
-        se = self._meta.searchengine
-        if se:
-            return se.search_model(self.model,text)
+        if self._meta.searchengine:
+            self.text = text
+            return self
+            #return se.search_model(self.model,text)
         else:
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
-            
+    
+    def field_queries(self):
+        '''return a list of field queries. Field queries
+are queries which produce ids for the model and the query is restricted
+to these ids.'''
+        q = self._field_queries
+        if q is None:
+            q = []
+        if self.text:
+            qf = self._meta.searchengine.search_model(self.model,self.text)
+            if qf is None:
+                self.__empty = True
+                return []
+            q.extend(qf)
+        return q
+                
     def load_related(self, *fields):
         '''It returns a new ``QuerySet`` that automatically follows foreign-key
 relationships, selecting that additional related-object data when it executes
@@ -236,21 +258,29 @@ objects on the server side.'''
  sense that it is evaluated once only and its result stored for future
  retrieval. It return an instance of :class:`stdnet.BeckendQuery`
  '''
-        if self.__qset is None:
-            if self.fargs:
-                self.simple = not self.filter_sets
-                fargs = self.aggregate(self.fargs)
+        if self.__empty:
+            self.__qset = EmptySet()
+        else:
+            self.fqueries = self.field_queries()
+            if self.__empty:
+                self.__qset = EmptySet()
             else:
-                fargs = None
-            if self.eargs:
-                self.simple = False
-                eargs = self.aggregate(self.eargs)
-            else:
-                eargs = None
-            if self.queries:
-                self.simple = False
-            self.__qset = self._meta.cursor.Query(self, fargs, eargs,
-                                                  queries = self.queries)
+                if self.fargs:
+                    self.simple = not self.filter_sets
+                    fargs = self.aggregate(self.fargs)
+                else:
+                    fargs = None
+                if self.eargs:
+                    self.simple = False
+                    eargs = self.aggregate(self.eargs)
+                else:
+                    eargs = None
+                if self.fqueries:
+                    self.simple = False
+                self.__qset = self._meta.cursor.Query(self,
+                                                      fargs,
+                                                      eargs,
+                                                      queries = self.fqueries)
         return self.__qset
     
     # PRIVATE METHODS
@@ -385,10 +415,14 @@ where or limit in a SQL select statement.
         return QuerySet(self._meta, fargs = kwargs,
                         filter_sets = filter_sets)
     
-    def from_queries(self, queries):
+    def from_field_queries(self, field_queries):
         '''Build a new query from a list of :class:`field_query`
 independent queries.'''
-        return QuerySet(self._meta, queries = queries)
+        return QuerySet(self._meta, field_queries = field_queries)
+    
+    def field_query(self, qs, field):
+        query = field_query(qs, field)
+        return self.from_field_queries([query])
     
     def exclude(self, **kwargs):
         '''Create a new :class:`QuerySet` containing objects that do not

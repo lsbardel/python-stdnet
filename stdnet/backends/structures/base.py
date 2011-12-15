@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import stdnet
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
-from stdnet.lib import zset
+from stdnet.lib import zset, nil
 
 __all__ = ['PipeLine',
            'Structure',
@@ -79,7 +79,7 @@ _pipelines = {'list':ListPipe,
               'ordered_set': OsetPipe}
 
 
-strcuturemeta = namedtuple('strcuturemeta','cursor')
+structure_meta = namedtuple('structure_meta','cursor')
 
 
 class ResultCallback(object):
@@ -90,13 +90,16 @@ class ResultCallback(object):
         self.loads = loads
     
     def __call__(self, res):
-        if res:
+        if res and res is not nil:
             if self.loads:
                 return self.loads(res)
             else:
                 return res
         else:
-            return self.default
+            if isinstance(self.default,Exception):
+                raise self.default
+            else:
+                return self.default
 
 
 class KeyValueCallback(object):
@@ -180,7 +183,7 @@ can also be used as stand alone objects. For example::
                  value_pickler = None, scorefun = None,
                  **kwargs):
         self.pipetype = pipetype
-        self._meta = strcuturemeta(server)
+        self._meta = structure_meta(server)
         self.scorefun = scorefun or default_score
         self.instance = instance
         self.pickler = pickler or self.pickler or server.pickler
@@ -481,7 +484,15 @@ we are not using a pipeline, unpickle the result.'''
     def __delitem__(self, key):
         self.pop(key)
         
-    def pop(self, key, transaction = None, default = None):
+    def pop(self, key, *args, **kwargs):
+        if args:
+            if len(args) > 1:
+                raise TypeError('pop expected at most 2 arguments, got {0}'\
+                                .format(len(args)+1))
+            default = args[0]
+        else:
+            default = KeyError(key)
+        transaction = kwargs.get('transaction')
         key = self.pickler.dumps(key)
         return self._unpicklefrom(self._pop, transaction, default,
                                   self.value_pickler.loads, key)

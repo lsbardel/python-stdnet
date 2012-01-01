@@ -953,61 +953,6 @@ The first element is the score and the second is the value.'''
 popped (if it existes) and a flag indicationg if it existed.'''
         return self.script_call('hash_pop_item', 2, name, key)
 
-    # channels
-    def psubscribe(self, patterns):
-        "Subscribe to all channels matching any pattern in ``patterns``"
-        if isinstance(patterns, basestring):
-            patterns = [patterns]
-        response = self.execute_command('PSUBSCRIBE', *patterns)
-        # this is *after* the SUBSCRIBE in order to allow for lazy and broken
-        # connections that need to issue AUTH and SELECT commands
-        self.subscribed = True
-        return response
-
-    def punsubscribe(self, patterns=[]):
-        """
-        Unsubscribe from any channel matching any pattern in ``patterns``.
-        If empty, unsubscribe from all channels.
-        """
-        if isinstance(patterns, basestring):
-            patterns = [patterns]
-        return self.execute_command('PUNSUBSCRIBE', *patterns)
-
-    def subscribe(self, channels):
-        "Subscribe to ``channels``, waiting for messages to be published"
-        if is_string(channels):
-            channels = [channels]
-        response = self.execute_command('SUBSCRIBE', *channels)
-        # this is *after* the SUBSCRIBE in order to allow for lazy and broken
-        # connections that need to issue AUTH and SELECT commands
-        self.subscribed = True
-        return response
-
-    def unsubscribe(self, channels=[]):
-        """
-        Unsubscribe from ``channels``. If empty, unsubscribe
-        from all channels
-        """
-        if isinstance(channels, basestring):
-            channels = [channels]
-        return self.execute_command('UNSUBSCRIBE', *channels)
-
-    def publish(self, channel, message):
-        """
-        Publish ``message`` on ``channel``.
-        Returns the number of subscribers the message was delivered to.
-        """
-        return self.execute_command('PUBLISH', channel, message)
-
-    def listen(self):
-        "Listen for messages on channels this client has been subscribed to"
-        while self.subscribed:
-            r = self.parse_response('LISTEN')
-            message_type, channel, message = r[0], r[1], r[2]
-            yield (message_type, channel, message)
-            if message_type == 'unsubscribe' and message == 0:
-                self.subscribed = False
-
     # Scripting
     def eval(self, body, **kwargs):
         num_keys = len(kwargs)

@@ -320,8 +320,8 @@ objects on the server side.'''
             
             unique = field.unique
             if not field.index:
-                raise QuerySetError("Field %s is not an index.\
- Cannot query." % name)
+                raise QuerySetError("{0} {1} is not an index.\
+ Cannot query.".format(field.__class__.__name__,name))
             #elif value:
             #    self.simple = self.simple and unique 
             #    yield queryarg(name,value,unique,lookup)

@@ -71,9 +71,11 @@ class add2set(object):
         
         
 class RedisQuery(stdnet.BeckendQuery):
-    result = None
-    _count = None
-        
+    
+    @property
+    def simple(self):
+        return isinstance(self.query_set,list)
+    
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
         meta = self.meta
@@ -102,9 +104,10 @@ class RedisQuery(stdnet.BeckendQuery):
         if qargs:
             for q in qargs:
                 sha.write(q.__repr__().encode())
+                values = q.values
                 if q.unique:
                     if q.lookup == 'in':
-                        keys.append(self._unique_set(q.name, q.values))
+                        keys.append(self._unique_set(q.name, values))
                     else:
                         raise ValueError('Not available')
                 elif len(q.values) == 1:
@@ -118,10 +121,17 @@ class RedisQuery(stdnet.BeckendQuery):
                     #elif q.lookup == 'contains':
                     #    self.intersect(tkey,insersept).expire(tkey,self.expire)
                     else:
-                        raise ValueError('Lookup {0} Not available'\
-                                         .format(q.lookup))    
-                    keys.append(tkey)
-                    
+                        insersept = [meta.basekey(IDX,q.name,value)\
+                                      for value in values]
+                        tkey = self.meta.tempkey()
+                        if q.lookup == 'in':
+                            self.union(tkey,insersept).expire(tkey,self.expire)
+                        #elif q.lookup == 'contains':
+                        #    self.intersect(tkey,insersept).expire(tkey,self.expire)
+                        else:
+                            raise ValueError('Lookup {0} Not available'\
+                                             .format(q.lookup))    
+                        keys.append(tkey)
         
         if extra:
             for id in extra:
@@ -163,6 +173,7 @@ different model) which has a *field* containing current model ids.'''
                 # In a different redis database. We need to move the set
                 query._meta.cursor.client.move(qset,pipe.db)
                 pipe.expire(qset,self.expire)
+                
             skey = self.meta.tempkey()
             okey = backend.basekey(meta,OBJ,'*->{0}'.format(q.field))
             pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\
@@ -176,6 +187,7 @@ different model) which has a *field* containing current model ids.'''
         return tkey
     
     def build(self, fargs, eargs, queries):
+        '''Entry points for queries.'''
         meta = self.meta
         backend = self.backend
         self.idset = idset = backend.basekey(meta,'id')
@@ -202,8 +214,8 @@ different model) which has a *field* containing current model ids.'''
                     if id is not None:
                         allids.append(id)
                         pismember(idset,id)
-            self.result = [id for (id,r) in zip(allids,pipe.execute())\
-                           if chk(r)]
+            self.query_set = [id for (id,r) in zip(allids,pipe.execute())\
+                              if chk(r)]
         else:
             self.intersect = pipeattr(pipe,p,'interstore')
             self.union = pipeattr(pipe,p,'unionstore')
@@ -221,18 +233,16 @@ different model) which has a *field* containing current model ids.'''
                 key = key1
             self.query_set = key
             
-    def execute(self):
-        sha = self.sha
-        if sha:
+    def execute_query(self):
+        if not self.simple and self.sha:
             if self.timeout:
                 key = self.meta.tempkey(sha)
                 if not self.backend.client.exists(key):
                     self.pipe.rename(self.query_set,key)
-                    self.result = self.pipe.execute()
-                self.query_set = key
+                    return self.pipe.execute()
             else:
-                self.result = self.pipe.execute()
-    
+                return self.pipe.execute()
+        
     def order(self):
         '''Perform ordering with respect model fields.'''
         meta=  self.meta
@@ -250,17 +260,15 @@ different model) which has a *field* containing current model ids.'''
                 .expire(skey,self.expire).execute()
             return skey
     
-    def count(self):
-        if self._count is None:
-            if self.qs.simple:
-                self._count = len(self.result)
-            else:
-                self._count = self.card(self.query_set)
-        return self._count
+    def _count(self):
+        if self.simple:
+            return len(self.query_set)
+        else:
+            return self.card(self.query_set)
     
-    def has(self, val):
-        if self.qs.simple:
-            return val in self.result
+    def _has(self, val):
+        if self.simple:
+            return val in self.query_set
         else:
             return True if self.ismember(self.query_set, val) else False
     
@@ -275,7 +283,7 @@ different model) which has a *field* containing current model ids.'''
             stop = -1
         return start,stop
     
-    def items(self, slic):
+    def _items(self, slic):
         # Unwind the database query
         backend = self.backend
         client = backend.client
@@ -450,11 +458,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         #remove the id from set
         rem(bkey(meta, 'id'), id)
         # Remove multifields
-        mfs = obj._meta.multifields
-        if mfs:
-            fids = [fid for fid in (field.id(obj) for field in mfs) if fid]
-            if fids:
-                transaction.cursor.delete(*fids)
+
+        fids = obj._meta.multifields_ids_todelete(obj)
+        if fids:
+            transaction.cursor.delete(*fids)
         # Remove indices
         if meta.indices:
             rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')

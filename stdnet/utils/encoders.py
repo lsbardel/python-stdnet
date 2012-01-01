@@ -75,11 +75,15 @@ class NoEncoder(Encoder):
     
     
 class PythonPickle(Encoder):
-    '''A safe pickle serializer.'''
+    '''A safe pickle serializer. By default we use protocol 2 for compatibility
+between python 2 and python 3.'''
+    def __init__(self, protocol = 2):
+        self.protocol = protocol
+        
     def dumps(self, x, logger = None):
         if x is not None:
             try:
-                return pickle.dumps(x)
+                return pickle.dumps(x,self.protocol)
             except:
                 if logger:
                     logger.error('Could not serialize {0}'.format(x),

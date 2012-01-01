@@ -95,12 +95,21 @@ class CacheClass(object):
 class make_struct(object):
     _structs = {}
     
-    def __init__(self, name):
+    def __init__(self, name, pickler = None, value_pickler = None):
         self._name = name
+        self._pickler = pickler
+        self._value_pickler = value_pickler
     
-    def __call__(self, server = None, id = None, **kwargs):
+    def __call__(self, server = None, id = None, pickler = None,
+                 value_pickler = None, **kwargs):
         db = getdb(server)
-        s = getattr(db,self._name)(self._id(id),**kwargs)
+        pickler = pickler or self._pickler
+        value_pickler = value_pickler or self._value_pickler
+        st = getattr(db,self._name)
+        s = st(self._id(id),
+               pickler = pickler or self._pickler,
+               value_pickler = value_pickler or self._value_pickler,
+               **kwargs)
         self._structs[s.id] = s
         return s
         
@@ -132,6 +141,7 @@ class Structures(object):
     
     list = make_struct('list')
     hash = make_struct('hash')
+    dict = make_struct('hash', value_pickler = encoders.PythonPickle())
     set = make_struct('unordered_set')
     zset = make_struct('ordered_set')
     ts = make_struct('ts')

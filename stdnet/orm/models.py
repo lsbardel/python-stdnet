@@ -1,7 +1,7 @@
 import copy
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, UnicodeMixin, JSPLITTER
+from stdnet.utils import zip, UnicodeMixin, JSPLITTER, iteritems
 from stdnet import dispatch, transaction, attr_local_transaction
 
 from .base import StdNetType, FakeModelType
@@ -156,27 +156,21 @@ The method return ``self``.
                            instance = r)
         return r
     
-    def save_as_new(self, id = None, commit = True, **kwargs):
-        '''Utility method for saving the instance as a new object.
+    def clone(self, id = None, **data):
+        '''Utility method for cloning the instance as a new object.
         
 :parameter id: Optional new id.
 :parameter commit: If ``True`` the :meth:`save` method will be called with
     parameters *kwargs*, otherwise no save performed.
 :rtype: an instance of this class
 '''
-        self.on_save_as_new()
-        self._loadedfields  = None
-        self.id = id
-        self._dbdata = {}
-        if commit:
-            return self.save(**kwargs)
-        else:
-            return self
-        
-    def temp(self, clear = False):
-        if clear or not hasattr(self,'_temp'):
-            self._temp = {}
-        return self._temp
+        fields = self.todict()
+        fields.update(data)
+        fields.pop('id',None)
+        fields.pop('__dbdata__',None)
+        instance = self._meta.maker()
+        instance.__setstate__((id,None,fields))
+        return instance
     
     def is_valid(self, backend):
         '''Kick off the validation algorithm by checking oll
@@ -237,13 +231,6 @@ If the instance is not available (it does not have an id) and
             setattr(self,attr_local_transaction,
                     self.objects.backend.transaction(**kwargs))
         return getattr(self,attr_local_transaction)
-    
-    # HOOKS
-    
-    def on_save_as_new(self):
-        '''Callback by :meth:`save_as_new` just before saving an instance as a
-new object in the database'''
-        pass
     
     # UTILITY METHODS
     

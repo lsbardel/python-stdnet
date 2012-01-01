@@ -16,20 +16,12 @@ class EmptySet(frozenset):
     query_set = ''
     
     def items(self, slic):
-        raise StopIteration
+        return []
     
     def count(self):
         return len(self)
     
 
-def dupargs(kwargs, avail):
-    if avail:
-        fargs = avail.copy()
-        fargs.update(kwargs)
-        return fargs
-    return kwargs
-    
-    
 class QuerySet(object):
     '''A QuerySet is not created using its constructor but instead using
 the model manager via :meth:`Manager.filter` or,
@@ -44,9 +36,10 @@ it refers to all instances which have *field* set to ``bla``.
     stop = None
     lookups = ('in','contains')
     
-    def __init__(self, meta, backend, fargs = None, eargs = None,
-                 filter_sets = None, ordering = None, query_field = None,
-                 queries = None, empty = False):
+    def __init__(self, meta, fargs = None, eargs = None,
+                 filter_sets = None, ordering = None,
+                 field_queries = None, text = None,
+                 empty = False):
         '''\
 Initialize a queryset. The constructor is not called directly since
 instances of queryset are constructued using the 
@@ -67,6 +60,10 @@ instances of queryset are constructued using the
 .. attribute:: ordering
 
     optional ordering field.
+    
+.. attribute:: text_search
+
+    optional text to filter result on.
 '''
         self._meta  = meta
         self.backend = backend
@@ -74,13 +71,13 @@ instances of queryset are constructued using the
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
-        self.queries = queries
+        self._field_queries = field_queries
+        self.text = text
         self._select_related = None
         self.query_field = query_field or 'id'
         self.fields = None
+        self.__empty = empty
         self.clear()
-        if empty:
-            self.qset = EmptySet()
         
     @property
     def model(self):
@@ -88,11 +85,17 @@ instances of queryset are constructued using the
         
     def clear(self):
         self.simple = False
-        self.qset   = None
-        self._seq   = None
+        self.__qset = None
+        self.__slice_cache = None
         
+    def cache(self):
+        if not self.__slice_cache:
+            self.__slice_cache = {}
+        return self.__slice_cache
+    
     def __repr__(self):
-        if self._seq is None:
+        seq = self.cache().get(None)
+        if seq is None:
             s = self.__class__.__name__
             if self.fargs:
                 s = '%s.filter(%s)' % (s,self.fargs)
@@ -100,19 +103,19 @@ instances of queryset are constructued using the
                 s = '%s.exclude(%s)' % (s,self.eargs)
             return s
         else:
-            return str(self._seq)
+            return str(seq)
     __str__ = __repr__
     
     def __getitem__(self, slic):
         if isinstance(slic,slice):
-            return self.aslist(slic)
-        return self.aslist()[slic]
+            return self.items(slic)
+        return self.items()[slic]
     
     def all(self):
         return self
     
-    def __iter__(self): 
-        return self.items()
+    def __iter__(self):
+        return iter(self.items())
     
     def _clone(self, fargs, eargs, filter_sets = None):
         filter_sets = filter_sets or self.filter_sets
@@ -122,7 +125,8 @@ instances of queryset are constructued using the
                               eargs=eargs,
                               filter_sets=self.filter_sets,
                               ordering=self.ordering,
-                              queries=self.queries)
+                              field_queries=self._field_queries,
+                              text=self.text)
         
     def filter(self, filter_sets = None, **kwargs):
         '''Create a new :class:`QuerySet` with limiting clauses corresponding to
@@ -157,13 +161,29 @@ where or limit in a SQL select statement.
     def search(self, text):
         '''Search text in model. A search engine needs to be installed
 for this function to be available.'''
-        se = self._meta.searchengine
-        if se:
-            return se.search_model(self.model,text)
+        if self._meta.searchengine:
+            self.text = text
+            return self
+            #return se.search_model(self.model,text)
         else:
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
-            
+    
+    def field_queries(self):
+        '''return a list of field queries. Field queries
+are queries which produce ids for the model and the query is restricted
+to these ids.'''
+        q = self._field_queries
+        if q is None:
+            q = []
+        if self.text:
+            qf = self._meta.searchengine.search_model(self.model,self.text)
+            if qf is None:
+                self.__empty = True
+                return []
+            q.extend(qf)
+        return q
+                
     def load_related(self, *fields):
         '''It returns a new ``QuerySet`` that automatically follows foreign-key
 relationships, selecting that additional related-object data when it executes
@@ -193,8 +213,7 @@ achieved is less than the one obtained when using
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
-        dfields = self._meta.dfields
-        self.fields = tuple(set(self._load_only(fields)))
+        self.fields = tuple(set(self._load_only(fields))) if fields else None
         return self
     
     def _load_only(self, fields):
@@ -209,7 +228,7 @@ data intensive fields you don't need.
                     yield name
             
     def get(self):
-        items = self.aslist()
+        items = self.items()
         if items:
             if len(items) == 1:
                 return items[0]
@@ -224,19 +243,11 @@ data intensive fields you don't need.
 This method is efficient since the queryset does not
 receive any data from the server. It construct the queries and count the
 objects on the server side.'''
-        self._buildquery()
-        return self.qset.count()
+        return self.backend_query().count()
     
     def querykey(self):
         self.count()
-        return self.qset.query_set
-    
-    def field(self, field_name):
-        '''Select the field to be returned by the queryset. By default a
- queryset operates on id field but in some special cases a different field
- can be used.'''
-        self.field = field_name
-        return self
+        return self.__qset.query_set
         
     def __contains__(self, val):
         if isinstance(val,self.model):
@@ -245,33 +256,42 @@ objects on the server side.'''
             val = to_bytestring(val)
         except:
             return False
-        self._buildquery()
-        return self.qset.has(val)
+        return self.backend_query().has(val)
         
     def __len__(self):
         return self.count()
     
-    # PRIVATE METHODS
+    def backend_query(self):
+        '''Build and return the backend query. This is a lazy method in the
+ sense that it is evaluated once only and its result stored for future
+ retrieval. It return an instance of :class:`stdnet.BeckendQuery`
+ '''
+        if self.__empty:
+            self.__qset = EmptySet()
+        else:
+            self.fqueries = self.field_queries()
+            if self.__empty:
+                self.__qset = EmptySet()
+            else:
+                if self.fargs:
+                    self.simple = not self.filter_sets
+                    fargs = self.aggregate(self.fargs)
+                else:
+                    fargs = None
+                if self.eargs:
+                    self.simple = False
+                    eargs = self.aggregate(self.eargs)
+                else:
+                    eargs = None
+                if self.fqueries:
+                    self.simple = False
+                self.__qset = self._meta.cursor.Query(self,
+                                                      fargs,
+                                                      eargs,
+                                                      queries = self.fqueries)
+        return self.__qset
     
-    def _buildquery(self):
-        # Build a queryset from filters and exclude arguments
-        if self.qset is not None:
-            return 
-        meta = self._meta
-        if self.fargs:
-            self.simple = not self.filter_sets
-            fargs = self.aggregate(self.fargs)
-        else:
-            fargs = None
-        if self.eargs:
-            self.simple = False
-            eargs = self.aggregate(self.eargs)
-        else:
-            eargs = None
-        if self.queries:
-            self.simple = False
-        self.qset = self.backend.Query(self, fargs, eargs,
-                                       queries = self.queries)
+    # PRIVATE METHODS
     
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -290,46 +310,53 @@ objects on the server side.'''
                     raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta,name))
                 field = fields[name]
-                value = (field.serialize(value),)
-                unique = field.unique
+                value = value if isinstance(value,self.__class__) else\
+                                 (field.serialize(value),)
             # group lookup filter(name_in ['pippo','luca'])
             elif N == 2 and names[1] in self.lookups:
                 name = names[0]
+                lookup = names[1]
                 if name not in fields:
                     raise QuerySetError("Could not filter.\
  Field %s not defined.".format(name))
                 field = fields[name]
-                value = tuple((field.serialize(v) for v in value))
-                unique = field.unique
-                lookup = names[1]
+                value = value if isinstance(value,self.__class__) else\
+                                tuple((field.serialize(v) for v in value))
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")
             
+            unique = field.unique
             if not field.index:
-                raise QuerySetError("Field %s is not an index.\
- Cannot query." % name)
-            elif value:
-                self.simple = self.simple and unique 
-                yield queryarg(name,value,unique,lookup)
+                raise QuerySetError("{0} {1} is not an index.\
+ Cannot query.".format(field.__class__.__name__,name))
+            #elif value:
+            #    self.simple = self.simple and unique 
+            #    yield queryarg(name,value,unique,lookup)
+            self.simple = self.simple and unique 
+            yield queryarg(name,value,unique,lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''
-        if self._seq is not None:
-            for m in self._seq:
-                yield m
+        cache = self.cache()
+        key = None
+        seq = cache.get(None)
+        if slic:
+            if seq:
+                seq = seq[slic]
+            else:
+                key = (slic.start,slic.step,slic.stop)
+                
+        if seq is not None:
+            return seq
         else:
-            self._buildquery()
-            seq = self._seq = []
-            for m in self.qset.items(slic):
-                seq.append(m)
-                yield m
+            seq = list(self.backend_query().items(slic))
+            cache[key] = seq
+            return seq
                 
     def aslist(self, slic = None):
         '''Return python ``list`` of elements in queryset'''
-        if self._seq is None:
-            return list(self.items(slic))
-        return self._seq
+        return self.items(slic)
     
     def delete(self, transaction = None):
         '''Delete all the element in the queryset'''
@@ -397,10 +424,14 @@ where or limit in a SQL select statement.
                         fargs = kwargs,
                         filter_sets = filter_sets)
     
-    def from_queries(self, queries):
+    def from_field_queries(self, field_queries):
         '''Build a new query from a list of :class:`field_query`
 independent queries.'''
-        return QuerySet(self._meta, self.cursor, queries = queries)
+        return QuerySet(self._meta, field_queries = field_queries)
+    
+    def field_query(self, qs, field):
+        query = field_query(qs, field)
+        return self.from_field_queries([query])
     
     def exclude(self, **kwargs):
         '''Create a new :class:`QuerySet` containing objects that do not

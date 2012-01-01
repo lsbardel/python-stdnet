@@ -47,16 +47,6 @@ class TestStruct(test.TestCase):
         l = struct.set()
         self.assertEqual(l.size(),0)
         
-    def testHash(self):
-        l = struct.hash()
-        self.assertEqual(l.size(),0)
-        l['bla'] = 'foo'
-        l['pluto'] = 3
-        l.save()
-        self.assertEqual(l.size(),2)
-        d = dict(l)
-        self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
-        
     def testZset(self):
         '''test a very simple zset with integer'''
         l = struct.zset()
@@ -86,6 +76,31 @@ class TestStruct(test.TestCase):
         r = list(l)
         self.assertTrue(l._cache)
         self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
+        
+
+class TestHash(test.TestCase):
+    
+    def testSimple(self):
+        l = struct.hash()
+        self.assertEqual(l.size(),0)
+        l['bla'] = 'foo'
+        l['pluto'] = 3
+        l.save()
+        self.assertEqual(l.size(),2)
+        d = dict(l)
+        self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
+        
+    def testPop(self):
+        d = struct.dict()
+        d['foo'] = 'ciao'
+        d.save()
+        self.assertEqual(len(d),1)
+        self.assertEqual(d['foo'],'ciao')
+        self.assertRaises(KeyError, lambda : d.pop('bla'))
+        self.assertEqual(d.pop('bla',56),56)
+        self.assertRaises(TypeError, lambda : d.pop('bla',1,2))
+        self.assertEqual(d.pop('foo'),'ciao')
+        self.assertEqual(len(d),0)
         
         
 class TestTimeserie(test.TestCase):

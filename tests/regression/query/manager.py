@@ -73,10 +73,9 @@ class TestManager(test.TestCase):
         '''Test filter when performing a all request'''
         self.fill()
         qs = SimpleModel.objects.all()
-        self.assertEqual(qs.qset,None)
         self.assertFalse('ciao' in qs)
-        self.assertTrue(qs.qset)
+        self.assertTrue(qs.backend_query())
         self.assertTrue(1 in qs)
-        self.assertEqual(qs._seq,None)
+        self.assertEqual(qs.cache(),{})
         
         

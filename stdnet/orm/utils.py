@@ -41,35 +41,52 @@ Register a new serializer to the library.
 class Serializer(object):
     '''The stdnet serializer base class.'''
     
-    def serialize(self, qs, stream = None, **options):
-        stream = stream or StringIO()
-        data = self.get_data(qs)
-        self.end_serialize(data, stream, **options)
+    @property
+    def data(self):
+        if not hasattr(self,'_data'):
+            self._data = []
+        return self._data
+    
+    def serialize(self, qs, **options):
+        data = self.data.append(self.get_data(qs))
     
     def get_data(self, qs):
-        objs = []
+        data = []
         for obj in qs:
-            data = obj.todict()
-            data['id'] = obj.id
-            objs.append(data)
-        return objs
+            data.append(obj.tojson())
+            model = str(obj._meta)
+        return {'model':model,
+                'data':data}
     
-    def end_serialize(self, data, stream, **options):
+    def write(self, stream, **options):
         raise NotImplementedError
     
     
 class JsonSerializer(Serializer):
             
-    def end_serialize(self, data, stream, **options):
-        json.dumps(data,stream,**options)
+    def write(self, stream = None, **options):
+        stream = stream or StringIO()
+        line = json.dumps(self.data,stream,**options)
+        stream.write(line)
+        return stream
         
         
 class CsvSerializer(Serializer):
             
-    def end_serialize(self, data, stream, **options):
-        w = DictWriter(stream,**options)
-        for row in data:
-            w.write(row)
+    def write(self, stream = None, **options):
+        stream = stream or StringIO()
+        if self.data:
+            if len(self.data) > 1:
+                print('Cannot serialize more than one model into CSV')
+                return stream
+            data = self.data[0]['data']
+            if data:
+                fields = list(data[0])
+                w = DictWriter(stream,fields,**options)
+                w.writeheader()
+                for row in data:
+                    w.writerow(row)
+        return stream
             
 
 _serializers['json'] = JsonSerializer()

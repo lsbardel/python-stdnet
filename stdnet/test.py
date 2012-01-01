@@ -3,9 +3,20 @@ A specialized test case class for stdnet
 '''
 import os
 import sys
-import unittest
 import logging
 from inspect import isclass
+
+import sys
+
+if sys.version_info >= (2,7):
+    import unittest
+else:
+    try:
+        import unittest2 as unittest
+    except ImportError:
+        print('To run tests in python 2.6 you need to install\
+ the unitest2 package')
+        exit(0)
 
 from stdnet import orm
 from stdnet.utils import to_string, gen_unique_id

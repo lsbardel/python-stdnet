@@ -24,9 +24,17 @@ class Keys(object):
         
     def add(self, value):
         self.value = value
+         
         
-    
 class BeckendQuery(object):
+    '''Backend queryset class which implements the database
+queries specified by :class:`stdnet.orm.QuerySet`.
+
+.. attribute:: qs
+
+    Underlying queryset
+    
+'''
     query_set = None
     
     def __init__(self, qs, fargs = None, eargs = None,
@@ -35,10 +43,12 @@ class BeckendQuery(object):
         self.expire = max(timeout,30)
         self.timeout = timeout
         self._sha = BytesIO()
+        self.__count = None
+        self.__result = False
+        # build the queryset without fetching data
         self.build(fargs, eargs, queries)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
-        self.execute()
 
     @property
     def meta(self):
@@ -52,23 +62,51 @@ class BeckendQuery(object):
     def sha(self):
         return self._sha
     
+    @property
+    def query_class(self):
+        '''The underlying query class'''
+        return self.qs.__class__
+    
     def __len__(self):
         return self.count()
 
     def has(self, val):
-        raise NotImplementedError
+        if self.__result == False:
+            self.__result = self.execute_query()
+        return self._has(val)
+    
+    def items(self, slic):
+        if self.__result == False:
+            self.__result = self.execute_query()
+        return self._items(slic)
     
     def count(self):
+        if self.__count is None:
+            if self.__result == False:
+                self.__result = self.execute_query()
+            self.__count = self._count()
+        return self.__count
+    
+    # VIRTUAL FUNCTIONS
+    
+    def _count(self):
+        raise NotImplementedError
+    
+    def _has(self, val):
+        raise NotImplementedError
+    
+    def _items(self, slic):
         raise NotImplementedError
     
     def build(self, fargs, eargs, queries):
         raise NotImplementedError
     
-    def execute(self):
+    def execute_query(self):
+        '''Execute the query without fetching data from server. Must
+ be implemented by data-server backends.'''
         raise NotImplementedError
     
-    def items(self, slic):
-        raise NotImplementedError
+    # LOAD RELATED
     
     def load_related(self, result):
         '''load related fields into the query result.

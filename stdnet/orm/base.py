@@ -295,6 +295,14 @@ of fields names and a list of field attribute names.'''
                         atts.append(name)
         return names,atts
 
+
+    def multifields_ids_todelete(self, instance):
+        '''Return the list of ids of multifields belonging to *instance*
+ which needs to be deleted when *instance* is deleted.'''
+        gen = (field.id(instance) for field in self.multifields\
+                                         if field.todelete())
+        return [fid for fid in gen if fid]
+    
 class FakeMeta(object):
     pass
         

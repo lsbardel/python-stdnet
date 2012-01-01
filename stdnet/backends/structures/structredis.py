@@ -111,7 +111,7 @@ class HashTable(CommonMixin,structures.HashTable):
         return cursor.execute_command('HGET', self.id, key)
     
     def _pop(self, cursor, key):
-        return cursor.execute_command('HDEL', self.id, key)
+        return cursor.hpop(self.id, key)
         
     def _keys(self, cursor):
         return cursor.execute_command('HKEYS', self.id)

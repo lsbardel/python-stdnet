@@ -19,7 +19,7 @@ from stdnet.dispatch import Signal
 from .connection import ConnectionPool
 from .exceptions import *
 
-from . import scripts
+from .scripts import nil, script_call_back, get_script
 
 
 tuple_list = (tuple,list)
@@ -187,6 +187,7 @@ class Redis(object):
             'PING': lambda r: r == b'PONG',
             'TTL': lambda r: r != -1 and r or None,
             'ZRANK': int_or_none,
+            'EVAL': script_call_back
         }
         )
 
@@ -272,10 +273,6 @@ between the client and server.
         "Delete one or more keys specified by ``names``"
         return self.execute_command('DEL', *names)
     __delitem__ = delete
-    
-    def delpattern(self, pattern):
-        "delete all keys matching *pattern*."
-        return self.execute_command('EVAL', scripts.delpattern, 1, pattern)
 
     def flushall(self):
         "Delete all keys in all databases on the current host"
@@ -936,61 +933,10 @@ The first element is the score and the second is the value.'''
         "Return the list of values within hash ``name``"
         return self.execute_command('HVALS', name)
 
-
-    # channels
-    def psubscribe(self, patterns):
-        "Subscribe to all channels matching any pattern in ``patterns``"
-        if isinstance(patterns, basestring):
-            patterns = [patterns]
-        response = self.execute_command('PSUBSCRIBE', *patterns)
-        # this is *after* the SUBSCRIBE in order to allow for lazy and broken
-        # connections that need to issue AUTH and SELECT commands
-        self.subscribed = True
-        return response
-
-    def punsubscribe(self, patterns=[]):
-        """
-        Unsubscribe from any channel matching any pattern in ``patterns``.
-        If empty, unsubscribe from all channels.
-        """
-        if isinstance(patterns, basestring):
-            patterns = [patterns]
-        return self.execute_command('PUNSUBSCRIBE', *patterns)
-
-    def subscribe(self, channels):
-        "Subscribe to ``channels``, waiting for messages to be published"
-        if is_string(channels):
-            channels = [channels]
-        response = self.execute_command('SUBSCRIBE', *channels)
-        # this is *after* the SUBSCRIBE in order to allow for lazy and broken
-        # connections that need to issue AUTH and SELECT commands
-        self.subscribed = True
-        return response
-
-    def unsubscribe(self, channels=[]):
-        """
-        Unsubscribe from ``channels``. If empty, unsubscribe
-        from all channels
-        """
-        if isinstance(channels, basestring):
-            channels = [channels]
-        return self.execute_command('UNSUBSCRIBE', *channels)
-
-    def publish(self, channel, message):
-        """
-        Publish ``message`` on ``channel``.
-        Returns the number of subscribers the message was delivered to.
-        """
-        return self.execute_command('PUBLISH', channel, message)
-
-    def listen(self):
-        "Listen for messages on channels this client has been subscribed to"
-        while self.subscribed:
-            r = self.parse_response('LISTEN')
-            message_type, channel, message = r[0], r[1], r[2]
-            yield (message_type, channel, message)
-            if message_type == 'unsubscribe' and message == 0:
-                self.subscribed = False
+    def hpop(self, name, key):
+        '''pop the *key*. Return a two element tuple containing the element
+popped (if it existes) and a flag indicationg if it existed.'''
+        return self.script_call('hash_pop_item', 2, name, key)
 
     # Scripting
     def eval(self, body, **kwargs):
@@ -1006,7 +952,19 @@ The first element is the score and the second is the value.'''
             keys = ()
         return self.execute_command('EVAL', body, num_keys, *keys)
     
+    def script_call(self, name, num, *args, **options):
+        script = get_script(name)
+        if not script:
+            raise ValueError('No such script {0}'.format(name))
+        options['script'] = name
+        options['args'] = args
+        return self.execute_command('EVAL',
+                                    script.script, num, *args, **options)
     
+    def delpattern(self, pattern):
+        "delete all keys matching *pattern*."
+        return self.script_call('delpattern', 1, pattern)
+
 
 class Pipeline(Redis):
     """

@@ -51,8 +51,8 @@ class PipelineTestCase(BaseTest):
         self.assertEquals(pipe.set('z', 'zzz').execute(), [True])
         self.assertEquals(self.client['z'], b'zzz')
 
-    def test_pipeline_no_transaction(self):
-        pipe = self.client.pipeline(transaction=False)
+    def test_pipeline2(self):
+        pipe = self.client.pipeline()
         pipe.set('a', 'a1').set('b', 'b1').set('c', 'c1')
         self.assertEquals(pipe.execute(), [True, True, True])
         self.assertEquals(self.client['a'], b'a1')

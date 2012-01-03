@@ -44,7 +44,7 @@ class TestDateTimeSeriesTS(hashts.TestHashTimeSeries):
         self.assertTrue(N)
         a  = int(N/4)
         b  = 3*a
-        with ts.transaction() as t:
+        with self.model.objects.transaction() as t:
             ts.data.irange(0,a,t)
             ts.data.irange(a,b,t)
             ts.data.irange(b,-1,t)
@@ -79,12 +79,12 @@ class TestDateTimeSeriesTS(hashts.TestHashTimeSeries):
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a
-        with ts.transaction() as t:
+        with self.model.objects.transaction() as t:
             ts.data.irange(0,a,t)
             ts.data.irange(a,b,t)
             ts.data.irange(b,-1,t)
         r1,r2,r3 = [list(r) for r in t.get_result()]
-        with ts.transaction() as t:
+        with self.model.objects.transaction() as t:
             ts.data.range(r2[0][0],r2[-1][0],t)
         r4 = [list(r) for r in t.get_result()][0]
         self.assertEqual(r4[0],r2[0])

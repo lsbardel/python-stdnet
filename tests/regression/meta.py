@@ -69,15 +69,14 @@ class PickleSupport(test.TestCase):
         self.assertEqual(inst.type,inst2.type)
         self.assertEqual(inst.ccy,inst2.ccy)
         
-    def testSimple2(self):
+    def testTempDictionary(self):
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
-        self.assertTrue(inst._local_transaction)
-        self.assertFalse(inst._local_transaction._cachepipes)
+        self.assertTrue(inst._temp)
         p = pickle.dumps(inst)
         inst2 = pickle.loads(p)
-        self.assertFalse(hasattr(inst2,'_local_transaction'))
+        self.assertFalse(hasattr(inst2,'_temp'))
         inst2.save()
-        self.assertTrue(inst._local_transaction)
+        self.assertTrue(inst._temp)
         
 
 class TestRegistration(test.TestCase):

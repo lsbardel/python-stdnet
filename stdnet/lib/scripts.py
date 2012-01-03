@@ -1,13 +1,28 @@
-# This just works
+import os
+
+from .py2py3 import zip
+
+
+__all__ = ['RedisScript','ScriptBuilder','nil']
+
 
 class nil(object):
     pass
 
+
 _scripts = {}
+
 
 def get_script(script):
     return _scripts.get(script)
  
+ 
+def read_lua_file(filename):
+    path = os.path.split(os.path.abspath(__file__))[0]
+    name = os.path.join(path,'lua',filename)
+    with open(name) as f:
+        return f.read()
+    
  
 class RedisScriptMeta(type):
     
@@ -21,6 +36,7 @@ class RedisScriptMeta(type):
     
 RedisScriptBase = RedisScriptMeta('RedisScriptBase',(object,),{'abstract':True})
 
+
 class RedisScript(RedisScriptBase):
     abstract = True
     script = None
@@ -33,12 +49,57 @@ class RedisScript(RedisScriptBase):
         return response
     
     
-def script_call_back(response, script = None, args = None, **options):
-    s = _scripts.get(script)
+def script_call_back(response, script_name = None, script_args = None,
+                     **options):
+    s = _scripts.get(script_name)
     if not s:
-        raise ValueError('No such script {0}'.format(script))
-    return s.callback(response, args, **options)
+        return response
+    else:
+        return s.callback(response, script_args, **options)
     
+
+class ScriptCommand(object):
+    __slots__ = ('builder','name')
+    
+    def __init__(self, builder, name):
+        self.builder = builder
+        self.name = name
+        
+    def __repr__(self):
+        return self.name
+    __str__ = __repr__
+    
+    def __call__(self, key, *args):
+        sargs = ','.join(("'"+a+"'" if isinstance(a,str)\
+                           else str(a) for a in args))
+        name = "res = redis.call('"+self.name+"','"+key+"'"
+        if sargs:
+            name += ',' + sargs
+        command = name + ')'
+        self.builder.append(command)
+        return self.builder
+        
+        
+class ScriptBuilder(object):
+    
+    def __init__(self, redis):
+        self.redis = redis
+        self.lines = []
+    
+    def __getattr__(self, name):
+        return ScriptCommand(self, name)
+    
+    def append(self, line):
+        self.lines.append(line)
+        
+    def execute(self):
+        if self.lines:
+            lines = self.lines
+            self.lines = []
+            lines.append('return res')
+            script = '\n'.join(lines)
+            return self.redis.eval(script)
+        
         
 countpattern = '''\
 return table.getn(redis.call('keys',KEYS[1]))
@@ -74,3 +135,15 @@ return {pop,elem}
             return nil
         return response[1]
         
+
+class commit_session(RedisScript):
+    script = read_lua_file('session.lua')
+    
+    def callback(self, response, args, session = None):
+        data = []
+        for state,id in zip(session,response):
+            if not state.deleted:
+                instance = state.instance
+                instance.id = id
+                data.append(instance)
+        return data

@@ -21,7 +21,7 @@ class TestAtomFields(test.TestCase):
     model = TestDateModel
         
     def create(self):
-        with TestDateModel.transaction() as t:
+        with TestDateModel.objects.transaction() as t:
             for na,dt in zip(names,dates):
                 TestDateModel(person = na, name = na, dt = dt).save(t)
             
@@ -211,7 +211,6 @@ class TestErrorAtomFields(test.TestCase):
     def testNotRegistered(self):
         m = TestDateModel(name = names[1], dt = dates[0])
         self.assertRaises(stdnet.ModelNotRegistered,m.save)
-        self.assertRaises(stdnet.ModelNotRegistered,m._meta.table)
     
     def testNotSaved(self):
         m = TestDateModel(name = names[1], dt = dates[0])

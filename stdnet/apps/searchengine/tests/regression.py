@@ -64,7 +64,7 @@ def make_items(num = 30, content = False, related = None):
         contents = WORDS_GROUPS(num)
     else:
         contents = ['']*num
-    with Item.transaction() as t:
+    with Item.objects.transaction() as t:
         for name,co in zip(names,contents):
             if len(name) > 3:
                 Item(name=name,

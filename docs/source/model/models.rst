@@ -1,9 +1,11 @@
 .. _model-model:
 
+.. module:: stdnet.orm
 
 ============================
 Model and Query API
 ============================
+
 
 Model
 ==================
@@ -18,7 +20,7 @@ These python classes are subclasses of
 StdModel Class
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.StdModel
+.. autoclass:: StdModel
    :members:
    :member-order: bysource
 
@@ -29,7 +31,7 @@ StdModel Class
 Data Server Metaclass
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.base.Metaclass
+.. autoclass:: Metaclass
    :members:
    :member-order: bysource
 
@@ -43,68 +45,51 @@ Once a model is defined, in order to use it in an application it needs to be
 registered with a back-end database. Unregistered models cannot be used to save
 data and they will raise exceptions.
 
-Stdnet comes with two fucntions for
+Stdnet comes with two functions for
 registration, a low level and a higher level one which can be used to register
 several models at once.
 
 Register
 ~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.register
+.. autofunction:: register
 
 
 Register application models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.register_application_models  
+.. autofunction:: register_application_models  
 
 
 Register applications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.register_applications
+.. autofunction:: register_applications
 
 
 Registered models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.registered_models
+.. autofunction:: registered_models
 
 
 Unregister model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.unregister
+.. autofunction:: unregister
 
 
-.. module:: stdnet.orm.query
-   
 Queries
 ==============================   
 
-QuerySet
+Query
 ~~~~~~~~~~~~~~~
-Though you usually won't create one manually, you'll go through a :class:`stdnet.orm.query.Manager`,
-here's the formal declaration of a QuerySet.
 
-.. autoclass:: stdnet.orm.query.QuerySet
+.. autoclass:: Query
    :members:
    :member-order: bysource
    
-RelatedManager
-~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.orm.query.RelatedManager
-   :members:
-   :member-order: bysource
-   
-M2MRelatedManager
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.orm.query.M2MRelatedManager
-   :members:
-   :member-order: bysource
-
+   .. automethod:: __init__
 
 
 .. _signal-api:

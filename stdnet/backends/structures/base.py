@@ -37,7 +37,7 @@ class listPipeline(object):
 
 class PipeLine(object):
     '''A pipeline utility class. Used to hold data in :class:`stdnet.Structure`
- before it is saved into the data server.'''
+ before it is saved into the data backend.'''
     def __init__(self, pipe, method, timeout):
         self.pipe = pipe
         self.method = method
@@ -124,7 +124,8 @@ can also be used as stand alone objects. For example::
     db = stdnet.getdb(...)
     mylist = db.list('bla')
     
-:parameter server: instance of the remote server where the structure is stored.
+:parameter backend: instance of the remote :class:`BackendDataServer` where
+    the structure is stored.
 :parameter id: structure id
 :parameter pipetype: check the :attr:`pipetype`. Specified by the server.
 :parameter instance: Optional :class:`stdnet.orm.StdModel` instance to which
@@ -164,7 +165,7 @@ can also be used as stand alone objects. For example::
 .. attribute:: pickler
 
     Class used for serialize and unserialize values.
-    If ``None`` the :attr:`server` pickler will be used.
+    If ``None`` the :attr:`backend` pickler will be used.
     
     Default ``None``.
     
@@ -178,24 +179,20 @@ can also be used as stand alone objects. For example::
     '''
     pickler = None
     value_pickler = None
-    def __init__(self, server, id,  pipetype, instance = None,
+    def __init__(self, backend, id,  pipetype, instance = None,
                  timeout = 0, pickler = None,
                  value_pickler = None, scorefun = None,
                  **kwargs):
         self.pipetype = pipetype
-        self._meta = structure_meta(server)
+        self.backend = backend
         self.scorefun = scorefun or default_score
         self.instance = instance
-        self.pickler = pickler or self.pickler or server.pickler
+        self.pickler = pickler or self.pickler or backend.pickler
         self.value_pickler = value_pickler or self.value_pickler or\
-                                 server.pickler
+                                 backend.pickler
         self.id = id
         self._cache = None
         self.timeout = timeout
-
-    @property
-    def server(self):
-        return self._meta.cursor
     
     @property
     def struct(self):
@@ -236,7 +233,7 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
         if self._cache is None:
             cache = []
             loads = self.pickler.loads
-            for item in self._all(self.server.cursor()):
+            for item in self._all(self.backend.cursor()):
                 item = loads(item)
                 cache.append(item)
                 yield item
@@ -246,30 +243,30 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
                 yield item
                 
     def reload(self, transaction = None):
-        '''Fill data from the server'''
+        '''Fill data from the backend'''
         return self._all(self.cursor(transaction))
 
     def save(self, transaction = None):
         '''Save the data in the back-end server. If a transaction is
 specified, the data is pipelined and executed when the transaction completes.'''
-        cursor = transaction.cursor if transaction else self.server.cursor()
+        cursor = transaction.cursor if transaction else self.backend.cursor()
         return self._save_from_pipeline(cursor, self.pipe(transaction))
         
     def delete(self, transaction = None):
-        '''Delete the structure from the remote server. If a transaction is
+        '''Delete the structure from the remote backend. If a transaction is
 specified, the data is pipelined and executed when the transaction completes.'''
         cursor = self.cursor(transaction) if transaction else\
-                     self.server.cursor()
+                     self.backend.cursor()
         return self._delete(cursor)
         
     def size(self, transaction = None):
         '''Number of elements in structure. If no transaction is
-supplied, use the server default cursor.'''
+supplied, use the backend default cursor.'''
         if self._cache is None:
             if transaction:
                 return self._size(self.cursor(transaction))
             else:
-                return self._size(self.server.cursor())
+                return self._size(self.backend.cursor())
         else:
             return len(self._cache)
     
@@ -300,11 +297,15 @@ if you would like ti pipeline the command.'''
         return self._transaction.cursor
     
     def _setup(self):
+        # Build the pipeline for transaction if not already available.
+        # The pipeline is obtained from a transaction in the backend server.
+        # If an instance of a model is available, we build the transaction
+        # from the local_transaction method.
         if not hasattr(self,'_pipe_'):
             if self.instance:
-                transaction = self.instance.local_transaction()
+                transaction = self.instance.local_transaction(self.backend)
             else:
-                transaction = self.server.transaction()
+                transaction = self.backend.transaction()
             self._transaction = transaction
             self._pipe_ = self._transaction.structure_pipe(self)
             
@@ -319,18 +320,18 @@ if you would like ti pipeline the command.'''
         
     def _unpicklefrom(self, func, transaction, default, loads,
                       *args, **kwargs):
-        '''invoke remote function in the server and if
+        '''invoke remote function in the backend and if
 we are not using a pipeline, unpickle the result.'''
         rk = ResultCallback(default,loads)
         if transaction:
             transaction.add(func, args, kwargs, callback = rk)
         else:
-            return rk(func(self.server.cursor(), *args, **kwargs))
+            return rk(func(self.backend.cursor(), *args, **kwargs))
             
     # PURE VIRTUAL METHODS
     
     def set_cache(self, r):
-        # Called by the server when preloading data
+        # Called by the backend when preloading data
         raise NotimplementedError()
     
     def _has(self, cursor, value):
@@ -347,7 +348,7 @@ we are not using a pipeline, unpickle the result.'''
         raise NotImplementedError
     
     def _delete(self, cursor):
-        '''Delete structure from remote server.'''
+        '''Delete structure from remote backend.'''
         raise NotImplementedError
     
     def _save(self, cursor, pipeline):
@@ -479,7 +480,7 @@ we are not using a pipeline, unpickle the result.'''
         if transaction:
             transaction.add(func, args, kwargs, callback = rk)
         else:
-            return rk(func(self.server.cursor(), *args, **kwargs))
+            return rk(func(self.backend.cursor(), *args, **kwargs))
         
     def __delitem__(self, key):
         self.pop(key)
@@ -546,7 +547,7 @@ when not using a transaction).
     def keys(self, desc = False):
         '''Return a generator of all keys. No transactions involved.'''
         kloads = self.pickler.loads
-        for key in self._keys(self.server.cursor()):
+        for key in self._keys(self.backend.cursor()):
             yield kloads(key)
 
     def items(self, keys = None):
@@ -567,12 +568,12 @@ No transaction involved in this function.'''
             if keys:
                 dumps = self.pickler.dumps
                 keys = [dumps(k) for k in keys]
-                items = zip(keys,self._items(self.server.cursor(),keys))
+                items = zip(keys,self._items(self.backend.cursor(),keys))
                 for key,val in items:
                     yield kloads(key),vloads(val)
             else:
                 cache = {}
-                items = self._items(self.server.cursor(),keys)
+                items = self._items(self.backend.cursor(),keys)
                 for key,val in items:
                     k,v = kloads(key),vloads(val)
                     cache[k] = v
@@ -597,10 +598,10 @@ No transaction involved in this function.'''
             if keys:
                 dumps = self.pickler.dumps
                 keys = [dumps(k) for k in keys]
-                for item in self._items(self.server.cursor(),keys):
+                for item in self._items(self.backend.cursor(),keys):
                     yield vloads(item)
             else:
-                for key,val in self._items(self.server.cursor(),keys):
+                for key,val in self._items(self.backend.cursor(),keys):
                     yield vloads(val)
             
     def range(self, start, end, desc = False):
@@ -690,7 +691,7 @@ not available with vanilla redis. Check the
             
     def count(self, start, end):
         tokey    = self.pickler.dumps
-        return self._count(self.server.cursor(),
+        return self._count(self.backend.cursor(),
                            tokey(start),tokey(end))
             
     # PURE VIRTUAL METHODS

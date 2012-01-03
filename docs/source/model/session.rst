@@ -19,12 +19,27 @@ Session
    :member-order: bysource
    
    
-Manager
+Managers
 =====================
 
+Manager
+~~~~~~~~~~~~~~~~~~
 .. autoclass:: Manager
    :members:
    :member-order: bysource
    
+RelatedManager
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.orm.query.RelatedManager
+   :members:
+   :member-order: bysource
+   
+M2MRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.orm.query.M2MRelatedManager
+   :members:
+   :member-order: bysource
    
 .. _sqlalchemy: http://www.sqlalchemy.org/docs/orm/session.html

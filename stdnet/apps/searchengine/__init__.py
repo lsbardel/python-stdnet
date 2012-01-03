@@ -190,7 +190,7 @@ driver.
         
     def _index_item(self, item, words):    
         link = self._link_item_and_word
-        with WordItem.transaction() as t:
+        with WordItem.objects.transaction() as t:
             linked = [link(item, word, c, transaction = t)\
                        for word,c in iteritems(words)]
         return linked

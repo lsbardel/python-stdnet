@@ -104,7 +104,8 @@ on the same redis instance).'''
                         'Model {0} is already registered'.format(meta))
         else:
             return
-    model.objects.backend = backend
+    for manager in model._managers:
+        manager.backend = backend
     _GLOBAL_REGISTRY.add(model)
     return model.objects.backend
 

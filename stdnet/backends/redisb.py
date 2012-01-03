@@ -4,7 +4,8 @@ import stdnet
 from stdnet.conf import settings
 from stdnet.utils import iteritems, to_string, map, gen_unique_id
 from stdnet.backends.structures import structredis
-from stdnet.lib import redis, connection
+from stdnet.lib import redis, ScriptBuilder, RedisScript
+from stdnet.lib.redis import flat_mapping
 
 MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
@@ -118,20 +119,10 @@ class RedisQuery(stdnet.BeckendQuery):
                     tkey = backend.tempkey(meta)
                     if q.lookup == 'in':
                         self.union(tkey,insersept).expire(tkey,self.expire)
-                    #elif q.lookup == 'contains':
-                    #    self.intersect(tkey,insersept).expire(tkey,self.expire)
                     else:
-                        insersept = [meta.basekey(IDX,q.name,value)\
-                                      for value in values]
-                        tkey = self.meta.tempkey()
-                        if q.lookup == 'in':
-                            self.union(tkey,insersept).expire(tkey,self.expire)
-                        #elif q.lookup == 'contains':
-                        #    self.intersect(tkey,insersept).expire(tkey,self.expire)
-                        else:
-                            raise ValueError('Lookup {0} Not available'\
-                                             .format(q.lookup))    
-                        keys.append(tkey)
+                        raise ValueError('Lookup {0} Not available'\
+                                             .format(q.lookup))
+                    keys.append(tkey)
         
         if extra:
             for id in extra:
@@ -143,7 +134,7 @@ class RedisQuery(stdnet.BeckendQuery):
                 keys.append(key)
             if len(keys) > 1:
                 key = backend.tempkey(meta)
-                setoper(key, keys).expire(key,self.expire)
+                setoper(key, *keys).expire(key, self.expire)
             else:
                 key = keys[0]
                 
@@ -187,21 +178,12 @@ different model) which has a *field* containing current model ids.'''
         return tkey
     
     def build(self, fargs, eargs, queries):
-        '''Entry points for queries.'''
+        '''Build the lua script which will execute the query.'''
         meta = self.meta
         backend = self.backend
-        self.idset = idset = backend.basekey(meta,'id')
+        idset = backend.basekey(meta,'id')
         p = 'z' if meta.ordering else 's'
-        self.pipe = pipe = backend.client.pipeline()
-        if p == 'z':
-            pismember =  pipeattr(pipe,'','zrank')
-            self.ismember =  pipeattr(backend.client,'','zrank')
-            chk = self.zism
-        else:
-            pismember =  pipeattr(pipe,'','sismember')
-            self.ismember =  pipeattr(backend.client,'','sismember')
-            chk = self.sism
-        
+        self.pipe = ScriptBuilder(backend.client)
         if self.qs.simple:
             allids = []
             for q in fargs:
@@ -214,34 +196,35 @@ different model) which has a *field* containing current model ids.'''
                     if id is not None:
                         allids.append(id)
                         pismember(idset,id)
-            self.query_set = [id for (id,r) in zip(allids,pipe.execute())\
-                              if chk(r)]
+            return [id for (id,r) in zip(allids,pipe.execute()) if chk(r)]
         else:
-            self.intersect = pipeattr(pipe,p,'interstore')
-            self.union = pipeattr(pipe,p,'unionstore')
-            self.diff = pipeattr(pipe,p,'diffstore')
-            self.card = pipeattr(backend.client,p,'card')
-            self.add = add2set(backend,pipe,meta)
+            self.intersect = getattr(self.pipe, p+'interstore')
+            self.union = getattr(self.pipe, p+'unionstore')
+            self.diff = getattr(self.pipe, p+'diffstore')
+            self.card = getattr(self.pipe, p+'card')
             if queries:
                 idset = self.build_from_query(queries)
             key1 = self._query(fargs,self.intersect,idset,self.qs.filter_sets)
-            key2 = self._query(eargs,self.union)
+            key2 = self._query(eargs, self.union)
             if key2:
                 key = backend.tempkey(meta)
                 self.diff(key,(key1,key2)).expire(key,self.expire)
             else:
                 key = key1
-            self.query_set = key
+            self.card(key)
+            return key
             
     def execute_query(self):
-        if not self.simple and self.sha:
-            if self.timeout:
+        if not self.simple:
+            if self.sha and self.timeout:
                 key = self.meta.tempkey(sha)
                 if not self.backend.client.exists(key):
                     self.pipe.rename(self.query_set,key)
                     return self.pipe.execute()
             else:
                 return self.pipe.execute()
+        else:
+            return self.query_set
         
     def order(self):
         '''Perform ordering with respect model fields.'''
@@ -289,7 +272,7 @@ different model) which has a *field* containing current model ids.'''
         client = backend.client
         
         if self.qs.simple:
-            ids = self.result
+            ids = self.result()
             if slic:
                 ids = ids[slic]
         else:
@@ -338,6 +321,13 @@ different model) which has a *field* containing current model ids.'''
         else:
             return ids
     
+
+class DeleteQuery(RedisScript):
+    '''Lua script for bulk delete of an orm query, including cascade items.
+The first parameter is the model'''
+    script = '''\
+        
+'''
 
 class BackendDataServer(stdnet.BackendDataServer):
     Transaction = RedisTransaction
@@ -405,93 +395,38 @@ class BackendDataServer(stdnet.BackendDataServer):
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
-
-    def save_object(self, obj, newid, transaction):        
-        # Add object data to the model hash table
-        pipe = transaction.cursor
-        obid = obj.id
-        meta = obj._meta
-        bkey = self.basekey
-        data = obj._temp['cleaned_data']
-        indices = obj._temp['indices']
-        if data:
-            pipe.hmset(bkey(meta,OBJ,obid),data)
-        #hash.addnx(objid, data)
         
-        if newid or indices:
-            add = add2set(self,pipe,meta)
-            score = add(bkey(meta,'id'), obid, obj=obj, idsave=newid)
-            fields = self._loadfields(obj,obj._temp['toload'])
-            
-        if indices:
-            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
-            if not newid:
-                pipe.delpattern(self.tempkey(meta,'*'))
-            
-            # Create indexes
-            for field,value,oldvalue in indices:
-                name = field.name
-                if field.unique:
-                    name = bkey(meta,UNI,name)
-                    if not newid:
-                        oldvalue = fields.get(field.name,oldvalue)
-                        pipe.hdel(name, oldvalue)
-                    pipe.hset(name, value, obid)
-                else:
-                    if not newid:
-                        oldvalue = fields.get(field.name,oldvalue)
-                        rem(bkey(meta,IDX,name,oldvalue), obid)
-                    add(bkey(meta,IDX,name,value), obid, score = score)
-                        
-        return obj
-    
-    def _delete_object(self, obj, transaction):
-        dbdata = obj._dbdata
-        id = dbdata['id']
-        # Check for multifields and remove them
-        meta = obj._meta
-        bkey = self.basekey
-        pipe = transaction.cursor
-        rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
-        #remove the hash table
-        pipe.delete(bkey(meta, OBJ, id))
-        #remove the id from set
-        rem(bkey(meta, 'id'), id)
-        # Remove multifields
+    def execute_session(self, session):
+        basekey = self.basekey
+        lua_data = []
+        for state in session:
+            meta = state.meta
+            bk = basekey(meta)
+            s = 'z' if meta.ordering else 's'
+            indices = tuple((idx.name for idx in meta.indices))
+            uniques = tuple((1 if idx.unique else 0 for idx in meta.indices))
+            if state.deleted:
+                fids = meta.multifields_ids_todelete(state.instance)
+                lua_data.extend(('del',bk,state.id,s,len(fids)))
+                lua_data.extend(fids)
+            else:
+                data = state.cleaned_data()
+                id = data.pop('id','')
+                data = flat_mapping(data)
+                action = 'change' if state.persistent else 'add'
+                lua_data.extend((action,bk,id,s,len(data)))
+                lua_data.extend(data)
+            lua_data.append(len(indices))
+            lua_data.extend(indices)
+            lua_data.extend(uniques)
+        return self.client.script_call('commit_session', *lua_data,
+                                       **{'session': session})
 
-        fids = obj._meta.multifields_ids_todelete(obj)
-        if fids:
-            transaction.cursor.delete(*fids)
-        # Remove indices
-        if meta.indices:
-            rem = pipeattr(pipe,'z' if meta.ordering else 's','rem')
-            toload = []
-            for field in meta.indices:
-                name = field.name
-                if name not in dbdata:
-                    toload.append(name)
-                else:
-                    if field.unique:
-                        pipe.hdel(bkey(meta,UNI,name), dbdata[name])
-                    else:
-                        rem(bkey(meta,IDX,name,dbdata[name]), id)
-            fields = self._loadfields(obj,toload)
-            for name,value in iteritems(fields):
-                field = meta.dfields[name]
-                if field.unique:
-                    pipe.hdel(bkey(meta,UNI,name), value)
-                else:
-                    rem(bkey(meta,IDX,name,value), id)
-    
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
         key = '{0}{1}'.format(self.namespace,meta.modelkey)
         postfix = ':'.join((str(p) for p in args if p is not None))
         return '{0}:{1}'.format(key,postfix) if postfix else key
-    
-    def autoid(self, meta):
-        id = self.basekey(meta,IDS)
-        return self.client.incr(id)
     
     def tempkey(self, meta, name = None):
         return self.basekey(meta, TMP, name if name is not None else\
@@ -505,7 +440,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             
     def instance_keys(self, obj):
         meta = obj._meta
-        keys = [meta.basekey(meta,OBJ,obj.id)]
+        keys = [self.basekey(meta,OBJ,obj.id)]
         for field in meta.multifields:
             f = getattr(obj,field.attname)
             keys.append(f.id)

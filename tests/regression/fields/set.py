@@ -53,7 +53,7 @@ class TestCommands(test.TestCase):
     tag  = 'zdiffstore'
     
     def rpy(self):
-        return getdb().redispy
+        return getdb().client
         
     def fill(self, key, *vals):
         rpy = self.rpy()
@@ -74,7 +74,7 @@ class TestOrderedSet(test.TestCase):
         
     def fill(self, update = False):
         ts = Calendar(name = 'MyCalendar').save()
-        with DateValue.transaction() as t:
+        with DateValue.objects.transaction() as t:
             for dt,value in zip(dates,values):
                 DateValue(dt = dt,value = value).save(t)
         

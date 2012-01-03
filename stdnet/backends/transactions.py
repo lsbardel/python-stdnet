@@ -36,8 +36,8 @@ def transaction(*models, **kwargs):
 
 
 class Transaction(object):
-    '''Transaction class for pipelining commands to the back-end backend.
-An instance of this class is usally obtained by using the high level
+    '''Transaction class for pipelining commands to the back-end.
+An instance of this class is usually obtained by using the high level
 :func:`stdnet.transaction` function.
 
 .. attribute:: name
@@ -46,8 +46,7 @@ An instance of this class is usally obtained by using the high level
     
 .. attribute:: backend
 
-    Instance of a :class:`stdnet.BackendDataServer` to which the transaction
-    is being performed.
+    the :class:`BackendDataServer` to which the transaction is being performed.
     
 .. attribute:: cursor
 
@@ -56,12 +55,17 @@ An instance of this class is usally obtained by using the high level
     '''
     default_name = 'transaction'
     
-    def __init__(self, backend, cursor, name = None):
+    def __init__(self, backend, cursor, session = None, name = None):
         self.name = name or self.default_name
         self.backend = backend
         self.cursor = cursor
+        self.session = session
         self._cachepipes = {}
         self._callbacks = []
+        
+    @property
+    def is_open(self):
+        return not hasattr(self,'_result')
     
     def add(self, func, args, kwargs, callback = None):
         '''Add an new operation to the transaction.
@@ -110,11 +114,17 @@ operation in the database.'''
         if type is None:
             self.commit()
         else:
+            self.rollback()
             self._result = value
             
     def commit(self):
         '''Close the transaction and commit commands to the backend.'''
+        if not self.is_open:
+            raise InvalidTransaction('Invalid operation.\
+ Transaction already closed.')
         results = self._execute() or ()
+        if self.session:
+            self.backend.execute_session(self.session)
         callbacks = self._callbacks
         self._callbacks = []
         if len(results) and len(callbacks):
@@ -122,7 +132,10 @@ operation in the database.'''
                                    zip(callbacks,results)))
         else:
             self._results = results
-            
+    
+    def rollback(self):
+        pass
+    
     def get_result(self):
         '''Retrieve the result after the transaction has executed.
 This can be done once only.'''

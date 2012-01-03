@@ -86,20 +86,22 @@ related keys (keys which are related to the instance rather than the model).'''
         # get the field database key
         field_key = to_string(field.id)
         self.assertTrue(id in field_key)
-        keys = obj.instance_keys()
+        
+        backend = obj.objects.backend
+        keys = backend.instance_keys(obj)
         # field id should be in instance keys
         self.assertTrue(field.id in keys)
-        lkeys = list(obj._meta.cursor.keys())
+        lkeys = list(backend.keys())
         # the field has no data, so there is no key in the database
         self.assertFalse(field.id in lkeys)
         #
         # Lets add data
         self.adddata(obj)
         # The field id should be in the server keys
-        lkeys = obj._meta.cursor.keys()
+        lkeys = backend.keys()
         self.assertTrue(field.id in lkeys)
         obj.delete()
-        lkeys = list(obj._meta.cursor.keys())
+        lkeys = list(backend.keys())
         self.assertFalse(field.id in lkeys)
         
 

@@ -15,7 +15,6 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
         return d,d.data
     
     def adddata(self,d):
-        data = d.data
         d.data.update(self.data)
         self.assertEqual(d.data.size(),0)
         d.save()

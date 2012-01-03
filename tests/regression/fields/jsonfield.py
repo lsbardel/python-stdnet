@@ -90,8 +90,8 @@ class TestJsonField(test.TestCase):
     def testValueError(self):
         a = Statistics(dt = date.today(),
                        data = {'mean': self})
-        self.assertFalse(a.is_valid())
         self.assertRaises(stdnet.FieldValueError,a.save)
+        self.assertTrue(a._temp['errors'])
         
 
 class TestJsonFieldAsData(test.TestCase):
@@ -129,7 +129,7 @@ The `as_string` atttribute is set to ``False``.'''
     def testMake(self):
         m = self.make()
         self.assertTrue(m.is_valid())
-        data = m.cleaned_data
+        data = m._temp['cleaned_data']
         data.pop('data')
         self.assertEqual(len(data),6)
         self.assertEqual(float(data['data__mean']),1.0)
@@ -154,7 +154,7 @@ The `as_string` atttribute is set to ``False``.'''
     def testmakeEmpty(self):
         m = self.make(self.def_data2)
         self.assertTrue(m.is_valid())
-        cdata = m.cleaned_data
+        cdata = m._temp['cleaned_data']
         self.assertEqual(len(cdata),10)
         self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
@@ -175,7 +175,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 0))
         m = self.make(data)
         self.assertTrue(m.is_valid())
-        cdata = m.cleaned_data
+        cdata = m._temp['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':
@@ -189,7 +189,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 1))
         m = self.make(data)
         self.assertTrue(m.is_valid())
-        cdata = m.cleaned_data
+        cdata = m._temp['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':
@@ -203,7 +203,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 3))
         m = self.make(deepcopy(data))
         self.assertTrue(m.is_valid())
-        cdata = m.cleaned_data
+        cdata = m._temp['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':

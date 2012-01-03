@@ -1,16 +1,18 @@
 import sys
 import copy
 import hashlib
+import weakref
 from collections import namedtuple
 
 from stdnet.utils import zip, to_bytestring, to_string
-from stdnet.orm import signals
 from stdnet.exceptions import *
 
+from . import signals
 from .globals import hashmodel, JSPLITTER
 from .fields import Field, AutoField
-from .session import Manager
+from .session import Manager, setup_managers
 
+__all__ = ['Metaclass']
 
 def get_fields(bases, attrs):
     fields = {}
@@ -29,13 +31,13 @@ orderinginfo = namedtuple('orderinginfo','name field desc')
 
 
 class Metaclass(object):
-    '''Utility class used for storing all information
-which maps a :class:`stdnet.orm.StdModel` model into an object in the
-in the remote :class:`stdnet.BackendDataServer`.
-An instance is initiated when :class:`stdnet.orm.StdModel` class is created.
+    '''An instance of :class:`Metaclass` stores all information
+which maps an :class:`StdModel` into an object in the in a remote
+:class:`stdnet.BackendDataServer`.
+An instance is initiated by the orm when a :class:`StdModel` class is created.
 
 To override default behaviour you can specify the ``Meta`` class as an inner
-class of :class:`stdnet.orm.StdModel` in the following way::
+class of :class:`StdModel` in the following way::
 
     from datetime import datetime
     from stdnet import orm
@@ -155,7 +157,6 @@ mapper.
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
-        self.cursor = None
         for scalar in self.scalarfields:
             if scalar.index:
                 self.indices.append(scalar)
@@ -173,7 +174,7 @@ mapper.
     def __str__(self):
         return self.__repr__()
     
-    def is_valid(self, instance, backend):
+    def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
@@ -193,7 +194,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                 value = field.get_default()
                 setattr(instance,name,value)
             try:
-                svalue = field.serialize(value, backend)
+                svalue = field.serialize(value)
             except FieldValueError as e:
                 errors[name] = str(e)
             else:
@@ -222,15 +223,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
                                     indices.append((field,svalue,None))
                                 
         return len(errors) == 0
-                
-    def table(self, transaction = None):
-        '''Return an instance of :class:`stdnet.HashTable` holding
-the model table'''
-        if not self.cursor:
-            raise ModelNotRegistered('%s not registered.\
- Call orm.register(model_class) to solve the problem.' % self)
-        return self.cursor.hash(self.basekey(),self.timeout,
-                                transaction=transaction)
     
     def flush(self):
         '''Fast method for clearing the whole table including related tables'''
@@ -243,9 +235,6 @@ the model table'''
         if self.cursor:
             N += self.cursor.flush(self)
         return N
-
-    def database(self):
-        return self.cursor
 
     def get_sorting(self, sortby, errorClass):
         s = None
@@ -297,8 +286,8 @@ of fields names and a list of field attribute names.'''
 
 
     def multifields_ids_todelete(self, instance):
-        '''Return the list of ids of multifields belonging to *instance*
- which needs to be deleted when *instance* is deleted.'''
+        '''Return the list of ids of :class:`MultiField` belonging to *instance*
+which needs to be deleted when *instance* is deleted.'''
         gen = (field.id(instance) for field in self.multifields\
                                          if field.todelete())
         return [fid for fid in gen if fid]
@@ -342,13 +331,7 @@ class StdNetType(type):
         fields    = get_fields(bases, attrs)        
         # create the new class
         new_class = super_new(cls, name, bases, attrs)
-        objects = getattr(new_class,'objects',None)
-        if objects is None:
-            objects = Manager()
-        else:
-            objects = copy.copy(objects)
-        objects.register(new_class)
-        new_class.objects = objects
+        setup_managers(new_class)
         app_label = kwargs.pop('app_label')
         
         if app_label is None:

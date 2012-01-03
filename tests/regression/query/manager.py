@@ -14,12 +14,12 @@ class TestManager(test.TestCase):
     model = SimpleModel
     
     def fill(self):
-        with SimpleModel.transaction() as t:
+        with SimpleModel.objects.transaction() as t:
             for name in names:
                 SimpleModel(code = name).save(t)
                 
     def testGetOrCreate(self):
-        v,created = SimpleModel.objects.get_or_create(code = 'test')
+        v, created = SimpleModel.objects.get_or_create(code = 'test')
         self.assertTrue(created)
         self.assertEqual(v.code,'test')
         v2,created = SimpleModel.objects.get_or_create(code = 'test')

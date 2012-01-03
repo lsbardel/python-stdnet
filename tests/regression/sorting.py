@@ -23,7 +23,7 @@ class TestSort(test.TestCase):
     
     def fill(self):
         model = self.model
-        with model.transaction() as t:
+        with model.objects.transaction() as t:
             for p,n,d in zip(persons,groups,dates):
                 model(person = p, name = n, dt = d).save(t)
         qs = model.objects.all()
@@ -122,13 +122,13 @@ class TestSortByForeignKeyField(TestSort):
     models = (Person,Group)
         
     def fill(self):
-        with Group.transaction() as t:
+        with Group.objects.transaction() as t:
             for g in groups:
                 Group(name = g).save(t)
                 
         model = self.model
         gps = populate('choice',NUM_DATES,choice_from = Group.objects.all())
-        with model.transaction() as t:
+        with model.objects.transaction() as t:
             for p,g in zip(persons,gps):
                 model(name = p, group = g).save(t)
         qs = model.objects.all()

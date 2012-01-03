@@ -24,6 +24,7 @@ from .scripts import nil, script_call_back, get_script
 
 tuple_list = (tuple,list)
 
+
 def list_or_args(keys, args):
     if not isinstance(keys, tuple_list):
         keys = [keys]
@@ -47,6 +48,13 @@ def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
 
 
+def flat_mapping(mapping):
+    items = []
+    for pair in iteritems(mapping):
+        items.extend(pair)
+    return items
+
+        
 def dict_merge(*dicts):
     merged = {}
     [merged.update(d) for d in dicts]
@@ -921,8 +929,7 @@ The first element is the score and the second is the value.'''
         Sets each key in the ``mapping`` dict to its corresponding value
         in the hash ``name``
         """
-        items = []
-        [items.extend(pair) for pair in iteritems(mapping)]
+        items = flat_mapping(mapping)
         return self.execute_command('HMSET', name, *items)
 
     def hmget(self, name, keys):
@@ -952,18 +959,19 @@ popped (if it existes) and a flag indicationg if it existed.'''
             keys = ()
         return self.execute_command('EVAL', body, num_keys, *keys)
     
-    def script_call(self, name, num, *args, **options):
+    def script_call(self, name, *args, **options):
+        '''Execute a registered lua script.'''
         script = get_script(name)
         if not script:
             raise ValueError('No such script {0}'.format(name))
-        options['script'] = name
-        options['args'] = args
+        options['script_name'] = name
+        options['script_args'] = args
         return self.execute_command('EVAL',
-                                    script.script, num, *args, **options)
+                                    script.script, len(args), *args, **options)
     
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
-        return self.script_call('delpattern', 1, pattern)
+        return self.script_call('delpattern', pattern)
 
 
 class Pipeline(Redis):

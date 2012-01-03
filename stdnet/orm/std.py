@@ -1,9 +1,8 @@
 from stdnet.exceptions import *
 from stdnet.utils import encoders
-from stdnet.orm.related import add_lazy_relation, ModelFieldPickler
 
 from .fields import Field
-from .query import M2MRelatedManager
+from .related import add_lazy_relation, ModelFieldPickler, M2MRelatedManager
 
 
 __all__ = ['ManyFieldManagerProxy',
@@ -44,10 +43,9 @@ class ManyFieldManagerProxy(object):
         return self.get_structure(instance)
     
     def get_structure(self, instance):
-        meta = instance._meta
         backend = instance.objects.backend
         st = getattr(backend,self.stype)
-        return st(meta.basekey('id',instance.id,self.name),
+        return st(backend.basekey(instance._meta,'id',instance.id,self.name),
                   instance = instance,
                   #timeout = meta.timeout,
                   pickler = self.pickler,
@@ -131,8 +129,7 @@ a stand alone structure in the back-end server with very little effort.
                  scorefun = None,
                  **kwargs):
         # Force required to be false
-        super(MultiField,self).__init__(required = False,
-                                        **kwargs)
+        super(MultiField,self).__init__(required = False, **kwargs)
         self.relmodel = model
         self.index = False
         self.unique = False

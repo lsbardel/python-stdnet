@@ -25,7 +25,8 @@ from .base import Reader, fallback
 
 
 class RedisRequest(object):
-    '''A redis request'''
+    '''Redis request base class. A request instance manages the
+handling of a single command from start to the response from the server.'''
     def __init__(self, connection, command_name, args,
                  parse_response = None, release_connection = True,
                  **options):

@@ -1,4 +1,5 @@
 import copy
+import json
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, UnicodeMixin, JSPLITTER, iteritems
@@ -7,7 +8,7 @@ from stdnet import dispatch, transaction, attr_local_transaction
 from .base import StdNetType, FakeModelType
 from .globals import get_model_from_hash
 from .signals import *
-from .session import SessionModel
+from .session import Session, Manager
 
 
 __all__ = ['FakeModel',
@@ -52,6 +53,40 @@ StdNetBase = StdNetType('StdNetBase',(ModelMixin,),{})
 class FakeModel(FakeModelBase):
     id = None
     is_base_class = True
+    
+    
+class ModelState(object):
+    
+    def __init__(self, instance):
+        if not instance.is_valid():
+            raise FieldValueError(json.dumps(instance.errors))
+        self.instance = instance
+        self.persistent = False
+        self.deleted = False
+        dbdata = instance._dbdata
+        if instance.id and 'id' in dbdata:
+            if instance.id != dbdata['id']:
+                raise ValueError('Id has changed from {0} to {1}.'\
+                                 .format(instance.id,dbdata['id']))
+            self.persistent = True
+    
+    def __hash__(self):
+        if self.instance.id:
+            return self.instance.uuid
+        else:
+            return id(self.instance)
+    
+    @property    
+    def meta(self):
+        return self.instance._meta
+    
+    @property
+    def id(self):
+        if self.instance.id:
+            return self.instance.id
+    
+    def cleaned_data(self):
+        return self.instance._temp['cleaned_data']
 
 
 class StdModel(StdNetBase):
@@ -76,6 +111,7 @@ the :attr:`StdModel._meta` attribute.
 '''
     is_base_class = True
     _loadedfields = None
+    _state = None
     
     def __init__(self, **kwargs):
         self._dbdata = {}
@@ -89,6 +125,12 @@ the :attr:`StdModel._meta` attribute.
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
+            
+    def state(self):
+        temp = self.temp()
+        if 'state' not in temp:
+            temp['state'] = ModelState(self)
+        return temp['state']
 
     def loadedfields(self):
         '''Generator of fields loaded from database'''
@@ -125,7 +167,7 @@ details.'''
     
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
-The model must be registered with a :class:`stdnet.backends.BackendDataServer`
+The model must be registered with a :class:`stdnet.BackendDataServer`
 otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
 
 :parameter transaction: Optional transaction instance.
@@ -146,22 +188,24 @@ otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
                         
 The method return ``self``.
 '''
-        session = self.objects.session
-        send_signal = not transaction and not skip_signal
-        if send_signal:
-            pre_save.send(sender=self.__class__, instance = self)
-        r = session.save(self, transaction)
-        if send_signal:
-            post_save.send(sender=self.__class__,
-                           instance = r)
-        return r
+        if transaction is None:
+            cls = self.__class__
+            session = cls.objects.session()
+            if not skip_signal:
+                pre_save.send(sender = cls, instance = self)
+            with session.begin():
+                session.add(instance)
+            if not skip_signal:
+                post_save.send(sender=cls, instance = self)
+        else:
+            transaction.session.add(self)
+        return self
     
     def clone(self, id = None, **data):
         '''Utility method for cloning the instance as a new object.
         
 :parameter id: Optional new id.
-:parameter commit: If ``True`` the :meth:`save` method will be called with
-    parameters *kwargs*, otherwise no save performed.
+:parameter data: addtitional data to override.
 :rtype: an instance of this class
 '''
         fields = self.todict()
@@ -169,15 +213,20 @@ The method return ``self``.
         fields.pop('id',None)
         fields.pop('__dbdata__',None)
         instance = self._meta.maker()
-        instance.__setstate__((id,None,fields))
+        instance.__setstate__((id, None, fields))
         return instance
     
-    def is_valid(self, backend):
-        '''Kick off the validation algorithm by checking oll
-:attr:`StdModel.loadedfields` agains their respective validation algorithm.
+    def is_valid(self):
+        '''Kick off the validation algorithm by checking all
+:attr:`StdModel.loadedfields` against their respective validation algorithm.
 
 :rtype: Boolean indicating if the model validates.'''
-        return self._meta.is_valid(self, backend)
+        return self._meta.is_valid(self)
+    
+    def temp(self):
+        if not hasattr(self,'_temp'):
+            self._temp = {}
+        return self._temp
     
     @property
     def toload(self):
@@ -191,8 +240,12 @@ If the instance is not available (it does not have an id) and
 :parameter transaction: Optional transaction instance as in
                         :meth:`stdnet.orm.StdModel.save`.
 '''
-        session = self.session_from_transaction(transaction)
-        return session.delete(self,transaction)
+        if transaction is None:
+            session = self.objects.session()
+            with session.transaction():
+                session.delete(self)
+        else:
+            transaction.session.delete(self)
     
     def related_objects(self):
         '''A generator of related objects'''
@@ -225,30 +278,24 @@ If the instance is not available (it does not have an id) and
         '''return a JSON serializable dictionary representation.'''
         return dict(self._to_json())
     
-    def local_transaction(self, **kwargs):
+    def local_transaction(self, session = None, backend = None, **kwargs):
         '''Create a transaction for this instance.'''
         if not hasattr(self,attr_local_transaction):
-            setattr(self,attr_local_transaction,
-                    self.objects.backend.transaction(**kwargs))
+            if not session:
+                if backend:
+                    session = Session(backend)
+                else:
+                    session = self.objects.session
+            setattr(self, attr_local_transaction, session.transaction(**kwargs))
         return getattr(self,attr_local_transaction)
     
     # UTILITY METHODS
     
-    def instance_keys(self):
-        '''Utility method for returning keys associated with
-this instance only. The instance id
-is however available in other keys (indices and other backend containers).'''
-        return self._meta.cursor.instance_keys(self)
-    
     @classmethod
-    def transaction(cls, *models, **kwargs):
-        '''Return a transaction instance.'''
-        return transaction(cls,*models,**kwargs)
-    
-    @classmethod
-    def session_from_transaction(cls, transaction = None):
+    def manager_from_transaction(cls, transaction = None):
+        '''Obtain a manager from the transaction'''
         if transaction:
-            return SessionModel(cls,transaction.backend)
+            return Manager(cls, transaction.backend)
         else:
             return cls.objects
     

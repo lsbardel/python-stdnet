@@ -16,14 +16,29 @@ class TestSession(test.TestCase):
         self.assertEqual(session.backend,backend)
         return session
         
-    def testMeta(self):
+    def testQueryMeta(self):
         session = self.session()
         qs = session.query(SimpleModel)
-        self.assertTrue(isinstance(qs,orm.QuerySet))
+        self.assertTrue(isinstance(qs,orm.Query))
     
     def testCreate(self):
         session = self.session()
-        obj = session.save(SimpleModel(code='pluto',group='planet'))
-        self.assertEqual(obj.id,1)
+        session.begin()
+        m = SimpleModel(code='pluto',group='planet')
+        session.add(m)
+        self.assertTrue(m in session)
+        session.commit()
+        self.assertEqual(m.id,1)
+        
+    def testCreateTransaction(self):
+        session = SimpleModel.objects.session()
+        with session.begin():
+            session.add(SimpleModel(code='pluto',group='planet'))
+            session.add(SimpleModel(code='venus',group='planet'))
+            session.add(SimpleModel(code='sun',group='star'))
+        query = session.query(SimpleModel)
+        self.assertEqual(query.session,session)
+        qs = query.filter(group = 'planet')
+        self.assertEqual(qs.count(),2)
         
     

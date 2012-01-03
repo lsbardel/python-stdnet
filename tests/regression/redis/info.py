@@ -5,7 +5,7 @@ from stdnet.lib.redisinfo import redis_info
 class TestInfo(test.TestCase):
     
     def setUp(self):
-        rpy = getdb().redispy
+        rpy = getdb().client
         rpy.set('test','bla')
         self.db = rpy.db
         self.info = redis_info(rpy)

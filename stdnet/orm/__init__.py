@@ -1,4 +1,5 @@
 '''Object Relational Mapper for remote data structures.'''
+from .base import *
 from .mapper import *
 from .models import *
 from .query import *

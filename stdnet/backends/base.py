@@ -9,11 +9,13 @@ from .structures import Structure
 
 __all__ = ['BackendDataServer', 'BeckendQuery']
 
+
 def intid(id):
     try:
         return int(id)
     except ValueError:
         return id
+
         
 class Keys(object):
     
@@ -28,17 +30,18 @@ class Keys(object):
         
 class BeckendQuery(object):
     '''Backend queryset class which implements the database
-queries specified by :class:`stdnet.orm.QuerySet`.
+queries specified by :class:`stdnet.orm.Query`.
 
 .. attribute:: qs
 
-    Underlying queryset
+    The ORM :class:`stdnet.orm.Query` instance.
     
 '''
     query_set = None
     
     def __init__(self, qs, fargs = None, eargs = None,
                  timeout = 0, queries = None):
+        '''Initialize the query for the backend database.'''
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
@@ -46,7 +49,7 @@ queries specified by :class:`stdnet.orm.QuerySet`.
         self.__count = None
         self.__result = False
         # build the queryset without fetching data
-        self.build(fargs, eargs, queries)
+        self.query_set = self.build(fargs, eargs, queries)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
 
@@ -69,20 +72,25 @@ queries specified by :class:`stdnet.orm.QuerySet`.
     
     def __len__(self):
         return self.count()
+    
+    def result(self):
+        if self.__result is False:
+            self.__result = self.execute_query()
+        return self.__result
 
     def has(self, val):
-        if self.__result == False:
+        if self.__result is False:
             self.__result = self.execute_query()
         return self._has(val)
     
     def items(self, slic):
-        if self.__result == False:
+        if self.__result is False:
             self.__result = self.execute_query()
         return self._items(slic)
     
     def count(self):
         if self.__count is None:
-            if self.__result == False:
+            if self.__result is False:
                 self.__result = self.execute_query()
             self.__count = self._count()
         return self.__count
@@ -126,7 +134,7 @@ queries specified by :class:`stdnet.orm.QuerySet`.
                     for r,val in zip(result,related):
                         setattr(r,name,val)
                 else:
-                    with meta.model.transaction() as t:
+                    with self.backend.transaction() as t:
                         for val in vals:
                             val.reload(t)
                     for val,r in zip(vals,t.get_result()):
@@ -209,6 +217,9 @@ It must implement the *loads* and *dumps* methods.'''
     def transaction(self, pipelined = True, **kwargs):
         '''Return a transaction instance'''
         return self.Transaction(self,self.cursor(pipelined),**kwargs)
+    
+    def execute_session(self, session):
+        raise NotImplementedError
         
     def delete_object(self, obj, transaction = None):
         '''Delete an object from the data server and clean up indices.

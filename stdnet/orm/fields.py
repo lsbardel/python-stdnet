@@ -12,8 +12,8 @@ from stdnet.utils import pickle, json, DefaultJSONEncoder,\
                          to_bytestring, is_bytes_or_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator
 
-from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor
-from .query import RelatedManager
+from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor, \
+                        RelatedManager
 from .globals import get_model_from_hash, JSPLITTER
 
 
@@ -207,7 +207,7 @@ function users should never call.'''
     def get_cache_name(self):
         return '_%s_cache' % self.name
     
-    def serialize(self, value, backend = None):
+    def serialize(self, value):
         '''Called by the :func:`stdnet.orm.StdModel.save` method when saving
 an object to the remote data server. It returns a representation of *value*
 to store in the database.
@@ -233,9 +233,12 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         else:
             return self.default
     
-    def index_value(self):
+    def index_value(self, value):
         '''A value which is used by indexes to generate keys.'''
-        return self.value
+        if value is not None:
+            return value
+        else:
+            return ''
     
     def scorefun(self, value):
         '''Function which evaluate a score from the field value. Used by
@@ -293,12 +296,9 @@ or other entities. They are indexes by default.'''
         else:
             return self.default
         
-    def serialize(self, value, backend = None):
+    def serialize(self, value):
         if value is not None:
             return self.encoder.dumps(value, logger = logger)
-    
-    def index_value(self):
-        return sha1(self.value)
     
 
 class IntegerField(AtomField):
@@ -339,8 +339,8 @@ class BooleanField(AtomField):
     def to_python(self, value):
         return True if self.scorefun(value) else False
     
-    def index_value(self):
-        return 1 if self.value else 0
+    def index_value(self, value):
+        return 1 if value else 0
     
     
 class AutoField(IntegerField):
@@ -351,10 +351,6 @@ will automatically be added to your model
 if you don't specify otherwise.
     '''
     type = 'auto'
-    def serialize(self, value, backend = None):
-        if not value and backend:
-            value = backend.autoid(self.meta)
-        return super(AutoField,self).serialize(value, backend)
 
 
 class FloatField(AtomField):
@@ -524,7 +520,7 @@ the relation from the related object back to self.
     def scorefun(self, value):
         raise NotImplementedError
     
-    def serialize(self, value, backend = None):
+    def serialize(self, value):
         try:
             return value.id
         except:
@@ -601,7 +597,7 @@ which can be rather useful feature.
                 value = self.loads(value)
         return value
                     
-    def serialize(self, value, transaction = None):
+    def serialize(self, value):
         if value is not None:
             if is_bytes_or_string(value):
                 value = self.to_python(value)
@@ -647,8 +643,7 @@ which can be rather useful feature.
             except:
                 logger.critical('Unhandled exception while loading Json\
  field {0}'.format(self), exc_info = True)
-                
-
+    
 
 class ByteField(CharField):
     '''A field which contains binary data.
@@ -661,7 +656,7 @@ In python this is converted to `bytes`.'''
     
     def get_encoder(self, params):
         return encoders.Bytes(self.charset)
-        
+    
 
 class ModelField(SymbolField):
     '''A filed which can be used to store the model classes (not only

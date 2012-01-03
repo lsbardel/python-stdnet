@@ -19,7 +19,7 @@ class TestUniqueFilter(test.TestCase):
     model = SimpleModel
     
     def setUp(self):
-        with SimpleModel.transaction() as t:
+        with SimpleModel.objects.transaction() as t:
             for n,g in zip(codes,groups):
                 SimpleModel(code = n, group = g).save(t)
     

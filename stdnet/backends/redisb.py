@@ -1,4 +1,5 @@
 from collections import namedtuple
+import json
 
 import stdnet
 from stdnet.conf import settings
@@ -12,11 +13,11 @@ EMPTY_DICT = {}
 
 ################################################################################
 #    prefixes for data
-IDS = 'ids'
-OBJ = 'obj'
-UNI = 'uni'
-IDX = 'idx'
-TMP = 'tmp'
+ID = 'id'       # the set of all ids
+OBJ = 'obj'     # the hash table for a instance
+UNI = 'uni'     # the hashtable for the unique field value to id mapping
+IDX = 'idx'     # the set of indexes for a field value
+TMP = 'tmp'     # temorary key
 ################################################################################
 
 pipeattr = lambda pipe,p,name : getattr(pipe,p+name)
@@ -73,10 +74,6 @@ class add2set(object):
         
 class RedisQuery(stdnet.BeckendQuery):
     
-    @property
-    def simple(self):
-        return isinstance(self.query_set,list)
-    
     def _unique_set(self, name, values):
         '''Handle filtering over unique fields'''
         meta = self.meta
@@ -96,7 +93,7 @@ class RedisQuery(stdnet.BeckendQuery):
         pipe.expire(key,self.expire)
         return key
     
-    def _query(self, qargs, setoper, key = None, extra = None):
+    def _query(self, qargs, oper, key = None, extra = None):
         pipe = self.pipe
         meta = self.meta
         backend = self.backend
@@ -118,7 +115,7 @@ class RedisQuery(stdnet.BeckendQuery):
                                   for value in q.values]
                     tkey = backend.tempkey(meta)
                     if q.lookup == 'in':
-                        self.union(tkey,insersept).expire(tkey,self.expire)
+                        self.union(tkey,*insersept).expire(tkey,self.expire)
                     else:
                         raise ValueError('Lookup {0} Not available'\
                                              .format(q.lookup))
@@ -177,83 +174,91 @@ different model) which has a *field* containing current model ids.'''
             self.intersect(tkey,keys).expire(tkey,self.expire)
         return tkey
     
-    def build(self, fargs, eargs, queries):
-        '''Build the lua script which will execute the query.'''
+    def _build(self, fargs, eargs, queries):
+        '''Set up the query for redis'''
         meta = self.meta
         backend = self.backend
-        idset = backend.basekey(meta,'id')
-        p = 'z' if meta.ordering else 's'
-        self.pipe = ScriptBuilder(backend.client)
-        if self.qs.simple:
-            allids = []
-            for q in fargs:
-                if q.name == 'id':
-                    ids = q.values
-                else:
-                    key = backend.basekey(meta, UNI, q.name)
-                    ids = backend.client.hmget(key, q.values)
-                for id in ids:
-                    if id is not None:
-                        allids.append(id)
-                        pismember(idset,id)
-            return [id for (id,r) in zip(allids,pipe.execute()) if chk(r)]
+        idset = backend.basekey(meta, ID)
+        if meta.ordering:
+            p = 'z'
+            self.client_ismember =  pipeattr(backend,client,'','zrank')
+            self._check_member = self.zism
         else:
-            self.intersect = getattr(self.pipe, p+'interstore')
-            self.union = getattr(self.pipe, p+'unionstore')
-            self.diff = getattr(self.pipe, p+'diffstore')
-            self.card = getattr(self.pipe, p+'card')
-            if queries:
-                idset = self.build_from_query(queries)
-            key1 = self._query(fargs,self.intersect,idset,self.qs.filter_sets)
-            key2 = self._query(eargs, self.union)
+            p = 's'
+            self.client_ismember =  pipeattr(backend.client,'','sismember')
+            self._check_member = self.sism
+            
+        self.args = args = [backend.basekey(meta),p]
+        if fargs:
+            for q in fargs:
+                args.append('where')
+                args.extend(q)
+        if eargs:
+            for q in eargs:
+                args.append('exclude')
+                args.extend(q)
+        return
+        
+        if self.qs.simple:
+            self.simple = True
+            key = backend.tempkey(meta)
+            args.append(key)
+            for q in fargs:
+                args.append(q.name)
+                args.append(len(q.values))
+                args.extend(q.values)
+        else:
+            # build the lua script which will execute the query
+            self.simple = False
+            self.client_card = getattr(backend.client, p+'card')
+            #if queries:
+            #    idset = self.build_from_query(queries)
+            
+            key1 = self._query(fargs,'intersect', idset, self.qs.filter_sets)
+            key2 = self._query(eargs, 'union')
             if key2:
                 key = backend.tempkey(meta)
-                self.diff(key,(key1,key2)).expire(key,self.expire)
+                self.diff(key,key1,key2).expire(key,self.expire)
             else:
                 key = key1
-            self.card(key)
-            return key
-            
-    def execute_query(self):
-        if not self.simple:
+        self.query_key = key
+    
+    def _execute_query(self):
+        '''Execute the query without fetching data. Returns the number of
+elements in the query.'''
+        if self.simple:
+            return self.backend.client.script_call('simple_query',*self.args)
+        else:
             if self.sha and self.timeout:
                 key = self.meta.tempkey(sha)
                 if not self.backend.client.exists(key):
-                    self.pipe.rename(self.query_set,key)
+                    self.pipe.rename(self.query_key,key)
+                    self.query_key = key
+                    self.card(self.query_key)
                     return self.pipe.execute()
+                else:
+                    self.query_key = key
+                    return self.client_card(self.query_key)
             else:
-                return self.pipe.execute()
-        else:
-            return self.query_set
+                self.card(self.query_key)
+                r = self.pipe.execute()
+                self.query_string = self.pipe.script
+                return r
         
-    def order(self):
+    def order(self, start, stop):
         '''Perform ordering with respect model fields.'''
-        meta=  self.meta
-        backend = self.backend
         if self.qs.ordering:
             sort_by = self.qs.ordering
-            skey = backend.tempkey(meta)
+            skey = self.backend.tempkey(self.meta)
             okey = backend.basekey(meta, OBJ,'*->{0}'.format(sort_by.name))
-            pipe = backend.client.pipeline()
-            pipe.sort(self.query_set,
-                      by = okey,
-                      desc = sort_by.desc,
-                      store = skey,
-                      alpha = sort_by.field.internal_type == 'text')\
-                .expire(skey,self.expire).execute()
-            return skey
-    
-    def _count(self):
-        if self.simple:
-            return len(self.query_set)
-        else:
-            return self.card(self.query_set)
+            order = ['BY', okey, 'LIMIT', start, stop]
+            if sort_by.field.internal_type == 'text':
+                order.append('ALPHA')
+            return order
     
     def _has(self, val):
-        if self.simple:
-            return val in self.query_set
-        else:
-            return True if self.ismember(self.query_set, val) else False
+        r = self.client_ismember(self.query_key, val)
+        return self._check_member(r)
     
     def get_redis_slice(self, slic):
         if slic:
@@ -269,28 +274,41 @@ different model) which has a *field* containing current model ids.'''
     def _items(self, slic):
         # Unwind the database query
         backend = self.backend
-        client = backend.client
-        
-        if self.qs.simple:
-            ids = self.result()
-            if slic:
-                ids = ids[slic]
+        meta = self.meta
+        start, stop = self.get_redis_slice(slic)
+        order = self.order(start, stop)
+        fields = self.qs.fields or None
+        if fields:
+            fields, fields_attributes = meta.backend_fields(fields)
         else:
-            skey = self.order()
-            if skey:
-                start,stop = self.get_redis_slice(slic)
-                ids = self.backend.client.lrange(skey,start,stop)
-            elif self.meta.ordering:
-                start,stop = self.get_redis_slice(slic)
-                if self.meta.ordering.desc:
-                    command = client.zrevrange
-                else:
-                    command = client.zrange
-                ids = command(self.query_set,start,stop)
+            fields_attributes = ''
+            
+        args = [self.query_key,
+                backend.basekey(meta),
+                fields_attributes]
+        
+        if order:
+            args.append('explicit')
+            args.extend(order)
+        else:
+            if meta.ordering:
+                order = 'DESC' if meta.ordering.desc else 'ASC'
             else:
-                ids = list(client.smembers(self.query_set))
-                if slic:
-                    ids = ids[slic]
+                order = ''
+            args.append(order)
+            args.append(start)
+            args.append(stop)
+                    
+        options = {'fields':fields,'fields_attributes':fields_attributes}
+        data = backend.client.script_call('load_query', *args, **options)
+        result = backend.make_objects(meta, data)
+        return self.load_related(result)
+    
+        if fields:
+                pipe = client.pipeline()
+                hmget = pipe.hmget
+                for id in ids:
+                    hmget(bkey(meta, OBJ, to_string(id)),fields_attributes)
         
         # Load data
         if ids:
@@ -419,8 +437,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             lua_data.append(len(indices))
             lua_data.extend(indices)
             lua_data.extend(uniques)
-        return self.client.script_call('commit_session', *lua_data,
-                                       **{'session': session})
+        options = {'session': session}
+        return self.client.script_call('commit_session', *lua_data, **options)
 
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
@@ -432,11 +450,12 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.basekey(meta, TMP, name if name is not None else\
                                         gen_unique_id())
         
-    def flush(self, meta):
+    def flush(self, meta = None, pattern = None):
         '''Flush all model keys from the database'''
-        # The scripting delete
-        pattern = '{0}*'.format(self.basekey(meta))
-        return self.client.delpattern(pattern)
+        if meta is not None:
+            pattern = '{0}*'.format(self.basekey(meta))
+        if pattern:
+            return self.client.delpattern(pattern)
             
     def instance_keys(self, obj):
         meta = obj._meta

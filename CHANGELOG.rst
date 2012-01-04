@@ -1,17 +1,19 @@
 Ver. 0.7.0 - Development
 ============================
-* A superset of the :ref:`0.6 series <vers06>` with tons of new features manly geared
-  towards improved performance via custom query options, transactions and
+* Tons of new features manly geared towards improved performance via custom
+  query options, more flexible transactions, lua scripting and
   a new ``C`` parser shipped with the library.
 * It requires redis_ 2.6 or higher.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
-* Added :meth:`stdnet.orm.query.QuerySet.load_only` method for loading a subset
+* Added :class:`stdnet.orm.Session` for managing transactions in the object
+  relational mapper.
+* Added :meth:`stdnet.orm.Query.load_only` method for loading a subset
   of a model fields. This can improve performance by reducing the amount of
   data transferred from the server to the client.
   Check the :ref:`performance tips <performance-loadonly>` regarding the
   new feature.
-* Added :meth:`stdnet.orm.query.QuerySet.load_related` for loading related
+* Added :meth:`stdnet.orm.Query.load_related` for loading related
   fields of a queryset with a single database query. This can have huge
   :ref:`performance benefits <performance-loadrelated>` when you know you are
   going to access the related field in your model.
@@ -31,8 +33,6 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
-  model ``delete`` method to crash.
 * **360 regression tests** with **80%** coverage.
 
 .. _vers06:
@@ -40,7 +40,8 @@ Ver. 0.7.0 - Development
 Ver. 0.6.2 - 2011 Nov 14
 ============================
 * Critical bug fix in ``delete`` method when a model has no indices.
-* Critical bug fix in `ManyToManyField`.
+* Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
+  model ``delete`` method to crash.
 * **299 regression tests**.
 
 Ver. 0.6.1 - 2011 Sep 10

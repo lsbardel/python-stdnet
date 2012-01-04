@@ -30,6 +30,21 @@ class Session(object):
         self._modified = OrderedDict()
         self.query_class = query_class or Query
     
+    @property
+    def new(self):
+        "The set of all new instances within this ``Session``"
+        return frozenset(self._new.values())
+    
+    @property
+    def modified(self):
+        "The set of all modified instances within this ``Session``"
+        return frozenset(self._modified.values())
+    
+    @property
+    def deleted(self):
+        "The set of all instances marked as 'deleted' within this ``Session``"
+        return frozenset(self._deleted.values())
+    
     def __str__(self):
         return str(self.backend)
     
@@ -83,7 +98,7 @@ transactions, please see :ref:`session_begin_nested`.'''
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
         if state.persistent:
-            self._updated[state] = instance
+            self._modified[state] = instance
         else:
             self._new[state] = instance
         
@@ -166,6 +181,9 @@ They can also exclude instances from the query::
     __repr__ = __str__
 
     def session(self):
+        if not self.backend:
+            raise ModelNotRegistered("Model '{0}' is not registered with a\
+ backend database. Cannot use manager.".format(self.model))
         return Session(self.backend)
     
     def transaction(self, *models):

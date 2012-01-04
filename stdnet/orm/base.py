@@ -54,7 +54,6 @@ class of :class:`StdModel` in the following way::
 :parameter abstract: Check the :attr:`abstract` attribute.
 :parameter ordering: Check the :attr:`ordering` attribute.
 :parameter app_label: Check the :attr:`app_label` attribute.
-:parameter keyprefix: Check the :attr:`keyprefix` attribute.
 :parameter modelkey: Check the :attr:`modelkey` attribute.
 
 **Attributes and methods**:
@@ -95,12 +94,6 @@ mapper.
 
     list of :class:`stdnet.orm.Field` instances.
     
-.. attribute:: keyprefix
-
-    Override the :ref:`settings.DEFAULT_KEYPREFIX <settings>` value.
-    
-    Default ``None``.
-    
 .. attribute:: modelkey
 
     Override the modelkey which is by default given by ``app_label.name``
@@ -115,12 +108,11 @@ mapper.
     connection_string = None
     
     def __init__(self, model, fields,
-                 abstract = False, keyprefix = None,
-                 app_label = '', verbose_name = None,
+                 abstract = False, app_label = '',
+                 verbose_name = None,
                  ordering = None, modelkey = None,
                  **kwargs):
         self.abstract = abstract
-        self.keyprefix = keyprefix
         self.model = model
         self.app_label = app_label
         self.name = model.__name__.lower()
@@ -350,13 +342,11 @@ class StdNetType(type):
     
 
 def meta_options(abstract = False,
-                 keyprefix = None,
                  app_label = None,
                  ordering = None,
                  modelkey = None,
                  **kwargs):
     return {'abstract': abstract,
-            'keyprefix': keyprefix,
             'app_label':app_label,
             'ordering':ordering,
             'modelkey':modelkey}

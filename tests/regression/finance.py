@@ -43,25 +43,28 @@ class BaseFinance(test.TestCase):
     model = Instrument
     
     def setUp(self):
-        '''Create Instruments and Funds commiting at the end for speed'''
-        with Instrument.transaction() as t:
+        '''Create Instruments and Funds'''
+        session = self.session()
+        with session.begin():
             for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-                Instrument(name = name, type = typ, ccy = ccy).save(t)
-        with Fund.transaction() as t:        
+                session.add(Instrument(name = name, type = typ, ccy = ccy))
             for name,ccy in zip(fund_names,fund_ccys):
-                Fund(name = name, ccy = ccy).save(t)
+                session.add(Fund(name = name, ccy = ccy))
         
     def makePositions(self):
-        '''Create Positions objects which hold foreign key to instruments and funds'''
-        instruments = Instrument.objects.all()
+        '''Create Positions objects which hold foreign key to instruments
+ and funds.'''
+        session = self.session()
+        instruments = session.query(Instrument)
         n = 0
-        with Position.transaction() as t:
-            for f in Fund.objects.all():
+        with session.begin():
+            for f in session.query(Fund):
                 insts = populate('choice',POS_LEN,choice_from = instruments)
                 for dt in dates:
                     for inst in insts:
                         n += 1
-                        Position(instrument = inst, dt = dt, fund = f).save(t)
+                        session.add(Position(instrument = inst, dt = dt,
+                                             fund = f))
         return n
 
 

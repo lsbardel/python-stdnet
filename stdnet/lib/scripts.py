@@ -3,12 +3,19 @@ import os
 from .py2py3 import zip
 
 
-__all__ = ['RedisScript','ScriptBuilder','nil']
+__all__ = ['RedisScript','ScriptBuilder','pairs_to_dict','nil']
 
 
 class nil(object):
     pass
 
+
+def pairs_to_dict(response, encoding = 'utf-8'):
+    "Create a dict given a list of key/value pairs"
+    if response:
+        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
+    else:
+        return ()
 
 _scripts = {}
 
@@ -18,6 +25,7 @@ def get_script(script):
  
  
 def read_lua_file(filename):
+    '''Load lua script from the stdnet/lib/lua directory'''
     path = os.path.split(os.path.abspath(__file__))[0]
     name = os.path.join(path,'lua',filename)
     with open(name) as f:
@@ -84,21 +92,27 @@ class ScriptBuilder(object):
     
     def __init__(self, redis):
         self.redis = redis
+        self.script = None
         self.lines = []
     
     def __getattr__(self, name):
         return ScriptCommand(self, name)
     
     def append(self, line):
+        if self.script:
+            raise ValueError('Script has been executed already. Run clear')
         self.lines.append(line)
+        
+    def clear(self):
+        self.script = None
+        self.lines = []
         
     def execute(self):
         if self.lines:
             lines = self.lines
-            self.lines = []
             lines.append('return res')
-            script = '\n'.join(lines)
-            return self.redis.eval(script)
+            self.script = '\n'.join(lines)
+            return self.redis.eval(self.script)
         
         
 countpattern = '''\
@@ -147,3 +161,26 @@ class commit_session(RedisScript):
                 instance.id = id
                 data.append(instance)
         return data
+    
+    
+class simple_query(RedisScript):
+    script = read_lua_file('simple_query.lua')
+    
+
+class load_query(RedisScript):
+    script = read_lua_file('load_query.lua')
+    
+    def callback(self, response, args, fields = None, fields_attributes = None):
+        fields = tuple(fields) if fields else None
+        if fields:
+            if len(fields) == 1 and fields[0] == 'id':
+                for id in response:
+                    yield id,(),{}
+            else:
+                for id,fdata in response:
+                    yield id,fields_attributes,\
+                            dict(zip(fields_attributes,fdata))
+        else:
+            for id,fdata in response:
+                yield id,None,dict(pairs_to_dict(fdata))
+            

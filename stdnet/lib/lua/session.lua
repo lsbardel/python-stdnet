@@ -34,7 +34,10 @@ function update_indices(s, bk, id, idkey, indices, uniques, add)
                 redis.call('hdel', idxkey, value)
             end
         else
-	        idxkey = bk .. ':idx:' .. value
+        	idxkey = bk .. ':idx:' .. name .. ':'
+        	if value then
+	        	idxkey = idxkey .. value
+	        end
 	        if add then
 	            redis.call(s .. 'add', idxkey, id)
 	        else

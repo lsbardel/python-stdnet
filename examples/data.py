@@ -32,18 +32,27 @@ class finance_data(object):
         self.dates =  populate('date',num_dates,start=datetime.date(2009,6,1),
                          end=datetime.date(2010,6,6))
     
-    def create(self, use_transaction = True):
-        with transaction(Instrument,Fund) as t:
-            t = t if use_transaction else None
+    def create(self, test, use_transaction = True):
+        session = test.session()
+        if use_transaction:
+            with session.begin():
+                for name,typ,ccy in zip(self.inst_names,self.inst_types,\
+                                        self.inst_ccys):
+                    session.add(Instrument(name = name, type = typ, ccy = ccy))     
+                for name,ccy in zip(self.fund_names,self.fund_ccys):
+                    session.add(Fund(name = name, ccy = ccy))
+        else:
+            self.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                     self.inst_ccys):
-                Instrument(name = name, type = typ, ccy = ccy).save(t)     
+                Instrument(name = name, type = typ, ccy = ccy).save()     
             for name,ccy in zip(self.fund_names,self.fund_ccys):
-                Fund(name = name, ccy = ccy).save(t)
-        self.num_insts = Instrument.objects.all().count()
-        self.num_funds = Fund.objects.all().count()
+                Fund(name = name, ccy = ccy).save()
+                
+        self.num_insts = session.query(Instrument).count()
+        self.num_funds = session.query(Fund).count()
     
-    def makePositions(self, use_transaction = True):
+    def makePositions(self, test, use_transaction = True):
         self.create()
         instruments = Instrument.objects.all()
         with transaction(Position) as t:
@@ -58,6 +67,8 @@ class finance_data(object):
         
     
 class FinanceTest(test.TestCase):
+    '''A class for testing the Finance application example. It can be run
+with different sizes by passing the'''
     models = (Instrument, Fund, Position)
     
     @classmethod

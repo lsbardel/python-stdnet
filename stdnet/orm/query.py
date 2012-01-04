@@ -81,6 +81,13 @@ using the :meth:`Session.query` method::
     def model(self):
         return self._meta.model
         
+    @property
+    def executed(self):
+        if self.__qset is not None:
+            return self.__qset.executed
+        else:
+            return False
+        
     def clear(self):
         self.simple = False
         self.__qset = None
@@ -280,6 +287,8 @@ objects on the server side.'''
  sense that it is evaluated once only and its result stored for future
  retrieval. It return an instance of :class:`stdnet.BeckendQuery`
  '''
+        if self.__qset is not None:
+            return self.__qset
         if self.__empty:
             self.__qset = EmptySet()
         else:
@@ -290,11 +299,19 @@ objects on the server side.'''
                 if self.fargs:
                     self.simple = not self.filter_sets
                     fargs = self.aggregate(self.fargs)
+                    for f in fargs:
+                        # no values to filter on. empty result.
+                        if not f.values:
+                            self.__qset = EmptySet()
+                            return self.__qset
                 else:
                     fargs = None
                 if self.eargs:
                     self.simple = False
                     eargs = self.aggregate(self.eargs)
+                    for a in tuple(eargs):
+                        if not a.values:
+                            eargs.remove(a)
                 else:
                     eargs = None
                 if self.fqueries:
@@ -335,7 +352,7 @@ objects on the server side.'''
  Field %s not defined.".format(name))
                 field = fields[name]
                 value = value if isinstance(value,self.__class__) else\
-                                tuple((field.serialize(v) for v in value))
+                                tuple((field.index_value(v) for v in value))
             else: 
                 # Nested lookup. Not available yet!
                 raise NotImplementedError("Nested lookup is not yet available")

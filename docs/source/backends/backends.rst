@@ -34,7 +34,15 @@ data can be loaded back in memory. If you need speed, Redis is great solution.
 
 Model data
 ~~~~~~~~~~~~~~~~~~
+Each :class:`stdnet.orm.StdModel` class has an associated ``base key`` which
+specify the namespace for all keys associated with it::
 
+    >>> from stdnet import getdb
+    >>> from stdnet.apps.searchengine import Word
+    >>> rdb = getdb('redis://localhost:6379?prefix=bla.')
+    >>> rdb.basekey(Word._meta)
+    'bla.searchengine.word'
+     
 Each :class:`stdnet.orm.StdModel` instance is mapped to a redis **Hash table**.
 The hash table key is uniquely evaluated by the model hash and
 the *id* of the model instance.
@@ -46,8 +54,13 @@ model instance.
 Indexes
 ~~~~~~~~~~~~~~~~~
 
-Indexes are obtained by using sets or sorted sets.
+Indexes are obtained by using sets or sorted sets with keys obtained using the
+following form::
 
+    <<basekey>>:idx:<<field name>>:<<field value>>
+
+Indices are updated and removed via the ``update_indices`` function in the
+``section.lua`` script.
 
 
 .. _redis-parser:

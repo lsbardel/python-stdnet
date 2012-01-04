@@ -11,6 +11,7 @@ Copyright (c) 2011 Luca Sbardella
     BSD License
 
 '''
+import os
 import errno
 import socket
 import io

@@ -7,31 +7,31 @@ from examples.models import SimpleModel
 
 
 class TestSession(test.TestCase):
-    
-    def session(self):
-        prefix = gen_unique_id()+'.'
-        backend = getdb(settings.DEFAULT_BACKEND, prefix = prefix)
-        self.assertEqual(backend.namespace,prefix)
-        session = orm.Session(backend)
-        self.assertEqual(session.backend,backend)
-        return session
+    model = SimpleModel
         
     def testQueryMeta(self):
         session = self.session()
+        self.assertEqual(len(session.new),0)
+        self.assertEqual(len(session.modified),0)
+        self.assertEqual(len(session.deleted),0)
         qs = session.query(SimpleModel)
         self.assertTrue(isinstance(qs,orm.Query))
     
-    def testCreate(self):
+    def testSimpleCreate(self):
         session = self.session()
         session.begin()
         m = SimpleModel(code='pluto',group='planet')
         session.add(m)
         self.assertTrue(m in session)
+        self.assertEqual(len(session.new),1)
+        self.assertEqual(len(session.modified),0)
+        self.assertEqual(len(session.deleted),0)
+        self.assertTrue(m in session.new)
         session.commit()
         self.assertEqual(m.id,1)
         
-    def testCreateTransaction(self):
-        session = SimpleModel.objects.session()
+    def testSimpleFilter(self):
+        session = self.session()
         with session.begin():
             session.add(SimpleModel(code='pluto',group='planet'))
             session.add(SimpleModel(code='venus',group='planet'))
@@ -39,6 +39,12 @@ class TestSession(test.TestCase):
         query = session.query(SimpleModel)
         self.assertEqual(query.session,session)
         qs = query.filter(group = 'planet')
-        self.assertEqual(qs.count(),2)
+        self.assertFalse(qs.executed)
+        self.assertEqual(qs.count(), 2)
+        self.assertTrue(qs.executed)
+        qs = query.filter(group = 'star')
+        self.assertEqual(qs.count(), 1)
+        qs = query.filter(group = 'bla')
+        self.assertEqual(qs.count(), 0)
         
     

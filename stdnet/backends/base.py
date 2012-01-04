@@ -36,9 +36,11 @@ queries specified by :class:`stdnet.orm.Query`.
 
     The ORM :class:`stdnet.orm.Query` instance.
     
-'''
-    query_set = None
+.. attribute:: executed
+
+    flag indicating if the query has been executed in the backend server
     
+'''
     def __init__(self, qs, fargs = None, eargs = None,
                  timeout = 0, queries = None):
         '''Initialize the query for the backend database.'''
@@ -47,9 +49,8 @@ queries specified by :class:`stdnet.orm.Query`.
         self.timeout = timeout
         self._sha = BytesIO()
         self.__count = None
-        self.__result = False
-        # build the queryset without fetching data
-        self.query_set = self.build(fargs, eargs, queries)
+        # build the queryset without performing any database communication
+        self._build(fargs, eargs, queries)
         code = self._sha.getvalue()
         self._sha = code if not code else sha1(code).hexdigest()
 
@@ -66,39 +67,36 @@ queries specified by :class:`stdnet.orm.Query`.
         return self._sha
     
     @property
+    def executed(self):
+        return self.__count is None
+    
+    @property
     def query_class(self):
         '''The underlying query class'''
         return self.qs.__class__
     
     def __len__(self):
-        return self.count()
-    
-    def result(self):
-        if self.__result is False:
-            self.__result = self.execute_query()
-        return self.__result
-
-    def has(self, val):
-        if self.__result is False:
-            self.__result = self.execute_query()
-        return self._has(val)
-    
-    def items(self, slic):
-        if self.__result is False:
-            self.__result = self.execute_query()
-        return self._items(slic)
+        return self.execute_query()
     
     def count(self):
+        return self.execute_query()
+
+    def __contains__(self, val):
+        self.execute_query()
+        return self._has(val)
+        
+    def items(self, slic):
+        if self.execute_query():
+            return self._items(slic)
+        else:
+            return ()
+    
+    def execute_query(self):
         if self.__count is None:
-            if self.__result is False:
-                self.__result = self.execute_query()
-            self.__count = self._count()
+            self.__count = self._execute_query()
         return self.__count
     
     # VIRTUAL FUNCTIONS
-    
-    def _count(self):
-        raise NotImplementedError
     
     def _has(self, val):
         raise NotImplementedError
@@ -106,10 +104,10 @@ queries specified by :class:`stdnet.orm.Query`.
     def _items(self, slic):
         raise NotImplementedError
     
-    def build(self, fargs, eargs, queries):
+    def _build(self, fargs, eargs, queries):
         raise NotImplementedError
     
-    def execute_query(self):
+    def _execute_query(self):
         '''Execute the query without fetching data from server. Must
  be implemented by data-server backends.'''
         raise NotImplementedError
@@ -169,6 +167,8 @@ It must implement the *loads* and *dumps* methods.'''
         self.client = self.setup_connection(address, **params)
         
     def setup_connection(self, address, **params):
+        '''Callback during initialization. Implementation should override
+this function for customizing their handling of connection parameters.'''
         raise NotImplementedError
 
     @property
@@ -195,10 +195,8 @@ It must implement the *loads* and *dumps* methods.'''
         pass
     
     def __repr__(self):
-        return '%s backend' % self.__name
-    
-    def __str__(self):
-        return self.__repr__()
+        return self.connection_string
+    __str__ = __repr__
     
     def createdb(self, name):
         pass
@@ -246,33 +244,20 @@ Called to clear a model instance.
             
         return 1
     
-    def make_objects(self, meta, ids, data = None, loadedfields = None,
-                     loadedfields_attributes = None):
+    def make_objects(self, meta, data):
         '''Generator of :class:`stdnet.orm.StdModel` instances with data
 from database.
 
-:parameter meta: instance of model :class:`stdnet.orm.base.Metaclass`.
-:parameter ids: Iterator over ids.
+:parameter meta: instance of model :class:`stdnet.orm.Metaclass`.
+:parameter data: iterator over instances data.
 '''
         make_object = meta.maker
-        if data is None:
-            for id in ids:
-                obj = make_object()
-                obj.__setstate__((id,(),{'__dbdata__': {}}))
-                obj._dbdata['id'] = obj.id
-                yield obj
-        else:
-            loadedfields = tuple(loadedfields) if loadedfields else None 
-            for id,fields in zip(ids,data):
-                obj = make_object()
-                if loadedfields:
-                    fields = dict(zip(loadedfields_attributes,fields))
-                else:
-                    fields = dict(fields)
-                fields['__dbdata__'] = deepcopy(fields)
-                obj.__setstate__((id,loadedfields,fields))
-                obj._dbdata['id'] = obj.id
-                yield obj
+        for state in data:
+            obj = make_object()
+            obj.__setstate__(state)
+            #fields['__dbdata__'] = deepcopy(fields)
+            obj._dbdata['id'] = obj.id
+            yield obj
         
     def set(self, id, value, timeout = None):
         timeout = timeout or 0
@@ -345,18 +330,6 @@ If the key does not exist, raise a ValueError exception."""
     
     def clear(self):
         """Remove *all* values from the database at once."""
-        raise NotImplementedError
-    
-    def autoid(self, meta):
-        raise NotImplementedError
-    
-    def save_object(self, obj, idnew, transaction):
-        raise NotImplementedError
-    
-    def _remove_indexes(self, obj, transaction):
-        raise NotImplementedError
-    
-    def _delete_object(self, obj, deleted, transaction):
         raise NotImplementedError
     
     def keys(self, pattern = '*'):

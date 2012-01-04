@@ -10,34 +10,35 @@ from stdnet.exceptions import *
 from .base import BackendDataServer
 
 
-parse_qsl = urlparse.parse_qsl
-
-
 BACKENDS = {
     'redis': 'redisb',
 }
 
 
 def parse_backend_uri(backend_uri):
-    """Form django source code.
-    Converts the "backend_uri" into a cache scheme ('db', 'memcached', etc), a
-    host and any extra params that are required for the backend. Returns a
-    (scheme, host, params) tuple.
-    """
-    if backend_uri.find(':') == -1:
-        raise ImproperlyConfigured("Backend URI must start with scheme://")
-    scheme, rest = backend_uri.split(':', 1)
-    if not rest.startswith('//'):
-        raise ImproperlyConfigured("Backend URI must start with scheme://")
-    host = rest[2:]
-    qpos = rest.find('?')
-    if qpos != -1:
-        params = dict(parse_qsl(rest[qpos+1:]))
-        host = rest[2:qpos]
+    """Converts the "backend_uri" into the database connection parameters.
+It returns a (scheme, host, params) tuple."""
+    r = urlparse.urlsplit(backend_uri)
+    scheme, host = r.scheme, r.netloc
+    if scheme not in ('https','http'):
+        query = r.path
+        path = ''
+        if query:
+            if query.find('?'):
+                path = query
+            else:
+                query = query[1:]
+    else:
+        path, query = r.path, r.query
+    
+    if path:
+        raise ImproperlyConfigured("Backend URI must not have a path.\
+ Found {0}".format(path))
+        
+    if query:
+        params = dict(urlparse.parse_qsl(query))
     else:
         params = {}
-    if host.endswith('/'):
-        host = host[:-1]
 
     return scheme, host, params
 
@@ -57,6 +58,7 @@ def get_connection_string(scheme, address, params):
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
+    
     
 def getdb(backend_uri = None, **kwargs):
     '''get a backend database'''
@@ -152,6 +154,5 @@ class Structures(object):
     def all(self):
         return make_struct._structs
         
-    
-    
+        
 struct = Structures()

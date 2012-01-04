@@ -172,7 +172,7 @@ Kudos
 * Redis_ simply because this library uses its awesome features.
 * redis-py_ for the Redis Python client initial implementation which has been subsequently modified.
 * hiredis-py_ for some parts of the C parser.
-* Django_ for some ideas and the ``dispatch`` module.
+* SQLAlchemy_ and Django_ for ideas and API design.
 * Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
 

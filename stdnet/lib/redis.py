@@ -19,7 +19,7 @@ from stdnet.dispatch import Signal
 from .connection import ConnectionPool
 from .exceptions import *
 
-from .scripts import nil, script_call_back, get_script
+from .scripts import nil, script_call_back, get_script, pairs_to_dict
 
 
 tuple_list = (tuple,list)
@@ -90,14 +90,6 @@ In doing so, convert byte data into unicode.'''
             data = {}
             info[line[2:]] = data
     return info
-
-
-def pairs_to_dict(response, encoding = 'utf-8'):
-    "Create a dict given a list of key/value pairs"
-    if response:
-        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
-    else:
-        return ()
 
 
 def ts_pairs(response, **options):

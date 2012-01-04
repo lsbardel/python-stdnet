@@ -18,7 +18,7 @@ else:
  the unitest2 package')
         exit(0)
 
-from stdnet import orm
+from stdnet import orm, getdb
 from stdnet.utils import to_string, gen_unique_id
 
 
@@ -27,26 +27,29 @@ class TestCase(unittest.TestCase):
     models = ()
     model = None
     
+    def session(self):
+        session = orm.Session(self.backend)
+        self.assertEqual(session.backend, self.backend)
+        return session
+    
     def register(self):
-        if not self.models and self.model:
-            self.models = (self.model,)
+        '''Utility for registering the managers to the current backend.
+This should be used with care in parallel testing'''
         for model in self.models:
-            orm.register(model)
-        
-    def unregister(self):
-        orm.unregister()
+            orm.register(self.backend)
     
     def _pre_setup(self):
-        self.prefix = 'test-'+gen_unique_id()+'.'
-        self.register()
-        for model in orm.registered_models():
-            model._meta.keyprefix = self.prefix
+        if not self.models and self.model:
+            self.models = (self.model,)
+        self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
+        self.backend = getdb(prefix = self.prefix)
+        return self.backend.flush(pattern = 'stdnet-test-*')
         
     def _post_teardown(self):
-        for model in orm.registered_models():
-            model.objects.flush()
-        #orm.clearall()
-        self.unregister()
+        session = orm.Session(self.backend)
+        for model in self.models:
+            session.flush(model)
+        orm.unregister()
     
     def __call__(self, result=None):
         """Wrapper around default __call__ method

@@ -58,22 +58,21 @@ It removes all keys associated with models.'''
     return flushed
             
 
-def register(model, backend = None, keyprefix = None, timeout = None,
-             ignore_duplicates = True):
+def register(model, backend = None, ignore_duplicates = True, **params):
     '''The low level function for registering a :class:`stdnet.orm.StdModel`
 classes with a :class:`stdnet.backends.BackendDataServer` data server.
     
 :parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
 
 :parameter backend: a backend connection string.
+    For example::
+
+        redis://localhost:8080?db=6&prefix=bla.
+    
+    Default ``settings.DEFAULT_BACKEND``.
                     
-                    Default ``settings.DEFAULT_BACKEND``.
-                    
-:parameter keyprefix: a string used to prefix all database keys related
-                      to the model. If not provided it is calculated
-                      from the connection string.
-                      
-                      Default ``None``.
+:parameter params: optional parameters which can be used to override the
+    connection string parameters.
                       
 :parameter timeout: timeout in seconds for keys persistence.
                     If not provided it is calculated from the
@@ -97,13 +96,13 @@ while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
     global _GLOBAL_REGISTRY
     from stdnet.conf import settings
-    backend = backend or settings.DEFAULT_BACKEND
     if model in _GLOBAL_REGISTRY:
         if not ignore_duplicates:  
             raise AlreadyRegistered(
                         'Model {0} is already registered'.format(meta))
         else:
             return
+    backend = getdb(backend_uri = backend, **params)
     for manager in model._managers:
         manager.backend = backend
     _GLOBAL_REGISTRY.add(model)

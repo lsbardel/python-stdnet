@@ -30,7 +30,7 @@ class redisReadTask(object):
             length = None
             if rtype == REDIS_REPLY_ERROR:
                 if response.startswith(ERR):
-                    response = ResponseError(response[4:])
+                    response = ResponseError(response[4:].decode('utf-8'))
                 elif response.startswith(LOADING):
                     raise ConnectionError("Redis is loading data into memory")
             elif rtype == REDIS_REPLY_INTEGER:

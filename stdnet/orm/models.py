@@ -32,10 +32,10 @@ class ModelMixin(UnicodeMixin):
         return not self.__eq__(other)
     
     def __hash__(self):
-        try:
+        if self.id:
             return hash(self.uuid)
-        except self.DoesNotExist as e:
-            raise TypeError(str(e))
+        else:
+            return id(self)
         
     @property
     def uuid(self):
@@ -71,10 +71,7 @@ class ModelState(object):
             self.persistent = True
     
     def __hash__(self):
-        if self.instance.id:
-            return self.instance.uuid
-        else:
-            return id(self.instance)
+        return hash(self.instance)
     
     @property    
     def meta(self):
@@ -194,7 +191,7 @@ The method return ``self``.
             if not skip_signal:
                 pre_save.send(sender = cls, instance = self)
             with session.begin():
-                session.add(instance)
+                session.add(self)
             if not skip_signal:
                 post_save.send(sender=cls, instance = self)
         else:

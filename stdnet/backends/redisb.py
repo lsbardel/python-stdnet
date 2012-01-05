@@ -1,11 +1,14 @@
 from collections import namedtuple
+from copy import copy
 import json
+from hashlib import sha1
 
 import stdnet
 from stdnet.conf import settings
-from stdnet.utils import iteritems, to_string, map, gen_unique_id
+from stdnet.utils import iteritems, to_string, map, gen_unique_id, zip
 from stdnet.backends.structures import structredis
-from stdnet.lib import redis, ScriptBuilder, RedisScript
+from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
+                        pairs_to_dict
 from stdnet.lib.redis import flat_mapping
 
 MIN_FLOAT =-1.e99
@@ -20,12 +23,31 @@ IDX = 'idx'     # the set of indexes for a field value
 TMP = 'tmp'     # temorary key
 ################################################################################
 
-pipeattr = lambda pipe,p,name : getattr(pipe,p+name)
-
-
 redis_connection = namedtuple('redis_connection',
                               'host port db password socket_timeout decode')
  
+
+class field_query(RedisScript):
+    script = read_lua_file('field_query.lua')
+    
+    
+class load_query(RedisScript):
+    script = read_lua_file('load_query.lua')
+    
+    def callback(self, response, args, fields = None, fields_attributes = None):
+        fields = tuple(fields) if fields else None
+        if fields:
+            if len(fields) == 1 and fields[0] == 'id':
+                for id in response:
+                    yield id,(),{}
+            else:
+                for id,fdata in response:
+                    yield id,fields_attributes,\
+                            dict(zip(fields_attributes,fdata))
+        else:
+            for id,fdata in response:
+                yield id,None,dict(pairs_to_dict(fdata))
+                
 
 class RedisTransaction(stdnet.Transaction):
     default_name = 'redis-transaction'
@@ -46,105 +68,9 @@ class RedisTransaction(stdnet.Transaction):
             return len(self.cursor.command_stack) <= 1
         else:
             return True
-
-
-def whereselect(oper, args):
-    if args:
-        yield oper
-        yield len(args)
-        for arg in args:
-            for a in arg:
-                yield a
-                
-                
-class add2set(object):
-
-    def __init__(self, backend, pipe, meta):
-        self.backend = backend
-        self.pipe = pipe
-        self.meta = meta
-    
-    def __call__(self, key, id, score = None, obj = None, idsave = True):
-        ordering = self.meta.ordering
-        if ordering:
-            if obj is not None:
-                v = getattr(obj,ordering.name,None)
-                score = MIN_FLOAT if v is None else ordering.field.scorefun(v)
-            elif score is None:
-                # A two way trip here.
-                idset = self.backend.basekey(self.meta,'id')
-                score = self.backend.client.zscore(idset,id)
-            if idsave:
-                self.pipe.zadd(key, score, id)
-        elif idsave:
-            self.pipe.sadd(key, id)
-        return score
         
         
 class RedisQuery(stdnet.BeckendQuery):
-    
-    def _unique_set(self, name, values):
-        '''Handle filtering over unique fields'''
-        meta = self.meta
-        key = self.backend.tempkey(meta)
-        pipe = self.pipe
-        add = self.add
-        if name == 'id':
-            for id in values:
-                add(key,id)
-        else:
-            bkey = self.backend.basekey
-            rpy = self.backend.client
-            for value in values:
-                hkey = bkey(meta,UNI,name)
-                id = rpy.hget(hkey, value)
-                add(key,id)
-        pipe.expire(key,self.expire)
-        return key
-    
-    def _query(self, qargs, oper, key = None, extra = None):
-        pipe = self.pipe
-        meta = self.meta
-        backend = self.backend
-        keys = []
-        sha  = self._sha
-        if qargs:
-            for q in qargs:
-                sha.write(q.__repr__().encode())
-                values = q.values
-                if q.unique:
-                    if q.lookup == 'in':
-                        keys.append(self._unique_set(q.name, values))
-                    else:
-                        raise ValueError('Not available')
-                elif len(q.values) == 1:
-                    keys.append(backend.basekey(meta,IDX,q.name,q.values[0]))
-                else:
-                    insersept = [backend.basekey(meta,IDX,q.name,value)\
-                                  for value in q.values]
-                    tkey = backend.tempkey(meta)
-                    if q.lookup == 'in':
-                        self.union(tkey,*insersept).expire(tkey,self.expire)
-                    else:
-                        raise ValueError('Lookup {0} Not available'\
-                                             .format(q.lookup))
-                    keys.append(tkey)
-        
-        if extra:
-            for id in extra:
-                sha.write(id.encode('utf-8'))
-                keys.append(id)
-        
-        if keys:
-            if key:
-                keys.append(key)
-            if len(keys) > 1:
-                key = backend.tempkey(meta)
-                setoper(key, *keys).expire(key, self.expire)
-            else:
-                key = keys[0]
-                
-        return key
         
     def zism(self, r):
         return r is not None
@@ -183,78 +109,72 @@ different model) which has a *field* containing current model ids.'''
             self.intersect(tkey,keys).expire(tkey,self.expire)
         return tkey
     
-    def _build(self, fargs, eargs, queries):
-        '''Set up the query for redis'''
-        meta = self.meta
+    def accumulate(self, pipe, qs):
         backend = self.backend
-        idset = backend.basekey(meta, ID)
-        if meta.ordering:
-            p = 'z'
-            self.client_ismember =  pipeattr(backend,client,'','zrank')
+        if getattr(qs,'backend',None) != backend:
+            return ('',qs)
+        p = 'z' if self.meta.ordering else 's'
+        meta = self.meta
+        args = []
+        for child in qs:
+            arg = self.accumulate(pipe, child)
+            args.extend(arg)
+        if qs.keyword == 'set':
+            if qs.name == 'id' and not args:
+                return 'key',backend.basekey(meta,'id')
+            else:
+                bk = backend.basekey(meta)
+                key = backend.tempkey(meta)
+                unique = 'u' if qs.unique else ''
+                pipe.script_call('field_query', bk, p, key, qs.name,
+                                 unique, qs.lookup, *args)
+                return 'key',key
+        else:
+            key = backend.tempkey(meta)
+            args = args[1::2]
+            if qs.keyword == 'intersect':
+                getattr(pipe,p+'interstore')(key,*args)
+            elif qs.keyword == 'union':
+                getattr(pipe,p+'unionstore')(key,*args)
+            elif qs.keyword == 'diff':
+                getattr(pipe,p+'diffstore')(key,*args)
+            else:
+                raise ValueError('Could not perform "{0}" operation'\
+                                 .format(qs.keyword))
+            return 'key',key
+        
+    def _build(self):
+        '''Set up the query for redis'''
+        backend = self.backend
+        client = backend.client
+        self.pipe = client.pipeline()
+        what, key = self.accumulate(self.pipe, self.qs)
+        if what == 'key':
+            self.query_key = key
+        else:
+            raise valueError('Critical error while building query')
+        if self.meta.ordering:
+            self.pipe.zcard(self.query_key)
+            self.ismember = getattr(client,'zrank')
+            self.card = getattr(client,'scard')
             self._check_member = self.zism
         else:
-            p = 's'
-            self.client_ismember =  pipeattr(backend.client,'','sismember')
+            self.pipe.scard(self.query_key)
+            self.ismember = getattr(client,'sismember')
+            self.card = getattr(client,'zcard')
             self._check_member = self.sism
-            
-        self.args = args = [backend.basekey(meta),p]
-        args.extend(whereselect('intersect',fargs))
-        args.extend(whereselect('union ',fargs))
-        args.extend(union(fargs))
-            for q in fargs:
-                args.append('where')
-                args.extend(q)
-        if eargs:
-            for q in eargs:
-                args.append('exclude')
-                args.extend(q)
-        return
-        
-        if self.qs.simple:
-            self.simple = True
-            key = backend.tempkey(meta)
-            args.append(key)
-            for q in fargs:
-                args.append(q.name)
-                args.append(len(q.values))
-                args.extend(q.values)
-        else:
-            # build the lua script which will execute the query
-            self.simple = False
-            self.client_card = getattr(backend.client, p+'card')
-            #if queries:
-            #    idset = self.build_from_query(queries)
-            
-            key1 = self._query(fargs,'intersect', idset, self.qs.filter_sets)
-            key2 = self._query(eargs, 'union')
-            if key2:
-                key = backend.tempkey(meta)
-                self.diff(key,key1,key2).expire(key,self.expire)
-            else:
-                key = key1
-        self.query_key = key
     
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
-        if self.simple:
-            return self.backend.client.script_call('simple_query',*self.args)
-        else:
-            if self.sha and self.timeout:
-                key = self.meta.tempkey(sha)
-                if not self.backend.client.exists(key):
-                    self.pipe.rename(self.query_key,key)
-                    self.query_key = key
-                    self.card(self.query_key)
-                    return self.pipe.execute()
-                else:
-                    self.query_key = key
-                    return self.client_card(self.query_key)
-            else:
-                self.card(self.query_key)
-                r = self.pipe.execute()
-                self.query_string = self.pipe.script
-                return r
+        command = copy(self.pipe.command_stack)
+        command.pop(0)
+        self.executed_command = command
+        self.query_results = self.pipe.execute()
+        for v in self.query_results:
+            if isinstance(v,Exception):
+                raise v
+        return self.query_results[-1]
         
     def order(self, start, stop):
         '''Perform ordering with respect model fields.'''

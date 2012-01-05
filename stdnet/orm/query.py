@@ -1,4 +1,5 @@
 from copy import copy
+from inspect import isgenerator
 from collections import namedtuple
 
 from stdnet.exceptions import *
@@ -6,11 +7,17 @@ from stdnet.utils import zip, to_bytestring, JSPLITTER
 from stdnet import transaction as get_transaction
 
 
-__all__ = ['Query']
+__all__ = ['Query','QueryOper']
 
-queryarg = namedtuple('queryarg','meta name values unique lookup')
 field_query = namedtuple('field_query','query field')
 
+
+def iterable(value):
+    if isgenerator(value) or isinstance(value,(tuple,list,set,frozenset)):
+        return True
+    else:
+        return False
+    
 
 class EmptySet(frozenset):
     query_set = ''
@@ -22,11 +29,88 @@ class EmptySet(frozenset):
         return len(self)
     
     
-class QueryOperation(object):
+class QueryOper(object):
+    keyword = ''
+    name = ''
+    get = 'id'
     
-    def __init__(self, queries):
-        self.queries = queries
+    def __init__(self, qs, underlying):
+        self.qs = qs
+        self.underlying = underlying
         
+    def __repr__(self):
+        v = ''
+        if self.underlying:
+            v = '('+', '.join((str(v) for v in self))+')'
+        k = self.keyword
+        if self.name:
+            k += '-' + self.name
+        return k + v
+    __str__ = __repr__
+
+    def __iter__(self):
+        return iter(self.underlying)
+        
+    @property
+    def meta(self):
+        return self.qs._meta
+    
+    @property
+    def backend(self):
+        return self.qs.backend
+    
+    @property
+    def ordering(self):
+        return self.qs.ordering
+    
+    @property
+    def fields(self):
+        return self.qs.fields
+    
+    @property
+    def select_related(self):
+        return self.qs._select_related
+    
+    def flat(self):
+        yield self.keyword
+        yield self.backend(self.meta)
+        yield self.get
+        for b in self.body:
+            yield b
+        yield self.get
+        
+    
+class QuerySet(QueryOper):
+    keyword = 'set'
+    def __init__(self, qs, name = None, values = None,
+                    unique = False, lookup = 'in'):
+        values = values if values is not None else ()
+        super(QuerySet,self).__init__(qs, values)
+        self.name = name or 'id'
+        self.unique = unique
+        self.lookup = lookup
+        
+    @property
+    def values(self):
+        return self.underlying
+    
+    
+class Select(QueryOper):
+    """Forms the basis of select type set operations."""
+    def __init__(self, qs, keyword, queries):
+        super(Select,self).__init__(qs, queries)
+        self.keyword = keyword
+    
+        
+def intersect(qs, queries):
+    return Select(qs, 'intersect', queries)
+
+def union(qs, queries):
+    return Select(qs, 'union', queries)
+
+def difference(qs, queries):
+    return Select(qs, 'diff', queries)
+    
 
 class Query(object):
     '''A :class:`Query` is produced in terms of a given :class:`Session`,
@@ -34,6 +118,11 @@ using the :meth:`Session.query` method::
 
     qs = session.query(MyModel)
     
+A query is equivalent to a collection of SELECT statements for a standard
+relational database. It has a  a generative interface whereby successive calls
+return a new :class:`Query` object, a copy of the former with additional
+criteria and options associated with it.
+
 .. attribute:: _meta
 
     the :attr:`StdModel.meta` attribute.
@@ -62,19 +151,18 @@ using the :meth:`Session.query` method::
 '''
     start = None
     stop = None
+    _get_field = 'id'
     lookups = ('in','contains')
     
     def __init__(self, meta, session, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
-                 field_queries = None, text = None,
-                 empty = False):
+                 text = None, empty = False):
         self._meta  = meta
         self.session = session
         self.fargs  = fargs
         self.eargs  = eargs
         self.ordering = ordering
         self.filter_sets = filter_sets
-        self._field_queries = field_queries
         self.text = text
         self._select_related = None
         self.fields = None
@@ -97,7 +185,6 @@ using the :meth:`Session.query` method::
             return False
         
     def clear(self):
-        self.simple = False
         self.__qset = None
         self.__slice_cache = None
         
@@ -130,42 +217,43 @@ using the :meth:`Session.query` method::
     def __iter__(self):
         return iter(self.items())
     
-    def _clone(self, fargs, eargs, filter_sets = None):
-        return self.__class__(self._meta,
-                              self.session,
-                              fargs = fargs,
-                              eargs = eargs,
-                              filter_sets = self.filter_sets,
-                              ordering = self.ordering,
-                              field_queries = self._field_queries,
-                              text = self.text)
+    def _clone(self):
+        cls = self.__class__
+        q = cls.__new__(cls)
+        q.__dict__ = self.__dict__.copy()
+        q.clear()
+        return q
         
     def filter(self, filter_sets = None, **kwargs):
-        '''Create a new :class:`QuerySet` with limiting clauses corresponding to
-where or limit in a SQL select statement.
+        '''Create a new :class:`Query` with limiting clauses corresponding to
+where or limit in a SQL SELECT statement.
 
 :parameter filter_sets: optional list of set ids to filter.
     Used by the :class:`stdnet.orm.query.M2MRelatedManager`.
 :parameter kwargs: dictionaris of limiting clauses.
 :rtype: a :class:`QuerySet` instance.'''
         if kwargs:
+            q = self._clone()
             if self.fargs:
                 c = self.fargs.copy()
                 c.update(kwargs)
                 kwargs = c
-            return self._clone(kwargs, self.eargs)
+            q.fargs = kwargs
+            return q
         else:
             return self
     
     def exclude(self, **kwargs):
-        '''Returns a new ``QuerySet`` containing objects that do not match\
- the given lookup parameters.'''
+        '''Returns a new :class:`Query` with a collections of new EXCEPT
+type operators.'''
         if kwargs:
+            q = self._clone()
             if self.eargs:
                 c = self.eargs.copy()
                 c.update(kwargs)
                 kwargs = c
-            return self._clone(self.fargs,kwargs)
+            q.eargs = kwargs
+            return q
         else:
             return self
     
@@ -173,20 +261,44 @@ where or limit in a SQL select statement.
         '''Sort the query by the given field'''
         if ordering:
             ordering = self._meta.get_sorting(ordering,QuerySetError)
-        self.ordering = ordering
-        return self
+        q = self._clone()
+        q.ordering = ordering
+        return q
     
     def search(self, text):
         '''Search *text* in model. A search engine needs to be installed
 for this function to be available.'''
         if self._meta.searchengine:
-            self.text = text
-            return self
+            q = self._clone()
+            q.text = text
+            return q
             #return se.search_model(self.model,text)
         else:
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
     
+    def get_field(self, field):
+        '''A :class:`Query` performs a series of operations and utimately
+generate of set of matched elements ``ids``. If on the other hand, a
+different field is required, it can be specified with the :meth:`get_field`
+method. For example, lets say a model has a field called ``object_id``
+which contains id of some model we could use::
+
+    qs = session.query(MyModel).get_field('object_id')
+    
+to obtain a set containing the values of matched elements ``object_id``
+fields.'''
+        if field != self._get_field:
+            if field not in self.meta._dfields:
+                if field_name not in fields:
+                    raise QuerySetError('Model "{0}" has no field "{1}"'\
+                                        .format(meta,field_name))
+            q = self._clone()
+            q._get_field = field
+            return q
+        else:
+            return self
+        
     def field_queries(self):
         '''return a list of field queries. Field queries
 are queries which produce ids for the model and the query is restricted
@@ -290,41 +402,38 @@ objects on the server side.'''
         post_delete.send(sender=self.model, instance = self)
         return res
     
+    def construct(self):
+        if self.__empty:
+            return EmptySet()
+        q = QuerySet(self)
+        if self.fargs:
+            args = []
+            fargs = self.aggregate(self.fargs)
+            for f in fargs:
+                # no values to filter on. empty result.
+                if not f.values:
+                    return EmptySet()
+            q = intersect(self, [q]+fargs)
+        
+        if self.eargs:
+            eargs = self.aggregate(self.eargs)
+            for a in tuple(eargs):
+                if not a.values:
+                    eargs.remove(a)
+            if eargs:
+                if len(eargs) > 1:
+                    eargs = [union(self, eargs)]
+                q = difference(self, [q]+eargs)
+        
+        q.get = self._get_field
+        return self.backend.Query(self.backend,q)
+    
     def backend_query(self):
         '''Build and return the backend query. This is a lazy method in the
- sense that it is evaluated once only and its result stored for future
- retrieval. It return an instance of :class:`stdnet.BeckendQuery`
- '''
-        if self.__qset is not None:
-            return self.__qset
-        if self.__empty:
-            self.__qset = EmptySet()
-        else:
-            self.fqueries = self.field_queries()
-            if self.__empty:
-                self.__qset = EmptySet()
-            else:
-                if self.fargs:
-                    self.simple = not self.filter_sets
-                    fargs = self.aggregate(self.fargs)
-                    for f in fargs:
-                        # no values to filter on. empty result.
-                        if not f.values:
-                            self.__qset = EmptySet()
-                            return self.__qset
-                else:
-                    fargs = None
-                if self.eargs:
-                    eargs = self.aggregate(self.eargs)
-                    for a in tuple(eargs):
-                        if not a.values:
-                            eargs.remove(a)
-                else:
-                    eargs = None
-                self.__qset = self.backend.Query(self,
-                                                 fargs,
-                                                 eargs,
-                                                 queries = self.fqueries)
+sense that it is evaluated once only and its result stored for future
+retrieval. It return an instance of :class:`stdnet.BeckendQuery`'''
+        if self.__qset is None:
+            self.__qset = self.construct()
         return self.__qset
     
     # PRIVATE METHODS
@@ -346,20 +455,21 @@ objects on the server side.'''
             field = fields[field_name]
             if not field.index:
                 raise QuerySetError("{0} {1} is not an index.\
- Cannot query.".format(field.__class__.__name__,field_name))
-            
-            value = value if isinstance(value,self.__class__) else\
-                                            (field.index_value(value),)
-                                 
+ Cannot query.".format(field.__class__.__name__,field_name))                                 
             lookup = '__'.join(names[1:])
             lvalue = field.filter(self.session, lookup, value)
             if lvalue:
                 lookup = 'in'
                 value = lvalue
-            value = value if isinstance(value,self.__class__) else\
-                                tuple((field.index_value(v) for v in value))            
+            if isinstance(value,self.__class__):
+                value = value.backend_query()
+            else:
+                if not iterable(value):
+                    value = (value,) 
+                value = tuple((field.index_value(v) for v in value))
+                            
             unique = field.unique 
-            yield queryarg(meta, field_name, value, unique, lookup)
+            yield QuerySet(self, field_name, value, unique, lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''

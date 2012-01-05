@@ -3,7 +3,8 @@ import os
 from .py2py3 import zip
 
 
-__all__ = ['RedisScript','ScriptBuilder','pairs_to_dict','nil']
+__all__ = ['RedisScript','ScriptBuilder','pairs_to_dict',
+           'read_lua_file','nil']
 
 
 class nil(object):
@@ -162,25 +163,3 @@ class commit_session(RedisScript):
                 data.append(instance)
         return data
     
-    
-class simple_query(RedisScript):
-    script = read_lua_file('simple_query.lua')
-    
-
-class load_query(RedisScript):
-    script = read_lua_file('load_query.lua')
-    
-    def callback(self, response, args, fields = None, fields_attributes = None):
-        fields = tuple(fields) if fields else None
-        if fields:
-            if len(fields) == 1 and fields[0] == 'id':
-                for id in response:
-                    yield id,(),{}
-            else:
-                for id,fdata in response:
-                    yield id,fields_attributes,\
-                            dict(zip(fields_attributes,fdata))
-        else:
-            for id,fdata in response:
-                yield id,None,dict(pairs_to_dict(fdata))
-            

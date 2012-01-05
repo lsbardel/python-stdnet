@@ -55,7 +55,7 @@ To change settings::
 class Settings(object):
 
     def __init__(self):
-        self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379/?db=7'
+        self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
         self.DEFAULT_KEYPREFIX  = 'stdnet.'
         self.CHARSET = 'utf-8'
         self.REDIS_PARSER = None

@@ -173,17 +173,14 @@ via a simple attribute of the model.'''
     def get_related_object(self, model, id):
         return model.objects.get(id = id)
         
-    def filter(self, **kwargs):
+    def query(self):
         if self.related_instance:
-            kwargs[self.related_fieldname] = self.related_instance
-            return super(RelatedManager,self).filter(**kwargs)
+            kwargs = {self.related_fieldname: self.related_instance}
+            return super(RelatedManager,self).query().filter(**kwargs)
         else:
             raise QuerySetError('Related manager can be accessed only from\
  an instance of its related model.')
             
-    def exclude(self, **kwargs):
-        return self.filter().exclude(**kwargs)
-        
 
 class M2MRelatedManager(BaseRelatedManager):
     '''A specialized :class:`Manager` for handling

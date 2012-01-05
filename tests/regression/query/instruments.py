@@ -16,14 +16,26 @@ class TestFilter(FinanceTest):
         qs = session.query(self.model)
         self.assertTrue(qs.count() > 0)
     
-    def testFilterId(self):
+    def testSimpleFilterId_WithRedisInternal(self):
         session = self.session()
         query = session.query(self.model)
         qs = query.filter(id = 1)
+        # test the redis internals
+        if qs.backend.name == 'redis':
+            qs.count()
+            rqs = qs.backend_query()
+            self.assertEqual(len(rqs.executed_command),3)
         self.assertEqual(qs.count(),1)
         obj = qs[0]
         self.assertEqual(obj.id,1)
         self.assertEqual(obj._loadedfields,None)
+        
+    def testSimpleFilter(self):
+        session = self.session()
+        qs = session.query(self.model).filter(ccy = 'EUR')
+        self.assertTrue(qs.count() > 0)
+        for i in qs:
+            self.assertEqual(i.ccy,'EUR')
         
     def testFilterIn(self):
         session = self.session()
@@ -71,7 +83,7 @@ class TestFilter(FinanceTest):
         for inst in qs:
             self.assertNotEqual(inst.ccy,'JPY')
             
-    def testExcludeFilterin(self):
+    def testExcludeFilterIn(self):
         CCYS = ('EUR','GBP','JPY')
         session = self.session()
         A = session.query(self.model).filter(ccy__in = CCYS)

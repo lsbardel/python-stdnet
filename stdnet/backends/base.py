@@ -1,9 +1,8 @@
 import json
 from copy import deepcopy
-from hashlib import sha1
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, iteritems, itervalues, BytesIO, encoders
+from stdnet.utils import zip, iteritems, itervalues, encoders
 
 from .structures import Structure
 
@@ -26,7 +25,7 @@ class Keys(object):
         
     def add(self, value):
         self.value = value
-         
+    
         
 class BeckendQuery(object):
     '''Backend queryset class which implements the database
@@ -41,26 +40,19 @@ queries specified by :class:`stdnet.orm.Query`.
     flag indicating if the query has been executed in the backend server
     
 '''
-    def __init__(self, qs, fargs = None, eargs = None,
-                 timeout = 0, queries = None):
+    def __init__(self, backend, qs, timeout = 0):
         '''Initialize the query for the backend database.'''
+        self.backend = backend
         self.qs = qs
         self.expire = max(timeout,30)
         self.timeout = timeout
-        self._sha = BytesIO()
         self.__count = None
         # build the queryset without performing any database communication
-        self._build(fargs, eargs, queries)
-        code = self._sha.getvalue()
-        self._sha = code if not code else sha1(code).hexdigest()
+        self._build()
 
     @property
     def meta(self):
-        return self.qs._meta
-    
-    @property
-    def backend(self):
-        return self.qs.backend
+        return self.qs.meta
     
     @property
     def sha(self):
@@ -104,7 +96,7 @@ queries specified by :class:`stdnet.orm.Query`.
     def _items(self, slic):
         raise NotImplementedError
     
-    def _build(self, fargs, eargs, queries):
+    def _build(self):
         raise NotImplementedError
     
     def _execute_query(self):
@@ -119,11 +111,11 @@ queries specified by :class:`stdnet.orm.Query`.
 
 :parameter result: a result from a queryset.
 :rtype: the same queryset qith related models loaded.'''
-        if self.qs._select_related:
+        if self.qs.select_related:
             if not hasattr(result,'__len__'):
                 result = list(result)
             meta = self.meta
-            for field in self.qs._select_related:
+            for field in self.qs.select_related:
                 name = field.name
                 attname = field.attname
                 vals = [getattr(r,attname) for r in result]

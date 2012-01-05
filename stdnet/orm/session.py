@@ -202,14 +202,20 @@ if their managers have the same backend database.'''
         return self.session().begin()
     
     # SESSION Proxy methods
-    def all(self):
+    def query(self):
         return self.session().query(self.model)
     
+    def all(self):
+        return self.query()
+    
     def filter(self, **kwargs):
-        return self.session().query(self.model, fargs = kwargs)
+        return self.query().filter(**kwargs)
     
     def exclude(self, **kwargs):
-        return self.session().query(self.model, eargs = kwargs)
+        return self.query().exclude(**kwargs)
+    
+    def search(self, text):
+        return self.query().search(text)
     
     def flush(self):
         return self.session().flush(self.model)
@@ -219,9 +225,6 @@ if their managers have the same backend database.'''
     
     def get_or_create(self, **kwargs):
         return self.session().get_or_create(self.model, **kwargs)
-    
-    def search(self, text):
-        return self.session().query(self.model, text = text)
     
     def __copy__(self):
         cls = self.__class__

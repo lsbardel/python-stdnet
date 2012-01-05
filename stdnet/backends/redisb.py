@@ -48,6 +48,15 @@ class RedisTransaction(stdnet.Transaction):
             return True
 
 
+def whereselect(oper, args):
+    if args:
+        yield oper
+        yield len(args)
+        for arg in args:
+            for a in arg:
+                yield a
+                
+                
 class add2set(object):
 
     def __init__(self, backend, pipe, meta):
@@ -189,7 +198,9 @@ different model) which has a *field* containing current model ids.'''
             self._check_member = self.sism
             
         self.args = args = [backend.basekey(meta),p]
-        if fargs:
+        args.extend(whereselect('intersect',fargs))
+        args.extend(whereselect('union ',fargs))
+        args.extend(union(fargs))
             for q in fargs:
                 args.append('where')
                 args.extend(q)

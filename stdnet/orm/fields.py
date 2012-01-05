@@ -257,6 +257,9 @@ the ordering alorithm'''
         field.meta = None
         return field
     
+    def filter(self, session, name, value):
+        pass
+    
     def todelete(self):
         return False
     
@@ -531,6 +534,11 @@ the relation from the related object back to self.
             return int(value)
         except:
             return value
+        
+    def filter(self, session, name, value):
+        name = name.split('__')[0]
+        if name in self.model._meta.dfields:
+            return self.session.query(self.model).filter(name = value)
     
     
 class JSONField(CharField):

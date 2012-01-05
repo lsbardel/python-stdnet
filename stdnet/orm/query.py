@@ -8,7 +8,7 @@ from stdnet import transaction as get_transaction
 
 __all__ = ['Query']
 
-queryarg = namedtuple('queryarg','name values unique lookup')
+queryarg = namedtuple('queryarg','meta name values unique lookup')
 field_query = namedtuple('field_query','query field')
 
 
@@ -21,6 +21,12 @@ class EmptySet(frozenset):
     def count(self):
         return len(self)
     
+    
+class QueryOperation(object):
+    
+    def __init__(self, queries):
+        self.queries = queries
+        
 
 class Query(object):
     '''A :class:`Query` is produced in terms of a given :class:`Session`,
@@ -38,11 +44,13 @@ using the :meth:`Session.query` method::
     
 .. attribute:: fargs
 
-    dictionary containing the lookup parameters to include.
+    Dictionary containing the ``filter`` lookup parameters each one of
+    them corresponding to a ``where`` clause of a select.
     
 .. attribute:: eargs
 
-    dictionary containing the lookup parameters to exclude from query.
+    Dictionary containing the ``exclude`` lookup parameters each one
+    of them corresponding to a ``where`` clause of a select.
 
 .. attribute:: ordering
 
@@ -307,15 +315,12 @@ objects on the server side.'''
                 else:
                     fargs = None
                 if self.eargs:
-                    self.simple = False
                     eargs = self.aggregate(self.eargs)
                     for a in tuple(eargs):
                         if not a.values:
                             eargs.remove(a)
                 else:
                     eargs = None
-                if self.fqueries:
-                    self.simple = False
                 self.__qset = self.backend.Query(self,
                                                  fargs,
                                                  eargs,
@@ -334,38 +339,27 @@ objects on the server side.'''
         for name,value in kwargs.items():
             names = name.split('__')
             N = len(names)
-            lookup = 'in'
-            # simple lookup for example filter(name = 'pippo')
-            if N == 1:
-                if name not in fields:
-                    raise QuerySetError('Could not filter on model "{0}".\
- Field "{1}" does not exist.'.format(meta,name))
-                field = fields[name]
-                value = value if isinstance(value,self.__class__) else\
-                                 (field.index_value(value),)
-            # group lookup filter(name_in ['pippo','luca'])
-            elif N == 2 and names[1] in self.lookups:
-                name = names[0]
-                lookup = names[1]
-                if name not in fields:
-                    raise QuerySetError("Could not filter.\
- Field %s not defined.".format(name))
-                field = fields[name]
-                value = value if isinstance(value,self.__class__) else\
-                                tuple((field.index_value(v) for v in value))
-            else: 
-                # Nested lookup. Not available yet!
-                raise NotImplementedError("Nested lookup is not yet available")
-            
-            unique = field.unique
+            field_name = names[0]
+            if field_name not in fields:
+                raise QuerySetError('Could not filter on model "{0}".\
+ Field "{1}" does not exist.'.format(meta,field_name))
+            field = fields[field_name]
             if not field.index:
                 raise QuerySetError("{0} {1} is not an index.\
- Cannot query.".format(field.__class__.__name__,name))
-            #elif value:
-            #    self.simple = self.simple and unique 
-            #    yield queryarg(name,value,unique,lookup)
-            self.simple = self.simple and unique 
-            yield queryarg(name,value,unique,lookup)
+ Cannot query.".format(field.__class__.__name__,field_name))
+            
+            value = value if isinstance(value,self.__class__) else\
+                                            (field.index_value(value),)
+                                 
+            lookup = '__'.join(names[1:])
+            lvalue = field.filter(self.session, lookup, value)
+            if lvalue:
+                lookup = 'in'
+                value = lvalue
+            value = value if isinstance(value,self.__class__) else\
+                                tuple((field.index_value(v) for v in value))            
+            unique = field.unique 
+            yield queryarg(meta, field_name, value, unique, lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''

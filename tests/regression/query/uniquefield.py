@@ -19,24 +19,28 @@ class TestUniqueFilter(test.TestCase):
     model = SimpleModel
     
     def setUp(self):
-        with SimpleModel.objects.transaction() as t:
+        session = self.session()
+        with session.begin():
             for n,g in zip(codes,groups):
-                SimpleModel(code = n, group = g).save(t)
+                session.add(self.model(code = n, group = g))
     
     def testFilterSimple(self):
+        session = self.session()
+        query = session.query(self.model)
         for i in range(10):
             i = randint(0,len(codes)-1)
             code = codes[i]
-            qs = SimpleModel.objects.filter(code = code)
+            qs = query.filter(code = code)
             self.assertEqual(qs.count(),1)
-            self.assertTrue(qs.simple)
             self.assertEqual(qs[0].code,code)
             
     def testExcludeSimple(self):
+        session = self.session()
+        query = session.query(self.model)
         for i in range(10):
             i = randint(0,len(codes)-1)
             code = codes[i]
-            r = SimpleModel.objects.exclude(code = code)
+            r = query.exclude(code = code)
             self.assertEqual(r.count(),SIZE-1)
             self.assertFalse(code in set((o.code for o in r)))
             

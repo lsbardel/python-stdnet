@@ -168,7 +168,7 @@ class Redis(object):
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
             'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME '
-            'SAVE SELECT SET SHUTDOWN',
+            'SAVE SELECT SET SHUTDOWN SLAVEOF WATCH UNWATCH',
             lambda r: r == OK
             ),
         string_keys_to_dict('BLPOP BRPOP', lambda r: r and tuple(r) or None),

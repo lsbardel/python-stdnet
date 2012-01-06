@@ -122,7 +122,6 @@ class TestFilter(FinanceTest):
         query = session.query(self.model)
         qs = query.filter(id__in = ids)
         self.assertEqual(len(qs),3)
-        self.assertTrue(qs.simple)
         cids = set((o.id for o in qs))
         self.assertEqual(cids,ids)
         

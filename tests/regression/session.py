@@ -47,4 +47,31 @@ class TestSession(test.TestCase):
         qs = query.filter(group = 'bla')
         self.assertEqual(qs.count(), 0)
         
+    def testModifyIndexField(self):
+        session = self.session()
+        with session.begin():
+            session.add(SimpleModel(code='pluto',group='planet'))
+        query = session.query(SimpleModel)
+        qs = query.filter(group = 'planet')
+        self.assertEqual(qs.count(),1)
+        el = qs[0]
+        self.assertEqual(el.id,1)
+        session = self.session()
+        el.group = 'smallplanet'
+        with session.begin():
+            session.add(el)
+        self.assertEqual(el.id,1)
+        # lets get it from the server
+        qs = session.query(self.model).filter(id = 1)
+        self.assertEqual(qs.count(),1)
+        el = qs[0]
+        self.assertEqual(el.code,'pluto')
+        self.assertEqual(el.group,'smallplanet')
+        # now filter on group
+        qs = session.query(self.model).filter(group = 'smallplanet')
+        self.assertEqual(qs.count(),1)
+        self.assertEqual(qs[0].id,1)
+        # now filter on old group
+        qs = session.query(self.model).filter(group = 'planet')
+        self.assertEqual(qs.count(),0)
     

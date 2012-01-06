@@ -48,8 +48,6 @@ class TestManyToMany(test.TestCase):
         self.assertEqual(profile.roles.all().count(),0)
         profile.delete()
         
-        
-    
     def testRemove(self):
         p1 = Profile().save()
         p2 = Profile().save()

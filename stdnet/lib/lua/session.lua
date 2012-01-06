@@ -1,5 +1,4 @@
--- Script for committing a stdnet session to redis
-
+-- Script for committing a stdnet.orm.Session to redis
 function table_slice (values,i1,i2)
     local res = {}
     local n = #values
@@ -22,11 +21,11 @@ function table_slice (values,i1,i2)
     return res
 end
 
--- ADD OR REMOVE INDICES FOR INSTANCE
+-- Add or remove indices for an instance
 function update_indices(s, bk, id, idkey, indices, uniques, add)
     for i,name in pairs(indices) do
         value = redis.call('hget', idkey, name)
-        if uniques[i] == 1 then
+        if uniques[i] == '1' then
             idxkey = bk .. ':uni:' .. name
             if add then
                 redis.call('hset', idxkey, value, id)

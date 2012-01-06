@@ -360,7 +360,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 lua_data.extend(fids)
             else:
                 data = state.cleaned_data()
-                id = data.pop('id','')
+                id = state.id or ''
                 data = flat_mapping(data)
                 action = 'change' if state.persistent else 'add'
                 lua_data.extend((action,bk,id,s,len(data)))

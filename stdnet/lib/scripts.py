@@ -159,7 +159,7 @@ class commit_session(RedisScript):
         for state,id in zip(session,response):
             if not state.deleted:
                 instance = state.instance
-                instance.id = id
+                instance.id = instance._meta.pk.to_python(id)
                 data.append(instance)
         return data
     

@@ -60,7 +60,7 @@ queries specified by :class:`stdnet.orm.Query`.
     
     @property
     def executed(self):
-        return self.__count is None
+        return self.__count is not None
     
     @property
     def query_class(self):

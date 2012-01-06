@@ -1,4 +1,4 @@
---
+-- Script to perform a lookup on a field
 bk = KEYS[1] -- base key for model
 s = KEYS[2] -- 's' for set or 'z' for sorted sets
 rkey = KEYS[3] -- the key where to store the result ids

@@ -49,6 +49,20 @@ class load_query(RedisScript):
                 yield id,None,dict(pairs_to_dict(fdata))
                 
 
+class commit_session(RedisScript):
+    script = read_lua_file('session.lua')
+    
+    def callback(self, response, args, session = None):
+        data = []
+        for state,id in zip(session,response):
+            if not state.deleted:
+                instance = state.instance
+                instance.id = instance._meta.pk.to_python(id)
+                instance._dbdata['id'] = instance.id 
+                data.append(instance)
+        return data
+                
+
 class RedisTransaction(stdnet.Transaction):
     default_name = 'redis-transaction'
     
@@ -70,7 +84,7 @@ class RedisTransaction(stdnet.Transaction):
             return True
         
         
-class RedisQuery(stdnet.BeckendQuery):
+class RedisQuery(stdnet.BackendQuery):
         
     def zism(self, r):
         return r is not None

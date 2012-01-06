@@ -53,17 +53,27 @@ class finance_data(object):
         self.num_funds = session.query(Fund).count()
     
     def makePositions(self, test, use_transaction = True):
-        self.create()
-        instruments = Instrument.objects.all()
-        with transaction(Position) as t:
-            t = t if use_transaction else None
-            for f in Fund.objects.all():
+        self.create(test, use_transaction)
+        session = test.session()
+        instruments = session.query(Instrument).all()
+        if use_transaction:
+            with session.begin():
+                for f in session.query(Fund):
+                    insts = populate('choice', self.pos_len,
+                                     choice_from = instruments)
+                    for dt in self.dates:
+                        for inst in insts:
+                            session.add(Position(instrument = inst, dt = dt,
+                                                 fund = f))
+        else:
+            for f in Fund.objects.query(Fund):
                 insts = populate('choice', self.pos_len,
-                                 choice_from = instruments)
+                                choice_from = instruments)
                 for dt in self.dates:
                     for inst in insts:
-                        Position(instrument = inst, dt = dt, fund = f).save(t)
-        self.num_pos = Position.objects.all().count()
+                        Position(instrument = inst, dt = dt, fund = f).save()
+                        
+        self.num_pos = session.query(Position).count()
         
     
 class FinanceTest(test.TestCase):

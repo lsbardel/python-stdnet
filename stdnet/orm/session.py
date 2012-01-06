@@ -21,6 +21,10 @@ class Session(object):
 .. attribute:: backend
 
     the :class:`stdnet.BackendDataServer` instance
+    
+.. attribute:: query_class
+
+    class for querying. Default is :class:`Query`.
 '''
     def __init__(self, backend, query_class = None):
         self.backend = getdb(backend)
@@ -28,6 +32,7 @@ class Session(object):
         self._new = OrderedDict()
         self._deleted = OrderedDict()
         self._modified = OrderedDict()
+        self._loaded = {}
         self.query_class = query_class or Query
     
     @property
@@ -75,30 +80,53 @@ transactions, please see :ref:`session_begin_nested`.'''
             self.transaction = self.backend.transaction(session = self)
         return self.transaction
     
-    def query(self, model, **kwargs):
-        return self.query_class(model._meta, self, **kwargs)
-    
-    def get(self, model, **kwargs):
-        qs = self.query(model, fargs=kwargs)
-        return qs.get()
+    def query(self, model):
+        '''Create a new :class:`Query` for *model*.'''
+        return self.query_class(model._meta, self)
     
     def get_or_create(self, model, **kwargs):
-        '''Get an object. If it does not exists, it creates one'''
+        '''Get an instance of *model* from the internal cache (only if the
+dictionary *kwargs* is of length 1 and has key given by ``id``) or from the
+server. If it the instance is not available, it tries to create one
+from the **kwargs** parameters.
+
+:parameter model: a :class:`StdModel`
+:parameter kwargs: dictionary of parameters.
+:rtype: an instance of  two elements tuple containing the instance and a boolean
+    indicating if the instance was created or not.
+'''
         try:
-            res = self.get(model, **kwargs)
+            res = self.query(self.model).get(**kwargs)
             created = False
         except model.DoesNotExist:
-            res = self.save(model(**kwargs))
+            res = self.add(model(**kwargs))
             created = True
         return res,created
+
+    def get(self, model, id):
+        uuid = model.get_uuid(id)
+        if uuid in self._modified:
+            return self._modified.get(uuid)
+        elif uuid in self._deleted:
+            return self._modified.get(uuid)
+        
+    def add(self, instance, modified = True):
+        '''Add an *instance* to the session.
+        
+:parameter instance: a class:`StdModel` instance.
+:parameter modified: a boolean flag indictaing if the instance was modified.
     
-    def add(self, instance):
-        '''Add an *instance* to the session.'''
+'''
         state = instance.state()
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
+        instance.session = self
         if state.persistent:
-            self._modified[state] = instance
+            if modified:
+                self._loaded.pop(state,None)
+                self._modified[state] = instance
+            elif state not in self._modified:
+                self._loaded[state] = instance
         else:
             self._new[state] = instance
         
@@ -133,6 +161,12 @@ Session."""
         else:
             raise InvalidTransaction('No transaction was started')
         
+    def expunge(self, instance):
+        for d in (self._new,self._modified,self._deleted):
+            if instance in d:
+                d.pop(instance)
+                return True
+        return False        
         
 class Manager(object):
     '''A manager class for models. Each :class:`StdModel`
@@ -170,10 +204,10 @@ They can also exclude instances from the query::
     
     def __str__(self):
         if self.model:
-            if self._session:
+            if self.backend:
                 return '{0}({1} - {2})'.format(self.__class__.__name__,
                                                self.model,
-                                               self.session)
+                                               self.backend)
             else:
                 return '{0}({1})'.format(self.__class__.__name__,self.model)
         else:
@@ -217,11 +251,11 @@ if their managers have the same backend database.'''
     def search(self, text):
         return self.query().search(text)
     
+    def get(self, **kwargs):
+        return self.query().get(**kwargs)
+    
     def flush(self):
         return self.session().flush(self.model)
-    
-    def get(self, **kwargs):
-        return self.session().get(self.model, fargs = kwargs)
     
     def get_or_create(self, **kwargs):
         return self.session().get_or_create(self.model, **kwargs)

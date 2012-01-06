@@ -5,7 +5,7 @@ from examples.models import Role, Profile
 
     
 class TestManyToMany(test.TestCase):
-    models = (Role,Profile)
+    models = (Role, Profile)
     
     def addsome(self):
         profile = Profile().save()

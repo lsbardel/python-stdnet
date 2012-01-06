@@ -6,7 +6,7 @@ from stdnet.utils import zip, iteritems, itervalues, encoders
 
 from .structures import Structure
 
-__all__ = ['BackendDataServer', 'BeckendQuery']
+__all__ = ['BackendDataServer', 'BackendQuery']
 
 
 def intid(id):
@@ -27,7 +27,7 @@ class Keys(object):
         self.value = value
     
         
-class BeckendQuery(object):
+class BackendQuery(object):
     '''Backend queryset class which implements the database
 queries specified by :class:`stdnet.orm.Query`.
 

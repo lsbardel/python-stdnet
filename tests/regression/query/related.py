@@ -11,19 +11,23 @@ STEPS   = 10
 
 
 class TestSelfForeignKey(test.TestCase):
+    '''The Node model is used only in this test class and should be used only
+in this test class so that we can use the manager in a parallel test suite.'''
     model = Node
+    nesting = 2
         
-    def create(self, N, root):
-        for n in range(N):
-            node = self.model(parent = root,
-                              weight = random.uniform(0,1)).save()
+    def create(self, root, nesting):
+        if nesting:
+            N = random.randint(0,9)
+            for n in range(N):
+                node = self.model(parent = root,
+                                  weight = random.uniform(0,1)).save()
+                self.create(node, nesting-1)
         
     def setUp(self):
+        self.register()
         root = self.model(weight = 1.0).save()
-        for n in range(STEPS):
-            node = self.model(parent = root,
-                              weight = random.uniform(0,1)).save()
-            self.create(random.randint(0,9), node)
+        self.create(root, nesting = self.nesting)
             
     def testMeta(self):
         for n in Node.objects.all():
@@ -51,19 +55,20 @@ class TestSelfForeignKey(test.TestCase):
 class TestRelatedManager(FinanceTest):
         
     def testExclude(self):
-        self.data.makePositions()
-        inst = Instrument.objects.get(id = 1)
-        fund = Fund.objects.get(id = 1)
+        self.data.makePositions(self)
+        session = self.session()
+        inst = session.query(Instrument).get(id = 1)
+        fund = session.query(Fund).get(id = 1)
         pos = fund.positions.exclude(instrument = inst)
         for p in pos:
             self.assertFalse(p.instrument == inst)
             self.assertEqual(p.fund,fund)
-            
         
+
 class load_related(FinanceTest):
     
     def testSelectRelated(self):
-        self.data.makePositions()
+        self.data.makePositions(self)
         pos = Position.objects.all().load_related()
         self.assertTrue(pos._select_related)
         self.assertTrue(len(pos._select_related),2)
@@ -77,7 +82,7 @@ class load_related(FinanceTest):
                 self.assertEqual(id,val.id)
         
     def testSelectRelatedSingle(self):
-        self.data.makePositions()
+        self.data.makePositions(self)
         pos = Position.objects.all().load_related('instrument')
         self.assertTrue(pos._select_related)
         self.assertTrue(len(pos._select_related),1)
@@ -94,35 +99,3 @@ class load_related(FinanceTest):
             val = getattr(p,cache,None)
             self.assertFalse(val)
             
-            
-class TestMultiField(test.TestCase):
-    model = Dictionary
-    
-    def setUp(self):
-        m = self.model(name = 'bla').save()
-        m.data['ciao'] = 'bla'
-        m.data['hello'] = 'foo'
-        m.data['hi'] = 'pippo'
-        m.data['salut'] = 'luna'
-        m.save()
-        m = self.model(name = 'luca').save()
-        m.data['hi'] = 'pippo'
-        m.data['salut'] = 'luna'
-        m.save()
-        
-    def testloadNotSelected(self):
-        '''Get the model and check that no data-structure data
- has been loaded.'''
-        cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.all():
-            data = getattr(m,cache,None)
-            self.assertFalse(data)
-        
-    def testloadselected(self):
-        '''Use load_selected to load stastructure data'''
-        cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.all().load_related():
-            data = getattr(m,cache,None)
-            self.assertTrue(data)
-            self.assertTrue(data.cache)
-        

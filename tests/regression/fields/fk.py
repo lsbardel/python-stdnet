@@ -5,10 +5,13 @@ from examples.models import Person, Group
 
 
 class fkmeta(test.TestCase):
-    models = (Person,Group)
+    models = (Person, Group)
     
     def setUp(self):
-        g = Group(name = 'bla').save()
+        session = self.session()
+        with session.begin():
+            session.add(Group(name = 'bla'))
+        g = session.query(self.model).get(name = 'bla')
         self.p = Person(name = 'foo', group = g).save()
         
     def testSimple(self):

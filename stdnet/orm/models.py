@@ -11,7 +11,8 @@ from .signals import *
 from .session import Session, Manager
 
 
-__all__ = ['FakeModel',
+__all__ = ['ModelMixin',
+           'FakeModel',
            'StdModel',
            'StdNetType',
            'from_uuid',
@@ -19,8 +20,14 @@ __all__ = ['FakeModel',
 
 
 class ModelMixin(UnicodeMixin):
+    '''A mixin class for :class:`StdModel`. It implements the :attr:`uuid`
+attribute which provides the univarsal unique identifier for an instance of a
+model.'''
     DoesNotExist = ObjectNotFound
+    '''Exception raised when an instance of a model does not exist.'''
     DoesNotValidate = ObjectNotValidated
+    '''Exception raised when an instance of a model does not validate. Usually
+raised when trying to save an invalid instance.'''
     
     def __eq__(self, other):
         if other.__class__ == self.__class__:
@@ -37,13 +44,17 @@ class ModelMixin(UnicodeMixin):
         else:
             return id(self)
         
+    @classmethod
+    def get_uuid(cls, id):
+        return '{0}.{1}'.format(cls._meta.hash,id)
+        
     @property
     def uuid(self):
         '''Universally unique identifier for a model instance.'''
         if not self.id:
             raise self.DoesNotExist(\
                     'Object not saved. Cannot obtain universally unique id')
-        return '{0}.{1}'.format(self._meta.hash,self.id)
+        return self.get_uuid(self.id)
         
     
 FakeModelBase = FakeModelType('FakeModelBase',(ModelMixin,),{})
@@ -87,15 +98,14 @@ class ModelState(object):
 
 
 class StdModel(StdNetBase):
-    '''A model is the single, definitive source of data
-about your data. It contains the essential fields and behaviors
-of the data you're storing. Each model class
-maps instances to :class:`stdnet.HashTable` structures via
-the :attr:`StdModel._meta` attribute.
+    '''A :class:`ModelMixin` which gives you the single, definitive source
+of data about your data. It contains the essential fields and behaviors
+of the data you're storing.
 
 .. attribute:: _meta
 
-    Instance of :class:`stdnet.orm.base.Metaclass`
+    Instance of :class:`Metaclass`, it containes all the information needed
+    by a :class:`stdnet.backendServer`.
 
 .. attribute:: id
 
@@ -105,6 +115,10 @@ the :attr:`StdModel._meta` attribute.
 
     Universally unique identifier for a model instance.
     
+.. attribute:: session
+
+    the :class:`Session` instance which loaded the instance (available
+    when the instance is loaded from the data server).
 '''
     is_base_class = True
     _loadedfields = None
@@ -193,7 +207,7 @@ The method return ``self``.
             with session.begin():
                 session.add(self)
             if not skip_signal:
-                post_save.send(sender=cls, instance = self)
+                post_delete.send(sender=cls, instance = self)
         else:
             transaction.session.add(self)
         return self
@@ -224,6 +238,12 @@ The method return ``self``.
         if not hasattr(self,'_temp'):
             self._temp = {}
         return self._temp
+    
+    def __get_session(self):
+        return self._temp.get('session')
+    def __set_session(self,session):
+        self._temp['session'] = session
+    session = property(__get_session,__set_session)
     
     @property
     def toload(self):

@@ -1,7 +1,8 @@
 **A stand-alone Python 3 compatible data manager for Redis remote data structures.**
 
 The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (ORM_) with similar API to Django_. 
+light-weight Object Relational Mapper (ORM_) with API inspired by SQLAlchemy_
+and Django_. 
 The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
 --
@@ -21,7 +22,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 
 Requirements
 =================
-* Python 2.6 or above, including Python 3 series.
+* Python 2.6 or up to Python 3.3.
 * Optional Cython_ for faster redis protocol parser.
 * You need access to a Redis_ server.
 

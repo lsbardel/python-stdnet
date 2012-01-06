@@ -12,9 +12,8 @@ Python Stdnet
 It is shipped with an object relational mapper which greatly facilitates the
 management and retrieval of large data-sets.
 It includes a modified version of redis-py_ compatible with ``python 3``.
-There are no dependencies
-and the library requires ``python 2.6`` or above, including ``python 3``.
-There are over 300 tests with a coverage of about 80%.
+There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
+there are over 350 tests with a coverage of about 80%.
 
 **The library is stable, used in production and continuously maintained**.
 

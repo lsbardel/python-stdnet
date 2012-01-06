@@ -16,8 +16,10 @@ class TestUtils(test.TestCase):
                 'folder1':{'folder11':1,
                            'folder12':2,
                            '':'home'}}
-        obj = self.model(name='foo',data=data).save()
-        obj = self.model.objects.get(id = obj.id)
+        session = self.session()
+        with session.begin():
+            session.add(self.model(name='foo',data=data))
+        obj = session.query(self.model).get(id = 1)
         self.assertEqual(\
             nested_json_value(obj,'data__folder1__folder11',orm.JSPLITTER),1)
         self.assertEqual(\

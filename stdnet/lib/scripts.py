@@ -150,16 +150,4 @@ return {pop,elem}
             return nil
         return response[1]
         
-
-class commit_session(RedisScript):
-    script = read_lua_file('session.lua')
-    
-    def callback(self, response, args, session = None):
-        data = []
-        for state,id in zip(session,response):
-            if not state.deleted:
-                instance = state.instance
-                instance.id = instance._meta.pk.to_python(id)
-                data.append(instance)
-        return data
     

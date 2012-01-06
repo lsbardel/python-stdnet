@@ -55,3 +55,35 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
             self.assertEqual(v,self.data.pop(k))
         self.assertEqual(len(self.data),0)
         
+
+class TestMultiField(test.TestCase):
+    model = Dictionary
+    
+    def setUp(self):
+        m = self.model(name = 'bla').save()
+        m.data['ciao'] = 'bla'
+        m.data['hello'] = 'foo'
+        m.data['hi'] = 'pippo'
+        m.data['salut'] = 'luna'
+        m.save()
+        m = self.model(name = 'luca').save()
+        m.data['hi'] = 'pippo'
+        m.data['salut'] = 'luna'
+        m.save()
+        
+    def testloadNotSelected(self):
+        '''Get the model and check that no data-structure data
+ has been loaded.'''
+        cache = self.model._meta.dfields['data'].get_cache_name()
+        for m in self.model.objects.all():
+            data = getattr(m,cache,None)
+            self.assertFalse(data)
+        
+    def testloadselected(self):
+        '''Use load_selected to load stastructure data'''
+        cache = self.model._meta.dfields['data'].get_cache_name()
+        for m in self.model.objects.all().load_related():
+            data = getattr(m,cache,None)
+            self.assertTrue(data)
+            self.assertTrue(data.cache)
+        

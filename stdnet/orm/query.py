@@ -6,6 +6,8 @@ from stdnet.exceptions import *
 from stdnet.utils import zip, to_bytestring, JSPLITTER
 from stdnet import transaction as get_transaction
 
+from .signals import *
+
 
 __all__ = ['Query','QueryOper']
 
@@ -125,29 +127,53 @@ criteria and options associated with it.
 
 .. attribute:: _meta
 
-    the :attr:`StdModel.meta` attribute.
+    The :attr:`StdModel._meta` attribute.
+    
+.. attribute:: session
+
+    The :class:`Session` which created the :class:`Query` via the
+    :meth:`Session.query` method.
+    
+.. attribute:: _get_field
+
+    The :class:`Field` which provides the values of the matched elements.
+    This can be changed via the :meth:`get_field` method.
+    
+    Default: ``id``.
     
 .. attribute:: backend
 
     the :class:`stdnet.BackendDataServer` holding the data to query.
     
+.. attribute:: model
+
+    the :class:`StdModel` class for this query.
+    
 .. attribute:: fargs
 
     Dictionary containing the ``filter`` lookup parameters each one of
-    them corresponding to a ``where`` clause of a select.
+    them corresponding to a ``where`` clause of a select. This value is
+    manipulated via the :meth:`filter` method.
+    
+    Default: ``{}``.
     
 .. attribute:: eargs
 
     Dictionary containing the ``exclude`` lookup parameters each one
-    of them corresponding to a ``where`` clause of a select.
+    of them corresponding to a ``where`` clause of a select. This value is
+    manipulated via the :meth:`exclude` method.
+    
+    Default: ``{}``.
 
 .. attribute:: ordering
 
     optional ordering field.
     
-.. attribute:: text_search
+.. attribute:: text
 
     optional text to filter result on.
+    
+    Default: ``""``.
 '''
     start = None
     stop = None
@@ -157,6 +183,7 @@ criteria and options associated with it.
     def __init__(self, meta, session, fargs = None, eargs = None,
                  filter_sets = None, ordering = None,
                  text = None, empty = False):
+        '''A :class:`Query` is not initialized directly.'''
         self._meta  = meta
         self.session = session
         self.fargs  = fargs
@@ -183,15 +210,6 @@ criteria and options associated with it.
             return self.__qset.executed
         else:
             return False
-        
-    def clear(self):
-        self.__qset = None
-        self.__slice_cache = None
-        
-    def cache(self):
-        if not self.__slice_cache:
-            self.__slice_cache = {}
-        return self.__slice_cache
     
     def __repr__(self):
         seq = self.cache().get(None)
@@ -212,26 +230,27 @@ criteria and options associated with it.
         return self.items()[slic]
     
     def all(self):
-        return self
+        '''Return a ``list`` of all matched elements.'''
+        return self.items()
     
     def __iter__(self):
         return iter(self.items())
     
-    def _clone(self):
-        cls = self.__class__
-        q = cls.__new__(cls)
-        q.__dict__ = self.__dict__.copy()
-        q.clear()
-        return q
+    def __len__(self):
+        return self.count()
         
-    def filter(self, filter_sets = None, **kwargs):
-        '''Create a new :class:`Query` with limiting clauses corresponding to
-where or limit in a SQL SELECT statement.
+    def filter(self, **kwargs):
+        '''Create a new :class:`Query` with additional clauses corresponding to
+``where`` or ``limit`` in a ``SQL SELECT`` statement.
 
-:parameter filter_sets: optional list of set ids to filter.
-    Used by the :class:`stdnet.orm.query.M2MRelatedManager`.
-:parameter kwargs: dictionaris of limiting clauses.
-:rtype: a :class:`QuerySet` instance.'''
+:parameter kwargs: dictionary of limiting clauses.
+:rtype: a new :class:`Query` instance.
+
+For example::
+
+    qs = session.query(MyModel)
+    result = qs.filter(group = 'planet')
+'''
         if kwargs:
             q = self._clone()
             if self.fargs:
@@ -244,8 +263,12 @@ where or limit in a SQL SELECT statement.
             return self
     
     def exclude(self, **kwargs):
-        '''Returns a new :class:`Query` with a collections of new EXCEPT
-type operators.'''
+        '''Returns a new :class:`Query` with additional clauses corresponding
+to ``EXCEPT`` in a ``SQL SELECT`` statement.
+
+:parameter kwargs: dictionary of limiting clauses.
+:rtype: a new :class:`Query` instance.
+'''
         if kwargs:
             q = self._clone()
             if self.eargs:
@@ -258,7 +281,13 @@ type operators.'''
             return self
     
     def sort_by(self, ordering):
-        '''Sort the query by the given field'''
+        '''Sort the query by the given field
+        
+:parameter ordering: a string indicating the class:`Field` name to sort by.
+    If prefixed with ``-``, the sorting will be in descending order, otherwise
+    in ascending order.
+:return type: a new :class:`Query` instance.
+'''
         if ordering:
             ordering = self._meta.get_sorting(ordering,QuerySetError)
         q = self._clone()
@@ -267,7 +296,11 @@ type operators.'''
     
     def search(self, text):
         '''Search *text* in model. A search engine needs to be installed
-for this function to be available.'''
+for this function to be available.
+
+:parameter text: a string to search.
+:return type: a new :class:`Query` instance.
+'''
         if self._meta.searchengine:
             q = self._clone()
             q.text = text
@@ -282,12 +315,17 @@ for this function to be available.'''
 generate of set of matched elements ``ids``. If on the other hand, a
 different field is required, it can be specified with the :meth:`get_field`
 method. For example, lets say a model has a field called ``object_id``
-which contains id of some model we could use::
+which contains ids of another model, we could use::
 
     qs = session.query(MyModel).get_field('object_id')
     
 to obtain a set containing the values of matched elements ``object_id``
-fields.'''
+fields.
+
+:parameter field: the name of the field which will be used to obtained the
+    matched elements value. Must be an index.
+:rtype: a new :class:`Query` instance.
+'''
         if field != self._get_field:
             if field not in self.meta._dfields:
                 if field_name not in fields:
@@ -357,8 +395,20 @@ data intensive fields you don't need.
                 if na in dfields and dfields[na].type == 'json object':
                     yield name
             
-    def get(self):
-        items = self.items()
+    def get(self, **kwargs):
+        '''Return an instance of a model matching the query. A special case is
+the query on ``id`` which provides a direct access to the :attr:`session`
+instances. If the given primary key is present in the session, the object
+is returned directly without performing any query.'''
+        id = kwargs.get('id')
+        if id is not None and len(kwargs) == 1:
+            # check the current session first
+            el = self.session.get(self.model, id)
+            if el is not None:
+                return el
+        # not there, perform the database query
+        qs = self.filter(**kwargs)
+        items = qs.items()
         if items:
             if len(items) == 1:
                 return items[0]
@@ -370,8 +420,9 @@ data intensive fields you don't need.
     
     def count(self):
         '''Return the number of objects in ``self``.
-This method is efficient since the queryset does not
-receive any data from the server. It construct the queries and count the
+This method is efficient since the :class:`Query` does not
+receive any data from the server apart from the number of matched elements.
+It construct the queries and count the
 objects on the server side.'''
         return self.backend_query().count()
     
@@ -387,20 +438,69 @@ objects on the server side.'''
         except:
             return False
         return self.backend_query().has(val)
-        
-    def __len__(self):
-        return self.count()
     
-    def delete(self):
-        if not instance.id:
-            raise FieldValueError('Cannot delete object. It was never saved.')
-        T = 0
-        pre_delete.send(sender=self.model, instance = self)
-        for obj in instance.related_objects():
-            T += self.delete(obj, transaction)
-        res = T + self.backend.delete_object(instance, transaction)
-        post_delete.send(sender=self.model, instance = self)
-        return res
+    def delete(self, sync_session = False):
+        '''Delete all matched elements of the :class:`Query`.'''
+        c = self.backend_query().delete(with_ids = sync_session)
+        if c:
+            post_delete.send(sender=self.__class__, instance = self)
+        if sync_session:
+            for id in c:
+                instance = self.model(id = id)
+                self.session.expunge(instance)
+        return c
+    
+    def backend_query(self):
+        '''Build and return the :class:`stdnet.BackendQuery`.
+This is a lazy method in the sense that it is evaluated once only and its
+result stored for future retrieval.'''
+        if self.__qset is None:
+            self.__qset = self.construct()
+        return self.__qset
+    
+    def test_unique(self, fieldname, value, instance = None, exception = None):
+        '''Test if a given field *fieldname* has a unique *value*
+in :attr:`model`. The field must be an index of the model.
+If the field value is not unique and the *instance* is not the same
+an exception is raised.
+
+:parameter fieldname: :class:`Field` name to test
+:parameter vale: :class:`Field` value
+:parameter instance: optional instance of :attr:`model`
+:parameter exception: optional exception class to raise if the test fails.
+    Default: :attr:`ModelMixin.DoesNotValidate`.
+:return: *value*
+'''
+        try:
+            r = self.get(**{fieldname:value})
+        except self.model.DoesNotExist:
+            return value
+        
+        if instance and r.id == instance.id:
+            return value
+        else:
+            exception = exception or self.model.DoesNotValidate
+            raise exception('An instance with {0} {1} is already available'\
+                            .format(fieldname,value))
+    
+    ############################################################################
+    # PRIVATE METHODS
+    ############################################################################
+    def _clone(self):
+        cls = self.__class__
+        q = cls.__new__(cls)
+        q.__dict__ = self.__dict__.copy()
+        q.clear()
+        return q
+    
+    def clear(self):
+        self.__qset = None
+        self.__slice_cache = None
+        
+    def cache(self):
+        if not self.__slice_cache:
+            self.__slice_cache = {}
+        return self.__slice_cache
     
     def construct(self):
         if self.__empty:
@@ -427,17 +527,7 @@ objects on the server side.'''
         
         q.get = self._get_field
         return self.backend.Query(self.backend,q)
-    
-    def backend_query(self):
-        '''Build and return the backend query. This is a lazy method in the
-sense that it is evaluated once only and its result stored for future
-retrieval. It return an instance of :class:`stdnet.BeckendQuery`'''
-        if self.__qset is None:
-            self.__qset = self.construct()
-        return self.__qset
-    
-    # PRIVATE METHODS
-    
+
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
         
@@ -485,24 +575,10 @@ retrieval. It return an instance of :class:`stdnet.BeckendQuery`'''
         if seq is not None:
             return seq
         else:
-            seq = list(self.backend_query().items(slic))
+            seq = []
+            session = self.session
+            for el in self.backend_query().items(slic):
+                session.add(el,False)
+                seq.append(el)
             cache[key] = seq
             return seq
-                
-    def aslist(self, slic = None):
-        '''Return python ``list`` of elements in queryset'''
-        return self.items(slic)
-    
-    def delete(self, transaction = None):
-        '''Delete all the element in the queryset'''
-        if self.count():
-            commit = False
-            if not transaction:
-                commit = True
-                transaction = self.backend.transaction()
-            for el in self:
-                el.delete(transaction)
-            if commit:
-                transaction.commit()
-        self.clear()
-            

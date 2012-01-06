@@ -23,20 +23,31 @@ from stdnet.utils import to_string, gen_unique_id
 
 
 class TestCase(unittest.TestCase):
-    '''Base class for testing stdnet.'''    
+    '''A :class:`unittest.TestCase` subclass for testing stdnet. It contains
+some utility functions for tesing in a parallel test suite.
+
+.. attribute:: backend
+
+    A :class:`stdnet.BackendDataServer` for the :class:`TestCase`.
+    It is different for each instance and it is created just before
+    :meth:`setUp` method is called.
+'''    
     models = ()
     model = None
     
     def session(self):
+        '''Create a new :class:`stdnet.orm.Session` bind to the
+:attr:`TestCase.backend` attribute.'''
         session = orm.Session(self.backend)
         self.assertEqual(session.backend, self.backend)
         return session
     
     def register(self):
         '''Utility for registering the managers to the current backend.
-This should be used with care in parallel testing'''
+This should be used with care in parallel testing. All registered models
+will be unregistered after the :meth:`tearDown` method.'''
         for model in self.models:
-            orm.register(self.backend)
+            orm.register(model, self.backend)
     
     def _pre_setup(self):
         if not self.models and self.model:

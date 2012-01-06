@@ -143,6 +143,37 @@ DateConverter
 .. autoclass:: stdnet.utils.encoders.DateConverter
    :members:
    :member-order: bysource
+
+
+.. module:: stdnet
+
+Exceptions
+============================
+
+.. autoclass:: StdNetException
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: ImproperlyConfigured
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: ModelNotRegistered
+   :members:
+   :member-order: bysource
+   
+   
+.. autoclass:: QuerySetError
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: FieldError
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: FieldValueError
+   :members:
+   :member-order: bysource
    
 
    
@@ -155,31 +186,11 @@ Populate
 .. autofunction:: stdnet.utils.populate
 
 
-Exceptions
-============================
+.. module:: stdnet.test
 
-.. autoclass:: stdnet.StdNetException
+TestCase
+~~~~~~~~~~~~~~~
+
+.. autoclass:: TestCase
    :members:
    :member-order: bysource
-   
-.. autoclass:: stdnet.ImproperlyConfigured
-   :members:
-   :member-order: bysource
-   
-.. autoclass:: stdnet.ModelNotRegistered
-   :members:
-   :member-order: bysource
-   
-   
-.. autoclass:: stdnet.QuerySetError
-   :members:
-   :member-order: bysource
-   
-.. autoclass:: stdnet.FieldError
-   :members:
-   :member-order: bysource
-   
-.. autoclass:: stdnet.FieldValueError
-   :members:
-   :member-order: bysource
-   

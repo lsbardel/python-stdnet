@@ -7,7 +7,7 @@ Model and Query API
 ============================
 
 
-Model
+Model and Query
 ==================
 
 The StdNet Object Relational Mapper presents a method of
@@ -35,7 +35,25 @@ Data Server Metaclass
    :members:
    :member-order: bysource
 
-        
+ModelMixin
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ModelMixin
+   :members:
+   :member-order: bysource
+
+.. _model-query:
+
+Query
+~~~~~~~~~~~~~~~
+
+.. autoclass:: Query
+   :members:
+   :member-order: bysource
+   
+   .. automethod:: __init__
+
+
 .. _register-model:
         
 Registration
@@ -77,20 +95,6 @@ Unregister model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: unregister
-
-
-Queries
-==============================   
-
-Query
-~~~~~~~~~~~~~~~
-
-.. autoclass:: Query
-   :members:
-   :member-order: bysource
-   
-   .. automethod:: __init__
-
 
 .. _signal-api:
 

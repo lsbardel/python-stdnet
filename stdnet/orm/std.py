@@ -2,7 +2,8 @@ from stdnet.exceptions import *
 from stdnet.utils import encoders
 
 from .fields import Field
-from .related import add_lazy_relation, ModelFieldPickler, M2MRelatedManager
+from . import related
+from .struct import *
 
 
 __all__ = ['ManyFieldManagerProxy',
@@ -10,17 +11,15 @@ __all__ = ['ManyFieldManagerProxy',
            'MultiField',
            'SetField',
            'ListField',
-           'HashField',
-           'ManyToManyField']
+           'HashField']
 
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, cache_name, stype, pickler,
+    def __init__(self, name, cache_name, pickler,
                  value_pickler, scorefun):
         self.name = name
         self.cache_name = cache_name
-        self.stype = stype
         self.pickler = pickler
         self.value_pickler = value_pickler
         self.scorefun  = scorefun
@@ -43,7 +42,7 @@ class ManyFieldManagerProxy(object):
         return self.get_structure(instance)
     
     def get_structure(self, instance):
-        backend = instance.objects.backend
+        session = instance.session
         st = getattr(backend,self.stype)
         return st(backend.basekey(instance._meta,'id',instance.id,self.name),
                   instance = instance,
@@ -95,10 +94,6 @@ a stand alone structure in the back-end server with very little effort.
     Optional :class:`stdnet.otm.StdModel` class contained in the structure.
     It can also be specified as a string.
     
-.. attribute:: related_name
-
-    Same as :class:`stdnet.orm.ForeignKey` Field.
-    
 .. attribute:: pickler
 
     an instance of :class:`stdnet.utils.encoders.Encoder` used to serialize
@@ -116,16 +111,11 @@ a stand alone structure in the back-end server with very little effort.
     default_pickler = encoders.Json()
     default_value_pickler = None
     
-    
-    def get_pipeline(self):
-        raise NotImplementedError
-    
     def __init__(self,
                  model = None,
                  pickler = None,
                  value_pickler = None,
                  required = False,
-                 related_name = None,
                  scorefun = None,
                  **kwargs):
         # Force required to be false
@@ -135,34 +125,37 @@ a stand alone structure in the back-end server with very little effort.
         self.unique = False
         self.primary_key = False
         self.pickler = pickler
-        self.related_name = related_name
         self.value_pickler = value_pickler
         self.scorefun = scorefun
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
         if self.relmodel:
-            add_lazy_relation(self,self.relmodel,self._register_related_model)
+            related.load_relmodel(self,self._set_relmodel)
         else:
-            self._register_related_model(self,None)
-            
-    def _register_related_model(self, field, related):
-        field.relmodel = related
+            self._register_with_model()
+    
+    def _set_relmodel(self, relmodel):
+        self.relmodel = relmodel
+        if not self.pickler:
+            self.pickler = related.ModelFieldPickler(self.relmodel)
+        self._register_with_model()
+        
+    def _register_with_model(self):
         self._install_encoders()
+        self.pickler = self.pickler or self.default_pickler
+        self.value_pickler = self.value_pickler or self.default_value_pickler
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,
                                       self.get_cache_name(),
-                                      self.get_pipeline(),
-                                      self.pickler,self.value_pickler,
-                                      self.scorefun))
+                                      pickler = self.pickler,
+                                      value_pickler = self.value_pickler,
+                                      scorefun = self.scorefun))
     
     def _install_encoders(self):
         if self.relmodel and not self.pickler:
-            self.pickler = ModelFieldPickler(self.relmodel)
-        self.pickler = self.pickler or self.default_pickler
-        self.value_pickler = self.value_pickler or self.default_value_pickler\
-                             or self.pickler
+            self.pickler = related.ModelFieldPickler(self.relmodel)
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -175,6 +168,9 @@ a stand alone structure in the back-end server with very little effort.
 
     def todelete(self):
         return True
+    
+    def structure_class(self):
+        raise NotImplementedError
 
 
 class SetField(MultiField):
@@ -197,9 +193,8 @@ It can be used in the following way::
     >>> user2 in user.following
     True
     '''
-    type = 'set'
-    def get_pipeline(self):
-        return 'ordered_set' if self.ordered else 'unordered_set'
+    def structure_class(self):
+        return Zset if self.ordered else Set
     
 
 class ListField(MultiField):
@@ -228,8 +223,8 @@ Can be used as::
     2
     '''
     type = 'list'
-    def get_pipeline(self):
-        return 'list'          
+    def structure_class(self):
+        return List        
 
 
 class HashField(MultiField):
@@ -246,67 +241,8 @@ it returns an instance of :class:`stdnet.HashTable` structure.
     
     def _install_encoders(self):
         if self.relmodel and not self.value_pickler:
-            self.value_pickler = ModelFieldPickler(relmodel)
-        self.pickler = self.pickler or self.default_pickler
-        self.value_pickler = self.value_pickler or self.default_value_pickler
+            self.value_pickler = related.ModelFieldPickler(relmodel)
 
+    def structure_class(self):
+        return HashTable
 
-class ManyToManyField(MultiField):
-    '''A many-to-many relationship. It accepts **related_name**
-as extra argument.
-
-.. attribute:: related_name
-
-    Optional name to use for the relation from the related object
-    back to ``self``.
-    
-    
-For example::
-    
-    class User(orm.StdModel):
-        name      = orm.SymbolField(unique = True)
-        following = orm.ManyToManyField(model = 'self',
-                                        related_name = 'followers')
-    
-To use it::
-
-    >>> u = User(name = 'luca').save()
-    >>> u.following.add(User(name = 'john').save())
-    >>> u.following.add(User(name = 'mark').save())
-
-and to remove::
-
-    >>> u.following.remove(User.objects.get(name = 'john))
-    
-This field is implemented as a double Set field.
-'''
-    type = 'many-to-many'
-    def get_pipeline(self):
-        return 'unordered_set'
-    
-    def get_related_cache_name(self, related_name):
-        return '_%s_cache' % related_name
-    
-    def register_with_model(self, name, model):
-        Field.register_with_model(self, name, model)
-        add_lazy_relation(self,self.relmodel,self._register_related_model)
-    
-    def _register_related_model(self, field, related):
-        #Register manager to self and to the related model
-        related_name = self.related_name or '%s_set' % self.name
-        self.related_name = related_name
-        field.relmodel = related
-        stype = self.get_pipeline()
-        
-        cn = self.get_cache_name()
-        rcn = self.get_related_cache_name(related_name)
-        
-        m2m = Many2ManyManagerProxy(self.name, cn, stype,
-                                    related_name, related)
-        r2r = Many2ManyManagerProxy(related_name, rcn, stype,
-                                    self.name, self.model)
-        setattr(self.model, self.name, m2m)
-        setattr(self.relmodel,related_name,r2r)
-    
-    def todelete(self):
-        return False

@@ -1,5 +1,5 @@
 import stdnet
-from stdnet import test, transaction
+from stdnet import test
 
 from examples.models import Person, Group 
 

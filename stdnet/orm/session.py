@@ -11,7 +11,124 @@ from .query import Query
 from .signals import *
 
 
-__all__ = ['Session','Manager']
+__all__ = ['Session','Manager','Transaction']
+
+
+class Transaction(object):
+    '''Transaction class for pipelining commands to the back-end.
+An instance of this class is usually obtained by using the high level
+:func:`stdnet.transaction` function.
+
+.. attribute:: name
+
+    Transaction name
+    
+.. attribute:: backend
+
+    the :class:`BackendDataServer` to which the transaction is being performed.
+    
+.. attribute:: cursor
+
+    The backend cursor which manages the transaction.
+    
+    '''
+    default_name = 'transaction'
+    
+    def __init__(self, session, name = None):
+        self.name = name or self.default_name
+        self.session = session
+        self._callbacks = []
+        
+    @property
+    def backend(self):
+        return self.session.backend
+    
+    @property
+    def is_open(self):
+        return not hasattr(self,'_result')
+    
+    def add(self, func, args, kwargs, callback = None):
+        '''Add an new operation to the transaction.
+
+:parameter func: function to call which accept :attr:`stdnet.Transaction.cursor`
+    as its first argument.
+:parameter args: tuple or varying arguments to pass to *func*.
+:parameter kwargs: dictionary or key-values arguments to pass to *func*.
+:parameter callback: optional callback function with arity 1 which process
+    the result wonce back from the backend.'''
+        res = func(self.cursor,*args,**kwargs)
+        callback = callback or default_callback
+        self._callbacks.append(callback)
+        
+    def merge(self, other):
+        '''Merge two transaction together'''
+        if self.backend == other.backend:
+            if not other.empty():
+                raise NotImplementedError()
+        else:
+            raise InvalidTransaction('Cannot merge transactions.')
+        
+    def empty(self):
+        '''Check if the transaction contains query data or not.
+If there is no query data the transaction does not perform any
+operation in the database.'''
+        for c in itervalues(self._cachepipes):
+            if c.pipe:
+                return False
+        return self.emptypipe()
+                
+    def emptypipe(self):
+        raise NotImplementederror
+            
+    def structure_pipe(self, structure):
+        '''Create a pipeline for a structured datafield'''
+        id = structure.id
+        if id not in self._cachepipes:
+            self._cachepipes[id] = structure.struct()
+        return self._cachepipes[id].pipe
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            self.commit()
+        else:
+            self.rollback()
+            self._result = value
+            
+    def commit(self):
+        '''Close the transaction and commit commands to the backend.'''
+        if not self.is_open:
+            raise InvalidTransaction('Invalid operation.\
+ Transaction already closed.')
+        results = self.backend.execute_session(self.session)
+        callbacks = self._callbacks
+        self._callbacks = []
+        if len(results) and len(callbacks):
+            self._results = ((cb(r) for cb,r in\
+                                   zip(callbacks,results)))
+        else:
+            self._results = results
+    
+    def rollback(self):
+        pass
+    
+    def get_result(self):
+        '''Retrieve the result after the transaction has executed.
+This can be done once only.'''
+        if not hasattr(self,'_results'):
+            raise InvalidTransaction(\
+                        'Transaction {0} has not been executed'.format(self))
+        results = self.__dict__.pop('_results')
+        if isgenerator(results):
+            results = list(results)
+        return results
+
+    # VIRTUAL FUNCTIONS
+    
+    def _execute(self):
+        raise NotImplementedError
 
 
 class Session(object):
@@ -22,13 +139,31 @@ class Session(object):
 
     the :class:`stdnet.BackendDataServer` instance
     
+.. attribute:: autocommit
+
+    When ``True``, the :class:`Session`` does not keep a persistent transaction
+    running, and will acquire connections from the engine on an as-needed basis,
+    returning them immediately after their use.
+    Flushes will begin and commit (or possibly rollback) their own transaction
+    if no transaction is present. When using this mode, the :meth:`begin`
+    method may be used to begin a transaction explicitly.
+          
+    Default: ``False``. 
+          
+.. attribute:: transaction
+
+    A :class:`Transaction` instance. Not ``None`` if this :class:`Session`
+    is in a transactional state.
+    
 .. attribute:: query_class
 
     class for querying. Default is :class:`Query`.
 '''
-    def __init__(self, backend, query_class = None):
+    _structures = {}
+    def __init__(self, backend, autocommit = False, query_class = None):
         self.backend = getdb(backend)
         self.transaction = None
+        self.autocommit = autocommit
         self._new = OrderedDict()
         self._deleted = OrderedDict()
         self._modified = OrderedDict()
@@ -48,6 +183,11 @@ class Session(object):
     @property
     def deleted(self):
         "The set of all instances marked as 'deleted' within this ``Session``"
+        return frozenset(self._loaded.values())
+    
+    @property
+    def deleted(self):
+        "The set of all instances marked as 'deleted' within this ``Session``"
         return frozenset(self._deleted.values())
     
     def __str__(self):
@@ -56,28 +196,13 @@ class Session(object):
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__,self)
     
-    def begin(self, subtransactions=False, nested=False):
-        '''Begin a class:`stdnet.Transaction` for models.
-If this Session is already within a transaction, either a plain
-transaction or nested transaction, an error is raised, unless
-``subtransactions=True`` or ``nested=True`` is specified.
-
-The ``subtransactions=True`` flag indicates that this :meth:`transaction` 
-can create a subtransaction if a transaction is already in progress.
-For documentation on subtransactions, please see :ref:`session_subtransactions`.
-
-The ``nested`` flag begins a SAVEPOINT transaction and is equivalent
-to calling :meth:`~.Session.begin_nested`. For documentation on SAVEPOINT
-transactions, please see :ref:`session_begin_nested`.'''
+    def begin(self):
+        '''Begin a new class:`Transaction`.
+If this :class:`Session` is already within a transaction, an error is raised.'''
         if self.transaction is not None:
-            if subtransactions or nested:
-                self.transaction = self.transaction._begin(nested=nested)
-            else:
-                raise InvalidTransaction(
-                    "A transaction is already begun.  Use subtransactions=True "
-                    "to allow subtransactions.")
+            raise InvalidTransaction("A transaction is already begun.")
         else:
-            self.transaction = self.backend.transaction(session = self)
+            self.transaction = Transaction(self)
         return self.transaction
     
     def query(self, model):
@@ -113,7 +238,7 @@ from the **kwargs** parameters.
     def add(self, instance, modified = True):
         '''Add an *instance* to the session.
         
-:parameter instance: a class:`StdModel` instance.
+:parameter instance: a class:`StdModel` or a :class:`Structure` instance.
 :parameter modified: a boolean flag indictaing if the instance was modified.
     
 '''
@@ -124,26 +249,25 @@ from the **kwargs** parameters.
         if state.persistent:
             if modified:
                 self._loaded.pop(state,None)
-                self._modified[state] = instance
+                self._modified[instance] = instance
             elif state not in self._modified:
-                self._loaded[state] = instance
+                self._loaded[instance] = instance
         else:
-            self._new[state] = instance
+            self._new[instance] = instance
         
-        return state
+        return instance
     
     def delete(self, instance):
-        if instance.uuid in self._deleted:
-            return
-        self._deleted[instance.uuid] = instance
+        self.expunge(instance)
+        if instance.state().persistent:
+            self._deleted[instance] = instance
         
     def flush(self, model):
         return self.backend.flush(model._meta)
     
     def __contains__(self, instance):
-        state = instance.state()
-        return state in self._new or state in self._deleted\
-                                  or state in self._modified
+        return instance in self._new or state in self._deleted\
+                                     or state in self._modified
                                   
     def __iter__(self):
         """Iterate over all pending or persistent instances within this
@@ -154,19 +278,63 @@ Session."""
             yield m
         for d in self._deleted:
             yield d
-            
+        
     def commit(self):
-        if self.transaction:
-            return self.transaction.commit()
-        else:
-            raise InvalidTransaction('No transaction was started')
+        """Flush pending changes and commit the current transaction.
+
+        If no transaction is in progress, this method raises an
+        InvalidRequestError.
+
+        By default, the :class:`.Session` also expires all database
+        loaded state on all ORM-managed attributes after transaction commit.
+        This so that subsequent operations load the most recent 
+        data from the database.   This behavior can be disabled using
+        the ``expire_on_commit=False`` option to :func:`.sessionmaker` or
+        the :class:`.Session` constructor.
+
+        If a subtransaction is in effect (which occurs when begin() is called
+        multiple times), the subtransaction will be closed, and the next call
+        to ``commit()`` will operate on the enclosing transaction.
+
+        For a session configured with autocommit=False, a new transaction will
+        be begun immediately after the commit, but note that the newly begun
+        transaction does *not* use any connection resources until the first
+        SQL is actually emitted.
+
+        """
+        if self.transaction is None:
+            if not self.autocommit:
+                self.begin()
+            else:
+                raise InvalidTransaction('No transaction was started')
+
+        self.transaction.commit()
         
     def expunge(self, instance):
-        for d in (self._new,self._modified,self._deleted):
+        instance._dbdata.pop('state',None)
+        for d in (self._new,self._modified,self._loaded,self._deleted):
             if instance in d:
                 d.pop(instance)
                 return True
-        return False        
+        return False
+    
+    def server_update(self, instance, id = None):
+        '''Callback by the :class:`stdnet.BackendDataServer` once the commit is
+finished. Remove the deleted instances and updated the modified and new
+instances.'''
+        state = instance.state()
+        self.expunge(instance)
+        if not state.deleted:
+            if id:
+                instance.id = instance._meta.pk.to_python(id)
+                instance._dbdata['id'] = instance.id
+            self.add(instance, False)
+            return instance
+        
+    @classmethod
+    def clearall(cls):
+        pass
+      
         
 class Manager(object):
     '''A manager class for models. Each :class:`StdModel`
@@ -240,7 +408,7 @@ if their managers have the same backend database.'''
         return self.session().query(self.model)
     
     def all(self):
-        return self.query()
+        return self.query().all()
     
     def filter(self, **kwargs):
         return self.query().filter(**kwargs)

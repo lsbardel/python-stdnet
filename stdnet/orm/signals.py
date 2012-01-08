@@ -1,4 +1,4 @@
-from stdnet.dispatch import Signal
+from stdnet.utils.dispatch import Signal
 
 __all__ = ['class_prepared',
            'pre_init',

@@ -6,7 +6,6 @@ from hashlib import sha1
 import stdnet
 from stdnet.conf import settings
 from stdnet.utils import iteritems, to_string, map, gen_unique_id, zip
-from stdnet.backends.structures import structredis
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping
@@ -53,35 +52,13 @@ class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
     def callback(self, response, args, session = None):
+        # The session has received the callback from redis client
         data = []
-        for state,id in zip(session,response):
-            if not state.deleted:
-                instance = state.instance
-                instance.id = instance._meta.pk.to_python(id)
-                instance._dbdata['id'] = instance.id 
+        for instance,id in list(zip(session,response)):
+            instance = session.server_update(instance, id)
+            if instance:
                 data.append(instance)
         return data
-                
-
-class RedisTransaction(stdnet.Transaction):
-    default_name = 'redis-transaction'
-    
-    def _execute(self):
-        '''Commit cache objects to database.'''
-        cursor = self.cursor
-        for id,cachepipe in iteritems(self._cachepipes):
-            el = getattr(self.backend,cachepipe.method)(id)
-            el._save_from_pipeline(cursor, cachepipe.pipe)
-            cachepipe.pipe.clear()
-                    
-        if not self.emptypipe():
-            return cursor.execute()
-        
-    def emptypipe(self):
-        if hasattr(self.cursor,'execute'):
-            return len(self.cursor.command_stack) <= 1
-        else:
-            return True
         
         
 class RedisQuery(stdnet.BackendQuery):
@@ -293,9 +270,7 @@ The first parameter is the model'''
 '''
 
 class BackendDataServer(stdnet.BackendDataServer):
-    Transaction = RedisTransaction
     Query = RedisQuery
-    structure_module = structredis
     connection_pools = {}
     _redis_clients = {}
         
@@ -354,7 +329,8 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _loadfields(self, obj, toload):
         if toload:
-            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id), toload)
+            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id),
+                                       toload)
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
@@ -362,28 +338,39 @@ class BackendDataServer(stdnet.BackendDataServer):
     def execute_session(self, session):
         basekey = self.basekey
         lua_data = []
-        for state in session:
-            meta = state.meta
+        pipe = self.client.pipeline()
+        for instance in session:
+            meta = instance._meta
+            state = instance.state()
             bk = basekey(meta)
-            s = 'z' if meta.ordering else 's'
-            indices = tuple((idx.name for idx in meta.indices))
-            uniques = tuple((1 if idx.unique else 0 for idx in meta.indices))
-            if state.deleted:
-                fids = meta.multifields_ids_todelete(state.instance)
-                lua_data.extend(('del',bk,state.id,s,len(fids)))
-                lua_data.extend(fids)
-            else:
-                data = state.cleaned_data()
-                id = state.id or ''
-                data = flat_mapping(data)
-                action = 'change' if state.persistent else 'add'
-                lua_data.extend((action,bk,id,s,len(data)))
-                lua_data.extend(data)
-            lua_data.append(len(indices))
-            lua_data.extend(indices)
-            lua_data.extend(uniques)
-        options = {'session': session}
-        return self.client.script_call('commit_session', *lua_data, **options)
+            model_type = meta.model._model_type
+            # The model is a structure
+            if model_type == 'structure':
+                self.flush_structure(pipe, instance)
+            elif model_type == 'object':
+                s = 'z' if meta.ordering else 's'
+                indices = tuple((idx.attname for idx in meta.indices))
+                uniques = tuple((1 if idx.unique else 0 for idx in meta.indices))
+                if state.deleted:
+                    fids = meta.multifields_ids_todelete(state.instance)
+                    lua_data.extend(('del',bk,state.id,s,len(fids)))
+                    lua_data.extend(fids)
+                else:
+                    if not instance.is_valid():
+                        raise FieldValueError(json.dumps(instance.errors))
+                    data = state.cleaned_data
+                    id = instance.id or ''
+                    data = flat_mapping(data)
+                    action = 'change' if state.persistent else 'add'
+                    lua_data.extend((action,bk,id,s,len(data)))
+                    lua_data.extend(data)
+                lua_data.append(len(indices))
+                lua_data.extend(indices)
+                lua_data.extend(uniques)
+        if lua_data:
+            options = {'session': session}
+            pipe.script_call('commit_session', *lua_data, **options)
+        return pipe.execute()
 
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
@@ -409,3 +396,31 @@ class BackendDataServer(stdnet.BackendDataServer):
             f = getattr(obj,field.attname)
             keys.append(f.id)
         return keys
+
+    def flush_structure(self, pipe, instance):
+        name = instance._meta.name
+        id = instance.id
+        if not id:
+            id = instance.makeid()
+            instance.id = id
+        cache = instance.cache
+        if name == 'set':
+            if cache.toadd:
+                pipe.sadd(id, *cache.toadd)
+            if cache.toremove:
+                pipe.sadd(id, *cache.toremove)
+        elif name == 'zset':
+            raise NotImplementedError()
+        elif name == 'list':
+            if cache.front:
+                pipe.lpush(id, *cache.front)
+            if cache.back:
+                pipe.rpush(id, *cache.back)
+        elif name == 'hashtable':
+            if cache.toadd:
+                pipe.hmset(id, cache.toadd)
+            if cache.todelete:
+                pipe.hdel(id, *cache.todelete)
+        elif name == 'ts':
+            raise NotImplementedError()
+        

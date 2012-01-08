@@ -21,7 +21,9 @@ class TestManyToMany(test.TestCase):
         self.assertEqual(p2,profile)
         
     def testMeta(self):
-        role = Role(name='admin').save()
+        session = self.session()
+        with session.begin():
+            role = session.add(Role(name='admin'))
         profiles = role.profiles
         self.assertTrue(isinstance(profiles,query.M2MRelatedManager))
         self.assertEqual(profiles.model,Profile)

@@ -34,11 +34,10 @@ class Default(Encoder):
                 return str(x).encode(self.charset,self.encoding_errors)
             
         def loads(self, x, logger = None):
-            if isinstance(x,bytes):
+            if isinstance(x, bytes):
                 return x.decode(self.charset,self.encoding_errors)
             else:
                 return str(x)
-    
     else:
         def dumps(self, x, logger = None):
             if not isinstance(x,unicode):
@@ -50,6 +49,18 @@ class Default(Encoder):
                 x = str(x)
             return x.decode(self.charset,self.encoding_errors)
     
+
+class NumericDefault(Default):
+    
+    def loads(self, x, logger = None):
+        x = super(NumericDefault,self).loads(x,logger)
+        try:
+            x = float(x)
+            ix = int(x)
+            return ix if x == ix else x
+        except (TypeError, ValueError):
+            return x
+        
     
 class Bytes(Encoder):
     '''The binary unicode encoder'''

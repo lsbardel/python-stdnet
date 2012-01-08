@@ -53,7 +53,19 @@ in this test class so that we can use the manager in a parallel test suite.'''
 
 
 class TestRelatedManager(FinanceTest):
-        
+
+    def testSimple(self):
+        self.data.makePositions(self)
+        session = self.session()
+        inst = session.query(Instrument).get(id = 1)
+        fund = session.query(Fund).get(id = 1)
+        positions1 = session.query(Position).filter(fund = fund).all()
+        positions = fund.positions.all()
+        self.assertTrue(positions)
+        for p in positions:
+            self.assertEqual(p.fund,fund)
+        self.assertEual(set(positions1),set(positions))
+                    
     def testExclude(self):
         self.data.makePositions(self)
         session = self.session()

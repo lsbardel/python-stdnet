@@ -1,8 +1,11 @@
 Ver. 0.7.0 - Development
 ============================
+* Backward incompatible changes in the API, but not on the database schema.
+* Removed structures from :mod'`backends` module and included in the :mod:`orm`
+  module.
 * Tons of new features manly geared towards improved performance via custom
-  query options, more flexible transactions, lua scripting and
-  a new ``C`` parser shipped with the library.
+  query options, more flexible transactions and lua scripting for redis_ and
+  a new ``C`` redis_ parser shipped with the library.
 * It requires redis_ 2.6 or higher.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.

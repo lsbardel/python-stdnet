@@ -1,17 +1,13 @@
 from copy import copy
 from inspect import isgenerator
-from collections import namedtuple
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, to_bytestring, JSPLITTER
-from stdnet import transaction as get_transaction
 
 from .signals import *
 
 
 __all__ = ['Query','QueryOper']
-
-field_query = namedtuple('field_query','query field')
 
 
 def iterable(value):
@@ -558,7 +554,8 @@ an exception is raised.
                     value = (value,) 
                 value = tuple((field.index_value(v) for v in value))
                             
-            unique = field.unique 
+            unique = field.unique
+            field_name = field.attname
             yield QuerySet(self, field_name, value, unique, lookup)
         
     def items(self, slic = None):
@@ -578,7 +575,7 @@ an exception is raised.
             seq = []
             session = self.session
             for el in self.backend_query().items(slic):
-                session.add(el,False)
+                session.server_update(el)
                 seq.append(el)
             cache[key] = seq
             return seq

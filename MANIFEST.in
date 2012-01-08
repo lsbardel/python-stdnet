@@ -7,7 +7,7 @@ include .coveragerc
 include docs/make.bat
 include docs/Makefile
 include docs/source/conf.py
-include stdnet/dispatch/license.txt
+include stdnet/utils/dispatch/license.txt
 recursive-include stdnet/lib/lua *.lua
 recursive-include lib *.py
 recursive-include lib/hiredis *

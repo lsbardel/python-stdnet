@@ -1,5 +1,4 @@
 from inspect import isclass
-from uuid import uuid4
 
 from stdnet.conf import settings
 from stdnet.utils import urlparse, encoders, itervalues, urlencode
@@ -8,6 +7,9 @@ from stdnet.lib.exceptions import ConnectionError
 from stdnet.exceptions import *
 
 from .base import BackendDataServer
+
+
+__all__ = ['getdb', 'getcache', 'CacheClass']
 
 
 BACKENDS = {
@@ -93,66 +95,3 @@ class CacheClass(object):
         self.has_key = self.db.has_key
         self.clear   = self.db.clear
         
-
-class make_struct(object):
-    _structs = {}
-    
-    def __init__(self, name, pickler = None, value_pickler = None):
-        self._name = name
-        self._pickler = pickler
-        self._value_pickler = value_pickler
-    
-    def __call__(self, server = None, id = None, pickler = None,
-                 value_pickler = None, **kwargs):
-        db = getdb(server)
-        pickler = pickler or self._pickler
-        value_pickler = value_pickler or self._value_pickler
-        st = getattr(db,self._name)
-        s = st(self._id(id),
-               pickler = pickler or self._pickler,
-               value_pickler = value_pickler or self._value_pickler,
-               **kwargs)
-        self._structs[s.id] = s
-        return s
-        
-    def _id(self, id):
-        return id or 'stdnet-{0}'.format(str(uuid4())[:8])
-    
-    @classmethod
-    def clear(cls, ids):
-        if ids:
-            for id in ids:
-                s = self._structs.pop(id,None)
-                if s:
-                    try:
-                        s.delete()
-                    except ConnectionError:
-                        pass
-        else:
-            for s in itervalues(cls._structs):
-                try:
-                    s.delete()
-                except ConnectionError:
-                    pass
-            cls._structs.clear()
-            
-    
-class Structures(object):
-    '''Create stdnet remote structures'''
-    ids = set()
-    
-    list = make_struct('list')
-    hash = make_struct('hash')
-    dict = make_struct('hash', value_pickler = encoders.PythonPickle())
-    set = make_struct('unordered_set')
-    zset = make_struct('ordered_set')
-    ts = make_struct('ts')
-        
-    def clear(self, *ids):
-        make_struct.clear(ids)
-    
-    def all(self):
-        return make_struct._structs
-        
-        
-struct = Structures()

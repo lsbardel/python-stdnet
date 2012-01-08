@@ -1,7 +1,7 @@
 from datetime import datetime
 from itertools import chain
 
-from stdnet import test, getdb, struct
+from stdnet import test, getdb
 from stdnet.utils import populate, zip, flatzset
 from stdnet.lib import zset
 
@@ -11,15 +11,6 @@ NUM_DATES = 100
 
 dates = populate('date',NUM_DATES)
 values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
-
-
-class TestSetStructure(test.TestCase):
-    
-    def testAdd(self):
-        s = struct.set()
-        s.update((1,2,3,4,5,5))
-        s.save()
-        self.assertEqual(s.size(),5)
     
     
 class TestSetField(test.TestCase):

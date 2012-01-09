@@ -36,6 +36,7 @@ class listcache(object):
 class setcache(object):
     
     def __init__(self):
+        self.remote = set()
         self.toadd = set()
         self.toremove = set()
 
@@ -57,8 +58,33 @@ class setcache(object):
     def discard(self, v):
         self.toadd.discard(v)
         self.toremove.add(v)
+        
+
+class hashcache(object):
+    
+    def __init__(self):
+        self.remote = {}
+        self.toadd = {}
+        self.toremove = {}
+
+    def __contains__(self, v):
+        return v in self.toadd
+    
 
 
+def withsession(f):
+    
+    def _(self, *args, **kwargs):
+        if self.session:
+            return f(self, *args, **kwargs)
+        else:
+            raise ValueError('Cannot perform operation. No session available')
+
+    _.__name__ = f.__name__
+    _.__doc__ = f.__doc__        
+    return _
+
+            
 class ResultCallback(object):
     __slots__ = ('default','loads')
     
@@ -162,20 +188,6 @@ can also be used as stand alone objects. For example::
         if 'cache' not in self._dbdata:
             self._dbdata['cache'] = self.cache_class()
         return self._dbdata['cache']
-    
-    def pipe(self, transaction = None):
-        '''Return a structure pipe given a *transaction*.
-The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
-
-:parameter transaction: Optional :class:`stdnet.Transaction` instance.
-:rtype: a local strcuture to hold data before it is safe into
-    the backend database.'''
-        return transaction.structure_pipe(self) if transaction\
-             else self._pipe()
-        
-    def cursor(self, transaction = None):
-        '''Return the backend cursor given a *transaction*.'''
-        return transaction.cursor if transaction else self._cursor()
         
     def __repr__(self):
         return '%s(%s) %s' % (self.__class__.__name__,self.id,self.cache)
@@ -196,91 +208,24 @@ The pipe is the :attr:`Pipeline.pipe` attribute of the structure pipeline.
             for item in self.cache:
                 yield item
                 
-    def reload(self, transaction = None):
-        '''Fill data from the backend'''
-        return self._all(self.cursor(transaction))
-
-    def save(self, transaction = None):
-        '''Save the data in the back-end server. If a transaction is
-specified, the data is pipelined and executed when the transaction completes.'''
-        cursor = transaction.cursor if transaction else self.backend.cursor()
-        return self._save_from_pipeline(cursor, self.pipe(transaction))
-        
-    def delete(self, transaction = None):
+    @withsession
+    def delete(self):
         '''Delete the structure from the remote backend. If a transaction is
 specified, the data is pipelined and executed when the transaction completes.'''
-        cursor = self.cursor(transaction) if transaction else\
-                     self.backend.cursor()
-        return self._delete(cursor)
+        self.session.delete(self)
         
-    def size(self, transaction = None):
+    @withsession
+    def size(self):
         '''Number of elements in structure. If no transaction is
 supplied, use the backend default cursor.'''
-        if self._cache is None:
-            if transaction:
-                return self._size(self.cursor(transaction))
-            else:
-                return self._size(self.backend.cursor())
-        else:
-            return len(self._cache)
+        return session.backend.structure_size(self)
     
+    @withsession
     def __contains__(self, value):
-        return self.has(value)
+        return session.backend.structure_contains(self)
     
     def __len__(self):
         return self.size()
-    
-    def has(self, value, transaction = None):
-        '''Check if *value* is in the structure. Pass a transaction
-if you would like ti pipeline the command.'''
-        if self._cache is None:
-            value = self.pickler.dumps(value)
-            return self._unpicklefrom(self._has, transaction, False, None,
-                                      value)
-        else:
-            return value in self._cache
-        
-    # INTERNAL METHODS
-    
-    def _pipe(self):
-        self._setup()
-        return self._pipe_
-    
-    def _cursor(self):
-        self._setup()
-        return self._transaction.cursor
-    
-    def _setup(self):
-        # Build the pipeline for transaction if not already available.
-        # The pipeline is obtained from a transaction in the backend server.
-        # If an instance of a model is available, we build the transaction
-        # from the local_transaction method.
-        if not hasattr(self,'_pipe_'):
-            if self.instance:
-                transaction = self.instance.local_transaction(self.backend)
-            else:
-                transaction = self.backend.transaction()
-            self._transaction = transaction
-            self._pipe_ = self._transaction.structure_pipe(self)
-            
-    def _save_from_pipeline(self, cursor, pipeline):
-        if pipeline:
-            self._save(cursor, pipeline)
-            pipeline.clear()
-            if self.timeout:
-                self.add_expiry()
-        else:
-            return 0
-        
-    def _unpicklefrom(self, func, transaction, default, loads,
-                      *args, **kwargs):
-        '''invoke remote function in the backend and if
-we are not using a pipeline, unpickle the result.'''
-        rk = ResultCallback(default,loads)
-        if transaction:
-            transaction.add(func, args, kwargs, callback = rk)
-        else:
-            return rk(func(self.backend.cursor(), *args, **kwargs))
             
     # PURE VIRTUAL METHODS
     
@@ -415,7 +360,7 @@ class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`.
 The networked equivalent to a Python ``dict``.'''
     pickler = None
-    cache_class = dict
+    cache_class = hashcache
     
     def setup(self, pickler = None, **kwargs):
         self.pickler = pickler or self.pickler or encoder.Default()

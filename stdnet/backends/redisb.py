@@ -10,7 +10,6 @@ from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping
 
-MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
 
 ################################################################################
@@ -269,6 +268,93 @@ The first parameter is the model'''
         
 '''
 
+
+class Struct(object):
+    __slots__ = ('instance','client')
+    def __init__(self, instance, client):
+        self.instance = instance
+        self.client = client
+        if not instance.id:
+            instance.id = instance.makeid()
+            
+    def commit(self):
+        self.flush()
+        self.clear()
+    
+    @property
+    def id(self):
+        return self.instance.id
+        
+
+class Set(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.sadd(self.id, *cache.toadd)
+        if cache.toremove:
+            self.client.srem(self.id, *cache.toremove)
+    
+    def size(self):
+        return self.client.scard(self.id)
+    
+    def clear(self):
+        self.instance.cache.toadd.clear()
+        self.instance.cache.toremove.clear()
+    
+
+class Zset(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.sadd(self.id, *cache.toadd)
+        if cache.toremove:
+            self.client.sadd(self.id, *cache.toremove)
+    
+    def size(self):
+        return self.client.scard(self.id)
+    
+
+class List(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.front:
+            self.client.lpush(id, *cache.front)
+        if cache.back:
+            self.client.rpush(id, *cache.back)
+    
+    def size(self):
+        return self.client.llen(self.id)
+    
+
+class Hash(Set):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.hmset(self.id, cache.toadd)
+        if cache.toremove:
+            self.client.hdel(self.id, *cache.toremove)
+            
+    def size(self):
+        return self.client.hlen(self.id)
+    
+    
+class TS(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.hmset(id, cache.toadd)
+        if cache.todelete:
+            self.client.hdel(id, *cache.todelete)
+            
+    def size(self):
+        return self.client.hlen(self.id)
+        
+
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     connection_pools = {}
@@ -346,11 +432,12 @@ class BackendDataServer(stdnet.BackendDataServer):
             model_type = meta.model._model_type
             # The model is a structure
             if model_type == 'structure':
-                self.flush_structure(pipe, instance)
+                self.flush_structure(instance, pipe)
             elif model_type == 'object':
                 s = 'z' if meta.ordering else 's'
                 indices = tuple((idx.attname for idx in meta.indices))
-                uniques = tuple((1 if idx.unique else 0 for idx in meta.indices))
+                uniques = tuple((1 if idx.unique else 0\
+                                             for idx in meta.indices))
                 if state.deleted:
                     fids = meta.multifields_ids_todelete(state.instance)
                     lua_data.extend(('del',bk,state.id,s,len(fids)))
@@ -358,7 +445,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 else:
                     if not instance.is_valid():
                         raise FieldValueError(json.dumps(instance.errors))
-                    data = state.cleaned_data
+                    data = instance._dbdata['cleaned_data']
                     id = instance.id or ''
                     data = flat_mapping(data)
                     action = 'change' if state.persistent else 'add'
@@ -397,30 +484,20 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(f.id)
         return keys
 
-    def flush_structure(self, pipe, instance):
+    def structure(self, instance, client = None):
+        client = client or self.client
         name = instance._meta.name
-        id = instance.id
-        if not id:
-            id = instance.makeid()
-            instance.id = id
-        cache = instance.cache
         if name == 'set':
-            if cache.toadd:
-                pipe.sadd(id, *cache.toadd)
-            if cache.toremove:
-                pipe.sadd(id, *cache.toremove)
-        elif name == 'zset':
-            raise NotImplementedError()
+            return Set(instance, client)
+        if name == 'zset':
+            return Zset(instance, client)
         elif name == 'list':
-            if cache.front:
-                pipe.lpush(id, *cache.front)
-            if cache.back:
-                pipe.rpush(id, *cache.back)
+            return List(instance, client)
         elif name == 'hashtable':
-            if cache.toadd:
-                pipe.hmset(id, cache.toadd)
-            if cache.todelete:
-                pipe.hdel(id, *cache.todelete)
+            return Hash(instance, client)
         elif name == 'ts':
-            raise NotImplementedError()
+            return TS(instance, client)
+       
+    def flush_structure(self, instance, pipe):
+        self.structure(instance, pipe).commit()
         

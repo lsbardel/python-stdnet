@@ -86,7 +86,7 @@ class TestSetStructure(test.TestCase):
         self.assertEqual(l.session,None)
         self.assertEqual(l._meta.name,'set')
         
-    def testAdd(self):
+    def testSimpleUpdate(self):
         # Typical usage
         session = self.session()
         s = session.add(orm.Set())
@@ -94,25 +94,42 @@ class TestSetStructure(test.TestCase):
         self.assertEqual(s.instance,None)
         self.assertEqual(s.id,None)
         with session.begin():
+            s.add(8)
             s.update((1,2,3,4,5,5))
         self.assertTrue(s.id)
-        self.assertEqual(s.size(),5)
+        self.assertEqual(s.size(),6)
         
+    def testUpdateDelete(self):
+        session = self.session()
+        s = session.add(orm.Set())
+        with session.begin():
+            s.update((1,2,3,4,5,5))
+            s.discard(2)
+            s.discard(67)
+            s.remove(4)
+            s.remove(46)
+            s.difference_update((1,56,89))
+        self.assertEqual(s.size(),2)
+        with session.begin():
+            s.difference_update((3,5,6,7))
+        self.assertEqual(s.size(),0)    
         
-#class TestHash(test.TestCase):
-class TestHash(object):
+
+class TestHash(test.TestCase):
     
     def testSimple(self):
-        l = struct.hash()
-        self.assertEqual(l.size(),0)
-        l['bla'] = 'foo'
-        l['pluto'] = 3
-        l.save()
-        self.assertEqual(l.size(),2)
-        d = dict(l)
-        self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
+        l = orm.HashTable()
+        self.assertRaises(ValueError, l.size)
+        session = self.session()
+        h = session.add(orm.HashTable())
+        with session.begin():
+            h['bla'] = 'foo'
+            h['pluto'] = 3
+        self.assertEqual(h.size(),2)
+        #d = dict(l)
+        #self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
         
-    def testPop(self):
+    def __testPop(self):
         d = struct.dict()
         d['foo'] = 'ciao'
         d.save()

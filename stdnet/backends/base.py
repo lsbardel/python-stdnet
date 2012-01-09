@@ -209,6 +209,9 @@ this function for customizing their handling of connection parameters.'''
     
     def execute_session(self, session):
         raise NotImplementedError
+    
+    def structure(self, struct):
+        raise NotImplementedError
         
     def delete_object(self, obj, transaction = None):
         '''Delete an object from the data server and clean up indices.

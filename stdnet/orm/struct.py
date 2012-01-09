@@ -51,14 +51,14 @@ class setcache(object):
         self.toadd.update(v)
         self.toremove.difference_update(v)
         
-    def remove(self, v):
-        self.toadd.remove(v)
-        self.toremove.add(v)
+    def difference_update(self, v):
+        self.toadd.difference_update(v)
+        self.toremove.update(v)
         
     def discard(self, v):
         self.toadd.discard(v)
         self.toremove.add(v)
-        
+    
 
 class hashcache(object):
     
@@ -69,6 +69,11 @@ class hashcache(object):
 
     def __contains__(self, v):
         return v in self.toadd
+    
+    def update(self, v):
+        self.toadd.update(v)
+        for k in v:
+            self.toremove.pop(v,None)
     
 
 
@@ -218,7 +223,7 @@ specified, the data is pipelined and executed when the transaction completes.'''
     def size(self):
         '''Number of elements in structure. If no transaction is
 supplied, use the backend default cursor.'''
-        return session.backend.structure_size(self)
+        return self.session.backend.structure(self).size()
     
     @withsession
     def __contains__(self, value):
@@ -304,15 +309,16 @@ This structure is used for in two different parts of the library.
     def update(self, values):
         '''Add iterable *values* to the set'''
         d = self.value_pickler.dumps
-        self.cache.update((d(v) for v in values))
+        self.cache.update(tuple((d(v) for v in values)))
             
     def discard(self, value):
         '''Remove an element from a set if it is a member'''
         self.cache.discard(self.value_pickler.dumps(value))
+    remove = discard
         
-    def remove(self, value):
-        '''Remove elements from a set if they are members'''
-        self.cache.remove(self.value_pickler.dumps(value))
+    def difference_update(self, values):
+        d = self.value_pickler.dumps
+        self.cache.difference_update(tuple((d(v) for v in values)))
 
 
 class Zset(Set):
@@ -363,7 +369,7 @@ The networked equivalent to a Python ``dict``.'''
     cache_class = hashcache
     
     def setup(self, pickler = None, **kwargs):
-        self.pickler = pickler or self.pickler or encoder.Default()
+        self.pickler = pickler or self.pickler or encoders.Default()
         
     def set_cache(self, items):
         kloads = self.pickler.loads
@@ -396,9 +402,9 @@ we are not using a pipeline, unpickle the result.'''
         return self._unpicklefrom(self._pop, transaction, default,
                                   self.value_pickler.loads, key)
         
-    def add(self, key, value, transaction = None):
+    def add(self, key, value):
         '''Add ``key`` - ``value`` pair to hashtable.'''
-        self.update({key:value},transaction)
+        self.update(((key,value),))
     __setitem__ = add
     
     def addnx(self, field, value, transaction = None):
@@ -408,18 +414,16 @@ does not exist.'''
                            self.pickler.dumps(key),
                            self.pickler_value.dumps(value))
     
-    def update(self, mapping, transaction = None):
+    def update(self, mapping):
         '''Add *mapping* dictionary to hashtable.
 Equivalent to python dictionary update method.
 
-:parameter mapping: a dictionary of field values,
-:parameter transaction: a optional :class:`stadnet.Transaction` instance.'''
+:parameter mapping: a dictionary of field values.'''
         tokey = self.pickler.dumps
         dumps = self.value_pickler.dumps
-        pipe = self.pipe(transaction)
         if isinstance(mapping,dict):
             mapping = iteritems(mapping)
-        pipe.update(dict(((tokey(k),dumps(v)) for k,v in mapping)))
+        self.cache.update(dict(((tokey(k),dumps(v)) for k,v in mapping)))
     
     def get(self, key, default = None, transaction = None):
         '''Retrieve a single element from the hashtable.

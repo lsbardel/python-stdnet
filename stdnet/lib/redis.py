@@ -678,9 +678,9 @@ can be one of: refcount, encoding, idletime.'''
         "Return a random member of set ``name``"
         return self.execute_command('SRANDMEMBER', name)
 
-    def srem(self, name, value):
+    def srem(self, name, *values):
         "Remove ``value`` from set ``name``"
-        return self.execute_command('SREM', name, value)
+        return self.execute_command('SREM', name, *values)
 
     def sunion(self, keys, *args):
         "Return the union of sets specifiued by ``keys``"

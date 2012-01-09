@@ -95,7 +95,9 @@ operation in the database.'''
             self.commit()
         else:
             self.rollback()
-            self._result = value
+            
+    def rollback(self):
+        pass
             
     def commit(self):
         '''Close the transaction and commit commands to the backend.'''
@@ -110,20 +112,11 @@ operation in the database.'''
                                    zip(callbacks,results)))
         else:
             self._results = results
+        self.close()
     
-    def rollback(self):
-        pass
-    
-    def get_result(self):
-        '''Retrieve the result after the transaction has executed.
-This can be done once only.'''
-        if not hasattr(self,'_results'):
-            raise InvalidTransaction(\
-                        'Transaction {0} has not been executed'.format(self))
-        results = self.__dict__.pop('_results')
-        if isgenerator(results):
-            results = list(results)
-        return results
+    def close(self):
+        self.session.transaction = None
+        self.session = None
 
     # VIRTUAL FUNCTIONS
     

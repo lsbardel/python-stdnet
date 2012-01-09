@@ -1,4 +1,4 @@
-from stdnet import test, transaction
+from stdnet import test
 from stdnet.utils import zip
 
 from examples.models import SimpleModel, Person, Group

@@ -8,14 +8,25 @@ class LoadOnly(test.TestCase):
     model = SimpleModel
     
     def setUp(self):
-        self.model(code = 'a', group = 'group1', description = 'blabla').save()
-        self.model(code = 'b', group = 'group2', description = 'blabla').save()
-        self.model(code = 'c', group = 'group1', description = 'blabla').save()
-        self.model(code = 'd', group = 'group3', description = 'blabla').save()
-        self.model(code = 'e', group = 'group1', description = 'blabla').save()
+        s = self.session()
+        with s.begin():
+            s.add(self.model(code = 'a', group = 'group1',
+                             description = 'blabla'))
+            s.add(self.model(code = 'b', group = 'group2',
+                             description = 'blabla'))
+            s.add(self.model(code = 'c', group = 'group1',
+                             description = 'blabla'))
+            s.add(self.model(code = 'd', group = 'group3',
+                             description = 'blabla'))
+            s.add(self.model(code = 'e', group = 'group1',
+                             description = 'blabla'))
         
     def test_idonly(self):
-        qs = self.model.objects.all().load_only('id')
+        s = self.session()
+        query = s.query(self.model)
+        qs = query.load_only('id')
+        self.assertNotEqual(query,qs)
+        self.assertEqual(qs.fields,('id',))
         for m in qs:
             self.assertEqual(m._loadedfields,())
             self.assertEqual(tuple(m.loadedfields()),())

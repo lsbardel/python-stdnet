@@ -152,7 +152,7 @@ via a simple attribute of the model.'''
  a loaded instance of its related model.')
             
     def query(self):
-        kwargs = {self.related_fieldname: self.related_instance}
+        kwargs = {self.field.name: self.related_instance}
         return super(RelatedManager,self).query().filter(**kwargs)
             
 

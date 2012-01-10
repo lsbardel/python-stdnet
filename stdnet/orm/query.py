@@ -377,8 +377,9 @@ achieved is less than the one obtained when using
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
-        self.fields = tuple(set(self._load_only(fields))) if fields else None
-        return self
+        q = self._clone()
+        q.fields = tuple(set(self._load_only(fields))) if fields else None
+        return q
     
     def _load_only(self, fields):
         dfields = self._meta.dfields

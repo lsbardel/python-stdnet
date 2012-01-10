@@ -7,8 +7,6 @@ from stdnet.orm import query
 from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
 
-STEPS   = 10
-
 
 class TestSelfForeignKey(test.TestCase):
     '''The Node model is used only in this test class and should be used only
@@ -18,7 +16,7 @@ in this test class so that we can use the manager in a parallel test suite.'''
         
     def create(self, root, nesting):
         if nesting:
-            N = random.randint(0,9)
+            N = random.randint(2,9)
             for n in range(N):
                 node = self.model(parent = root,
                                   weight = random.uniform(0,1)).save()
@@ -30,12 +28,14 @@ in this test class so that we can use the manager in a parallel test suite.'''
         self.create(root, nesting = self.nesting)
             
     def testMeta(self):
-        for n in Node.objects.all():
+        session = self.session()
+        for n in session.query(Node):
             if n.parent_id:
                 self.assertTrue(isinstance(n.parent,self.model))
     
     def testRelatedCache(self):
-        for n in Node.objects.all():
+        session = self.session()
+        for n in session.query(Node):
             pcache = n._meta.dfields['parent'].get_cache_name()
             self.assertFalse(hasattr(n,pcache))
             p = n.parent
@@ -43,13 +43,19 @@ in this test class so that we can use the manager in a parallel test suite.'''
                 self.assertEqual(getattr(n,pcache),p)
                 
     def testSelfRelated(self):
-        root = Node.objects.filter(parent = None)
+        session = self.session()
+        query = session.query(Node)
+        root = query.filter(parent = None)
         self.assertEqual(len(root),1)
         root = root[0]
-        children = list(root.children.all())
-        self.assertEqual(len(children),STEPS)
+        children = root.children.all()
+        self.assertTrue(children)
         for child in children:
             self.assertEqual(child.parent,root)
+            children2 = child.children.all()
+            self.assertTrue(children2)
+            for child2 in children2:
+                self.assertEqual(child2.parent,child)
 
 
 class TestRelatedManager(FinanceTest):
@@ -64,7 +70,7 @@ class TestRelatedManager(FinanceTest):
         self.assertTrue(positions)
         for p in positions:
             self.assertEqual(p.fund,fund)
-        self.assertEual(set(positions1),set(positions))
+        self.assertEqual(set(positions1),set(positions))
                     
     def testExclude(self):
         self.data.makePositions(self)

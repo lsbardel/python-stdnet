@@ -79,11 +79,7 @@ the :attr:`StdModel._meta` attribute.
     def __init__(self, **kwargs):
         self._dbdata = {}
         for field in self._meta.scalarfields:
-            name = field.name
-            value = kwargs.pop(name,None)
-            if value is None:
-                value = field.get_default()
-            setattr(self,name,value)
+            self.set_field_value(field, kwargs.pop(field.name,None))
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
@@ -122,6 +118,13 @@ details.'''
             if hasattr(self,name):
                 yield field,getattr(self,name)
     
+    def set_field_value(self, field, value):
+        if value is None:
+            value = field.get_default()
+        value = field.to_python(value)
+        setattr(self, field.attname, value)
+        return value
+            
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.backends.BackendDataServer`
@@ -290,7 +293,8 @@ will enumerate the number of object to delete. without deleting them.'''
         id,loadedfields,data = state
         meta = self._meta
         field = meta.pk
-        setattr(self,'id',field.to_python(id))
+        # set the id
+        setattr(self, 'id', field.to_python(id))
         self._loadedfields = loadedfields
         fields = meta.dfields
         for field in self.loadedfields():

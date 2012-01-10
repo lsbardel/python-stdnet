@@ -2,6 +2,8 @@
 from stdnet.conf import settings
 from stdnet.utils import PPath
 
+p = PPath(__file__)
+p.add(module = 'pulsar', up = 1, down = ('pulsar',))
 from pulsar.apps.test import TestSuite, TestOptionPlugin
 from pulsar.apps.test.plugins import bench
 
@@ -18,8 +20,6 @@ class TestServer(TestOptionPlugin):
     
 
 if __name__ == '__main__':
-    p = PPath(__file__)
-    p.add(module = 'pulsar', up = 1, down = ('pulsar',))
     suite = TestSuite(description = 'Stdnet Asynchronous test suite',
                       modules = ('tests','stdnet.apps'),
                       plugins = (TestServer(),bench.BenchMark(),)

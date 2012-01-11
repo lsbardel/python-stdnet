@@ -22,15 +22,16 @@ end
 
 local rkey = KEYS[1]
 local bk = KEYS[2]
-local fields = KEYS[3]
-local ordering = KEYS[4]
+local io = 4 + KEYS[3]
+local fields = table_slice(KEYS, 4, io)
+local ordering = KEYS[io]
 
 -- Perform custom ordering if required
 if ordering == 'explicit' then
-	ids = redis.call('sort', rkey, unpack(table_slice(KEYS,5,-1)))
+	ids = redis.call('sort', rkey, unpack(table_slice(KEYS,io+1,-1)))
 else
-	local start = KEYS[5] + 0
-	local stop = KEYS[6] + 0
+	local start = KEYS[io+1] + 0
+	local stop = KEYS[io+2] + 0
 	if ordering == 'DESC' then
 		ids = redis.call('zrevrange', rkey, start, stop)
 	elseif ordering == 'ASC' then

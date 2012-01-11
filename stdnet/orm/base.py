@@ -271,11 +271,9 @@ of fields names and a list of field attribute names.'''
         names = []
         atts = []
         for name in fields:
-            if name == 'id':
+            if name == 'id' or name in processed:
                 continue
-            if name in processed:
-                continue
-            if name in dfields:
+            elif name in dfields:
                 processed.add(name)
                 field = dfields[name]
                 names.append(field.name)

@@ -199,14 +199,17 @@ elements in the query.'''
         start, stop = self.get_redis_slice(slic)
         order = self.order(start, stop)
         fields = self.qs.fields or None
-        if fields:
+        if fields == ('id',):
+            fields_attributes = fields
+        elif fields:
             fields, fields_attributes = meta.backend_fields(fields)
         else:
-            fields_attributes = ''
+            fields_attributes = ()
             
         args = [self.query_key,
                 backend.basekey(meta),
-                fields_attributes]
+                len(fields_attributes)]
+        args.extend(fields_attributes)
         
         if order:
             args.append('explicit')

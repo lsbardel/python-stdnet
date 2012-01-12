@@ -1,12 +1,38 @@
-# This just works
+import os
+
+from .py2py3 import zip
+
+
+__all__ = ['RedisScript','pairs_to_dict',
+           'read_lua_file','nil']
+
 
 class nil(object):
     pass
 
+
+def pairs_to_dict(response, encoding = 'utf-8'):
+    "Create a dict given a list of key/value pairs"
+    if response:
+        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
+    else:
+        return ()
+    
 _scripts = {}
+
 
 def get_script(script):
     return _scripts.get(script)
+
+
+def read_lua_file(filename, path = None):
+    '''Load lua script from the stdnet/lib/lua directory'''
+    if not path:
+        path = os.path.split(os.path.abspath(__file__))[0]
+        path = os.path.join(path,'lua')
+    name = os.path.join(path,filename)
+    with open(name) as f:
+        return f.read()
  
  
 class RedisScriptMeta(type):
@@ -33,11 +59,13 @@ class RedisScript(RedisScriptBase):
         return response
     
     
-def script_call_back(response, script = None, args = None, **options):
-    s = _scripts.get(script)
+def script_call_back(response, script_name = None, script_args = None,
+                     **options):
+    s = _scripts.get(script_name)
     if not s:
-        raise ValueError('No such script {0}'.format(script))
-    return s.callback(response, args, **options)
+        return response
+    else:
+        return s.callback(response, script_args, **options)
     
         
 countpattern = '''\

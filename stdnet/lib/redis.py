@@ -17,7 +17,7 @@ from stdnet.dispatch import Signal
 from .connection import ConnectionPool
 from .exceptions import *
 
-from .scripts import nil, script_call_back, get_script
+from .scripts import nil, script_call_back, get_script, pairs_to_dict
 
 
 tuple_list = (tuple,list)
@@ -80,14 +80,6 @@ In doing so, convert byte data into unicode.'''
             data = {}
             info[line[2:]] = data
     return info
-
-
-def pairs_to_dict(response, encoding = 'utf-8'):
-    "Create a dict given a list of key/value pairs"
-    if response:
-        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
-    else:
-        return ()
 
 
 def ts_pairs(response, **options):
@@ -967,18 +959,18 @@ popped (if it existes) and a flag indicationg if it existed.'''
             keys = ()
         return self.execute_command('EVAL', body, num_keys, *keys)
     
-    def script_call(self, name, num, *args, **options):
+    def script_call(self, name, *args, **options):
         script = get_script(name)
         if not script:
             raise ValueError('No such script {0}'.format(name))
-        options['script'] = name
-        options['args'] = args
+        options['script_name'] = name
+        options['script_args'] = args
         return self.execute_command('EVAL',
-                                    script.script, num, *args, **options)
+                                    script.script, len(args), *args, **options)
     
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
-        return self.script_call('delpattern', 1, pattern)
+        return self.script_call('delpattern', pattern)
 
 
 class Pipeline(Redis):

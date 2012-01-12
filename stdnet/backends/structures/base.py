@@ -178,7 +178,7 @@ can also be used as stand alone objects. For example::
     '''
     pickler = None
     value_pickler = None
-    def __init__(self, server, id,  pipetype, instance = None,
+    def __init__(self, server, id,  pipetype = None, instance = None,
                  timeout = 0, pickler = None,
                  value_pickler = None, scorefun = None,
                  **kwargs):
@@ -196,6 +196,10 @@ can also be used as stand alone objects. For example::
     @property
     def server(self):
         return self._meta.cursor
+    
+    @property
+    def client(self):
+        return self._meta.cursor.redispy
     
     @property
     def struct(self):

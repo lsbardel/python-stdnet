@@ -1,0 +1,1 @@
+-- perform a linear combination of one or more timeseries

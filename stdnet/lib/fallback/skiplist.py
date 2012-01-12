@@ -113,3 +113,10 @@ and lookup by rank.'''
         while node is not NIL:
             yield node.score,node.value
             node = node.next[0]
+
+    def flat(self):
+        node = self.head.next[0]
+        while node is not NIL:
+            yield node.score
+            yield node.value
+            node = node.next[0]

@@ -94,7 +94,7 @@ between python 2 and python 3.'''
         elif isinstance(x, bytes):
             try:
                 return pickle.loads(x)
-            except (pickle.UnpicklingError,EOFError):
+            except (pickle.UnpicklingError,EOFError,ValueError):
                 return x.decode('utf-8','ignore')
         else:
             return x

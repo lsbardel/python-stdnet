@@ -178,7 +178,7 @@ elements in the query.'''
             return order
     
     def _has(self, val):
-        r = self.client_ismember(self.query_key, val)
+        r = self.ismember(self.query_key, val)
         return self._check_member(r)
     
     def get_redis_slice(self, slic):

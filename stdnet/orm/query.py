@@ -437,11 +437,7 @@ objects on the server side.'''
     def __contains__(self, val):
         if isinstance(val,self.model):
             val = val.id
-        try:
-            val = to_bytestring(val)
-        except:
-            return False
-        return self.backend_query().has(val)
+        return val in self.backend_query()
     
     def delete(self, sync_session = False):
         '''Delete all matched elements of the :class:`Query`.'''

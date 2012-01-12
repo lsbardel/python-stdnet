@@ -214,7 +214,7 @@ from the **kwargs** parameters.
     indicating if the instance was created or not.
 '''
         try:
-            res = self.query(self.model).get(**kwargs)
+            res = self.query(model).get(**kwargs)
             created = False
         except model.DoesNotExist:
             res = self.add(model(**kwargs))
@@ -419,7 +419,10 @@ if their managers have the same backend database.'''
         return self.session().flush(self.model)
     
     def get_or_create(self, **kwargs):
-        return self.session().get_or_create(self.model, **kwargs)
+        session = self.session()
+        with session.begin():
+            el,created = session.get_or_create(self.model, **kwargs)
+        return el,created
     
     def __copy__(self):
         cls = self.__class__

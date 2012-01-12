@@ -58,7 +58,8 @@ It removes all keys associated with models.'''
     return flushed
             
 
-def register(model, backend = None, ignore_duplicates = True, **params):
+def register(model, backend = None, ignore_duplicates = True,
+             local_thread = False, **params):
     '''The low level function for registering a :class:`stdnet.orm.StdModel`
 classes with a :class:`stdnet.backends.BackendDataServer` data server.
     

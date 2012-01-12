@@ -19,7 +19,6 @@ for serializing and loading data to and from the data server.'''
         raise NotImplementedError
     
         
-    
 class Default(Encoder):
     '''The default unicode encoder'''
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
@@ -106,8 +105,8 @@ between python 2 and python 3.'''
         elif isinstance(x, bytes):
             try:
                 return pickle.loads(x)
-            except pickle.UnpicklingError:
-                return None
+            except (pickle.UnpicklingError,EOFError,ValueError):
+                return x.decode('utf-8','ignore')
         else:
             return x
     

@@ -555,10 +555,13 @@ the relation from the related object back to self.
             return value
     
     def to_python(self, value):
-        try:
-            return int(value)
-        except:
-            return value
+        if hasattr(value,'id'):
+            return value.id
+        else:
+            try:
+                return int(value)
+            except:
+                return value
         
     def filter(self, session, name, value):
         name = name.split('__')[0]
@@ -704,9 +707,11 @@ registered in the model hash table, it can be used.'''
            return  value._meta.hash
        
     def to_python(self, value):
-        if value:
+        if value and not hasattr(value,'_meta'):
             value = self.encoder.loads(value)
             return get_model_from_hash(value)
+        else:
+            return value
     
     def serialize(self, value):
         if value is not None:

@@ -155,10 +155,10 @@ safe to use::
 	    
 Register models with backend::
 
-	orm.register(Instrument,'redis://localhost/?db=1')
-	orm.register(Fund,'redis://localhost/?db=1')
-	orm.register(PositionDescriptor,'redis://localhost/?db=2')
-	orm.register(Position,'redis://localhost/?db=2')
+	orm.register(Instrument,'redis://localhost?db=1')
+	orm.register(Fund,'redis://localhost?db=1')
+	orm.register(PositionDescriptor,'redis://localhost?db=2')
+	orm.register(Position,'redis://localhost?db=2')
 
 And play with the API::
 

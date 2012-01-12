@@ -43,11 +43,8 @@ class StdModel(StdNetBase):
     
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
-            name = field.name
-            value = kwargs.pop(name,None)
-            if value is None:
-                value = field.get_default()
-            setattr(self,name,value)
+            self.set_field_value(field, kwargs.pop(field.name,None))
+        setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
@@ -85,6 +82,13 @@ details.'''
             if hasattr(self,name):
                 yield field,getattr(self,name)
     
+    def set_field_value(self, field, value):
+        if value is None:
+            value = field.get_default()
+        value = field.to_python(value)
+        setattr(self, field.attname, value)
+        return value
+            
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.BackendDataServer`
@@ -212,7 +216,7 @@ If the instance is not available (it does not have an id) and
         id,loadedfields,data = state
         meta = self._meta
         field = meta.pk
-        setattr(self,'id',field.to_python(id))
+        setattr(self, 'id', field.to_python(id))
         if loadedfields is not None:
             loadedfields = tuple(loadedfields)
         self._loadedfields = loadedfields

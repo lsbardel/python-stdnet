@@ -196,9 +196,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
-            if value is None:
-                value = field.get_default()
-                setattr(instance,name,value)
+            value = instance.set_field_value(field, value)
             try:
                 svalue = field.serialize(value)
             except FieldValueError as e:

@@ -213,6 +213,8 @@ If the instance is not available (it does not have an id) and
         meta = self._meta
         field = meta.pk
         setattr(self,'id',field.to_python(id))
+        if loadedfields is not None:
+            loadedfields = tuple(loadedfields)
         self._loadedfields = loadedfields
         fields = meta.dfields
         for field in self.loadedfields():

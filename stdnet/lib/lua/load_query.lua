@@ -22,8 +22,10 @@ end
 
 local rkey = KEYS[1]
 local bk = KEYS[2]
-local io = 4 + KEYS[3]
-local fields = table_slice(KEYS, 4, io)
+local num_fields = KEYS[3] + 0
+local io = 3
+local fields = table_slice(KEYS, io+1, io+num_fields)
+io = io + num_fields + 1
 local ordering = KEYS[io]
 
 -- Perform custom ordering if required
@@ -44,12 +46,10 @@ else
 end
 
 -- loop over ids and gather the data if needed
-if fields == '' then
+if num_fields == 0 then
 	result = {}
 	for i,id in pairs(ids) do
-		idkey = bk .. ':obj:' .. id
-		fields = redis.call('hgetall', idkey)
-		result[i] = {id, fields}
+		result[i] = {id, redis.call('hgetall', bk .. ':obj:' .. id)}
 	end
 	return result
 elseif table.getn(fields) == 1 and fields[1] == 'id' then
@@ -57,9 +57,7 @@ elseif table.getn(fields) == 1 and fields[1] == 'id' then
 else
 	result = {}
 	for i,id in pairs(ids) do
-		idkey = bk .. ':obj:' .. id
-		fields = redis.call('hmget', idkey, unpack(fields))
-		result[i] = {id, fields}
+		result[i] = {id, redis.call('hmget', bk .. ':obj:' .. id, unpack(fields))}
 	end
 	return result
 end

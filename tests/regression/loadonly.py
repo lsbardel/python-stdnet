@@ -34,66 +34,72 @@ class LoadOnly(test.TestCase):
             self.assertFalse(hasattr(m,'group'))
             self.assertFalse(hasattr(m,'description'))
             self.assertTrue('id' in m._dbdata)
-            self.assertEqual(int(m._dbdata['id']),m.id)
+            self.assertEqual(m._dbdata['id'],m.id)
             
     def test_idonly_None(self):
-        qs = self.model.objects.all().load_only('id')
-        with transaction(self.model) as t:
+        s = self.session()
+        query = s.query(self.model)
+        qs = query.load_only('id')
+        with s.begin():
             for m in qs:
                 self.assertFalse(hasattr(m,'description'))
                 m.description = None
-                m.save(t)
+                s.add(m)
         # Check that description are empty
-        for m in self.model.objects.all().load_only('description'):
+        for m in query.load_only('description'):
             self.assertFalse(m.description)
             
     def test_idonly_delete(self):
-        qs = self.model.objects.all().load_only('id')
+        qs = self.session().query(self.model).load_only('id')
         qs.delete()
         qs = self.model.objects.filter(group = 'group1')
         self.assertEqual(qs.count(),0)
         
     def testSimple(self):
-        qs = self.model.objects.all().load_only('code')
-        for m in qs:
+        query = self.session().query(self.model)
+        for m in query.load_only('code'):
             self.assertEqual(m._loadedfields,('code',))
             self.assertTrue(m.code)
             self.assertFalse(hasattr(m,'group'))
             self.assertFalse(hasattr(m,'description'))
-        qs = self.model.objects.all().load_only('code','group')
-        for m in qs:
+        for m in query.load_only('code','group'):
             self.assertEqual(m._loadedfields,('code','group'))
             self.assertTrue(m.code)
             self.assertTrue(m.group)
             self.assertFalse(hasattr(m,'description'))
             
     def testSave(self):
-        original = [m.group for m in self.model.objects.all()]
-        self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
-        qs = self.model.objects.all().load_only('code')
-        for m in qs:
-            m.save()
-        qs = self.model.objects.all()
-        for m,g in zip(qs,original):
-            self.assertEqual(m.group,g)
+        session = self.session()
+        query = session.query(self.model)
+        original = dict(((m.id,m.group) for m in query.load_only('group')))
+        self.assertEqual(query.filter(group = 'group1').count(),3)
+        # save the models
+        with session.begin():
+            for m in query.load_only('code'):
+                session.add(m)
+        for m in query.load_only('group'):
+            self.assertEqual(m.group,original[m.id])
         # No check indexes
-        self.assertEqual(self.model.objects.filter(group = 'group1').count(),3)
+        self.assertEqual(query.filter(group = 'group1').count(),3)
         
     def testChangeNotLoaded(self):
         '''We load an object with only one field and modify a field not
 loaded. The correct behavior should be to updated the field and indexes.'''
-        original = [m.group for m in self.model.objects.all()]
-        qs = self.model.objects.all().load_only('code')
-        for m in qs:
-            m.group = 'group4'
-            m.save()
-        qs = self.model.objects.filter(group = 'group1')
+        session = self.session()
+        query = session.query(self.model)
+        original = dict(((m.id,m.group) for m in query.load_only('group')))
+        # load only the code and change the group
+        with session.begin():
+            for m in query.load_only('code'):
+                m.group = 'group4'
+                session.add(m)
+        qs = query.filter(group = 'group1')
         self.assertEqual(qs.count(),0)
-        qs = self.model.objects.filter(group = 'group2')
+        qs = query.filter(group = 'group2')
         self.assertEqual(qs.count(),0)
-        qs = self.model.objects.filter(group = 'group3')
+        qs = query.filter(group = 'group3')
         self.assertEqual(qs.count(),0)
-        qs = self.model.objects.filter(group = 'group4')
+        qs = query.filter(group = 'group4')
         self.assertEqual(qs.count(),5)
         for m in qs:
             self.assertEqual(m.group,'group4')

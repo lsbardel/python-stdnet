@@ -132,10 +132,17 @@ criteria and options associated with it.
     
 .. attribute:: _get_field
 
-    The :class:`Field` which provides the values of the matched elements.
-    This can be changed via the :meth:`get_field` method.
+    When iterating over a :class:`Query`, you get back instances of
+    the :attr:`model` class. However, if ``_get_field`` is specified
+    you get back values of the field specified.
+    This can be changed via the :meth:`get_field` method::
     
-    Default: ``id``.
+        qs = query.get_field('name').all()
+        
+    the results is a list of name values (provided the model has a
+    ``name`` field of course).
+    
+    Default: ``None``.
     
 .. attribute:: backend
 
@@ -173,7 +180,7 @@ criteria and options associated with it.
 '''
     start = None
     stop = None
-    _get_field = 'id'
+    _get_field = None
     lookups = ('in','contains')
     
     def __init__(self, meta, session, fargs = None, eargs = None,

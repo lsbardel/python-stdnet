@@ -501,7 +501,7 @@ the relation from the related object back to self.
 '''
     type = 'related object'
     internal_type = 'numeric'
-    lazy_loader_class = related.LazyForeignKey
+    proxy_class = related.LazyForeignKey
     related_manager_class = related.One2ManyRelatedManager
     
     def __init__(self, model, related_name = None, **kwargs):
@@ -513,8 +513,8 @@ the relation from the related object back to self.
     
     def register_with_related_model(self):
         # add the RelatedManager proxy to the model holding the field
-        setattr(self.model, self.name, self.lazy_loader_class(self))
-        related.load_relmodel(self,self._set_relmodel)
+        setattr(self.model, self.name, self.proxy_class(self))
+        related.load_relmodel(self, self._set_relmodel)
         
     def _set_relmodel(self, relmodel):
         self.relmodel = relmodel
@@ -759,25 +759,29 @@ and to remove::
     This model contains two :class:`ForeignKeys`, one to model holding the
     :class:`ManyToManyField` and the other to the *related_model*.
 '''
-    lazy_loader_class = related.Many2ManyRelatedManager
-    related_manager_class = related.Many2ManyRelatedManager
+    proxy_class = related.Many2ManyRelatedManager
     
-    def _register_related_model(self, related):
-        related.through = Many2ManyThroughModel(self)
-        related_name = self.related_name or '%s_set' % self.name
-        self.related_name = related_name
-        field.relmodel = related
-        stype = self.get_pipeline()
+    def __init__(self, model, through = None, **kwargs):
+        self.through = through
+        super(ManyToManyField,self).__init__(model,**kwargs)
         
-        cn = self.get_cache_name()
-        rcn = self.get_related_cache_name(related_name)
-        
-        m2m = Many2ManyManagerProxy(self.name, cn, stype,
-                                    related_name, related)
-        r2r = Many2ManyManagerProxy(related_name, rcn, stype,
-                                    self.name, self.model)
-        setattr(self.model, self.name, m2m)
-        setattr(self.relmodel,related_name,r2r)
+    def related_manager_class(self, field):
+        return related.Many2ManyRelatedManager(field,field.relmodel)
     
+    def _register_with_related_model(self):
+        if not self.through:
+            self.through = related.Many2ManyThroughModel(self)
+        super(ManyToManyField,self)._register_with_related_model()
+        
+    def add_to_fields(self):
+        pass
+        #self.model._meta.multifields.append(self)
+    
+    def add(self, instance, **kwargs):
+        '''Add an instance of :attr:`relmodel` to the field.'''
+    
+    def get_attname(self):
+        return self.name
+        
     def todelete(self):
         return False

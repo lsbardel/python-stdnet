@@ -292,14 +292,7 @@ class List(Structure):
 
 
 class Set(Structure):
-    '''An unordered set :class:`stdnet.Structure`. Equivalent to python ``set``.
-    
-This structure is used for in two different parts of the library.
-
-* It is the structure upon which indexes are built, therefore each :class:`stdnet.orm.Field`
-  which has ``index`` set to ``True`` will have an associated
-  Set structure in the data server backend.
-* It is also used as :class:`stdnet.orm.SetField`.'''
+    '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
     cache_class = setcache
      
     def add(self, value):
@@ -312,11 +305,12 @@ This structure is used for in two different parts of the library.
         self.cache.update(tuple((d(v) for v in values)))
             
     def discard(self, value):
-        '''Remove an element from a set if it is a member'''
+        '''Remove an element *value* from a set if it is a member.'''
         self.cache.discard(self.value_pickler.dumps(value))
     remove = discard
         
     def difference_update(self, values):
+        '''Remove an iterable of *values* from the set.'''
         d = self.value_pickler.dumps
         self.cache.difference_update(tuple((d(v) for v in values)))
 

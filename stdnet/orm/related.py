@@ -1,5 +1,6 @@
 import stdnet
 from stdnet.utils import encoders
+from stdnet import FieldValueError
 
 from .session import Manager
 from . import signals
@@ -57,7 +58,8 @@ signals.class_prepared.connect(do_pending_lookups)
 
 
 def Many2ManyThroughModel(field):
-    from stdnet.orm import StdNetType, ForeignKey
+    '''Create a Many2Many through table with two foreign key fields'''
+    from stdnet.orm import StdNetType, StdModel, ForeignKey
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
     name = '{0}_{1}'.format(name_model,name_relmodel)
@@ -128,20 +130,14 @@ class RelatedManager(Manager):
 While standard :class:`Manager` are class properties of a model,
 related managers are accessed by instances to easily retrieve instances
 of a related model.'''
-    def __init__(self, field, instance = None):
+    def __init__(self, field, model = None, instance = None):
         self.field = field
-        super(RelatedManager,self).__init__(field.model)
+        model = model or field.model
+        super(RelatedManager,self).__init__(model)
         self.related_instance = instance
     
-        
-class One2ManyRelatedManager(RelatedManager):
-    '''A specialised :class:`RelatedManager` for handling one-to-many
-relationships under the hood.
-If a model has a :class:`ForeignKey` field, instances of
-that model will have access to the related (foreign) objects
-via a simple attribute of the model.'''    
     def __get__(self, instance, instance_type=None):
-        return self.__class__(self.field, instance)
+        return self.__class__(self.field, self.model, instance)
     
     def session(self):
         if self.related_instance:
@@ -150,7 +146,18 @@ via a simple attribute of the model.'''
                 return session
         raise QuerySetError('Related manager can be accessed only from\
  a loaded instance of its related model.')
-            
+    
+        
+class One2ManyRelatedManager(RelatedManager):
+    '''A specialised :class:`RelatedManager` for handling one-to-many
+relationships under the hood.
+If a model has a :class:`ForeignKey` field, instances of
+that model will have access to the related (foreign) objects
+via a simple attribute of the model.'''    
+    @property
+    def relmodel(self):
+        return self.field.relmodel
+    
     def query(self):
         kwargs = {self.field.name: self.related_instance}
         return super(RelatedManager,self).query().filter(**kwargs)
@@ -161,13 +168,12 @@ class Many2ManyRelatedManager(RelatedManager):
 many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
-attribute of the model.'''    
-    def add(self, value, transaction = None):
+attribute of the model.'''        
+    def add(self, value):
         '''Add *value*, an instance of ``self.model``, to the set.'''
-        if not isinstance(value,self.model):
+        if not isinstance(value,self.relmodel):
             raise FieldValueError(
-                        '%s is not an instance of %s' % (value,self.model))
-        trans = transaction or value.local_transaction()
+                    '%s is not an instance of %s' % (value,self.relmodel))
         # Get the related manager
         related = getattr(value, self.to_name)
         self.st.add(value, transaction = trans)
@@ -176,7 +182,7 @@ attribute of the model.'''
         if not transaction:
             trans.commit()
     
-    def remove(self, value, transaction = None):
+    def remove(self, value):
         '''Remove *value*, an instance of ``self.model`` from the set of
 elements contained by the field.'''
         if not isinstance(value,self.model):

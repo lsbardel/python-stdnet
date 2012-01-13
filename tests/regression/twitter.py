@@ -1,7 +1,7 @@
 from datetime import datetime
 from random import randint
 
-from stdnet import orm, test, transaction
+from stdnet import orm, test
 from stdnet.utils import populate, zip
 
 from examples.models import User, Post

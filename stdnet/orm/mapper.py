@@ -1,11 +1,11 @@
 import copy
 import logging
 from stdnet.utils import is_bytes_or_string
-from stdnet import getdb, struct
 from stdnet.utils.importer import import_module
+from stdnet import getdb
 
 from .base import StdNetType, AlreadyRegistered
-from .session import Manager
+from .session import Manager, Session
 
 
 logger = logging.getLogger('stdnet.mapper')
@@ -27,7 +27,7 @@ def clearall(exclude = None):
     for model in _GLOBAL_REGISTRY:
         if not model._meta.name in exclude:
             model.objects.flush()
-    struct.clear()
+    Session.clearall()
 
 
 def models_from_names(names):
@@ -58,7 +58,8 @@ It removes all keys associated with models.'''
     return flushed
             
 
-def register(model, backend = None, ignore_duplicates = True, **params):
+def register(model, backend = None, ignore_duplicates = True,
+             local_thread = False, **params):
     '''The low level function for registering a :class:`stdnet.orm.StdModel`
 classes with a :class:`stdnet.backends.BackendDataServer` data server.
     

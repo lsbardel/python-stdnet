@@ -22,15 +22,18 @@ end
 
 local rkey = KEYS[1]
 local bk = KEYS[2]
-local fields = KEYS[3]
-local ordering = KEYS[4]
+local num_fields = KEYS[3] + 0
+local io = 3
+local fields = table_slice(KEYS, io+1, io+num_fields)
+io = io + num_fields + 1
+local ordering = KEYS[io]
 
 -- Perform custom ordering if required
 if ordering == 'explicit' then
-	ids = redis.call('sort', rkey, unpack(table_slice(KEYS,5,-1)))
+	ids = redis.call('sort', rkey, unpack(table_slice(KEYS,io+1,-1)))
 else
-	local start = KEYS[5] + 0
-	local stop = KEYS[6] + 0
+	local start = KEYS[io+1] + 0
+	local stop = KEYS[io+2] + 0
 	if ordering == 'DESC' then
 		ids = redis.call('zrevrange', rkey, start, stop)
 	elseif ordering == 'ASC' then
@@ -43,12 +46,10 @@ else
 end
 
 -- loop over ids and gather the data if needed
-if fields == '' then
+if num_fields == 0 then
 	result = {}
 	for i,id in pairs(ids) do
-		idkey = bk .. ':obj:' .. id
-		fields = redis.call('hgetall', idkey)
-		result[i] = {id, fields}
+		result[i] = {id, redis.call('hgetall', bk .. ':obj:' .. id)}
 	end
 	return result
 elseif table.getn(fields) == 1 and fields[1] == 'id' then
@@ -56,9 +57,7 @@ elseif table.getn(fields) == 1 and fields[1] == 'id' then
 else
 	result = {}
 	for i,id in pairs(ids) do
-		idkey = bk .. ':obj:' .. id
-		fields = redis.call('hmget', idkey, unpack(fields))
-		result[i] = {id, fields}
+		result[i] = {id, redis.call('hmget', bk .. ':obj:' .. id, unpack(fields))}
 	end
 	return result
 end

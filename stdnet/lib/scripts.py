@@ -18,11 +18,22 @@ def pairs_to_dict(response, encoding = 'utf-8'):
     else:
         return ()
 
+
 _scripts = {}
 
 
 def get_script(script):
     return _scripts.get(script)
+
+
+def read_lua_file(filename, path = None):
+    '''Load lua script from the stdnet/lib/lua directory'''
+    if not path:
+        path = os.path.split(os.path.abspath(__file__))[0]
+        path = os.path.join(path,'lua')
+    name = os.path.join(path,filename)
+    with open(name) as f:
+        return f.read()
  
  
 def read_lua_file(filename):

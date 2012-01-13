@@ -13,6 +13,9 @@ names = populate('string',LEN, min_len = 5, max_len = 20)
 class TestManager(test.TestCase):
     model = SimpleModel
     
+    def setUp(self):
+        self.register()
+        
     def fill(self):
         with SimpleModel.objects.transaction() as t:
             for name in names:
@@ -53,7 +56,7 @@ class TestManager(test.TestCase):
         
     def testIndexFilter(self):
         self.assertEqual(SimpleModel.objects.filter(group = 'g1').count(),0)
-        v,created =SimpleModel.objects.get_or_create(code = 'test', group = 'g2')
+        v,created=SimpleModel.objects.get_or_create(code = 'test',group = 'g2')
         self.assertEqual(SimpleModel.objects.filter(group = 'g1').count(),0)
         self.assertEqual(SimpleModel.objects.filter(group = 'g2').count(),1)
         v1 = SimpleModel.objects.get(group = 'g2')
@@ -72,7 +75,7 @@ class TestManager(test.TestCase):
     def testContainsAll(self):
         '''Test filter when performing a all request'''
         self.fill()
-        qs = SimpleModel.objects.all()
+        qs = SimpleModel.objects.query()
         self.assertFalse('ciao' in qs)
         self.assertTrue(qs.backend_query())
         self.assertTrue(1 in qs)

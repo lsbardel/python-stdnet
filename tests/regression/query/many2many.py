@@ -1,5 +1,5 @@
 from stdnet import test
-from stdnet.orm import query
+from stdnet.orm import related
 
 from examples.models import Role, Profile
 
@@ -8,22 +8,29 @@ class TestManyToMany(test.TestCase):
     models = (Role, Profile)
     
     def addsome(self):
-        profile = Profile().save()
-        role1 = Role(name='admin').save()
-        profile.roles.add(role1)
-        self.assertEqual(role1.profiles.all().count(),1)
+        session = self.session()
+        with session.begin():
+            profile = session.add(Profile())
+            role1 = session.add(Role(name='admin'))
+            profile.roles.add(role1)
+        self.assertEqual(role1.profiles.count(),1)
         
-        role2 = Role(name='coder').save()
-        profile.roles.add(role2)
-        self.assertEqual(role2.profiles.all().count(),1)
+        with session.begin():
+            role2 = session(Role(name='coder'))
+            profile.roles.add(role2)
+        self.assertEqual(role2.profiles.count(),1)
         
         p2 = role1.profiles.filter(id = profile.id)[0]
         self.assertEqual(p2,profile)
         
     def testMeta(self):
-        role = Role(name='admin').save()
+        p = Profile()
+        self.assertTrue(p.roles)
+        session = self.session()
+        with session.begin():
+            role = session.add(Role(name='admin'))
         profiles = role.profiles
-        self.assertTrue(isinstance(profiles,query.M2MRelatedManager))
+        self.assertTrue(isinstance(profiles,related.Many2ManyRelatedManager))
         self.assertEqual(profiles.model,Profile)
         self.assertEqual(profiles.related_instance,role)
         

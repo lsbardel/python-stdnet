@@ -2,105 +2,21 @@ import copy
 import json
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, UnicodeMixin, JSPLITTER, iteritems
-from stdnet import dispatch, transaction, attr_local_transaction
+from stdnet.utils import zip, JSPLITTER, iteritems
 
-from .base import StdNetType, FakeModelType
-from .globals import get_model_from_hash
+from .base import StdNetType, Model
 from .signals import *
 from .session import Session, Manager
 
 
-__all__ = ['ModelMixin',
-           'FakeModel',
-           'StdModel',
-           'StdNetType',
-           'from_uuid',
-           'model_to_dict']
-
-
-class ModelMixin(UnicodeMixin):
-    '''A mixin class for :class:`StdModel`. It implements the :attr:`uuid`
-attribute which provides the univarsal unique identifier for an instance of a
-model.'''
-    DoesNotExist = ObjectNotFound
-    '''Exception raised when an instance of a model does not exist.'''
-    DoesNotValidate = ObjectNotValidated
-    '''Exception raised when an instance of a model does not validate. Usually
-raised when trying to save an invalid instance.'''
-    
-    def __eq__(self, other):
-        if other.__class__ == self.__class__:
-            return self.id == other.id
-        else:
-            return False
-        
-    def __ne__(self, other):
-        return not self.__eq__(other)
-    
-    def __hash__(self):
-        if self.id:
-            return hash(self.uuid)
-        else:
-            return id(self)
-        
-    @classmethod
-    def get_uuid(cls, id):
-        return '{0}.{1}'.format(cls._meta.hash,id)
-        
-    @property
-    def uuid(self):
-        '''Universally unique identifier for a model instance.'''
-        if not self.id:
-            raise self.DoesNotExist(\
-                    'Object not saved. Cannot obtain universally unique id')
-        return self.get_uuid(self.id)
+__all__ = ['StdModel', 'model_to_dict']
         
     
-FakeModelBase = FakeModelType('FakeModelBase',(ModelMixin,),{})
-StdNetBase = StdNetType('StdNetBase',(ModelMixin,),{})
-
-
-class FakeModel(FakeModelBase):
-    id = None
-    is_base_class = True
-    
-    
-class ModelState(object):
-    
-    def __init__(self, instance):
-        if not instance.is_valid():
-            raise FieldValueError(json.dumps(instance.errors))
-        self.instance = instance
-        self.persistent = False
-        self.deleted = False
-        dbdata = instance._dbdata
-        if instance.id and 'id' in dbdata:
-            if instance.id != dbdata['id']:
-                raise ValueError('Id has changed from {0} to {1}.'\
-                                 .format(instance.id,dbdata['id']))
-            self.persistent = True
-    
-    def __hash__(self):
-        return hash(self.instance)
-    
-    @property    
-    def meta(self):
-        return self.instance._meta
-    
-    @property
-    def id(self):
-        if self.instance.id:
-            return self.instance.id
-    
-    def cleaned_data(self):
-        return self.instance._temp['cleaned_data']
+StdNetBase = StdNetType('StdNetBase',(Model,),{})
 
 
 class StdModel(StdNetBase):
-    '''A :class:`ModelMixin` which gives you the single, definitive source
-of data about your data. It contains the essential fields and behaviors
-of the data you're storing.
+    '''A :class:`Model` which contains data in :class:`Field`.
 
 .. attribute:: _meta
 
@@ -109,39 +25,29 @@ of the data you're storing.
 
 .. attribute:: id
 
-    Model instance id. The instance primary key.
+    The instance primary key.
         
 .. attribute:: uuid
 
-    Universally unique identifier for a model instance.
+    Universally unique identifier for an instance.
     
 .. attribute:: session
 
     the :class:`Session` instance which loaded the instance (available
     when the instance is loaded from the data server).
 '''
+    _model_type = 'object'
     is_base_class = True
     _loadedfields = None
     _state = None
     
     def __init__(self, **kwargs):
-        self._dbdata = {}
         for field in self._meta.scalarfields:
-            name = field.name
-            value = kwargs.pop(name,None)
-            if value is None:
-                value = field.get_default()
-            setattr(self,name,value)
+            self.set_field_value(field, kwargs.pop(field.name,None))
         setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))
-            
-    def state(self):
-        temp = self.temp()
-        if 'state' not in temp:
-            temp['state'] = ModelState(self)
-        return temp['state']
 
     def loadedfields(self):
         '''Generator of fields loaded from database'''
@@ -176,6 +82,13 @@ details.'''
             if hasattr(self,name):
                 yield field,getattr(self,name)
     
+    def set_field_value(self, field, value):
+        if value is None:
+            value = field.get_default()
+        value = field.to_python(value)
+        setattr(self, field.attname, value)
+        return value
+            
     def save(self, transaction = None, skip_signal = False):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.BackendDataServer`
@@ -234,17 +147,6 @@ The method return ``self``.
 :rtype: Boolean indicating if the model validates.'''
         return self._meta.is_valid(self)
     
-    def temp(self):
-        if not hasattr(self,'_temp'):
-            self._temp = {}
-        return self._temp
-    
-    def __get_session(self):
-        return self._temp.get('session')
-    def __set_session(self,session):
-        self._temp['session'] = session
-    session = property(__get_session,__set_session)
-    
     @property
     def toload(self):
         return self._valattr('toload')
@@ -273,14 +175,14 @@ If the instance is not available (it does not have an id) and
                 yield obj
     
     def todict(self):
-        '''Return a dictionary of serialized scalar field for pickling'''
+        '''Return a dictionary of serialised scalar field for pickling'''
         odict = {}
         for field,value in self.fieldvalue_pairs():
             value = field.serialize(value)
             if value:
                 odict[field.name] = value
-        if self._dbdata:
-            odict['__dbdata__'] = self._dbdata
+        if 'id' in self._dbdata:
+            odict['__dbdata__'] = {'id':self._dbdata['id']}
         return odict
     
     def _to_json(self):
@@ -294,17 +196,6 @@ If the instance is not available (it does not have an id) and
     def tojson(self):
         '''return a JSON serializable dictionary representation.'''
         return dict(self._to_json())
-    
-    def local_transaction(self, session = None, backend = None, **kwargs):
-        '''Create a transaction for this instance.'''
-        if not hasattr(self,attr_local_transaction):
-            if not session:
-                if backend:
-                    session = Session(backend)
-                else:
-                    session = self.objects.session
-            setattr(self, attr_local_transaction, session.transaction(**kwargs))
-        return getattr(self,attr_local_transaction)
     
     # UTILITY METHODS
     
@@ -325,27 +216,15 @@ If the instance is not available (it does not have an id) and
         id,loadedfields,data = state
         meta = self._meta
         field = meta.pk
-        setattr(self,'id',field.to_python(id))
+        setattr(self, 'id', field.to_python(id))
+        if loadedfields is not None:
+            loadedfields = tuple(loadedfields)
         self._loadedfields = loadedfields
         fields = meta.dfields
         for field in self.loadedfields():
             value = field.value_from_data(self,data)
             setattr(self,field.attname,field.to_python(value))
         self._dbdata = data.get('__dbdata__',{})
-    
-
-def from_uuid(uuid):
-    '''Retrieve an instance of a :class:`stdnet.orm.StdModel`
-from an universal unique identifier *uuid*. If the *uuid* does not match any
-instance an exception will raise.'''
-    elems = uuid.split('.')
-    if len(elems) == 2:
-        model = get_model_from_hash(elems[0])
-        if not model:
-            raise StdModel.DoesNotExist(\
-                        'model id "{0}" not available'.format(elems[0]))
-        return model.objects.get(id = elems[1])
-    raise StdModel.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
     
     
 def model_to_dict(instance, fields = None, exclude = None):

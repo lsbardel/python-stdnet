@@ -1,7 +1,7 @@
 import gc
 import sys
 
-from stdnet.dispatch import Signal
+from stdnet.utils.dispatch import Signal
 from stdnet import test
 
 

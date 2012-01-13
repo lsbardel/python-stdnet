@@ -12,8 +12,7 @@ from stdnet.utils import pickle, json, DefaultJSONEncoder,\
                          to_bytestring, is_bytes_or_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator
 
-from .related import RelatedObject, ReverseSingleRelatedObjectDescriptor, \
-                        RelatedManager
+from . import related
 from .globals import get_model_from_hash, JSPLITTER
 
 
@@ -34,6 +33,7 @@ __all__ = ['Field',
            'JSONField',
            'PickleObjectField',
            'ModelField',
+           'ManyToManyField',
            'JSPLITTER']
 
 EMPTY = ''
@@ -188,7 +188,7 @@ function users should never call.'''
             raise FieldError('Field %s is already registered\
  with a model' % self)
         self.name  = name
-        self.attname =self.get_attname()
+        self.attname = self.get_attname()
         self.model = model
         meta = model._meta
         self.meta  = meta
@@ -236,7 +236,7 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
     def index_value(self, value):
         '''A value which is used by indexes to generate keys.'''
         if value is not None:
-            return value
+            return getattr(value,'id',value)
         else:
             return ''
     
@@ -476,7 +476,7 @@ or :class:`JSONField` fields as more general alternatives.'''
         return self.encoder.dumps(value, protocol = 2)
     
 
-class ForeignKey(Field, RelatedObject):
+class ForeignKey(Field):
     '''A field defining a :ref:`one-to-many <one-to-many>` objects relationship.
 Requires a positional argument: the class to which the model is related.
 For example::
@@ -501,20 +501,45 @@ the relation from the related object back to self.
 '''
     type = 'related object'
     internal_type = 'numeric'
-    def __init__(self, model, related_name = None, **kwargs):
-        Field.__init__(self, **kwargs)
-        RelatedObject.__init__(self,
-                               model,
-                               relmanager = RelatedManager,
-                               related_name = related_name)
+    proxy_class = related.LazyForeignKey
+    related_manager_class = related.One2ManyRelatedManager
     
+    def __init__(self, model, related_name = None, **kwargs):
+        super(ForeignKey,self).__init__(**kwargs)
+        if not model:
+            raise stdnet.FieldError('Model not specified')
+        self.relmodel = model
+        self.related_name = related_name
+    
+    def register_with_related_model(self):
+        # add the RelatedManager proxy to the model holding the field
+        setattr(self.model, self.name, self.proxy_class(self))
+        related.load_relmodel(self, self._set_relmodel)
+        
+    def _set_relmodel(self, relmodel):
+        self.relmodel = relmodel
+        meta  = self.relmodel._meta
+        related_name = self.related_name or '%s_set' % self.model._meta.name
+        if related_name not in meta.related and related_name\
+                                                 not in meta.dfields:
+            self.related_name = related_name
+            self._register_with_related_model()
+        else:
+            raise stdnet.FieldError('Duplicated related name "{0}"\
+ in model "{1}" and field {2}'.format(related_name,meta,self))
+    
+    def _register_with_related_model(self):
+        manager = self.related_manager_class(self)
+        setattr(self.relmodel, self.related_name, manager)
+        self.relmodel._meta.related[self.related_name] = manager
+        self.relmodel_manager = manager
+        
     def get_attname(self):
         return '%s_id' % self.name
     
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
         if not model._meta.abstract:
-            setattr(model,self.name,ReverseSingleRelatedObjectDescriptor(self))
             self.register_with_related_model()
     
     def json_serialize(self, value):
@@ -530,10 +555,13 @@ the relation from the related object back to self.
             return value
     
     def to_python(self, value):
-        try:
-            return int(value)
-        except:
-            return value
+        if hasattr(value,'id'):
+            return value.id
+        else:
+            try:
+                return int(value)
+            except:
+                return value
         
     def filter(self, session, name, value):
         name = name.split('__')[0]
@@ -679,9 +707,11 @@ registered in the model hash table, it can be used.'''
            return  value._meta.hash
        
     def to_python(self, value):
-        if value:
+        if value and not hasattr(value,'_meta'):
             value = self.encoder.loads(value)
             return get_model_from_hash(value)
+        else:
+            return value
     
     def serialize(self, value):
         if value is not None:
@@ -693,3 +723,70 @@ registered in the model hash table, it can be used.'''
             return self.encoder.dumps(value)
     
 
+class ManyToManyField(ForeignKey):
+    '''A many-to-many relationship. Like :class:`ForeignKey`, it accepts
+**related_name** as extra argument.
+
+.. attribute:: related_name
+
+    Optional name to use for the relation from the related object
+    back to ``self``.
+    
+.. attribute:: through
+
+    Optional model to use for creating the manyToMany relationship.
+    
+For example::
+    
+    class Group(orm.StdModel):
+        name = orm.SymbolField(unique = True)
+        
+    class User(orm.StdModel):
+        name = orm.SymbolField(unique = True)
+        group = orm.ManyToManyField(model = Group, related_name = 'users')
+    
+To use it::
+ 
+    >>> g = Group(name = 'developers').save()
+    >>> g.users.add(User(name = 'john').save())
+    >>> u.users.add(User(name = 'mark').save())
+
+and to remove::
+
+    >>> u.following.remove(User.objects.get(name = 'john))
+    
+.. attribute:: model_name
+
+    Under the hood, a :class:`ManyToMany` create a new model anmed *model_name*.
+    If not provided, the the name will be constructed from the field name
+    and the model holding the field. In the example above it would be
+    *group_user*.
+    This model contains two :class:`ForeignKeys`, one to model holding the
+    :class:`ManyToManyField` and the other to the *related_model*.
+'''
+    proxy_class = related.Many2ManyRelatedManager
+    
+    def __init__(self, model, through = None, **kwargs):
+        self.through = through
+        super(ManyToManyField,self).__init__(model,**kwargs)
+        
+    def related_manager_class(self, field):
+        return related.Many2ManyRelatedManager(field,field.relmodel)
+    
+    def _register_with_related_model(self):
+        if not self.through:
+            self.through = related.Many2ManyThroughModel(self)
+        super(ManyToManyField,self)._register_with_related_model()
+        
+    def add_to_fields(self):
+        pass
+        #self.model._meta.multifields.append(self)
+    
+    def add(self, instance, **kwargs):
+        '''Add an instance of :attr:`relmodel` to the field.'''
+    
+    def get_attname(self):
+        return self.name
+        
+    def todelete(self):
+        return False

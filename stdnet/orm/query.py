@@ -1,17 +1,13 @@
 from copy import copy
 from inspect import isgenerator
-from collections import namedtuple
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, to_bytestring, JSPLITTER
-from stdnet import transaction as get_transaction
 
 from .signals import *
 
 
 __all__ = ['Query','QueryOper']
-
-field_query = namedtuple('field_query','query field')
 
 
 def iterable(value):
@@ -136,10 +132,17 @@ criteria and options associated with it.
     
 .. attribute:: _get_field
 
-    The :class:`Field` which provides the values of the matched elements.
-    This can be changed via the :meth:`get_field` method.
+    When iterating over a :class:`Query`, you get back instances of
+    the :attr:`model` class. However, if ``_get_field`` is specified
+    you get back values of the field specified.
+    This can be changed via the :meth:`get_field` method::
     
-    Default: ``id``.
+        qs = query.get_field('name').all()
+        
+    the results is a list of name values (provided the model has a
+    ``name`` field of course).
+    
+    Default: ``None``.
     
 .. attribute:: backend
 
@@ -177,7 +180,7 @@ criteria and options associated with it.
 '''
     start = None
     stop = None
-    _get_field = 'id'
+    _get_field = None
     lookups = ('in','contains')
     
     def __init__(self, meta, session, fargs = None, eargs = None,
@@ -381,8 +384,9 @@ achieved is less than the one obtained when using
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
-        self.fields = tuple(set(self._load_only(fields))) if fields else None
-        return self
+        q = self._clone()
+        q.fields = tuple(set(self._load_only(fields))) if fields else None
+        return q
     
     def _load_only(self, fields):
         dfields = self._meta.dfields
@@ -433,11 +437,7 @@ objects on the server side.'''
     def __contains__(self, val):
         if isinstance(val,self.model):
             val = val.id
-        try:
-            val = to_bytestring(val)
-        except:
-            return False
-        return self.backend_query().has(val)
+        return val in self.backend_query()
     
     def delete(self, sync_session = False):
         '''Delete all matched elements of the :class:`Query`.'''
@@ -558,7 +558,8 @@ an exception is raised.
                     value = (value,) 
                 value = tuple((field.index_value(v) for v in value))
                             
-            unique = field.unique 
+            unique = field.unique
+            field_name = field.attname
             yield QuerySet(self, field_name, value, unique, lookup)
         
     def items(self, slic = None):
@@ -578,7 +579,7 @@ an exception is raised.
             seq = []
             session = self.session
             for el in self.backend_query().items(slic):
-                session.add(el,False)
+                session.server_update(el)
                 seq.append(el)
             cache[key] = seq
             return seq

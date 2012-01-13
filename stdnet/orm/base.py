@@ -4,15 +4,15 @@ import hashlib
 import weakref
 from collections import namedtuple
 
-from stdnet.utils import zip, to_bytestring, to_string
+from stdnet.utils import zip, to_bytestring, to_string, UnicodeMixin
 from stdnet.exceptions import *
 
 from . import signals
-from .globals import hashmodel, JSPLITTER
+from .globals import hashmodel, JSPLITTER, get_model_from_hash
 from .fields import Field, AutoField
 from .session import Manager, setup_managers
 
-__all__ = ['Metaclass']
+__all__ = ['Metaclass','Model','ModelBase','StdNetType', 'from_uuid']
 
 def get_fields(bases, attrs):
     fields = {}
@@ -30,7 +30,38 @@ def get_fields(bases, attrs):
 orderinginfo = namedtuple('orderinginfo','name field desc')
 
 
-class Metaclass(object):
+class ModelMeta(object):
+    '''A class for storing meta data of a :class:`Model` class.'''
+    def __init__(self, model, app_label = None, modelkey = None,
+                 abstract = False):
+        self.abstract = abstract
+        self.model = model
+        self.model._meta = self
+        self.app_label = app_label
+        self.name = model.__name__.lower()
+        if not modelkey:
+            if self.app_label:
+                modelkey = '{0}.{1}'.format(self.app_label,self.name)
+            else:
+                modelkey = self.name
+        self.modelkey = modelkey
+        hashmodel(model)
+        
+    def maker(self):
+        model = self.model
+        return model.__new__(model)
+        
+    def __repr__(self):
+        if self.app_label:
+            return '%s.%s' % (self.app_label,self.name)
+        else:
+            return self.name
+    
+    def __str__(self):
+        return self.__repr__()
+    
+        
+class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
 which maps an :class:`StdModel` into an object in the in a remote
 :class:`stdnet.BackendDataServer`.
@@ -112,10 +143,10 @@ mapper.
                  verbose_name = None,
                  ordering = None, modelkey = None,
                  **kwargs):
-        self.abstract = abstract
-        self.model = model
-        self.app_label = app_label
-        self.name = model.__name__.lower()
+        super(Metaclass,self).__init__(model,
+                                       app_label = app_label,
+                                       modelkey = modelkey,
+                                       abstract = abstract)
         self.fields = []
         self.scalarfields = []
         self.indices = []
@@ -124,9 +155,6 @@ mapper.
         self.timeout = 0
         self.related = {}
         self.verbose_name = verbose_name or self.name
-        self.modelkey = modelkey or '{0}.{1}'.format(self.app_label,self.name)
-        model._meta = self
-        hashmodel(model)
         
         # Check if ID field exists
         try:
@@ -152,39 +180,23 @@ mapper.
         for scalar in self.scalarfields:
             if scalar.index:
                 self.indices.append(scalar)
-        
-    def maker(self):
-        model = self.model
-        return model.__new__(model)
-        
-    def __repr__(self):
-        if self.app_label:
-            return '%s.%s' % (self.app_label,self.name)
-        else:
-            return self.name
-    
-    def __str__(self):
-        return self.__repr__()
     
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
-        v = instance.temp()
-        data = v['cleaned_data'] = {}
-        errors = v['errors'] = {}
-        toload = v['toload'] = []
-        indices = v['indices'] = []
-        id = instance.id
         dbdata = instance._dbdata
+        data = dbdata['cleaned_data'] = {}
+        errors = dbdata['errors'] = {}
+        toload = dbdata['toload'] = []
+        indices = dbdata['indices'] = []
+        id = instance.id
         idnew = not (id and id == dbdata.get('id'))
         
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
-            if value is None:
-                value = field.get_default()
-                setattr(instance,name,value)
+            value = instance.set_field_value(field, value)
             try:
                 svalue = field.serialize(value)
             except FieldValueError as e:
@@ -257,11 +269,9 @@ of fields names and a list of field attribute names.'''
         names = []
         atts = []
         for name in fields:
-            if name == 'id':
+            if name == 'id' or name in processed:
                 continue
-            if name in processed:
-                continue
-            if name in dfields:
+            elif name in dfields:
                 processed.add(name)
                 field = dfields[name]
                 names.append(field.name)
@@ -283,46 +293,37 @@ which needs to be deleted when *instance* is deleted.'''
         gen = (field.id(instance) for field in self.multifields\
                                          if field.todelete())
         return [fid for fid in gen if fid]
-    
-class FakeMeta(object):
-    pass
         
     
-class FakeModelType(type):
+class ModelType(type):
     '''StdModel python metaclass'''
+    is_base_class = True
     def __new__(cls, name, bases, attrs):
-        parents = [b for b in bases if isinstance(b, FakeModelType)]
-        is_base_class = attrs.pop('is_base_class',False)
-        new_class = super(FakeModelType, cls).__new__(cls, name, bases, attrs)
-        if not parents or is_base_class:
-            return new_class
-        new_class._meta = FakeMeta()
-        hashmodel(new_class)
-        return new_class  
-
-
-class StdNetType(type):
-    '''StdModel python metaclass'''
-    def __new__(cls, name, bases, attrs):
-        super_new = super(StdNetType, cls).__new__
-        parents = [b for b in bases if isinstance(b, StdNetType)]
+        parents = [b for b in bases if isinstance(b, ModelType)]
         if not parents or attrs.pop('is_base_class',False):
-            return super_new(cls, name, bases, attrs)
-        
-        # remove the Meta class if present
-        meta      = attrs.pop('Meta', None)
+            return super(ModelType, cls).__new__(cls, name, bases, attrs)
+        return cls.make(name, bases, attrs, attrs.pop('Meta', None))
+    
+    @classmethod    
+    def make(cls, name, bases, attrs, meta):
+        model = type.__new__(cls, name, bases, attrs)
+        meta = ModelMeta(model)
+        return model
+
+
+class StdNetType(ModelType):
+    is_base_class = True
+    @classmethod
+    def make(cls, name, bases, attrs, meta):
         if meta:
             kwargs   = meta_options(**meta.__dict__)
         else:
             kwargs   = meta_options()
-        
-        #if kwargs['abstract']:
-        #    return super_new(cls, name, bases, attrs)
-        
+            
         # remove and build field list
         fields    = get_fields(bases, attrs)        
         # create the new class
-        new_class = super_new(cls, name, bases, attrs)
+        new_class = type.__new__(cls, name, bases, attrs)
         setup_managers(new_class)
         app_label = kwargs.pop('app_label')
         
@@ -337,9 +338,6 @@ class StdNetType(type):
         signals.class_prepared.send(sender=new_class)
         return new_class
     
-    def __str__(cls):
-        return str(cls._meta)
-    
 
 def meta_options(abstract = False,
                  app_label = None,
@@ -352,3 +350,96 @@ def meta_options(abstract = False,
             'modelkey':modelkey}
     
 
+class ModelState(object):
+    
+    def __init__(self, instance):
+        self._dbdata = instance._dbdata
+        self.persistent = False
+        self.deleted = False
+        dbdata = instance._dbdata
+        if instance.id and 'id' in dbdata:
+            if instance.id != dbdata['id']:
+                raise ValueError('Id has changed from {0} to {1}.'\
+                                 .format(instance.id,dbdata['id']))
+            self.persistent = True
+    
+    def __repr__(self):
+        if self.persistent:
+            return 'persistent' + (' deleted' if self.deleted else '')
+        else:
+            return 'new'
+    __str__ = __repr__
+    
+    
+class Model(UnicodeMixin):
+    '''A mixin class for :class:`StdModel`. It implements the :attr:`uuid`
+attribute which provides the univarsal unique identifier for an instance of a
+model.'''
+    _model_type = None
+    DoesNotExist = ObjectNotFound
+    '''Exception raised when an instance of a model does not exist.'''
+    DoesNotValidate = ObjectNotValidated
+    '''Exception raised when an instance of a model does not validate. Usually
+raised when trying to save an invalid instance.'''
+    
+    def __new__(cls, id = None, **kwargs):
+        o = super(Model,cls).__new__(cls)
+        o.id = id
+        o._dbdata = {}
+        return o
+        
+    def __eq__(self, other):
+        if other.__class__ == self.__class__:
+            return self.id == other.id
+        else:
+            return False
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __hash__(self):
+        if self.id:
+            return hash(self.uuid)
+        else:
+            return id(self)
+    
+    def state(self):
+        if 'state' not in self._dbdata:
+            self._dbdata['state'] = ModelState(self)
+        return self._dbdata['state']
+    
+    @classmethod
+    def get_uuid(cls, id):
+        return '{0}.{1}'.format(cls._meta.hash,id)
+        
+    @property
+    def uuid(self):
+        '''Universally unique identifier for an instance.'''
+        if not self.id:
+            raise self.DoesNotExist(\
+                    'Object not saved. Cannot obtain universally unique id')
+        return self.get_uuid(self.id)
+    
+    def __get_session(self):
+        return self._dbdata.get('session')
+    def __set_session(self,session):
+        self._dbdata['session'] = session
+    session = property(__get_session,__set_session)
+    
+    
+ModelBase = ModelType('ModelBase',(Model,),{})
+
+
+def from_uuid(uuid, session = None):
+    '''Retrieve a :class:`Model` from its universally unique identifier
+*uuid*. If the *uuid* does not match any instance an exception will raise.'''
+    elems = uuid.split('.')
+    if len(elems) == 2:
+        model = get_model_from_hash(elems[0])
+        if not model:
+            raise Model.DoesNotExist(\
+                        'model id "{0}" not available'.format(elems[0]))
+        if not session:
+            session = model.objects.session()
+        return session.query(model).get(id = elems[1])
+    raise Model.DoesNotExist('uuid "{0}" not recognized'.format(uuid))

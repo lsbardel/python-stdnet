@@ -35,10 +35,10 @@ Data Server Metaclass
    :members:
    :member-order: bysource
 
-ModelMixin
+Model
 ~~~~~~~~~~~~~~~~~
 
-.. autoclass:: ModelMixin
+.. autoclass:: Model
    :members:
    :member-order: bysource
 
@@ -55,6 +55,89 @@ Query
 
 
 .. _register-model:
+
+
+Data Structures
+==============================
+
+Data structures are fundamental constructs around which you build your application.
+They are used in almost all computer programs, therefore becoming fluent in what the standard
+data-structures can do for you is essential to get full value out of them.
+The `standard template library`_ in C++ implements a wide array of structures,
+python has several of them too. ``stdnet`` implements **five** remote structures:
+list, set, ordered set, hash and timeseries.
+
+The structures are bind to a remote dataserver and they derive from
+from :class:`stdnet.Structure` base class.
+
+
+Creating Structures
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:attribute:: struct
+
+    Creating the five structures available in stdnet is accomplished by using struct
+    object in the following way::
+    
+        from stdnet import struct
+    
+        l = struct.list()
+        s = struct.set()
+        o = struct.zset()
+        h = struct.hash()
+        t = struct.ts()
+        
+Structure Base Class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: Structure
+   :members:
+   :member-order: bysource
+
+
+List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: List
+   :members:
+   :member-order: bysource
+
+
+Set
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: Set
+   :members:
+   :member-order: bysource
+
+
+.. _orderedset-structure:
+
+OrderedSet
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: Zset
+   :members:
+   :member-order: bysource
+
+
+.. _hash-structure:   
+   
+HashTable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: HashTable
+   :members:
+   :member-order: bysource
+   
+   
+TS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: TS
+   :members:
+   :member-order: bysource
+        
         
 Registration
 ======================
@@ -106,3 +189,5 @@ In a nutshell, signals allow certain senders to notify a set of receivers
 that some action has taken place.
 They’re especially useful when many pieces of code may be interested in
 the same events.
+
+.. _standard template library: http://www.sgi.com/tech/stl/

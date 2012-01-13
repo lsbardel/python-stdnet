@@ -4,9 +4,9 @@ import json
 from hashlib import sha1
 
 import stdnet
+from stdnet import FieldValueError
 from stdnet.conf import settings
 from stdnet.utils import iteritems, to_string, map, gen_unique_id, zip
-from stdnet.backends.structures import structredis
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping
@@ -53,37 +53,25 @@ class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
     def callback(self, response, args, session = None):
+        # The session has received the callback from redis client
         data = []
-        for state,id in zip(session,response):
-            if not state.deleted:
-                instance = state.instance
-                instance.id = instance._meta.pk.to_python(id)
-                instance._dbdata['id'] = instance.id 
+        for instance,id in list(zip(session,response)):
+            instance = session.server_update(instance, id)
+            if instance:
                 data.append(instance)
         return data
-                
+        
 
-class RedisTransaction(stdnet.Transaction):
-    default_name = 'redis-transaction'
+def redis_execution(pipe):
+    command = copy(pipe.command_stack)
+    command.pop(0)
+    result = pipe.execute()
+    for v in result:
+        if isinstance(v,Exception):
+            raise v
+    return command,result
     
-    def _execute(self):
-        '''Commit cache objects to database.'''
-        cursor = self.cursor
-        for id,cachepipe in iteritems(self._cachepipes):
-            el = getattr(self.backend,cachepipe.method)(id)
-            el._save_from_pipeline(cursor, cachepipe.pipe)
-            cachepipe.pipe.clear()
-                    
-        if not self.emptypipe():
-            return cursor.execute()
-        
-    def emptypipe(self):
-        if hasattr(self.cursor,'execute'):
-            return len(self.cursor.command_stack) <= 1
-        else:
-            return True
-        
-        
+    
 class RedisQuery(stdnet.BackendQuery):
         
     def zism(self, r):
@@ -181,13 +169,7 @@ different model) which has a *field* containing current model ids.'''
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
-        command = copy(self.pipe.command_stack)
-        command.pop(0)
-        self.executed_command = command
-        self.query_results = self.pipe.execute()
-        for v in self.query_results:
-            if isinstance(v,Exception):
-                raise v
+        self.executed_command, self.query_results = redis_execution(self.pipe)
         return self.query_results[-1]
         
     def order(self, start, stop):
@@ -202,7 +184,7 @@ elements in the query.'''
             return order
     
     def _has(self, val):
-        r = self.client_ismember(self.query_key, val)
+        r = self.ismember(self.query_key, val)
         return self._check_member(r)
     
     def get_redis_slice(self, slic):
@@ -223,14 +205,17 @@ elements in the query.'''
         start, stop = self.get_redis_slice(slic)
         order = self.order(start, stop)
         fields = self.qs.fields or None
-        if fields:
+        if fields == ('id',):
+            fields_attributes = fields
+        elif fields:
             fields, fields_attributes = meta.backend_fields(fields)
         else:
-            fields_attributes = ''
+            fields_attributes = ()
             
         args = [self.query_key,
                 backend.basekey(meta),
-                fields_attributes]
+                len(fields_attributes)]
+        args.extend(fields_attributes)
         
         if order:
             args.append('explicit')
@@ -292,10 +277,95 @@ The first parameter is the model'''
         
 '''
 
+
+class Struct(object):
+    __slots__ = ('instance','client')
+    def __init__(self, instance, client):
+        self.instance = instance
+        self.client = client
+        if not instance.id:
+            instance.id = instance.makeid()
+            
+    def commit(self):
+        self.flush()
+        self.clear()
+    
+    @property
+    def id(self):
+        return self.instance.id
+        
+
+class Set(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.sadd(self.id, *cache.toadd)
+        if cache.toremove:
+            self.client.srem(self.id, *cache.toremove)
+    
+    def size(self):
+        return self.client.scard(self.id)
+    
+    def clear(self):
+        self.instance.cache.toadd.clear()
+        self.instance.cache.toremove.clear()
+    
+
+class Zset(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.sadd(self.id, *cache.toadd)
+        if cache.toremove:
+            self.client.sadd(self.id, *cache.toremove)
+    
+    def size(self):
+        return self.client.scard(self.id)
+    
+
+class List(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.front:
+            self.client.lpush(id, *cache.front)
+        if cache.back:
+            self.client.rpush(id, *cache.back)
+    
+    def size(self):
+        return self.client.llen(self.id)
+    
+
+class Hash(Set):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.hmset(self.id, cache.toadd)
+        if cache.toremove:
+            self.client.hdel(self.id, *cache.toremove)
+            
+    def size(self):
+        return self.client.hlen(self.id)
+    
+    
+class TS(Struct):
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.toadd:
+            self.client.hmset(id, cache.toadd)
+        if cache.todelete:
+            self.client.hdel(id, *cache.todelete)
+            
+    def size(self):
+        return self.client.hlen(self.id)
+        
+
 class BackendDataServer(stdnet.BackendDataServer):
-    Transaction = RedisTransaction
     Query = RedisQuery
-    structure_module = structredis
     connection_pools = {}
     _redis_clients = {}
         
@@ -354,7 +424,8 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _loadfields(self, obj, toload):
         if toload:
-            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id), toload)
+            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id),
+                                       toload)
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
@@ -362,28 +433,48 @@ class BackendDataServer(stdnet.BackendDataServer):
     def execute_session(self, session):
         basekey = self.basekey
         lua_data = []
-        for state in session:
-            meta = state.meta
+        pipe = self.client.pipeline()
+        for instance in session:
+            meta = instance._meta
+            state = instance.state()
             bk = basekey(meta)
-            s = 'z' if meta.ordering else 's'
-            indices = tuple((idx.name for idx in meta.indices))
-            uniques = tuple((1 if idx.unique else 0 for idx in meta.indices))
-            if state.deleted:
-                fids = meta.multifields_ids_todelete(state.instance)
-                lua_data.extend(('del',bk,state.id,s,len(fids)))
-                lua_data.extend(fids)
-            else:
-                data = state.cleaned_data()
-                id = state.id or ''
-                data = flat_mapping(data)
-                action = 'change' if state.persistent else 'add'
-                lua_data.extend((action,bk,id,s,len(data)))
-                lua_data.extend(data)
-            lua_data.append(len(indices))
-            lua_data.extend(indices)
-            lua_data.extend(uniques)
-        options = {'session': session}
-        return self.client.script_call('commit_session', *lua_data, **options)
+            model_type = meta.model._model_type
+            # The model is a structure
+            if model_type == 'structure':
+                self.flush_structure(instance, pipe)
+            elif model_type == 'object':
+                score = MIN_FLOAT
+                s = 's'
+                if meta.ordering:
+                    s = 'z'
+                    v = getattr(instance,meta.ordering.name,None)
+                    if v is not None:
+                        score = meta.ordering.field.scorefun(v)
+                indices = tuple((idx.attname for idx in meta.indices))
+                uniques = tuple((1 if idx.unique else 0\
+                                             for idx in meta.indices))
+                if state.deleted:
+                    fids = meta.multifields_ids_todelete(state.instance)
+                    lua_data.extend(('del',bk,state.id,s,score,len(fids)))
+                    lua_data.extend(fids)
+                else:
+                    if not instance.is_valid():
+                        raise FieldValueError(
+                                    json.dumps(instance._dbdata['errors']))
+                    data = instance._dbdata['cleaned_data']
+                    id = instance.id or ''
+                    data = flat_mapping(data)
+                    action = 'change' if state.persistent else 'add'
+                    lua_data.extend((action,bk,id,s,score,len(data)))
+                    lua_data.extend(data)
+                lua_data.append(len(indices))
+                lua_data.extend(indices)
+                lua_data.extend(uniques)
+        if lua_data:
+            options = {'session': session}
+            pipe.script_call('commit_session', *lua_data, **options)
+        command,result = redis_execution(pipe)
+        return result
 
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
@@ -409,3 +500,21 @@ class BackendDataServer(stdnet.BackendDataServer):
             f = getattr(obj,field.attname)
             keys.append(f.id)
         return keys
+
+    def structure(self, instance, client = None):
+        client = client or self.client
+        name = instance._meta.name
+        if name == 'set':
+            return Set(instance, client)
+        if name == 'zset':
+            return Zset(instance, client)
+        elif name == 'list':
+            return List(instance, client)
+        elif name == 'hashtable':
+            return Hash(instance, client)
+        elif name == 'ts':
+            return TS(instance, client)
+       
+    def flush_structure(self, instance, pipe):
+        self.structure(instance, pipe).commit()
+        

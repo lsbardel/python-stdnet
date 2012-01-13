@@ -22,7 +22,7 @@ function table_slice (values,i1,i2)
 end
 
 -- Add or remove indices for an instance
-function update_indices(s, bk, id, idkey, indices, uniques, add)
+function update_indices(s, score, bk, id, idkey, indices, uniques, add)
     for i,name in pairs(indices) do
         value = redis.call('hget', idkey, name)
         if uniques[i] == '1' then
@@ -38,7 +38,11 @@ function update_indices(s, bk, id, idkey, indices, uniques, add)
 	        	idxkey = idxkey .. value
 	        end
 	        if add then
-	            redis.call(s .. 'add', idxkey, id)
+	            if s == 's' then
+	                redis.call('sadd', idxkey, id)
+	            else
+	                redis.call('zadd', idxkey, score, id)
+	            end
 	        else
 	            redis.call(s .. 'rem', idxkey, id)
 	        end
@@ -56,7 +60,8 @@ while i < N  do
     local bk = KEYS[i+2]
     local id = KEYS[i+3]
     local s = KEYS[i+4] -- 's' for sorted sets, 'z' for zsets
-    local idx0 = i+5
+    local score = KEYS[i+5]
+    local idx0 = i+6
     local length_data = KEYS[idx0]
     local idx1 = idx0+length_data+1
     local length_indices = KEYS[idx1]
@@ -68,21 +73,26 @@ while i < N  do
         id = redis.call('incr',bk .. ':ids')
     end
     local idkey = bk .. ':obj:' .. id
+    local idset = bk .. ':id'
   
     -- DELETING THE INSTANCE
     if action == 'del' then
-        update_indices(s, bk, id, idkey, indices, uniques, false)
+        update_indices(s, score, bk, id, idkey, indices, uniques, false)
         redis.call('del', idkey)
-        redis.call('srem', idkey)
+        redis.call(s .. 'rem', idset, idkey)
     -- ADDING OR EDITING THE INSTANCE
     else
         if action == 'change' then
-            update_indices(s, bk, id, idkey, indices, uniques, false)
+            update_indices(s, score, bk, id, idkey, indices, uniques, false)
         end
         local data = table_slice(KEYS,idx0+1,idx0+length_data)
-        redis.call('sadd', bk .. ':id', id)
+        if s == 's' then
+            redis.call('sadd', idset, id)
+        else
+            redis.call('zadd', idset, score, id)
+        end
         redis.call('hmset', idkey, unpack(data))
-        update_indices(s, bk, id, idkey, indices, uniques, true)
+        update_indices(s, score, bk, id, idkey, indices, uniques, true)
     end
     result[t] = id
     t = t + 1

@@ -4,7 +4,6 @@ from copy import deepcopy
 from stdnet.exceptions import *
 from stdnet.utils import zip, iteritems, itervalues, encoders
 
-from .structures import Structure
 
 __all__ = ['BackendDataServer', 'BackendQuery']
 
@@ -161,7 +160,11 @@ It must implement the *loads* and *dumps* methods.'''
     def setup_connection(self, address, **params):
         '''Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters.'''
-        raise NotImplementedError
+        raise NotImplementedError()
+    
+    def execute_session(self, session):
+        '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
+        raise NotImplementedError()
 
     @property
     def name(self):
@@ -204,11 +207,10 @@ this function for customizing their handling of connection parameters.'''
         '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError
     
-    def transaction(self, pipelined = True, **kwargs):
-        '''Return a transaction instance'''
-        return self.Transaction(self,self.cursor(pipelined),**kwargs)
-    
     def execute_session(self, session):
+        raise NotImplementedError
+    
+    def structure(self, struct):
         raise NotImplementedError
         
     def delete_object(self, obj, transaction = None):
@@ -338,40 +340,5 @@ If the key does not exist, raise a ValueError exception."""
     
     def flush(self, meta):
         raise NotImplementedError
-            
-    # DATASTRUCTURES
-    
-    def index_keys(self, id, timeout, transaction = None):
-        return Keys(id,timeout,self._keys)
-    
-    def list(self, id, timeout = 0, **kwargs):
-        '''Return an instance of :class:`stdnet.List`
-for a given *id*.'''
-        return self.structure_module.List(self, id, 'list',
-                                          timeout = timeout, **kwargs)
-    
-    def hash(self, id, timeout = 0, **kwargs):
-        '''Return an instance of :class:`stdnet.HashTable` structure
-for a given *id*.'''
-        return self.structure_module.HashTable(self, id, 'hash',
-                                               timeout = timeout, **kwargs)
-    
-    def ts(self, id, timeout = 0, **kwargs):
-        '''Return an instance of :class:`stdnet.HashTable` structure
-for a given *id*.'''
-        return self.structure_module.TS(self, id, 'ts',
-                                        timeout = timeout, **kwargs)
-    
-    def unordered_set(self, id, timeout = 0, **kwargs):
-        '''Return an instance of :class:`stdnet.Set` structure
-for a given *id*.'''
-        return self.structure_module.Set(self, id, 'unordered_set',
-                                         timeout = timeout, **kwargs)
-    
-    def ordered_set(self, id, timeout = 0, **kwargs):
-        '''Return an instance of :class:`stdnet.OrderedSet` structure
-for a given *id*.'''
-        return self.structure_module.OrderedSet(self, id, 'ordered_set',
-                                                timeout = timeout, **kwargs)
     
 

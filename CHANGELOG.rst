@@ -1,13 +1,15 @@
 Ver. 0.7.0 - Development
-==============================
-* Tons of new features mainly geared towards improved performance via custom
-  query options, more flexible transactions, lua scripting and
-  a new ``C`` parser shipped with the library.
+* Backward incompatible changes in the API, but not on the database schema.
+* Tons of new features manly geared towards improved performance via custom
+  query options, more flexible transactions and lua scripting for redis_ and
+  a new ``C`` redis_ parser shipped with the library.
 * It requires redis_ 2.6 or higher.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
+* Removed structures from :mod'`backends` module and included in the :mod:`orm`
+  module.
 * Added :meth:`stdnet.orm.Query.load_only` method for loading a subset
   of a model fields. This can improve performance by reducing the amount of
   data transferred from the server to the client.
@@ -33,7 +35,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **360 regression tests** with **80%** coverage.
+* **364 regression tests** with **80%** coverage.
 
 .. _vers06:
 

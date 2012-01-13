@@ -1,5 +1,5 @@
 import stdnet
-from stdnet import test, transaction
+from stdnet import test
 
 from examples.models import Person, Group 
 
@@ -11,17 +11,20 @@ class fkmeta(test.TestCase):
         session = self.session()
         with session.begin():
             session.add(Group(name = 'bla'))
-        g = session.query(self.model).get(name = 'bla')
-        self.p = Person(name = 'foo', group = g).save()
+        g = session.query(Group).get(name = 'bla')
+        with session.begin():
+            session.add(Person(name = 'foo', group = g))
         
     def testSimple(self):
-        p = Person.objects.get(id = 1)
-        self.assertTrue(p.group_id)
+        session = self.session()
+        query = session.query(Person)
+        p = query.get(id = 1)
         self.assertTrue(p.group_id)
         p.group = None
         self.assertEqual(p.group_id,None)
         
     def testOldRelatedNone(self):
+        self.register()
         p = Person.objects.get(id = 1)
         self.assertTrue(p.group)
         p.group = None

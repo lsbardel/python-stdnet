@@ -195,8 +195,7 @@ class Role(orm.StdModel):
 
 
 class Profile(orm.StdModel):
-    roles = orm.ManyToManyField(model=Role,
-                                related_name="profiles")
+    roles = orm.ManyToManyField(model=Role, related_name="profiles")
 
 
 ##############################################

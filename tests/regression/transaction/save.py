@@ -1,7 +1,7 @@
 import random
 
 import stdnet
-from stdnet import test, orm, InvalidTransaction, transaction
+from stdnet import test, orm, InvalidTransaction
 from examples.models import SimpleModel, Dictionary
 from stdnet.utils import populate
 
@@ -22,11 +22,13 @@ class TestTransactions(test.TestCase):
     model = SimpleModel
         
     def testSave(self):
-        with SimpleModel.transaction() as t:
-            self.assertEqual(t.server,SimpleModel._meta.cursor)
-            s = SimpleModel(code = 'test', description = 'just a test')\
-                            .save(transaction = t)
-            self.assertTrue(s.id)
+        session = self.session()
+        query = session.quary(self.model)
+        with session.begin() as t:
+            self.assertEqual(t.backend,session.backend)
+            s = session.add(self.model(code = 'test',
+                                       description = 'just a test'))
+            self.assertFalse(s.id)
             self.assertRaises(SimpleModel.DoesNotExist,
                               SimpleModel.objects.get,id=s.id)
             s2 = SimpleModel(code = 'test2', description = 'just a test')\

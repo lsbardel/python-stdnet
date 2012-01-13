@@ -1,10 +1,13 @@
 import weakref
 import threading
 
-from stdnet.dispatch import saferef
 from stdnet.utils import range
 
+from . import saferef
+
+
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
+
 
 def _make_id(target):
     if hasattr(target, 'im_func'):

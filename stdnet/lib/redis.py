@@ -14,7 +14,7 @@ from datetime import datetime
 from functools import partial
 
 from stdnet.utils import zip, is_int, iteritems, is_string
-from stdnet.dispatch import Signal
+from stdnet.utils.dispatch import Signal
 
 from .connection import ConnectionPool
 from .exceptions import *
@@ -624,9 +624,9 @@ can be one of: refcount, encoding, idletime.'''
 
 
     #### SET COMMANDS ####
-    def sadd(self, name, value):
+    def sadd(self, name, *values):
         "Add ``value`` to set ``name``"
-        return self.execute_command('SADD', name, value)
+        return self.execute_command('SADD', name, *values)
 
     def scard(self, name):
         "Return the number of elements in set ``name``"
@@ -678,9 +678,9 @@ can be one of: refcount, encoding, idletime.'''
         "Return a random member of set ``name``"
         return self.execute_command('SRANDMEMBER', name)
 
-    def srem(self, name, value):
+    def srem(self, name, *values):
         "Remove ``value`` from set ``name``"
-        return self.execute_command('SREM', name, value)
+        return self.execute_command('SREM', name, *values)
 
     def sunion(self, keys, *args):
         "Return the union of sets specifiued by ``keys``"
@@ -874,9 +874,9 @@ The first element is the score and the second is the value.'''
         return self.execute_command(*pieces, **{'withscores': withtimes})
     
     #### HASH COMMANDS ####
-    def hdel(self, name, key):
+    def hdel(self, name, *keys):
         "Delete ``key`` from hash ``name``"
-        return self.execute_command('HDEL', name, key)
+        return self.execute_command('HDEL', name, *keys)
 
     def hexists(self, name, key):
         "Returns a boolean indicating if ``key`` exists within hash ``name``"

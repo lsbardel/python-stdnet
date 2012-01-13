@@ -13,8 +13,13 @@ def genid():
 
 
 class Id(test.TestCase):
+    '''Test primary key when it is not an AutoField.
+Use the manager for convenience.'''
     model = Task
     
+    def setUp(self):
+        self.register()
+        
     def make(self):
         return Task(id = genid(), name = 'pluto').save()
     
@@ -39,7 +44,7 @@ class Id(test.TestCase):
         self.assertEqual(t1.name,t2.name)
         self.assertNotEqual(t1.timestamp,t2.timestamp)
         self.assertTrue(t1.timestamp<t2.timestamp)
-        tasks = list(Task.objects.all())
+        tasks = Task.objects.all()
         self.assertEqual(len(tasks),2)
         self.assertEqual(tasks[0].id,t2.id)
         self.assertEqual(tasks[1].id,t1.id)

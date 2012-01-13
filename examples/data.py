@@ -1,9 +1,10 @@
 import datetime
 
-from stdnet import transaction, test
+from stdnet import test
 from stdnet.utils import populate, zip
 
 from .models import Instrument, Fund, Position
+
 
 CCYS_TYPES = ['EUR','GBP','AUD','USD','CHF','JPY']
 INSTS_TYPES = ['equity','bond','future','cash','option','bond option']

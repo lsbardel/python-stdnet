@@ -38,6 +38,8 @@ class TestSession(test.TestCase):
             session.add(SimpleModel(code='sun',group='star'))
         query = session.query(SimpleModel)
         self.assertEqual(query.session,session)
+        all = query.all()
+        self.assertEqual(len(all),3)
         qs = query.filter(group = 'planet')
         self.assertFalse(qs.executed)
         self.assertEqual(qs.count(), 2)

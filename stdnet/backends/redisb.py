@@ -4,12 +4,14 @@ import json
 from hashlib import sha1
 
 import stdnet
+from stdnet import FieldValueError
 from stdnet.conf import settings
 from stdnet.utils import iteritems, to_string, map, gen_unique_id, zip
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping
 
+MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
 
 ################################################################################
@@ -59,7 +61,17 @@ class commit_session(RedisScript):
                 data.append(instance)
         return data
         
-        
+
+def redis_execution(pipe):
+    command = copy(pipe.command_stack)
+    command.pop(0)
+    result = pipe.execute()
+    for v in result:
+        if isinstance(v,Exception):
+            raise v
+    return command,result
+    
+    
 class RedisQuery(stdnet.BackendQuery):
         
     def zism(self, r):
@@ -157,13 +169,7 @@ different model) which has a *field* containing current model ids.'''
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
-        command = copy(self.pipe.command_stack)
-        command.pop(0)
-        self.executed_command = command
-        self.query_results = self.pipe.execute()
-        for v in self.query_results:
-            if isinstance(v,Exception):
-                raise v
+        self.executed_command, self.query_results = redis_execution(self.pipe)
         return self.query_results[-1]
         
     def order(self, start, stop):
@@ -437,22 +443,29 @@ class BackendDataServer(stdnet.BackendDataServer):
             if model_type == 'structure':
                 self.flush_structure(instance, pipe)
             elif model_type == 'object':
-                s = 'z' if meta.ordering else 's'
+                score = MIN_FLOAT
+                s = 's'
+                if meta.ordering:
+                    s = 'z'
+                    v = getattr(instance,meta.ordering.name,None)
+                    if v is not None:
+                        score = meta.ordering.field.scorefun(v)
                 indices = tuple((idx.attname for idx in meta.indices))
                 uniques = tuple((1 if idx.unique else 0\
                                              for idx in meta.indices))
                 if state.deleted:
                     fids = meta.multifields_ids_todelete(state.instance)
-                    lua_data.extend(('del',bk,state.id,s,len(fids)))
+                    lua_data.extend(('del',bk,state.id,s,score,len(fids)))
                     lua_data.extend(fids)
                 else:
                     if not instance.is_valid():
-                        raise FieldValueError(json.dumps(instance.errors))
+                        raise FieldValueError(
+                                    json.dumps(instance._dbdata['errors']))
                     data = instance._dbdata['cleaned_data']
                     id = instance.id or ''
                     data = flat_mapping(data)
                     action = 'change' if state.persistent else 'add'
-                    lua_data.extend((action,bk,id,s,len(data)))
+                    lua_data.extend((action,bk,id,s,score,len(data)))
                     lua_data.extend(data)
                 lua_data.append(len(indices))
                 lua_data.extend(indices)
@@ -460,7 +473,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         if lua_data:
             options = {'session': session}
             pipe.script_call('commit_session', *lua_data, **options)
-        return pipe.execute()
+        command,result = redis_execution(pipe)
+        return result
 
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""

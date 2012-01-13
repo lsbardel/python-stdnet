@@ -22,13 +22,13 @@ class TestSort(test.TestCase):
     desc = False
     
     def fill(self):
-        model = self.model
-        with model.objects.transaction() as t:
+        session = self.session()
+        with session.begin():
             for p,n,d in zip(persons,groups,dates):
-                model(person = p, name = n, dt = d).save(t)
-        qs = model.objects.all()
+                session.add(self.model(person = p, name = n, dt = d))
+        qs = session.query(self.model)
         self.assertEqual(qs.count(),NUM_DATES)
-        return qs    
+        return qs
     
     def checkOrder(self, qs, attr, desc = None):
         attrs = attr.split(orm.JSPLITTER)
@@ -98,9 +98,13 @@ class TestOrderingModel(TestSort):
         self.assertEqual(ordering.desc,self.desc)
     
     def testAdd(self):
-        a = self.model(person='luca',name='football',dt=date.today()).save()
-        b = self.model(person='luca',name='football',dt=date.today()).save()
-        self.assertEqual(self.model.objects.all().count(),2)
+        session = self.session()
+        with session.begin():
+            a = session.add(self.model(person='luca',name='football',
+                                       dt=date.today()))
+            b = session.add(self.model(person='luca',name='football',
+                                       dt=date.today()))
+        self.assertEqual(session.query(self.model).count(),2)
         
     def testSimple(self):
         self.checkOrder(self.fill(),'dt')
@@ -147,7 +151,6 @@ class TestSortByForeignKeyField(TestSort):
 
 class TestOrderingModel_zdiffstore(TestOrderingModel):
     '''Test a model wich is always sorted by the ordering meta attribute.'''
-    tag = 'zdiffstore'
     
     def testExclude(self):
         qs = self.fill().exclude(name='rugby')
@@ -157,4 +160,3 @@ class TestOrderingModel_zdiffstore(TestOrderingModel):
 class TestOrderingModel2_zdiffstore(TestOrderingModel_zdiffstore):
     model = SportAtDate2
     desc = True
-    tag = 'zdiffstore'

@@ -1,6 +1,6 @@
 Ver. 0.7.0 - Development
-============================
-* Tons of new features manly geared towards improved performance via custom
+==============================
+* Tons of new features mainly geared towards improved performance via custom
   query options, more flexible transactions, lua scripting and
   a new ``C`` parser shipped with the library.
 * It requires redis_ 2.6 or higher.

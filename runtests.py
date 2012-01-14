@@ -31,7 +31,7 @@ class TestDataSize(TestOptionPlugin):
 
 if __name__ == '__main__':
     suite = TestSuite(description = 'Stdnet Asynchronous test suite',
-                      modules = ('tests','stdnet.apps'),
+                      modules = ('tests',),
                       plugins = (TestServer(),bench.BenchMark(),)
                       )
     suite.start()

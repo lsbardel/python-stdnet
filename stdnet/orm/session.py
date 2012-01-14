@@ -198,9 +198,9 @@ If this :class:`Session` is already within a transaction, an error is raised.'''
             self.transaction = Transaction(self)
         return self.transaction
     
-    def query(self, model):
+    def query(self, model, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
-        return self.query_class(model._meta, self)
+        return self.query_class(model._meta, self, **kwargs)
     
     def get_or_create(self, model, **kwargs):
         '''Get an instance of *model* from the internal cache (only if the

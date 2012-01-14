@@ -58,6 +58,45 @@ in this test class so that we can use the manager in a parallel test suite.'''
                 self.assertEqual(child2.parent,child)
 
 
+class TestRealtedQuery(FinanceTest):
+    
+    def testRelatedFilter(self):
+        self.data.makePositions(self)
+        session = self.session()
+        query = session.query(Position)
+        # fetch all position with EUR instruments
+        instruments = session.query(Instrument).filter(ccy = 'EUR')
+        self.assertTrue(instruments.count())
+        ids = set()
+        for i in instruments:
+            self.assertEqual(i.ccy,'EUR')
+            ids.add(i.id)
+        peur1 = query.filter(instrument__in = ids)
+        self.assertTrue(peur1.count())
+        for p in peur1:
+            self.assertTrue(p.instrument.id in ids)
+            self.assertEqual(p.instrument.ccy,'EUR')
+            
+        peur = query.filter(instrument__ccy = 'EUR')
+        q = peur.backend_query()
+        qe = q.queryelem
+        self.assertEqual(qe.get,None)
+        self.assertEqual(len(qe),2)
+        self.assertEqual(qe.keyword,'intersect')
+        self.assertTrue(peur.count())
+        for p in peur:
+            self.assertEqual(p.instrument.ccy,'EUR')
+            
+    def testRelatedExclude(self):
+        self.data.makePositions(self)
+        session = self.session()
+        query = session.query(Position)
+        peur = query.exclude(instrument__ccy = 'EUR')
+        self.assertTrue(peur.count())
+        for p in peur:
+            self.assertNotEqual(p.instrument.ccy,'EUR')
+    
+    
 class TestRelatedManager(FinanceTest):
 
     def testSimple(self):
@@ -83,37 +122,3 @@ class TestRelatedManager(FinanceTest):
             self.assertEqual(p.fund,fund)
         
 
-class load_related(FinanceTest):
-    
-    def testSelectRelated(self):
-        self.data.makePositions(self)
-        pos = Position.objects.all().load_related()
-        self.assertTrue(pos._select_related)
-        self.assertTrue(len(pos._select_related),2)
-        for p in pos:
-            for f in pos._select_related:
-                cache = f.get_cache_name()
-                val = getattr(p,cache,None)
-                self.assertTrue(val)
-                self.assertTrue(isinstance(val,f.relmodel))
-                id = getattr(p,f.attname)
-                self.assertEqual(id,val.id)
-        
-    def testSelectRelatedSingle(self):
-        self.data.makePositions(self)
-        pos = Position.objects.all().load_related('instrument')
-        self.assertTrue(pos._select_related)
-        self.assertTrue(len(pos._select_related),1)
-        fund = Position._meta.dfields['fund']
-        inst = Position._meta.dfields['instrument']
-        pos = list(pos)
-        self.assertTrue(pos)
-        for p in pos:
-            cache = inst.get_cache_name()
-            val = getattr(p,cache,None)
-            self.assertTrue(val)
-            self.assertTrue(isinstance(val,inst.relmodel))
-            cache = fund.get_cache_name()
-            val = getattr(p,cache,None)
-            self.assertFalse(val)
-            

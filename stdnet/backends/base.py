@@ -30,32 +30,37 @@ class BackendQuery(object):
     '''Backend queryset class which implements the database
 queries specified by :class:`stdnet.orm.Query`.
 
-.. attribute:: qs
+.. attribute:: queryelem
 
-    The ORM :class:`stdnet.orm.Query` instance.
+    The :class:`stdnet.orm.QueryElement` to process.
     
 .. attribute:: executed
 
     flag indicating if the query has been executed in the backend server
     
 '''
-    def __init__(self, backend, qs, timeout = 0):
+    def __init__(self, queryelem, timeout = 0):
         '''Initialize the query for the backend database.'''
-        self.backend = backend
-        self.qs = qs
+        self.queryelem = queryelem
         self.expire = max(timeout,30)
         self.timeout = timeout
         self.__count = None
         # build the queryset without performing any database communication
         self._build()
 
-    @property
-    def meta(self):
-        return self.qs.meta
+    def __repr__(self):
+        return self.queryelem.__repr__()
+    
+    def __str__(self):
+        return str(self.queryelem)
     
     @property
-    def sha(self):
-        return self._sha
+    def backend(self):
+        return self.queryelem.backend
+    
+    @property
+    def meta(self):
+        return self.queryelem.meta
     
     @property
     def executed(self):
@@ -64,7 +69,7 @@ queries specified by :class:`stdnet.orm.Query`.
     @property
     def query_class(self):
         '''The underlying query class'''
-        return self.qs.__class__
+        return self.queryelem.__class__
     
     def __len__(self):
         return self.execute_query()
@@ -110,11 +115,11 @@ queries specified by :class:`stdnet.orm.Query`.
 
 :parameter result: a result from a queryset.
 :rtype: the same queryset qith related models loaded.'''
-        if self.qs.select_related:
+        if self.queryelem.select_related:
             if not hasattr(result,'__len__'):
                 result = list(result)
             meta = self.meta
-            for field in self.qs.select_related:
+            for field in self.queryelem.select_related:
                 name = field.name
                 attname = field.attname
                 vals = [getattr(r,attname) for r in result]

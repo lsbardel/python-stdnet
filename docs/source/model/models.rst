@@ -54,8 +54,7 @@ Query
    .. automethod:: __init__
 
 
-.. _register-model:
-
+.. _model-structures:
 
 Data Structures
 ==============================
@@ -138,7 +137,10 @@ TS
    :members:
    :member-order: bysource
         
-        
+
+.. _register-model:
+
+
 Registration
 ======================
 

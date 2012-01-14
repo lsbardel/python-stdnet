@@ -87,12 +87,21 @@ TSEXISTS
 Check if ``time`` is in timeseries at ``key``::
 
     tsexists key time
+    
+    
+TSRANK
+------------------
+Returns the rank (index position) of ``time`` in timeseries at ``key``::
+
+    tsrank key time
+    
  
 TSGET
 ------
 Get value at ``time`` in timeseries at ``key``::
 
     tsget key time
+ 
  
 TSRANGE
 ------------------
@@ -108,6 +117,7 @@ string which can take two values: ``withtimes`` or ``novalues``::
     tsrange key start end withtimes -> return (time,value)s
     tsrange key start end novalues  -> return times
  
+ 
 TSRANGEBYTIME
 ------------------
 Range by times::
@@ -116,6 +126,7 @@ Range by times::
  
 Where ``time_start`` and ``time_end`` are double (timestaps) and ``<flag>``
 is the same as in ``TSRANGE``.
+
 
 TSCOUNT
 ------------------

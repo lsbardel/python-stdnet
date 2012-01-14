@@ -142,19 +142,14 @@ class TestHash(test.TestCase):
         self.assertEqual(len(d),0)
         
 
-#class TestTimeserie(test.TestCase):
-class TestTimeserie(object):
+class TestTimeserie(test.TestCase):
     
     def testEmpty(self):
+        session = self.session()
         ts = orm.TS()
+        self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(),None)
         self.assertEqual(ts.back(),None)
-        # lets try with a transaction
-        with transaction(ts) as t:
-            ts.front(t)
-            ts.back(t)
-        for r in t.get_result():
-            self.assertEqual(r,None)
         self.assertEqual(ts.size(),0)
         
     def testData(self):

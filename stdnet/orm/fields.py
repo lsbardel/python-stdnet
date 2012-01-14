@@ -564,9 +564,9 @@ the relation from the related object back to self.
                 return value
         
     def filter(self, session, name, value):
-        name = name.split('__')[0]
-        if name in self.model._meta.dfields:
-            return self.session.query(self.model).filter(name = value)
+        fname = name.split('__')[0]
+        if fname in self.relmodel._meta.dfields:
+            return session.query(self.relmodel, fargs = {name: value})
     
     
 class JSONField(CharField):

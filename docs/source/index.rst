@@ -33,7 +33,7 @@ First steps
 :ref:`Tutorial 2 <tutorial2>`
 
 **API:**
-:ref:`Structures <structures-backend>` |
+:ref:`Structures API <model-structures>` |
 :ref:`Model API <model-model>` |
 :ref:`Fields API <model-field>`
 

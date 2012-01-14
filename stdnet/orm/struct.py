@@ -18,10 +18,11 @@ __all__ = ['Structure',
 default_score = lambda x : x
 
 
+
 class listcache(object):
+    
     def __init__(self):
-        self.back = []
-        self.front = []
+        self.clear()
         
     def push_front(self, value):
         self.front.append(value)
@@ -29,9 +30,10 @@ class listcache(object):
     def push_back(self, value):
         self.back.append(value)
         
-    def __len__(self):
-        return len(self.back) + len(self.front)
-    
+    def clear(self):
+        self.back = []
+        self.front = []
+        
     
 class setcache(object):
     
@@ -58,8 +60,12 @@ class setcache(object):
     def discard(self, v):
         self.toadd.discard(v)
         self.toremove.add(v)
+        
+    def clear(self):
+        self.toadd.clear()
+        self.toremove.clear()
+        
     
-
 class hashcache(object):
     
     def __init__(self):
@@ -74,9 +80,40 @@ class hashcache(object):
         self.toadd.update(v)
         for k in v:
             self.toremove.pop(v,None)
+
+
+class tscache(object):
     
+    def __init__(self):
+        self.fields = {}
+        self.delete_fields = set()
+        self.deleted_timestamps = set()
 
-
+    def add(self, timestamp, field, value):
+        if field not in self.fields:
+            self.fields[field] = skiplist()
+        self.fields[field].insert(timestamp,value)
+        
+    def flush(self):
+        self.fields.clear()
+        self.delete_fields.clear()
+        self.deleted_timestamps.clear()
+        
+    def flat(self):
+        if self.deleted_timestamps or self.delete_fields or self.fields:
+            args = [len(self.deleted_timestamps)]
+            args.extend(self.deleted_timestamps)
+            args.append(len(self.delete_fields))
+            args.extend(self.delete_fields)
+            for field in self.fields:
+                val = self.fields[field]
+                args.append(field)
+                args.append(len(val))
+                args.extend(val.flat())
+            self.flush()
+            return args
+        
+        
 def withsession(f):
     
     def _(self, *args, **kwargs):

@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from stdnet.utils import todate
 
-from .models import TimeSeries, DateTimeSeries
+from examples.tsmodels import TimeSeries, DateTimeSeries
 from . import hashts
 
 testdata  = hashts.testdata

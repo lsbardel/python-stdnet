@@ -1,11 +1,15 @@
 Ver. 0.7.0 - Development
-* Backward incompatible changes in the API, but not on the database schema.
-* Tons of new features manly geared towards improved performance via custom
-  query options, more flexible transactions and lua scripting for redis_ and
-  a new ``C`` redis_ parser shipped with the library.
+===============================
+* Backward incompatible changes in the API.
 * It requires redis_ 2.6 or higher.
+* Tons of new features including a richer query API, improved performance via custom
+  query options, more flexible transactions, lua scripting for redis_ and
+  a new ``C`` redis_ parser shipped with the library.
+* Redesign of :class:`stdnet.orm.Many2ManyField` which now uses a ``through`` model
+  for building the many to many relationship.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
+* Filtering on :class:`stdnet.orm.ForeignKey` fields.
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
 * Removed structures from :mod'`backends` module and included in the :mod:`orm`
@@ -71,13 +75,12 @@ Ver. 0.6.0 - 2011 Aug 9
 * :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash
   tables with fields given by the model field names and values given by the
   instance field values.
-* Implemented two types of sorting: 
-    * *Implicit* by the :class:`stdnet.orm.Metaclass` attribute ``ordering``.
-      When using this route, items are stored in the database in a sorted
-      fashion, therefore no overhead is required for the sorting step.
-    * *Explicit* by using the ``sort_by`` method in
-      a :class:`stdnet.orm.query.QuerySet` object.
-  
+* Implemented two types of sorting:
+  *Implicit* by the :class:`stdnet.orm.Metaclass` attribute ``ordering``.
+  When using this route, items are stored in the database in a sorted
+  fashion, therefore no overhead is required for the sorting step.
+  *Explicit* by using the ``sort_by`` method in
+  a :class:`stdnet.orm.query.QuerySet` object.
   Check the :ref:`sorting <sorting>` documentation for more information.
 * Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
   are now indexed via redis_ hash tables which maps the field value to the
@@ -245,10 +248,12 @@ Ver. 0.3.1 - 2010 Jul 19
 
 Ver. 0.3.0 - 2010 Jul 15
 ========================================
-* Overall code refactoring
+* Overall code refactoring.
 * Added ListField and OrderedSetField with Redis implementation
-* ``StdModel`` raise ``AttributError`` when method/attribute not available. Previously it returned ``None``
-* ``StdModel`` raise ``ModelNotRegistered`` when trying to save an instance of a non-registered model
+* ``StdModel`` raise ``AttributError`` when method/attribute not available.
+  Previously it returned ``None``
+* ``StdModel`` raise ``ModelNotRegistered`` when trying to save an instance
+  of a non-registered model
 * **24 tests**
 
 Ver. 0.2.2 - 2010 Jul 7

@@ -7,7 +7,7 @@ from stdnet.utils import zip, to_bytestring, JSPLITTER
 from .signals import *
 
 
-__all__ = ['Query','QueryOper']
+__all__ = ['Query','QueryElement']
 
 
 def iterable(value):
@@ -27,18 +27,34 @@ class EmptySet(frozenset):
         return len(self)
     
     
-class QueryOper(object):
+class QueryElement(object):
+    '''An element of a :class:`Query`.
+    
+.. attribute:: qs
+
+    the :class:`Query` which contains this :class:`QueryElement`.
+    
+.. attribute:: underlying
+
+    the element contained in the :class:`QueryElement`. This underlying is
+    an iterable or another :class:`Query`.
+    
+.. attribute:: valid
+
+    if ``False`` this :class:`QueryElement` has no underlying elements and
+    won't produce any query.
+'''
     keyword = ''
     name = ''
-    get = 'id'
+    get = None
     
     def __init__(self, qs, underlying):
         self.qs = qs
-        self.underlying = underlying
-        
+        self.underlying = underlying if underlying is not None else ()
+    
     def __repr__(self):
         v = ''
-        if self.underlying:
+        if self.underlying is not None:
             v = '('+', '.join((str(v) for v in self))+')'
         k = self.keyword
         if self.name:
@@ -48,6 +64,13 @@ class QueryOper(object):
 
     def __iter__(self):
         return iter(self.underlying)
+    
+    def __len__(self):
+        return len(self.underlying)
+    
+    @property
+    def valid(self):
+        return bool(self.underlying)
         
     @property
     def meta(self):
@@ -78,22 +101,33 @@ class QueryOper(object):
         yield self.get
         
     
-class QuerySet(QueryOper):
+class QuerySet(QueryElement):
     keyword = 'set'
     def __init__(self, qs, name = None, values = None,
                     unique = False, lookup = 'in'):
-        values = values if values is not None else ()
         super(QuerySet,self).__init__(qs, values)
         self.name = name or 'id'
         self.unique = unique
         self.lookup = lookup
-        
+    
+
+class QueryQuery(QuerySet):
+    keyword = 'query'
+    def __iter__(self):
+        return iter(())
+    
+    def __len__(self):
+        return 0
+    
     @property
-    def values(self):
-        return self.underlying
+    def valid(self):
+        return True
+    
+    def backend_query(self):
+        return self.underlying.backend_query()
     
     
-class Select(QueryOper):
+class Select(QueryElement):
     """Forms the basis of select type set operations."""
     def __init__(self, qs, keyword, queries):
         super(Select,self).__init__(qs, queries)
@@ -125,10 +159,18 @@ criteria and options associated with it.
 
     The :attr:`StdModel._meta` attribute.
     
+.. attribute:: model
+
+    the :class:`StdModel` class for this query.
+    
 .. attribute:: session
 
     The :class:`Session` which created the :class:`Query` via the
     :meth:`Session.query` method.
+    
+.. attribute:: backend
+
+    the :class:`stdnet.BackendDataServer` holding the data to query.
     
 .. attribute:: _get_field
 
@@ -143,14 +185,6 @@ criteria and options associated with it.
     ``name`` field of course).
     
     Default: ``None``.
-    
-.. attribute:: backend
-
-    the :class:`stdnet.BackendDataServer` holding the data to query.
-    
-.. attribute:: model
-
-    the :class:`StdModel` class for this query.
     
 .. attribute:: fargs
 
@@ -511,14 +545,14 @@ an exception is raised.
             fargs = self.aggregate(self.fargs)
             for f in fargs:
                 # no values to filter on. empty result.
-                if not f.values:
+                if not f.valid:
                     return EmptySet()
             q = intersect(self, [q]+fargs)
         
         if self.eargs:
             eargs = self.aggregate(self.eargs)
             for a in tuple(eargs):
-                if not a.values:
+                if not a.valid:
                     eargs.remove(a)
             if eargs:
                 if len(eargs) > 1:
@@ -526,7 +560,7 @@ an exception is raised.
                 q = difference(self, [q]+eargs)
         
         q.get = self._get_field
-        return self.backend.Query(self.backend,q)
+        return self.backend.Query(q)
 
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -537,7 +571,6 @@ an exception is raised.
         fields  = meta.dfields
         for name,value in kwargs.items():
             names = name.split('__')
-            N = len(names)
             field_name = names[0]
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
@@ -547,20 +580,24 @@ an exception is raised.
                 raise QuerySetError("{0} {1} is not an index.\
  Cannot query.".format(field.__class__.__name__,field_name))                                 
             lookup = '__'.join(names[1:])
-            lvalue = field.filter(self.session, lookup, value)
-            if lvalue:
-                lookup = 'in'
-                value = lvalue
-            if isinstance(value,self.__class__):
-                value = value.backend_query()
+            if lookup:
+                lvalue = field.filter(self.session, lookup, value)
+                if lvalue is not None:
+                    lookup = 'in'
+                    value = lvalue
             else:
+                lookup = 'in'
+            if not isinstance(value, self.__class__):
+                query_class = QuerySet
                 if not iterable(value):
-                    value = (value,) 
+                    value = (value,)
                 value = tuple((field.index_value(v) for v in value))
+            else:
+                query_class = QueryQuery
                             
             unique = field.unique
             field_name = field.attname
-            yield QuerySet(self, field_name, value, unique, lookup)
+            yield query_class(self, field_name, value, unique, lookup)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''
@@ -583,3 +620,10 @@ an exception is raised.
                 seq.append(el)
             cache[key] = seq
             return seq
+
+
+class QueryGroup(object):
+    
+    def __init__(self):
+        self.queries = []
+        

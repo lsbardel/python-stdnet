@@ -27,8 +27,8 @@ redis_connection = namedtuple('redis_connection',
                               'host port db password socket_timeout decode')
  
 
-class field_query(RedisScript):
-    script = read_lua_file('field_query.lua')
+class build_query(RedisScript):
+    script = read_lua_file('build_query.lua')
     
     
 class load_query(RedisScript):
@@ -111,26 +111,33 @@ different model) which has a *field* containing current model ids.'''
             self.intersect(tkey,keys).expire(tkey,self.expire)
         return tkey
     
-    def accumulate(self, pipe, qs):
+    def accumulate(self, qs):
+        pipe = self.pipe
         backend = self.backend
         if getattr(qs,'backend',None) != backend:
             return ('',qs)
         p = 'z' if self.meta.ordering else 's'
         meta = self.meta
-        args = []
-        for child in qs:
-            arg = self.accumulate(pipe, child)
-            args.extend(arg)
-        if qs.keyword == 'set':
+        if qs.keyword == 'query':
+            bq = qs.backend_query()
+            pipe.command_stack.extend(bq.pipe.command_stack[1:])
+            args = ('key',bq.query_key)
+        else:
+            args = []
+            for child in qs:
+                arg = self.accumulate(child)
+                args.extend(arg)
+        if qs.keyword in ('set','query'):
             if qs.name == 'id' and not args:
                 return 'key',backend.basekey(meta,'id')
             else:
                 bk = backend.basekey(meta)
                 key = backend.tempkey(meta)
                 unique = 'u' if qs.unique else ''
-                pipe.script_call('field_query', bk, p, key, qs.name,
+                pipe.script_call('build_query', bk, p, key, qs.name,
                                  unique, qs.lookup, *args)
                 return 'key',key
+        # a select operation
         else:
             key = backend.tempkey(meta)
             args = args[1::2]
@@ -150,18 +157,16 @@ different model) which has a *field* containing current model ids.'''
         backend = self.backend
         client = backend.client
         self.pipe = client.pipeline()
-        what, key = self.accumulate(self.pipe, self.qs)
+        what, key = self.accumulate(self.queryelem)
         if what == 'key':
             self.query_key = key
         else:
             raise valueError('Critical error while building query')
         if self.meta.ordering:
-            self.pipe.zcard(self.query_key)
             self.ismember = getattr(client,'zrank')
             self.card = getattr(client,'scard')
             self._check_member = self.zism
         else:
-            self.pipe.scard(self.query_key)
             self.ismember = getattr(client,'sismember')
             self.card = getattr(client,'zcard')
             self._check_member = self.sism
@@ -169,13 +174,17 @@ different model) which has a *field* containing current model ids.'''
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
+        if self.meta.ordering:
+            self.pipe.zcard(self.query_key)
+        else:
+            self.pipe.scard(self.query_key)
         self.executed_command, self.query_results = redis_execution(self.pipe)
         return self.query_results[-1]
         
     def order(self, start, stop):
         '''Perform ordering with respect model fields.'''
-        if self.qs.ordering:
-            sort_by = self.qs.ordering
+        if self.queryelem.ordering:
+            sort_by = self.queryelem.ordering
             skey = self.backend.tempkey(self.meta)
             okey = backend.basekey(meta, OBJ,'*->{0}'.format(sort_by.name))
             order = ['BY', okey, 'LIMIT', start, stop]
@@ -204,7 +213,7 @@ elements in the query.'''
         meta = self.meta
         start, stop = self.get_redis_slice(slic)
         order = self.order(start, stop)
-        fields = self.qs.fields or None
+        fields = self.queryelem.fields or None
         if fields == ('id',):
             fields_attributes = fields
         elif fields:
@@ -245,7 +254,7 @@ elements in the query.'''
             meta = self.meta
             bkey = backend.basekey
             pipe = None
-            fields = self.qs.fields or None
+            fields = self.queryelem.fields or None
             fields_attributes = None
             if fields:
                 fields, fields_attributes = meta.backend_fields(fields)

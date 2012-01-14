@@ -7,8 +7,8 @@ from stdnet.apps.searchengine import SearchEngine, double_metaphone
 from stdnet.apps.searchengine.models import Word, WordItem, AutoComplete
 from stdnet.utils import populate
 
-from .basicwords import basic_english_words
-from .testsearch.models import Item, RelatedItem
+from example.wordsearch.basicwords import basic_english_words
+from example.wordsearch.models import Item, RelatedItem
 
 
 python_content = 'Python is a programming language that lets you work more\

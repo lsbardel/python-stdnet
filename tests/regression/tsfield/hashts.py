@@ -5,7 +5,7 @@ from stdnet import test, orm
 from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
                              
-from .models import HashTimeSeries, DateHashTimeSeries
+from examples.tsmodels import HashTimeSeries, DateHashTimeSeries
 
 
 NUM_DATES = 300

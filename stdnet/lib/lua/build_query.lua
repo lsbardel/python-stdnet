@@ -1,7 +1,7 @@
--- Script to perform a lookup on a field
+-- Script to aggregate a stdnet query
 bk = KEYS[1] -- base key for model
 s = KEYS[2] -- 's' for set or 'z' for sorted sets
-rkey = KEYS[3] -- the key where to store the result ids
+rkey = KEYS[3] -- the key where to store the structure containing the resuls
 unionstore = s .. 'unionstore'
 name = KEYS[4]
 unique = KEYS[5]
@@ -39,7 +39,7 @@ while i < table.getn(KEYS) do
 			add(val) -- straightforward add of a member
 		end
 	elseif unique == 'u' then
-		-- Unique field but not an id. These fields maps to id in an hash table
+		-- Unique field but not an id. These fields maps to ids in an hash table
 		mapkey = bk .. ':uni:' .. name
 		if what == 'key' then
 			-- This lookup is quite rare
@@ -56,6 +56,7 @@ while i < table.getn(KEYS) do
 			add(redis.call('hget', mapkey, val))
 		end
 	elseif what == 'key' then
+	    -- An index with a key, The key may be a set, a zset or a list
 		if s == 's' then
 			for i,v in pairs(redis.call('smembers', val)) do
 				union(v)

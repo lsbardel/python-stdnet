@@ -22,7 +22,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 
 Requirements
 =================
-* Python 2.6 or up to Python 3.3.
+* Python 2.6 to Python 3.3.
 * Optional Cython_ for faster redis protocol parser.
 * You need access to a Redis_ server.
 
@@ -54,7 +54,7 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.6.1'
+	'0.7.0'
 
 
 .. _runningtests:

@@ -34,14 +34,6 @@ def read_lua_file(filename, path = None):
     name = os.path.join(path,filename)
     with open(name) as f:
         return f.read()
- 
- 
-def read_lua_file(filename):
-    '''Load lua script from the stdnet/lib/lua directory'''
-    path = os.path.split(os.path.abspath(__file__))[0]
-    name = os.path.join(path,'lua',filename)
-    with open(name) as f:
-        return f.read()
     
  
 class RedisScriptMeta(type):

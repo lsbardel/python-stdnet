@@ -16,18 +16,78 @@ def iterable(value):
     else:
         return False
     
-
-class EmptySet(frozenset):
-    query_set = ''
     
+class Q(object):
+    keyword = ''
+    name = ''
+    def __init__(self, meta = None, session = None, select_related = None,
+                 ordering = None, fields = None, get_field = None,
+                 name = None, keyword = None):
+        self.data = {'meta':meta,
+                     'session':session,
+                     'select_related': select_related,
+                     'ordering': ordering,
+                     'fields': fields,
+                     'get_field': get_field}
+        self.name = name if name is not None else self.name
+        self.keyword = keyword if keyword is not None else self.keyword
+    
+    @property
+    def _meta(self):
+        return self.data['meta']
+    
+    @property
+    def meta(self):
+        return self.data['meta']
+    
+    @property
+    def model(self):
+        return self._meta.model
+    
+    @property
+    def session(self):
+        return self.data['session']
+    
+    @property
+    def select_related(self):
+        return self.data['select_related']
+    
+    @property
+    def ordering(self):
+        return self.data['ordering']
+    
+    @property
+    def fields(self):
+        return self.data['fields']
+    
+    @property
+    def _get_field(self):
+        return self.data['get_field']
+        
+    @property
+    def backend(self):
+        return self.session.backend
+    
+    def construct(self):
+        raise NotImplementedError()
+    
+    
+class EmptyQuery(Q):
+    keyword = 'empty'
     def items(self, slic):
         return []
     
+    def __len__(self):
+        return 0
+    
     def count(self):
-        return len(self)
+        return 0
+    
+    def construct(self):
+        return None
     
     
-class QueryElement(object):
+class QueryElement(Q):
     '''An element of a :class:`Query`.
     
 .. attribute:: qs
@@ -44,12 +104,10 @@ class QueryElement(object):
     if ``False`` this :class:`QueryElement` has no underlying elements and
     won't produce any query.
 '''
-    keyword = ''
-    name = ''
-    get = None
-    
-    def __init__(self, qs, underlying):
-        self.qs = qs
+    def __init__(self, *args, **kwargs):
+        self.__backend_query = None
+        underlying = kwargs.pop('underlying',None)
+        super(QueryElement,self).__init__(*args,**kwargs)
         self.underlying = underlying if underlying is not None else ()
     
     def __repr__(self):
@@ -68,29 +126,17 @@ class QueryElement(object):
     def __len__(self):
         return len(self.underlying)
     
+    def construct(self):
+        return self
+    
+    def backend_query(self, **kwargs):
+        if self.__backend_query is None:
+            self.__backend_query = self.backend.Query(self, **kwargs)
+        return self.__backend_query
+    
     @property
     def valid(self):
         return bool(self.underlying)
-        
-    @property
-    def meta(self):
-        return self.qs._meta
-    
-    @property
-    def backend(self):
-        return self.qs.backend
-    
-    @property
-    def ordering(self):
-        return self.qs.ordering
-    
-    @property
-    def fields(self):
-        return self.qs.fields
-    
-    @property
-    def select_related(self):
-        return self.qs._select_related
     
     def flat(self):
         yield self.keyword
@@ -102,13 +148,13 @@ class QueryElement(object):
         
     
 class QuerySet(QueryElement):
+    '''A :class:`QueryElement` which represents a lookup on a field.'''
     keyword = 'set'
-    def __init__(self, qs, name = None, values = None,
-                    unique = False, lookup = 'in'):
-        super(QuerySet,self).__init__(qs, values)
-        self.name = name or 'id'
-        self.unique = unique
-        self.lookup = lookup
+    name = 'id'
+    def __init__(self, *args, **kwargs):
+        self.unique = kwargs.pop('unique',False)
+        self.lookup = kwargs.pop('lookup','in')
+        super(QuerySet,self).__init__(*args,**kwargs)
     
 
 class QueryQuery(QuerySet):
@@ -123,28 +169,32 @@ class QueryQuery(QuerySet):
     def valid(self):
         return True
     
-    def backend_query(self):
-        return self.underlying.backend_query()
-    
     
 class Select(QueryElement):
     """Forms the basis of select type set operations."""
-    def __init__(self, qs, keyword, queries):
-        super(Select,self).__init__(qs, queries)
-        self.keyword = keyword
-    
-        
-def intersect(qs, queries):
-    return Select(qs, 'intersect', queries)
-
-def union(qs, queries):
-    return Select(qs, 'union', queries)
-
-def difference(qs, queries):
-    return Select(qs, 'diff', queries)
+    pass
     
 
-class Query(object):
+def make_select(keyword,queries):
+    data = queries[0].data.copy()
+    data.update({'keyword': keyword, 'underlying': queries})
+    return Select(**data)
+
+def intersect(queries):
+    return make_select('intersect',queries)
+
+def union(queries):
+    return make_select('union',queries)
+
+def difference(queries):
+    return make_select('diff',queries)
+
+def queryset(qs):
+    data = qs.data.copy()
+    return QuerySet(**data)
+    
+
+class Query(Q):
     '''A :class:`Query` is produced in terms of a given :class:`Session`,
 using the :meth:`Session.query` method::
 
@@ -214,33 +264,16 @@ criteria and options associated with it.
 '''
     start = None
     stop = None
-    _get_field = None
     lookups = ('in','contains')
     
-    def __init__(self, meta, session, fargs = None, eargs = None,
-                 filter_sets = None, ordering = None,
-                 text = None, empty = False):
+    def __init__(self, *args, **kwargs):
         '''A :class:`Query` is not initialized directly.'''
-        self._meta  = meta
-        self.session = session
-        self.fargs  = fargs
-        self.eargs  = eargs
-        self.ordering = ordering
-        self.filter_sets = filter_sets
-        self.text = text
-        self._select_related = None
-        self.fields = None
-        self.__empty = empty
+        self.fargs  = kwargs.pop('fargs',None)
+        self.eargs  = kwargs.pop('eargs',None)
+        self.text  = kwargs.pop('text',None)
+        super(Query,self).__init__(*args,**kwargs)
         self.clear()
-    
-    @property
-    def backend(self):
-        return self.session.backend
-    
-    @property
-    def model(self):
-        return self._meta.model
-        
+     
     @property
     def executed(self):
         if self.__qset is not None:
@@ -364,12 +397,11 @@ fields.
 :rtype: a new :class:`Query` instance.
 '''
         if field != self._get_field:
-            if field not in self.meta._dfields:
-                if field_name not in fields:
-                    raise QuerySetError('Model "{0}" has no field "{1}"'\
-                                        .format(meta,field_name))
+            if field not in self._meta.dfields:
+                raise QuerySetError('Model "{0}" has no field "{1}".'\
+                                    .format(self._meta,field))
             q = self._clone()
-            q._get_field = field
+            q.data['get_field'] = field
             return q
         else:
             return self
@@ -393,12 +425,12 @@ to these ids.'''
         '''It returns a new ``QuerySet`` that automatically follows foreign-key
 relationships, selecting that additional related-object data when it executes
 its query. This is :ref:`performance boost <increase-performance>` when
-accessing the related fields of all (most) objects in your queryset.
+accessing the related fields of all (most) objects in your query.
 
 :parameter fields: fields to include in the loading. If not provided all
     foreign keys and :ref:`structured fields <model-field-structure>`
     in the model will be loaded.
-:rtype: an instance of a :class:`stdnet.orm.query.Queryset`.'''
+:rtype: a new :class:`Query`.'''
         if not fields:
             fields = []
             for field in self._meta.scalarfields:
@@ -414,7 +446,7 @@ accessing the related fields of all (most) objects in your queryset.
         '''This is provides a :ref:`performance boost <increase-performance>`
 in cases when you need to load a subset of fields of your model. The boost
 achieved is less than the one obtained when using
-:meth:`QuerySet.load_related`, since it does not reduce the number of requests
+:meth:`Query.load_related`, since it does not reduce the number of requests
 to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
@@ -475,20 +507,28 @@ objects on the server side.'''
     
     def delete(self):
         '''Delete all matched elements of the :class:`Query`.'''
-        c = self.backend_query().delete()
-        if c:
-            post_delete.send(sender=self.__class__, ids = c, query = self)
-            for id in c:
-                instance = self.model(id = id)
-                self.session.expunge(instance)
-        return c
+        session = self.session
+        with session.begin():
+            session.delete(self)        
+        #ids = self.backend_query().delete()
+        #post_delete.send(sender=self.__class__, ids = ids, query = self)
     
-    def backend_query(self):
+    def construct(self):
+        '''Build the :class:`QueryElement` representing this query.'''
+        if self.__construct is False:
+            self.__construct = self._construct()
+        return self.__construct
+        
+    def backend_query(self, **kwargs):
         '''Build and return the :class:`stdnet.BackendQuery`.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         if self.__qset is None:
-            self.__qset = self.construct()
+            q = self.construct()
+            if q is None:
+                self.__qset = EmptyQuery()
+            else:
+                self.__qset = q.backend_query(**kwargs)
         return self.__qset
     
     def test_unique(self, fieldname, value, instance = None, exception = None):
@@ -522,11 +562,14 @@ an exception is raised.
     def _clone(self):
         cls = self.__class__
         q = cls.__new__(cls)
-        q.__dict__ = self.__dict__.copy()
+        d = self.__dict__.copy()
+        d['data'] = d['data'].copy()
+        q.__dict__ = d
         q.clear()
         return q
     
     def clear(self):
+        self.__construct = False
         self.__qset = None
         self.__slice_cache = None
         
@@ -535,18 +578,16 @@ an exception is raised.
             self.__slice_cache = {}
         return self.__slice_cache
     
-    def construct(self):
-        if self.__empty:
-            return EmptySet()
-        q = QuerySet(self)
+    def _construct(self):
+        q = queryset(self)
         if self.fargs:
             args = []
             fargs = self.aggregate(self.fargs)
             for f in fargs:
                 # no values to filter on. empty result.
                 if not f.valid:
-                    return EmptySet()
-            q = intersect(self, [q]+fargs)
+                    return
+            q = intersect([q]+fargs)
         
         if self.eargs:
             eargs = self.aggregate(self.eargs)
@@ -555,11 +596,10 @@ an exception is raised.
                     eargs.remove(a)
             if eargs:
                 if len(eargs) > 1:
-                    eargs = [union(self, eargs)]
-                q = difference(self, [q]+eargs)
+                    eargs = [union(eargs)]
+                q = difference([q]+eargs)
         
-        q.get = self._get_field
-        return self.backend.Query(q)
+        return q
 
     def aggregate(self, kwargs):
         return sorted(self._aggregate(kwargs), key = lambda x : x.name)
@@ -586,17 +626,23 @@ an exception is raised.
                     value = lvalue
             else:
                 lookup = 'in'
-            if not isinstance(value, self.__class__):
+            if isinstance(value, Q):
+                value = value.construct()
+                query_class = QueryQuery
+            else:
                 query_class = QuerySet
                 if not iterable(value):
                     value = (value,)
                 value = tuple((field.index_value(v) for v in value))
-            else:
-                query_class = QueryQuery
                             
             unique = field.unique
             field_name = field.attname
-            yield query_class(self, field_name, value, unique, lookup)
+            data = self.data.copy()
+            data.update({'name':field.attname,
+                         'underlying':value,
+                         'unique':field.unique,
+                         'lookup':lookup})
+            yield query_class(**data)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''

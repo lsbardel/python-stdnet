@@ -39,14 +39,14 @@ queries specified by :class:`stdnet.orm.Query`.
     flag indicating if the query has been executed in the backend server
     
 '''
-    def __init__(self, queryelem, timeout = 0):
+    def __init__(self, queryelem, timeout = 0, **kwargs):
         '''Initialize the query for the backend database.'''
         self.queryelem = queryelem
         self.expire = max(timeout,30)
         self.timeout = timeout
         self.__count = None
         # build the queryset without performing any database communication
-        self._build()
+        self._build(**kwargs)
 
     def __repr__(self):
         return self.queryelem.__repr__()
@@ -103,7 +103,7 @@ queries specified by :class:`stdnet.orm.Query`.
     def _items(self, slic):
         raise NotImplementedError
     
-    def _build(self):
+    def _build(self, **kwargs):
         raise NotImplementedError
     
     def _execute_query(self):

@@ -218,6 +218,8 @@ can also be used as stand alone objects. For example::
                                 encoders.NumericDefault()
         self.timeout = timeout
         self.setup(**kwargs)
+        if self.instance is not None:
+            self.session = instance.session
         
     def makeid(self):
         return '{0}.{1}'.format(self._meta,str(uuid4())[:8])

@@ -7,19 +7,25 @@ from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
                                 InvalidTransaction
 
-from .query import Query
+from .query import Q, Query, EmptyQuery
 from .signals import *
 
 
 __all__ = ['Session','Manager','Transaction']
 
 
+def is_query(query):
+    return isinstance(query,Q)
+
+
 class SessionModel(object):
     
-    def __init__(self,meta):
+    def __init__(self, meta, session):
         self.meta = meta
+        self.session = session
         self._new = OrderedDict()
         self._deleted = OrderedDict()
+        self._delete_query = []
         self._modified = OrderedDict()
         self._loaded = {}
 
@@ -33,13 +39,13 @@ class SessionModel(object):
     def __iter__(self):
         """Iterate over all pending or persistent instances within this
 Session model."""
-        for v in self._new:
+        for v in itervalues(self._new):
             yield v
-        for m in self._modified:
+        for m in itervalues(self._modified):
             yield m
-        for d in self._deleted:
+        for d in itervalues(self._deleted):
             yield d
-            
+          
     @property
     def model(self):
         return self.meta.model
@@ -55,7 +61,7 @@ Session model."""
         return frozenset(itervalues(self._modified))
     
     @property
-    def deleted(self):
+    def loaded(self):
         "The set of all instances marked as 'deleted' within this ``Session``"
         return frozenset(itervalues(self._loaded))
     
@@ -65,8 +71,9 @@ Session model."""
         return frozenset(itervalues(self._deleted))
     
     def __contains__(self, instance):
-        return instance in self._new or instance in self._deleted\
-                             or instance in self._modified
+        iid = instance.state().iid
+        return iid in self._new or iid in self._deleted\
+                                or iid in self._modified
                                      
     def get(self, id):
         if id in self._modified:
@@ -76,32 +83,63 @@ Session model."""
         
     def add(self, instance, modified):
         state = instance.state()
+        iid = state.iid
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
         if state.persistent:
             if modified:
-                self._loaded.pop(state,None)
-                self._modified[instance] = instance
+                self._loaded.pop(iid,None)
+                self._modified[iid] = instance
             elif state not in self._modified:
-                self._loaded[instance] = instance
+                self._loaded[iid] = instance
         else:
-            self._new[instance] = instance
+            self._new[iid] = instance
         
         return instance
     
     def delete(self, instance):
         self.expunge(instance)
-        if instance.state().persistent:
-            self._deleted[instance] = instance
+        state = instance.state()
+        if state.persistent:
+            state.deleted = True
+            self._deleted[state.iid] = instance
     
     def expunge(self, instance):
-        instance._dbdata.pop('state',None)
+        if isinstance(instance,self.meta.model):
+            iid = instance.state().iid
+        else:
+            iid = instance
+        r = False
         for d in (self._new,self._modified,self._loaded,self._deleted):
-            if instance in d:
-                d.pop(instance)
-                return True
-        return False
+            if iid in d:
+                instance = d.pop(iid)
+                instance._dbdata.pop('state',None)
+                r = True
+        return r
     
+    def get_delete_query(self, **kwargs):
+        queries = self._delete_query
+        if queries:
+            if len(queries) == 1:
+                return queries[0].backend_query(**kwargs)
+            else:
+                bq = queries[0]
+                qs = [q.construct() for q in queries]
+                qs = union(bq,*qs)
+                return bq.backend.Query(qs, **kwargs)
+        
+    def query(self):
+        return self.session.query(self.model)
+    
+    def pre_commit(self):
+        '''Build a delete query from deleted instances'''
+        if self.model._model_type == 'object':
+            d = self.deleted
+            if d:
+                self._deleted.clear()
+                q = self.query().filter(id__in  = d)
+                self._delete_query.append(q.construct())
+            
     def post_commit(self, ids):
         instances = []
         for instance,id in zip(self,ids):
@@ -118,6 +156,8 @@ Session model."""
                 instance._dbdata['id'] = instance.id
             self.add(instance, False)
             return instance
+        else:
+            instance.state().deleted = True
 
 
 class Transaction(object):
@@ -186,13 +226,6 @@ operation in the database.'''
     def emptypipe(self):
         raise NotImplementederror
             
-    def structure_pipe(self, structure):
-        '''Create a pipeline for a structured datafield'''
-        id = structure.id
-        if id not in self._cachepipes:
-            self._cachepipes[id] = structure.struct()
-        return self._cachepipes[id].pipe
-    
     def __enter__(self):
         return self
     
@@ -283,8 +316,12 @@ class Session(object):
         for sm in self._models.values():
             yield sm
             
-    def model(self, meta):
-        return self._models.get(meta)
+    def model(self, meta, make = False):
+        sm = self._models.get(meta)
+        if sm is None:
+            sm = SessionModel(meta,self)
+            self._models[meta] = sm
+        return sm
             
     def begin(self):
         '''Begin a new class:`Transaction`.
@@ -298,6 +335,9 @@ If this :class:`Session` is already within a transaction, an error is raised.'''
     def query(self, model, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         return self.query_class(model._meta, self, **kwargs)
+    
+    def empty(self, model):
+        return EmptyQuery(model._meta, self)
     
     def get_or_create(self, model, **kwargs):
         '''Get an instance of *model* from the internal cache (only if the
@@ -330,18 +370,33 @@ from the **kwargs** parameters.
 :parameter modified: a boolean flag indictaing if the instance was modified.
     
 '''
-        meta = instance._meta
-        if meta not in self._models:
-            self._models[meta] = SessionModel(meta)
-        sm = self._models[meta]
+        sm = self.model(instance._meta,True)
         instance.session = self
         return sm.add(instance,modified)
     
     def delete(self, instance):
-        sm = self._models.get(instance._meta)
-        if sm:
-            sm.delete(instance)
+        '''Add an *instance* to the session instances to be deleted.
         
+:parameter instance: a class:`StdModel` or a :class:`Structure` instance.
+'''
+        sm = self.model(instance._meta,True)
+        # not an instance of a Model. Assume it is a query.
+        if is_query(instance):
+            if instance.session is not self:
+                raise ValueError('Adding a query generated by another session')
+            q = instance.construct()
+            if q is not None:
+                sm._delete_query.append(q)
+            return q
+        else:
+            instance.session = self
+            return sm.delete(instance)
+        
+    def delete_query(self, query):
+        meta = query._meta
+        sm = self.model(query._meta, True)
+        sm._delete_query.append(query)
+         
     def flush(self, model):
         return self.backend.flush(model._meta)
     
@@ -384,8 +439,8 @@ from the **kwargs** parameters.
         '''Callback by the :class:`stdnet.BackendDataServer` once the commit is
 finished. Remove the deleted instances and updated the modified and new
 instances.'''
-        sm = self._models.get(instance._meta)
-        if sm:
+        if hasattr(instance,'_meta'):
+            sm = self.model(instance._meta,True)
             instance.session = self
             return sm.server_update(instance, id)
         

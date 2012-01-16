@@ -1,10 +1,9 @@
 import os
 from struct import pack, unpack
 
-from stdnet import orm, struct, Structure, getdb
+from stdnet import orm, getdb
 from stdnet.lib import skiplist, read_lua_file, RedisScript
 from stdnet.utils import encoders
-from stdnet.backends.main import make_struct
 
 ##########################################################
 # flags
@@ -91,7 +90,7 @@ class ValueEncoder(encoders.Default):
             return super(ValueEncoder,self).loads(value[1:])
         
         
-class TS(Structure):
+class TS(orm.Structure):
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
     value_pickler = ValueEncoder()
@@ -138,20 +137,6 @@ class TimeSeriesField(orm.MultiField):
         super(TimeSeriesField,self).register_with_model(name, model)
         
     
-class makets(make_struct):
-    _structs = {}
-    
-    def __call__(self, server = None, id = None, pickler = None,
-                 value_pickler = None, **kwargs):
-        db = getdb(server)
-        s = TS(db, self._id(id))
-        self._structs[s.id] = s
-        return s
-    
-    
-struct.ts2 = makets('ts2')
-
-
 class TimeseriesSessionScript(RedisScript):
     script = read_lua_file('session.lua',script_path)
     

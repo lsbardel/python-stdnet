@@ -363,6 +363,9 @@ class ModelState(object):
                 raise ValueError('Id has changed from {0} to {1}.'\
                                  .format(instance.id,dbdata['id']))
             self.persistent = True
+            self.iid = instance.id
+        else:
+            self.iid = instance.id or 'new.{0}'.format(id(instance)) 
     
     def __repr__(self):
         if self.persistent:

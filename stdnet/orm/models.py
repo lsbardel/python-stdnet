@@ -43,7 +43,6 @@ class StdModel(StdNetBase):
     def __init__(self, **kwargs):
         for field in self._meta.scalarfields:
             self.set_field_value(field, kwargs.pop(field.name,None))
-        setattr(self,'id',kwargs.pop('id',None))
         if kwargs:
             raise ValueError("'%s' is an invalid keyword argument for %s" %\
                               (kwargs.keys()[0],self._meta))

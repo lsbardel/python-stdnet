@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from stdnet import test, struct
+from stdnet import test
 from stdnet.apps.timeseries2.models import TimeSeriesField 
 
 

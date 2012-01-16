@@ -20,7 +20,7 @@ init_data = {'set':{'count':0,'size':0},
 OBJECT_VERSION = StrictVersion('2.4.0')
 
 
-class RedisKeyData(orm.FakeModel):
+class RedisKeyData(orm.Model):
     
     def __init__(self, key, typ, len, ttl, enc):
         self.key = key
@@ -131,7 +131,7 @@ class RedisStats(object):
         return RedisKeyData(key,typ,l,ttl,enc)
 
     
-class RedisDbData(orm.FakeModel):
+class RedisDbData(orm.Model):
     
     def __init__(self, version = None, rpy = None, db = None, keys = None,
                  expires = None):

@@ -16,9 +16,10 @@ __all__ = ['ManyFieldManagerProxy',
 
 class ManyFieldManagerProxy(object):
     
-    def __init__(self, name, cache_name, pickler,
+    def __init__(self, name, factory, cache_name, pickler,
                  value_pickler, scorefun):
         self.name = name
+        self.factory = factory
         self.cache_name = cache_name
         self.pickler = pickler
         self.value_pickler = value_pickler
@@ -39,17 +40,13 @@ class ManyFieldManagerProxy(object):
             return rel_manager
         
     def get_related_manager(self, instance):
-        return self.get_structure(instance)
-    
-    def get_structure(self, instance):
         session = instance.session
-        st = getattr(backend,self.stype)
-        return st(backend.basekey(instance._meta,'id',instance.id,self.name),
-                  instance = instance,
-                  #timeout = meta.timeout,
-                  pickler = self.pickler,
-                  value_pickler = self.value_pickler,
-                  scorefun = self.scorefun)
+        backend = session.backend
+        id = backend.basekey(instance._meta,'id',instance.id,self.name)
+        return self.factory(id = id, instance = instance,
+                            pickler = self.pickler,
+                            value_pickler = self.value_pickler,
+                            scorefun = self.scorefun)
 
 
 class Many2ManyManagerProxy(ManyFieldManagerProxy):
@@ -148,6 +145,7 @@ a stand alone structure in the back-end server with very little effort.
         setattr(self.model,
                 self.name,
                 ManyFieldManagerProxy(self.name,
+                                      self.structure_class(),
                                       self.get_cache_name(),
                                       pickler = self.pickler,
                                       value_pickler = self.value_pickler,

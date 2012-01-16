@@ -6,7 +6,7 @@ from hashlib import sha1
 import stdnet
 from stdnet import FieldValueError
 from stdnet.conf import settings
-from stdnet.utils import iteritems, to_string, map, gen_unique_id, zip
+from stdnet.utils import to_string, map, gen_unique_id, zip
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping
@@ -34,7 +34,7 @@ class build_query(RedisScript):
 class load_query(RedisScript):
     script = read_lua_file('load_query.lua')
     
-    def callback(self, response, args, fields = None, fields_attributes = None):
+    def build(self, response, fields, fields_attributes):
         fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
@@ -47,13 +47,42 @@ class load_query(RedisScript):
         else:
             for id,fdata in response:
                 yield id,None,dict(pairs_to_dict(fdata))
+    
+    def callback(self, response, args, query = None, get = None,
+                 fields = None, fields_attributes = None):
+        meta = query.meta
+        if get:
+            field = meta.dfields[get]
+            tpy = field.to_python
+            if get == 'id':
+                return [tpy(v) for v in response]
+            else:
+                return [tpy(v) for _,v[1] in response]
+        else:
+            data = self.build(response, fields, fields_attributes)
+            result = query.backend.make_objects(meta, data)
+            return query.load_related(result)
                 
-                
+
 class delete_query(RedisScript):
     '''Lua script for bulk delete of an orm query, including cascade items.
 The first parameter is the model'''
     script = read_lua_file('delete_query.lua')
-                
+    
+    def callback(self, response, args, session = None, meta = None):
+        if response:
+            tpy = meta.pk.to_python
+            ids = []
+            sm = session.model(meta)
+            rem = sm.expunge if sm is not None else lambda x : x
+            for id in response:
+                id = tpy(id)
+                rem(id)
+                ids.append(id)
+            return ids
+        else:
+            return response
+    
 
 class commit_session(RedisScript):
     script = read_lua_file('session.lua')
@@ -75,17 +104,11 @@ def redis_execution(pipe):
     return command,result
     
     
+################################################################################
+##    REDIS QUERY CLASS
+################################################################################
 class RedisQuery(stdnet.BackendQuery):
         
-    def delete(self):
-        self.accumulate_delete()
-        self.executed_command, results = redis_execution(self.pipe)
-        return results[-1]
-    
-    ############################################################################
-    ##    INTERNALS
-    ############################################################################
-    
     def zism(self, r):
         return r is not None
     
@@ -123,24 +146,6 @@ different model) which has a *field* containing current model ids.'''
             self.intersect(tkey,keys).expire(tkey,self.expire)
         return tkey
     
-    def accumulate_delete(self):
-        meta = self.meta
-        pipe = self.pipe
-        backend = self.backend
-        query = self.queryelem.qs
-        related_queries = []
-        for name in meta.related:
-            rmanager = getattr(meta.model,name)
-            bq = rmanager.query_from_query(query).backend_query()\
-                                                 .accumulate_delete()
-            pipe.command_stack.extend(bq.pipe.command_stack[1:])
-        bk = backend.basekey(meta)
-        indices = list(backend.flat_indices(meta))
-        s = 'z' if self.meta.ordering else 's'
-        self.pipe.script_call('delete_query', bk, self.query_key, s,
-                              len(indices)//2, *indices)
-        return self
-    
     def accumulate(self, qs):
         pipe = self.pipe
         backend = self.backend
@@ -149,8 +154,7 @@ different model) which has a *field* containing current model ids.'''
         p = 'z' if self.meta.ordering else 's'
         meta = self.meta
         if qs.keyword == 'query':
-            bq = qs.backend_query()
-            pipe.command_stack.extend(bq.pipe.command_stack[1:])
+            bq = qs.backend_query(pipe = pipe)
             args = ('key',bq.query_key)
         else:
             args = []
@@ -182,11 +186,11 @@ different model) which has a *field* containing current model ids.'''
                                  .format(qs.keyword))
             return 'key',key
         
-    def _build(self):
+    def _build(self, pipe = None, **kwargs):
         '''Set up the query for redis'''
         backend = self.backend
         client = backend.client
-        self.pipe = client.pipeline()
+        self.pipe = pipe if pipe is not None else client.pipeline()
         what, key = self.accumulate(self.queryelem)
         if what == 'key':
             self.query_key = key
@@ -243,17 +247,24 @@ elements in the query.'''
         meta = self.meta
         start, stop = self.get_redis_slice(slic)
         order = self.order(start, stop)
-        fields = self.queryelem.fields or None
-        if fields == ('id',):
-            fields_attributes = fields
-        elif fields:
-            fields, fields_attributes = meta.backend_fields(fields)
+        get = self.queryelem._get_field
+        fields_attributes = None
+        args = [self.query_key, backend.basekey(meta)]
+        if get:
+            if get == 'id':
+                fields_attributes = fields = (get,)
+            else:
+                fields, fields_attributes = meta.backend_fields((get,))
         else:
-            fields_attributes = ()
-            
-        args = [self.query_key,
-                backend.basekey(meta),
-                len(fields_attributes)]
+            fields = self.queryelem.fields or None
+            if fields == ('id',):
+                fields_attributes = fields
+            elif fields:
+                fields, fields_attributes = meta.backend_fields(fields)
+            else:
+                fields_attributes = ()
+                
+        args.append(len(fields_attributes))
         args.extend(fields_attributes)
         
         if order:
@@ -268,46 +279,12 @@ elements in the query.'''
             args.append(start)
             args.append(stop)
                     
-        options = {'fields':fields,'fields_attributes':fields_attributes}
-        data = backend.client.script_call('load_query', *args, **options)
-        result = backend.make_objects(meta, data)
-        return self.load_related(result)
-    
-        if fields:
-                pipe = client.pipeline()
-                hmget = pipe.hmget
-                for id in ids:
-                    hmget(bkey(meta, OBJ, to_string(id)),fields_attributes)
-        
-        # Load data
-        if ids:
-            meta = self.meta
-            bkey = backend.basekey
-            pipe = None
-            fields = self.queryelem.fields or None
-            fields_attributes = None
-            if fields:
-                fields, fields_attributes = meta.backend_fields(fields)
-                if fields:
-                    pipe = client.pipeline()
-                    hmget = pipe.hmget
-                    for id in ids:
-                        hmget(bkey(meta, OBJ, to_string(id)),fields_attributes)
-            else:
-                pipe = client.pipeline()
-                hgetall = pipe.hgetall
-                for id in ids:
-                    hgetall(bkey(meta, OBJ, to_string(id)))
-            if pipe is not None:
-                result = backend.make_objects(meta, ids,
-                                              pipe.execute(), fields,
-                                              fields_attributes)
-            else:
-                result = backend.make_objects(meta, ids)
-            return self.load_related(result)
-        else:
-            return ids
-    
+        options = {'fields':fields,
+                   'fields_attributes':fields_attributes,
+                   'query':self,
+                   'get':get}
+        return backend.client.script_call('load_query', *args, **options)    
+
 
 class Struct(object):
     __slots__ = ('instance','client')
@@ -397,6 +374,9 @@ class TS(Struct):
 struct_map = {'set':Set,'list':List,'zset':Zset,'hash':Hash,'ts':TS}
 
 
+################################################################################
+##    REDIS BACKEND
+################################################################################
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     connection_pools = {}
@@ -474,34 +454,31 @@ class BackendDataServer(stdnet.BackendDataServer):
         lua_data = []
         pipe = self.client.pipeline()
         for sm in session:
-            N = len(sm)
-            if not N:
-                continue
+            sm.pre_commit()
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
-                bk = basekey(meta)
-                s = 'z' if meta.ordering else 's'
-                indices = list(self.flat_indices(meta))
-                lua_data.extend((bk,s,N,len(indices)//2))
-                lua_data.extend(indices)
-                for instance in sm:
-                    state = instance.state()
-                    score = MIN_FLOAT
-                    if meta.ordering:
-                        v = getattr(instance,meta.ordering.name,None)
-                        if v is not None:
-                            score = meta.ordering.field.scorefun(v)
-                    if state.deleted:
-                        fids = meta.multifields_ids_todelete(state.instance)
-                        lua_data.extend(('d',state.id,score,len(fids)))
-                        lua_data.extend(fids)
-                    else:
+                delquery = sm.get_delete_query(pipe = pipe)
+                self.accumulate_delete(delquery)
+                N = len(sm)
+                if N:
+                    bk = basekey(meta)
+                    s = 'z' if meta.ordering else 's'
+                    indices = list(self.flat_indices(meta))
+                    lua_data.extend((bk,s,N,len(indices)//2))
+                    lua_data.extend(indices)
+                    for instance in sm:
+                        state = instance.state()
                         if not instance.is_valid():
                             raise FieldValueError(
                                         json.dumps(instance._dbdata['errors']))
+                        score = MIN_FLOAT
+                        if meta.ordering:
+                            v = getattr(instance,meta.ordering.name,None)
+                            if v is not None:
+                                score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         id = instance.id or ''
                         data = flat_mapping(data)
@@ -511,12 +488,37 @@ class BackendDataServer(stdnet.BackendDataServer):
         if lua_data:
             options = {'session': session, 'callback':callback}
             pipe.script_call('commit_session', *lua_data, **options)
+    
         transaction = session.transaction
         command, result = redis_execution(pipe)
         transaction.command = command
         transaction.result = result
         return transaction
-
+    
+    def accumulate_delete(self, query):
+        # Accumulate models queries for a delete. It loops through the
+        # related models to build related queries.
+        if query is None:
+            return
+        meta = query.meta
+        pipe = query.pipe
+        related_queries = []
+        for name in meta.related:
+            rmanager = getattr(meta.model,name)
+            rq = rmanager.query_from_query(query.queryelem)\
+                         .backend_query(pipe = pipe)
+            self.accumulate_delete(rq)
+        s = 'z' if meta.ordering else 's'
+        indices = list(self.flat_indices(meta))
+        mfields = [field.name for field in meta.multifields]
+        lua_data = [self.basekey(meta), query.query_key, s, len(indices)//2]
+        lua_data.extend(indices)
+        lua_data.append(len(mfields))
+        lua_data.extend(mfields)
+        options = {'meta':meta, 'session': query.session}
+        pipe.script_call('delete_query', *lua_data, **options)
+        return query
+        
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
         key = '{0}{1}'.format(self.namespace,meta.modelkey)

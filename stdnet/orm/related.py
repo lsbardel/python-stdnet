@@ -173,7 +173,8 @@ via a simple attribute of the model.'''
     
     def query_from_query(self, query):
         session = query.session
-        return session.query(self.model, fargs = {self.field.name: query}) 
+        return session.query(self.model,
+                             fargs = {self.field.name: query}) 
             
 
 def makeMany2ManyRelatedManager(formodel):

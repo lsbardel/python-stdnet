@@ -5,7 +5,6 @@ from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, iteritems
 
 from .base import StdNetType, Model
-from .signals import *
 from .session import Session, Manager
 
 
@@ -89,7 +88,7 @@ details.'''
         setattr(self, field.attname, value)
         return value
             
-    def save(self, transaction = None, skip_signal = False):
+    def save(self, transaction = None):
         '''Save the instance.
 The model must be registered with a :class:`stdnet.BackendDataServer`
 otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
@@ -103,24 +102,12 @@ otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
                         
                         Default: ``None``.
                         
-:parameter skip_signal: When saving an instance, :ref:`signals <signal-api>`
-                        are sent just before and just after saving. If
-                        this flag is set to ``False``, those signals
-                        are not used in the function call.
-                        
-                        Default: ``False``
-                        
 The method return ``self``.
 '''
         if transaction is None:
-            cls = self.__class__
-            session = cls.objects.session()
-            if not skip_signal:
-                pre_save.send(sender = cls, instance = self)
+            session = self.__class__.objects.session()
             with session.begin():
                 session.add(self)
-            if not skip_signal:
-                post_delete.send(sender=cls, instance = self)
         else:
             transaction.session.add(self)
         return self
@@ -165,14 +152,6 @@ If the instance is not available (it does not have an id) and
                 session.delete(self)
         else:
             transaction.session.delete(self)
-    
-    def related_objects(self):
-        '''A generator of related objects'''
-        objs = []
-        for rel in self._meta.related:
-            rmanager = getattr(self,rel)
-            for obj in rmanager.all():
-                yield obj
     
     def todict(self):
         '''Return a dictionary of serialised scalar field for pickling'''

@@ -39,7 +39,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **364 regression tests** with **80%** coverage.
+* **371 regression tests** with **80%** coverage.
 
 .. _vers06:
 
@@ -48,7 +48,7 @@ Ver. 0.6.2 - 2011 Nov 14
 * Critical bug fix in ``delete`` method when a model has no indices.
 * Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
   model ``delete`` method to crash.
-* **299 regression tests**.
+* **297 regression tests**.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

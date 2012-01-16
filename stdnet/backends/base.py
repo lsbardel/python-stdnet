@@ -94,6 +94,9 @@ queries specified by :class:`stdnet.orm.Query`.
     
     # VIRTUAL FUNCTIONS
     
+    def delete(self, related_queries):
+        raise NotImplementedError()
+    
     def _has(self, val):
         raise NotImplementedError
     
@@ -167,7 +170,7 @@ It must implement the *loads* and *dumps* methods.'''
 this function for customizing their handling of connection parameters.'''
         raise NotImplementedError()
     
-    def execute_session(self, session):
+    def execute_session(self, session, callback):
         '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
         raise NotImplementedError()
 
@@ -208,40 +211,19 @@ this function for customizing their handling of connection parameters.'''
             keys = list(keys)
         return len(keys)
     
+    def model_keys(self, model):
+        '''Return a list of database keys used by model *model*'''
+        raise NotImplementedError()
+        
     def instance_keys(self, obj):
         '''Return a list of database keys used by instance *obj*'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def execute_session(self, session):
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def structure(self, struct):
-        raise NotImplementedError
-        
-    def delete_object(self, obj, transaction = None):
-        '''Delete an object from the data server and clean up indices.
-Called to clear a model instance.
-
-:parameter obj: instance of :class:`stdnet.orm.StdModel`
-:parameter deleted: a list or ``None``. If a list, deleted keys
-                    will be appended to it.
-:parameter multi_field: if ``True`` the multifield ids (if any)
-                        will be removed. Default ``True``.
-        '''
-        if 'id' not in obj._dbdata:
-            return 0
-        
-        commit = False
-        if not transaction:
-            commit = True
-            transaction = self.transaction()
-        
-        self._delete_object(obj, transaction)
-        
-        if commit:
-            transaction.commit()
-            
-        return 1
+        raise NotImplementedError()
     
     def make_objects(self, meta, data):
         '''Generator of :class:`stdnet.orm.StdModel` instances with data

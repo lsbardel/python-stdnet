@@ -10,34 +10,39 @@ names = populate('string',LEN, min_len = 5, max_len = 20)
 
 
 class TransactionReceiver(object):
-    requests = {}
-    def __call__(self, sender, response = None, raw_command = None, **kwargs):
-        if raw_command in self.requests:
-            self.requests[raw_command]['response'] = response
-        else:
-            self.requests[raw_command] = kwargs
+    
+    def __init__(self):
+        self.transactions = []
+        
+    def __call__(self, sender, instances = None, transaction = None, **kwargs):
+        self.transactions.append((sender,instances,transaction,
+                                  transaction.session))
         
 
 class TestTransactions(test.TestCase):
     model = SimpleModel
         
-    def testSave(self):
+    def testCreate(self):
         session = self.session()
-        query = session.quary(self.model)
+        query = session.query(self.model)
+        receiver = TransactionReceiver()
+        orm.post_commit.connect(receiver, orm.Session)
+        orm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
             self.assertEqual(t.backend,session.backend)
             s = session.add(self.model(code = 'test',
                                        description = 'just a test'))
             self.assertFalse(s.id)
-            self.assertRaises(SimpleModel.DoesNotExist,
-                              SimpleModel.objects.get,id=s.id)
-            s2 = SimpleModel(code = 'test2', description = 'just a test')\
-                                .save(transaction = t)
-
-        all = list(SimpleModel.objects.all())
+            session.add(self.model(code = 'test2',
+                                   description = 'just a test'))
+            
+        all = query.all()
         self.assertEqual(len(all),2)
-        v = SimpleModel.objects.get(code = 'test')
-        self.assertEqual(v.description,'just a test')
+        self.assertTrue(len(receiver.transactions),2)
+        sender,instances,t,s = receiver.transactions[0]
+        self.assertTrue(instances)
+        self.assertEqual(instances,all)
+        self.assertEqual(s,session)
         
     def testDelete(self):
         s = SimpleModel(code = 'test', description = 'just a test').save()

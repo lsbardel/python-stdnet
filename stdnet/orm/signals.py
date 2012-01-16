@@ -3,9 +3,8 @@ from stdnet.utils.dispatch import Signal
 __all__ = ['class_prepared',
            'pre_init',
            'post_init',
-           'pre_save',
-           'post_save',
-           'pre_delete',
+           'pre_commit',
+           'post_commit',
            'post_delete']
 
 
@@ -14,8 +13,6 @@ class_prepared = Signal(providing_args=["class"])
 pre_init = Signal(providing_args=["instance", "args", "kwargs"])
 post_init = Signal(providing_args=["instance"])
 
-pre_save = Signal(providing_args=["instance", "raw"])
-post_save = Signal(providing_args=["instance", "raw", "created"])
-
-pre_delete = Signal(providing_args=["instance"])
-post_delete = Signal(providing_args=["instance"])
+pre_commit = Signal(providing_args=["instances", "transaction"])
+post_commit = Signal(providing_args=["instances", "transaction"])
+post_delete = Signal(providing_args=["ids", "query"])

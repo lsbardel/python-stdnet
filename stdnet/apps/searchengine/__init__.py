@@ -40,7 +40,7 @@ from inspect import isclass
 from stdnet import orm
 from stdnet.utils import to_string, iteritems
 
-from .models import Word, WordItem, AutoComplete, Tag
+from .models import Word, WordItem, Tag
 from .ignore import STOP_WORDS, PUNCTUATION_CHARS
 from .processors.metaphone import dm as double_metaphone
 from .processors.porter import PorterStemmer
@@ -90,21 +90,6 @@ def stemming_processor(words):
         word = stem(word, 0, len(word)-1)
         yield word
 
-
-def autocomplete_processor(words):
-    if auto:
-        otexts = list(texts)
-        if not otexts:
-            autotext = text.strip()
-            texts = list(auto.search(autotext))
-        else:
-            autotext = otexts[-1]
-            texts = otexts[:-1]
-            N = len(texts)
-            texts.extend(auto.search(autotext))
-            if len(texts) == N:
-                texts = otexts
-    
     
 class SearchEngine(orm.SearchEngine):
     """A python implementation for the :class:`stdnet.orm.SearchEngine`
@@ -118,13 +103,7 @@ driver.
 :parameter stop_words: list of words not included in the search engine.
 
                        Default ``stdnet.apps.searchengine.ignore.STOP_WORDS``
-                        
-:parameter autocomplete: Name for the autocomplete sorted set.
-                         If ``None`` `autocomplete` functionality won't
-                         be available.
-                         
-                         Default ``None``.
-                         
+                          
 :parameter metaphone: If ``True`` the double metaphone_ algorithm will be
     used to store and search for words. The metaphone should be the last
     world middleware to be added.
@@ -147,8 +126,8 @@ driver.
     ITEM_PROCESSORS = []
     
     def __init__(self, min_word_length = 3, stop_words = None,
-                 autocomplete = None, metaphone = True,
-                 stemming = True, splitters = None):
+                 metaphone = True, stemming = True,
+                 splitters = None):
         super(SearchEngine,self).__init__()
         self.MIN_WORD_LENGTH = min_word_length
         stop_words = stop_words if stop_words is not None else STOP_WORDS
@@ -164,7 +143,6 @@ driver.
             self.add_word_middleware(stemming_processor)
         if metaphone:
             self.add_word_middleware(tolerant_metaphone_processor)
-        self._autocomplete = autocomplete
         
     def split_text(self, text):
         if self.punctuation_regex:
@@ -179,13 +157,6 @@ driver.
         WordItem.flush()
         if full:
             Word.flush()
-        
-    @property
-    def autocomplete(self):
-        if self._autocomplete:
-            ac = AutoComplete.me(self._autocomplete)
-            #ac.minlen = self.MIN_WORD_LENGTH
-            return ac
         
     def _index_item(self, item, words):    
         link = self._link_item_and_word

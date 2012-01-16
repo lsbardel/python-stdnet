@@ -52,10 +52,10 @@ class finance_data(object):
                 
         self.num_insts = session.query(Instrument).count()
         self.num_funds = session.query(Fund).count()
+        return session
     
     def makePositions(self, test, use_transaction = True):
-        self.create(test, use_transaction)
-        session = test.session()
+        session = self.create(test, use_transaction)
         instruments = session.query(Instrument).all()
         if use_transaction:
             with session.begin():
@@ -75,6 +75,7 @@ class finance_data(object):
                         Position(instrument = inst, dt = dt, fund = f).save()
                         
         self.num_pos = session.query(Position).count()
+        return session
         
     
 class FinanceTest(test.TestCase):

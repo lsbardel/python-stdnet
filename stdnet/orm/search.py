@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .models import StdModel
 from .fields import DateTimeField, CharField
-from .signals import post_save, post_delete
+from .signals import post_commit
 
 
 class SearchEngine(object):
@@ -58,10 +58,8 @@ search engine.
         model._tag_field = tag_field
         model._index_related = related or ()
         update_model = UpdateSE(self)
-        delete_model = RemoveFromSE(self)
-        self.REGISTERED_MODELS[model] = (update_model,delete_model)
-        post_save.connect(update_model, sender = model)
-        post_delete.connect(delete_model, sender = model)
+        self.REGISTERED_MODELS[model] = update_model
+        post_commit.connect(update_model, sender = model)
             
     def words_from_text(self, text, for_search = False):
         '''Generator of indexable words in *text*.
@@ -104,7 +102,6 @@ Can and should be reimplemented by subclasses.'''
     def index_item(self, item, skipremove = False):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
-If autocomplete is enabled, it adds indexes for it too.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
 :parameter skipremove: If ``True`` it skip the remove step for
@@ -170,22 +167,18 @@ class UpdateSE(object):
     def __init__(self, se):
         self.se = se
         
-    def __call__(self, instance, **kwargs):
-        if not instance.last_indexed:
-            self.se.index_item(instance)
-            instance.last_indexed = datetime.now()
-            instance.save(skip_signal = True)
+    def __call__(self, instances, transaction = None, **kwargs):
+        for instance in instances:
+            state = instance.state()
+            if state.deleted:
+                self.se.remove_item(instance)
+            else:
+                if not instance.last_indexed:
+                    self.se.index_item(instance)
+                    instance.last_indexed = datetime.now()
+                    instance.save(skip_signal = True)
         
         
-class RemoveFromSE(object):
-    
-    def __init__(self, se):
-        self.se = se
-        
-    def __call__(self, instance, **kwargs):
-        self.se.remove_item(instance)
-        
-
 class stdnet_processor(object):
     '''A search engine processor for stdnet models.
 An engine processor is a callable

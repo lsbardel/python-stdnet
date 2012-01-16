@@ -473,12 +473,11 @@ objects on the server side.'''
             val = val.id
         return val in self.backend_query()
     
-    def delete(self, sync_session = False):
+    def delete(self):
         '''Delete all matched elements of the :class:`Query`.'''
-        c = self.backend_query().delete(with_ids = sync_session)
+        c = self.backend_query().delete()
         if c:
-            post_delete.send(sender=self.__class__, instance = self)
-        if sync_session:
+            post_delete.send(sender=self.__class__, ids = c, query = self)
             for id in c:
                 instance = self.model(id = id)
                 self.session.expunge(instance)

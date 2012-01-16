@@ -6,7 +6,7 @@ from stdnet import test
 from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
-from examples.models import Instrument, Fund, Position, Dictionary
+from examples.models import Instrument, Fund, Position, Dictionary, SimpleModel
 from examples.data import FinanceTest
 
 DICT_LEN    = 200
@@ -14,34 +14,49 @@ dict_keys   = populate('string', DICT_LEN, min_len = 5, max_len = 20)
 dict_values = populate('string', DICT_LEN, min_len = 20, max_len = 300)
 
 
+class TestSimpleModel(test.TestCase):
+    model = SimpleModel
+    
+    def testSimple(self):
+        session = self.session()
+        with session.begin():
+            session.add(self.model(code = 'ciao'))
+        all = session.query(self.model).all()
+        self.assertEqual(len(all),1)
+        session.query(self.model).delete()
+        all = session.query(self.model).all()
+        self.assertEqual(all,[])
+
+
 class TestDeleteScalarFields(FinanceTest):
         
     def testFlushSimpleModel(self):
         '''Use the class method flush to remove all instances of a
  Model including filters.'''
-        self.data.create()
-        self.assertTrue(Instrument.flush()>self.data.num_insts)
-        self.assertEqual(Instrument.objects.all().count(),0)
-        Fund.flush()
+        session = self.data.create(self)
+        self.assertTrue(session.flush(Instrument)>self.data.num_insts)
+        self.assertEqual(session.query(Instrument).all(),[])
+        self.assertTrue(session.flush(Fund))
         # Now we check the database if it is empty as it should
-        keys = list(Instrument._meta.cursor.keys())
+        keys = list(session.backend.model_keys(Instrument))
         self.assertEqual(len(keys),0)
         
     def testFlushRelatedModel(self):
-        self.data.makePositions()
-        self.assertTrue(Instrument.flush()>self.data.num_insts)
-        self.assertEqual(Position.objects.all().count(),0)
-        self.assertEqual(Instrument.objects.all().count(),0)
+        session = self.data.makePositions(self)
+        self.assertTrue(session.flush(Instrument)>self.data.num_insts)
+        self.assertEqual(session.query(Instrument).all(),[])
+        self.assertTrue(session.flush(Fund))
         # Now we check the database if it is empty as it should
-        Fund.flush()
-        keys = list(Instrument._meta.cursor.keys())
+        keys = list(session.backend.model_keys(Instrument))
+        self.assertEqual(len(keys),0)
+        keys = list(session.backend.model_keys(Position))
         self.assertEqual(len(keys),0)
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
-        self.data.create()
-        Instrument.objects.all().delete()
-        self.assertEqual(Instrument.objects.all().count(),0)
+        session = self.data.create(self)
+        session.query(Instrument).delete()
+        self.assertEqual(session.query(Instrument).all(),[])
         #There should be only one key in the database,
         # The one used to autoincrement the Instrument ids
         keys = list(Instrument._meta.cursor.keys())
@@ -55,7 +70,7 @@ class TestDeleteScalarFields(FinanceTest):
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
         # Create Positions which hold foreign keys to Instruments
-        self.data.makePositions()
+        self.data.makePositions(self)
         for inst in Instrument.objects.all():
             inst.delete()
         self.assertEqual(Instrument.objects.all().count(),0)
@@ -65,10 +80,10 @@ test as it involves lots of operations and consistency checks.'''
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
         # Create Positions which hold foreign keys to Instruments
-        self.data.makePositions()
-        Instrument.objects.all().delete()
-        self.assertEqual(Instrument.objects.all().count(),0)
-        self.assertEqual(Position.objects.all().count(),0)
+        session = self.data.makePositions(self)
+        session.query(Position).delete()
+        self.assertEqual(session.query(Instrument).all(),[])
+        self.assertEqual(session.query(Position).all(),[])
         
     def __testDeleteRelatedCounting(self):
         '''Test delete on models with related models. This is a crucial

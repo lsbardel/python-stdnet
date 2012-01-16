@@ -3,7 +3,7 @@
 .. module:: stdnet
 
 ================================
-Backend Server and Structures
+Backend Data Server
 ================================
 
 Behind the scenes is the database. Currently stdnet has support for Redis_ only but
@@ -24,7 +24,8 @@ be of different types:
     * Timeseries if you use the redis branch from lsbardel_.
     
 In other words, you can look at redis as a data structure server, the networked
-equivalent of the `standard template library in C++ <http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html>`_.
+equivalent of the `standard template library in C++
+<http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html>`_.
 And that is where stdnet get its name from, *std* from the standard template library
 and *net* from networked.
 

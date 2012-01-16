@@ -2,7 +2,7 @@ import json
 from copy import copy
 
 from stdnet import getdb
-from stdnet.utils import itervalues
+from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
                                 InvalidTransaction
@@ -12,6 +12,112 @@ from .signals import *
 
 
 __all__ = ['Session','Manager','Transaction']
+
+
+class SessionModel(object):
+    
+    def __init__(self,meta):
+        self.meta = meta
+        self._new = OrderedDict()
+        self._deleted = OrderedDict()
+        self._modified = OrderedDict()
+        self._loaded = {}
+
+    def __repr__(self):
+        return self.meta.__repr__()
+    __str__ = __repr__
+    
+    def __len__(self):
+        return len(self._new) + len(self._modified) + len(self._deleted)
+        
+    def __iter__(self):
+        """Iterate over all pending or persistent instances within this
+Session model."""
+        for v in self._new:
+            yield v
+        for m in self._modified:
+            yield m
+        for d in self._deleted:
+            yield d
+            
+    @property
+    def model(self):
+        return self.meta.model
+    
+    @property
+    def new(self):
+        "The set of all modified instances within this ``Session``"
+        return frozenset(itervalues(self._new))
+    
+    @property
+    def modified(self):
+        "The set of all modified instances within this ``Session``"
+        return frozenset(itervalues(self._modified))
+    
+    @property
+    def deleted(self):
+        "The set of all instances marked as 'deleted' within this ``Session``"
+        return frozenset(itervalues(self._loaded))
+    
+    @property
+    def deleted(self):
+        "The set of all instances marked as 'deleted' within this ``Session``"
+        return frozenset(itervalues(self._deleted))
+    
+    def __contains__(self, instance):
+        return instance in self._new or instance in self._deleted\
+                             or instance in self._modified
+                                     
+    def get(self, id):
+        if id in self._modified:
+            return self._modified.get(id)
+        elif id in self._deleted:
+            return self._deleted.get(id)
+        
+    def add(self, instance, modified):
+        state = instance.state()
+        if state.deleted:
+            raise ValueError('State is deleted. Cannot add.')
+        if state.persistent:
+            if modified:
+                self._loaded.pop(state,None)
+                self._modified[instance] = instance
+            elif state not in self._modified:
+                self._loaded[instance] = instance
+        else:
+            self._new[instance] = instance
+        
+        return instance
+    
+    def delete(self, instance):
+        self.expunge(instance)
+        if instance.state().persistent:
+            self._deleted[instance] = instance
+    
+    def expunge(self, instance):
+        instance._dbdata.pop('state',None)
+        for d in (self._new,self._modified,self._loaded,self._deleted):
+            if instance in d:
+                d.pop(instance)
+                return True
+        return False
+    
+    def post_commit(self, ids):
+        instances = []
+        for instance,id in zip(self,ids):
+            self.server_update(instance, id)
+            instances.append(instance)
+        return instances
+    
+    def server_update(self, instance, id = None):
+        state = instance.state()
+        self.expunge(instance)
+        if not state.deleted:
+            if id:
+                instance.id = instance._meta.pk.to_python(id)
+                instance._dbdata['id'] = instance.id
+            self.add(instance, False)
+            return instance
 
 
 class Transaction(object):
@@ -100,24 +206,31 @@ operation in the database.'''
         pass
             
     def commit(self):
-        '''Close the transaction and commit commands to the backend.'''
+        '''Close the transaction and commit session to the backend.'''
         if not self.is_open:
             raise InvalidTransaction('Invalid operation.\
  Transaction already closed.')
-        results = self.backend.execute_session(self.session)
-        callbacks = self._callbacks
-        self._callbacks = []
-        if len(results) and len(callbacks):
-            self._results = ((cb(r) for cb,r in\
-                                   zip(callbacks,results)))
-        else:
-            self._results = results
+        self.trigger(pre_commit)
+        self.backend.execute_session(self.session, self.post_commit)
+        
+    def post_commit(self, response):
+        for ids,sm in zip(response,self.session):
+            instances = sm.post_commit(ids)
+            post_commit.send(sm.model, instances = instances,
+                             transaction = self)
         self.close()
     
     def close(self):
+        post_commit.send(Session, transaction = self)
         self.session.transaction = None
         self.session = None
 
+    # INTERNAL FUNCTIONS
+    def trigger(self, signal):
+        send = getattr(signal,'send')
+        for sm in self.session:
+            send(sm.model, instances = sm, transaction = self)
+        
     # VIRTUAL FUNCTIONS
     
     def _execute(self):
@@ -157,31 +270,8 @@ class Session(object):
         self.backend = getdb(backend)
         self.transaction = None
         self.autocommit = autocommit
-        self._new = OrderedDict()
-        self._deleted = OrderedDict()
-        self._modified = OrderedDict()
-        self._loaded = {}
+        self._models = OrderedDict()
         self.query_class = query_class or Query
-    
-    @property
-    def new(self):
-        "The set of all new instances within this ``Session``"
-        return frozenset(self._new.values())
-    
-    @property
-    def modified(self):
-        "The set of all modified instances within this ``Session``"
-        return frozenset(self._modified.values())
-    
-    @property
-    def deleted(self):
-        "The set of all instances marked as 'deleted' within this ``Session``"
-        return frozenset(self._loaded.values())
-    
-    @property
-    def deleted(self):
-        "The set of all instances marked as 'deleted' within this ``Session``"
-        return frozenset(self._deleted.values())
     
     def __str__(self):
         return str(self.backend)
@@ -189,6 +279,13 @@ class Session(object):
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__,self)
     
+    def __iter__(self):
+        for sm in self._models.values():
+            yield sm
+            
+    def model(self, meta):
+        return self._models.get(meta)
+            
     def begin(self):
         '''Begin a new class:`Transaction`.
 If this :class:`Session` is already within a transaction, an error is raised.'''
@@ -222,11 +319,9 @@ from the **kwargs** parameters.
         return res,created
 
     def get(self, model, id):
-        uuid = model.get_uuid(id)
-        if uuid in self._modified:
-            return self._modified.get(uuid)
-        elif uuid in self._deleted:
-            return self._modified.get(uuid)
+        sm = self._models.get(model._meta)
+        if sm:
+            return sm.get(id)
         
     def add(self, instance, modified = True):
         '''Add an *instance* to the session.
@@ -235,42 +330,24 @@ from the **kwargs** parameters.
 :parameter modified: a boolean flag indictaing if the instance was modified.
     
 '''
-        state = instance.state()
-        if state.deleted:
-            raise ValueError('State is deleted. Cannot add.')
+        meta = instance._meta
+        if meta not in self._models:
+            self._models[meta] = SessionModel(meta)
+        sm = self._models[meta]
         instance.session = self
-        if state.persistent:
-            if modified:
-                self._loaded.pop(state,None)
-                self._modified[instance] = instance
-            elif state not in self._modified:
-                self._loaded[instance] = instance
-        else:
-            self._new[instance] = instance
-        
-        return instance
+        return sm.add(instance,modified)
     
     def delete(self, instance):
-        self.expunge(instance)
-        if instance.state().persistent:
-            self._deleted[instance] = instance
+        sm = self._models.get(instance._meta)
+        if sm:
+            sm.delete(instance)
         
     def flush(self, model):
         return self.backend.flush(model._meta)
     
     def __contains__(self, instance):
-        return instance in self._new or state in self._deleted\
-                                     or state in self._modified
-                                  
-    def __iter__(self):
-        """Iterate over all pending or persistent instances within this
-Session."""
-        for v in self._new:
-            yield v
-        for m in self._modified:
-            yield m
-        for d in self._deleted:
-            yield d
+        sm = self._models.get(instance._meta)
+        return instance in sm if sm is not None else False
         
     def commit(self):
         """Flush pending changes and commit the current transaction.
@@ -302,27 +379,15 @@ Session."""
                 raise InvalidTransaction('No transaction was started')
 
         self.transaction.commit()
-        
-    def expunge(self, instance):
-        instance._dbdata.pop('state',None)
-        for d in (self._new,self._modified,self._loaded,self._deleted):
-            if instance in d:
-                d.pop(instance)
-                return True
-        return False
     
     def server_update(self, instance, id = None):
         '''Callback by the :class:`stdnet.BackendDataServer` once the commit is
 finished. Remove the deleted instances and updated the modified and new
 instances.'''
-        state = instance.state()
-        self.expunge(instance)
-        if not state.deleted:
-            if id:
-                instance.id = instance._meta.pk.to_python(id)
-                instance._dbdata['id'] = instance.id
-            self.add(instance, False)
-            return instance
+        sm = self._models.get(instance._meta)
+        if sm:
+            instance.session = self
+            return sm.server_update(instance, id)
         
     @classmethod
     def clearall(cls):

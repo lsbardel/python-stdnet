@@ -48,18 +48,21 @@ class load_query(RedisScript):
             for id,fdata in response:
                 yield id,None,dict(pairs_to_dict(fdata))
                 
+                
+class delete_query(RedisScript):
+    '''Lua script for bulk delete of an orm query, including cascade items.
+The first parameter is the model'''
+    script = read_lua_file('delete_query.lua')
+                
 
 class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
-    def callback(self, response, args, session = None):
+    def callback(self, response, args, session = None, callback = None):
         # The session has received the callback from redis client
-        data = []
-        for instance,id in list(zip(session,response)):
-            instance = session.server_update(instance, id)
-            if instance:
-                data.append(instance)
-        return data
+        if callback:
+            callback(response)
+        return session
         
 
 def redis_execution(pipe):
@@ -74,6 +77,15 @@ def redis_execution(pipe):
     
 class RedisQuery(stdnet.BackendQuery):
         
+    def delete(self):
+        self.accumulate_delete()
+        self.executed_command, results = redis_execution(self.pipe)
+        return results[-1]
+    
+    ############################################################################
+    ##    INTERNALS
+    ############################################################################
+    
     def zism(self, r):
         return r is not None
     
@@ -110,6 +122,24 @@ different model) which has a *field* containing current model ids.'''
             tkey = self.meta.tempkey()
             self.intersect(tkey,keys).expire(tkey,self.expire)
         return tkey
+    
+    def accumulate_delete(self):
+        meta = self.meta
+        pipe = self.pipe
+        backend = self.backend
+        query = self.queryelem.qs
+        related_queries = []
+        for name in meta.related:
+            rmanager = getattr(meta.model,name)
+            bq = rmanager.query_from_query(query).backend_query()\
+                                                 .accumulate_delete()
+            pipe.command_stack.extend(bq.pipe.command_stack[1:])
+        bk = backend.basekey(meta)
+        indices = list(backend.flat_indices(meta))
+        s = 'z' if self.meta.ordering else 's'
+        self.pipe.script_call('delete_query', bk, self.query_key, s,
+                              len(indices)//2, *indices)
+        return self
     
     def accumulate(self, qs):
         pipe = self.pipe
@@ -279,14 +309,6 @@ elements in the query.'''
             return ids
     
 
-class DeleteQuery(RedisScript):
-    '''Lua script for bulk delete of an orm query, including cascade items.
-The first parameter is the model'''
-    script = '''\
-        
-'''
-
-
 class Struct(object):
     __slots__ = ('instance','client')
     def __init__(self, instance, client):
@@ -372,6 +394,8 @@ class TS(Struct):
     def size(self):
         return self.client.hlen(self.id)
         
+struct_map = {'set':Set,'list':List,'zset':Zset,'hash':Hash,'ts':TS}
+
 
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
@@ -438,52 +462,60 @@ class BackendDataServer(stdnet.BackendDataServer):
             return dict(zip(toload,fields))
         else:
             return EMPTY_DICT
+    
+    def flat_indices(self, meta):
+        for idx in meta.indices:
+            yield idx.attname
+        for idx in meta.indices:
+            yield 1 if idx.unique else 0
         
-    def execute_session(self, session):
+    def execute_session(self, session, callback):
         basekey = self.basekey
         lua_data = []
         pipe = self.client.pipeline()
-        for instance in session:
-            meta = instance._meta
-            state = instance.state()
-            bk = basekey(meta)
+        for sm in session:
+            N = len(sm)
+            if not N:
+                continue
+            meta = sm.meta
             model_type = meta.model._model_type
-            # The model is a structure
             if model_type == 'structure':
-                self.flush_structure(instance, pipe)
+                self.flush_structure(sm, pipe)
             elif model_type == 'object':
-                score = MIN_FLOAT
-                s = 's'
-                if meta.ordering:
-                    s = 'z'
-                    v = getattr(instance,meta.ordering.name,None)
-                    if v is not None:
-                        score = meta.ordering.field.scorefun(v)
-                indices = tuple((idx.attname for idx in meta.indices))
-                uniques = tuple((1 if idx.unique else 0\
-                                             for idx in meta.indices))
-                if state.deleted:
-                    fids = meta.multifields_ids_todelete(state.instance)
-                    lua_data.extend(('del',bk,state.id,s,score,len(fids)))
-                    lua_data.extend(fids)
-                else:
-                    if not instance.is_valid():
-                        raise FieldValueError(
-                                    json.dumps(instance._dbdata['errors']))
-                    data = instance._dbdata['cleaned_data']
-                    id = instance.id or ''
-                    data = flat_mapping(data)
-                    action = 'change' if state.persistent else 'add'
-                    lua_data.extend((action,bk,id,s,score,len(data)))
-                    lua_data.extend(data)
-                lua_data.append(len(indices))
+                bk = basekey(meta)
+                s = 'z' if meta.ordering else 's'
+                indices = list(self.flat_indices(meta))
+                lua_data.extend((bk,s,N,len(indices)//2))
                 lua_data.extend(indices)
-                lua_data.extend(uniques)
+                for instance in sm:
+                    state = instance.state()
+                    score = MIN_FLOAT
+                    if meta.ordering:
+                        v = getattr(instance,meta.ordering.name,None)
+                        if v is not None:
+                            score = meta.ordering.field.scorefun(v)
+                    if state.deleted:
+                        fids = meta.multifields_ids_todelete(state.instance)
+                        lua_data.extend(('d',state.id,score,len(fids)))
+                        lua_data.extend(fids)
+                    else:
+                        if not instance.is_valid():
+                            raise FieldValueError(
+                                        json.dumps(instance._dbdata['errors']))
+                        data = instance._dbdata['cleaned_data']
+                        id = instance.id or ''
+                        data = flat_mapping(data)
+                        action = 'c' if state.persistent else 'a'
+                        lua_data.extend((action,id,score,len(data)))
+                        lua_data.extend(data)
         if lua_data:
-            options = {'session': session}
+            options = {'session': session, 'callback':callback}
             pipe.script_call('commit_session', *lua_data, **options)
-        command,result = redis_execution(pipe)
-        return result
+        transaction = session.transaction
+        command, result = redis_execution(pipe)
+        transaction.command = command
+        transaction.result = result
+        return transaction
 
     def basekey(self, meta, *args):
         """Calculate the key to access model data in the backend backend."""
@@ -502,6 +534,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         if pattern:
             return self.client.delpattern(pattern)
             
+    def model_keys(self, model):
+        pattern = '{0}*'.format(self.basekey(model._meta))
+        return self.client.keys(pattern)            
+        
     def instance_keys(self, obj):
         meta = obj._meta
         keys = [self.basekey(meta,OBJ,obj.id)]
@@ -510,20 +546,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(f.id)
         return keys
 
-    def structure(self, instance, client = None):
+    def flush_structure(self, sm, pipe):
         client = client or self.client
-        name = instance._meta.name
-        if name == 'set':
-            return Set(instance, client)
-        if name == 'zset':
-            return Zset(instance, client)
-        elif name == 'list':
-            return List(instance, client)
-        elif name == 'hashtable':
-            return Hash(instance, client)
-        elif name == 'ts':
-            return TS(instance, client)
-       
-    def flush_structure(self, instance, pipe):
-        self.structure(instance, pipe).commit()
+        struct = struct_map.get(sm.meta.name)
+        for instance in sm:
+            struct(instance,client).commit()
         

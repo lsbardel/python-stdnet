@@ -11,9 +11,7 @@ class TestSession(test.TestCase):
         
     def testQueryMeta(self):
         session = self.session()
-        self.assertEqual(len(session.new),0)
-        self.assertEqual(len(session.modified),0)
-        self.assertEqual(len(session.deleted),0)
+        self.assertEqual(len(session._models),0)
         qs = session.query(SimpleModel)
         self.assertTrue(isinstance(qs,orm.Query))
     
@@ -23,10 +21,11 @@ class TestSession(test.TestCase):
         m = SimpleModel(code='pluto',group='planet')
         session.add(m)
         self.assertTrue(m in session)
-        self.assertEqual(len(session.new),1)
-        self.assertEqual(len(session.modified),0)
-        self.assertEqual(len(session.deleted),0)
-        self.assertTrue(m in session.new)
+        sm = session.model(m._meta)
+        self.assertEqual(len(sm.new),1)
+        self.assertEqual(len(sm.modified),0)
+        self.assertEqual(len(sm.deleted),0)
+        self.assertTrue(m in sm.new)
         session.commit()
         self.assertEqual(m.id,1)
         

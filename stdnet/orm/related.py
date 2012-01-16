@@ -62,11 +62,20 @@ def Many2ManyThroughModel(field):
     from stdnet.orm import StdNetType, StdModel, ForeignKey
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
-    name = '{0}_{1}'.format(name_model,name_relmodel)
-    fields = {name_model: ForeignKey(field.model),
-              name_relmodel: ForeignKey(field.relmodel,
-                                        related_name = field.related_name)}
-    return StdNetType(name,(StdModel,),fields)
+    through = field.through
+    if through is None:
+        name = '{0}_{1}'.format(name_model,name_relmodel)
+        through = StdNetType(name,(StdModel,),{})
+        field.through = through
+        
+    # The field
+    field1 = ForeignKey(field.model, related_name = field.name,
+            related_manager_class = makeMany2ManyRelatedManager(field.relmodel))
+    field1.register_with_model(name_model, through)
+    
+    field2 = ForeignKey(field.relmodel, related_name = field.related_name,
+            related_manager_class = makeMany2ManyRelatedManager(field.model))
+    field2.register_with_model(name_relmodel, through)
 
 
 class LazyForeignKey(object):
@@ -161,46 +170,45 @@ via a simple attribute of the model.'''
     def query(self):
         kwargs = {self.field.name: self.related_instance}
         return super(RelatedManager,self).query().filter(**kwargs)
+    
+    def query_from_query(self, query):
+        session = query.session
+        return session.query(self.model, fargs = {self.field.name: query}) 
             
 
-class Many2ManyRelatedManager(RelatedManager):
-    '''A specialized :class:`Manager` for handling
+def makeMany2ManyRelatedManager(formodel):
+
+    class Many2ManyRelatedManager(One2ManyRelatedManager):
+        '''A specialized :class:`Manager` for handling
 many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
-attribute of the model.'''        
-    def add(self, value):
-        '''Add *value*, an instance of ``self.model``, to the set.'''
-        if not isinstance(value,self.relmodel):
-            raise FieldValueError(
-                    '%s is not an instance of %s' % (value,self.relmodel))
-        # Get the related manager
-        related = getattr(value, self.to_name)
-        self.st.add(value, transaction = trans)
-        related.st.add(self.related_instance, transaction = trans)
-        # If not part of a wider transaction, commit changes
-        if not transaction:
-            trans.commit()
-    
-    def remove(self, value):
-        '''Remove *value*, an instance of ``self.model`` from the set of
-elements contained by the field.'''
-        if not isinstance(value,self.model):
-            raise FieldValueError(
-                        '%s is not an instance of %s' % (value,self.to._meta))
-        trans = transaction or value.local_transaction()
-        related = getattr(value, self.to_name)
-        self.st.discard(value, transaction = trans)
-        related.st.discard(self.related_instance, transaction = trans)
-        # If not part of a wider transaction, commit changes
-        if not transaction:
-            trans.commit()
+attribute of the model.'''       
+        def add(self, value, **kwargs):
+            '''Add *value*, an instance of ``self.formodel``,
+            to the throw model.'''
+            if not isinstance(value,self.formodel):
+                raise FieldValueError(
+                        '%s is not an instance of %s' % (value,self.for_model))
+            # Get the related manager
+            session = self.session()
+            kwargs.update({self.formodel._meta.name: value,
+                           self.relmodel._meta.name: self.related_instance})
+            return session.add(self.model(**kwargs))
         
-    def filter(self, **kwargs):
-        '''Filter instances of related model.'''
-        kwargs['filter_sets'] = [self.st.id]
-        return super(M2MRelatedManager,self).filter(**kwargs)
-        
-    def exclude(self, **kwargs):
-        return self.filter().exclude(**kwargs)
-    
+        def remove(self, value):
+            '''Remove *value*, an instance of ``self.model`` from the set of
+    elements contained by the field.'''
+            if not isinstance(value,self.model):
+                raise FieldValueError(
+                            '%s is not an instance of %s' % (value,self.to._meta))
+            trans = transaction or value.local_transaction()
+            related = getattr(value, self.to_name)
+            self.st.discard(value, transaction = trans)
+            related.st.discard(self.related_instance, transaction = trans)
+            # If not part of a wider transaction, commit changes
+            if not transaction:
+                trans.commit()
+
+    Many2ManyRelatedManager.formodel = formodel
+    return Many2ManyRelatedManager

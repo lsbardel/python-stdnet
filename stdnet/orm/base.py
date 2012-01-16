@@ -101,12 +101,12 @@ mapper.
 .. attribute:: app_label
 
     Unless specified it is the name of the directory or file
-    (if at top level) containing the
-    :class:`stdnet.orm.StdModel` definition.
+    (if at top level) containing the :class:`StdModel` definition.
     
 .. attribute:: model
 
-    a subclass of :class:`stdnet.orm.StdModel`. Set by the ``orm``.
+    The :class:`StdModel` represented by the :class:`Metaclass`.
+    This attribute is set by the ``orm`` during class initialization.
     
 .. attribute:: ordering
 
@@ -123,7 +123,12 @@ mapper.
     
 .. attribute:: fields
 
-    list of :class:`stdnet.orm.Field` instances.
+    list of all :class:`Field` instances.
+    
+.. attribute:: indices
+
+    List of :class:`Field` which are indices (:attr:`Field.index` attribute
+    set to ``True``).
     
 .. attribute:: modelkey
 
@@ -133,7 +138,7 @@ mapper.
         
 .. attribute:: pk
 
-    The primary key :class:`stdnet.orm.Field`
+    The :class:`Field` representing the primary key.
 '''
     searchengine = None
     connection_string = None
@@ -155,7 +160,6 @@ mapper.
         self.timeout = 0
         self.related = {}
         self.verbose_name = verbose_name or self.name
-        
         # Check if ID field exists
         try:
             pk = fields['id']
@@ -166,20 +170,15 @@ mapper.
         self.pk = pk
         if not self.pk.primary_key:
             raise FieldError("Primary key must be named id")
-        
         for name,field in fields.items():
             if name == 'id':
                 continue
             field.register_with_model(name,model)
             if field.primary_key:
                 raise FieldError("Primary key already available %s." % name)
-        
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
-        for scalar in self.scalarfields:
-            if scalar.index:
-                self.indices.append(scalar)
     
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
@@ -196,6 +195,8 @@ Return ``True`` if the instance is ready to be saved to database.'''
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
+            if not name:
+                continue
             value = instance.set_field_value(field, value)
             try:
                 svalue = field.serialize(value)

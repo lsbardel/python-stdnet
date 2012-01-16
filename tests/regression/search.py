@@ -1,14 +1,14 @@
+'''Search engine application in `apps.searchengine`.'''
 from random import randint
 
 from stdnet import test
-
 from stdnet.utils import to_string, range
 from stdnet.apps.searchengine import SearchEngine, double_metaphone
-from stdnet.apps.searchengine.models import Word, WordItem, AutoComplete
+from stdnet.apps.searchengine.models import Word, WordItem
 from stdnet.utils import populate
 
-from example.wordsearch.basicwords import basic_english_words
-from example.wordsearch.models import Item, RelatedItem
+from examples.wordsearch.basicwords import basic_english_words
+from examples.wordsearch.models import Item, RelatedItem
 
 
 python_content = 'Python is a programming language that lets you work more\
@@ -67,40 +67,42 @@ def make_items(num = 30, content = False, related = None):
     with Item.objects.transaction() as t:
         for name,co in zip(names,contents):
             if len(name) > 3:
-                Item(name=name,
-                     counter=randint(0,10),
-                     content = co,
-                     related = related).save(t)
+                item = Item(name=name,
+                            counter=randint(0,10),
+                            content = co,
+                            related = related).save(t)
+            
 
 
 class TestCase(test.TestCase):
     '''Mixin for testing the search engine. No tests implemented here,
-just registration and some utility functions. All searchengine tests
+just registration and some utility functions. All search-engine tests
 below will derive from this class.'''
     metaphone = True
-    autocomplete = None
     stemming = True
-    models = (AutoComplete,Word,WordItem,Item,RelatedItem)
-        
-    def register(self):
-        super(TestCase,self).register()
+    models = (Word,WordItem,Item,RelatedItem)
+    
+    def setUp(self):
         self.engine = SearchEngine(metaphone = self.metaphone,
-                                   stemming = self.stemming,
-                                   autocomplete = self.autocomplete)
+                                   stemming = self.stemming)
         self.engine.register(Item,('related',))
     
-    def simpleadd(self,name='python',counter=10,content=None,related=None):
+    def simpleadd(self, name = 'python', counter = 10, content = None,
+                  related = None):
         engine = self.engine
         item = self.make_item(name,counter,content,related)
-        wi = WordItem.objects.filter(model_type = Item, object_id = item.id)
+        wi = self.session().query(WordItem).filter(model_type = Item,
+                                                   object_id = item.id)
         self.assertTrue(wi)
         return item,wi
     
     def make_item(self,name='python',counter=10,content=None,related=None):
-        return Item(name=name,
-                    counter = counter,
+        session = self.session()
+        with session.begin():
+            item = session.add(Item(name=name, counter = counter,
                     content=content if content is not None else python_content,
-                    related= related).save()
+                    related= related))
+        return item
     
     def sometags(self, num = 10, minlen = 3):
         def _():
@@ -134,10 +136,12 @@ class TestMeta(TestCase):
         self.assertTrue(Item in self.engine.REGISTERED_MODELS)
                 
     def testWordModel(self):
-        # This tests was put in place bacuse the Word model was
+        # This tests was put in place because the Word model was
         # not working properly in Python 3
-        Word(id = 'bla').save()
-        w = Word.objects.get(id = 'bla')
+        session = self.session()
+        with session.begin():
+            session.add(Word(id = 'bla'))
+        w = session.query(Word).get(id = 'bla')
         self.assertFalse(isinstance(w.id,bytes))
         
     def testAddWithNumbers(self):
@@ -240,37 +244,3 @@ class TestSearchEngineWithRegistration(TestCase):
         self.assertEqual(len(words),len(Word.objects.all()))
     
     
-class TestAutoComplete(object):
-    autocomplete = 'en'
-    
-    def testMeta(self):
-        auto = self.engine.autocomplete
-        self.assertTrue(auto)
-        self.assertEqual(auto.id,'en')
-        self.assertEqual(len(auto.data),0)
-        
-    def testSimpleAdd(self):
-        engine = self.engine
-        item = self.make_item('fantastic',content='and')
-        item2 = self.make_item('world',content='the')
-        engine.index_item(item)
-        engine.index_item(item)
-        auto = engine.autocomplete
-        self.assertEqual(len(auto.data),8)
-        engine.index_item(item2)
-        self.assertEqual(len(auto.data),12)
-        items = [to_string(v) for v in auto.data]
-        self.assertEqual(items,['fa','fan','fant','fanta',
-                                'fantas','fantast','fantasti',
-                                'fantastic*',
-                                'wo','wor','worl','world*'])
-        
-    def testSearch(self):
-        engine = self.engine
-        make_items(content = True)
-        for item in Item.objects.all():
-            self.assertTrue(engine.index_item(item))
-        search = engine.search('tro')
-        self.assertTrue(search)
-        
-        

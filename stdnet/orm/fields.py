@@ -61,7 +61,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
               against the field will
               throw a :class:`stdnet.QuerySetError` exception.
               No database queries are allowed for non indexed fields
-              as a design decision (excplicit better than implicit).
+              as a design decision (explicit better than implicit).
     
     Default ``True``.
     
@@ -81,7 +81,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     * :attr:`Field.unique` is also ``True``.
     * There can be only one in a model.
     * It's attribute name in the model must be **id**.
-    * If not specified a :class:`stdnet.orm.AutoField` will be added.
+    * If not specified a :class:`AutoField` will be added.
     
     Default ``False``.
     
@@ -198,7 +198,10 @@ function users should never call.'''
             self.add_to_fields()
             
     def add_to_fields(self):
-        self.model._meta.scalarfields.append(self)
+        meta = self.model._meta
+        meta.scalarfields.append(self)
+        if self.index:
+            meta.indices.append(self)
     
     def get_attname(self):
         '''Generate the :attr:`attname` at runtime'''
@@ -504,7 +507,10 @@ the relation from the related object back to self.
     proxy_class = related.LazyForeignKey
     related_manager_class = related.One2ManyRelatedManager
     
-    def __init__(self, model, related_name = None, **kwargs):
+    def __init__(self, model, related_name = None, related_manager_class = None,
+                 **kwargs):
+        if related_manager_class:
+            self.related_manager_class = related_manager_class
         super(ForeignKey,self).__init__(**kwargs)
         if not model:
             raise stdnet.FieldError('Model not specified')
@@ -723,7 +729,7 @@ registered in the model hash table, it can be used.'''
             return self.encoder.dumps(value)
     
 
-class ManyToManyField(ForeignKey):
+class ManyToManyField(Field):
     '''A many-to-many relationship. Like :class:`ForeignKey`, it accepts
 **related_name** as extra argument.
 
@@ -763,30 +769,31 @@ and to remove::
     *group_user*.
     This model contains two :class:`ForeignKeys`, one to model holding the
     :class:`ManyToManyField` and the other to the *related_model*.
-'''
-    proxy_class = related.Many2ManyRelatedManager
-    
-    def __init__(self, model, through = None, **kwargs):
+'''    
+    def __init__(self, model, through = None, related_name = None, **kwargs):
         self.through = through
+        self.relmodel = model
+        self.related_name = related_name
         super(ManyToManyField,self).__init__(model,**kwargs)
         
-    def related_manager_class(self, field):
-        return related.Many2ManyRelatedManager(field,field.relmodel)
-    
-    def _register_with_related_model(self):
-        if not self.through:
-            self.through = related.Many2ManyThroughModel(self)
-        super(ManyToManyField,self)._register_with_related_model()
+    def register_with_model(self, name, model):
+        super(ManyToManyField,self).register_with_model(name, model)
+        if not model._meta.abstract:
+            related.load_relmodel(self, self._set_relmodel)
         
-    def add_to_fields(self):
-        pass
-        #self.model._meta.multifields.append(self)
-    
-    def add(self, instance, **kwargs):
-        '''Add an instance of :attr:`relmodel` to the field.'''
-    
+    def _set_relmodel(self, relmodel):
+        self.relmodel = relmodel
+        if not self.related_name:
+            self.related_name = '%s_set' % self.model._meta.name
+        related.Many2ManyThroughModel(self)
+        
     def get_attname(self):
-        return self.name
+        return None
         
     def todelete(self):
         return False
+    
+    def add_to_fields(self):
+        #A many to many field is a dummy field. All it does it provides a proxy
+        #for the through model with added syntaxic sugar
+        self.meta.dfields.pop(self.name)

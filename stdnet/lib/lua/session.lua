@@ -51,52 +51,63 @@ function update_indices(s, score, bk, id, idkey, indices, uniques, add)
 end
 
 -- LOOP OVER INSTANCES TO ADD/CHANGE/DELETE
-result = {}
+results = {}
 local N = table.getn(KEYS)
 local i = 0
 local t = 1
 while i < N  do
-    local action = KEYS[i+1]
-    local bk = KEYS[i+2]
-    local id = KEYS[i+3]
-    local s = KEYS[i+4] -- 's' for sorted sets, 'z' for zsets
-    local score = KEYS[i+5]
-    local idx0 = i+6
-    local length_data = KEYS[idx0]
-    local idx1 = idx0+length_data+1
-    local length_indices = KEYS[idx1]
+    local bk = KEYS[i+1]
+    local s = KEYS[i+2] -- 's' for sorted sets, 'z' for zsets
+    local num_instances = KEYS[i+3] + 0
+    local length_indices = KEYS[i+4] + 0
+    local idx1 = i+4
+    i = idx1+2*length_indices
     local indices = table_slice(KEYS,idx1+1,idx1+length_indices)
-    local uniques = table_slice(KEYS,idx1+length_indices+1,idx1+2*length_indices)
-    
-    -- ID NOT AVAILABLE. CREATE ONE
-    if id == '' then
-        id = redis.call('incr',bk .. ':ids')
-    end
-    local idkey = bk .. ':obj:' .. id
+    local uniques = table_slice(KEYS,idx1+length_indices+1,i)
     local idset = bk .. ':id'
-  
-    -- DELETING THE INSTANCE
-    if action == 'del' then
-        update_indices(s, score, bk, id, idkey, indices, uniques, false)
-        redis.call('del', idkey)
-        redis.call(s .. 'rem', idset, idkey)
-    -- ADDING OR EDITING THE INSTANCE
-    else
-        if action == 'change' then
-            update_indices(s, score, bk, id, idkey, indices, uniques, false)
-        end
+    local j = 0
+    local result = {}
+    
+    while j < num_instances do
+        local action = KEYS[i+1]
+        local id = KEYS[i+2]
+        local score = KEYS[i+3]
+        local idx0 = i+4
+        local length_data = KEYS[idx0] + 0
         local data = table_slice(KEYS,idx0+1,idx0+length_data)
-        if s == 's' then
-            redis.call('sadd', idset, id)
-        else
-            redis.call('zadd', idset, score, id)
-        end
-        redis.call('hmset', idkey, unpack(data))
-        update_indices(s, score, bk, id, idkey, indices, uniques, true)
-    end
-    result[t] = id
-    t = t + 1
-    i = idx1 + 2*length_indices
+        i = idx0 + length_data
+    
+	    -- ID NOT AVAILABLE. CREATE ONE
+	    if id == '' then
+	        id = redis.call('incr',bk .. ':ids')
+	    end
+	    local idkey = bk .. ':obj:' .. id
+	  
+	    -- DELETING THE INSTANCE
+	    if action == 'd' then
+	        update_indices(s, score, bk, id, idkey, indices, uniques, false)
+	        redis.call('del', idkey)
+	        redis.call(s .. 'rem', idset, idkey)
+	    -- ADDING OR EDITING THE INSTANCE
+	    else
+	        if action == 'c' then
+	            update_indices(s, score, bk, id, idkey, indices, uniques, false)
+	        end
+	        if s == 's' then
+	            redis.call('sadd', idset, id)
+	        else
+	            redis.call('zadd', idset, score, id)
+	        end
+	        if length_data > 0 then
+	           redis.call('hmset', idkey, unpack(data))
+	        end
+	        update_indices(s, score, bk, id, idkey, indices, uniques, true)
+	    end
+	    j = j + 1
+	    result[j] = id
+	end
+	results[t] = result
+	t = t + 1
 end
 
-return result
+return results

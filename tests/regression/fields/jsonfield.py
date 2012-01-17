@@ -44,6 +44,9 @@ class make_random(object):
     
 class TestJsonField(test.TestCase):
     model = Statistics
+    
+    def setUp(self):
+        self.register()
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
@@ -91,7 +94,7 @@ class TestJsonField(test.TestCase):
         a = Statistics(dt = date.today(),
                        data = {'mean': self})
         self.assertRaises(stdnet.FieldValueError,a.save)
-        self.assertTrue(a._temp['errors'])
+        self.assertTrue(a._dbdata['errors'])
         
 
 class TestJsonFieldAsData(test.TestCase):
@@ -118,6 +121,9 @@ The `as_string` atttribute is set to ``False``.'''
                         'std': {'1y':4.0,'2y':5.1}},
                 'dt': datetime.now()}
     
+    def setUp(self):
+        self.register()
+        
     def make(self, data = None):
         data = data or self.def_data
         return self.model(name = 'bla', data = data)
@@ -129,7 +135,7 @@ The `as_string` atttribute is set to ``False``.'''
     def testMake(self):
         m = self.make()
         self.assertTrue(m.is_valid())
-        data = m._temp['cleaned_data']
+        data = m._dbdata['cleaned_data']
         data.pop('data')
         self.assertEqual(len(data),6)
         self.assertEqual(float(data['data__mean']),1.0)
@@ -154,7 +160,7 @@ The `as_string` atttribute is set to ``False``.'''
     def testmakeEmpty(self):
         m = self.make(self.def_data2)
         self.assertTrue(m.is_valid())
-        cdata = m._temp['cleaned_data']
+        cdata = m._dbdata['cleaned_data']
         self.assertEqual(len(cdata),10)
         self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
@@ -175,7 +181,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 0))
         m = self.make(data)
         self.assertTrue(m.is_valid())
-        cdata = m._temp['cleaned_data']
+        cdata = m._dbdata['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':
@@ -189,7 +195,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 1))
         m = self.make(data)
         self.assertTrue(m.is_valid())
-        cdata = m._temp['cleaned_data']
+        cdata = m._dbdata['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':
@@ -203,7 +209,7 @@ The `as_string` atttribute is set to ``False``.'''
         data = dict(r.make(nesting = 3))
         m = self.make(deepcopy(data))
         self.assertTrue(m.is_valid())
-        cdata = m._temp['cleaned_data']
+        cdata = m._dbdata['cleaned_data']
         cdata.pop('data')
         for k in cdata:
             if k is not 'name':

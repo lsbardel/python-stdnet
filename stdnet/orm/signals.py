@@ -15,4 +15,4 @@ post_init = Signal(providing_args=["instance"])
 
 pre_commit = Signal(providing_args=["instances", "transaction"])
 post_commit = Signal(providing_args=["instances", "transaction"])
-post_delete = Signal(providing_args=["ids", "query"])
+post_delete = Signal(providing_args=["ids", "transaction"])

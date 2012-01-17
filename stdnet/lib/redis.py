@@ -1,13 +1,14 @@
 '''
-This file was originally forked from redis-py in January 2011.
-Since than it has moved on a different direction.
+The :mod:`stdnet.lib.redis` module was originally forked from redis-py_
+in January 2011. Since than it has moved on a different direction.
 
-Original Copyright
-Copyright (c) 2010 Andy McCurdy
-    BSD License   
+Copyright (c)
 
-Copyright (c) 2011 Luca Sbardella
-    BSD License
+* 2010 Andy McCurdy. BSD License   
+* 2011-2012 Luca Sbardella. BSD License
+    
+    
+.. _redis-py: https://github.com/andymccurdy/redis-py
 '''
 import time
 from datetime import datetime
@@ -22,10 +23,10 @@ from .exceptions import *
 from .scripts import nil, script_call_back, get_script, pairs_to_dict
 
 
-tuple_list = (tuple,list)
+tuple_list = (tuple, list, set, frozenset)
 
 
-def list_or_args(keys, args):
+def list_or_args(keys, args = None):
     if not isinstance(keys, tuple_list):
         keys = [keys]
     if args:
@@ -136,11 +137,8 @@ def bytes_to_string(result, encoding = 'utf-8'):
 
 
 class Redis(object):
-    """
-    Implementation of the Redis protocol.
-
-    This abstract class provides a Python interface to all Redis commands
-    and an implementation of the Redis protocol.
+    """Implementation of the Redis protocol.
+    This class provides a Python interface to all Redis commands.
 
     Connection and Pipeline derive from this, implementing how
     the commands are sent and received to the Redis server
@@ -222,9 +220,8 @@ class Redis(object):
     
     def pipeline(self):
         """
-Return a new pipeline object that can queue multiple commands for
-later execution. ``transaction`` indicates whether all commands
-should be executed atomically. Apart from making a group of operations
+Return a new :class:`Pipeline` that can queue multiple commands for
+later execution. Apart from making a group of operations
 atomic, pipelines are useful for reducing the back-and-forth overhead
 between the client and server.
 """
@@ -520,9 +517,9 @@ can be one of: refcount, encoding, idletime.'''
         "Remove and return the first item of the list ``name``"
         return self.execute_command('LPOP', name)
 
-    def lpush(self, name, value):
-        "Push ``value`` onto the head of the list ``name``"
-        return self.execute_command('LPUSH', name, value)
+    def lpush(self, name, *values):
+        "Push ``values`` onto the head of the list ``name``"
+        return self.execute_command('LPUSH', name, *values)
 
     def lrange(self, name, start, end):
         """
@@ -567,9 +564,9 @@ can be one of: refcount, encoding, idletime.'''
         """
         return self.execute_command('RPOPLPUSH', src, dst)
 
-    def rpush(self, name, value):
-        "Push ``value`` onto the tail of the list ``name``"
-        return self.execute_command('RPUSH', name, value)
+    def rpush(self, name, *values):
+        "Push ``values`` onto the tail of the list ``name``"
+        return self.execute_command('RPUSH', name, *values)
 
     def sort(self, name, start=None, num=None, by=None, get=None,
             desc=False, alpha=False, store=None, storeset=None):
@@ -713,14 +710,6 @@ The first element is the score and the second is the value.'''
         "Increment the score of ``value`` in sorted set ``name`` by ``amount``"
         return self.execute_command('ZINCRBY', name, amount, value)
 
-    def zinterstore(self, dest, keys, aggregate=None):
-        """
-        Intersect multiple sorted sets specified by ``keys`` into
-        a new sorted set, ``dest``. Scores in the destination will be
-        aggregated based on the ``aggregate``, or SUM if none is provided.
-        """
-        return self._zaggregate('ZINTERSTORE', dest, keys, aggregate)
-
     def zrange(self, name, start, end, desc=False, withscores=False):
         """
         Return a range of values from sorted set ``name`` between
@@ -805,6 +794,14 @@ The first element is the score and the second is the value.'''
         "Return the score of element ``value`` in sorted set ``name``"
         return self.execute_command('ZSCORE', name, value)
 
+    def zinterstore(self, dest, keys, aggregate=None):
+        """
+        Intersect multiple sorted sets specified by ``keys`` into
+        a new sorted set, ``dest``. Scores in the destination will be
+        aggregated based on the ``aggregate``, or SUM if none is provided.
+        """
+        return self._zaggregate('ZINTERSTORE', dest, keys, aggregate)
+    
     def zunionstore(self, dest, keys, aggregate=None):
         """
         Union multiple sorted sets specified by ``keys`` into
@@ -813,14 +810,17 @@ The first element is the score and the second is the value.'''
         """
         return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate)
     
-    def zdiffstore(self, dest, keys, withscores=None):
+    def zdiffstore(self, dest, keys, aggregate=None, withscores=None):
         """
-        Compute the difference of multiple sorted sets specified by ``keys`` into
-        a new sorted set, ``dest``.
+        Compute the difference of multiple sorted sets specified by
+        ``keys`` into a new sorted set, ``dest``.
         """
-        return self._zaggregate('ZDIFFSTORE', dest, keys, withscores = withscores)
+        return self._zaggregate('ZDIFFSTORE', dest, keys,
+                                aggregate = aggregate,
+                                withscores = withscores)
 
-    def _zaggregate(self, command, dest, keys, aggregate=None, withscores = None):
+    def _zaggregate(self, command, dest, keys,
+                    aggregate=None, withscores = None):
         pieces = [command, dest, len(keys)]
         if isinstance(keys, dict):
             items = keys.items()
@@ -840,7 +840,7 @@ The first element is the score and the second is the value.'''
             pieces.append(aggregate)
         return self.execute_command(*pieces)
     
-    ### TIMESERIES COMMAND ###
+    ### TIMESERIES COMMANDS ###
     def tslen(self, key):
         '''timeseries length'''
         return self.execute_command('TSLEN', key)
@@ -924,7 +924,7 @@ The first element is the score and the second is the value.'''
         items = flat_mapping(mapping)
         return self.execute_command('HMSET', name, *items)
 
-    def hmget(self, name, keys):
+    def hmget(self, name, *keys):
         "Returns a list of values ordered identically to ``keys``"
         return self.execute_command('HMGET', name, *keys)
 
@@ -995,6 +995,10 @@ on a key of a different datatype.
     def reset(self):
         self.command_stack = []
         self.execute_command('MULTI')
+        
+    @property
+    def empty(self):
+        return len(self.command_stack) <= 1
 
     def execute_command(self, *args, **options):
         """
@@ -1008,9 +1012,22 @@ pipe = pipe.set('foo', 'bar').incr('baz').decr('bang')
 At some other point, you can then run: pipe.execute(),
 which will execute all commands queued in the pipe.
 """
-        self.command_stack.append((args, options))
+        self.command_stack.append((args, options, []))
         return self
-        
+    
+    def add_callback(self, callback):
+        '''Adding a callback to the latest command in the pipeline.
+Tipycal usage::
+
+    pipe.sadd('foo').add_callback(mycallback)
+    
+The callback will be executed after the default callback for the command.
+'''
+        if self.empty:
+            raise ValueError('Cannot add callback. No command in the stack')
+        self.command_stack[-1][2].append(callback)
+        return self
+                
     def parse_response(self, response, commands, **kwargs):
         return list(self._parse_response(response[-1], commands[1:-1]))
         
@@ -1024,15 +1041,17 @@ which will execute all commands queued in the pipe.
         parse_response = super(Pipeline,self).parse_response
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
-                args, options = cmd
-                r = parse_response(r,args[0],**options)
+                args, options, callbacks = cmd
+                r = parse_response(r, args[0], **options)
+                for callback in callbacks:
+                    r = callback(r)
             yield r
 
-    def execute(self, with_callbacks = True):
+    def execute(self):
         "Execute all the commands in the current pipeline"
         self.execute_command('EXEC')
         commands = self.command_stack
         self.reset()
         conn = self.connection_pool.get_connection()
-        return conn.execute_pipeline(self.parse_response, commands)
+        return conn.execute_pipeline(commands, self.parse_response)
 

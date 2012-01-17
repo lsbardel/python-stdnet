@@ -39,11 +39,13 @@ handling of a single command from start to the response from the server.'''
         self.options = options
         self._response = None
         self.response = connection.parser.gets()
+        # if the command_name is missing, it means it is a pipeline of commands
+        # in the args input parameter
         if not self.command_name:
             self.response = []
             command = connection.pack_pipeline(args)
         else:
-            command = connection.pack_command(command_name,*args)
+            command = connection.pack_command(command_name, *args)
         self.send(command)
 
     @property
@@ -307,8 +309,10 @@ This class should not be directly initialized. Insteady use the
         return b''.join(self.__pack_gen(args))
     
     def pack_pipeline(self, commands):
+        '''Internal function for packing pipeline commands into a
+command byte to be send to redis.'''
         pack = self.pack_command
-        return b''.join(starmap(pack, (args for args,_ in commands)))
+        return b''.join(starmap(pack, (args[0] for args in commands)))
     
     def request(self, command_name, *args, **options):
         return self.request_class(self, command_name, args, **options)
@@ -318,7 +322,12 @@ This class should not be directly initialized. Insteady use the
         r = self.request(command_name, *args, **options)
         return r.finish()
     
-    def execute_pipeline(self, parse_response, commands):
+    def execute_pipeline(self, commands, parse_response):
+        '''Execute a :class:`Pipeline` in the server.
+
+:parameter commands: the list of commands to execute in the server.
+:parameter parse_response: callback for parsing the response from server.
+:rtype: ?'''
         r = self.request_class(self, None, commands,
                                parse_response = parse_response)
         return r.finish()

@@ -48,7 +48,10 @@ class TestDeleteSimpleModel(test.TestCase):
             session.add(self.model(code = 'vega', group = 'star'))
             session.add(self.model(code = 'sirus', group = 'star'))
             session.add(self.model(code = 'pluto', group = 'planet'))
-        query.filter(group = 'star').delete()
+        with session.begin() as t:
+            session.delete(query.filter(group = 'star'))
+        self.assertTrue(t.done)
+        self.assertEqual(len(query.all()),1)
         qs = query.filter(group = 'star')
         self.assertEqual(qs.count(),0)
         qs = query.filter(group = 'planet')
@@ -82,12 +85,14 @@ class TestDeleteScalarFields(FinanceTest):
         session.query(Instrument).delete()
         self.assertEqual(session.query(Instrument).all(),[])
         # There should be only keys for indexes and auto id
-        keys = list(session.backend.model_keys(Instrument))
-        self.assertEqual(len(keys),1)
-        self.assertEqual(keys[0],Instrument._meta.autoid())
-        Instrument.flush()
-        keys = list(Instrument._meta.cursor.keys())
-        self.assertEqual(len(keys),0)
+        backend = session.backend
+        if backend.name == 'redis':
+            keys = list(backend.model_keys(Instrument))
+            self.assertEqual(len(keys),1)
+            self.assertEqual(keys[0],backend.basekey(Instrument._meta,'ids'))
+            session.flush(Instrument)
+            keys = list(backend.model_keys(Instrument))
+            self.assertEqual(len(keys),0)
 
     def testDeleteRelatedOneByOne(self):
         '''Test delete on models with related models. This is a crucial
@@ -106,7 +111,7 @@ test as it involves lots of operations and consistency checks.'''
 test as it involves lots of operations and consistency checks.'''
         # Create Positions which hold foreign keys to Instruments
         session = self.data.makePositions(self)
-        session.query(Position).delete()
+        session.query(Instrument).delete()
         self.assertEqual(session.query(Instrument).all(),[])
         self.assertEqual(session.query(Position).all(),[])
         
@@ -137,13 +142,16 @@ class TestDeleteStructuredFields(test.TestCase):
     def fill(self, name):
         session = self.session()
         d = session.query(Dictionary).get(name = name)
+        self.assertEqual(len(session._models),1)
         data = d.data
+        self.assertEqual(len(session._models),2)
+        self.assertEqual(data.instance,d)
+        self.assertTrue(data.id)
         d.data.update(self.data)
         self.assertEqual(d.data.size(),0)
-        d.save()
-        data = d.data
+        session.commit()
         self.assertEqual(data.size(),len(self.data))
-        return Dictionary.objects.get(name = name)
+        return d
     
     def testSimpleFlush(self):
         session = self.session()
@@ -156,9 +164,12 @@ class TestDeleteStructuredFields(test.TestCase):
     def testFlushWithData(self):
         self.fill('test')
         self.fill('test2')
-        Dictionary.flush()
-        self.assertEqual(Dictionary.objects.all().count(),0)
+        session = self.session()
+        session.flush(Dictionary)
+        self.assertEqual(session.query(Dictionary).count(),0)
         # Now we check the database if it is empty as it should
-        keys = list(Dictionary._meta.cursor.keys())
-        self.assertEqual(len(keys),0)
+        backend = session.backend
+        if backend.name == 'redis':
+            keys = list(backend.model_keys(Dictionary))
+            self.assertEqual(keys,[])
     

@@ -2,6 +2,7 @@ import json
 import logging
 from copy import copy
 from hashlib import sha1
+from collections import namedtuple
 import time
 from datetime import date, datetime
 
@@ -15,6 +16,8 @@ from stdnet.utils import pickle, json, DefaultJSONEncoder,\
 from . import related
 from .globals import get_model_from_hash, JSPLITTER
 
+
+orderinginfo = namedtuple('orderinginfo','name field desc model nested')
 
 logger = logging.getLogger('stdnet.orm')
 
@@ -262,6 +265,9 @@ the ordering alorithm'''
     
     def filter(self, session, name, value):
         pass
+    
+    def get_sorting(self, name, errorClass):
+        raise errorClass('Cannot use nested sorting on field {0}'.format(self))
     
     def todelete(self):
         return False
@@ -573,6 +579,9 @@ the relation from the related object back to self.
         fname = name.split('__')[0]
         if fname in self.relmodel._meta.dfields:
             return session.query(self.relmodel, fargs = {name: value})
+        
+    def get_sorting(self, name, errorClass):
+        return self.relmodel._meta.get_sorting(name, errorClass)
     
     
 class JSONField(CharField):
@@ -686,6 +695,9 @@ which can be rather useful feature.
                 logger.critical('Unhandled exception while loading Json\
  field {0}'.format(self), exc_info = True)
     
+    def get_sorting(self, name, errorClass):
+        pass
+
 
 class ByteField(CharField):
     '''A field which contains binary data.

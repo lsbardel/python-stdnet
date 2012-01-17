@@ -9,7 +9,9 @@ from stdnet.conf import settings
 from stdnet.utils import to_string, map, gen_unique_id, zip
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
-from stdnet.lib.redis import flat_mapping
+from stdnet.lib.redis import flat_mapping, Pipeline
+
+from .base import BackendStructure, query_result, session_result
 
 MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
@@ -25,7 +27,6 @@ TMP = 'tmp'     # temorary key
 
 redis_connection = namedtuple('redis_connection',
                               'host port db password socket_timeout decode')
-session_result = namedtuple('session_result','meta result')
  
 
 class build_query(RedisScript):
@@ -63,15 +64,15 @@ class load_query(RedisScript):
             data = self.build(response, fields, fields_attributes)
             result = query.backend.make_objects(meta, data)
             return query.load_related(result)
-                
+        
 
 class delete_query(RedisScript):
     '''Lua script for bulk delete of an orm query, including cascade items.
 The first parameter is the model'''
     script = read_lua_file('delete_query.lua')
     
-    def callback(self, response, args, sm = None):
-        return (sm.meta, response)
+    def callback(self, response, args, meta = None):
+        return session_result(meta, response, 'delete')
         if response:
             
             meta = sm.meta
@@ -91,7 +92,7 @@ class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
     def callback(self, response, args, sm = None):
-        return session_result(sm.meta, response)
+        return session_result(sm.meta, response[0], 'save')
         
 
 def redis_execution(pipe, result_type):
@@ -100,11 +101,11 @@ def redis_execution(pipe, result_type):
     result = pipe.execute()
     results = []
     for v in result:
-        if isinstance(v,Exception):
+        if isinstance(v, Exception):
             raise v
-        elif isinstance(v,result_type):
+        elif isinstance(v, result_type):
             results.append(v)
-    return command,results
+    return command, results
     
     
 ################################################################################
@@ -150,6 +151,7 @@ different model) which has a *field* containing current model ids.'''
         return tkey
     
     def accumulate(self, qs):
+        # Accumulate a query
         pipe = self.pipe
         backend = self.backend
         p = 'z' if self.meta.ordering else 's'
@@ -177,11 +179,11 @@ different model) which has a *field* containing current model ids.'''
             key = backend.tempkey(meta)
             args = args[1::2]
             if qs.keyword == 'intersect':
-                getattr(pipe,p+'interstore')(key,*args)
+                getattr(pipe,p+'interstore')(key,args)
             elif qs.keyword == 'union':
-                getattr(pipe,p+'unionstore')(key,*args)
+                getattr(pipe,p+'unionstore')(key,args)
             elif qs.keyword == 'diff':
-                getattr(pipe,p+'diffstore')(key,*args)
+                getattr(pipe,p+'diffstore')(key,args)
             else:
                 raise ValueError('Could not perform "{0}" operation'\
                                  .format(qs.keyword))
@@ -209,24 +211,35 @@ different model) which has a *field* containing current model ids.'''
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
+        pipe = self.pipe
         if self.meta.ordering:
-            self.pipe.zcard(self.query_key)
+            pipe.zcard(self.query_key)
         else:
-            self.pipe.scard(self.query_key)
-        self.executed_command, self.query_results = redis_execution(self.pipe)
-        return self.query_results[-1]
-        
-    def order(self, start, stop):
+            pipe.scard(self.query_key)
+        pipe.add_callback(lambda r : query_result(self.query_key,r))
+        self.commands, self.query_results = redis_execution(pipe, query_result)
+        return self.query_results[-1].count
+    
+    def order(self):
         '''Perform ordering with respect model fields.'''
         if self.queryelem.ordering:
-            sort_by = self.queryelem.ordering
-            skey = self.backend.tempkey(self.meta)
-            okey = backend.basekey(meta, OBJ,'*->{0}'.format(sort_by.name))
-            order = ['BY', okey, 'LIMIT', start, stop]
-            if sort_by.field.internal_type == 'text':
-                order.append('ALPHA')
-            return order
-    
+            last = self.queryelem.ordering
+            desc = 'DESC' if last.desc else ''
+            nested = last.nested
+            nested_args = []
+            while nested:
+                meta = nested.model._meta
+                nested_args.extend((self.backend.basekey(meta),nested.name))
+                last = nested
+                nested = nested.nested
+            meth = ''
+            if last.field.internal_type == 'text':
+                meth = 'ALPHA'
+            
+            args = [last.name, meth, desc, len(nested_args)//2]
+            args.extend(nested_args)
+            return args
+            
     def _has(self, val):
         r = self.ismember(self.query_key, val)
         return self._check_member(r)
@@ -246,8 +259,8 @@ elements in the query.'''
         # Unwind the database query
         backend = self.backend
         meta = self.meta
+        order = self.order() or ()
         start, stop = self.get_redis_slice(slic)
-        order = self.order(start, stop)
         get = self.queryelem._get_field
         fields_attributes = None
         args = [self.query_key, backend.basekey(meta)]
@@ -269,16 +282,18 @@ elements in the query.'''
         args.extend(fields_attributes)
         
         if order:
-            args.append('explicit')
-            args.extend(order)
+            if start and stop == -1:
+                stop = self.execute_query()-1
+            if stop != -1:
+                stop = stop - start + 1
+            name = 'explicit'
         else:
+            name = ''
             if meta.ordering:
-                order = 'DESC' if meta.ordering.desc else 'ASC'
-            else:
-                order = ''
-            args.append(order)
-            args.append(start)
-            args.append(stop)
+                name = 'DESC' if meta.ordering.desc else 'ASC'
+        
+        args.extend((name,start,stop))
+        args.extend(order)
                     
         options = {'fields':fields,
                    'fields_attributes':fields_attributes,
@@ -287,24 +302,23 @@ elements in the query.'''
         return backend.client.script_call('load_query', *args, **options)    
 
 
-class Struct(object):
-    __slots__ = ('instance','client')
-    def __init__(self, instance, client):
-        self.instance = instance
-        self.client = client
-        if not instance.id:
-            instance.id = instance.makeid()
-            
-    def commit(self):
-        self.flush()
-        self.clear()
+class RedisStructure(BackendStructure):
     
-    @property
-    def id(self):
-        return self.instance.id
+    def __iter__(self):
+        if self.pipelined:
+            return iter(())
+        else:
+            return self._iter()
         
-
-class Set(Struct):
+    def _iter(self):
+        raise NotImplementedError()
+        
+    @property
+    def pipelined(self):
+        return isinstance(self.client,Pipeline)
+    
+    
+class Set(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
@@ -316,38 +330,54 @@ class Set(Struct):
     def size(self):
         return self.client.scard(self.id)
     
-    def clear(self):
-        self.instance.cache.toadd.clear()
-        self.instance.cache.toremove.clear()
+    def __iter__(self):
+        return self.client.smembers(self.id)
     
 
-class Zset(Struct):
+class Zset(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
         if cache.toadd:
-            self.client.sadd(self.id, *cache.toadd)
+            flat = cache.toadd.flat()
+            self.client.zadd(self.id, *flat)
         if cache.toremove:
-            self.client.sadd(self.id, *cache.toremove)
+            flat = cache.toadd.flat()
+            self.client.zadd(self.id, *flat)
     
     def size(self):
         return self.client.zcard(self.id)
     
+    def _iter(self):
+        # Redis return a value followed by score, we invert the result
+        for v,s in self.client.zrange(self.id, self.start, self.stop,
+                                    withscores = True):
+            yield s,v
+            
+    def values(self, desc = False, withscores = False):
+        for v in self.client.zrange(self.id, self.start, self.stop,
+                                    desc = False, withscores = False):
+            yield v
+    
 
-class List(Struct):
+class List(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
         if cache.front:
-            self.client.lpush(id, *cache.front)
+            self.client.lpush(self.id, *cache.front)
         if cache.back:
-            self.client.rpush(id, *cache.back)
+            self.client.rpush(self.id, *cache.back)
     
     def size(self):
         return self.client.llen(self.id)
     
+    def _iter(self):
+        for v in self.client.lrange(self.id, self.start, self.stop):
+            yield v
 
-class Hash(Set):
+
+class Hash(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
@@ -359,8 +389,23 @@ class Hash(Set):
     def size(self):
         return self.client.hlen(self.id)
     
+    def get(self, key, default = None):
+        return self.client.hmget(self.id, key) or default
     
-class TS(Struct):
+    def __iter__(self):
+        for k in self.script_call('hash_keys',self.id):
+            yield k
+            
+    def values(self):
+        for v in self.script_call('hash_values',self.id):
+            yield v
+            
+    def items(self):
+        for k,v in self.hgetall(self.id):
+            yield k,v
+    
+    
+class TS(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
@@ -370,7 +415,8 @@ class TS(Struct):
             self.client.hdel(id, *cache.todelete)
             
     def size(self):
-        return self.client.hlen(self.id)
+        return self.client.tslen(self.id)
+
         
 struct_map = {'set':Set,
               'list':List,
@@ -490,7 +536,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                         action = 'c' if state.persistent else 'a'
                         lua_data.extend((action,id,score,len(data)))
                         lua_data.extend(data)
-                    options = {'session': sm}
+                    options = {'sm': sm}
                     pipe.script_call('commit_session', *lua_data, **options)
     
         command, result = redis_execution(pipe, session_result)
@@ -517,7 +563,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         lua_data.extend(indices)
         lua_data.append(len(mfields))
         lua_data.extend(mfields)
-        options = {'meta':meta, 'session': query.session}
+        options = {'meta':meta}
         pipe.script_call('delete_query', *lua_data, **options)
         return query
         
@@ -550,11 +596,11 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(f.id)
         return keys
 
-    def structure(self, instance):
+    def structure(self, instance, session = None):
         struct = struct_map.get(instance._meta.name)
         return struct(instance,self.client)
         
-    def flush_structure(self, sm, pipe):
+    def flush_structure(self, sm, pipe = None):
         client = pipe or self.client
         struct = struct_map.get(sm.meta.name)
         for instance in sm:

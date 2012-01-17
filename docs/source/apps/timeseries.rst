@@ -1,23 +1,19 @@
 .. _apps-timeserie:
 
 
-.. module:: stdnet.apps.timeseries
+.. module:: stdnet.apps.timeseries.models
 
 ==========================
 Timeseries Models
 ==========================
 
 This is an experimental module which requires :ref:`stdnet redis branch <stdnetredis>`.
-To run the ``timeseries`` tests::
-
-    python runtests.py timeseries -i ts
-
 
 
 Timeseries base model
 =========================
 
-.. autoclass:: stdnet.apps.timeseries.models.TimeSeriesBase
+.. autoclass:: TimeSeriesBase
    :members:
    :member-order: bysource
 
@@ -25,7 +21,7 @@ Timeseries base model
 Timeseries model
 =========================
 
-.. autoclass:: stdnet.apps.timeseries.models.TimeSeries
+.. autoclass:: TimeSeries
    :members:
    :member-order: bysource
    
@@ -33,7 +29,7 @@ Timeseries model
 Timeseries Model Field
 ===============================
 
-.. autoclass:: stdnet.apps.timeseries.models.TimeSeriesField
+.. autoclass:: TimeSeriesField
    :members:
    :member-order: bysource
 

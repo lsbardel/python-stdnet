@@ -20,11 +20,14 @@ class TestFilter(FinanceTest):
         session = self.session()
         query = session.query(self.model)
         qs = query.filter(id = 1)
+        # count so that we execute the query
+        self.assertEqual(qs.count(),1)
+        bq = qs.backend_query()
+        self.assertTrue(bq.done)
         # test the redis internals
         if qs.backend.name == 'redis':
-            qs.count()
             rqs = qs.backend_query()
-            self.assertEqual(len(rqs.executed_command),3)
+            self.assertEqual(len(rqs.commands),2)
         self.assertEqual(qs.count(),1)
         obj = qs[0]
         self.assertEqual(obj.id,1)

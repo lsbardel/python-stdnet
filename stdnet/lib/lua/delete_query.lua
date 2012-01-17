@@ -1,4 +1,4 @@
---DELETE A QUERY
+--DELETE A QUERY for a model
 function table_slice (values,i1,i2)
     local res = {}
     local n = #values
@@ -66,9 +66,9 @@ local j = 0
 results = {}
 for _,id in ipairs(ids) do
     local idkey = bk .. ':obj:' .. id
-    num = redis.call('del',idkey) + 0
-    redis.call(s .. 'rem',idset,id)
     update_indices(s, bk, id, idkey, indices, uniques)
+    num = redis.call('del', idkey) + 0
+    redis.call(s .. 'rem', idset, id)
     if num == 1 then
     	j = j + 1
         results[j] = id

@@ -7,8 +7,8 @@ Sessions
 ============================
 
 The :class:`Session` is designed along the lines of sqlalchemy_. It establishes
-all conversations with the database and represents a “holding zone” for all the
-objects which you’ve loaded or associated with it during its lifespan.
+all conversations with the database and represents a *holding zone* for all the
+objects which you have loaded or associated with it during its lifespan.
 
 It also provides the entrypoint to acquire a :class:`Query` object, which sends
 queries to the database using the :attr:`Session.backend`, the session
@@ -31,10 +31,27 @@ a class:`stdnet.BackendDataServer`.::
 Session API
 ===================
 
+Session
+~~~~~~~~~~~~~~~
+
 .. autoclass:: Session
    :members:
    :member-order: bysource
    
+Session Model
+~~~~~~~~~~~~~~~
+
+.. autoclass:: SessionModel
+   :members:
+   :member-order: bysource
+   
+
+Transaction
+~~~~~~~~~~~~~~~
+
+.. autoclass:: Transaction
+   :members:
+   :member-order: bysource
    
 Managers API
 =====================
@@ -61,12 +78,6 @@ One2ManyRelatedManager
 .. autoclass:: One2ManyRelatedManager
    :members:
    :member-order: bysource
-   
-Many2ManyRelatedManager
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: Many2ManyRelatedManager
-   :members:
-   :member-order: bysource
    
 .. _sqlalchemy: http://www.sqlalchemy.org/docs/orm/session.html

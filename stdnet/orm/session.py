@@ -1,37 +1,33 @@
 import json
 from copy import copy
 
-from stdnet import getdb
+from stdnet import getdb, ServerOperation
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
                                 InvalidTransaction
 
-from .query import Q, Query, EmptyQuery
+from .query import Q, Query, EmptyQuery, SessionModelBase
 from .signals import *
 
 
-__all__ = ['Session','Manager','Transaction']
+__all__ = ['Session','SessionModel','Manager','Transaction']
 
 
 def is_query(query):
     return isinstance(query,Q)
 
 
-class SessionModel(object):
-    
+class SessionModel(SessionModelBase):
+    '''A :class:`SessionModel` is the container of all objects for a given
+:class:`Model` in a stdnet :class:`Session`.'''
     def __init__(self, meta, session):
-        self.meta = meta
-        self.session = session
+        super(SessionModel,self).__init__(meta,session)
         self._new = OrderedDict()
         self._deleted = OrderedDict()
         self._delete_query = []
         self._modified = OrderedDict()
         self._loaded = {}
-
-    def __repr__(self):
-        return self.meta.__repr__()
-    __str__ = __repr__
     
     def __len__(self):
         return len(self._new) + len(self._modified) + len(self._deleted)
@@ -160,7 +156,7 @@ Session model."""
             instance.state().deleted = True
 
 
-class Transaction(object):
+class Transaction(ServerOperation):
     '''Transaction class for pipelining commands to the back-end.
 An instance of this class is usually obtained by using the high level
 :func:`stdnet.transaction` function.
@@ -169,21 +165,20 @@ An instance of this class is usually obtained by using the high level
 
     Transaction name
     
+.. attribute:: session
+
+    the :class:`Session` for this :class:`Transaction`.
+    
 .. attribute:: backend
 
-    the :class:`BackendDataServer` to which the transaction is being performed.
-    
-.. attribute:: cursor
-
-    The backend cursor which manages the transaction.
-    
+    the :class:`stdnet.BackendDataServer` to which the transaction
+    is being performed.
     '''
     default_name = 'transaction'
     
     def __init__(self, session, name = None):
         self.name = name or self.default_name
         self.session = session
-        self._callbacks = []
         
     @property
     def backend(self):
@@ -205,27 +200,7 @@ An instance of this class is usually obtained by using the high level
         res = func(self.cursor,*args,**kwargs)
         callback = callback or default_callback
         self._callbacks.append(callback)
-        
-    def merge(self, other):
-        '''Merge two transaction together'''
-        if self.backend == other.backend:
-            if not other.empty():
-                raise NotImplementedError()
-        else:
-            raise InvalidTransaction('Cannot merge transactions.')
-        
-    def empty(self):
-        '''Check if the transaction contains query data or not.
-If there is no query data the transaction does not perform any
-operation in the database.'''
-        for c in itervalues(self._cachepipes):
-            if c.pipe:
-                return False
-        return self.emptypipe()
-                
-    def emptypipe(self):
-        raise NotImplementederror
-            
+                    
     def __enter__(self):
         return self
     
@@ -246,23 +221,37 @@ operation in the database.'''
         self.trigger(pre_commit)
         self.backend.execute_session(self.session, self.post_commit)
         
-    def post_commit(self, response, command):
-        self.command = command
+    def post_commit(self, response, commands):
+        '''callback from the :class:`stdnet.BackendDataServer` once the
+:attr:`session` has finished and results are available.
+
+:parameter response: list of results for each :class:`SessionModel`
+    in :attr:`session`. Each element in the list is a two-element tuple
+    with the :attr:`SessionModel.meta` element and a list of ids.
+    
+:parameter commands: The commands executed by the
+    :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
+    for information.'''
+        self.commands = commands
         self.result = response
-        for meta,resp in self.result:
-            sm = self.model(meta)
-            if not sm:
-                raise ValueError('Got a response for an unknown model')
+        for meta,response,action in self.result:
+            sm = self.session.model(meta, True)
             tpy = meta.pk.to_python
             ids = []
-            rem = sm.expunge
-            for id in response:
-                id = tpy(id)
-                rem(id)
-                ids.append(id)
-            instances = sm.post_commit(ids)
-            post_commit.send(sm.model, instances = instances,
-                             transaction = self)
+            if action == 'delete':
+                rem = sm.expunge
+                for id in response:
+                    id = tpy(id)
+                    rem(id)
+                    ids.append(id)
+                post_delete.send(sm.model, ids = ids, transaction = self)
+            else:
+                for id in response:
+                    id = tpy(id)
+                    ids.append(id)
+                instances = sm.post_commit(ids)
+                post_commit.send(sm.model, instances = instances,
+                                 transaction = self)
         self.close()
         return self
     
@@ -345,9 +334,10 @@ If this :class:`Session` is already within a transaction, an error is raised.'''
             self.transaction = Transaction(self)
         return self.transaction
     
-    def query(self, model, **kwargs):
+    def query(self, model, query_class = None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
-        return self.query_class(model._meta, self, **kwargs)
+        query_class = query_class or self.query_class
+        return query_class(model._meta, self, **kwargs)
     
     def empty(self, model):
         return EmptyQuery(model._meta, self)
@@ -445,7 +435,6 @@ from the **kwargs** parameters.
                 self.begin()
             else:
                 raise InvalidTransaction('No transaction was started')
-
         self.transaction.commit()
     
     def server_update(self, instance, id = None):
@@ -457,6 +446,13 @@ instances.'''
             instance.session = self
             return sm.server_update(instance, id)
         
+    def structure(self, instance):
+        '''Return a :class:`stdnet.BackendStructure` for a given
+:class:`Structure` *instance*.'''
+        return self.backend.structure(instance)
+        if not self.autocommit:
+            return self.backend.structure(instance, session)
+    
     @classmethod
     def clearall(cls):
         pass

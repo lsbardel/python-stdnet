@@ -86,30 +86,6 @@ details.'''
         value = field.to_python(value)
         setattr(self, field.attname, value)
         return value
-            
-    def save(self, transaction = None):
-        '''Save the instance.
-The model must be registered with a :class:`stdnet.BackendDataServer`
-otherwise a :class:`stdnet.ModelNotRegistered` exception will raise.
-
-:parameter transaction: Optional transaction instance.
-                        It can be useful when saving
-                        several object together (it guarantees atomicity
-                        and it is much faster).
-                        Check the :ref:`transaction <model-transactions>`
-                        documentation for more information.
-                        
-                        Default: ``None``.
-                        
-The method return ``self``.
-'''
-        if transaction is None:
-            session = self.__class__.objects.session()
-            with session.begin():
-                session.add(self)
-        else:
-            transaction.session.add(self)
-        return self
     
     def clone(self, id = None, **data):
         '''Utility method for cloning the instance as a new object.

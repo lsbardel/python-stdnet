@@ -35,10 +35,10 @@ some utility functions for tesing in a parallel test suite.
     models = ()
     model = None
     
-    def session(self):
+    def session(self, **kwargs):
         '''Create a new :class:`stdnet.orm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
-        session = orm.Session(self.backend)
+        session = orm.Session(self.backend, **kwargs)
         self.assertEqual(session.backend, self.backend)
         return session
     

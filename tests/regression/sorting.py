@@ -19,6 +19,7 @@ persons = populate('choice',NUM_DATES,
  
     
 class TestSort(test.TestCase):
+    '''Base class for sorting'''
     desc = False
     
     def fill(self):
@@ -126,16 +127,17 @@ class TestSortByForeignKeyField(TestSort):
     models = (Person,Group)
         
     def fill(self):
-        with Group.objects.transaction() as t:
+        session = self.session()
+        with session.begin():
             for g in groups:
-                Group(name = g).save(t)
+                session.add(Group(name = g))
                 
         model = self.model
-        gps = populate('choice',NUM_DATES,choice_from = Group.objects.all())
-        with model.objects.transaction() as t:
+        gps = populate('choice', NUM_DATES, choice_from = session.query(Group))
+        with session.begin():
             for p,g in zip(persons,gps):
-                model(name = p, group = g).save(t)
-        qs = model.objects.all()
+                session.add(model(name = p, group = g))
+        qs = session.query(model)
         self.assertEqual(qs.count(),NUM_DATES)
         return qs
     
@@ -145,8 +147,8 @@ class TestSortByForeignKeyField(TestSort):
     def testNameSortByReversed(self):
         self.checkOrder(self.fill().sort_by('-name'),'name',True)
         
-    #def testSortByFK(self):
-    #    self.checkOrder(self.fill().sort_by('group__name'),'group__name')
+    def testSortByFK(self):
+        self.checkOrder(self.fill().sort_by('group__name'),'group__name')
         
 
 class TestOrderingModel_zdiffstore(TestOrderingModel):

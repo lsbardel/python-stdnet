@@ -21,24 +21,27 @@ class TestAtomFields(test.TestCase):
     model = TestDateModel
         
     def create(self):
-        with TestDateModel.objects.transaction() as t:
+        session = self.session()
+        with session.begin():
             for na,dt in zip(names,dates):
-                TestDateModel(person = na, name = na, dt = dt).save(t)
+                session.add(self.model(person = na, name = na, dt = dt))
+        return session
             
     def testFilter(self):
-        self.create()
-        all = TestDateModel.objects.all()
-        self.assertEqual(len(dates),all.count())
+        session = self.create()
+        query = self.query(self.model)
+        all = query.all()
+        self.assertEqual(len(dates),len(all))
         N = 0
         done_dates = set()
         for dt in dates:
             if dt not in done_dates:
                 done_dates.add(dt)
-                elems = TestDateModel.objects.filter(dt = dt)
+                elems = query.filter(dt = dt)
                 N += elems.count()
                 for elem in elems:
                     self.assertEqual(elem.dt,dt)
-        self.assertEqual(all.count(),N)
+        self.assertEqual(len(all),N)
         
     def testDelete(self):
         self.create()

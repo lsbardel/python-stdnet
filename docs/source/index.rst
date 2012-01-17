@@ -11,7 +11,8 @@ Python Stdnet
   
 It is shipped with an object relational mapper which greatly facilitates the
 management and retrieval of large data-sets.
-It includes a modified version of redis-py_ compatible with ``python 3``.
+It includes a stand-alone, ``python 3`` compatible,
+:ref:`redis client <redis-client>` which was originally forked from redis-py_.
 There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
 there are over 350 tests with a coverage of about 80%.
 
@@ -35,7 +36,8 @@ First steps
 **API:**
 :ref:`Structures API <model-structures>` |
 :ref:`Model API <model-model>` |
-:ref:`Fields API <model-field>`
+:ref:`Fields API <model-field>` |
+:ref:`Redis Client <redis-server>`
 
 **Examples:**
 :ref:`Timeseries <timeseries-example>` |

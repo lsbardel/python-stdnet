@@ -17,6 +17,21 @@ def iterable(value):
         return False
     
     
+class SessionModelBase(object):
+
+    def __init__(self, meta, session):
+        self.meta = meta
+        self.session = session
+        
+    def __repr__(self):
+        return self.meta.__repr__()
+    __str__ = __repr__
+    
+    @property
+    def backend(self):
+        return self.session.backend
+        
+    
 class Q(object):
     keyword = ''
     name = ''
@@ -371,7 +386,7 @@ to ``EXCEPT`` in a ``SQL SELECT`` statement.
         if ordering:
             ordering = self._meta.get_sorting(ordering,QuerySetError)
         q = self._clone()
-        q.ordering = ordering
+        q.data['ordering'] = ordering
         return q
     
     def search(self, text):

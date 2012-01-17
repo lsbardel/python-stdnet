@@ -2,17 +2,18 @@ import sys
 import copy
 import hashlib
 import weakref
-from collections import namedtuple
 
 from stdnet.utils import zip, to_bytestring, to_string, UnicodeMixin
 from stdnet.exceptions import *
 
 from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash
-from .fields import Field, AutoField
+from .fields import Field, AutoField, orderinginfo
 from .session import Manager, setup_managers
 
+
 __all__ = ['Metaclass','Model','ModelBase','StdNetType', 'from_uuid']
+
 
 def get_fields(bases, attrs):
     fields = {}
@@ -25,9 +26,6 @@ def get_fields(bases, attrs):
             fields[name] = attrs.pop(name)
     
     return fields
-
-
-orderinginfo = namedtuple('orderinginfo','name field desc')
 
 
 class ModelMeta(object):
@@ -249,16 +247,17 @@ Return ``True`` if the instance is ready to be saved to database.'''
             sortby = sortby[1:]
         if sortby == 'id':
             f = self.pk
-            return orderinginfo(f.name,f,desc)
+            return orderinginfo(f.attname, f, desc, self.model, None)
         else:
             if sortby in self.dfields:
                 f = self.dfields[sortby]
-                return orderinginfo(f.name,f,desc)
+                return orderinginfo(f.attname, f, desc, self.model, None)
             sortbys = sortby.split(JSPLITTER)
             s0 = sortbys[0]
             if len(sortbys) > 1 and s0 in self.dfields:
                 f = self.dfields[s0]
-                return orderinginfo(sortby,f,desc)
+                nested = f.get_sorting(JSPLITTER.join(sortbys[1:]),errorClass)
+                return orderinginfo(sortby, f, desc, self.model, nested)
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
         
@@ -431,7 +430,7 @@ raised when trying to save an invalid instance.'''
     session = property(__get_session,__set_session)
     
     
-ModelBase = ModelType('ModelBase',(Model,),{})
+ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})
 
 
 def from_uuid(uuid, session = None):

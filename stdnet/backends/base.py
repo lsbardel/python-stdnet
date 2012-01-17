@@ -1,11 +1,16 @@
 import json
-from copy import deepcopy
+from collections import namedtuple
 
 from stdnet.exceptions import *
 from stdnet.utils import zip, iteritems, itervalues, encoders
 
 
-__all__ = ['BackendDataServer', 'BackendQuery']
+__all__ = ['BackendDataServer', 'ServerOperation', 'BackendQuery',
+           'session_result','query_result']
+
+
+session_result = namedtuple('session_result','meta result action')
+query_result = namedtuple('query_result','key count')
 
 
 def intid(id):
@@ -24,9 +29,50 @@ class Keys(object):
         
     def add(self, value):
         self.value = value
-    
         
-class BackendQuery(object):
+
+class ServerOperation(object):
+    
+    def __new__(cls, *args, **kwargs):
+        o = super(ServerOperation,cls).__new__(cls)
+        o.commands = None
+        o._callbacks = []
+        return o
+    
+    @property
+    def done(self):
+        return self.commands is not None
+    
+    
+class BackendStructure(object):
+    __slots__ = ('instance', 'client', 'start', 'stop')
+    def __init__(self, instance, client):
+        self.instance = instance
+        self.client = client
+        self.start = 0
+        self.stop = -1
+        if not instance.id:
+            instance.id = instance.makeid()
+            
+    def commit(self):
+        self.flush()
+        self.instance.cache.clear()
+    
+    @property
+    def id(self):
+        return self.instance.id
+    
+    def flush(self):
+        raise NotImplementedError()
+    
+    def size(self):
+        raise NotImplementedError()
+    
+    def clone(self):
+        return self.__class__(self.instance,self.client)
+    
+    
+class BackendQuery(ServerOperation):
     '''Backend queryset class which implements the database
 queries specified by :class:`stdnet.orm.Query`.
 
@@ -66,11 +112,6 @@ queries specified by :class:`stdnet.orm.Query`.
     def executed(self):
         return self.__count is not None
     
-    @property
-    def query_class(self):
-        '''The underlying query class'''
-        return self.queryelem.__class__
-    
     def __len__(self):
         return self.execute_query()
     
@@ -93,9 +134,6 @@ queries specified by :class:`stdnet.orm.Query`.
         return self.__count
     
     # VIRTUAL FUNCTIONS
-    
-    def delete(self, related_queries):
-        raise NotImplementedError()
     
     def _has(self, val):
         raise NotImplementedError
@@ -222,7 +260,7 @@ this function for customizing their handling of connection parameters.'''
     def execute_session(self, session):
         raise NotImplementedError()
     
-    def structure(self, struct):
+    def structure(self, struct, session):
         raise NotImplementedError()
     
     def make_objects(self, meta, data):
@@ -236,7 +274,6 @@ from database.
         for state in data:
             obj = make_object()
             obj.__setstate__(state)
-            #fields['__dbdata__'] = deepcopy(fields)
             obj._dbdata['id'] = obj.id
             yield obj
         

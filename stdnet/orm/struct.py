@@ -18,7 +18,6 @@ __all__ = ['Structure',
 default_score = lambda x : x
 
 
-
 class listcache(object):
     
     def __init__(self):
@@ -38,7 +37,6 @@ class listcache(object):
 class setcache(object):
     
     def __init__(self):
-        self.remote = set()
         self.toadd = set()
         self.toremove = set()
 
@@ -65,17 +63,29 @@ class setcache(object):
         self.toadd.clear()
         self.toremove.clear()
         
+
+class zsetcache(setcache):
     
-class hashcache(object):
+    def __init__(self):
+        self.toadd = zset()
+        self.toremove = set()
+
+    def add(self, score, v):
+        self.toadd.add(score,v)
+        self.toremove.discard(v)
+        
+    def update(self, v):
+        self.toadd.update(v)
+        self.toremove.difference_update(v)
+        
+    
+class hashcache(setcache):
     
     def __init__(self):
         self.remote = {}
         self.toadd = {}
         self.toremove = {}
 
-    def __contains__(self, v):
-        return v in self.toadd
-    
     def update(self, v):
         self.toadd.update(v)
         for k in v:
@@ -240,17 +250,9 @@ can also be used as stand alone objects. For example::
         return self.__repr__()
     
     def __iter__(self):
-        if self._cache is None:
-            cache = []
-            loads = self.pickler.loads
-            for item in self._all(self.backend.cursor()):
-                item = loads(item)
-                cache.append(item)
-                yield item
-            self._cache = cache
-        else:
-            for item in self.cache:
-                yield item
+        loads = self.value_pickler.loads
+        for v in self.session.structure(self):
+            yield loads(v)
                 
     @withsession
     def delete(self):
@@ -321,13 +323,13 @@ class List(Structure):
                                   lambda x : self.pickler.loads(x[1]),
                                   timeout)
     
-    def push_back(self, value, transaction = None):
-        '''Appends a copy of *value* to the end of the remote list.'''
-        self.pipe(transaction).push_back(self.pickler.dumps(value))
+    def push_back(self, value):
+        '''Appends a copy of *value* to the end of the list.'''
+        self.cache.push_back(self.value_pickler.dumps(value))
     
-    def push_front(self, value, transaction = None):
-        '''Appends a copy of *value* to the beginning of the remote list.'''
-        self.pipe(transaction).push_front(self.pickler.dumps(value))
+    def push_front(self, value):
+        '''Appends a copy of *value* to the beginning of the list.'''
+        self.cache.push_front(self.value_pickler.dumps(value))
 
 
 class Set(Structure):
@@ -356,25 +358,28 @@ class Set(Structure):
 
 class Zset(Set):
     '''An ordered version of :class:`Set`.'''
-    cache_class = zset
-    
-    def setup(self, scorefun, **kwargs):
-        self.scorefun = scorefun or default_score
+    cache_class = zsetcache
+        
+    def __iter__(self):
+        loads = self.value_pickler.loads
+        for s,v in self.session.structure(self):
+            yield float(s),loads(v)
         
     def set_cache(self, r):
         loads = self.pickler.loads
         self._cache = list((loads(v) for v in r))
         
-    def add(self, value, transaction = None):
+    def add(self, score, value):
         '''Add *value* to the set'''
-        score = self.scorefun(value)
-        self.pipe(transaction).add(score,self.pickler.dumps(value))
+        score = float(score)
+        self.cache.add(score,self.value_pickler.dumps(value))
 
     def update(self, values, transaction = None):
         '''Add iterable *values* to the set'''
-        s = self.scorefun
-        d = self.pickler.dumps
-        self.pipe(transaction).update(((s(v),d(v)) for v in values))
+        d = self.value_pickler.dumps
+        add = self.cache.add
+        for score,value in values:
+            add(float(score),d(value))
             
     def rank(self, value):
         if self.pickler:
@@ -404,6 +409,22 @@ The networked equivalent to a Python ``dict``.'''
     def setup(self, pickler = None, **kwargs):
         self.pickler = pickler or self.pickler or encoders.Default()
         
+    def __iter__(self):
+        loads = self.pickler.loads
+        for k in self.session.structure(self):
+            yield loads(v)
+
+    def values(self):
+        vloads = self.value_pickler.loads
+        for v in self.session.structure(self).values():
+            yield vloads(v)
+                        
+    def items(self):
+        loads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        for k,v in self.session.structure(self).items():
+            yield loads(k),vloads(v)
+            
     def set_cache(self, items):
         kloads = self.pickler.loads
         vloads = self.value_pickler.loads
@@ -422,7 +443,7 @@ we are not using a pipeline, unpickle the result.'''
     def __delitem__(self, key):
         self.pop(key)
         
-    def pop(self, key, *args, **kwargs):
+    def pop(self, key, *args):
         if args:
             if len(args) > 1:
                 raise TypeError('pop expected at most 2 arguments, got {0}'\
@@ -430,10 +451,9 @@ we are not using a pipeline, unpickle the result.'''
             default = args[0]
         else:
             default = KeyError(key)
-        transaction = kwargs.get('transaction')
         key = self.pickler.dumps(key)
-        return self._unpicklefrom(self._pop, transaction, default,
-                                  self.value_pickler.loads, key)
+        v = self.session.structure(self).pop(key,default)
+        return self.pickler_value.loads(v)
         
     def add(self, key, value):
         '''Add ``key`` - ``value`` pair to hashtable.'''
@@ -458,10 +478,9 @@ Equivalent to python dictionary update method.
             mapping = iteritems(mapping)
         self.cache.update(dict(((tokey(k),dumps(v)) for k,v in mapping)))
     
-    def get(self, key, default = None, transaction = None):
+    def get(self, key, default = None):
         '''Retrieve a single element from the hashtable.
-If the element is not available return the default value (only
-when not using a transaction).
+If the element is not available return the default value.
 
 :parameter key: lookup field
 :parameter default: default value when the field is not available.
@@ -469,8 +488,8 @@ when not using a transaction).
 :rtype: a value in the hashtable or a pipeline depending if a
     transaction has been used.'''
         key = self.pickler.dumps(key)
-        return self._unpicklefrom(self._get, transaction, default,
-                                  self.value_pickler.loads, key)
+        result = self.session.backend.structure(self).get(key,default)
+        return self.value_pickler.loads(result[0])
     
     def __getitem__(self, key):
         v = self.get(key)
@@ -591,7 +610,7 @@ No transaction involved in this function.'''
 
     
 class TS(HashTable):
-    '''A timeseries :class:`stdnet.Structure`. This is an experimental structure
+    '''A timeseries :class:`Structure`. This is an experimental structure
 not available with vanilla redis. Check the
 :ref:`timeseries documentation <apps-timeserie>` for further information.'''
     pickler = encoders.DateTimeConverter()

@@ -9,21 +9,6 @@ class HashTimeSeriesField(orm.HashField):
         self.pickler = model.converter
         
         
-class TimeSeriesField(orm.MultiField):
-    '''A timeseries field based on TS data structure in Redis.
-To be used with subclasses of :class:`TimeSeriesBase`'''
-    type = 'ts'
-    
-    def get_pipeline(self):
-        return 'ts'
-        
-    def register_with_model(self, name, model):
-         # must be set before calling super method
-        self.pickler = model.converter
-        self.value_pickler = self.value_pickler or self.default_pickler
-        super(TimeSeriesField,self).register_with_model(name, model)
-        
-        
 class TimeSeriesBase(orm.StdModel):
     '''Timeseries base model class'''
     '''Class responsable for converting Python dates into unix timestamps'''
@@ -51,7 +36,7 @@ tuples.'''
     
 class TimeSeries(TimeSeriesBase):
     '''Timeseries model'''
-    data  = TimeSeriesField()
+    data  = orm.TimeSeriesField()
     
     def dates(self):
         return self.data.keys()

@@ -19,62 +19,6 @@ class zsetfunc(object):
     
     def loads(self, x):
         return x
-
-
-#class TestStruct(test.TestCase):
-class TestStruct(object):
-    
-    def testList(self):
-        session = self.session()
-        l = session.add(orm.List())
-        self.assertEqual(l._meta.name,'list')
-        self.assertEqual(l.size(),0)
-        l.push_back(3)
-        l.push_back('save')
-        self.assertEqual(l.size(),0)
-        l.save()
-        self.assertEqual(l.size(),2)
-        self.assertEqual(list(l),[b'3',b'save'])
-        
-    def testJsonList(self):
-        l = struct.list(pickler = encoders.Json())
-        self.assertEqual(l.size(),0)
-        l.push_back(3)
-        l.push_back('save')
-        self.assertEqual(l.size(),0)
-        l.save()
-        self.assertEqual(l.size(),2)
-        self.assertEqual(list(l),[3,'save'])
-        
-    def testZset(self):
-        '''test a very simple zset with integer'''
-        l = orm.Zset()
-        self.assertEqual(l.size(),0)
-        l.add(56)
-        l.add(-5)
-        l.update((5,45,78,-5))
-        l.save()
-        self.assertEqual(l.size(),5)
-        self.assertFalse(l._cache)
-        r = list(l)
-        self.assertTrue(l._cache)
-        self.assertEqual(r,[b'-5',b'5',b'45',b'56',b'78'])
-        
-    def testZsetWithScore(self):
-        '''test a very simple zset with integer'''
-        z = zsetfunc()
-        l = orm.Zset(scorefun = z.score, pickler = z)
-        self.assertEqual(l.size(),0)
-        l.add((39,'luca'))
-        l.add((8,'gaia'))
-        l.add((40,'jo'))
-        l.add((6,'joshua'))
-        l.save()
-        self.assertEqual(l.size(),4)
-        self.assertFalse(l._cache)
-        r = list(l)
-        self.assertTrue(l._cache)
-        self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
         
 
 class TestSetStructure(test.TestCase):
@@ -85,6 +29,7 @@ class TestSetStructure(test.TestCase):
         self.assertEqual(l.instance,None)
         self.assertEqual(l.session,None)
         self.assertEqual(l._meta.name,'set')
+        self.assertEqual(l._meta.model._model_type,'structure')
         
     def testSimpleUpdate(self):
         # Typical usage
@@ -115,25 +60,117 @@ class TestSetStructure(test.TestCase):
         self.assertEqual(s.size(),0)    
         
 
+class TestZset(test.TestCase):
+    
+    def testMeta(self):
+        session = self.session()
+        l = session.add(orm.Zset())
+        self.assertEqual(l._meta.name,'zset')
+        self.assertEqual(l._meta.model._model_type,'structure')
+        self.assertEqual(l.size(),0)
+        l.add(3,'bla')
+        l.add(-5,'foo')
+        self.assertEqual(l.size(),0)
+        session.commit()
+        self.assertEqual(l.size(),2)
+        self.assertEqual(list(l),[(-5.0,'foo'),(3.0,'bla')])
+        
+    def testPanetMass(self):
+        '''test a very simple zset with integer'''
+        session = self.session()
+        l = session.add(orm.Zset())
+        l.add(1,'earth')
+        l.add(0.06,'mercury')
+        l.add(317.8,'juppiter')
+        l.update(((95.2,'saturn'),\
+                  (0.82,'venus'),\
+                  (14.6,'uranus'),\
+                  (1.52,'mars'),
+                  (17.2,'neptune'),
+                  (0.0007,'pluto')))
+        self.assertEqual(l.size(),0)
+        self.assertEqual(len(l.cache.toadd),9)
+        session.commit()
+        self.assertEqual(l.size(),9)
+        r = list(l)
+        result =  [(0.0007,'pluto'),
+                   (0.06,'mercury'),
+                   (0.82,'venus'),
+                   (1,'earth'),
+                   (1.52,'mars'),
+                   (14.6,'uranus'),
+                   (17.2,'neptune'),
+                   (95.2,'saturn'),
+                   (317.8,'juppiter')]
+        self.assertEqual(r,result)
+        
+    def testZsetWithScore(self):
+        '''test a very simple zset with integer'''
+        z = zsetfunc()
+        l = orm.Zset(scorefun = z.score, pickler = z)
+        self.assertEqual(l.size(),0)
+        l.add((39,'luca'))
+        l.add((8,'gaia'))
+        l.add((40,'jo'))
+        l.add((6,'joshua'))
+        l.save()
+        self.assertEqual(l.size(),4)
+        self.assertFalse(l._cache)
+        r = list(l)
+        self.assertTrue(l._cache)
+        self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
+
+
+class TestList(test.TestCase):
+
+    def testMeta(self):
+        session = self.session()
+        l = session.add(orm.List())
+        self.assertEqual(l._meta.name,'list')
+        self.assertEqual(l._meta.model._model_type,'structure')
+        self.assertEqual(l.size(),0)
+        l.push_back(3)
+        l.push_back(5.6)
+        l.push_back('save')
+        l.push_back({'test': 1})
+        self.assertEqual(l.size(),0)
+        session.commit()
+        self.assertEqual(l.size(),4)
+        self.assertEqual(list(l),[3,5.6,'save',"{'test': 1}"])
+        
+    def testJsonList(self):
+        session = self.session()
+        l = session.add(orm.List(value_pickler = encoders.Json()))
+        self.assertEqual(l.size(),0)
+        l.push_back(3)
+        l.push_back(5.6)
+        l.push_back('save')
+        l.push_back({'test': 1})
+        self.assertEqual(l.size(),0)
+        session.commit()
+        self.assertEqual(l.size(),4)
+        self.assertEqual(list(l),[3,5.6,'save',{'test': 1}])
+    
+
 class TestHash(test.TestCase):
     
-    def testSimple(self):
-        l = orm.HashTable()
-        self.assertRaises(ValueError, l.size)
+    def testMeta(self):
         session = self.session()
         h = session.add(orm.HashTable())
-        with session.begin():
+        self.assertEqual(h._meta.name,'hashtable')
+        self.assertEqual(h._meta.model._model_type,'structure')
+        self.assertEqual(h.size(),0)
+        with session.begin() as t:
             h['bla'] = 'foo'
             h['pluto'] = 3
         self.assertEqual(h.size(),2)
-        #d = dict(l)
-        #self.assertEqual(d,{'bla':b'foo','pluto':b'3'})
         
-    def __testPop(self):
-        d = struct.dict()
-        d['foo'] = 'ciao'
-        d.save()
-        self.assertEqual(len(d),1)
+    def testPop(self):
+        session = self.session()
+        with session.begin():
+            d = session.add(orm.HashTable())
+            d['foo'] = 'ciao'
+        self.assertEqual(d.size(),1)
         self.assertEqual(d['foo'],'ciao')
         self.assertRaises(KeyError, lambda : d.pop('bla'))
         self.assertEqual(d.pop('bla',56),56)

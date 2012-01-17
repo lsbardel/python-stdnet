@@ -6,15 +6,14 @@ from . import related
 from .struct import *
 
 
-__all__ = ['ManyFieldManagerProxy',
-           'Many2ManyManagerProxy',
-           'MultiField',
+__all__ = ['MultiField',
            'SetField',
            'ListField',
-           'HashField']
+           'HashField',
+           'TimeSeriesField']
 
 
-class ManyFieldManagerProxy(object):
+class MultiFieldStructureProxy(object):
     
     def __init__(self, name, factory, cache_name, pickler,
                  value_pickler, scorefun):
@@ -43,24 +42,13 @@ class ManyFieldManagerProxy(object):
         session = instance.session
         backend = session.backend
         id = backend.basekey(instance._meta,'id',instance.id,self.name)
-        return self.factory(id = id, instance = instance,
+        stru = self.factory(id = id, instance = instance,
                             pickler = self.pickler,
                             value_pickler = self.value_pickler,
                             scorefun = self.scorefun)
-
-
-class Many2ManyManagerProxy(ManyFieldManagerProxy):
-    
-    def __init__(self, name, cache_name, stype, to_name, to):
-        super(Many2ManyManagerProxy,self).__init__(name, cache_name, stype,
-                                    ModelFieldPickler(to), None, None)
-        self.to_name = to_name
-        self.model = to
-        
-    def get_related_manager(self, instance):
-        st = self.get_structure(instance)
-        return M2MRelatedManager(self.model,
-                                 st, self.to_name, instance = instance)
+        # add the structure to the session
+        session.add(stru)
+        return stru
 
 
 class MultiField(Field):
@@ -144,12 +132,12 @@ a stand alone structure in the back-end server with very little effort.
         self.value_pickler = self.value_pickler or self.default_value_pickler
         setattr(self.model,
                 self.name,
-                ManyFieldManagerProxy(self.name,
-                                      self.structure_class(),
-                                      self.get_cache_name(),
-                                      pickler = self.pickler,
-                                      value_pickler = self.value_pickler,
-                                      scorefun = self.scorefun))
+                MultiFieldStructureProxy(self.name,
+                                         self.structure_class(),
+                                         self.get_cache_name(),
+                                         pickler = self.pickler,
+                                         value_pickler = self.value_pickler,
+                                         scorefun = self.scorefun))
     
     def _install_encoders(self):
         if self.relmodel and not self.pickler:
@@ -234,9 +222,6 @@ it returns an instance of :class:`stdnet.HashTable` structure.
     default_pickler = encoders.NoEncoder()
     default_value_pickler = encoders.Json()
     
-    def get_pipeline(self):
-        return 'hash'
-    
     def _install_encoders(self):
         if self.relmodel and not self.value_pickler:
             self.value_pickler = related.ModelFieldPickler(relmodel)
@@ -244,3 +229,18 @@ it returns an instance of :class:`stdnet.HashTable` structure.
     def structure_class(self):
         return HashTable
 
+
+class TimeSeriesField(HashField):
+    '''A timeseries field based on TS data structure in Redis.
+To be used with subclasses of :class:`TimeSeriesBase`'''
+    default_pickler = None
+    
+    def structure_class(self):
+        return TS
+        
+    def register_with_model(self, name, model):
+         # must be set before calling super method
+        date_pickler = getattr(model,'converter',None)
+        if date_pickler:
+            self.default_pickler = date_pickler
+        super(TimeSeriesField,self).register_with_model(name, model)

@@ -27,13 +27,74 @@ local io = 3
 local fields = table_slice(KEYS, io+1, io+num_fields)
 io = io + num_fields + 1
 local ordering = KEYS[io]
+local start = KEYS[io+1] + 0
+local stop = KEYS[io+2] + 0
+io = io + 2
 
--- Perform custom ordering if required
+function randomkey()
+	rkey = bk .. ':tmp:' .. math.random(1,100000000)
+	if redis.call('exists', rkey) + 0 == 1 then
+		return randomkey()
+	else
+		return rkey
+	end
+end
+
+function members(key)
+	local typ = redis.call('type',key)['ok']
+	if typ == 'set' then
+		return redis.call('smembers',key)
+	elseif typ == 'zset' then
+		return redis.call('zrange',key,0,-1)
+	elseif typ == 'list' then
+		return redis.call('lrange',key,0,-1)
+	else
+		return {}
+	end
+end
+
+-- Perform explicit custom ordering if required
 if ordering == 'explicit' then
-	ids = redis.call('sort', rkey, unpack(table_slice(KEYS,io+1,-1)))
+	local field = KEYS[io+1]
+	local alpha = KEYS[io+2]
+	local desc = KEYS[io+3]
+	local nested = KEYS[io+4] + 0
+	io = io + 4
+	-- nested sorting for foreign key fields
+	if nested > 0 then
+		skey = randomkey()
+		for _,id in pairs(members(rkey)) do
+			local value = redis.call('hget', bk .. ':obj:' .. id, field)
+			local n = 0
+			while n < nested do
+				ion = io + 2*n
+				n = n + 1
+				key = KEYS[ion+1] .. ':obj:' .. value
+				name = KEYS[ion+2]
+				value = redis.call('hget', key, name)
+			end
+			-- store value on temporary hash table
+			redis.call('hset', skey, id, value)
+		end
+		bykey = skey .. '->*'
+		redis.call('expire', skey, 5)
+	else
+		bykey = bk .. ':obj:*->' .. field
+	end
+	local sortargs = {'BY',bykey}
+	if start > 0 or stop ~= -1 then
+		table.insert(sortargs,'LIMIT')
+		table.insert(sortargs,start)
+		table.insert(sortargs,stop)
+	end
+	if alpha == 'ALPHA' then
+		table.insert(sortargs,alpha)
+	end
+	if desc == 'DESC' then
+		table.insert(sortargs,desc)
+	end
+	ids = redis.call('sort', rkey, unpack(sortargs))
 else
-	local start = KEYS[io+1] + 0
-	local stop = KEYS[io+2] + 0
 	if ordering == 'DESC' then
 		ids = redis.call('zrevrange', rkey, start, stop)
 	elseif ordering == 'ASC' then

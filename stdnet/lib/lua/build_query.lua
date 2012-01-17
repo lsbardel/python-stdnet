@@ -29,7 +29,7 @@ i = 6
 local what
 local val
 while i < table.getn(KEYS) do
-	what = KEYS[i+1] -- what type of value is val
+	what = KEYS[i+1] -- what type of value is val, either a key or an actual value
 	val = KEYS[i+2]
 	i = i + 2
 	if unique == 'u' and name == 'id' then

@@ -68,7 +68,16 @@ class Q(object):
     def backend(self):
         return self.session.backend
     
+    def __contains__(self, val):
+        if isinstance(val,self.model):
+            val = val.id
+        return val in self.backend_query()
+    
     def construct(self):
+        raise NotImplementedError()
+    
+    def backend_query(self, **kwargs):
+        '''Build a :class:`stdnet.BackedQuery`'''
         raise NotImplementedError()
     
     
@@ -85,6 +94,10 @@ class EmptyQuery(Q):
     
     def construct(self):
         return None
+    
+    @property
+    def executed(self):
+        return True
     
     
 class QueryElement(Q):
@@ -135,8 +148,18 @@ class QueryElement(Q):
         return self.__backend_query
     
     @property
+    def executed(self):
+        if self.__backend_query is not None:
+            return self.__backend_query.executed
+        else:
+            return False
+    
+    @property
     def valid(self):
-        return bool(self.underlying)
+        if isinstance(self.underlying,QueryElement):
+            return self.keyword == 'set'
+        else:
+            return len(self.underlying) > 0
     
     def flat(self):
         yield self.keyword
@@ -155,19 +178,6 @@ class QuerySet(QueryElement):
         self.unique = kwargs.pop('unique',False)
         self.lookup = kwargs.pop('lookup','in')
         super(QuerySet,self).__init__(*args,**kwargs)
-    
-
-class QueryQuery(QuerySet):
-    keyword = 'query'
-    def __iter__(self):
-        return iter(())
-    
-    def __len__(self):
-        return 0
-    
-    @property
-    def valid(self):
-        return True
     
     
 class Select(QueryElement):
@@ -276,8 +286,8 @@ criteria and options associated with it.
      
     @property
     def executed(self):
-        if self.__qset is not None:
-            return self.__qset.executed
+        if self.__construct is not None:
+            return self.__construct.executed
         else:
             return False
     
@@ -496,26 +506,15 @@ It construct the queries and count the
 objects on the server side.'''
         return self.backend_query().count()
     
-    def querykey(self):
-        self.count()
-        return self.__qset.query_set
-        
-    def __contains__(self, val):
-        if isinstance(val,self.model):
-            val = val.id
-        return val in self.backend_query()
-    
     def delete(self):
         '''Delete all matched elements of the :class:`Query`.'''
         session = self.session
         with session.begin():
-            session.delete(self)        
-        #ids = self.backend_query().delete()
-        #post_delete.send(sender=self.__class__, ids = ids, query = self)
+            session.delete(self)
     
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''
-        if self.__construct is False:
+        if self.__construct is None:
             self.__construct = self._construct()
         return self.__construct
         
@@ -523,13 +522,11 @@ objects on the server side.'''
         '''Build and return the :class:`stdnet.BackendQuery`.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
-        if self.__qset is None:
-            q = self.construct()
-            if q is None:
-                self.__qset = EmptyQuery()
-            else:
-                self.__qset = q.backend_query(**kwargs)
-        return self.__qset
+        q = self.construct()
+        if q is None:
+            return EmptyQuery()
+        else:
+            return q.backend_query(**kwargs)
     
     def test_unique(self, fieldname, value, instance = None, exception = None):
         '''Test if a given field *fieldname* has a unique *value*
@@ -569,8 +566,7 @@ an exception is raised.
         return q
     
     def clear(self):
-        self.__construct = False
-        self.__qset = None
+        self.__construct = None
         self.__slice_cache = None
         
     def cache(self):
@@ -579,25 +575,35 @@ an exception is raised.
         return self.__slice_cache
     
     def _construct(self):
-        q = queryset(self)
         if self.fargs:
             args = []
             fargs = self.aggregate(self.fargs)
             for f in fargs:
                 # no values to filter on. empty result.
                 if not f.valid:
-                    return
-            q = intersect([q]+fargs)
+                    return EmptyQuery()
+        else:
+            fargs = None
+        
+        if not fargs:
+            q = queryset(self)
+        elif len(fargs) > 1:
+            q = intersect(fargs)
+        else:
+            q = fargs[0]
         
         if self.eargs:
             eargs = self.aggregate(self.eargs)
             for a in tuple(eargs):
                 if not a.valid:
                     eargs.remove(a)
-            if eargs:
-                if len(eargs) > 1:
-                    eargs = [union(eargs)]
-                q = difference([q]+eargs)
+            if len(eargs) > 1:
+                eargs = [union(eargs)]
+        else:
+            eargs = None
+            
+        if eargs:
+            q = difference([q]+eargs)
         
         return q
 
@@ -626,23 +632,22 @@ an exception is raised.
                     value = lvalue
             else:
                 lookup = 'in'
-            if isinstance(value, Q):
-                value = value.construct()
-                query_class = QueryQuery
-            else:
-                query_class = QuerySet
-                if not iterable(value):
-                    value = (value,)
-                value = tuple((field.index_value(v) for v in value))
-                            
-            unique = field.unique
-            field_name = field.attname
+            if not iterable(value):
+                value = (value,)
+            values = []
+            for v in value:
+                if isinstance(v, Q):
+                    v = v.construct()
+                else:
+                    v = field.index_value(v)
+                values.append(v)
+                
             data = self.data.copy()
             data.update({'name':field.attname,
-                         'underlying':value,
+                         'underlying':tuple(values),
                          'unique':field.unique,
                          'lookup':lookup})
-            yield query_class(**data)
+            yield QuerySet(**data)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''

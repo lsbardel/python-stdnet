@@ -10,6 +10,11 @@ values = populate('string', 200, min_len = 20, max_len = 300)
 class TestHashField(test.TestCase,test.TestMultiFieldMixin):
     model = Dictionary
     
+    def setUp(self):
+        self.register()
+        d = Dictionary(name = 'test').save()
+        self.data = dict(zip(keys,values))
+        
     def get_object_and_field(self):
         d = Dictionary.objects.get(name = 'test')
         return d,d.data
@@ -20,10 +25,6 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
         d.save()
         data = d.data
         self.assertEqual(data.size(),len(self.data))
-    
-    def setUp(self):
-        d = Dictionary(name = 'test').save()
-        self.data = dict(zip(keys,values))
     
     def fill(self):
         d = Dictionary.objects.get(name = 'test')
@@ -60,6 +61,7 @@ class TestMultiField(test.TestCase):
     model = Dictionary
     
     def setUp(self):
+        self.register()
         m = self.model(name = 'bla').save()
         m.data['ciao'] = 'bla'
         m.data['hello'] = 'foo'

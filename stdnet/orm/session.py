@@ -246,12 +246,25 @@ operation in the database.'''
         self.trigger(pre_commit)
         self.backend.execute_session(self.session, self.post_commit)
         
-    def post_commit(self, response):
-        for ids,sm in zip(response,self.session):
+    def post_commit(self, response, command):
+        self.command = command
+        self.result = response
+        for meta,resp in self.result:
+            sm = self.model(meta)
+            if not sm:
+                raise ValueError('Got a response for an unknown model')
+            tpy = meta.pk.to_python
+            ids = []
+            rem = sm.expunge
+            for id in response:
+                id = tpy(id)
+                rem(id)
+                ids.append(id)
             instances = sm.post_commit(ids)
             post_commit.send(sm.model, instances = instances,
                              transaction = self)
         self.close()
+        return self
     
     def close(self):
         post_commit.send(Session, transaction = self)

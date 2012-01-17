@@ -25,6 +25,7 @@ TMP = 'tmp'     # temorary key
 
 redis_connection = namedtuple('redis_connection',
                               'host port db password socket_timeout decode')
+session_result = namedtuple('session_result','meta result')
  
 
 class build_query(RedisScript):
@@ -69,12 +70,14 @@ class delete_query(RedisScript):
 The first parameter is the model'''
     script = read_lua_file('delete_query.lua')
     
-    def callback(self, response, args, session = None, meta = None):
+    def callback(self, response, args, sm = None):
+        return (sm.meta, response)
         if response:
+            
+            meta = sm.meta
             tpy = meta.pk.to_python
             ids = []
-            sm = session.model(meta)
-            rem = sm.expunge if sm is not None else lambda x : x
+            rem = sm.expunge
             for id in response:
                 id = tpy(id)
                 rem(id)
@@ -87,21 +90,21 @@ The first parameter is the model'''
 class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
-    def callback(self, response, args, session = None, callback = None):
-        # The session has received the callback from redis client
-        if callback:
-            callback(response)
-        return session
+    def callback(self, response, args, sm = None):
+        return session_result(sm.meta, response)
         
 
-def redis_execution(pipe):
+def redis_execution(pipe, result_type):
     command = copy(pipe.command_stack)
     command.pop(0)
     result = pipe.execute()
+    results = []
     for v in result:
         if isinstance(v,Exception):
             raise v
-    return command,result
+        elif isinstance(v,result_type):
+            results.append(v)
+    return command,results
     
     
 ################################################################################
@@ -149,19 +152,17 @@ different model) which has a *field* containing current model ids.'''
     def accumulate(self, qs):
         pipe = self.pipe
         backend = self.backend
-        if getattr(qs,'backend',None) != backend:
-            return ('',qs)
         p = 'z' if self.meta.ordering else 's'
         meta = self.meta
-        if qs.keyword == 'query':
-            bq = qs.backend_query(pipe = pipe)
-            args = ('key',bq.query_key)
-        else:
-            args = []
-            for child in qs:
-                arg = self.accumulate(child)
-                args.extend(arg)
-        if qs.keyword in ('set','query'):
+        args = []
+        for child in qs:
+            if getattr(child,'backend',None) != backend:
+                args.extend(('',child))
+            else:
+                be = child.backend_query(pipe = pipe)
+                args.extend(('key',be.query_key))
+                
+        if qs.keyword == 'set':
             if qs.name == 'id' and not args:
                 return 'key',backend.basekey(meta,'id')
             else:
@@ -330,7 +331,7 @@ class Zset(Struct):
             self.client.sadd(self.id, *cache.toremove)
     
     def size(self):
-        return self.client.scard(self.id)
+        return self.client.zcard(self.id)
     
 
 class List(Struct):
@@ -371,7 +372,11 @@ class TS(Struct):
     def size(self):
         return self.client.hlen(self.id)
         
-struct_map = {'set':Set,'list':List,'zset':Zset,'hash':Hash,'ts':TS}
+struct_map = {'set':Set,
+              'list':List,
+              'zset':Zset,
+              'hashtable':Hash,
+              'ts':TS}
 
 
 ################################################################################
@@ -485,33 +490,30 @@ class BackendDataServer(stdnet.BackendDataServer):
                         action = 'c' if state.persistent else 'a'
                         lua_data.extend((action,id,score,len(data)))
                         lua_data.extend(data)
-        if lua_data:
-            options = {'session': session, 'callback':callback}
-            pipe.script_call('commit_session', *lua_data, **options)
+                    options = {'session': sm}
+                    pipe.script_call('commit_session', *lua_data, **options)
     
-        transaction = session.transaction
-        command, result = redis_execution(pipe)
-        transaction.command = command
-        transaction.result = result
-        return transaction
+        command, result = redis_execution(pipe, session_result)
+        return callback(result, command)
     
-    def accumulate_delete(self, query):
+    def accumulate_delete(self, backend_query):
         # Accumulate models queries for a delete. It loops through the
         # related models to build related queries.
-        if query is None:
+        if backend_query is None:
             return
+        pipe = backend_query.pipe
+        query = backend_query.queryelem
         meta = query.meta
-        pipe = query.pipe
         related_queries = []
         for name in meta.related:
             rmanager = getattr(meta.model,name)
-            rq = rmanager.query_from_query(query.queryelem)\
-                         .backend_query(pipe = pipe)
+            rq = rmanager.query_from_query(query).backend_query(pipe = pipe)
             self.accumulate_delete(rq)
         s = 'z' if meta.ordering else 's'
         indices = list(self.flat_indices(meta))
         mfields = [field.name for field in meta.multifields]
-        lua_data = [self.basekey(meta), query.query_key, s, len(indices)//2]
+        lua_data = [self.basekey(meta), backend_query.query_key,
+                    s, len(indices)//2]
         lua_data.extend(indices)
         lua_data.append(len(mfields))
         lua_data.extend(mfields)
@@ -548,8 +550,12 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(f.id)
         return keys
 
+    def structure(self, instance):
+        struct = struct_map.get(instance._meta.name)
+        return struct(instance,self.client)
+        
     def flush_structure(self, sm, pipe):
-        client = client or self.client
+        client = pipe or self.client
         struct = struct_map.get(sm.meta.name)
         for instance in sm:
             struct(instance,client).commit()

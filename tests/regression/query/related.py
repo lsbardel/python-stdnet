@@ -78,11 +78,10 @@ class TestRealtedQuery(FinanceTest):
             self.assertEqual(p.instrument.ccy,'EUR')
             
         peur = query.filter(instrument__ccy = 'EUR')
-        q = peur.backend_query()
-        qe = q.queryelem
-        self.assertEqual(qe.get,None)
-        self.assertEqual(len(qe),2)
-        self.assertEqual(qe.keyword,'intersect')
+        qe = peur.construct()
+        self.assertEqual(qe._get_field,None)
+        self.assertEqual(len(qe),1)
+        self.assertEqual(qe.keyword,'set')
         self.assertTrue(peur.count())
         for p in peur:
             self.assertEqual(p.instrument.ccy,'EUR')

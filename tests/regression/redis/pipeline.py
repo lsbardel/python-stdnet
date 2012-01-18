@@ -1,15 +1,8 @@
-from .base import *
+from .base import TestCase, ResponseError
 
 
-class PipelineTestCase(BaseTest):
+class PipelineTestCase(TestCase):
     
-    def setUp(self):
-        self.client = self.get_client()
-        self.client.flushdb()
-
-    def tearDown(self):
-        self.client.flushdb()
-
     def test_pipeline(self):
         pipe = self.client.pipeline()
         pipe.set('a', 'a1').get('a').zadd('z', 1, 'z1', -4, 'z2', 5, 'z3')\

@@ -5,11 +5,11 @@ Ver. 0.7.0 - Development
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions, lua scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
-* Redesign of :class:`stdnet.orm.Many2ManyField` which now uses a ``through`` model
+* Redesign of :class:`stdnet.orm.ManyToManyField` which now uses a ``through`` model
   for building the many to many relationship.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
-* Filtering on :class:`stdnet.orm.ForeignKey` fields.
+* Added ability to filter on :class:`stdnet.orm.ForeignKey` index fields.
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
 * Removed structures from :mod'`backends` module and included in the :mod:`orm`

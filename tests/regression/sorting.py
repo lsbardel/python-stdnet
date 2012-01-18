@@ -83,37 +83,6 @@ class ExplicitOrderingMixin(object):
         
     def testDateSlicingDesc(self):
         self._slicingTest('dt',True)
-
-
-class TestOrderingModel(TestSort):
-    '''Test a model wich is always sorted by the ordering meta attribute.'''
-    
-    model = SportAtDate
-    
-    def testMeta(self):
-        model = self.model
-        self.assertTrue(model._meta.ordering)
-        ordering = model._meta.ordering
-        self.assertEqual(ordering.name,'dt')
-        self.assertEqual(ordering.field.name,'dt')
-        self.assertEqual(ordering.desc,self.desc)
-    
-    def testAdd(self):
-        session = self.session()
-        with session.begin():
-            a = session.add(self.model(person='luca',name='football',
-                                       dt=date.today()))
-            b = session.add(self.model(person='luca',name='football',
-                                       dt=date.today()))
-        self.assertEqual(session.query(self.model).count(),2)
-        
-    def testSimple(self):
-        self.checkOrder(self.fill(),'dt')
-        
-
-class TestOrderingModel2(TestOrderingModel):
-    model = SportAtDate2
-    desc = True
     
         
 class TestSortBy(TestSort,ExplicitOrderingMixin):
@@ -148,17 +117,50 @@ class TestSortByForeignKeyField(TestSort):
         self.checkOrder(self.fill().sort_by('-name'),'name',True)
         
     def testSortByFK(self):
-        self.checkOrder(self.fill().sort_by('group__name'),'group__name')
+        qs = self.fill()
+        qs = qs.sort_by('group__name')
+        ordering = qs.ordering
+        self.assertEqual(ordering.name,'group_id')
+        self.assertEqual(ordering.nested.name,'name')
+        self.assertEqual(ordering.model,qs.model)
+        self.checkOrder(qs,'group__name')
         
 
-class TestOrderingModel_zdiffstore(TestOrderingModel):
+class TestOrderingModel(TestSort):
     '''Test a model wich is always sorted by the ordering meta attribute.'''
+    model = SportAtDate
     
+    def testMeta(self):
+        model = self.model
+        self.assertTrue(model._meta.ordering)
+        ordering = model._meta.ordering
+        self.assertEqual(ordering.name,'dt')
+        self.assertEqual(ordering.field.name,'dt')
+        self.assertEqual(ordering.desc,self.desc)
+    
+    def testAdd(self):
+        session = self.session()
+        with session.begin():
+            a = session.add(self.model(person='luca',name='football',
+                                       dt=date.today()))
+            b = session.add(self.model(person='luca',name='football',
+                                       dt=date.today()))
+        self.assertEqual(session.query(self.model).count(),2)
+        
+    def testSimple(self):
+        self.checkOrder(self.fill(),'dt')
+        
+    def testFilter(self):
+        # Require zdiffstore
+        qs = self.fill().filter(name__in = ('football','rugby'))
+        self.checkOrder(qs,'dt')
+        
     def testExclude(self):
+        # Require zdiffstore
         qs = self.fill().exclude(name='rugby')
         self.checkOrder(qs,'dt')
         
         
-class TestOrderingModel2_zdiffstore(TestOrderingModel_zdiffstore):
+class TestOrderingModelDesc(TestOrderingModel):
     model = SportAtDate2
     desc = True

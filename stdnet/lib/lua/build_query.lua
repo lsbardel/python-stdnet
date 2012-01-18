@@ -2,16 +2,22 @@
 bk = KEYS[1] -- base key for model
 s = KEYS[2] -- 's' for set or 'z' for sorted sets
 rkey = KEYS[3] -- the key where to store the structure containing the resuls
-unionstore = s .. 'unionstore'
 name = KEYS[4]
 unique = KEYS[5]
 lookup = KEYS[6]
 
+-- Perform the union of the index for value val and the result key *rkey*
+-- The result is stored in *rkey*
 function union (val)
 	local setkey = bk .. ':idx:' .. name .. ':' .. val
-	redis.call(unionstore, rkey, rkey, setkey)
+	if s == 's' then
+	    redis.call('sunionstore', rkey, rkey, setkey)
+	else
+	    redis.call('zunionstore', rkey, 2, rkey, setkey)
+	end
 end
 
+-- add a value to a set (or sorted set)
 function add (val)
 	if val ~= false then
 		if s == 's' then

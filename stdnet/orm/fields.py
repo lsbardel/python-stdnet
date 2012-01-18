@@ -752,7 +752,8 @@ class ManyToManyField(Field):
     
 .. attribute:: through
 
-    Optional model to use for creating the manyToMany relationship.
+    Optional :class:`StdModel` to use for creating the many-to-many
+    relationship.
     
 For example::
     
@@ -761,7 +762,7 @@ For example::
         
     class User(orm.StdModel):
         name = orm.SymbolField(unique = True)
-        group = orm.ManyToManyField(model = Group, related_name = 'users')
+        groups = orm.ManyToManyField(Group, related_name = 'users')
     
 To use it::
  
@@ -773,14 +774,13 @@ and to remove::
 
     >>> u.following.remove(User.objects.get(name = 'john))
     
-.. attribute:: model_name
 
-    Under the hood, a :class:`ManyToMany` create a new model anmed *model_name*.
-    If not provided, the the name will be constructed from the field name
-    and the model holding the field. In the example above it would be
-    *group_user*.
-    This model contains two :class:`ForeignKeys`, one to model holding the
-    :class:`ManyToManyField` and the other to the *related_model*.
+Under the hood, a :class:`ManyToManyField` creates a new model *model_name*.
+If not provided, the the name will be constructed from the field name
+and the model holding the field. In the example above it would be
+*group_user*.
+This model contains two :class:`ForeignKeys`, one to model holding the
+:class:`ManyToManyField` and the other to the *related_model*.
 '''    
     def __init__(self, model, through = None, related_name = None, **kwargs):
         self.through = through

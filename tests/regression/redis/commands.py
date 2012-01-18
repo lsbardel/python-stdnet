@@ -8,7 +8,7 @@ from stdnet.utils import to_string, ispy3k, iteritems, range, flatzset
 if not ispy3k:
     chr = unichr
     
-from .base import *
+from .base import TestCase, ResponseError, RedisError, get_version
 
 
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
@@ -17,14 +17,7 @@ binary_set = lambda x : set(to_charlist(x))
 encode_dict = lambda h : dict(((k,v.encode()) for k,v in h.items()))
 
 
-class ServerCommandsTestCase(BaseTest):
-
-    def setUp(self):
-        self.client = self.get_client()
-        self.client.flushdb()
-        
-    def tearDown(self):
-        self.client.flushdb()
+class ServerCommandsTestCase(TestCase):
 
     # GENERAL SERVER COMMANDS
     def test_dbsize(self):
@@ -227,9 +220,6 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.type('a'), 'zset')
 
     # LISTS
-    def make_list(self, name, l):
-        for i in l:
-            self.client.rpush(name, i)
 
     def test_blpop(self):
         self.make_list('a', 'ab')
@@ -431,9 +421,6 @@ class ServerCommandsTestCase(BaseTest):
         self.assertEquals(self.client.lindex('a', 1), b'b')
 
     # Set commands
-    def make_set(self, name, l):
-        for i in l:
-            self.client.sadd(name, i)
 
     def test_sadd(self):
         # key is not a set
@@ -613,8 +600,6 @@ class ServerCommandsTestCase(BaseTest):
             set([b'a1', b'a2', b'a3', b'b2']))
 
     # SORTED SETS
-    def make_zset(self, name, d):
-        self.client.zadd(name, *flatzset(kwargs=d))
 
     def test_zadd(self):
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
@@ -668,8 +653,7 @@ class ServerCommandsTestCase(BaseTest):
             list(self.client.zrange('z', 0, -1, withscores=True)),
             [(b'a3', 20), (b'a1', 23)]
             )
-
-
+        
     def test_zrange(self):
         # key is not a zset
         self.client['a'] = 'a'
@@ -818,12 +802,6 @@ class ServerCommandsTestCase(BaseTest):
             [(b'a2', 1), (b'a3', 5), (b'a5', 12), (b'a4', 19), (b'a1', 23)]
             )
 
-
-    # HASHES
-    def make_hash(self, key, d):
-        for k,v in d.items():
-            self.client.hset(key, k, v)
-
     def test_hget_and_hset(self):
         # key is not a hash
         self.client['a'] = 'a'
@@ -861,14 +839,15 @@ class ServerCommandsTestCase(BaseTest):
         d = {'a': 1, 'b': 2, 'c': 3}
         self.assert_(self.client.hmset('foo', d))
         self.assertEqual(self.client.hmget('foo',
-                                     ['a', 'b', 'c']), [b'1', b'2', b'3'])
-        self.assertEqual(self.client.hmget('foo', ['a', 'c']), [b'1', b'3'])
+                                     'a', 'b', 'c'), [b'1', b'2', b'3'])
+        self.assertEqual(self.client.hmget('foo',
+                                    'a', 'c'), [b'1', b'3'])
 
     def test_hmget_empty(self):
-        self.assertEqual(self.client.hmget('foo', ['a', 'b']), [None, None])
+        self.assertEqual(self.client.hmget('foo', 'a', 'b'), [None, None])
 
-    def test_hmget_no_keys(self):
-        self.assertRaises(ResponseError, self.client.hmget, 'foo', [])
+    def test_hmget_no_fields(self):
+        self.assertRaises(ResponseError, self.client.hmget, 'foo')
 
     def test_hdel(self):
         # key is not a hash

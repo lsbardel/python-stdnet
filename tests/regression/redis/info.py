@@ -1,14 +1,15 @@
-from stdnet import test, getdb
 from stdnet.lib.redisinfo import redis_info
 
+from .base import TestCase
 
-class TestInfo(test.TestCase):
+
+class TestInfo(TestCase):
     
     def setUp(self):
-        rpy = getdb().client
-        rpy.set('test','bla')
-        self.db = rpy.db
-        self.info = redis_info(rpy)
+        super(TestInfo,self).setUp()
+        self.client.set('test','bla')
+        self.db = self.client.db
+        self.info = redis_info(self.client)
         
     def testSimple(self):
         info = self.info

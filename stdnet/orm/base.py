@@ -257,6 +257,8 @@ Return ``True`` if the instance is ready to be saved to database.'''
             if len(sortbys) > 1 and s0 in self.dfields:
                 f = self.dfields[s0]
                 nested = f.get_sorting(JSPLITTER.join(sortbys[1:]),errorClass)
+                if nested:
+                    sortby = f.attname
                 return orderinginfo(sortby, f, desc, self.model, nested)
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
@@ -351,9 +353,8 @@ def meta_options(abstract = False,
     
 
 class ModelState(object):
-    
+    __slots__ = ('persistent','deleted','iid')
     def __init__(self, instance):
-        self._dbdata = instance._dbdata
         self.persistent = False
         self.deleted = False
         dbdata = instance._dbdata
@@ -407,9 +408,7 @@ raised when trying to save an invalid instance.'''
             return id(self)
     
     def state(self):
-        if 'state' not in self._dbdata:
-            self._dbdata['state'] = ModelState(self)
-        return self._dbdata['state']
+        return ModelState(self)
     
     @classmethod
     def get_uuid(cls, id):

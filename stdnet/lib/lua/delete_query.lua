@@ -53,11 +53,11 @@ local idset = bk .. ':id'
 local ty = redis.call('type',rkey)['ok']
 local ids
 if ty == 'set' then
-    ids = redis.call('smembers',rkey)
+    ids = redis.call('smembers', rkey)
 elseif ty == 'zset' then
-    ids = redis.call('zmembers',rkey)
+    ids = redis.call('zrange', rkey, 0, -1)
 elseif ty == 'list' then
-    ids = redis.call('lrange',rkey,0,-1)
+    ids = redis.call('lrange', rkey, 0, -1)
 else
 	ids = {}
 end

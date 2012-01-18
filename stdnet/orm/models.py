@@ -40,12 +40,16 @@ class StdModel(StdNetBase):
     _loadedfields = None
     _state = None
     
-    def __init__(self, **kwargs):
+    def __init__(self, id = None, **kwargs):
         for field in self._meta.scalarfields:
             self.set_field_value(field, kwargs.pop(field.name,None))
         if kwargs:
-            raise ValueError("'%s' is an invalid keyword argument for %s" %\
-                              (kwargs.keys()[0],self._meta))
+            keys = ', '.join(kwargs)
+            if len(kwargs) > 1:
+                keys += ' are'
+            else:
+                keys += ' is an'
+            raise ValueError("%s invalid keyword for %s." % (keys,self._meta))
 
     def loadedfields(self):
         '''Generator of fields loaded from database'''
@@ -113,20 +117,17 @@ details.'''
     def toload(self):
         return self._valattr('toload')
     
-    def delete(self, transaction = None):
-        '''Delete an instance from database.
-If the instance is not available (it does not have an id) and
-``StdNetException`` exception will raise.
-
-:parameter transaction: Optional transaction instance as in
-                        :meth:`stdnet.orm.StdModel.save`.
-'''
-        if transaction is None:
-            session = self.objects.session()
-            with session.transaction():
-                session.delete(self)
-        else:
-            transaction.session.delete(self)
+    def save(self):
+        session = self.__class__.objects.session()
+        with session.begin():
+            session.add(self)
+        return self
+    
+    def delete(self):
+        session = self.__class__.objects.session()
+        with session.begin():
+            session.delete(self)
+        return self
     
     def todict(self):
         '''Return a dictionary of serialised scalar field for pickling'''

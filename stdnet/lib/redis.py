@@ -93,12 +93,14 @@ In doing so, convert byte data into unicode.'''
     return info
 
 
-def ts_pairs(response, **options):
+def ts_pairs(response, withtimes = False, novalues = False, single = False,
+             **options):
     '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
     if not response:
         return response
-    elif options.get('withtimes'):
-        return zip(response[::2], response[1::2])
+    elif withtimes:
+        times = (float(t) for t in response[::2])
+        return zip(times, response[1::2])
     elif options.get('single') and len(response) == 1:
         return response[0]
     else:
@@ -143,6 +145,12 @@ class Redis(object):
     Connection and Pipeline derive from this, implementing how
     the commands are sent and received to the Redis server
     """
+    NO_KEY_COMMAND = frozenset((
+        'SUBSCRIBE', 'PSUBSCRIBE', 'UNSUBSCRIBE', 'PUNSUBSCRIBE',
+        'RANDOMKEY', 'BGREWRITEAOF', 'BGSAVE', 'CONFIG GET', 'CONFIG SET',
+        'CONFIG RESETSTAT', 'DBSIZE', 'DEBUG OBJECT', 'DEBUG SEGFAULT',
+        'FLUSHALL', 'FLUSHDB', 'INFO', 'LASTSAVE', 'MONITOR', 'SAVE',
+        'SHUTDOWN','SLAVEOF','SLOWLOG','SYNC'))
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'KEYS RANDOMKEY TYPE OBJECT HKEYS',
@@ -194,7 +202,8 @@ class Redis(object):
 
     def __init__(self, host='localhost', port=6379,
                  db=0, password=None, socket_timeout=None,
-                 connection_pool=None, encoding = 'utf-8'):
+                 connection_pool=None, encoding = 'utf-8',
+                 prefix = ''):
         if not connection_pool:
             kwargs = {
                 'db': db,
@@ -205,6 +214,7 @@ class Redis(object):
                 'encoding': encoding
                 }
             connection_pool = ConnectionPool(**kwargs)
+        self.prefix = prefix
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
@@ -841,37 +851,39 @@ The first element is the score and the second is the value.'''
         return self.execute_command(*pieces)
     
     ### TIMESERIES COMMANDS ###
-    def tslen(self, key):
+    def tslen(self, name):
         '''timeseries length'''
-        return self.execute_command('TSLEN', key)
+        return self.execute_command('TSLEN', name)
     
-    def tsexists(self, key, score):
+    def tsexists(self, name, score):
         '''timeseries length'''
-        return self.execute_command('TSEXISTS', key, score)
+        return self.execute_command('TSEXISTS', name, score)
+    
+    def tsrank(self, name, score):
+        '''Rank of *score*'''
+        return self.execute_command('TSRANK', name, score)
 
     def tsadd(self, name, *items):
         '''timeseries length'''
         return self.execute_command('TSADD', name, *items)
     
-    def tsrange(self, name, start, end, desc=False,
-                withtimes=False, novalue=False):
-        """
-        Return a range of values from sorted set ``name`` between
-        ``start`` and ``end`` sorted in ascending order.
+    def tsrange(self, name, start, end, desc = False,
+                withtimes = False, novalues = False):
+        """Return a range of values from timeseries at ``name`` between
+``start`` and ``end`` sorted in ascending order.
+``start`` and ``end`` can be negative, indicating the end of the range.
 
-        ``start`` and ``end`` can be negative, indicating the end of the range.
+``desc`` indicates to sort in descending order.
 
-        ``desc`` indicates to sort in descending order.
-
-        ``withscores`` indicates to return the scores along with the values.
-            The return type is a list of (value, score) pairs
-        """
-        #if desc:
-        #    return self.zrevrange(name, start, end, withscores)
-        pieces = ['ZRANGE', name, start, end]
+``withscores`` indicates to return the scores along with the values.
+    The return type is a list of (value, score) pairs"""
+        pieces = ['TSRANGE', name, start, end]
         if withtimes:
             pieces.append('withtimes')
-        return self.execute_command(*pieces, **{'withscores': withtimes})
+        elif novalues:
+            pieces.append('novalues')
+        return self.execute_command(*pieces, **{'withtimes': withtimes,
+                                                'novalues': novalues})
     
     #### HASH COMMANDS ####
     def hdel(self, name, *keys):
@@ -924,9 +936,9 @@ The first element is the score and the second is the value.'''
         items = flat_mapping(mapping)
         return self.execute_command('HMSET', name, *items)
 
-    def hmget(self, name, *keys):
-        "Returns a list of values ordered identically to ``keys``"
-        return self.execute_command('HMGET', name, *keys)
+    def hmget(self, name, *fields):
+        "Returns a list of values ordered identically to ``fields``"
+        return self.execute_command('HMGET', name, *fields)
 
     def hvals(self, name):
         "Return the list of values within hash ``name``"

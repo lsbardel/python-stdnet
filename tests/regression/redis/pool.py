@@ -1,4 +1,4 @@
-from .base import *
+from .base import TestCase, redis, ConnectionError
 
 
 class DummyConnection(object):
@@ -7,7 +7,7 @@ class DummyConnection(object):
         self.kwargs = kwargs
 
 
-class ConnectionPoolTestCase(BaseTest):
+class ConnectionPoolTestCase(TestCase):
     
     def get_pool(self, connection_info=None, max_connections=None):
         connection_info = connection_info or {'a': 1, 'b': 2, 'c': 3}
@@ -32,7 +32,7 @@ class ConnectionPoolTestCase(BaseTest):
         pool = self.get_pool(max_connections=2)
         c1 = pool.get_connection()
         c2 = pool.get_connection()
-        self.assertRaises(redis.ConnectionError, pool.get_connection)
+        self.assertRaises(ConnectionError, pool.get_connection)
 
     def test_release(self):
         pool = self.get_pool()

@@ -1,12 +1,11 @@
-   
-from .base import *
+from .base import TestCase
 
 
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
 
 
-class ScriptingCommandsTestCase(BaseTest):
+class ScriptingCommandsTestCase(TestCase):
     tag = 'script'
     default_run = False
 

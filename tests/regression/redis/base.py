@@ -1,16 +1,12 @@
 __test__ = False
 from stdnet.lib import redis
 from stdnet import test, getdb
-from stdnet.conf import settings
+from stdnet.utils import flatzset
 
 
 ResponseError = redis.ResponseError
 RedisError = redis.RedisError
-
-
-def makeredis(pool = None):
-    db = getdb(format(settings.DEFAULT_BACKEND), decode = 1)
-    return db.client
+ConnectionError = redis.ConnectionError
 
 
 def get_version(info):
@@ -20,11 +16,33 @@ def get_version(info):
         return info['Server']['redis_version']
 
 
-class BaseTest(test.TestCase):
-    _client_no_pool = makeredis()
+class TestCase(test.TestCase):
     
+    def setUp(self):
+        self.client = self.get_client()
+        self.client.flushdb()
+    
+    def tearDown(self):
+        self.client.flushdb()
+        
     def get_client(self, pool = None, build = False):
         if pool or build:
-            return makeredis(pool)
+            return gedb(self.backend.connection_string).client
         else:
-            return self._client_no_pool
+            return self.backend.client
+        
+    def make_hash(self, key, d):
+        for k,v in d.items():
+            self.client.hset(key, k, v)
+
+    def make_list(self, name, l):
+        for i in l:
+            self.client.rpush(name, i)
+            
+    def make_set(self, name, l):
+        for i in l:
+            self.client.sadd(name, i)
+
+    def make_zset(self, name, d):
+        self.client.zadd(name, *flatzset(kwargs=d))
+        

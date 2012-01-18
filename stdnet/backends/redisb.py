@@ -1,4 +1,3 @@
-from collections import namedtuple
 from copy import copy
 import json
 from hashlib import sha1
@@ -25,9 +24,6 @@ IDX = 'idx'     # the set of indexes for a field value
 TMP = 'tmp'     # temorary key
 ################################################################################
 
-redis_connection = namedtuple('redis_connection',
-                              'host port db password socket_timeout decode')
- 
 
 class build_query(RedisScript):
     script = read_lua_file('build_query.lua')
@@ -167,6 +163,8 @@ different model) which has a *field* containing current model ids.'''
         if qs.keyword == 'set':
             if qs.name == 'id' and not args:
                 return 'key',backend.basekey(meta,'id')
+            #elif len(args) == 2 and not args[0] and not qs.unique:
+            #    return 'key',backend.basekey(meta,'idx', args[1])
             else:
                 bk = backend.basekey(meta)
                 key = backend.tempkey(meta)
@@ -225,6 +223,7 @@ elements in the query.'''
         if self.queryelem.ordering:
             last = self.queryelem.ordering
             desc = 'DESC' if last.desc else ''
+            field = last.name
             nested = last.nested
             nested_args = []
             while nested:
@@ -236,7 +235,7 @@ elements in the query.'''
             if last.field.internal_type == 'text':
                 meth = 'ALPHA'
             
-            args = [last.name, meth, desc, len(nested_args)//2]
+            args = [field, meth, desc, len(nested_args)//2]
             args.extend(nested_args)
             return args
             

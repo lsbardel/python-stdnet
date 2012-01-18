@@ -1,3 +1,4 @@
+-- LOAD INSTANCES DATA FROM AN EXISTING QUERY
 function table_slice (values,i1,i2)
     local res = {}
     local n = #values
@@ -20,8 +21,8 @@ function table_slice (values,i1,i2)
     return res
 end
 
-local rkey = KEYS[1]
-local bk = KEYS[2]
+local rkey = KEYS[1]  -- Key containing the ids of the query
+local bk = KEYS[2] -- Base key for model
 local num_fields = KEYS[3] + 0
 local io = 3
 local fields = table_slice(KEYS, io+1, io+num_fields)
@@ -62,8 +63,9 @@ if ordering == 'explicit' then
 	io = io + 4
 	-- nested sorting for foreign key fields
 	if nested > 0 then
-		skey = randomkey()
-		for _,id in pairs(members(rkey)) do
+		local skey = randomkey()
+		local mids = members(rkey)
+		for _,id in pairs(mids) do
 			local value = redis.call('hget', bk .. ':obj:' .. id, field)
 			local n = 0
 			while n < nested do
@@ -78,6 +80,7 @@ if ordering == 'explicit' then
 		end
 		bykey = skey .. '->*'
 		redis.call('expire', skey, 5)
+		-- return mids
 	else
 		bykey = bk .. ':obj:*->' .. field
 	end

@@ -142,6 +142,27 @@ end
 return n
 '''
 
+class delpattern_ifempty(RedisScript):
+    script = '''\
+n = 0
+type_table = {}
+type_table['set'] = 'scard'
+type_table['zset'] = 'zcard'
+type_table['list'] = 'llen'
+type_table['hash'] = 'hlen'
+type_table['string'] = 'strlen'
+for i,key in ipairs(redis.call('keys',KEYS[1])) do
+    typ = redis.call('type',key)['ok']
+    command = type_table[typ]
+    if command then
+        if redis.call(command,key) + 0 == 0 then
+            n = n + redis.call('del',key)
+        end
+    end
+end
+return n
+'''
+
 class hash_pop_item(RedisScript):
     script = '''\
 elem = redis.call('hget',KEYS[1],KEYS[2])

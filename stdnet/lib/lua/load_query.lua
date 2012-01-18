@@ -33,25 +33,33 @@ local stop = KEYS[io+2] + 0
 io = io + 2
 
 function randomkey()
-	rkey = bk .. ':tmp:' .. math.random(1,100000000)
-	if redis.call('exists', rkey) + 0 == 1 then
+	local rnd_key = bk .. ':tmp:' .. math.random(1,100000000)
+	if redis.call('exists', rnd_key) + 0 == 1 then
 		return randomkey()
 	else
-		return rkey
+		return rnd_key
 	end
 end
 
 function members(key)
 	local typ = redis.call('type',key)['ok']
 	if typ == 'set' then
-		return redis.call('smembers',key)
+		return redis.call('smembers', key)
 	elseif typ == 'zset' then
-		return redis.call('zrange',key,0,-1)
+		return redis.call('zrange', key, 0, -1)
 	elseif typ == 'list' then
-		return redis.call('lrange',key,0,-1)
+		return redis.call('lrange', key, 0, -1)
 	else
 		return {}
 	end
+end
+
+function delete_keys(keys)
+	local n = table.getn(keys)
+	if n > 0 then
+		redis.call('del', unpack(keys))
+	end
+	return n 
 end
 
 -- Perform explicit custom ordering if required
@@ -60,12 +68,14 @@ if ordering == 'explicit' then
 	local alpha = KEYS[io+2]
 	local desc = KEYS[io+3]
 	local nested = KEYS[io+4] + 0
+	local tkeys = {}
 	io = io + 4
 	-- nested sorting for foreign key fields
 	if nested > 0 then
+		-- generate a temporary key where to store the hash table holding
+		-- the values to sort with
 		local skey = randomkey()
-		local mids = members(rkey)
-		for _,id in pairs(mids) do
+		for i,id in pairs(members(rkey)) do
 			local value = redis.call('hget', bk .. ':obj:' .. id, field)
 			local n = 0
 			while n < nested do
@@ -76,11 +86,14 @@ if ordering == 'explicit' then
 				value = redis.call('hget', key, name)
 			end
 			-- store value on temporary hash table
-			redis.call('hset', skey, id, value)
+			--redis.call('hset', skey, id, value)
+			tkeys[i] = skey .. id
+			-- store value on temporary key
+			redis.call('set', tkeys[i], value)
 		end
-		bykey = skey .. '->*'
-		redis.call('expire', skey, 5)
-		-- return mids
+		--bykey = skey .. '->*'
+		bykey = skey .. '*'
+		--redis.call('expire', skey, 5)
 	else
 		bykey = bk .. ':obj:*->' .. field
 	end
@@ -97,6 +110,7 @@ if ordering == 'explicit' then
 		table.insert(sortargs,desc)
 	end
 	ids = redis.call('sort', rkey, unpack(sortargs))
+	delete_keys(tkeys)
 else
 	if ordering == 'DESC' then
 		ids = redis.call('zrevrange', rkey, start, stop)

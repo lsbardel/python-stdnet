@@ -401,7 +401,18 @@ from the **kwargs** parameters.
         sm._delete_query.append(query)
          
     def flush(self, model):
+        '''Completely flush a :class:`Model` from the database. No keys
+associated with the model will exists after this operation.'''
         return self.backend.flush(model._meta)
+    
+    def clean(self, model):
+        '''Remove empty keys for a :class:`Model` from the database. No 
+empty keys associated with the model will exists after this operation.'''
+        return self.backend.clean(model._meta)
+    
+    def keys(self, model):
+        '''Retrieve all keys for a *model*.'''
+        return self.backend.model_keys(model._meta)
     
     def __contains__(self, instance):
         sm = self._models.get(instance._meta)
@@ -546,6 +557,12 @@ if their managers have the same backend database.'''
     
     def flush(self):
         return self.session().flush(self.model)
+    
+    def clean(self):
+        return self.session().clean(self.model)
+    
+    def keys(self):
+        return self.session().keys(self.model)
     
     def get_or_create(self, **kwargs):
         session = self.session()

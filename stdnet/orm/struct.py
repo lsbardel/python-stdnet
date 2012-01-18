@@ -497,12 +497,6 @@ If the element is not available return the default value.
             raise KeyError('%s not available' % key)
         else:
             return v
-    
-    def keys(self, desc = False):
-        '''Return a generator of all keys. No transactions involved.'''
-        kloads = self.pickler.loads
-        for key in self._keys(self.backend.cursor()):
-            yield kloads(key)
 
     def items(self, keys = None):
         '''Generator over key-values.
@@ -569,12 +563,8 @@ No transaction involved in this function.'''
         for key,value in self.items():
             yield value
     
-    def __iter__(self):
-        # overrite the __iter__ method
-        return self.keys()
-    
     def sortedkeys(self, desc = True):
-        keys = sorted(self.keys())
+        keys = sorted(self)
         if not desc:
             keys = reversed(keys)
         return keys
@@ -597,9 +587,6 @@ No transaction involved in this function.'''
         raise NotImplementedError
     
     def _get(self, cursor, key):
-        raise NotImplementedError
-    
-    def _keys(self, cursor):
         raise NotImplementedError
     
     def _items(self, cursor, keys):

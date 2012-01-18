@@ -69,15 +69,6 @@ to perform cleanup, registration and unregistration.
         self._pre_setup()
         super(TestCase, self).__call__(result)
         self._post_teardown()
-        
-    def cleankeys(self, model, session = None):
-        backend = session.backend if session else model.objects.backend
-        tmp = backend.tempkey(model._meta,'')
-        keys = []
-        for key in backend.keys():
-            if not key.startswith(tmp):
-                keys.append(key)
-        return keys
                     
         
 class TestMultiFieldMixin(object):

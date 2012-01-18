@@ -39,7 +39,7 @@ __all__ = ['Field',
            'ManyToManyField',
            'JSPLITTER']
 
-EMPTY = ''
+NONE_EMPTY = (None,'')
 
 
 class Field(UnicodeMixin):
@@ -177,7 +177,10 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 data type, raising :class:`stdnet.FieldValueError` if the data
 can't be converted.
 Returns the converted value. Subclasses should override this."""
-        return value
+        if hasattr(value,'id'):
+            return value.id
+        else:
+            return value
     
     def value_from_data(self, instance, data):
         return data.pop(self.attname,None)
@@ -240,11 +243,9 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
             return self.default
     
     def index_value(self, value):
-        '''A value which is used by indexes to generate keys.'''
-        if value is not None:
-            return getattr(value,'id',value)
-        else:
-            return ''
+        '''A value which is used by indexes to generate keys. By default it
+invokes the :meth:`to_python` method.'''
+        return self.to_python(value)
     
     def scorefun(self, value):
         '''Function which evaluate a score from the field value. Used by
@@ -303,10 +304,11 @@ or other entities. They are indexes by default.'''
         return encoders.Default(self.charset)
     
     def to_python(self, value):
+        value = super(SymbolField,self).to_python(value)
         if value is not None:
             return self.encoder.loads(value)
         else:
-            return self.default
+            return self.get_default()
         
     def serialize(self, value):
         if value is not None:
@@ -317,6 +319,7 @@ class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
     internal_type = 'numeric'
+    python_type = int
     #default = 0
     
     def scorefun(self, value):
@@ -328,16 +331,18 @@ class IntegerField(AtomField):
         return value
     
     def to_python(self, value):
-        if value is not None and value is not EMPTY:
-            return int(value)
+        value = super(IntegerField,self).to_python(value)
+        if value in NONE_EMPTY:
+            return self.get_default()
         else:
-            return self.default
+            return self.python_type(value)
         
     
-class BooleanField(AtomField):
+class BooleanField(IntegerField):
     '''A boolean :class:`AtomField`'''
     type = 'bool'
     internal_type = 'numeric'
+    python_type = bool
     
     def __init__(self, required = False, **kwargs):
         super(BooleanField,self).__init__(required = required,**kwargs)
@@ -347,9 +352,6 @@ class BooleanField(AtomField):
             return 0
         else:
             return 1 if int(value) else 0
-        
-    def to_python(self, value):
-        return True if self.scorefun(value) else False
     
     def index_value(self, value):
         return 1 if value else 0
@@ -372,6 +374,7 @@ its :attr:`Field.index` is set to ``False``.
     type = 'float'
     internal_type = 'numeric'
     index = False
+    python_type = float
         
     def scorefun(self, value):
         if value is not None:
@@ -380,12 +383,6 @@ its :attr:`Field.index` is set to ``False``.
             except:
                 raise FieldValueError('Field is not a valid float')
         return value
-    
-    def to_python(self, value):
-        if value:
-            return float(value)
-        else:
-            return self.default
     
     
 class DateField(AtomField):
@@ -400,7 +397,7 @@ a :class:`datetime.date` instance.'''
         return self.scorefun(value)
     
     def scorefun(self, value):
-        if value is not None:
+        if value not in NONE_EMPTY:
             if isinstance(value,date):
                 value = date2timestamp(value)
             else:
@@ -408,15 +405,19 @@ a :class:`datetime.date` instance.'''
         return value
     
     def to_python(self, value):
-        if value:
+        if value not in NONE_EMPTY:
             if isinstance(value,date):
                 if isinstance(value,datetime):
                     value = value.date()
             else:
                 value = timestamp2date(float(value)).date()
+            return value
         else:
-            value = None
-        return value
+            return self.get_default()
+        
+    def index_value(self, value):
+        '''A value which is used by indexes to generate keys.'''
+        return self.scorefun(value)
         
         
 class DateTimeField(DateField):
@@ -426,15 +427,15 @@ a :class:`datetime.datetime` instance.'''
     index = False
     
     def to_python(self, value):
-        if value:
+        if value not in NONE_EMPTY:
             if isinstance(value,date):
                 if not isinstance(value,datetime):
                     value = datetime(value.year,value.month,value.day) 
             else:
                 value = timestamp2date(float(value))
+            return value
         else:
-            value = None
-        return value
+            return self.get_default()
 
 
 class CharField(SymbolField):

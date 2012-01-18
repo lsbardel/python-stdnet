@@ -50,9 +50,12 @@ def string_keys_to_dict(key_string, callback):
 
 
 def flat_mapping(mapping):
+    if isinstance(mapping,dict):
+        mapping = iteritems(mapping)
     items = []
-    for pair in iteritems(mapping):
-        items.extend(pair)
+    extend = items.extend
+    for pair in mapping:
+        extend(pair)
     return items
 
         
@@ -147,6 +150,10 @@ class Redis(object):
     """
     NO_KEY_COMMAND = frozenset((
         'SUBSCRIBE', 'PSUBSCRIBE', 'UNSUBSCRIBE', 'PUNSUBSCRIBE',
+        'EVAL',
+        #
+        'AUTH','ECHO','PING','QUIT','SELECT',
+        #
         'RANDOMKEY', 'BGREWRITEAOF', 'BGSAVE', 'CONFIG GET', 'CONFIG SET',
         'CONFIG RESETSTAT', 'DBSIZE', 'DEBUG OBJECT', 'DEBUG SEGFAULT',
         'FLUSHALL', 'FLUSHDB', 'INFO', 'LASTSAVE', 'MONITOR', 'SAVE',
@@ -399,8 +406,7 @@ instance is promoted to a master instead.
 
     def mset(self, mapping):
         "Sets each key in the ``mapping`` dict to its corresponding value"
-        items = []
-        [items.extend(pair) for pair in iteritems(mapping)]
+        items = flat_mapping(mapping)
         return self.execute_command('MSET', *items)
 
     def msetnx(self, mapping):
@@ -408,8 +414,7 @@ instance is promoted to a master instead.
         Sets each key in the ``mapping`` dict to its corresponding value if
         none of the keys are already set
         """
-        items = []
-        [items.extend(pair) for pair in iteritems(mapping)]
+        items = flat_mapping(mapping)
         return self.execute_command('MSETNX', *items)
 
     def move(self, name, db):

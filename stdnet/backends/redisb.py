@@ -155,7 +155,7 @@ different model) which has a *field* containing current model ids.'''
         args = []
         for child in qs:
             if getattr(child,'backend',None) != backend:
-                args.extend(('',child))
+                args.extend(('','' if child is None else child))
             else:
                 be = child.backend_query(pipe = pipe)
                 args.extend(('key',be.query_key))
@@ -392,11 +392,11 @@ class Hash(RedisStructure):
         return self.client.hmget(self.id, key) or default
     
     def __iter__(self):
-        for k in self.script_call('hash_keys',self.id):
+        for k in self.client.script_call('hash_keys',self.id):
             yield k
             
     def values(self):
-        for v in self.script_call('hash_values',self.id):
+        for v in self.client.script_call('hash_values',self.id):
             yield v
             
     def items(self):
@@ -511,7 +511,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
                 delquery = sm.get_delete_query(pipe = pipe)
-                self.accumulate_delete(delquery)
+                self.accumulate_delete(pipe, delquery)
                 N = len(sm)
                 if N:
                     bk = basekey(meta)
@@ -541,19 +541,20 @@ class BackendDataServer(stdnet.BackendDataServer):
         command, result = redis_execution(pipe, session_result)
         return callback(result, command)
     
-    def accumulate_delete(self, backend_query):
+    def accumulate_delete(self, pipe, backend_query):
         # Accumulate models queries for a delete. It loops through the
         # related models to build related queries.
+        # We pass the pipe since the backend_query may have been evaluated
+        # using a different pipe
         if backend_query is None:
             return
-        pipe = backend_query.pipe
         query = backend_query.queryelem
         meta = query.meta
         related_queries = []
         for name in meta.related:
             rmanager = getattr(meta.model,name)
             rq = rmanager.query_from_query(query).backend_query(pipe = pipe)
-            self.accumulate_delete(rq)
+            self.accumulate_delete(pipe, rq)
         s = 'z' if meta.ordering else 's'
         indices = list(self.flat_indices(meta))
         mfields = [field.name for field in meta.multifields]
@@ -582,9 +583,12 @@ class BackendDataServer(stdnet.BackendDataServer):
             pattern = '{0}*'.format(self.basekey(meta))
         if pattern:
             return self.client.delpattern(pattern)
+        
+    def clean(self, meta):
+        return self.client.delpattern(self.tempkey(meta, '*'))
             
-    def model_keys(self, model):
-        pattern = '{0}*'.format(self.basekey(model._meta))
+    def model_keys(self, meta):
+        pattern = '{0}*'.format(self.basekey(meta))
         return self.client.keys(pattern)            
         
     def instance_keys(self, obj):

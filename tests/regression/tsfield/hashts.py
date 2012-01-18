@@ -25,6 +25,7 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
     mkdate  = datetime
     
     def setUp(self):
+        self.register()
         self.model(ticker = 'GOOG').save()
         
     def get_object_and_field(self, ticker = 'GOOG'):

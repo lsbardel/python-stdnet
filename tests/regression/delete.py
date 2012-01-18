@@ -67,7 +67,7 @@ class TestDeleteScalarFields(FinanceTest):
         session.query(Instrument).delete()
         self.assertEqual(session.query(Instrument).all(),[])
         self.assertEqual(session.query(Position).all(),[])
-        keys = list(session.backend.model_keys(Instrument))
+        keys = list(session.keys(Instrument))
         self.assertTrue(len(keys)>0)
         
     def testFlushRelatedModel(self):
@@ -76,7 +76,7 @@ class TestDeleteScalarFields(FinanceTest):
         session.query(Instrument).delete()
         self.assertEqual(session.query(Instrument).all(),[])
         self.assertEqual(session.query(Position).all(),[])
-        keys = list(session.backend.model_keys(Instrument))
+        keys = list(session.keys(Instrument))
         self.assertTrue(len(keys)>0)
         
     def testDeleteSimple(self):
@@ -87,11 +87,11 @@ class TestDeleteScalarFields(FinanceTest):
         # There should be only keys for indexes and auto id
         backend = session.backend
         if backend.name == 'redis':
-            keys = list(backend.model_keys(Instrument))
+            keys = list(session.keys(Instrument))
             self.assertEqual(len(keys),1)
             self.assertEqual(keys[0],backend.basekey(Instrument._meta,'ids'))
             session.flush(Instrument)
-            keys = list(backend.model_keys(Instrument))
+            keys = list(session.keys(Instrument))
             self.assertEqual(len(keys),0)
 
     def testDeleteRelatedOneByOne(self):
@@ -158,7 +158,7 @@ class TestDeleteStructuredFields(test.TestCase):
         session.flush(Dictionary)
         self.assertEqual(session.query(Dictionary).count(),0)
         # Now we check the database if it is empty as it should
-        keys = list(session.backend.model_keys(Dictionary))
+        keys = list(session.keys(Dictionary))
         self.assertEqual(len(keys),0)
         
     def testFlushWithData(self):
@@ -170,6 +170,6 @@ class TestDeleteStructuredFields(test.TestCase):
         # Now we check the database if it is empty as it should
         backend = session.backend
         if backend.name == 'redis':
-            keys = list(backend.model_keys(Dictionary))
+            keys = list(session.keys(Dictionary))
             self.assertEqual(keys,[])
     

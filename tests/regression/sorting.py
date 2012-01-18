@@ -32,13 +32,11 @@ class TestSort(test.TestCase):
         return qs
     
     def checkOrder(self, qs, attr, desc = None):
-        attrs = attr.split(orm.JSPLITTER)
         self.assertTrue(qs)
         desc = desc if desc is not None else self.desc
-        attr = attrs[0]
-        at0 = getattr(qs[0],attr)
+        at0 = qs[0].get_attr_value(attr)
         for obj in qs[1:]:
-            at1 = getattr(obj,attr)
+            at1 = obj.get_attr_value(attr)
             if desc:
                 self.assertTrue(at1<=at0)
             else:

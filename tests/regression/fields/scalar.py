@@ -19,6 +19,9 @@ dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 
 class TestAtomFields(test.TestCase):
     model = TestDateModel
+    
+    def setUp(self):
+        self.register()
         
     def create(self):
         session = self.session()
@@ -29,7 +32,7 @@ class TestAtomFields(test.TestCase):
             
     def testFilter(self):
         session = self.create()
-        query = self.query(self.model)
+        query = session.query(self.model)
         all = query.all()
         self.assertEqual(len(dates),len(all))
         N = 0
@@ -54,17 +57,27 @@ class TestAtomFields(test.TestCase):
                 N += objs.count()
                 objs.delete()
         all = TestDateModel.objects.all()
-        self.assertEqual(all.count(),0)
+        self.assertEqual(len(all),0)
         
+        done_dates = set()
+        for dt in dates:
+            if dt not in done_dates:
+                done_dates.add(dt)
+                objs = TestDateModel.objects.filter(dt = dt)
+                self.assertEqual(objs.count(),0)
+                
         # The only key remaining is the ids key for the AutoField
-        keys = self.cleankeys(self.model)
+        TestDateModel.objects.clean()
+        keys = TestDateModel.objects.keys()
         self.assertEqual(len(keys),1)
-        self.assertEqual(keys[0],self.meta.autoid())
         
 
 class TestCharFields(test.TestCase):
     model = SimpleModel
-    
+
+    def setUp(self):
+        self.register()
+            
     def testUnicode(self):
         unicode_string = unichr(500) + to_string('ciao') + unichr(300)
         m = self.model(code = unicode_string).save()
@@ -81,7 +94,10 @@ class TestCharFields(test.TestCase):
     
 class TestNumericData(test.TestCase):
     model = NumericData
-        
+
+    def setUp(self):
+        self.register()
+            
     def testDefaultValue(self):
         d = NumericData(pv = 1.).save()
         self.assertAlmostEqual(d.pv,1.)
@@ -102,21 +118,24 @@ class TestNumericData(test.TestCase):
         
 class TestIntegerField(test.TestCase):
     model = Page
+
+    def setUp(self):
+        self.register()
             
     def testDefaultValue(self):
         p = Page()
         self.assertEqual(p.in_navigation,1)
         p = Page(in_navigation = '4')
-        self.assertEqual(p.in_navigation,'4')
+        self.assertEqual(p.in_navigation,4)
+        self.assertRaises(ValueError, p = Page, in_navigation = 'foo')
         p.save()
-        self.assertEqual(p.in_navigation,'4')
+        self.assertEqual(p.in_navigation,4)
         p = Page.objects.get(id = p.id)
         self.assertEqual(p.in_navigation,4)
         
     def testNotValidated(self):
         p = Page().save()
-        p = Page(in_navigation = 'bla')
-        self.assertRaises(stdnet.FieldValueError,p.save)
+        self.assertRaises(ValueError, Page, in_navigation = 'bla')
         
     def testZeroValue(self):
         p = Page(in_navigation = 0)
@@ -129,6 +148,9 @@ class TestIntegerField(test.TestCase):
 
 class TestDateData(test.TestCase):
     model = DateData
+
+    def setUp(self):
+        self.register()
         
     def testDateindateTime(self):
         v = DateData(dt2 = date.today()).save()
@@ -147,7 +169,10 @@ class TestDateData(test.TestCase):
 
 class TestBoolField(test.TestCase):
     model = NumericData
-    
+
+    def setUp(self):
+        self.register()
+         
     def testMeta(self):
         self.assertEqual(len(self.model._meta.indices),1)
         index = self.model._meta.indices[0]
@@ -169,16 +194,18 @@ class TestBoolField(test.TestCase):
     
 class TestByteField(test.TestCase):
     model = SimpleModel
-    
+
+    def setUp(self):
+        self.register()
+        
     def testMetaData(self):
         field = SimpleModel._meta.dfields['somebytes']
         
     def testValue(self):
         v = SimpleModel(code='one', somebytes=to_string('hello'))
-        self.assertTrue(is_string(v.somebytes))
+        self.assertEqual(v.somebytes, b'hello')
         v.save()
         v = SimpleModel.objects.get(code = 'one')
-        self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes,b'hello')
         
     def testValueByte(self):
@@ -195,6 +222,9 @@ class TestByteField(test.TestCase):
 class TestPickleObjectField(test.TestCase):
     model = Environment
     
+    def setUp(self):
+        self.register()
+        
     def testOkObject(self):
         v = Environment(data = ['ciao','pippo']).save()
         self.assertEqual(v.data, ['ciao','pippo'])
@@ -210,7 +240,10 @@ class TestPickleObjectField(test.TestCase):
     
 
 class TestErrorAtomFields(test.TestCase):
-    
+
+    def setUp(self):
+        self.register()
+  
     def testNotRegistered(self):
         m = TestDateModel(name = names[1], dt = dates[0])
         self.assertRaises(stdnet.ModelNotRegistered,m.save)

@@ -50,7 +50,7 @@ class StdModel(StdNetBase):
             else:
                 keys += ' is an'
             raise ValueError("%s invalid keyword for %s." % (keys,self._meta))
-
+    
     def loadedfields(self):
         '''Generator of fields loaded from database'''
         if self._loadedfields is None:
@@ -85,11 +85,24 @@ details.'''
                 yield field,getattr(self,name)
     
     def set_field_value(self, field, value):
-        if value is None:
-            value = field.get_default()
         value = field.to_python(value)
         setattr(self, field.attname, value)
         return value
+    
+    def get_attr_value(self, attr):
+        '''Retrive the *value* for a *attr* name. The attr can be nested,
+for example ``group__name``.'''
+        if hasattr(self,attr):
+            return getattr(self,attr)
+        # no atribute, try to check for nested values
+        bits = tuple((a for a in attr.split(JSPLITTER) if a))
+        if len(bits) > 1:
+            instance = self
+            for name in bits:
+                instance = getattr(instance, name, None)
+                if instance is None:
+                    return instance
+            return instance
     
     def clone(self, id = None, **data):
         '''Utility method for cloning the instance as a new object.

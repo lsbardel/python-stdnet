@@ -1,4 +1,5 @@
 import datetime
+from random import randint
 
 from stdnet import test
 from stdnet.utils import populate, zip
@@ -8,6 +9,26 @@ from .models import Instrument, Fund, Position
 
 CCYS_TYPES = ['EUR','GBP','AUD','USD','CHF','JPY']
 INSTS_TYPES = ['equity','bond','future','cash','option','bond option']
+
+
+class key_data(object):
+    sizes = {'tiny': 10,
+             'small': 100,
+             'normal': 1000,
+             'big': 10000,
+             'huge': 1000000}
+    
+    def __init__(self, size, sizes = None, min_len = 10, max_len = 20):
+        self.sizes = sizes or self.sizes
+        self.size = self.sizes[size]
+        self.keys = populate('string', self.size, min_len = min_len,
+                             max_len = max_len)
+        self.values = populate('string', self.size, min_len = min_len+10,
+                               max_len = max_len+20)
+        
+    def mapping(self, prefix = ''):
+        for k,v in zip(self.keys,self.values):
+            yield prefix+k,v
 
 
 class finance_data(object):
@@ -43,7 +64,7 @@ class finance_data(object):
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
                     session.add(Fund(name = name, ccy = ccy))
         else:
-            self.register()
+            test.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                     self.inst_ccys):
                 Instrument(name = name, type = typ, ccy = ccy).save()     
@@ -64,8 +85,11 @@ class finance_data(object):
                                      choice_from = instruments)
                     for dt in self.dates:
                         for inst in insts:
-                            session.add(Position(instrument = inst, dt = dt,
-                                                 fund = f))
+                            session.add(Position(instrument = inst,
+                                                 dt = dt,
+                                                 fund = f,
+                                                 size = randint(-100000,
+                                                                 100000)))
         else:
             for f in Fund.objects.query(Fund):
                 insts = populate('choice', self.pos_len,

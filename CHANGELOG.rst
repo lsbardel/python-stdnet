@@ -9,7 +9,7 @@ Ver. 0.7.0 - Development
   for building the many to many relationship.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
-* Added ability to filter on :class:`stdnet.orm.ForeignKey` index fields.
+* Added ability to filter and search on :class:`stdnet.orm.ForeignKey` fields.
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
 * Removed structures from :mod'`backends` module and included in the :mod:`orm`

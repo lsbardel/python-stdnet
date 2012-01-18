@@ -249,7 +249,7 @@ this function for customizing their handling of connection parameters.'''
             keys = list(keys)
         return len(keys)
     
-    def model_keys(self, model):
+    def model_keys(self, meta):
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
         
@@ -363,6 +363,9 @@ If the key does not exist, raise a ValueError exception."""
         raise NotImplementedError
     
     def flush(self, meta):
+        raise NotImplementedError
+    
+    def clean(self, meta):
         raise NotImplementedError
     
 

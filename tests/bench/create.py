@@ -7,8 +7,8 @@ from examples.data import FinanceTest, Instrument, Fund, Position
 class CreateTest(FinanceTest):
               
     def testCreate(self):
-        self.data.create(False)
+        self.data.create(self, False)
         
     def testCreateTransaction(self):
-        self.data.create(True)
+        self.data.create(self, True)
         

@@ -446,26 +446,46 @@ to these ids.'''
             q.extend(qf)
         return q
                 
-    def load_related(self, *fields):
-        '''It returns a new ``QuerySet`` that automatically follows foreign-key
-relationships, selecting that additional related-object data when it executes
-its query. This is :ref:`performance boost <increase-performance>` when
+    def load_related(self, related, *related_fields):
+        '''It returns a new :class:`Query` that automatically
+follows the foreign-key relationship *related*.
+
+:parameter related: A field name corresponding to a :class:`ForeignKey`
+    in :attr:`Query.model`.
+:parameter fields: optional :class:`Field` names for the *related*
+    model to load. If not provided, all fields will be loaded.
+    
+This function is :ref:`performance boost <increase-performance>` when
 accessing the related fields of all (most) objects in your query.
 
-:parameter fields: fields to include in the loading. If not provided all
-    foreign keys and :ref:`structured fields <model-field-structure>`
-    in the model will be loaded.
+If Your model contains more than one foreign key, you can use this function
+in a generative way::
+
+    qs = myquery.load_related('rel1').load_related('rel2','field1','field2')
+           
 :rtype: a new :class:`Query`.'''
-        if not fields:
-            fields = []
-            for field in self._meta.scalarfields:
-                if hasattr(field,'relmodel'):
-                    fields.append(field)
-            fields.extend(self._meta.multifields)
+        meta = self._meta
+        if related in meta.dfields:
+            field = meta.dfields[related]
+            if not hasattr(field,'relmodel'):
+                raise FieldError('Load related does not apply to "{0}"'\
+                                 .format(related))
         else:
-            fields = [self._meta.dfields[field] for field in fields]
-        self._select_related = fields
-        return self
+            raise FieldError('Unknown field "{0}"'.format(related))
+        q = self._clone()
+        rf = set(related_fields)
+        # we need to copy the related dictionary including its values
+        if q.select_related:
+            d = dict(((k,set(v)) for k,v in q.select_related.items()))
+        else:
+            d = {}
+        q.data['select_related'] = d
+        if field.name in d:
+            fields = d[field.name]
+            fields.update(rf)
+        else:
+            d[field.name] = rf
+        return q
     
     def load_only(self, *fields):
         '''This is provides a :ref:`performance boost <increase-performance>`

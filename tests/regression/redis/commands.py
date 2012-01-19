@@ -129,7 +129,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertEquals(self.client['a'], b'7')
 
     def test_keys(self):
-        self.assertEquals(self.client.keys(), [])
+        self.assertEquals(tuple(self.client.keys()), ())
         keys = set(['test_a', 'test_b', 'testc'])
         for key in keys:
             self.client[key] = 1
@@ -915,7 +915,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.hkeys, 'a')
         del self.client['a']
         # no key
-        self.assertEquals(self.client.hkeys('a'), [])
+        self.assertEquals(list(self.client.hkeys('a')), [])
         # real logic
         h = {'a1': '1', 'a2': '2', 'a3': '3'}
         self.make_hash('a', h)

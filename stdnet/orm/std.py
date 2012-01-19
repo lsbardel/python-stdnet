@@ -23,7 +23,7 @@ class MultiFieldStructureProxy(object):
         self.pickler = pickler
         self.value_pickler = value_pickler
         self.scorefun  = scorefun
-    
+        
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
@@ -31,17 +31,24 @@ class MultiFieldStructureProxy(object):
             raise MultiFieldError('id for %s is not available.\
  Call save on instance before accessing %s.' % (instance._meta,self.name))
         cache_name = self.cache_name
+        cache_val = None
         try:
-            return getattr(instance, cache_name)
+            cache_val = getattr(instance, cache_name)
+            if not isinstance(cache_val,Structure):
+                raise AttributeError()
+            else:
+                return cache_val
         except AttributeError:
-            rel_manager = self.get_related_manager(instance)
-            setattr(instance, cache_name, rel_manager)
-            return rel_manager
+            structure = self.get_structure(instance)
+            setattr(instance, cache_name, structure)
+            if cache_val is not None:
+                structure.set_cache(cache_val)
+            return structure
         
-    def get_related_manager(self, instance):
+    def get_structure(self, instance):
         session = instance.session
         backend = session.backend
-        id = backend.basekey(instance._meta,'id',instance.id,self.name)
+        id = backend.basekey(instance._meta, 'obj', instance.id, self.name)
         stru = self.factory(id = id, instance = instance,
                             pickler = self.pickler,
                             value_pickler = self.value_pickler,
@@ -158,6 +165,9 @@ a stand alone structure in the back-end server with very little effort.
     def structure_class(self):
         raise NotImplementedError
 
+    def set_cache(self, instance, data):
+        setattr(instance,self.get_cache_name(),data)
+        
 
 class SetField(MultiField):
     '''A field maintaining an unordered collection of values. It is initiated

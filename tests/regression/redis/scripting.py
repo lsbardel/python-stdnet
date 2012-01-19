@@ -15,6 +15,12 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertTrue(isinstance(r,list))
         self.assertEqual(len(r),6)
         
+    def testTable(self):
+        self.client = self.get_client()
+        r = self.client.eval('return {name="mars", mass=0.11, orbit = 1.52}')
+        self.assertTrue(isinstance(r,list))
+        self.assertEqual(len(r), 0)
+        
     def testDelPattern(self):
         c = self.get_client()
         items = ('bla',1,

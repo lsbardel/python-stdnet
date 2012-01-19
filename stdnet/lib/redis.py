@@ -975,6 +975,7 @@ popped (if it existes) and a flag indicationg if it existed.'''
             raise ValueError('No such script {0}'.format(name))
         options['script_name'] = name
         options['script_args'] = args
+        options['client'] = self
         return self.execute_command('EVAL',
                                     script.script, len(args), *args, **options)
     
@@ -984,18 +985,22 @@ popped (if it existes) and a flag indicationg if it existed.'''
 
 
 class Pipeline(Redis):
-    """
-Pipelines provide a way to transmit multiple commands to the Redis server
-in one transmission. This is convenient for batch processing, such as
+    """A :class:`Pipeline` provide a way to commit multiple commands
+to the Redis server in one transmission.
+This is convenient for batch processing, such as
 saving all the values in a list to Redis.
 
 All commands executed within a pipeline are wrapped with MULTI and EXEC
 calls. This guarantees all commands executed in the pipeline will be
 executed atomically.
 
+Check `redis transactions <http://redis.io/topics/transactions>`_
+for further information.
+
 Any command raising an exception does *not* halt the execution of
 subsequent commands in the pipeline. Instead, the exception is caught
-and its instance is placed into the response list returned by execute().
+and its instance is placed into the response list returned by
+:meth:`execute`.
 Code iterating over the response list should be able to deal with an
 instance of an exception as a potential value. In general, these will be
 ResponseError exceptions, such as those raised when issuing a command
@@ -1039,6 +1044,7 @@ Tipycal usage::
     pipe.sadd('foo').add_callback(mycallback)
     
 The callback will be executed after the default callback for the command.
+Several callbacks can be added.
 '''
         if self.empty:
             raise ValueError('Cannot add callback. No command in the stack')

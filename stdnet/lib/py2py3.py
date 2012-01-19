@@ -47,6 +47,11 @@ if ispy3k: # Python 3
         def __repr__(self):
             return '%s: %s' % (self.__class__.__name__,self)
         
+    def native_str(s, encoding = 'utf-8'):
+        if isinstance(s,bytes):
+            return s.decode(encoding)
+        return s
+        
 else: # Python 2
     string_type = unicode
     itervalues = lambda d : d.itervalues()
@@ -70,6 +75,11 @@ else: # Python 2
         
         def __repr__(self):
             return '%s: %s' % (self.__class__.__name__,self)
+    
+    def native_str(s, encoding = 'utf-8'):
+        if isinstance(s,unicode):
+            return s.encode(encoding)
+        return s
     
 
 is_int = lambda x : isinstance(x,int_type)

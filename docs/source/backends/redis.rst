@@ -103,6 +103,39 @@ Pipeline
    :members:
    :member-order: bysource
    
+
+Redis Session
+===============================
+
+Redis :class:`stdnet.orm.Session` and :class:`Query` are handled by lua scripts which
+perform them in a single atomic operation.
+
+Redis Query
+=====================
+
+A :class:`stdnet.orm.Query` is handled by two different lua scripts, the first is script
+perform the aggregation of which results in a temporary redis ``key``
+holding the ``ids`` which result from the query operations.
+The second script is used to load the data from redis to the client.
+
+.. _redis-aggragation:
+
+Aggregation
+~~~~~~~~~~~~~~~~~
+
+
+Loading
+~~~~~~~~~~~~~~~~~
+
+The list of arguments passed to the :mod:`stdnet.lib.lua.load_query` script:
+
+* ``query_key``, the redis key holding the ``ids``
+  from the :ref:`aggregation step<redis-aggragation>`.
+* ``basekey`` the prefix to apply to all keys in the model to aggregate.
+* List of field to loads as ``[num_fields, field1, ...]``. if ``num_fields``
+  is ``0``, all model fields will load.
+* List of related model to load as ``[num_rel_models, rel_models1, ...]``.
+    
    
    
 .. _Redis: http://redis.io/

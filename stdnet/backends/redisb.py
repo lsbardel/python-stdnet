@@ -5,7 +5,7 @@ from hashlib import sha1
 import stdnet
 from stdnet import FieldValueError
 from stdnet.conf import settings
-from stdnet.utils import to_string, map, gen_unique_id, zip
+from stdnet.utils import to_string, map, gen_unique_id, zip, native_str
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
                         pairs_to_dict
 from stdnet.lib.redis import flat_mapping, Pipeline
@@ -30,7 +30,12 @@ class build_query(RedisScript):
     
     
 class load_query(RedisScript):
-    script = read_lua_file('load_query.lua')
+    '''Rich script for loading a query result into stdnet. It handles
+loading of different fields, loading of related fields, sorting and
+limiting.'''
+    script = (read_lua_file('utils/table.lua'),
+              read_lua_file('utils/redis.lua'),
+              read_lua_file('load_query.lua'))
     
     def build(self, response, fields, fields_attributes):
         fields = tuple(fields) if fields else None
@@ -47,19 +52,43 @@ class load_query(RedisScript):
                 yield id,None,dict(pairs_to_dict(fdata))
     
     def callback(self, response, args, query = None, get = None,
-                 fields = None, fields_attributes = None):
+                 fields = None, fields_attributes = None,
+                 client = None, **kwargs):
         meta = query.meta
+        data, related = response
         if get:
             field = meta.dfields[get]
             tpy = field.to_python
             if get == 'id':
-                return [tpy(v) for v in response]
+                return [tpy(v) for v in data]
             else:
-                return [tpy(v) for _,v[1] in response]
+                return [tpy(v) for _,v[1] in data]
         else:
-            data = self.build(response, fields, fields_attributes)
-            result = query.backend.make_objects(meta, data)
-            return query.load_related(result)
+            data = self.build(data, fields, fields_attributes)
+            related_fields = {}
+            if related:
+                encoding = client.encoding
+                for fname,rdata,fields in related:
+                    fname = native_str(fname, encoding)
+                    fields = tuple(native_str(f, encoding) for f in fields)
+                    related_fields[fname] =\
+                        self.load_related(meta, fname, rdata, fields, encoding)
+            return query.backend.make_objects(meta, data, related_fields)
+        
+    def load_related(self, meta, fname, data, fields, encoding):
+        '''Parse data for related objects.'''
+        field = meta.dfields[fname]
+        if field in meta.multifields:
+            fmeta = field.structure_class()._meta
+            if fmeta.name in ('hashtable','zset','ts'):
+                return ((native_str(id, encoding),
+                         pairs_to_dict(fdata, encoding)) for \
+                        id,fdata in data)
+            else:
+                return data
+        else:
+            # this is data for stdmodel instances
+            return self.build(data,fields,fields)
         
 
 class delete_query(RedisScript):
@@ -67,10 +96,9 @@ class delete_query(RedisScript):
 The first parameter is the model'''
     script = read_lua_file('delete_query.lua')
     
-    def callback(self, response, args, meta = None):
+    def callback(self, response, args, meta = None, client = None, **kwargs):
         return session_result(meta, response, 'delete')
         if response:
-            
             meta = sm.meta
             tpy = meta.pk.to_python
             ids = []
@@ -87,7 +115,7 @@ The first parameter is the model'''
 class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
-    def callback(self, response, args, sm = None):
+    def callback(self, response, args, sm = None, client = None, **kwargs):
         return session_result(sm.meta, response[0], 'save')
         
 
@@ -255,7 +283,8 @@ elements in the query.'''
         return start,stop
     
     def _items(self, slic):
-        # Unwind the database query
+        # Unwind the database query by creating a list of arguments for
+        # the load_query lua script
         backend = self.backend
         meta = self.meta
         order = self.order() or ()
@@ -263,6 +292,7 @@ elements in the query.'''
         get = self.queryelem._get_field
         fields_attributes = None
         args = [self.query_key, backend.basekey(meta)]
+        # if the get_field is available, we simply load that field
         if get:
             if get == 'id':
                 fields_attributes = fields = (get,)
@@ -279,6 +309,7 @@ elements in the query.'''
                 
         args.append(len(fields_attributes))
         args.extend(fields_attributes)
+        args.extend(self.related_lua_args())
         
         if order:
             if start and stop == -1:
@@ -300,7 +331,28 @@ elements in the query.'''
                    'get':get}
         return backend.client.script_call('load_query', *args, **options)    
 
-
+    def related_lua_args(self):
+        '''Generator of load_related arguments'''
+        related = self.queryelem.select_related
+        if not related:
+            yield 0
+        else:
+            meta = self.meta
+            yield len(related)
+            for rel in related:
+                field = meta.dfields[rel]
+                typ = 'structure' if field in meta.multifields else ''
+                relmodel = field.relmodel
+                bk = self.backend.basekey(relmodel._meta) if relmodel else ''
+                fi = related[rel]
+                yield bk
+                yield field.name
+                yield field.attname
+                yield typ
+                yield len(fi)
+                for v in fi:
+                    yield v
+            
 
 def iteretor_pipelined(f):
     
@@ -512,6 +564,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             yield 1 if idx.unique else 0
         
     def execute_session(self, session, callback):
+        '''Execute a session in redis.'''
         basekey = self.basekey
         lua_data = []
         pipe = self.client.pipeline()

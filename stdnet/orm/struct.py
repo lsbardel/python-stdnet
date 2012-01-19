@@ -31,18 +31,24 @@ class listcache(object):
         self.back.append(value)
         
     def clear(self):
+        self.cache = []
         self.back = []
         self.front = []
+        
+    def set_cache(self, data):
+        self.cache.extend(data)
         
     
 class setcache(object):
     
     def __init__(self):
+        self.cache = set()
         self.toadd = set()
         self.toremove = set()
 
     def __contains__(self, v):
-        return v in self.toadd
+        if v not in self.toremove:
+            return v in self.cache or v in self.toadd
     
     def add(self, v):
         self.toadd.add(v)
@@ -61,13 +67,18 @@ class setcache(object):
         self.toremove.add(v)
         
     def clear(self):
+        self.cache.clear()
         self.toadd.clear()
         self.toremove.clear()
         
+    def set_cache(self, data):
+        self.cache.update(data)
+
 
 class zsetcache(setcache):
     
     def __init__(self):
+        self.cache = zset()
         self.toadd = zset()
         self.toremove = set()
 
@@ -83,7 +94,7 @@ class zsetcache(setcache):
 class hashcache(setcache):
     
     def __init__(self):
-        self.remote = {}
+        self.cache = {}
         self.toadd = {}
         self.toremove = {}
 
@@ -214,9 +225,11 @@ can also be used as stand alone objects. For example::
         return self.__repr__()
     
     def __iter__(self):
-        loads = self.value_pickler.loads
-        for v in self.session.structure(self):
-            yield loads(v)
+        cache = self.cache.cache
+        if cache:
+            return iter(cache)
+        else:
+            return iter(self._iter())
                 
     @withsession
     def delete(self):
@@ -236,6 +249,21 @@ supplied, use the backend default cursor.'''
     
     def __len__(self):
         return self.size()
+    
+    def _iter(self):
+        loads = self.value_pickler.loads
+        for v in self.session.structure(self):
+            yield loads(v)
+            
+    def set_cache(self, data):
+        '''Set the cache for the :class:`Structure`.
+Do not override this function. Use :meth:`load_data` method instead.'''
+        self.cache.clear()
+        self.cache.set_cache(self.load_data(data))
+        
+    def load_data(self, data):
+        loads = self.value_pickler.loads
+        return (loads(v) for v in data)
 
 
 class List(Structure):
@@ -297,45 +325,40 @@ class Zset(Set):
     '''An ordered version of :class:`Set`.'''
     cache_class = zsetcache
         
-    def __iter__(self):
+    def _iter(self):
         loads = self.value_pickler.loads
         for s,v in self.session.structure(self):
             yield float(s),loads(v)
         
-    def set_cache(self, r):
-        loads = self.pickler.loads
-        self._cache = list((loads(v) for v in r))
+    def load_data(self, mapping):
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        loads = self.value_pickler.loads
+        return ((s,loads(v)) for s,v in mapping)
         
     def add(self, score, value):
         '''Add *value* to the set'''
         score = float(score)
         self.cache.add(score,self.value_pickler.dumps(value))
 
-    def update(self, values, transaction = None):
+    def update(self, mapping):
         '''Add iterable *values* to the set'''
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
         d = self.value_pickler.dumps
         add = self.cache.add
-        for score,value in values:
+        for score,value in mapping:
             add(float(score),d(value))
             
     def rank(self, value):
-        if self.pickler:
-            value = self.pickler.dumps(value)
-        return self._rank(value)
+        value = self.pickler.dumps(value)
+        return self.session.structure(self).rank(value)
     
     def range(self, start, stop):
         if self.pickler:
             value = self.pickler.dumps(value)
         return self._rank(value)
         
-    # VIRTUAL FUNCTIONS
-    
-    def range(self, start, end = -1, withscores = False):
-        raise NotImplementedError
-    
-    def _rank(self, value):
-        raise NotImplementedError
-
     
 class HashTable(Structure):
     '''A hash-table :class:`stdnet.Structure`.
@@ -372,11 +395,6 @@ The networked equivalent to a Python ``dict``.'''
         vloads = self.value_pickler.loads
         for k,v in self.session.structure(self).items():
             yield loads(k),vloads(v)
-            
-    def set_cache(self, items):
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        self._cache = dict(((kloads(k),vloads(v)) for k,v in items))
         
     def __delitem__(self, key):
         self.pop(key)
@@ -408,16 +426,26 @@ does not exist.'''
     def __setitem__(self, key, value):
         return self.update(((key,value),))
     
+    def load_data(self, mapping):
+        loads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        return ((loads(k),vloads(v)) for k,v in mapping)
+    
+    def dump_data(self, mapping):
+        tokey = self.pickler.dumps
+        dumps = self.value_pickler.dumps
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        return ((tokey(k),dumps(v)) for k,v in mapping)
+        
     def update(self, mapping):
         '''Add *mapping* dictionary to hashtable.
 Equivalent to python dictionary update method.
 
 :parameter mapping: a dictionary of field values.'''
-        tokey = self.pickler.dumps
-        dumps = self.value_pickler.dumps
-        if isinstance(mapping,dict):
-            mapping = iteritems(mapping)
-        self.cache.update(dict(((tokey(k),dumps(v)) for k,v in mapping)))
+        self.cache.update(self.dump_data(mapping))
     
     def get(self, key, default = None):
         '''Retrieve a single element from the hashtable.
@@ -450,7 +478,7 @@ If the element is not available return the default value.
         items = sorted(self.items(),key = lambda t : t[0])
         if not desc:
             items = reversed(items)
-        return items
+        return items   
 
     
 class TS(HashTable):

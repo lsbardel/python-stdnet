@@ -1,66 +1,32 @@
 -- LOAD INSTANCES DATA FROM AN EXISTING QUERY
-function table_slice (values,i1,i2)
-    local res = {}
-    local n = #values
-    -- default values for range
-    i1 = i1 or 1
-    i2 = i2 or n
-    if i2 < 0 then
-        i2 = n + i2 + 1
-    elseif i2 > n then
-        i2 = n
-    end
-    if i1 < 1 or i1 > n then
-        return {}
-    end
-    local k = 1
-    for i = i1,i2 do
-        res[k] = values[i]
-        k = k + 1
-    end
-    return res
+function related_fields (args, i, num)
+	all = {}
+	local count = 0
+	while count < num do
+		local related = {bk = args[i+1], name = args[i+2], field = args[i+3], type = args[i+4]}
+		i = i + 5
+		local nf = args[i] + 0
+		related['fields'] = table_slice(args, i+1, i+nf)
+		i = i + nf
+		count = count + 1
+		all[count] = related
+	end
+	return {all, i}
 end
 
+-- Handle input arguments
 local rkey = KEYS[1]  -- Key containing the ids of the query
 local bk = KEYS[2] -- Base key for model
-local num_fields = KEYS[3] + 0
 local io = 3
-local fields = table_slice(KEYS, io+1, io+num_fields)
+local num_fields = KEYS[io] + 0
+local fields = table_slice(KEYS, io + 1, io + num_fields)
+local related
 io = io + num_fields + 1
-local ordering = KEYS[io]
-local start = KEYS[io+1] + 0
-local stop = KEYS[io+2] + 0
-io = io + 2
-
-function randomkey()
-	local rnd_key = bk .. ':tmp:' .. math.random(1,100000000)
-	if redis.call('exists', rnd_key) + 0 == 1 then
-		return randomkey()
-	else
-		return rnd_key
-	end
-end
-
-function members(key)
-	local typ = redis.call('type',key)['ok']
-	if typ == 'set' then
-		return redis.call('smembers', key)
-	elseif typ == 'zset' then
-		return redis.call('zrange', key, 0, -1)
-	elseif typ == 'list' then
-		return redis.call('lrange', key, 0, -1)
-	else
-		return {}
-	end
-end
-
-function delete_keys(keys)
-	local n = table.getn(keys)
-	if n > 0 then
-		redis.call('del', unpack(keys))
-	end
-	return n 
-end
+related, io = unpack(related_fields(KEYS, io, KEYS[io] + 0))
+local ordering = KEYS[io+1]
+local start = KEYS[io+2] + 0
+local stop = KEYS[io+3] + 0
+io = io + 3
 
 -- Perform explicit custom ordering if required
 if ordering == 'explicit' then
@@ -74,8 +40,8 @@ if ordering == 'explicit' then
 	if nested > 0 then
 		-- generate a temporary key where to store the hash table holding
 		-- the values to sort with
-		local skey = randomkey()
-		for i,id in pairs(members(rkey)) do
+		local skey = redis_randomkey(bk)
+		for i,id in pairs(redis_members(rkey)) do
 			local value = redis.call('hget', bk .. ':obj:' .. id, field)
 			local n = 0
 			while n < nested do
@@ -110,7 +76,7 @@ if ordering == 'explicit' then
 		table.insert(sortargs,desc)
 	end
 	ids = redis.call('sort', rkey, unpack(sortargs))
-	delete_keys(tkeys)
+	redis_delete(tkeys)
 else
 	if ordering == 'DESC' then
 		ids = redis.call('zrevrange', rkey, start, stop)
@@ -129,13 +95,49 @@ if num_fields == 0 then
 	for i,id in pairs(ids) do
 		result[i] = {id, redis.call('hgetall', bk .. ':obj:' .. id)}
 	end
-	return result
 elseif table.getn(fields) == 1 and fields[1] == 'id' then
-	return ids
+	result = ids
 else
 	result = {}
 	for i,id in pairs(ids) do
 		result[i] = {id, redis.call('hmget', bk .. ':obj:' .. id, unpack(fields))}
 	end
-	return result
 end
+
+-- handle related item loading
+related_items = {}
+related_fields = {}
+for r,rel in ipairs(related) do
+	local field_items = {}
+	local field = rel['field']
+	local fields = rel['fields']
+	related_items[r] = {rel['name'], field_items, fields}
+	-- A structure
+	if rel['type'] == 'structure' then
+		for i,res in ipairs(result) do
+			local id = res[1]
+			local fid = bk .. ':obj:' .. id .. ':' .. field
+			field_items[i] = {id, redis_members(fid,true)}
+		end
+	else
+		local processed = {}
+		local j = 0
+		local rbk = rel['bk']
+		for i,res in ipairs(result) do
+			local id = bk .. ':obj:' .. res[1]
+			local rid = redis.call('hget', id, field)
+			local val = processed[rid]
+			if not val then
+				j = j + 1
+				processed[rid] = j
+				if # fields > 0 then
+					field_items[j] = {rid, redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))}
+				else
+					field_items[j] = {rid, redis.call('hgetall', rbk .. ':obj:' .. rid)}
+				end
+			end
+		end
+	end
+end
+
+return {result, related_items}

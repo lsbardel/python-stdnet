@@ -149,34 +149,6 @@ queries specified by :class:`stdnet.orm.Query`.
  be implemented by data-server backends.'''
         raise NotImplementedError
     
-    # LOAD RELATED
-    
-    def load_related(self, result):
-        '''load related fields into the query result.
-
-:parameter result: a result from a queryset.
-:rtype: the same queryset qith related models loaded.'''
-        if self.queryelem.select_related:
-            if not hasattr(result,'__len__'):
-                result = list(result)
-            meta = self.meta
-            for field in self.queryelem.select_related:
-                name = field.name
-                attname = field.attname
-                vals = [getattr(r,attname) for r in result]
-                if field in meta.scalarfields:
-                    related = field.relmodel.objects.filter(id__in = vals)
-                    for r,val in zip(result,related):
-                        setattr(r,name,val)
-                else:
-                    with self.backend.transaction() as t:
-                        for val in vals:
-                            val.reload(t)
-                    for val,r in zip(vals,t.get_result()):
-                        val.set_cache(r)
-                        
-        return result
-    
 
 class BackendDataServer(object):
     '''\
@@ -263,7 +235,7 @@ this function for customizing their handling of connection parameters.'''
     def structure(self, struct, session):
         raise NotImplementedError()
     
-    def make_objects(self, meta, data):
+    def make_objects(self, meta, data, related_fields = None):
         '''Generator of :class:`stdnet.orm.StdModel` instances with data
 from database.
 
@@ -271,10 +243,32 @@ from database.
 :parameter data: iterator over instances data.
 '''
         make_object = meta.maker
+        related_data = []
+        if related_fields:
+            for fname,fdata in iteritems(related_fields):
+                field = meta.dfields[fname]
+                if field in meta.multifields:
+                    related = dict(fdata)
+                    multi = True
+                else:
+                    multi = False
+                    relmodel = field.relmodel
+                    related = dict(((obj.id,obj)\
+                            for obj in self.make_objects(relmodel._meta,fdata)))
+                related_data.append((field,related,multi))
+                
         for state in data:
             obj = make_object()
             obj.__setstate__(state)
             obj._dbdata['id'] = obj.id
+            for field,rdata,multi in related_data:
+                if multi:
+                    field.set_cache(obj, rdata.get(str(obj.id)))
+                else:
+                    rid = getattr(obj,field.attname,None)
+                    if rid is not None:
+                        value = rdata.get(rid)
+                        setattr(obj,field.name,value)
             yield obj
         
     def set(self, id, value, timeout = None):

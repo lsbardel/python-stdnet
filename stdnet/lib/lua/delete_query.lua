@@ -64,11 +64,15 @@ end
 
 local j = 0
 results = {}
+-- Loop over query ids and remove all keys associated with instances and update indices
 for _,id in ipairs(ids) do
     local idkey = bk .. ':obj:' .. id
     update_indices(s, bk, id, idkey, indices, uniques)
     num = redis.call('del', idkey) + 0
     redis.call(s .. 'rem', idset, id)
+    for _,name in ipairs(multifields) do
+        redis.call('del', idkey .. ':' .. name)
+    end 
     if num == 1 then
     	j = j + 1
         results[j] = id

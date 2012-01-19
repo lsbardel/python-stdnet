@@ -78,7 +78,7 @@ Session model."""
             return self._deleted.get(id)
         
     def add(self, instance, modified):
-        state = instance.state()
+        state = instance.state(update = True)
         iid = state.iid
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
@@ -94,13 +94,18 @@ Session model."""
         return instance
     
     def delete(self, instance):
-        self.expunge(instance)
-        state = instance.state()
-        if state.persistent:
-            state.deleted = True
-            self._deleted[state.iid] = instance
+        if self.expunge(instance):
+            state = instance.state()
+            if state.persistent:
+                state.deleted = True
+                self._deleted[state.iid] = instance
+            else:
+                instance.session = None
+        return instance
     
     def expunge(self, instance):
+        '''Remove *instance* from the :class:`Session`. Instance could be a
+:class:`Model` or an id.'''
         if isinstance(instance,self.meta.model):
             iid = instance.state().iid
         else:
@@ -109,7 +114,6 @@ Session model."""
         for d in (self._new,self._modified,self._loaded,self._deleted):
             if iid in d:
                 instance = d.pop(iid)
-                instance._dbdata.pop('state',None)
                 r = True
         return r
     
@@ -148,7 +152,12 @@ Session model."""
         self.expunge(instance)
         if not state.deleted:
             if id:
-                instance.id = instance._meta.pk.to_python(id)
+                id = instance._meta.pk.to_python(id)
+                if state.persistent and instance.id != id:
+                    raise ValueError('id has changed in the server from {0}\
+ to {1}'.format(instance.id,id))
+                elif not state.persistent:
+                    instance.id = id
                 instance._dbdata['id'] = instance.id
             self.add(instance, False)
             return instance
@@ -234,8 +243,10 @@ An instance of this class is usually obtained by using the high level
     for information.'''
         self.commands = commands
         self.result = response
+        session = self.session
+        self.close()
         for meta,response,action in self.result:
-            sm = self.session.model(meta, True)
+            sm = session.model(meta, True)
             tpy = meta.pk.to_python
             ids = []
             if action == 'delete':
@@ -251,8 +262,7 @@ An instance of this class is usually obtained by using the high level
                     ids.append(id)
                 instances = sm.post_commit(ids)
                 post_commit.send(sm.model, instances = instances,
-                                 transaction = self)
-        self.close()
+                                 session = session, transaction = self)
         return self
     
     def close(self):

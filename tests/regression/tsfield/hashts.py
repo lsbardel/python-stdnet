@@ -210,13 +210,15 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         
     def testloadrelated(self):
         self.model(ticker = 'AMZN').save()
+        # we have now to instances
         m1,m2 = tuple(self.model.objects.all())
-        with transaction(self.model) as t:
-            m1.data.update(testdata,t)
-            m2.data.update(testdata2,t)
+        m1.data.update(testdata)
+        m2.data.update(testdata2)
+        self.assertEqual(m1.session,m2.session)
+        m1.session.commit()
         
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.all().load_related():
+        for m in self.model.objects.query().load_related():
             data = getattr(m,cache,None)
             self.assertTrue(data)
             self.assertTrue(data.cache)

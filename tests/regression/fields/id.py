@@ -33,6 +33,7 @@ Use the manager for convenience.'''
     def testFailSave(self):
         t1 = self.make()
         self.assertEqual(t1.id,t1._dbdata['id'])
+        self.assertTrue(t1.state().persistent)
         t1.id = genid()
         self.assertRaises(ValueError,t1.save)
         

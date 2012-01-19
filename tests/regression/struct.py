@@ -9,18 +9,6 @@ dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
 
 
-class zsetfunc(object):
-    
-    def score(self, x):
-        return x[0]
-    
-    def dumps(self, x):
-        return x[1]
-    
-    def loads(self, x):
-        return x
-        
-
 class TestSetStructure(test.TestCase):
     
     def testMeta(self):
@@ -104,21 +92,16 @@ class TestZset(test.TestCase):
                    (317.8,'juppiter')]
         self.assertEqual(r,result)
         
-    def testZsetWithScore(self):
+    def testZsetState(self):
         '''test a very simple zset with integer'''
-        z = zsetfunc()
-        l = orm.Zset(scorefun = z.score, pickler = z)
-        self.assertEqual(l.size(),0)
-        l.add((39,'luca'))
-        l.add((8,'gaia'))
-        l.add((40,'jo'))
-        l.add((6,'joshua'))
-        l.save()
-        self.assertEqual(l.size(),4)
-        self.assertFalse(l._cache)
-        r = list(l)
-        self.assertTrue(l._cache)
-        self.assertEqual(r,[b'joshua',b'gaia',b'luca',b'jo'])
+        session = self.session()
+        z = session.add(orm.Zset())
+        self.assertFalse(z.state().persistent)
+        self.assertTrue(z in session)
+        self.assertEqual(z.session,session)
+        session.delete(z)
+        self.assertFalse(z in session)
+        self.assertEqual(z.session, None)
 
 
 class TestList(test.TestCase):
@@ -183,16 +166,17 @@ class TestTimeserie(test.TestCase):
     
     def testEmpty(self):
         session = self.session()
-        ts = orm.TS()
+        ts = session.add(orm.TS())
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(),None)
         self.assertEqual(ts.back(),None)
         self.assertEqual(ts.size(),0)
         
     def testData(self):
-        ts = orm.TS()
+        session = self.session()
+        ts = session.add(orm.TS())
         ts.update(zip(dates,values))
-        ts.save()
+        session.commit()
         self.assertEqual(ts.size(),len(dates))
         front = ts.front()
         back = ts.back()

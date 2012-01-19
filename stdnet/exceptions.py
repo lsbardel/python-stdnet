@@ -3,7 +3,10 @@ class StdNetException(Exception):
     '''A general StdNet exception'''
     pass
 
-class ModelNotRegistered(StdNetException):
+class SessionNotAvailable(StdNetException):
+    pass
+
+class ModelNotRegistered(SessionNotAvailable):
     '''A :class:`StdNetException` raised when trying to save an instance of a :class:`stdnet.orm.StdModel` not yet
 registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.orm.register` for details.'''
     pass

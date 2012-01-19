@@ -44,17 +44,20 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
         
     def testKeys(self):
         d = self.fill()
-        for k in d.data.keys():
-            k = to_string(k)
+        for k in d.data:
             self.data.pop(k)
         self.assertEqual(len(self.data),0)
     
     def testItems(self):
         d = self.fill()
         for k,v in d.data.items():
-            k = to_string(k)
             self.assertEqual(v,self.data.pop(k))
         self.assertEqual(len(self.data),0)
+        
+    def testValues(self):
+        d = self.fill()
+        values = list(d.data.values())
+        self.assertEqual(len(self.data),len(values))
         
 
 class TestMultiField(test.TestCase):
@@ -81,10 +84,10 @@ class TestMultiField(test.TestCase):
             data = getattr(m,cache,None)
             self.assertFalse(data)
         
-    def testloadselected(self):
+    def test_load_related(self):
         '''Use load_selected to load stastructure data'''
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.all().load_related():
+        for m in self.model.objects.query().load_related():
             data = getattr(m,cache,None)
             self.assertTrue(data)
             self.assertTrue(data.cache)

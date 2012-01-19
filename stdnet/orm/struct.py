@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
 from stdnet.lib import zset, nil
+from stdnet import SessionNotAvailable
 
 from .base import ModelBase
 
@@ -125,49 +126,20 @@ class tscache(object):
         
         
 def withsession(f):
-    
+    '''Decorator for instance methods which require a :class:`Session`
+available to perform their call. If a session is not available. It raises
+a :class:`SessionNotAvailable` exception.
+'''
     def _(self, *args, **kwargs):
         if self.session:
             return f(self, *args, **kwargs)
         else:
-            raise ValueError('Cannot perform operation. No session available')
+            raise SessionNotAvailable(
+                        'Cannot perform operation. No session available')
 
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__        
     return _
-
-            
-class ResultCallback(object):
-    __slots__ = ('default','loads')
-    
-    def __init__(self, default, loads):
-        self.default = default
-        self.loads = loads
-    
-    def __call__(self, res):
-        if res and res is not nil:
-            if self.loads:
-                return self.loads(res)
-            else:
-                return res
-        else:
-            if isinstance(self.default,Exception):
-                raise self.default
-            else:
-                return self.default
-
-
-class KeyValueCallback(object):
-    __slots__ = ('loads','vloads')
-    
-    def __init__(self, loads, vloads):
-        self.loads = loads
-        self.vloads = vloads
-    
-    def __call__(self, result):
-        kloads = self.loads
-        vloads = self.vloads
-        return ((kloads(k),vloads(v)) for k,v in result)
 
 
 class Structure(ModelBase):
@@ -210,14 +182,6 @@ can also be used as stand alone objects. For example::
     If ``None`` the :attr:`backend` pickler will be used.
     
     Default ``None``.
-    
-.. attribute:: scorefun
-
-    A callable which takes a value as parameter and return a float
-    number to be usedto score the value. Used in :class:`OrderedSet` structure.
-    
-    Default ``None``.
-
     '''
     _model_type = 'structure'
     value_pickler = None
@@ -268,37 +232,10 @@ supplied, use the backend default cursor.'''
     
     @withsession
     def __contains__(self, value):
-        return session.backend.structure_contains(self)
+        return self.pickler.dumps(value) in self.session.backend.structure(self)
     
     def __len__(self):
         return self.size()
-            
-    # PURE VIRTUAL METHODS
-    
-    def _has(self, cursor, value):
-        raise NotImplementedError()
-    
-    def _all(self, cursor):
-        raise NotImplementedError
-    
-    def _size(self, cursor):
-        raise NotImplementedError
-    
-    def _remove(self, cursor, items):
-        # Remove items form the structures
-        raise NotImplementedError
-    
-    def _delete(self, cursor):
-        '''Delete structure from remote backend.'''
-        raise NotImplementedError
-    
-    def _save(self, cursor, pipeline):
-        raise NotImplementedError("Could not save")
-    
-    def add_expiry(self, cursor, timeout):
-        '''Internal method called if a timeout is set.
-This needs to implemented.'''
-        raise NotImplementedError("Could not save")
 
 
 class List(Structure):
@@ -409,16 +346,27 @@ The networked equivalent to a Python ``dict``.'''
     def setup(self, pickler = None, **kwargs):
         self.pickler = pickler or self.pickler or encoders.Default()
         
+    @withsession
+    def __getitem__(self, key):
+        key = self.pickler.dumps(key)
+        result = self.session.backend.structure(self).get(key)
+        if result is None:
+            raise KeyError(key)
+        return self.value_pickler.loads(result)
+            
+    @withsession
     def __iter__(self):
         loads = self.pickler.loads
         for k in self.session.structure(self):
-            yield loads(v)
+            yield loads(k)
 
+    @withsession
     def values(self):
         vloads = self.value_pickler.loads
         for v in self.session.structure(self).values():
             yield vloads(v)
-                        
+    
+    @withsession        
     def items(self):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
@@ -429,16 +377,6 @@ The networked equivalent to a Python ``dict``.'''
         kloads = self.pickler.loads
         vloads = self.value_pickler.loads
         self._cache = dict(((kloads(k),vloads(v)) for k,v in items))
-        
-    def keyvaluedata(self, func, transaction, *args, **kwargs):
-        '''invoke remote function in the server and if
-we are not using a pipeline, unpickle the result.'''
-        rk = KeyValueCallback(self.pickler.loads,
-                              self.value_pickler.loads)
-        if transaction:
-            transaction.add(func, args, kwargs, callback = rk)
-        else:
-            return rk(func(self.backend.cursor(), *args, **kwargs))
         
     def __delitem__(self, key):
         self.pop(key)
@@ -467,6 +405,9 @@ does not exist.'''
                            self.pickler.dumps(key),
                            self.pickler_value.dumps(value))
     
+    def __setitem__(self, key, value):
+        return self.update(((key,value),))
+    
     def update(self, mapping):
         '''Add *mapping* dictionary to hashtable.
 Equivalent to python dictionary update method.
@@ -487,70 +428,10 @@ If the element is not available return the default value.
 :parameter transaction: an optional transaction instance.
 :rtype: a value in the hashtable or a pipeline depending if a
     transaction has been used.'''
-        key = self.pickler.dumps(key)
-        result = self.session.backend.structure(self).get(key,default)
-        return self.value_pickler.loads(result[0])
-    
-    def __getitem__(self, key):
-        v = self.get(key)
-        if v is None:
-            raise KeyError('%s not available' % key)
-        else:
-            return v
-
-    def items(self, keys = None):
-        '''Generator over key-values.
-If keys is not supplied, it is a generator over all key-value items.
-No transaction involved in this function.'''
-        if self.cache:
-            if self.keys:
-                cache = self.cache.get
-                for key in keys:
-                    yield key,cache(key)
-            else:
-                for item in iteritems(self.cache):
-                    yield item
-        else:
-            kloads = self.pickler.loads
-            vloads = self.value_pickler.loads
-            if keys:
-                dumps = self.pickler.dumps
-                keys = [dumps(k) for k in keys]
-                items = zip(keys,self._items(self.backend.cursor(),keys))
-                for key,val in items:
-                    yield kloads(key),vloads(val)
-            else:
-                cache = {}
-                items = self._items(self.backend.cursor(),keys)
-                for key,val in items:
-                    k,v = kloads(key),vloads(val)
-                    cache[k] = v
-                    yield k,v
-                self._cache = cache
-            
-    def values(self, keys = None):
-        '''Generator overvalues.
-If keys is not supplied, it is a generator over value items.
-No transaction involved in this function.'''
-        if self.cache:
-            if self.keys:
-                cache = self.cache.get
-                for key in keys:
-                    yield cache(key)
-            else:
-                for item in itervalues(self.cache):
-                    yield item
-        else:
-            kloads = self.pickler.loads
-            vloads = self.value_pickler.loads
-            if keys:
-                dumps = self.pickler.dumps
-                keys = [dumps(k) for k in keys]
-                for item in self._items(self.backend.cursor(),keys):
-                    yield vloads(item)
-            else:
-                for key,val in self._items(self.backend.cursor(),keys):
-                    yield vloads(val)
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
             
     def range(self, start, end, desc = False):
         '''Return a generator of ordered items between start and end.'''
@@ -559,10 +440,6 @@ No transaction involved in this function.'''
             items = reversed(items)
         return items
             
-    def values(self):
-        for key,value in self.items():
-            yield value
-    
     def sortedkeys(self, desc = True):
         keys = sorted(self)
         if not desc:
@@ -574,26 +451,6 @@ No transaction involved in this function.'''
         if not desc:
             items = reversed(items)
         return items
-    
-    def _all(self, cursor):
-        return self._items(cursor, None)
-    
-    # PURE VIRTUAL METHODS
-    
-    def _addnx(self, field, value):
-        raise NotImplementedError
-    
-    def _contains(self, cursor, value):
-        raise NotImplementedError
-    
-    def _get(self, cursor, key):
-        raise NotImplementedError
-    
-    def _items(self, cursor, keys):
-        raise NotImplementedError
-    
-    def _pop(self, cursor, key):
-        raise NotImplementedError
 
     
 class TS(HashTable):
@@ -634,64 +491,4 @@ not available with vanilla redis. Check the
         tokey    = self.pickler.dumps
         return self._count(self.backend.cursor(),
                            tokey(start),tokey(end))
-            
-    # PURE VIRTUAL METHODS
-    
-    def _count(self, cursor, start, end):
-        raise NotImplementedError
-    
-    def _range(self, cursor, start, end):
-        raise NotImplementedError
-    
-    def _irange(self, cursor, start, end):
-        raise NotImplementedError
-    
-    def _front(self, cursor):
-        raise NotImplementedError
-    
-    def _back(self, cursor):
-        raise NotImplementedError
        
-
-
-class make_struct(object):
-    
-    def __init__(self, name, pickler = None, value_pickler = None):
-        self._name = name
-        self._pickler = pickler
-        self._value_pickler = value_pickler
-    
-    def __call__(self, id = None, pickler = None, value_pickler = None,
-                 instance = None, **kwargs):
-        pickler = pickler or self._pickler
-        value_pickler = value_pickler or self._value_pickler
-        s = st(self._id(id),
-               pickler = pickler or self._pickler,
-               value_pickler = value_pickler or self._value_pickler,
-               instance = instance,
-               **kwargs)
-        return s
-        
-    def _id(self, id):
-        return id or 'stdnet-{0}'.format(str(uuid4())[:8])
-    
-    @classmethod
-    def clear(cls, ids):
-        if ids:
-            for id in ids:
-                s = self._structs.pop(id,None)
-                if s:
-                    try:
-                        s.delete()
-                    except ConnectionError:
-                        pass
-        else:
-            for s in itervalues(cls._structs):
-                try:
-                    s.delete()
-                except ConnectionError:
-                    pass
-            cls._structs.clear()
-
-
-Dict = make_struct(HashTable, value_pickler = encoders.PythonPickle())

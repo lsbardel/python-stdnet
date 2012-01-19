@@ -134,7 +134,7 @@ def float_or_none(response):
 
 def bytes_to_string(result, encoding = 'utf-8'):
     if isinstance(result,list):
-        return [res.decode(encoding) for res in result]
+        return (res.decode(encoding) for res in result)
     elif result is not None:
         return result.decode(encoding)
     else:

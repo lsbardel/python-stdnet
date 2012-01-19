@@ -301,13 +301,23 @@ elements in the query.'''
         return backend.client.script_call('load_query', *args, **options)    
 
 
-class RedisStructure(BackendStructure):
+
+def iteretor_pipelined(f):
     
-    def __iter__(self):
+    def _(self):
         if self.pipelined:
             return iter(())
         else:
-            return self._iter()
+            return f(self)
+        
+    return _
+
+
+class RedisStructure(BackendStructure):
+    
+    @iteretor_pipelined
+    def __iter__(self):
+        return self._iter()
         
     def _iter(self):
         raise NotImplementedError()
@@ -329,7 +339,7 @@ class Set(RedisStructure):
     def size(self):
         return self.client.scard(self.id)
     
-    def __iter__(self):
+    def _iter(self):
         return self.client.smembers(self.id)
     
 
@@ -388,20 +398,22 @@ class Hash(RedisStructure):
     def size(self):
         return self.client.hlen(self.id)
     
-    def get(self, key, default = None):
-        return self.client.hmget(self.id, key) or default
+    def get(self, key):
+        return self.client.hget(self.id, key)
     
-    def __iter__(self):
-        for k in self.client.script_call('hash_keys',self.id):
-            yield k
-            
+    def __contains__(self, key):
+        return self.client.hexists(self.id, key)
+    
+    def _iter(self):
+        return iter(self.client.hkeys(self.id))
+    
+    @iteretor_pipelined
     def values(self):
-        for v in self.client.script_call('hash_values',self.id):
-            yield v
-            
+        return iter(self.client.hvals(self.id))
+    
+    @iteretor_pipelined        
     def items(self):
-        for k,v in self.hgetall(self.id):
-            yield k,v
+        return iter(self.client.hgetall(self.id))
     
     
 class TS(RedisStructure):
@@ -557,12 +569,12 @@ class BackendDataServer(stdnet.BackendDataServer):
             self.accumulate_delete(pipe, rq)
         s = 'z' if meta.ordering else 's'
         indices = list(self.flat_indices(meta))
-        mfields = [field.name for field in meta.multifields]
+        multi_fields = [field.name for field in meta.multifields]
         lua_data = [self.basekey(meta), backend_query.query_key,
                     s, len(indices)//2]
         lua_data.extend(indices)
-        lua_data.append(len(mfields))
-        lua_data.extend(mfields)
+        lua_data.append(len(multi_fields))
+        lua_data.extend(multi_fields)
         options = {'meta':meta}
         pipe.script_call('delete_query', *lua_data, **options)
         return query

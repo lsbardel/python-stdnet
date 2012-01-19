@@ -722,8 +722,7 @@ registered in the model hash table, it can be used.'''
     internal_type = 'text'
     
     def json_serialize(self, value):
-       if value:
-           return  value._meta.hash
+        return self.index_value(value)
        
     def to_python(self, value):
         if value and not hasattr(value,'_meta'):
@@ -732,13 +731,17 @@ registered in the model hash table, it can be used.'''
         else:
             return value
     
-    def serialize(self, value):
+    def index_value(self, value):
         if value is not None:
             if not hasattr(value,'_meta'):
                 value = self.to_python(value)
                 if not hasattr(value,'_meta'):
                     return
-            value = value._meta.hash
+            return value._meta.hash
+    
+    def serialize(self, value):
+        value = self.index_value(value)
+        if value is not None:
             return self.encoder.dumps(value)
     
 

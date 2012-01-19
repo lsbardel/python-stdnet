@@ -630,7 +630,7 @@ an exception is raised.
         meta    = self._meta
         fields  = meta.dfields
         for name,value in kwargs.items():
-            names = name.split('__')
+            names = name.split(JSPLITTER)
             field_name = names[0]
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
@@ -639,7 +639,7 @@ an exception is raised.
             if not field.index:
                 raise QuerySetError("{0} {1} is not an index.\
  Cannot query.".format(field.__class__.__name__,field_name))                                 
-            lookup = '__'.join(names[1:])
+            lookup = JSPLITTER.join(names[1:])
             if lookup:
                 lvalue = field.filter(self.session, lookup, value)
                 if lvalue is not None:

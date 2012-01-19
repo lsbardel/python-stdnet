@@ -1,5 +1,6 @@
 '''Search engine application in `apps.searchengine`.'''
 from random import randint
+from datetime import date
 
 from stdnet import test
 from stdnet.utils import to_string, range
@@ -58,43 +59,19 @@ WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                                for i in range(size))
 
 
-def make_items(num = 30, content = False, related = None):
-    names = populate('choice', num, choice_from=basic_english_words)
-    if content:
-        contents = WORDS_GROUPS(num)
-    else:
-        contents = ['']*num
-    with Item.objects.transaction() as t:
-        for name,co in zip(names,contents):
-            if len(name) > 3:
-                item = Item(name=name,
-                            counter=randint(0,10),
-                            content = co,
-                            related = related).save(t)
-            
-
-
 class TestCase(test.TestCase):
     '''Mixin for testing the search engine. No tests implemented here,
 just registration and some utility functions. All search-engine tests
 below will derive from this class.'''
     metaphone = True
     stemming = True
-    models = (Word,WordItem,Item,RelatedItem)
+    models = (Word, WordItem, Item, RelatedItem)
     
     def setUp(self):
+        self.register()
         self.engine = SearchEngine(metaphone = self.metaphone,
                                    stemming = self.stemming)
         self.engine.register(Item,('related',))
-    
-    def simpleadd(self, name = 'python', counter = 10, content = None,
-                  related = None):
-        engine = self.engine
-        item = self.make_item(name,counter,content,related)
-        wi = self.session().query(WordItem).filter(model_type = Item,
-                                                   object_id = item.id)
-        self.assertTrue(wi)
-        return item,wi
     
     def make_item(self,name='python',counter=10,content=None,related=None):
         session = self.session()
@@ -103,6 +80,30 @@ below will derive from this class.'''
                     content=content if content is not None else python_content,
                     related= related))
         return item
+    
+    def make_items(self, num = 30, content = False, related = None):
+        names = populate('choice', num, choice_from=basic_english_words)
+        session = self.session()
+        if content:
+            contents = WORDS_GROUPS(num)
+        else:
+            contents = ['']*num
+        with session.begin():
+            for name,co in zip(names,contents):
+                if len(name) > 3:
+                    session.add(Item(name=name,
+                                     counter=randint(0,10),
+                                     content = co,
+                                     related = related))
+    
+    def simpleadd(self, name = 'python', counter = 10, content = None,
+                  related = None):
+        item = self.make_item(name,counter,content,related)
+        self.assertEqual(item.last_indexed.date(),date.today())
+        wi = self.session().query(WordItem).filter(model_type = Item,
+                                                   object_id = item.id)
+        self.assertTrue(wi.count())
+        return item,wi
     
     def sometags(self, num = 10, minlen = 3):
         def _():
@@ -215,7 +216,7 @@ class TestSearchEngine(TestCase):
         
     def _testAddTags(self):
         engine = self.engine
-        make_items(num=100)
+        self.make_items(num=100)
         for item in Item.objects.all():
             self.assertTrue(engine.add_tag(item,self.sometags()))
         tags = self.engine.alltags()

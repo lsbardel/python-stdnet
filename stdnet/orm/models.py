@@ -131,13 +131,20 @@ for example ``group__name``.'''
         return self._valattr('toload')
     
     def save(self):
-        session = self.__class__.objects.session()
+        '''A fast method for saving an object. Use this method with care
+since it commits changes to the backend database immediately. If a session
+is not available, it tries to create one from its :class:`Manager`.'''
+        session = self.session
+        if session is None:
+            session = self.__class__.objects.session()
         with session.begin():
             session.add(self)
         return self
     
     def delete(self):
-        session = self.__class__.objects.session()
+        session = self.session
+        if session is None:
+            session = self.__class__.objects.session()
         with session.begin():
             session.delete(self)
         return self

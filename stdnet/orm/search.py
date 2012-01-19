@@ -99,7 +99,7 @@ Can and should be reimplemented by subclasses.'''
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
     
-    def index_item(self, item, skipremove = False):
+    def index_item(self, session, item):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
@@ -109,8 +109,7 @@ It extracts content from the given *item* and add it to the index.
                        
                        Default ``False``.
 """
-        if not skipremove:
-            self.remove_item(item)
+        self.remove_item(session, item)
         wft = self.words_from_text
         words = chain(*[wft(value) for value in\
                             self.item_field_iterator(item)])                
@@ -121,13 +120,13 @@ It extracts content from the given *item* and add it to the index.
             else:
                 wc[word] = 1
         
-        return self._index_item(item,wc)
+        return self._index_item(session, item, wc)
 
     def flush(self, full = False):
         '''Clean the search engine'''
         raise NotImplementedError
     
-    def remove_item(self, item):
+    def remove_item(self, session, item):
         '''Remove an item from the serach indices'''
         raise NotImplementedError
     
@@ -167,16 +166,20 @@ class UpdateSE(object):
     def __init__(self, se):
         self.se = se
         
-    def __call__(self, instances, transaction = None, **kwargs):
-        for instance in instances:
-            state = instance.state()
-            if state.deleted:
-                self.se.remove_item(instance)
-            else:
-                if not instance.last_indexed:
-                    self.se.index_item(instance)
-                    instance.last_indexed = datetime.now()
-                    instance.save(skip_signal = True)
+    def __call__(self, instances, session = None, **kwargs):
+        '''An update on instances has occured. Propagate it to the search
+engine index models.'''
+        if session is None:
+            raise ValueError('No session available. Cannot updated indexes.')
+        with session.begin():
+            for instance in instances:
+                state = instance.state()
+                if state.deleted:
+                    self.se.remove_item(instance)
+                elif not instance.last_indexed:
+                    session.add(instance)
+                    self.se.index_item(session, instance)
+                    instance.last_indexed = datetime.now()    
         
         
 class stdnet_processor(object):

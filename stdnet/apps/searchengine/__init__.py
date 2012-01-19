@@ -158,25 +158,24 @@ driver.
         if full:
             Word.flush()
         
-    def _index_item(self, item, words):    
+    def _index_item(self, session, item, words):    
         link = self._link_item_and_word
-        with WordItem.objects.transaction() as t:
-            linked = [link(item, word, c, transaction = t)\
-                       for word,c in iteritems(words)]
-        return linked
+        for word,c in iteritems(words):
+            session.add(link(item, word, c, session))
     
-    def remove_item(self, item):
+    def remove_item(self, session, item):
         '''\
 Remove indexes for *item*.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
 '''
+        query = session.query(WordItem)
         if isclass(item):
-            wi = WordItem.objects.filter(model_type = item)
+            wi = query.filter(model_type = item)
         else:
-            wi = WordItem.objects.filter(model_type = item.__class__,
-                                         object_id = item.id)
-        wi.delete()
+            wi = query.filter(model_type = item.__class__,
+                              object_id = item.id)
+        session.delete(wi)
     
     def words(self, text, for_search = False):
         '''Given a text string,
@@ -256,13 +255,12 @@ searchable world in *text*'''
             for wi in wis:
                 yield wi.word
                     
-    def _link_item_and_word(self, item, word, count = 1, tag = False,
-                            transaction = None):
+    def _link_item_and_word(self, item, word, count = 1, tag = False):
         w = self.get_or_create(word, tag = tag)
         return WordItem(word = w,
                         model_type = item.__class__,
                         object_id = item.id,
-                        count = count).save(transaction)
+                        count = count)
     
     def item_field_iterator(self, item):
         for processor in self.ITEM_PROCESSORS:

@@ -407,8 +407,10 @@ raised when trying to save an invalid instance.'''
         else:
             return id(self)
     
-    def state(self):
-        return ModelState(self)
+    def state(self, update = False):
+        if 'state' not in self._dbdata or update:
+            self._dbdata['state'] = ModelState(self)
+        return self._dbdata['state']
     
     @classmethod
     def get_uuid(cls, id):

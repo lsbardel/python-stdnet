@@ -1,4 +1,4 @@
-from stdnet import test
+from stdnet import test, FieldError
 
 from examples.models import Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
@@ -79,7 +79,17 @@ class load_related(FinanceTest):
             cache = fund.get_cache_name()
             val = getattr(p,cache,None)
             self.assertTrue(val)
-            self.assertTrue(isinstance(val,fund.relmodel))        
+            self.assertTrue(isinstance(val,fund.relmodel))
+            
+    def testError(self):
+        self.data.makePositions(self)
+        session = self.session()
+        query = session.query(Position)
+        pos = self.assertRaises(FieldError, query.load_related, 'bla')
+        pos = self.assertRaises(FieldError, query.load_related, 'size')
+        pos = query.load_related('instrument','id')
+        self.assertEqual(len(pos.select_related),1)
+        self.assertEqual(pos.select_related['instrument'],set())
     
 
 class load_related_structure(test.TestCase):

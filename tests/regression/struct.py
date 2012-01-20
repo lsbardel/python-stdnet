@@ -9,7 +9,7 @@ dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
 
 
-class TestSetStructure(test.TestCase):
+class TestSet(test.TestCase):
     
     def testMeta(self):
         l = orm.Set()
@@ -49,22 +49,17 @@ class TestSetStructure(test.TestCase):
         
 
 class TestZset(test.TestCase):
-    
-    def testMeta(self):
-        session = self.session()
-        l = session.add(orm.Zset())
-        self.assertEqual(l._meta.name,'zset')
-        self.assertEqual(l._meta.model._model_type,'structure')
-        self.assertEqual(l.size(),0)
-        l.add(3,'bla')
-        l.add(-5,'foo')
-        self.assertEqual(l.size(),0)
-        session.commit()
-        self.assertEqual(l.size(),2)
-        self.assertEqual(list(l),[(-5.0,'foo'),(3.0,'bla')])
+    result =  [(0.0022,'pluto'),
+               (0.06,'mercury'),
+               (0.11,'mars'),
+               (0.82,'venus'),
+               (1,'earth'),
+               (14.6,'uranus'),
+               (17.2,'neptune'),
+               (95.2,'saturn'),
+               (317.8,'juppiter')]
         
-    def testPanetMass(self):
-        '''test a very simple zset with integer'''
+    def planets(self):
         session = self.session()
         l = session.add(orm.Zset())
         l.add(1,'earth')
@@ -73,25 +68,25 @@ class TestZset(test.TestCase):
         l.update(((95.2,'saturn'),\
                   (0.82,'venus'),\
                   (14.6,'uranus'),\
-                  (1.52,'mars'),
+                  (0.11,'mars'),
                   (17.2,'neptune'),
-                  (0.0007,'pluto')))
+                  (0.0022,'pluto')))
         self.assertEqual(l.size(),0)
         self.assertEqual(len(l.cache.toadd),9)
         session.commit()
         self.assertEqual(l.size(),9)
-        r = list(l)
-        result =  [(0.0007,'pluto'),
-                   (0.06,'mercury'),
-                   (0.82,'venus'),
-                   (1,'earth'),
-                   (1.52,'mars'),
-                   (14.6,'uranus'),
-                   (17.2,'neptune'),
-                   (95.2,'saturn'),
-                   (317.8,'juppiter')]
-        self.assertEqual(r,result)
-        
+        return l
+            
+    def testMeta(self):
+        session = self.session()
+        l = session.add(orm.Zset())
+        self.assertEqual(l._meta.name,'zset')
+        self.assertEqual(l._meta.model._model_type,'structure')
+        self.assertEqual(l.size(),0)
+        self.assertFalse(l.cache.cache)
+        self.assertFalse(l.cache.toadd)
+        self.assertFalse(l.cache.toremove)
+
     def testZsetState(self):
         '''test a very simple zset with integer'''
         session = self.session()
@@ -102,6 +97,19 @@ class TestZset(test.TestCase):
         session.delete(z)
         self.assertFalse(z in session)
         self.assertEqual(z.session, None)
+        
+    def testIter(self):
+        '''test a very simple zset with integer'''
+        l = self.planets()
+        r = list(l)
+        v = [t[1] for t in self.result]
+        self.assertEqual(r,v)
+                
+    def testItems(self):
+        '''test a very simple zset with integer'''
+        l = self.planets()
+        r = list(l.items())
+        self.assertEqual(r,self.result)
 
 
 class TestList(test.TestCase):
@@ -162,8 +170,18 @@ class TestHash(test.TestCase):
         self.assertEqual(len(d),0)
         
 
-class TestTimeserie(test.TestCase):
+class TestTS(test.TestCase):
     
+    def testMeta(self):
+        session = self.session()
+        ts = session.add(orm.TS())
+        self.assertEqual(ts._meta.name,'ts')
+        self.assertEqual(ts._meta.model._model_type,'structure')
+        self.assertEqual(ts.size(),0)
+        self.assertFalse(ts.cache.cache)
+        self.assertFalse(ts.cache.toadd)
+        self.assertFalse(ts.cache.toremove)
+        
     def testEmpty(self):
         session = self.session()
         ts = session.add(orm.TS())
@@ -176,12 +194,16 @@ class TestTimeserie(test.TestCase):
         session = self.session()
         ts = session.add(orm.TS())
         ts.update(zip(dates,values))
+        self.assertTrue(ts.cache.toadd)
         session.commit()
         self.assertEqual(ts.size(),len(dates))
         front = ts.front()
         back = ts.back()
-        self.assertTrue(back>front)
+        self.assertTrue(back[0]>front[0])
         range = list(ts.range(date(2009,10,1),date(2010,5,1)))
         self.assertTrue(range)
+        for time,val in range:
+            self.assertTrue(time>=front[0])
+            self.assertTrue(time<=back[0])
         
     

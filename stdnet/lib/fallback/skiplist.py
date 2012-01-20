@@ -34,14 +34,13 @@ NIL = Node(End(), None, [], [])
 
 
 class skiplist:
-    '''Sorted collection supporting O(lg n) insertion, removal,
+    '''Sorted collection supporting O(log n) insertion, removal,
 and lookup by rank.'''
 
     def __init__(self, expected_size=1000000):
-        self.size = 0
         self.maxlevels = int(1 + log(expected_size, 2))
-        self.head = Node('HEAD', None, [NIL]*self.maxlevels, [1]*self.maxlevels)
-
+        self.clear()
+        
     def __repr__(self):
         return list(self).__repr__()
     
@@ -60,6 +59,10 @@ and lookup by rank.'''
                 node = node.next[level]
         return node.value
 
+    def clear(self):
+        self.size = 0
+        self.head = Node('HEAD', None, [NIL]*self.maxlevels, [1]*self.maxlevels)
+        
     def insert(self, score, value):
         # find first node on each level where node.next[levels].score > score
         chain = [None] * self.maxlevels
@@ -86,6 +89,11 @@ and lookup by rank.'''
             chain[level].width[level] += 1
         self.size += 1
 
+    def update(self, values):
+        insert = self.insert
+        for score,value in values:
+            insert(score,value)
+        
     def remove(self, score):
         # find first node on each level where node.next[levels].score >= score
         chain = [None] * self.maxlevels

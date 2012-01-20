@@ -2,7 +2,7 @@ from uuid import uuid4
 from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
-from stdnet.lib import zset, nil
+from stdnet.lib import zset, skiplist, nil
 from stdnet import SessionNotAvailable
 
 from .base import ModelBase
@@ -16,8 +16,9 @@ __all__ = ['Structure',
            'TS']
 
 
-default_score = lambda x : x
-
+################################################################################
+##    CACHE CLASSES
+################################################################################
 
 class listcache(object):
     
@@ -49,22 +50,17 @@ class setcache(object):
     def __contains__(self, v):
         if v not in self.toremove:
             return v in self.cache or v in self.toadd
-    
-    def add(self, v):
-        self.toadd.add(v)
-        self.toremove.discard(v)
         
-    def update(self, v):
-        self.toadd.update(v)
-        self.toremove.difference_update(v)
+    def update(self, values):
+        self.toadd.update(values)
+        self.toremove.difference_update(values)
         
-    def difference_update(self, v):
-        self.toadd.difference_update(v)
-        self.toremove.update(v)
-        
-    def discard(self, v):
-        self.toadd.discard(v)
-        self.toremove.add(v)
+    def remove(self, values, add_to_remove = True):
+        self.toadd.difference_update(values)
+        if add_to_remove:
+            self.toremove.update(values)
+        else:
+            self.toremove.difference_update(values)
         
     def clear(self):
         self.cache.clear()
@@ -81,61 +77,33 @@ class zsetcache(setcache):
         self.cache = zset()
         self.toadd = zset()
         self.toremove = set()
-
-    def add(self, score, v):
-        self.toadd.add(score,v)
-        self.toremove.discard(v)
-        
-    def update(self, v):
-        self.toadd.update(v)
-        self.toremove.difference_update(v)
         
     
-class hashcache(setcache):
+class hashcache(zsetcache):
     
     def __init__(self):
         self.cache = {}
         self.toadd = {}
-        self.toremove = {}
+        self.toremove = set()
+        
+    def remove(self, keys, add_to_remove = True):
+        d = lambda x : self.toadd.pop(x,None)
+        for key in keys:
+            d(key)
+        if add_to_remove:
+            self.toremove.update(keys)
+        else:
+            self.toremove.difference_update(keys)
 
-    def update(self, v):
-        self.toadd.update(v)
-        for k in v:
-            self.toremove.pop(v,None)
 
-
-class tscache(object):
+class tscache(hashcache):
     
     def __init__(self):
-        self.fields = {}
-        self.delete_fields = set()
-        self.deleted_timestamps = set()
+        self.cache = skiplist()
+        self.toadd = skiplist()
+        self.toremove = set()
 
-    def add(self, timestamp, field, value):
-        if field not in self.fields:
-            self.fields[field] = skiplist()
-        self.fields[field].insert(timestamp,value)
-        
-    def flush(self):
-        self.fields.clear()
-        self.delete_fields.clear()
-        self.deleted_timestamps.clear()
-        
-    def flat(self):
-        if self.deleted_timestamps or self.delete_fields or self.fields:
-            args = [len(self.deleted_timestamps)]
-            args.extend(self.deleted_timestamps)
-            args.append(len(self.delete_fields))
-            args.extend(self.delete_fields)
-            for field in self.fields:
-                val = self.fields[field]
-                args.append(field)
-                args.append(len(val))
-                args.extend(val.flat())
-            self.flush()
-            return args
-        
-        
+
 def withsession(f):
     '''Decorator for instance methods which require a :class:`Session`
 available to perform their call. If a session is not available. It raises
@@ -152,6 +120,10 @@ a :class:`SessionNotAvailable` exception.
     _.__doc__ = f.__doc__        
     return _
 
+
+################################################################################
+##    STRUCTURE CLASSES
+################################################################################
 
 class Structure(ModelBase):
     '''Base class for remote data-structures. Remote structures are the
@@ -266,6 +238,153 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return (loads(v) for v in data)
 
 
+class PairMixin(object):
+    '''A mixin for handling structures with which holds pairs.'''
+    pickler = encoders.NoEncoder()
+    
+    def setup(self, pickler = None, **kwargs):
+        self.pickler = pickler or self.pickler
+    
+    @withsession
+    def _iter(self):
+        loads = self.pickler.loads
+        for k in self.session.structure(self):
+            yield loads(k)
+    
+    @withsession
+    def items(self):
+        data = self.session.structure(self).items()
+        return self.load_data(data)
+        
+    def add(self, *pair):
+        '''Add a *pair* to the structure.'''
+        if len(pair) != 2:
+            raise TypeError('add expected 2 arguments, got {0}'\
+                            .format(len(pair)))
+        self.update((pair,))
+        
+    def update(self, mapping):
+        '''Add *mapping* dictionary to hashtable.
+Equivalent to python dictionary update method.
+
+:parameter mapping: a dictionary of field values.'''
+        self.cache.update(self.dump_data(mapping))
+
+    def dump_data(self, mapping):
+        tokey = self.pickler.dumps
+        dumps = self.value_pickler.dumps
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        return [(tokey(k),dumps(v)) for k,v in mapping]
+
+    def load_data(self, mapping):
+        loads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        if isinstance(mapping,dict):
+            mapping = iteritems(mapping)
+        return ((loads(k),vloads(v)) for k,v in mapping)
+    
+
+class KeyValueMixin(PairMixin):
+    
+    @withsession
+    def __getitem__(self, key):
+        key = self.pickler.dumps(key)
+        result = self.session.backend.structure(self).get(key)
+        if result is None:
+            raise KeyError(key)
+        return self.value_pickler.loads(result)
+    
+    def __setitem__(self, key, value):
+        self.add(key,value)
+
+    def get(self, key, default = None):
+        '''Retrieve a single element from the hashtable.
+If the element is not available return the default value.
+
+:parameter key: lookup field
+:parameter default: default value when the field is not available.
+:parameter transaction: an optional transaction instance.
+:rtype: a value in the hashtable or a pipeline depending if a
+    transaction has been used.'''
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+        
+    def __delitem__(self, key):
+        '''Immediately remove an element. To remove with transactions use the
+:meth:`remove` method`.'''
+        self._pop(key)
+            
+    def pop(self, key, *args):
+        if len(args) > 1:
+            raise TypeError('pop expected at most 2 arguments, got {0}'\
+                            .format(len(args)+1))
+        try:
+            return self._pop(key)
+        except KeyError:
+            if args:
+                return args[0]
+            else:
+                raise
+        
+    def remove(self, *keys):
+        '''Remove *keys* from the hashtable.'''
+        dumps = self.pickler.dumps
+        self.cache.remove([dumps(v) for v in keys])
+        
+    @withsession
+    def values(self):
+        vloads = self.value_pickler.loads
+        for v in self.session.structure(self).values():
+            yield vloads(v)
+            
+    # PRIVATE
+    
+    def _pop(self, key):
+        k = self.pickler.dumps(key)
+        v = self.session.structure(self).pop(k)
+        if v is None:
+            raise KeyError(key)
+        else:
+            self.cache.remove((k,),False)
+            return self.value_pickler.loads(v)
+    
+    
+class OrderedMixin(object):
+    '''A mixin for :class:`Structure` wich maintain ordering with respect
+a float value.'''
+    
+    def front(self):
+        '''Return the front pair of the structure'''
+        v = tuple(self.irange(0,0))
+        if v:
+            return v[0]
+    
+    def back(self):
+        '''Return the back pair of the structure'''
+        v = tuple(self.irange(-1,-1))
+        if v:
+            return v[0]
+    
+    def rank(self, value):
+        value = self.pickler.dumps(value)
+        return self.session.structure(self).rank(value)
+    
+    def range(self, start, stop):
+        start = self.pickler.dumps(start)
+        stop = self.pickler.dumps(stop)
+        data = self.session.structure(self).range(start,stop)
+        return self.load_data(data)
+    
+    def irange(self, start = 0, end = -1):
+        '''Return a range between start and end key.'''
+        data = self.session.structure(self).irange(start,end)
+        return self.load_data(data)
+        
+
+
 class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
     cache_class = listcache
@@ -303,7 +422,7 @@ class Set(Structure):
      
     def add(self, value):
         '''Add *value* to the set'''
-        self.cache.add(self.value_pickler.dumps(value))
+        self.cache.update((self.value_pickler.dumps(value),))
 
     def update(self, values):
         '''Add iterable *values* to the set'''
@@ -312,109 +431,32 @@ class Set(Structure):
             
     def discard(self, value):
         '''Remove an element *value* from a set if it is a member.'''
-        self.cache.discard(self.value_pickler.dumps(value))
+        self.cache.remove((self.value_pickler.dumps(value),))
     remove = discard
         
     def difference_update(self, values):
         '''Remove an iterable of *values* from the set.'''
         d = self.value_pickler.dumps
-        self.cache.difference_update(tuple((d(v) for v in values)))
+        self.cache.remove(tuple((d(v) for v in values)))
 
 
-class Zset(Set):
+class Zset(OrderedMixin, PairMixin, Set):
     '''An ordered version of :class:`Set`.'''
+    pickler = encoders.Double()
     cache_class = zsetcache
         
     def _iter(self):
+        # Override the KeyValueMixin so that it iterates over values rather
+        # scores
         loads = self.value_pickler.loads
-        for s,v in self.session.structure(self):
-            yield float(s),loads(v)
-        
-    def load_data(self, mapping):
-        if isinstance(mapping,dict):
-            mapping = iteritems(mapping)
-        loads = self.value_pickler.loads
-        return ((s,loads(v)) for s,v in mapping)
-        
-    def add(self, score, value):
-        '''Add *value* to the set'''
-        score = float(score)
-        self.cache.add(score,self.value_pickler.dumps(value))
-
-    def update(self, mapping):
-        '''Add iterable *values* to the set'''
-        if isinstance(mapping,dict):
-            mapping = iteritems(mapping)
-        d = self.value_pickler.dumps
-        add = self.cache.add
-        for score,value in mapping:
-            add(float(score),d(value))
+        for v in self.session.structure(self):
+            yield loads(v)
             
-    def rank(self, value):
-        value = self.pickler.dumps(value)
-        return self.session.structure(self).rank(value)
     
-    def range(self, start, stop):
-        if self.pickler:
-            value = self.pickler.dumps(value)
-        return self._rank(value)
-        
-    
-class HashTable(Structure):
+class HashTable(KeyValueMixin, Structure):
     '''A hash-table :class:`stdnet.Structure`.
 The networked equivalent to a Python ``dict``.'''
-    pickler = None
     cache_class = hashcache
-    
-    def setup(self, pickler = None, **kwargs):
-        self.pickler = pickler or self.pickler or encoders.Default()
-        
-    @withsession
-    def __getitem__(self, key):
-        key = self.pickler.dumps(key)
-        result = self.session.backend.structure(self).get(key)
-        if result is None:
-            raise KeyError(key)
-        return self.value_pickler.loads(result)
-            
-    @withsession
-    def __iter__(self):
-        loads = self.pickler.loads
-        for k in self.session.structure(self):
-            yield loads(k)
-
-    @withsession
-    def values(self):
-        vloads = self.value_pickler.loads
-        for v in self.session.structure(self).values():
-            yield vloads(v)
-    
-    @withsession        
-    def items(self):
-        loads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        for k,v in self.session.structure(self).items():
-            yield loads(k),vloads(v)
-        
-    def __delitem__(self, key):
-        self.pop(key)
-        
-    def pop(self, key, *args):
-        if args:
-            if len(args) > 1:
-                raise TypeError('pop expected at most 2 arguments, got {0}'\
-                                .format(len(args)+1))
-            default = args[0]
-        else:
-            default = KeyError(key)
-        key = self.pickler.dumps(key)
-        v = self.session.structure(self).pop(key,default)
-        return self.pickler_value.loads(v)
-        
-    def add(self, key, value):
-        '''Add ``key`` - ``value`` pair to hashtable.'''
-        self.update(((key,value),))
-    __setitem__ = add
     
     def addnx(self, field, value, transaction = None):
         '''Set the value of a hash field only if the field
@@ -422,45 +464,7 @@ does not exist.'''
         return self._addnx(self.cursor(transaction),
                            self.pickler.dumps(key),
                            self.pickler_value.dumps(value))
-    
-    def __setitem__(self, key, value):
-        return self.update(((key,value),))
-    
-    def load_data(self, mapping):
-        loads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        if isinstance(mapping,dict):
-            mapping = iteritems(mapping)
-        return ((loads(k),vloads(v)) for k,v in mapping)
-    
-    def dump_data(self, mapping):
-        tokey = self.pickler.dumps
-        dumps = self.value_pickler.dumps
-        if isinstance(mapping,dict):
-            mapping = iteritems(mapping)
-        return ((tokey(k),dumps(v)) for k,v in mapping)
-        
-    def update(self, mapping):
-        '''Add *mapping* dictionary to hashtable.
-Equivalent to python dictionary update method.
-
-:parameter mapping: a dictionary of field values.'''
-        self.cache.update(self.dump_data(mapping))
-    
-    def get(self, key, default = None):
-        '''Retrieve a single element from the hashtable.
-If the element is not available return the default value.
-
-:parameter key: lookup field
-:parameter default: default value when the field is not available.
-:parameter transaction: an optional transaction instance.
-:rtype: a value in the hashtable or a pipeline depending if a
-    transaction has been used.'''
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-            
+           
     def range(self, start, end, desc = False):
         '''Return a generator of ordered items between start and end.'''
         items = sorted(self.items(),key = lambda t : t[0])
@@ -481,42 +485,11 @@ If the element is not available return the default value.
         return items   
 
     
-class TS(HashTable):
+class TS(OrderedMixin, KeyValueMixin, Structure):
     '''A timeseries :class:`Structure`. This is an experimental structure
 not available with vanilla redis. Check the
 :ref:`timeseries documentation <apps-timeserie>` for further information.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
+    cache_class = tscache 
     
-    def set_cache(self, r):
-        kloads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        self._cache = list(((kloads(k),vloads(v)) for k,v in r))
-        
-    def front(self, transaction = None):
-        '''Return the front key of timeseries'''
-        return self._unpicklefrom(self._front, transaction, None,
-                                  self.pickler.loads)
-        
-    def back(self, transaction = None):
-        '''Return the back key of timeseries'''
-        return self._unpicklefrom(self._back, transaction, None,
-                                  self.pickler.loads)
-        
-    def range(self, start, end, transaction = None):
-        '''Return a generator of a range between start and end key.'''
-        tokey = self.pickler.dumps
-        return self.keyvaluedata(self._range,transaction,
-                                 tokey(start),
-                                 tokey(end))
-            
-    def irange(self, start = 0, end = -1, transaction = None):
-        '''Return a range between start and end key.'''
-        return self.keyvaluedata(self._irange,transaction,
-                                 start, end)
-            
-    def count(self, start, end):
-        tokey    = self.pickler.dumps
-        return self._count(self.backend.cursor(),
-                           tokey(start),tokey(end))
-       

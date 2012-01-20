@@ -146,17 +146,3 @@ for i,key in ipairs(redis.call('keys',KEYS[1])) do
 end
 return n
 '''
-
-
-class hash_pop_item(RedisScript):
-    script = '''\
-elem = redis.call('hget',KEYS[1],KEYS[2])
-pop = redis.call('hdel',KEYS[1],KEYS[2])
-return {pop,elem}
-'''
-    def callback(self, response, args, **options):
-        if response[0] == 0:
-            return nil
-        return response[1]
-        
-    

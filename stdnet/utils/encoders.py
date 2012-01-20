@@ -61,6 +61,15 @@ class NumericDefault(Default):
             return x
         
     
+class Double(Encoder):
+    
+    def loads(self, x, logger = None):
+        return float(x)
+    
+    def dumps(self, x , logger = None):
+        return x
+    
+    
 class Bytes(Encoder):
     '''The binary unicode encoder'''
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):

@@ -474,6 +474,8 @@ in a generative way::
             raise FieldError('Unknown field "{0}"'.format(related))
         q = self._clone()
         rf = set(related_fields)
+        # if is always loaded.
+        rf.discard('id')
         # we need to copy the related dictionary including its values
         if q.select_related:
             d = dict(((k,set(v)) for k,v in q.select_related.items()))

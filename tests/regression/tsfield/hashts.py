@@ -209,19 +209,19 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertTrue(data)
         
     def testloadrelated(self):
-        self.model(ticker = 'AMZN').save()
+        session=  self.session()
+        with session.begin():
+            session.add(self.model(ticker = 'AMZN'))
         # we have now to instances
-        m1,m2 = tuple(self.model.objects.all())
+        query = session.query(self.model)
+        m1,m2 = query.all()
         self.assertEqual(m1.session,m2.session)
-        m1.data.update(testdata)
-        m2.data.update(testdata2)
-        m1.session.commit()
+        with session.begin():
+            m1.data.update(testdata)
+            m2.data.update(testdata2)
         
-        cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.query().load_related('data'):
-            data = getattr(m,cache,None)
-            self.assertTrue(data)
-            self.assertTrue(data.cache)
+        for m in query.load_related('data'):
+            self.assertTrue(m.data.cache.cache)
         
 
 class TestDateHashTimeSeries(TestHashTimeSeries):

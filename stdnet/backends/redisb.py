@@ -1,3 +1,5 @@
+'''Redis backend implementation
+'''
 from copy import copy
 import json
 from hashlib import sha1
@@ -410,15 +412,19 @@ class Zset(RedisStructure):
         return self.client.zcard(self.id)
     
     def _iter(self):
-        # Redis return a value followed by score, we invert the result
-        for v,s in self.client.zrange(self.id, self.start, self.stop,
-                                    withscores = True):
-            yield s,v
-            
-    def values(self, desc = False, withscores = False):
-        for v in self.client.zrange(self.id, self.start, self.stop,
-                                    desc = False, withscores = False):
-            yield v
+        return iter(self.client.zrange(self.id, self.start, self.stop))
+    
+    def range(self, desc = False, withscores = True):
+        return self.client.zrange(self.id, self.start, self.stop,
+                                  desc = desc, withscores = withscores)
+    
+    def irange(self, start, stop, desc = False, withscores = True):
+        return self.client.zrange(self.id, start, stop,
+                                  desc = desc, withscores = withscores)
+    
+    def items(self):
+        for v,score in self.range():
+            yield score,v
     
 
 class List(RedisStructure):
@@ -446,12 +452,24 @@ class Hash(RedisStructure):
             self.client.hmset(self.id, cache.toadd)
         if cache.toremove:
             self.client.hdel(self.id, *cache.toremove)
-            
+        
     def size(self):
         return self.client.hlen(self.id)
     
     def get(self, key):
         return self.client.hget(self.id, key)
+    
+    def pop(self, key):
+        pi = self.pipelined
+        p = self.client if pi else self.client.pipeline()
+        p.hget(self.id, key).hdel(self.id, key)
+        if not pi:
+            result = p.execute()
+            if result[1]:
+                return result[0]
+    
+    def remove(self, *fields):
+        return self.client.hdel(self.id, *fields)
     
     def __contains__(self, key):
         return self.client.hexists(self.id, key)
@@ -473,12 +491,20 @@ class TS(RedisStructure):
     def flush(self):
         cache = self.instance.cache
         if cache.toadd:
-            self.client.hmset(id, cache.toadd)
-        if cache.todelete:
-            self.client.hdel(id, *cache.todelete)
+            self.client.tsadd(self.id, *cache.toadd.flat())
+        if cache.toremove:
+            raise NotImplementedError('Cannot remove. TSDEL not implemented')
             
     def size(self):
         return self.client.tslen(self.id)
+
+    def range(self, time_start, time_stop, desc = False, withscores = True):
+        return self.client.tsrangebytime(self.id, time_start, time_stop,
+                                         withtimes = withscores)
+            
+    def irange(self, start, stop, desc = False, withscores = True):
+        return self.client.tsrange(self.id, start, stop,
+                                   withtimes = withscores)
 
         
 struct_map = {'set':Set,

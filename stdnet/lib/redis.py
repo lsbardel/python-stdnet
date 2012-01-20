@@ -889,11 +889,28 @@ The first element is the score and the second is the value.'''
             pieces.append('novalues')
         return self.execute_command(*pieces, **{'withtimes': withtimes,
                                                 'novalues': novalues})
+        
+    def tsrangebytime(self, key, start, end, desc = False,
+                      withtimes = False, novalues = False):
+        """Return a range of values from timeseries at ``key`` between
+time ``start`` and time ``end`` sorted in ascending order.
+
+``desc`` indicates to sort in descending order.
+
+``withscores`` indicates to return the scores along with the values.
+    The return type is a list of (value, score) pairs"""
+        pieces = ['TSRANGEBYTIME', key, start, end]
+        if withtimes:
+            pieces.append('withtimes')
+        elif novalues:
+            pieces.append('novalues')
+        return self.execute_command(*pieces, **{'withtimes': withtimes,
+                                                'novalues': novalues})
     
     #### HASH COMMANDS ####
-    def hdel(self, name, *keys):
-        "Delete ``key`` from hash ``name``"
-        return self.execute_command('HDEL', name, *keys)
+    def hdel(self, key, field, *fields):
+        '''Removes the specified ``fields`` from the hash stored at ``key``'''
+        return self.execute_command('HDEL', key, field, *fields)
 
     def hexists(self, name, key):
         "Returns a boolean indicating if ``key`` exists within hash ``name``"
@@ -948,11 +965,6 @@ The first element is the score and the second is the value.'''
     def hvals(self, name):
         "Return the list of values within hash ``name``"
         return self.execute_command('HVALS', name)
-
-    def hpop(self, name, key):
-        '''pop the *key*. Return a two element tuple containing the element
-popped (if it existes) and a flag indicationg if it existed.'''
-        return self.script_call('hash_pop_item', 2, name, key)
 
     # Scripting
     def eval(self, body, **kwargs):

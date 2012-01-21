@@ -26,16 +26,16 @@ class TestSet(test.TestCase):
         self.assertEqual(s.session,session)
         self.assertEqual(s.instance,None)
         self.assertEqual(s.id,None)
-        with session.begin():
-            s.add(8)
-            s.update((1,2,3,4,5,5))
+        s.add(8)
+        s.update((1,2,3,4,5,5))
+        session.commit()
         self.assertTrue(s.id)
         self.assertEqual(s.size(),6)
         
     def testUpdateDelete(self):
         session = self.session()
-        s = session.add(orm.Set())
         with session.begin():
+            s = session.add(orm.Set())
             s.update((1,2,3,4,5,5))
             s.discard(2)
             s.discard(67)
@@ -98,6 +98,10 @@ class TestZset(test.TestCase):
         self.assertFalse(z in session)
         self.assertEqual(z.session, None)
         
+    def testiRange(self):
+        l = self.planets()
+        r = l.irange()
+        
     def testIter(self):
         '''test a very simple zset with integer'''
         l = self.planets()
@@ -110,6 +114,11 @@ class TestZset(test.TestCase):
         l = self.planets()
         r = list(l.items())
         self.assertEqual(r,self.result)
+        
+    def testGet(self):
+        l = self.planets()
+        self.assertEqual(l[1],'earth')
+        self.assertEqual(l.get(0.11),'mars')
 
 
 class TestList(test.TestCase):
@@ -169,6 +178,19 @@ class TestHash(test.TestCase):
         self.assertEqual(d.pop('foo'),'ciao')
         self.assertEqual(len(d),0)
         
+    def testGet(self):
+        session = self.session()
+        with session.begin():
+            h = session.add(orm.HashTable())
+            h['bla'] = 'foo'
+            h['bee'] = 3
+        
+        self.assertEqual(h['bla'],'foo')
+        self.assertEqual(h.get('bee'),3)
+        self.assertEqual(h.get('ggg'),None)
+        self.assertEqual(h.get('ggg',1),1)
+        self.assertRaises(KeyError, lambda : h['gggggg'])
+        
 
 class TestTS(test.TestCase):
     
@@ -185,6 +207,7 @@ class TestTS(test.TestCase):
     def testEmpty(self):
         session = self.session()
         ts = session.add(orm.TS())
+        self.assertFalse(ts.id)
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(),None)
         self.assertEqual(ts.back(),None)
@@ -205,5 +228,17 @@ class TestTS(test.TestCase):
         for time,val in range:
             self.assertTrue(time>=front[0])
             self.assertTrue(time<=back[0])
-        
+            
+    def testGet(self):
+        session = self.session()
+        with session.begin():
+            ts = session.add(orm.TS())
+            ts.update(zip(dates,values))
+        dt1 = dates[0]
+        val1 = ts[dt1]
+        self.assertTrue(val1)
+        self.assertEqual(ts.get(dt1),val1)
+        self.assertEqual(ts.get(date(1990,1,1)),None)
+        self.assertEqual(ts.get(date(1990,1,1),1),1)
+        self.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
     

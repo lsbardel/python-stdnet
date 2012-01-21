@@ -244,6 +244,31 @@ class PairMixin(object):
     
     def setup(self, pickler = None, **kwargs):
         self.pickler = pickler or self.pickler
+        
+    @withsession
+    def __getitem__(self, key):
+        key = self.pickler.dumps(key)
+        result = self.session.backend.structure(self).get(key)
+        if result is None:
+            raise KeyError(key)
+        return self.value_pickler.loads(result)
+    
+    def __setitem__(self, key, value):
+        self.add(key,value)
+
+    def get(self, key, default = None):
+        '''Retrieve a single element from the structure.
+If the element is not available return the default value.
+
+:parameter key: lookup field
+:parameter default: default value when the field is not available.
+:parameter transaction: an optional transaction instance.
+:rtype: a value in the hashtable or a pipeline depending if a
+    transaction has been used.'''
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
     
     @withsession
     def _iter(self):
@@ -286,31 +311,6 @@ Equivalent to python dictionary update method.
     
 
 class KeyValueMixin(PairMixin):
-    
-    @withsession
-    def __getitem__(self, key):
-        key = self.pickler.dumps(key)
-        result = self.session.backend.structure(self).get(key)
-        if result is None:
-            raise KeyError(key)
-        return self.value_pickler.loads(result)
-    
-    def __setitem__(self, key, value):
-        self.add(key,value)
-
-    def get(self, key, default = None):
-        '''Retrieve a single element from the hashtable.
-If the element is not available return the default value.
-
-:parameter key: lookup field
-:parameter default: default value when the field is not available.
-:parameter transaction: an optional transaction instance.
-:rtype: a value in the hashtable or a pipeline depending if a
-    transaction has been used.'''
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
         
     def __delitem__(self, key):
         '''Immediately remove an element. To remove with transactions use the
@@ -358,24 +358,29 @@ a float value.'''
     
     def front(self):
         '''Return the front pair of the structure'''
-        v = tuple(self.irange(0,0))
+        v = tuple(self.irange(0, 0))
         if v:
             return v[0]
     
     def back(self):
         '''Return the back pair of the structure'''
-        v = tuple(self.irange(-1,-1))
+        v = tuple(self.irange(-1, -1))
         if v:
             return v[0]
     
+    def count(self, start, stop):
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        return self.session.structure(self).count(s1, s2)
+        
     def rank(self, value):
         value = self.pickler.dumps(value)
         return self.session.structure(self).rank(value)
     
     def range(self, start, stop):
-        start = self.pickler.dumps(start)
-        stop = self.pickler.dumps(stop)
-        data = self.session.structure(self).range(start,stop)
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        data = self.session.structure(self).range(s1,s2)
         return self.load_data(data)
     
     def irange(self, start = 0, end = -1):

@@ -134,6 +134,10 @@ Count element in range by ``time``::
 
     tscount key time_start,time_end
     
+This command is similar to :ref:`ZCOUNT http://redis.io/commands/zcount` for
+sorted sets.
+
+    
     
 Sorting
 ==================

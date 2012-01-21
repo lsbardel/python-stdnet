@@ -21,4 +21,4 @@ class DateTimeSeries(timeseries.DateTimeSeries):
     
 class BigTimeSeries(timeseries.DateTimeSeries):
     ticker = orm.SymbolField(unique = True)
-    data  = orm.TimeSeriesField(pickler = encoders.PythonPickle())
+    data  = timeseries.TimeSeriesField(pickler = encoders.PythonPickle())

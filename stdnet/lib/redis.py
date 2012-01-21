@@ -101,9 +101,11 @@ def ts_pairs(response, withtimes = False, novalues = False, single = False,
     '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
     if not response:
         return response
-    elif withtimes:
+    elif withtimes and not novalues:
         times = (float(t) for t in response[::2])
         return zip(times, response[1::2])
+    elif novalues:
+        return (float(t) for t in response)
     elif options.get('single') and len(response) == 1:
         return response[0]
     else:
@@ -707,8 +709,9 @@ can be one of: refcount, encoding, idletime.'''
         keys = list_or_args(keys, args)
         return self.execute_command('SUNIONSTORE', dest, *keys)
 
-
-    #### SORTED SET COMMANDS ####
+    ############################################################################
+    ##    SORTED SET
+    ############################################################################
     def zadd(self, name, *args):
         '''Add member the iterable over two dimensional elements ``args``.
 The first element is the score and the second is the value.'''
@@ -726,8 +729,7 @@ The first element is the score and the second is the value.'''
         return self.execute_command('ZINCRBY', name, amount, value)
 
     def zrange(self, name, start, end, desc=False, withscores=False):
-        """
-        Return a range of values from sorted set ``name`` between
+        """Return a range of values from sorted set ``name`` between
         ``start`` and ``end`` sorted in ascending order.
 
         ``start`` and ``end`` can be negative, indicating the end of the range.
@@ -737,15 +739,14 @@ The first element is the score and the second is the value.'''
         ``withscores`` indicates to return the scores along with the values.
             The return type is a list of (value, score) pairs
         """
-        if desc:
-            return self.zrevrange(name, start, end, withscores)
-        pieces = ['ZRANGE', name, start, end]
+        command = 'ZREVRANGE' if desc else 'ZRANGE'
+        pieces = [command, name, start, end]
         if withscores:
             pieces.append('withscores')
         return self.execute_command(*pieces, **{'withscores': withscores})
 
-    def zrangebyscore(self, name, min, max,
-            start=None, num=None, withscores=False):
+    def zrangebyscore(self, name, min, max, desc = False,
+                      start=None, num=None, withscores=False):
         """
         Return a range of values from the sorted set ``name`` with scores
         between ``min`` and ``max``.
@@ -755,10 +756,11 @@ The first element is the score and the second is the value.'''
         ``withscores`` indicates to return the scores along with the values.
             The return type is a list of (value, score) pairs
         """
+        command = 'ZREVRANGEBYSCORE' if desc else 'ZRANGEBYSCORE'
         if (start is not None and num is None) or \
                 (num is not None and start is None):
             raise RedisError("``start`` and ``num`` must both be specified")
-        pieces = ['ZRANGEBYSCORE', name, min, max]
+        pieces = [command, name, min, max]
         if start is not None and num is not None:
             pieces.extend(['LIMIT', start, num])
         if withscores:
@@ -782,21 +784,6 @@ The first element is the score and the second is the value.'''
         between ``min`` and ``max``
         """
         return self.execute_command('ZREMRANGEBYSCORE', name, min, max)
-
-    def zrevrange(self, name, start, num, withscores=False):
-        """
-        Return a range of values from sorted set ``name`` between
-        ``start`` and ``num`` sorted in descending order.
-
-        ``start`` and ``num`` can be negative, indicating the end of the range.
-
-        ``withscores`` indicates to return the scores along with the values
-            as a dictionary of value => score
-        """
-        pieces = ['ZREVRANGE', name, start, num]
-        if withscores:
-            pieces.append('withscores')
-        return self.execute_command(*pieces, **{'withscores': withscores})
 
     def zrevrank(self, name, value):
         """
@@ -855,7 +842,9 @@ The first element is the score and the second is the value.'''
             pieces.append(aggregate)
         return self.execute_command(*pieces)
     
-    ### TIMESERIES COMMANDS ###
+    ############################################################################
+    ##    TIMESERIES COMMANDS
+    ############################################################################
     def tslen(self, name):
         '''timeseries length'''
         return self.execute_command('TSLEN', name)
@@ -872,7 +861,11 @@ The first element is the score and the second is the value.'''
         '''timeseries length'''
         return self.execute_command('TSADD', name, *items)
     
-    def tsrange(self, name, start, end, desc = False,
+    def tscount(self, key, start, end):
+        '''Counts the number of elements between *start* and *end* at *key*.'''
+        return self.execute_command('TSCOUNT', key, start, end)
+    
+    def tsrange(self, name, start = 0, end = -1, desc = False,
                 withtimes = False, novalues = False):
         """Return a range of values from timeseries at ``name`` between
 ``start`` and ``end`` sorted in ascending order.
@@ -883,10 +876,10 @@ The first element is the score and the second is the value.'''
 ``withscores`` indicates to return the scores along with the values.
     The return type is a list of (value, score) pairs"""
         pieces = ['TSRANGE', name, start, end]
-        if withtimes:
-            pieces.append('withtimes')
-        elif novalues:
+        if novalues:
             pieces.append('novalues')
+        elif withtimes:
+            pieces.append('withtimes')
         return self.execute_command(*pieces, **{'withtimes': withtimes,
                                                 'novalues': novalues})
         

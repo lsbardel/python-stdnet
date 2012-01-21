@@ -248,9 +248,3 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
     def structure_class(self):
         return TS
         
-    def register_with_model(self, name, model):
-         # must be set before calling super method
-        date_pickler = getattr(model,'converter',None)
-        if date_pickler:
-            self.default_pickler = date_pickler
-        super(TimeSeriesField,self).register_with_model(name, model)

@@ -33,6 +33,11 @@ class TestUniqueFilter(test.TestCase):
             for n,g in zip(codes,groups):
                 session.add(self.model(code = n, group = g))
     
+    def testBadId(self):
+        session = self.session()
+        self.assertRaises(self.model.DoesNotExist,
+                          session.query(self.model).get, id = -1)
+        
     def testFilterSimple(self):
         session = self.session()
         query = session.query(self.model)
@@ -41,6 +46,13 @@ class TestUniqueFilter(test.TestCase):
             qs = query.filter(code = code)
             self.assertEqual(qs.count(),1)
             self.assertEqual(qs[0].code,code)
+            
+    def testIdCode(self):
+        session = self.session()
+        query = session.query(self.model)
+        for m in self.session().query(self.model):
+            m1 = query.get(code = m.code)
+            self.assertEqual(m,m1)
             
     def testExcludeSimple(self):
         session = self.session()

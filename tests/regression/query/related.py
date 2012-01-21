@@ -56,6 +56,36 @@ in this test class so that we can use the manager in a parallel test suite.'''
             self.assertTrue(children2)
             for child2 in children2:
                 self.assertEqual(child2.parent,child)
+                
+    def testSelfRelatedFilterOnSelf(self):
+        session = self.session()
+        query = session.query(Node)
+        # We should get the nodes just after the root
+        root = query.get(parent = None)
+        qs = query.filter(parent__parent = None)
+        self.assertTrue(qs.count())
+        for node in qs:
+            self.assertEqual(node.parent, root)
+
+    def testSelfRelatedDelete(self):
+        session = self.session()
+        session.query(Node).delete()
+        self.assertEqual(session.query(Node).count(),0)
+        
+    def testSelfRelatedRootDelete(self):
+        session = self.session()
+        qs = session.query(Node).filter(parent = None)
+        qs.delete()
+        self.assertEqual(session.query(Node).count(),0)
+        
+    def testSelfRelatedFilterDelete(self):
+        session = self.session()
+        query = session.query(Node)
+        root = query.get(parent = None)
+        qs = query.filter(parent = root)
+        qs.delete()
+        self.assertEqual(query.count(),1)
+        self.assertEqual(query[0],root)
 
 
 class TestRealtedQuery(FinanceTest):

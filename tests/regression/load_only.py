@@ -50,10 +50,12 @@ class LoadOnly(test.TestCase):
             self.assertFalse(m.description)
             
     def test_idonly_delete(self):
-        qs = self.session().query(self.model).load_only('id')
-        qs.delete()
-        qs = self.model.objects.filter(group = 'group1')
+        query = self.session().query(self.model)
+        query.load_only('id').delete()
+        qs = query.filter(group = 'group1')
         self.assertEqual(qs.count(),0)
+        qs = query.all()
+        self.assertEqual(qs,[])
         
     def testSimple(self):
         query = self.session().query(self.model)
@@ -109,22 +111,26 @@ class LoadOnlyRelated(test.TestCase):
     models = (Person, Group)
     
     def setUp(self):
-        g1 = Group(name = 'bla').save()
-        g2 = Group(name = 'foo').save()
-        with transaction(Person) as t:
-            Person(name = 'luca', group = g1).save(t)
-            Person(name = 'carl', group = g1).save(t)
-            Person(name = 'bob', group = g1).save(t)
+        session = self.session()
+        with session.begin():
+            g1 = session.add(Group(name = 'bla'))
+            g2 = session.add(Group(name = 'foo'))
+        with session.begin():
+            session.add(Person(name = 'luca', group = g1))
+            session.add(Person(name = 'carl', group = g1))
+            session.add(Person(name = 'bob', group = g1))
             
     def test_simple(self):
-        qs = Person.objects.all().load_only('group')
+        session = self.session()
+        query = session.query(Person)
+        qs = query.load_only('group')
         for m in qs:
             self.assertEqual(m._loadedfields,('group',))
             self.assertFalse(hasattr(m,'name'))
             self.assertTrue(hasattr(m,'group_id'))
             self.assertTrue(m.group_id)
             self.assertTrue('id' in m._dbdata)
-            self.assertEqual(int(m._dbdata['id']),m.id)
+            self.assertEqual(m._dbdata['id'],m.id)
             g = m.group
             self.assertTrue(isinstance(g,Group))
             

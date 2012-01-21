@@ -733,21 +733,24 @@ class ServerCommandsTestCase(TestCase):
     def test_zrevrange(self):
         # key is not a zset
         self.client['a'] = 'a'
-        self.assertRaises(ResponseError, self.client.zrevrange,
-            'a', 0, 1)
+        self.assertRaises(ResponseError, self.client.zrange,
+            'a', 0, 1, desc=True)
         del self.client['a']
         # real logic
         self.make_zset('a', {'a1': 1, 'a2': 2, 'a3': 3})
-        self.assertEquals(self.client.zrevrange('a', 0, 1), [b'a3', b'a2'])
-        self.assertEquals(self.client.zrevrange('a', 1, 2), [b'a2', b'a1'])
-        self.assertEquals(list(self.client.zrevrange(
-            'a', 0, 1, withscores=True)),
+        self.assertEquals(self.client.zrange('a', 0, 1, desc=True),
+                          [b'a3', b'a2'])
+        self.assertEquals(self.client.zrange('a', 1, 2, desc=True),
+                          [b'a2', b'a1'])
+        self.assertEquals(list(self.client.zrange(
+            'a', 0, 1, withscores=True, desc=True)),
             [(b'a3', 3.0), (b'a2', 2.0)])
-        self.assertEquals(list(self.client.zrevrange(
-            'a', 1, 2, withscores=True)),
+        self.assertEquals(list(self.client.zrange(
+            'a', 1, 2, withscores=True, desc=True)),
             [(b'a2', 2.0), (b'a1', 1.0)])
-        # a non existant key should return empty list
-        self.assertEquals(self.client.zrange('b', 0, 1, withscores=True), [])
+        # a non existent key should return empty list
+        self.assertEquals(
+                self.client.zrange('b', 0, 1, withscores=True, desc=True), [])
 
     def test_zrevrank(self):
         # key is not a zset

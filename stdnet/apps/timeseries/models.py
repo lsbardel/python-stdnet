@@ -8,6 +8,12 @@ class HashTimeSeriesField(orm.HashField):
         super(HashTimeSeriesField,self).register_with_model(name, model)
         self.pickler = model.converter
         
+class TimeSeriesField(orm.TimeSeriesField):
+    '''To be used with subclasses of :class:`TimeSeriesBase`.'''
+    def register_with_model(self, name, model):
+        super(TimeSeriesField,self).register_with_model(name, model)
+        self.pickler = model.converter
+        
         
 class TimeSeriesBase(orm.StdModel):
     '''Timeseries base model class'''
@@ -36,20 +42,24 @@ tuples.'''
     
 class TimeSeries(TimeSeriesBase):
     '''Timeseries model'''
-    data  = orm.TimeSeriesField()
+    data  = TimeSeriesField()
     
     def dates(self):
-        return self.data.keys()
+        return self.data
     
     def items(self):
         return self.data.items()
     
     def __get_start(self):
-        return self.data.front()
+        r = self.data.front()
+        if r:
+            return r[0]
     data_start = property(__get_start)
     
     def __get_end(self):
-        return self.data.back()
+        r = self.data.back()
+        if r:
+            return r[0]
     data_end = property(__get_end)
     
 

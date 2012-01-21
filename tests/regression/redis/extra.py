@@ -26,4 +26,9 @@ class TestStdnetBranchCommand(TestCase):
         self.assertEqual(self.client.tsrank('a',8),None)
         self.assertEqual(self.client.tsrank('a',-1),None)
         self.assertEqual(self.client.tsrank('a',5),None)
+        
+    def test_tsrange_novalues(self):
+        self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')
+        times = tuple(self.client.tsrange('a',novalues=True))
+        self.assertEqual(times,(1,3,7))
     

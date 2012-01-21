@@ -30,6 +30,11 @@ TMP = 'tmp'     # temorary key
 class build_query(RedisScript):
     script = read_lua_file('build_query.lua')
     
+
+class add_recursive(RedisScript):
+    script = (read_lua_file('utils/redis.lua'),
+              read_lua_file('add_recursive.lua'))
+    
     
 class load_query(RedisScript):
     '''Rich script for loading a query result into stdnet. It handles
@@ -47,8 +52,7 @@ limiting.'''
                     yield id,(),{}
             else:
                 for id,fdata in response:
-                    yield id,fields_attributes,\
-                            dict(zip(fields_attributes,fdata))
+                    yield id,fields,dict(zip(fields_attributes,fdata))
         else:
             for id,fdata in response:
                 yield id,None,dict(pairs_to_dict(fdata))
@@ -408,22 +412,35 @@ class Zset(RedisStructure):
             flat = cache.toadd.flat()
             self.client.zadd(self.id, *flat)
     
+    def get(self, score):
+        r = self.range(score,score,withscores=False)
+        if r:
+            if len(r) > 1:
+                return r
+            else:
+                return r[0]
+    
+    def _iter(self):
+        return iter(self.irange(withscores = False))
+    
     def size(self):
         return self.client.zcard(self.id)
     
-    def _iter(self):
-        return iter(self.client.zrange(self.id, self.start, self.stop))
+    def count(self, start, stop):
+        return self.client.zcount(self.id, start, stop)
     
-    def range(self, desc = False, withscores = True):
-        return self.client.zrange(self.id, self.start, self.stop,
-                                  desc = desc, withscores = withscores)
     
-    def irange(self, start, stop, desc = False, withscores = True):
+    def range(self, start, end, desc = False, withscores = True):
+        return self.client.zrangebyscore(self.id, start, end,
+                                         desc = desc,
+                                         withscores = withscores)
+    
+    def irange(self, start = 0, stop = -1, desc = False, withscores = True):
         return self.client.zrange(self.id, start, stop,
                                   desc = desc, withscores = withscores)
     
     def items(self):
-        for v,score in self.range():
+        for v,score in self.irange():
             yield score,v
     
 
@@ -486,7 +503,7 @@ class Hash(RedisStructure):
         return iter(self.client.hgetall(self.id))
     
     
-class TS(RedisStructure):
+class TS(Zset):
     
     def flush(self):
         cache = self.instance.cache
@@ -494,17 +511,28 @@ class TS(RedisStructure):
             self.client.tsadd(self.id, *cache.toadd.flat())
         if cache.toremove:
             raise NotImplementedError('Cannot remove. TSDEL not implemented')
-            
+    
+    def _iter(self):
+        return iter(self.irange(novalues = True))
+    
     def size(self):
         return self.client.tslen(self.id)
+    
+    def count(self, start, stop):
+        return self.client.tscount(self.id, start, stop)
 
     def range(self, time_start, time_stop, desc = False, withscores = True):
         return self.client.tsrangebytime(self.id, time_start, time_stop,
                                          withtimes = withscores)
             
-    def irange(self, start, stop, desc = False, withscores = True):
+    def irange(self, start=0, stop=-1, desc = False, withscores = True,
+               novalues = False):
         return self.client.tsrange(self.id, start, stop,
-                                   withtimes = withscores)
+                                   withtimes = withscores,
+                                   novalues = novalues)
+    
+    def items(self):
+        return self.irange()
 
         
 struct_map = {'set':Set,
@@ -641,16 +669,26 @@ class BackendDataServer(stdnet.BackendDataServer):
             return
         query = backend_query.queryelem
         meta = query.meta
-        related_queries = []
+        bk = self.basekey(meta)
+        s = 'z' if meta.ordering else 's'
+        recursive = []
+        rel_managers = []
         for name in meta.related:
             rmanager = getattr(meta.model,name)
+            if rmanager.model == meta.model:
+                pipe.script_call('add_recursive',
+                                 bk,s,
+                                 backend_query.query_key,
+                                 rmanager.field.attname)
+            else:
+                rel_managers.append(rmanager)
+        
+        for rmanager in rel_managers:
             rq = rmanager.query_from_query(query).backend_query(pipe = pipe)
             self.accumulate_delete(pipe, rq)
-        s = 'z' if meta.ordering else 's'
         indices = list(self.flat_indices(meta))
         multi_fields = [field.name for field in meta.multifields]
-        lua_data = [self.basekey(meta), backend_query.query_key,
-                    s, len(indices)//2]
+        lua_data = [bk, backend_query.query_key, s, len(indices)//2]
         lua_data.extend(indices)
         lua_data.append(len(multi_fields))
         lua_data.extend(multi_fields)
@@ -690,9 +728,10 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(f.id)
         return keys
 
-    def structure(self, instance, session = None):
+    def structure(self, instance, client = None):
         struct = struct_map.get(instance._meta.name)
-        return struct(instance,self.client)
+        client = client if client is not None else self.client
+        return struct(instance, client)
         
     def flush_structure(self, sm, pipe = None):
         client = pipe or self.client

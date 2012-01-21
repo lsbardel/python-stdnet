@@ -498,7 +498,10 @@ to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
         q = self._clone()
-        q.fields = tuple(set(self._load_only(fields))) if fields else None
+        fs = set(q.fields) if q.fields else set()
+        if fields:
+            fs.update(fields)
+        q.data['fields'] = tuple(fs) if fs else None
         return q
     
     def _load_only(self, fields):

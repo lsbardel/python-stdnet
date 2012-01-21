@@ -14,7 +14,7 @@ management and retrieval of large data-sets.
 It includes a stand-alone, ``python 3`` compatible,
 :ref:`redis client <redis-client>` which was originally forked from redis-py_.
 There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
-there are over 350 tests with a coverage of about 80%.
+there are over 400 tests with a coverage of about 80%.
 
 **The library is stable, used in production and continuously maintained**.
 

@@ -20,10 +20,13 @@ end
 -- add a value to a set (or sorted set)
 function add (val)
 	if val ~= false then
+	    idset = bk .. ':id'
 		if s == 's' then
-			redis.call('sadd', rkey, val)
+		    if redis.call('sismember',idset,val) + 0 == 1 then 
+			    redis.call('sadd', rkey, val)
+			end
 		else
-			score = redis.call('zscore', bk .. ':id', val)
+			score = redis.call('zscore', idset, val)
 			if score ~= false then
 				redis.call('zadd', rkey, score, val)
 			end

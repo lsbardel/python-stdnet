@@ -246,14 +246,14 @@ An instance of this class is usually obtained by using the high level
         session = self.session
         self.close()
         for meta,response,action in self.result:
+            if not response:
+                continue
             sm = session.model(meta, True)
             tpy = meta.pk.to_python
             ids = []
             if action == 'delete':
-                rem = sm.expunge
                 for id in response:
                     id = tpy(id)
-                    rem(id)
                     ids.append(id)
                 post_delete.send(sm.model, ids = ids, transaction = self)
             else:
@@ -267,6 +267,9 @@ An instance of this class is usually obtained by using the high level
     
     def close(self):
         post_commit.send(Session, transaction = self)
+        for sm in self.session:
+            if sm._delete_query:
+                sm._delete_query = []
         self.session.transaction = None
         self.session = None
 
@@ -471,8 +474,6 @@ instances.'''
         '''Return a :class:`stdnet.BackendStructure` for a given
 :class:`Structure` *instance*.'''
         return self.backend.structure(instance)
-        if not self.autocommit:
-            return self.backend.structure(instance, session)
     
     @classmethod
     def clearall(cls):

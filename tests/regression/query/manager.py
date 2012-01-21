@@ -17,9 +17,9 @@ class TestManager(test.TestCase):
         self.register()
         
     def fill(self):
-        with SimpleModel.objects.transaction() as t:
+        with SimpleModel.objects.session().begin() as t:
             for name in names:
-                SimpleModel(code = name).save(t)
+                t.session.add(SimpleModel(code = name))
                 
     def testGetOrCreate(self):
         v, created = SimpleModel.objects.get_or_create(code = 'test')
@@ -38,9 +38,9 @@ class TestManager(test.TestCase):
     def testGetError(self):
         '''Test for a ObjectNotFound exception.'''
         self.assertRaises(SimpleModel.DoesNotExist,
-                          SimpleModel.objects.get,code = 'test2')
+                          SimpleModel.objects.get, code = 'test2')
         self.assertRaises(SimpleModel.DoesNotExist,
-                          SimpleModel.objects.get,id = 34)
+                          SimpleModel.objects.get, id = 34)
         
     def testEmptyIDFilter(self):
         self.assertEqual(SimpleModel.objects.filter(id = 1).count(),0)

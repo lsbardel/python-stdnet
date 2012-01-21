@@ -2,99 +2,46 @@ import datetime
 import logging
 from random import randint
 
-from stdnet import test
-from stdnet.utils import populate, zip
-from stdnet.exceptions import QuerySetError
+from stdnet import test, QuerySetError
 
 from examples.models import Instrument, Fund, Position, PortfolioView,\
                              UserDefaultView
+from examples.data import FinanceTest, INSTS_TYPES, CCYS_TYPES
 
 
-INST_LEN    = 100
-FUND_LEN    = 10
-POS_LEN     = 30
-NUM_USERS   = 10
-NUM_DATES   = 2
-
-ccys_types  = ['EUR','GBP','AUD','USD','CHF','JPY']
-insts_types = ['equity','bond','future','cash','option','bond option']
-
-def finance_data(inst_len = INST_LEN, fund_len = FUND_LEN,
-                 num_dates = NUM_DATES):
-    return (
-            populate('string',inst_len, min_len = 5, max_len = 20),
-            populate('choice',inst_len, choice_from = insts_types),
-            populate('choice',inst_len, choice_from = ccys_types),
-            populate('string',fund_len, min_len = 5, max_len = 20),
-            populate('choice',fund_len, choice_from = ccys_types),
-            populate('date',num_dates,start=datetime.date(2009,6,1),
-                     end=datetime.date(2010,6,6))
-            )
-    
-
-inst_names,inst_types,inst_ccys,fund_names,fund_ccys,dates = finance_data() 
-
-users      = populate('string', NUM_USERS, min_len = 8, max_len = 14)
-view_names = populate('string', 4*FUND_LEN, min_len = 10, max_len = 20)
-
-
-class BaseFinance(test.TestCase):
-    models = (Instrument,Fund,Position,PortfolioView,UserDefaultView)
-    model = Instrument
-    
-    def setUp(self):
-        '''Create Instruments and Funds'''
-        session = self.session()
-        with session.begin():
-            for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-                session.add(Instrument(name = name, type = typ, ccy = ccy))
-            for name,ccy in zip(fund_names,fund_ccys):
-                session.add(Fund(name = name, ccy = ccy))
-        
-    def makePositions(self):
-        '''Create Positions objects which hold foreign key to instruments
- and funds.'''
-        session = self.session()
-        instruments = session.query(Instrument)
-        n = 0
-        with session.begin():
-            for f in session.query(Fund):
-                insts = populate('choice',POS_LEN,choice_from = instruments)
-                for dt in dates:
-                    for inst in insts:
-                        n += 1
-                        session.add(Position(instrument = inst, dt = dt,
-                                             fund = f))
-        return n
-
-
-class TestFinanceApplication(BaseFinance):
+class TestFinanceApplication(FinanceTest):
         
     def testGetObject(self):
         '''Test get method for id and unique field'''
-        obj = Instrument.objects.get(id = 1)
-        self.assertEqual(obj.id,1)
+        self.data.create(self)
+        session = self.session()
+        query = session.query(Instrument)
+        obj = query.get(id = 2)
+        self.assertEqual(obj.id,2)
         self.assertTrue(obj.name)
-        obj2 = Instrument.objects.get(name = obj.name)
+        obj2 = query.get(name = obj.name)
         self.assertEqual(obj,obj2)
         
     def testLen(self):
         '''Simply test len of objects greater than zero'''
-        objs = Instrument.objects.all()
+        session = self.data.create(self)
+        objs = session.query(Instrument).all()
         self.assertTrue(len(objs)>0)
     
     def testFilter(self):
         '''Test filtering on a model without foreignkeys'''
-        instget = lambda : Instrument.objects.get(type = 'equity')
-        self.assertRaises(QuerySetError,instget)
+        self.data.create(self)
+        session = self.session()
+        query = session.query(Instrument)
+        self.assertRaises(QuerySetError, query.get, type = 'equity')
         tot = 0
-        for t in insts_types:
-            fs = Instrument.objects.filter(type = t)
+        for t in INSTS_TYPES:
+            fs = query.filter(type = t)
             N  = fs.count()
             count = {}
             for f in fs:
                 count[f.ccy] = count.get(f.ccy,0) + 1
-            for c in ccys_types:
+            for c in CCYS_TYPES:
                 x = count.get(c,0)
                 objs = fs.filter(ccy = c)
                 y = 0
@@ -104,26 +51,28 @@ class TestFinanceApplication(BaseFinance):
                     self.assertEqual(obj.type,t)
                     self.assertEqual(obj.ccy,c)
                 self.assertEqual(x,y)
-        all = Instrument.objects.all()
+        all = query.all()
         self.assertEqual(tot,len(all))
         
     def testValidation(self):
-        pos = Position()
+        pos = Position(size = 10)
         self.assertFalse(pos.is_valid())
-        self.assertEqual(len(pos.errors),3)
-        self.assertEqual(len(pos.cleaned_data),1)
-        self.assertTrue('size' in pos.cleaned_data)
+        self.assertEqual(len(pos._dbdata['errors']),3)
+        self.assertEqual(len(pos._dbdata['cleaned_data']),1)
+        self.assertTrue('size' in pos._dbdata['cleaned_data'])
         
     def testForeignKey(self):
         '''Test filtering with foreignkeys'''
-        self.makePositions()
+        self.data.makePositions(self)
+        session = self.session()
+        query = session.query(Position)
         #
-        positions = Position.objects.all()
+        positions = query.all()
+        self.assertTrue(positions)
         for p in positions:
             self.assertTrue(isinstance(p.instrument,Instrument))
             self.assertTrue(isinstance(p.fund,Fund))
-            pos = Position.objects.filter(instrument = p.instrument,
-                                          fund = p.fund)
+            pos = query.filter(instrument = p.instrument, fund = p.fund)
             found = 0
             for po in pos:
                 if po == p:
@@ -133,7 +82,7 @@ class TestFinanceApplication(BaseFinance):
         # Testing 
         total_positions = len(positions)
         totp = 0
-        for instrument in Instrument.objects.all():
+        for instrument in session.query(Instrument):
             pos  = list(instrument.positions.all())
             for p in pos:
                 self.assertTrue(isinstance(p,Position))
@@ -143,8 +92,8 @@ class TestFinanceApplication(BaseFinance):
         self.assertEqual(total_positions,totp)
         
     def testRelatedManagerFilter(self):
-        self.makePositions()
-        instruments = Instrument.objects.all()
+        session = self.data.makePositions(self)
+        instruments = session.query(Instrument)
         for instrument in instruments:
             positions = instrument.positions.all()
             funds = {}
@@ -161,23 +110,26 @@ class TestFinanceApplication(BaseFinance):
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
-        instruments = Instrument.objects.all()
-        funds = Fund.objects.all()
+        self.data.create(self)
+        session = self.session()
+        instruments = session.query(Instrument)
+        funds = session.query(Fund)
         self.assertTrue(instruments.count())
         self.assertTrue(funds.count())
         instruments.delete()
         funds.delete()
-        self.assertFalse(Instrument.objects.all().count())
-        self.assertFalse(Fund.objects.all().count())
+        self.assertFalse(session.query(Instrument).count())
+        self.assertFalse(session.query(Fund).count())
         
     def testDelete(self):
         '''Test delete on models with related models'''
         # Create Positions which hold foreign keys to Instruments
-        self.makePositions()
-        instruments = Instrument.objects.all()
+        session = self.data.makePositions(self)
+        instruments = session.query(Instrument)
+        positions = session.query(Position)
         self.assertTrue(instruments.count())
-        self.assertTrue(Position.objects.all().count())
+        self.assertTrue(positions.count())
         instruments.delete()
-        self.assertFalse(instruments.count())
-        self.assertFalse(Position.objects.all().count())
+        self.assertFalse(session.query(Instrument).count())
+        self.assertFalse(session.query(Position).count())
         

@@ -146,10 +146,11 @@ class TestList(test.TestCase):
         l.push_back(5.6)
         l.push_back('save')
         l.push_back({'test': 1})
+        l.push_back({'test': 2})
         self.assertEqual(l.size(),0)
         session.commit()
-        self.assertEqual(l.size(),4)
-        self.assertEqual(list(l),[3,5.6,'save',{'test': 1}])
+        self.assertEqual(l.size(),5)
+        self.assertEqual(list(l),[3,5.6,'save',{'test': 1},{'test': 2}])
     
 
 class TestHash(test.TestCase):

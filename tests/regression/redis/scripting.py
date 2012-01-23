@@ -1,6 +1,8 @@
 from hashlib import sha1
+import json
 
 from stdnet.lib import RedisScript, read_lua_file, get_script
+from stdnet.lib.exceptions import NoScriptError
 
 from .base import TestCase
 
@@ -11,8 +13,13 @@ binary_set = lambda x : set(to_charlist(x))
 
 class test_script(RedisScript):
     script = (read_lua_file('utils/redis.lua'),
-              '''return {1,2,3,4,5,6}''')
-
+              '''\
+js = cjson.decode(KEYS[1])
+return cjson.encode(js)''')
+    
+    def callback(self, request, result, args, **options):
+        return json.loads(result.decode(request.encoding))
+    
 
 class Receiver(object):
     
@@ -21,6 +28,11 @@ class Receiver(object):
         
     def __call__(self, sender, request = None, **kwargs):
         self.requests.append(request)
+        
+    def get(self):
+        r = self.requests
+        self.requests = []
+        return r
 
 
 class ScriptingCommandsTestCase(TestCase):
@@ -68,11 +80,32 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(self.client.script_flush(),True)
         re = Receiver()
         self.client.signal_on_received.connect(re)
-        r = self.client.script_call('test_script')
+        r = self.client.script_call('test_script',json.dumps([1,2,3,4,5,6]))
         self.assertEqual(r,[1,2,3,4,5,6])
-        self.assertEqual(len(re.requests),3)
-        re.requests = []
-        r = self.client.script_call('test_script')
-        self.assertEqual(r,[1,2,3,4,5,6])
-        self.assertEqual(len(re.requests),1)
+        self.assertEqual(len(re.get()),2)
+        r = self.client.script_call('test_script',json.dumps([1,2,3]))
+        self.assertEqual(r,[1,2,3])
+        self.assertEqual(len(re.get()),1)
+        self.assertEqual(self.client.script_flush(),True)
+        self.assertEqual(len(re.get()),1)
+        r = self.client.script_call('test_script',json.dumps([1,2,3,4,5,'bla']))
+        self.assertEqual(r,[1,2,3,4,5,'bla'])
+        self.assertEqual(len(re.get()),2)
+        
+    def testEvalShaPipeline(self):
+        self.assertEqual(self.client.script_flush(),True)
+        pipe = self.client.pipeline()
+        pipe.script_call('test_script',['ciao']).sadd('bla','foo')
+        result = pipe.execute()
+        self.assertTrue(isinstance(result[0],NoScriptError))
+        self.assertTrue(result[1])
+
+    def testEvalShaPipeline(self):
+        self.assertEqual(self.client.script_flush(),True)
+        pipe = self.client.pipeline()
+        pipe.script_call('test_script',json.dumps({'foo':[1,2]}))\
+            .sadd('bla','foo')
+        result = pipe.execute(load_script = True)
+        self.assertEqual(len(result),2)
+        self.assertEqual(result[0],{'foo':[1,2]})
     

@@ -12,6 +12,9 @@ elems = populate('string', 100)
 class BaseTestListField(test.TestCase,test.TestMultiFieldMixin):
     model = SimpleList
     
+    def setUp(self):
+        self.register()
+        
     def get_object_and_field(self):
         d = SimpleList().save()
         return d,d.names

@@ -192,7 +192,7 @@ on registered models.'''
         '''Full text search'''
         return list(self.items_from_text(text,include,exclude))
     
-    def search_model(self, model, text):
+    def search_model(self, q, text):
         '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
 It return a list of :class:`stdnet.orm.QuerySet` instances for each
 searchable world in *text*'''
@@ -203,11 +203,10 @@ searchable world in *text*'''
         elif not words:
             return None
         
-        qs = WordItem.objects.filter(model_type = model)
-        for word in words:
-            qsets.append(field_query(qs.filter(word = word),'object_id'))
-        return qsets
-        
+        return WordItem.objects.filter(model_type = q.model,
+                                       word__contains = words,
+                                       object_id__in = q)\
+                               .get_field('object_id')        
         
     def add_tag(self, item, text):
         '''Add a tag to an object.

@@ -431,20 +431,13 @@ fields.
         else:
             return self
         
-    def field_queries(self):
-        '''return a list of field queries. Field queries
-are queries which produce ids for the model and the query is restricted
-to these ids.'''
-        q = self._field_queries
-        if q is None:
-            q = []
+    def search_queries(self, q):
+        '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            qf = self._meta.searchengine.search_model(self.model,self.text)
-            if qf is None:
-                self.__empty = True
-                return []
-            q.extend(qf)
-        return q
+            q = self._meta.searchengine.search_model(q, self.text)
+            return self.__class__().filter(id__in = q)
+        else:
+            return q
                 
     def load_related(self, related, *related_fields):
         '''It returns a new :class:`Query` that automatically
@@ -645,6 +638,7 @@ an exception is raised.
         if eargs:
             q = difference([q]+eargs)
         
+        q = self.search_queries(q)
         return q
 
     def aggregate(self, kwargs):

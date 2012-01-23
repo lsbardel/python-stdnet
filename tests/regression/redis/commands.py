@@ -968,7 +968,8 @@ class ServerCommandsTestCase(TestCase):
 
     def test_sort_limited(self):
         self.make_list('a', '3214')
-        self.assertEquals(self.client.sort('a', start=1, num=2), [b'2', b'3'])
+        self.assertEquals(self.client.sort('a', start=0, num=2), [b'1', b'2'])
+        self.assertEquals(self.client.sort('a', start=2, num=2), [b'3', b'4'])
 
     def test_sort_by(self):
         self.client['score:1'] = 8

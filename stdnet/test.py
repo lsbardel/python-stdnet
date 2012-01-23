@@ -54,6 +54,8 @@ will be unregistered after the :meth:`tearDown` method.'''
             self.models = (self.model,)
         self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
         self.backend = getdb(prefix = self.prefix)
+        if self.backend.name == 'redis':
+            self.backend.client.script_flush()
         return self.backend.flush(pattern = 'stdnet-test-*')
         
     def _post_teardown(self):

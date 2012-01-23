@@ -19,10 +19,9 @@ class nil(object):
     pass
 
 
-def pairs_to_dict(request, response, args, **options):
+def pairs_to_dict(response, encoding):
     "Create a dict given a list of key/value pairs"
     if response:
-        encoding = request.client.encoding
         return zip((r.decode(encoding) for r in response[::2]), response[1::2])
     else:
         return ()
@@ -66,13 +65,30 @@ RedisScriptBase = RedisScriptMeta('RedisScriptBase',(object,),{'abstract':True})
 
 class RedisScript(RedisScriptBase):
     ''':class:`RedisScript` is a class which helps the sending and receiving
-lua scripts to redis via the ``eval`` or ``evalsha`` command.'''
+lua scripts to redis via the ``evalsha`` command.
+
+.. attribute:: script
+
+    The lua script to run
+    
+.. attribute:: sha1
+
+    The SHA-1_ hexadecimal representation of :attr:`script` required by the
+    ``EVALSHA`` redis command. This attribute is evaluated by the library,
+    it is not set by the user.
+    
+.. _SHA-1: http://en.wikipedia.org/wiki/SHA-1
+'''
     abstract = True
     script = None
         
     def __str__(self):
         return self.__class__.__name__
     __repr__ = __str__
+    
+    @property
+    def name(self):
+        return self.__class__.__name__
     
     def call(self, client, command, script, *args, **options):
         options['script_name'] = str(self)
@@ -81,34 +97,38 @@ lua scripts to redis via the ``eval`` or ``evalsha`` command.'''
         
     def evalsha(self, client, *args, **options):
         return self.call(client, 'EVALSHA', self.sha1, *args, **options)
+        #return self.call(client, 'EVAL', self.script, *args, **options)
     
-    def eval(self, client, *args, **options):
-        return self.call(client, 'EVAL', self.script, *args, **options)
+    def load(self, client, *args, **options):
+        client.script_load(self.script)
+        return self.evalsha(client, *args, **options)
         
     def start_callback(self, request, response, args, **options):
         if isinstance(response,NoScriptError):
             client = request.client
             if not client.pipelined:
-                pipe = client.pipeline()
-                pipe.script_load(self.script)
                 args = args[2:]
-                self.eval(pipe, self.script, *args, **options)
+                pipe = client.pipeline()
+                self.load(pipe, *args, **options)
                 result = pipe.execute()
                 if isinstance(result, RedisRequest):
-                    return result.add_callback(
-                                partial(self._start_callback, args, options))
+                    return result.add_callback(lambda r : r[1])
                 else:
-                    return self._start_callback(request, args, options, result)
+                    return result[1]
             else:
                 return response
         else:
             return self.callback(request, response, args, **options)
     
-    def _start_callback(self, request, args, options, response):
-        #if response[0] == self.sha1:
-        return self.callback(request, response[1], args, **options)
-        
     def callback(self, request, response, args, **options):
+        '''This is the only method user should override when writing a new
+:class:`RedisScript`. By default it returns *response*.
+
+:parameter request: a class:`RedisRequest`.
+:parameter response: the parsed response from the remote redis server.
+:parameter args: parameters of the redis script.
+:parameter options: Additional options for the callback.
+'''
         return response
     
     
@@ -122,6 +142,61 @@ def script_call_back(request, response, args, script_name = None, **options):
         return s.start_callback(request, response, args, **options)
     
 
+def load_missing_scripts(pipe, commands, results):
+    '''Load missing scripts in a pipeline. This function loops thorugh the
+*results* list and if one or more values are instances of
+:class:`NoScriptError`, it loads the scripts and perfrom a new evaluation.
+Commands which have *option* ``script_dependency`` set to the name
+of a missing script, are also re-executed.'''
+    toload = True
+    for r in results:
+        if isinstance(r,NoScriptError):
+            toload = True
+            break
+    if not toload:
+        return results
+    
+    loaded = set()
+    positions = []
+    for i,result in enumerate(zip(commands,results)):
+        args, options, callbacks = result[0]    
+        if isinstance(result[1],NoScriptError):
+            name = options.get('script_name')
+            if name:
+                script = get_script(name)
+                if script:
+                    args = args[3:]
+                    if script.name not in loaded:
+                        positions.append(-1)
+                        loaded.add(script.name)
+                        script.load(pipe, *args, **options)
+                    else:
+                        script.evalsha(pipe, *args, **options)
+                    positions.append(i)
+                    for c in callbacks:
+                        pipe.add_callback(c)
+        else:
+            sc = options.get('script_dependency')
+            if sc in loaded:
+                pipe.command_stack.append(commands[i])
+                positions.append(i)
+                
+    res = pipe.execute()
+    if isinstance(res,RedisRequest):
+        return res.add_callback(partial(_load_missing_scripts,
+                                        results, positions))
+    else:
+        return _load_missing_scripts(results, positions, res)
+        
+
+def _load_missing_scripts(results, positions, res):
+    for i,r in zip(positions,res):
+        if i == -1:
+            continue
+        results[i] = r
+    return results
+    
+                
 class ScriptCommand(object):
     __slots__ = ('builder','name')
     

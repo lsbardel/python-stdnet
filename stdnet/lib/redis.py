@@ -17,10 +17,11 @@ from functools import partial
 from stdnet.utils import zip, is_int, iteritems, is_string
 from stdnet.utils.dispatch import Signal
 
-from .connection import ConnectionPool
+from .connection import ConnectionPool, RedisRequest
 from .exceptions import *
 
-from .scripts import nil, script_call_back, get_script, pairs_to_dict
+from .scripts import nil, script_call_back, get_script, pairs_to_dict,\
+                        load_missing_scripts
 
 
 tuple_list = (tuple, list, set, frozenset)
@@ -34,7 +35,11 @@ def list_or_args(keys, args = None):
     return keys
 
 
-def timestamp_to_datetime(request, response, args):
+def pairs_to_dict_cbk(request, response, args, **options):
+    return pairs_to_dict(response, request.client.encoding)
+
+
+def timestamp_to_datetime(request, response, args, **options):
     "Converts a unix timestamp to a Python datetime object"
     if not response:
         return None
@@ -65,7 +70,7 @@ def dict_merge(*dicts):
     return merged
 
 
-def parse_info(request, response, args):
+def parse_info(request, response, args, **options):
     '''Parse the response of Redis's INFO command into a Python dict.
 In doing so, convert byte data into unicode.'''
     info = {}
@@ -123,19 +128,19 @@ def zset_score_pairs(request, response, args, **options):
     return zip(response[::2], map(float, response[1::2]))
 
 
-def int_or_none(request, response, args):
+def int_or_none(request, response, args, **options):
     if response is None:
         return None
     return int(response)
 
 
-def float_or_none(request, response, args):
+def float_or_none(request, response, args, **options):
     if response is None:
         return None
     return float(response)
 
 
-def bytes_to_string(request, response, args):
+def bytes_to_string(request, response, args, **options):
     encoding = request.client.encoding
     if isinstance(response,list):
         return (res.decode(encoding) for res in response)
@@ -169,31 +174,32 @@ class Redis(object):
         string_keys_to_dict(
             'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
             'TSEXISTS RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
-            lambda request, response, args : bool(response)
+            lambda request, response, args, **options : bool(response)
             ),
         string_keys_to_dict(
             'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
-            lambda request, response, args : int(response)
+            lambda request, response, args, **options : int(response)
             ),
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
-            lambda request, response, args: is_int(response) and response\
-                                             or response == OK
+            lambda request, response, args, **options:\
+                is_int(response) and response or response == OK
             ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
             'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME'
             'SAVE SELECT SET SHUTDOWN SLAVEOF WATCH UNWATCH',
-            lambda request, response, args: response == OK
+            lambda request, response, args, **options: response == OK
             ),
         string_keys_to_dict(
             'BLPOP BRPOP',
-            lambda request, response, args: response and tuple(response) or None
+            lambda request, response, args, **options:\
+                         response and tuple(response) or None
             ),
         string_keys_to_dict('SDIFF SINTER SMEMBERS SUNION',
-            lambda request, response, args: set(response)
+            lambda request, response, args, **options: set(response)
             ),
         string_keys_to_dict(
             'ZRANGE ZRANGEBYSCORE ZREVRANGE',
@@ -201,15 +207,16 @@ class Redis(object):
             ),
         string_keys_to_dict('TSRANGE TSRANGEBYTIME', ts_pairs),
         {
-            'BGREWRITEAOF': lambda request, response, args: \
+            'BGREWRITEAOF': lambda request, response, args, **options: \
                 response == b'Background rewriting of AOF file started',
-            'BGSAVE': lambda request, response, args: \
+            'BGSAVE': lambda request, response, args, **options: \
                 response == b'Background saving started',
-            'HGETALL': pairs_to_dict,
+            'HGETALL': pairs_to_dict_cbk,
             'INFO': parse_info,
             'LASTSAVE': timestamp_to_datetime,
-            'PING': lambda request, response, args: response == b'PONG',
-            'TTL': lambda request, response, args: \
+            'PING': lambda request, response, args, **options: \
+                response == b'PONG',
+            'TTL': lambda request, response, args, **options: \
                 response != -1 and response or None,
             'ZRANK': int_or_none,
             'EVALSHA': script_call_back,
@@ -612,7 +619,8 @@ can be one of: refcount, encoding, idletime.'''
         return self.execute_command('RPUSH', name, *values)
 
     def sort(self, name, start=None, num=None, by=None, get=None,
-            desc=False, alpha=False, store=None, storeset=None):
+            desc=False, alpha=False, store=None, storeset=None,
+            **options):
         """
         Sort and return the list, set or sorted set at ``name``.
 
@@ -660,101 +668,79 @@ can be one of: refcount, encoding, idletime.'''
         elif store is not None:
             pieces.append('STORE')
             pieces.append(store)
-        return self.execute_command('SORT', *pieces)
+        return self.execute_command('SORT', *pieces, **options)
 
+    ############################################################################
+    ##    SET COMMANDS
+    ############################################################################
+    def sadd(self, name, *values, **options):
+        return self.execute_command('SADD', name, *values, **options)
 
-    #### SET COMMANDS ####
-    def sadd(self, name, *values):
-        "Add ``value`` to set ``name``"
-        return self.execute_command('SADD', name, *values)
+    def scard(self, name, **options):
+        return self.execute_command('SCARD', name, **options)
 
-    def scard(self, name):
-        "Return the number of elements in set ``name``"
-        return self.execute_command('SCARD', name)
-
-    def sdiff(self, keys, *args):
-        "Return the difference of sets specified by ``keys``"
+    def sdiff(self, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SDIFF', *keys)
+        return self.execute_command('SDIFF', *keys, **options)
 
-    def sdiffstore(self, dest, keys, *args):
-        """
-        Store the difference of sets specified by ``keys`` into a new
-        set named ``dest``.  Returns the number of keys in the new set.
-        """
+    def sdiffstore(self, dest, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SDIFFSTORE', dest, *keys)
+        return self.execute_command('SDIFFSTORE', dest, *keys, **options)
 
-    def sinter(self, keys, *args):
-        "Return the intersection of sets specified by ``keys``"
+    def sinter(self, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SINTER', *keys)
+        return self.execute_command('SINTER', *keys, **options)
 
-    def sinterstore(self, dest, keys, *args):
-        """
-        Store the intersection of sets specified by ``keys`` into a new
-        set named ``dest``.  Returns the number of keys in the new set.
-        """
+    def sinterstore(self, dest, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SINTERSTORE', dest, *keys)
+        return self.execute_command('SINTERSTORE', dest, *keys, **options)
 
-    def sismember(self, name, value):
-        "Return a boolean indicating if ``value`` is a member of set ``name``"
-        return self.execute_command('SISMEMBER', name, value)
+    def sismember(self, name, value, **options):
+        return self.execute_command('SISMEMBER', name, value, **options)
 
-    def smembers(self, name):
-        "Return all members of the set ``name``"
-        return self.execute_command('SMEMBERS', name)
+    def smembers(self, name, **options):
+        return self.execute_command('SMEMBERS', name, **options)
 
-    def smove(self, src, dst, value):
-        "Move ``value`` from set ``src`` to set ``dst`` atomically"
-        return self.execute_command('SMOVE', src, dst, value)
+    def smove(self, src, dst, value, **options):
+        return self.execute_command('SMOVE', src, dst, value, **options)
 
-    def spop(self, name):
-        "Remove and return a random member of set ``name``"
-        return self.execute_command('SPOP', name)
+    def spop(self, name, **options):
+        return self.execute_command('SPOP', name, **options)
 
-    def srandmember(self, name):
-        "Return a random member of set ``name``"
-        return self.execute_command('SRANDMEMBER', name)
+    def srandmember(self, name, **options):
+        return self.execute_command('SRANDMEMBER', name, **options)
 
-    def srem(self, name, *values):
-        "Remove ``value`` from set ``name``"
-        return self.execute_command('SREM', name, *values)
+    def srem(self, name, *values, **options):
+        return self.execute_command('SREM', name, *values, **options)
 
-    def sunion(self, keys, *args):
-        "Return the union of sets specifiued by ``keys``"
+    def sunion(self, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SUNION', *keys)
+        return self.execute_command('SUNION', *keys, **options)
 
-    def sunionstore(self, dest, keys, *args):
-        """
-        Store the union of sets specified by ``keys`` into a new
-        set named ``dest``.  Returns the number of keys in the new set.
-        """
+    def sunionstore(self, dest, keys, *args, **options):
         keys = list_or_args(keys, args)
-        return self.execute_command('SUNIONSTORE', dest, *keys)
+        return self.execute_command('SUNIONSTORE', dest, *keys, **options)
 
     ############################################################################
     ##    SORTED SET
     ############################################################################
-    def zadd(self, name, *args):
+    def zadd(self, name, *args, **options):
         '''Add member the iterable over two dimensional elements ``args``.
 The first element is the score and the second is the value.'''
         if len(args) % 2:
             raise RedisError(\
                     "ZADD requires an equal number of values and scores")
-        return self.execute_command('ZADD', name, *args)
+        return self.execute_command('ZADD', name, *args, **options)
 
-    def zcard(self, name):
+    def zcard(self, name, **options):
         "Return the number of elements in the sorted set ``name``"
-        return self.execute_command('ZCARD', name)
+        return self.execute_command('ZCARD', name, **options)
 
-    def zincrby(self, name, value, amount=1):
+    def zincrby(self, name, value, amount=1, **options):
         "Increment the score of ``value`` in sorted set ``name`` by ``amount``"
-        return self.execute_command('ZINCRBY', name, amount, value)
+        return self.execute_command('ZINCRBY', name, amount, value, **options)
 
-    def zrange(self, name, start, end, desc=False, withscores=False):
+    def zrange(self, name, start, end, desc=False, withscores=False, **options):
         """Return a range of values from sorted set ``name`` between
         ``start`` and ``end`` sorted in ascending order.
 
@@ -769,10 +755,12 @@ The first element is the score and the second is the value.'''
         pieces = [command, name, start, end]
         if withscores:
             pieces.append('withscores')
-        return self.execute_command(*pieces, **{'withscores': withscores})
+        options['withscores'] = withscores
+        return self.execute_command(*pieces, **options)
 
     def zrangebyscore(self, name, min, max, desc = False,
-                      start=None, num=None, withscores=False):
+                      start=None, num=None, withscores=False,
+                      **options):
         """
         Return a range of values from the sorted set ``name`` with scores
         between ``min`` and ``max``.
@@ -791,64 +779,67 @@ The first element is the score and the second is the value.'''
             pieces.extend(['LIMIT', start, num])
         if withscores:
             pieces.append('withscores')
-        return self.execute_command(*pieces, **{'withscores': withscores})
+        options['withscores'] = withscores
+        return self.execute_command(*pieces, **options)
 
-    def zrank(self, name, value):
+    def zrank(self, name, value, **options):
         """
         Returns a 0-based value indicating the rank of ``value`` in sorted set
         ``name``
         """
-        return self.execute_command('ZRANK', name, value)
+        return self.execute_command('ZRANK', name, value, **options)
 
-    def zrem(self, name, value):
+    def zrem(self, name, value, **options):
         "Remove member ``value`` from sorted set ``name``"
-        return self.execute_command('ZREM', name, value)
+        return self.execute_command('ZREM', name, value, **options)
 
-    def zremrangebyscore(self, name, min, max):
+    def zremrangebyscore(self, name, min, max, **options):
         """
         Remove all elements in the sorted set ``name`` with scores
         between ``min`` and ``max``
         """
-        return self.execute_command('ZREMRANGEBYSCORE', name, min, max)
+        return self.execute_command('ZREMRANGEBYSCORE', name, min, max,
+                                    **options)
 
-    def zrevrank(self, name, value):
+    def zrevrank(self, name, value, **options):
         """
         Returns a 0-based value indicating the descending rank of
         ``value`` in sorted set ``name``
         """
-        return self.execute_command('ZREVRANK', name, value)
+        return self.execute_command('ZREVRANK', name, value, **options)
 
-    def zscore(self, name, value):
+    def zscore(self, name, value, **options):
         "Return the score of element ``value`` in sorted set ``name``"
-        return self.execute_command('ZSCORE', name, value)
+        return self.execute_command('ZSCORE', name, value, **options)
 
-    def zinterstore(self, dest, keys, aggregate=None):
+    def zinterstore(self, dest, keys, aggregate=None, **options):
         """
         Intersect multiple sorted sets specified by ``keys`` into
         a new sorted set, ``dest``. Scores in the destination will be
         aggregated based on the ``aggregate``, or SUM if none is provided.
         """
-        return self._zaggregate('ZINTERSTORE', dest, keys, aggregate)
+        return self._zaggregate('ZINTERSTORE', dest, keys, aggregate, **options)
     
-    def zunionstore(self, dest, keys, aggregate=None):
+    def zunionstore(self, dest, keys, aggregate=None, **options):
         """
         Union multiple sorted sets specified by ``keys`` into
         a new sorted set, ``dest``. Scores in the destination will be
         aggregated based on the ``aggregate``, or SUM if none is provided.
         """
-        return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate)
+        return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate, **options)
     
-    def zdiffstore(self, dest, keys, aggregate=None, withscores=None):
+    def zdiffstore(self, dest, keys, aggregate=None, withscores=None,**options):
         """
         Compute the difference of multiple sorted sets specified by
         ``keys`` into a new sorted set, ``dest``.
         """
         return self._zaggregate('ZDIFFSTORE', dest, keys,
                                 aggregate = aggregate,
-                                withscores = withscores)
+                                withscores = withscores,
+                                **options)
 
     def _zaggregate(self, command, dest, keys,
-                    aggregate=None, withscores = None):
+                    aggregate=None, withscores = None, **options):
         pieces = [command, dest, len(keys)]
         if isinstance(keys, dict):
             items = keys.items()
@@ -866,33 +857,33 @@ The first element is the score and the second is the value.'''
         if withscores:
             pieces.append('WITHSCORES')
             pieces.append(aggregate)
-        return self.execute_command(*pieces)
+        return self.execute_command(*pieces, **options)
     
     ############################################################################
     ##    TIMESERIES COMMANDS
     ############################################################################
-    def tslen(self, name):
+    def tslen(self, name, **options):
         '''timeseries length'''
-        return self.execute_command('TSLEN', name)
+        return self.execute_command('TSLEN', name, **options)
     
-    def tsexists(self, name, score):
+    def tsexists(self, name, score, **options):
         '''timeseries length'''
-        return self.execute_command('TSEXISTS', name, score)
+        return self.execute_command('TSEXISTS', name, score, **options)
     
-    def tsrank(self, name, score):
+    def tsrank(self, name, score, **options):
         '''Rank of *score*'''
-        return self.execute_command('TSRANK', name, score)
+        return self.execute_command('TSRANK', name, score, **options)
 
-    def tsadd(self, name, *items):
+    def tsadd(self, name, *items, **options):
         '''timeseries length'''
-        return self.execute_command('TSADD', name, *items)
+        return self.execute_command('TSADD', name, *items, **options)
     
-    def tscount(self, key, start, end):
+    def tscount(self, key, start, end, **options):
         '''Counts the number of elements between *start* and *end* at *key*.'''
-        return self.execute_command('TSCOUNT', key, start, end)
+        return self.execute_command('TSCOUNT', key, start, end, **options)
     
     def tsrange(self, name, start = 0, end = -1, desc = False,
-                withtimes = False, novalues = False):
+                withtimes = False, novalues = False, **options):
         """Return a range of values from timeseries at ``name`` between
 ``start`` and ``end`` sorted in ascending order.
 ``start`` and ``end`` can be negative, indicating the end of the range.
@@ -906,11 +897,13 @@ The first element is the score and the second is the value.'''
             pieces.append('novalues')
         elif withtimes:
             pieces.append('withtimes')
-        return self.execute_command(*pieces, **{'withtimes': withtimes,
-                                                'novalues': novalues})
+        options.update({'withtimes': withtimes,
+                        'novalues': novalues})
+        return self.execute_command(*pieces, **options)
         
     def tsrangebytime(self, key, start, end, desc = False,
-                      withtimes = False, novalues = False):
+                      withtimes = False, novalues = False,
+                      **options):
         """Return a range of values from timeseries at ``key`` between
 time ``start`` and time ``end`` sorted in ascending order.
 
@@ -923,8 +916,9 @@ time ``start`` and time ``end`` sorted in ascending order.
             pieces.append('withtimes')
         elif novalues:
             pieces.append('novalues')
-        return self.execute_command(*pieces, **{'withtimes': withtimes,
-                                                'novalues': novalues})
+        options.update({'withtimes': withtimes,
+                        'novalues': novalues})
+        return self.execute_command(*pieces, **options)
         
     ############################################################################
     ##    HASH COMMANDS
@@ -1100,8 +1094,18 @@ Tipycal usage::
 
     pipe.sadd('foo').add_callback(mycallback)
     
-The callback will be executed after the default callback for the command.
-Several callbacks can be added.
+The callback will be executed after the default callback for the command
+with the following syntax::
+
+    mycallback(results, current_result)
+    
+where ``results`` is a list of previous pipeline's command results and
+``current_result`` is the result of the command the callback is
+associated with. The result from the callback will be added to
+the list of results.
+Several callbacks can be added for a given command::
+
+    pipe.sadd('foo').add_callback(mycallback).add_callback(mycallback2)
 '''
         if self.empty:
             raise ValueError('Cannot add callback. No command in the stack')
@@ -1111,26 +1115,37 @@ Several callbacks can be added.
     def parse_response(self, request):
         response = request.response
         commands = request.args
-        return list(self._parse_list_response(request, response[-1], commands[1:-1]))
-        
-    def _parse_list_response(self, request, response, commands):
+        processed = []
+        response = response[-1]
+        commands = commands[1:-1]
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
                 "pipeline execution")
         parse_response = self._parse_response
         for r, cmd in zip(response, commands):
+            args, options, callbacks = cmd
             if not isinstance(r, Exception):
-                args, options, callbacks = cmd
                 r = parse_response(request, r, args[0], args[1:], options)
-                for callback in callbacks:
-                    r = callback(r)
-            yield r
+            for callback in callbacks:
+                r = callback(processed,r)
+            processed.append(r)
+        return processed
 
-    def execute(self):
-        "Execute all the commands in the current pipeline"
+    def execute(self, load_script = False):
+        '''Execute all commands in the current pipeline.'''
         self.execute_command('EXEC')
         commands = self.command_stack
         self.reset()
         conn = self.connection_pool.get_connection()
-        return conn.execute_pipeline(self, commands)
+        res = conn.execute_pipeline(self, commands)
+        if isinstance(res,RedisRequest):
+            return res.add_callback(partial(self.finalise,commands,load_script))
+        else:
+            return self.finalise(commands, load_script, res)
 
+    def finalise(self, commands, load_script, result):
+        if load_script:
+            return load_missing_scripts(self, commands[1:-1], result)
+        return result
+                    
+            

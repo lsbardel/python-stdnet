@@ -20,7 +20,7 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
         connection.RedisRequest.__init__(self, *args, **kwargs)
         
     def send(self, command):
-        c = self.connection.connect()
+        c = self.connection.connect(self)
         if c:
             return c.add_callback(lambda r : self._send(command,r), True)
         else:
@@ -48,11 +48,12 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
 class AsyncRedisConnection(connection.Connection):
     request_class = AsyncRedisRequest
     
-    def _connect(self):
+    def _connect(self, request):
         self.stream = AsyncIOStream(self._sock)
-        return self.stream.connect(self.address, self.on_connect)
+        return self.stream.connect(self.address,
+                                   partial(self.on_connect,request))
         
-    def on_connect(self, result = None):
+    def on_connect(self, request, result = None):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
         OK = b'OK'

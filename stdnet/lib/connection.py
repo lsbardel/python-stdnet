@@ -58,6 +58,10 @@ handling of a single command from start to the response from the server.'''
             return len(self.args)
         
     @property
+    def encoding(self):
+        return self.client.encoding
+    
+    @property
     def done(self):
         if self.command_name:
             return self.response is not False

@@ -197,19 +197,12 @@ An instance of this class is usually obtained by using the high level
     def is_open(self):
         return not hasattr(self,'_result')
     
-    def add(self, func, args, kwargs, callback = None):
-        '''Add an new operation to the transaction.
-
-:parameter func: function to call which accept :attr:`stdnet.Transaction.cursor`
-    as its first argument.
-:parameter args: tuple or varying arguments to pass to *func*.
-:parameter kwargs: dictionary or key-values arguments to pass to *func*.
-:parameter callback: optional callback function with arity 1 which process
-    the result wonce back from the backend.'''
-        res = func(self.cursor,*args,**kwargs)
-        callback = callback or default_callback
-        self._callbacks.append(callback)
-                    
+    def add(self, instance):
+        self.session.add(instance)
+        
+    def delete(self, instance):
+        self.session.delete(instance)
+                        
     def __enter__(self):
         return self
     
@@ -228,7 +221,7 @@ An instance of this class is usually obtained by using the high level
             raise InvalidTransaction('Invalid operation.\
  Transaction already closed.')
         self.trigger(pre_commit)
-        self.backend.execute_session(self.session, self.post_commit)
+        return self.backend.execute_session(self.session, self.post_commit)
         
     def post_commit(self, response, commands):
         '''callback from the :class:`stdnet.BackendDataServer` once the
@@ -338,13 +331,13 @@ class Session(object):
             self._models[meta] = sm
         return sm
             
-    def begin(self):
+    def begin(self, name = None):
         '''Begin a new class:`Transaction`.
 If this :class:`Session` is already within a transaction, an error is raised.'''
         if self.transaction is not None:
             raise InvalidTransaction("A transaction is already begun.")
         else:
-            self.transaction = Transaction(self)
+            self.transaction = Transaction(self, name = name)
         return self.transaction
     
     def query(self, model, query_class = None, **kwargs):
@@ -459,7 +452,7 @@ empty keys associated with the model will exists after this operation.'''
                 self.begin()
             else:
                 raise InvalidTransaction('No transaction was started')
-        self.transaction.commit()
+        return self.transaction.commit()
     
     def server_update(self, instance, id = None):
         '''Callback by the :class:`stdnet.BackendDataServer` once the commit is

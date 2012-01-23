@@ -10,6 +10,9 @@ from examples.data import FinanceTest, Instrument, Fund, Position
 
 
 class TestInspectionAndComparison(FinanceTest):
+    
+    def setUp(self):
+        self.register()
         
     def testSimple(self):
         d = model_to_dict(Instrument)
@@ -59,6 +62,9 @@ class TestInspectionAndComparison(FinanceTest):
 
 class PickleSupport(test.TestCase):
     model = Instrument
+    
+    def setUp(self):
+        self.register()
         
     def testSimple(self):
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()

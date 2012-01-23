@@ -44,7 +44,7 @@ limiting.'''
               read_lua_file('utils/redis.lua'),
               read_lua_file('load_query.lua'))
     
-    def build(self, response, fields, fields_attributes):
+    def build(self, response, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
@@ -55,7 +55,7 @@ limiting.'''
                     yield id,fields,dict(zip(fields_attributes,fdata))
         else:
             for id,fdata in response:
-                yield id,None,dict(pairs_to_dict(fdata))
+                yield id,None,dict(pairs_to_dict(fdata, encoding))
     
     def callback(self, request, response, args, query = None, get = None,
                  fields = None, fields_attributes = None, **kwargs):
@@ -69,10 +69,10 @@ limiting.'''
             else:
                 return [tpy(v) for _,v[1] in data]
         else:
-            data = self.build(data, fields, fields_attributes)
+            encoding = request.client.encoding
+            data = self.build(data, fields, fields_attributes, encoding)
             related_fields = {}
             if related:
-                encoding = request.client.encoding
                 for fname,rdata,fields in related:
                     fname = native_str(fname, encoding)
                     fields = tuple(native_str(f, encoding) for f in fields)
@@ -93,7 +93,7 @@ limiting.'''
                 return data
         else:
             # this is data for stdmodel instances
-            return self.build(data,fields,fields)
+            return self.build(data, fields, fields, encoding)
         
 
 class delete_query(RedisScript):
@@ -128,7 +128,7 @@ class commit_session(RedisScript):
 def redis_execution(pipe, result_type):
     command = copy(pipe.command_stack)
     command.pop(0)
-    result = pipe.execute()
+    result = pipe.execute(load_script = True)
     results = []
     for v in result:
         if isinstance(v, Exception):
@@ -211,11 +211,14 @@ different model) which has a *field* containing current model ids.'''
             key = backend.tempkey(meta)
             args = args[1::2]
             if qs.keyword == 'intersect':
-                getattr(pipe,p+'interstore')(key,args)
+                getattr(pipe,p+'interstore')(key, args,
+                                             script_dependency = 'build_query')
             elif qs.keyword == 'union':
-                getattr(pipe,p+'unionstore')(key,args)
+                getattr(pipe,p+'unionstore')(key, args,
+                                             script_dependency = 'build_query')
             elif qs.keyword == 'diff':
-                getattr(pipe,p+'diffstore')(key,args)
+                getattr(pipe,p+'diffstore')(key, args,
+                                            script_dependency = 'build_query')
             else:
                 raise ValueError('Could not perform "{0}" operation'\
                                  .format(qs.keyword))
@@ -245,10 +248,10 @@ different model) which has a *field* containing current model ids.'''
 elements in the query.'''
         pipe = self.pipe
         if self.meta.ordering:
-            pipe.zcard(self.query_key)
+            pipe.zcard(self.query_key, script_dependency = 'build_query')
         else:
-            pipe.scard(self.query_key)
-        pipe.add_callback(lambda r : query_result(self.query_key,r))
+            pipe.scard(self.query_key, script_dependency = 'build_query')
+        pipe.add_callback(lambda p,r : query_result(self.query_key,r))
         self.commands, self.query_results = redis_execution(pipe, query_result)
         return self.query_results[-1].count
     

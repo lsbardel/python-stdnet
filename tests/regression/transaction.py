@@ -1,6 +1,5 @@
 import random
 
-import stdnet
 from stdnet import test, orm, InvalidTransaction
 from examples.models import SimpleModel, Dictionary
 from stdnet.utils import populate
@@ -21,6 +20,13 @@ class TransactionReceiver(object):
 
 class TestTransactions(test.TestCase):
     model = SimpleModel
+    
+    def setUp(self):
+        self.client = self.backend.client
+        self.client.flushdb()
+    
+    def tearDown(self):
+        self.client.flushdb()
         
     def testCreate(self):
         session = self.session()
@@ -40,87 +46,74 @@ class TestTransactions(test.TestCase):
         self.assertEqual(len(all),2)
         self.assertTrue(len(receiver.transactions),2)
         sender,instances,t,s = receiver.transactions[0]
+        self.assertEqual(sender, orm.Session)
+        self.assertEqual(s, session)
+        sender,instances,t,s = receiver.transactions[1]
         self.assertTrue(instances)
         self.assertEqual(instances,all)
-        self.assertEqual(s,session)
+        self.assertEqual(sender,self.model)
         
     def testDelete(self):
-        s = SimpleModel(code = 'test', description = 'just a test').save()
-        self.assertEqual(SimpleModel.objects.get(id = s.id),s)
+        session = self.session()
+        query = session.query(self.model)
+        with session.begin():
+            s = session.add(self.model(code = 'test',
+                                       description = 'just a test'))
+        self.assertEqual(query.count(),1)
+        self.assertEqual(query.get(id = s.id),s)
         s.delete()
-        self.assertRaises(SimpleModel.DoesNotExist,
-                          SimpleModel.objects.get,id=s.id)
-        
-    def testIncompatibleModels(self):
-        l = stdnet.struct.list('redis://localhost:6379/?db=9')
-        s = stdnet.struct.set('redis://localhost:6379/?db=8')
-        self.assertRaises(InvalidTransaction,transaction,l,s)
-        l = stdnet.struct.list('redis://localhost:6379/?db=9')
-        s = stdnet.struct.set('redis://localhost:6378/?db=9')
-        self.assertRaises(InvalidTransaction,transaction,l,s)
-        self.assertRaises(InvalidTransaction,transaction,SimpleModel,s)
-        
-    def testCompatibleModels(self):
-        s = stdnet.struct.set(SimpleModel._meta.cursor)
-        t = transaction(SimpleModel,s, name = 'test-transaction')
-        self.assertEqual(t.server,SimpleModel._meta.cursor)
-        self.assertEqual(t.name,'test-transaction')
+        self.assertRaises(self.model.DoesNotExist,
+                          query.get, id=s.id)
         
     def testSingleTransaction(self):
-        db = SimpleModel._meta.cursor
-        s = stdnet.struct.set(db)
-        l = stdnet.struct.list(db)
-        h = stdnet.struct.hash(db)
+        session = self.session()
+        s = session.add(orm.Set())
+        l = session.add(orm.List())
+        self.assertEqual(l.size(),0)
+        h = session.add(orm.HashTable())
         r = TransactionReceiver()
-        db.redispy.signal_on_send.connect(r)
-        db.redispy.signal_on_received.connect(r)
-        with transaction(s,l,h,SimpleModel) as t:
-            m = SimpleModel(code = 'test', description = 'just a test')
-            h.add('test','bla',t)
-            l.push_back(5,t)
-            l.push_back(8,t)
-            s.update((2,3,4,5,6,7),t)
-            s.save(t)
-            l.save(t)
-            h.save(t)
-            m.save(t)
+        orm.post_commit.connect(r, orm.Session)
+        session.add(self.model(code = 'test', description = 'just a test'))
+        h.add('test','bla')
+        l.push_back(5)
+        l.push_back(8)
+        s.update((2,3,4,5,6,7))
+        session.commit()
         self.assertEqual(s.size(),6)
-        self.assertEqual(l.size(),2)
         self.assertEqual(h.size(),1)
-        self.assertEqual(SimpleModel.objects.all().count(),1)
-        self.assertEqual(len(r.requests),1)
+        self.assertEqual(l.size(),2)
+        self.assertEqual(len(session.query(self.model).all()),1)
+        self.assertEqual(len(r.transactions),1)
         
         
 class TestMultiFieldTransaction(test.TestCase):
     model = Dictionary
     
     def make(self):
-        with transaction(self.model, name = 'create models') as t:
+        with self.session().begin(name = 'create models') as t:
             self.assertEqual(t.name, 'create models')
             for name in names:
-                self.model(name = name).save(t)
-            self.assertFalse(t._cachepipes)
+                t.add(self.model(name = name))
     
     def testSaveSimple(self):
         self.make()
         
     def testHashField(self):
         self.make()
-        d1,d2 = tuple(self.model.objects.filter(id__in = (1,2)))
-        with transaction(self.model) as t:
-            d1.data.add('ciao','hello in Italian',t)
-            d1.data.add('bla',10000,t)
-            d2.data.add('wine','drink to enjoy with or without food',t)
-            d2.data.add('foo',98,t)
-            self.assertTrue(t._cachepipes)
-            # We should have two entries in the cachepipes
-            self.assertTrue(len(t._cachepipes),2)
-            for c in t._cachepipes:
-                self.assertEqual(len(t._cachepipes[c].pipe),2)
+        session = self.session()
+        query = session.query(self.model)
+        d1,d2 = tuple(query.filter(id__in = (1,2)))
+        with session.begin():
+            d1.data.add('ciao','hello in Italian')
+            d1.data.add('bla',10000)
+            d2.data.add('wine','drink to enjoy with or without food')
+            d2.data.add('foo',98)
+            self.assertTrue(d1.data.cache.toadd)
+            self.assertTrue(d2.data.cache.toadd)
                 
-        self.assertEqual(len(t._cachepipes),2)
-        self.assertTrue(t.empty())
-        d1,d2 = tuple(self.model.objects.all().sort_by('id'))[:2]
+        self.assertFalse(d1.data.cache.toadd)
+        self.assertFalse(d2.data.cache.toadd)
+        d1,d2 = tuple(query.sort_by('id'))[:2]
         self.assertEqual(d1.data['ciao'],'hello in Italian')
         self.assertEqual(d2.data['wine'],'drink to enjoy with or without food')
     

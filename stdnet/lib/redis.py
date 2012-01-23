@@ -421,7 +421,7 @@ instance is promoted to a master instead.
 
     def keys(self, pattern='*'):
         "Returns a list of keys matching ``pattern``"
-        return self.execute_command('KEYS', pattern, encoding = self.encoding)
+        return self.execute_command('KEYS', pattern)
 
     def mget(self, keys, *args):
         """

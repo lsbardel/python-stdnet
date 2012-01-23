@@ -19,9 +19,10 @@ class nil(object):
     pass
 
 
-def pairs_to_dict(response, encoding = 'utf-8'):
+def pairs_to_dict(request, response, args, **options):
     "Create a dict given a list of key/value pairs"
     if response:
+        encoding = request.client.encoding
         return zip((r.decode(encoding) for r in response[::2]), response[1::2])
     else:
         return ()

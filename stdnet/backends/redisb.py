@@ -101,7 +101,8 @@ class delete_query(RedisScript):
 The first parameter is the model'''
     script = read_lua_file('delete_query.lua')
     
-    def callback(self, response, args, meta = None, client = None, **kwargs):
+    def callback(self, request, response, args, meta = None, client = None,
+                 **kwargs):
         return session_result(meta, response, 'delete')
         if response:
             meta = sm.meta
@@ -120,7 +121,7 @@ The first parameter is the model'''
 class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
-    def callback(self, response, args, sm = None, client = None, **kwargs):
+    def callback(self, request, response, args, sm = None, **kwargs):
         return session_result(sm.meta, response[0], 'save')
         
 

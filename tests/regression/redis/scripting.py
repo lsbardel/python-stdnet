@@ -14,6 +14,15 @@ class test_script(RedisScript):
               '''return {1,2,3,4,5,6}''')
 
 
+class Receiver(object):
+    
+    def __init__(self):
+        self.requests = []
+        
+    def __call__(self, sender, request = None, **kwargs):
+        self.requests.append(request)
+
+
 class ScriptingCommandsTestCase(TestCase):
     tag = 'script'
     default_run = False
@@ -57,8 +66,13 @@ class ScriptingCommandsTestCase(TestCase):
         
     def testEvalSha(self):
         self.assertEqual(self.client.script_flush(),True)
+        re = Receiver()
+        self.client.signal_on_received.connect(re)
         r = self.client.script_call('test_script')
         self.assertEqual(r,[1,2,3,4,5,6])
+        self.assertEqual(len(re.requests),3)
+        re.requests = []
         r = self.client.script_call('test_script')
         self.assertEqual(r,[1,2,3,4,5,6])
+        self.assertEqual(len(re.requests),1)
     

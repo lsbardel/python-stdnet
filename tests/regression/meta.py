@@ -77,12 +77,12 @@ class PickleSupport(test.TestCase):
         
     def testTempDictionary(self):
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
-        self.assertTrue(inst._temp)
+        self.assertTrue('cleaned_data' in inst._dbdata)
         p = pickle.dumps(inst)
         inst2 = pickle.loads(p)
-        self.assertFalse(hasattr(inst2,'_temp'))
+        self.assertFalse('cleaned_data' in inst2._dbdata)
         inst2.save()
-        self.assertTrue(inst._temp)
+        self.assertTrue('cleaned_data' in inst._dbdata)
         
 
 class TestRegistration(test.TestCase):

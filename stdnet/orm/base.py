@@ -185,8 +185,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
         dbdata = instance._dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
-        toload = dbdata['toload'] = []
-        indices = dbdata['indices'] = []
         id = instance.id
         idnew = not (id and id == dbdata.get('id'))
         
@@ -211,19 +209,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
                     else:
                         if svalue is not None:
                             data[name] = svalue
-                        # if the field is an index add it
-                        if field.index:
-                            if idnew:
-                                indices.append((field,svalue,None))
-                            else:
-                                if field.name in dbdata:
-                                    oldvalue = dbdata[field.name]
-                                    if svalue != oldvalue:
-                                        indices.append((field,svalue,oldvalue))
-                                else:
-                                    # The field was not loaded
-                                    toload.append(field.name)
-                                    indices.append((field,svalue,None))
                                 
         return len(errors) == 0
     

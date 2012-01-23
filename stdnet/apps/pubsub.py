@@ -12,7 +12,7 @@ class PubSub(object):
         if isclass(pickler):
             pickler = pickler()
         self.pickler = pickler
-        self.client = getdb(server).redispy
+        self.client = getdb(server).client
     
     
 class Publisher(PubSub):

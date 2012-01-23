@@ -224,7 +224,7 @@ class Environment(orm.StdModel):
 
 class NumericData(orm.StdModel):
     pv = orm.FloatField()
-    vega = orm.FloatField(default = 0.)
+    vega = orm.FloatField(default = 0.0)
     delta = orm.FloatField(default = 1.0)
     gamma = orm.FloatField(required = False)
     ok = orm.BooleanField()

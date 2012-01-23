@@ -68,7 +68,7 @@ class TestAtomFields(test.TestCase):
                 
         # The only key remaining is the ids key for the AutoField
         TestDateModel.objects.clean()
-        keys = TestDateModel.objects.keys()
+        keys = list(TestDateModel.objects.keys())
         self.assertEqual(len(keys),1)
         
 
@@ -185,7 +185,7 @@ class TestBoolField(test.TestCase):
         d = self.model.objects.get(id = d.id)
         self.assertEqual(d.ok,False)
         d.ok = 'jasxbhjaxsbjxsb'
-        self.assertRaises(ValueError,d.save)
+        self.assertRaises(ValueError, d.save)
         d.ok = True
         d.save()
         d = self.model.objects.get(id = d.id)

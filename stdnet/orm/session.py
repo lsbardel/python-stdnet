@@ -208,12 +208,19 @@ An instance of this class is usually obtained by using the high level
     
     def __exit__(self, type, value, traceback):
         if type is None:
-            self.commit()
+            try:
+                self.commit()
+            except:
+                self.rollback()
+                raise
         else:
             self.rollback()
             
     def rollback(self):
-        pass
+        if self.session:
+            self.session.expunge()
+            self.session.transaction = None
+            self.session = None
             
     def commit(self):
         '''Close the transaction and commit session to the backend.'''
@@ -330,6 +337,12 @@ class Session(object):
             sm = SessionModel(meta,self)
             self._models[meta] = sm
         return sm
+    
+    def expunge(self, meta = None):
+        if meta:
+            return self._models.pop(meta,None)
+        else:
+            self._models.clear()
             
     def begin(self, name = None):
         '''Begin a new class:`Transaction`.

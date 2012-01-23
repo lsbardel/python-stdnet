@@ -315,6 +315,33 @@ or other entities. They are indexes by default.'''
             return self.encoder.dumps(value, logger = logger)
     
 
+class BooleanField(AtomField):
+    '''A boolean :class:`AtomField`'''
+    type = 'bool'
+    internal_type = 'numeric'
+    python_type = bool
+    default = False
+    
+    def __init__(self, required = False, **kwargs):
+        super(BooleanField,self).__init__(required = required,**kwargs)
+    
+    def scorefun(self, value):
+        if value is None:
+            return 0
+        else:
+            return 1 if int(value) else 0
+        
+    def to_python(self, value):
+        value = super(BooleanField,self).to_python(value)
+        if value in NONE_EMPTY:
+            return self.get_default()
+        else:
+            return self.python_type(int(value))
+    
+    def index_value(self, value):
+        return 1 if value else 0
+    
+    
 class IntegerField(AtomField):
     '''An integer :class:`AtomField`.'''
     type = 'integer'
@@ -336,25 +363,6 @@ class IntegerField(AtomField):
             return self.get_default()
         else:
             return self.python_type(value)
-        
-    
-class BooleanField(IntegerField):
-    '''A boolean :class:`AtomField`'''
-    type = 'bool'
-    internal_type = 'numeric'
-    python_type = bool
-    
-    def __init__(self, required = False, **kwargs):
-        super(BooleanField,self).__init__(required = required,**kwargs)
-    
-    def scorefun(self, value):
-        if value is None:
-            return 0
-        else:
-            return 1 if int(value) else 0
-    
-    def index_value(self, value):
-        return 1 if value else 0
     
     
 class AutoField(IntegerField):
@@ -367,7 +375,7 @@ if you don't specify otherwise.
     type = 'auto'
 
 
-class FloatField(AtomField):
+class FloatField(IntegerField):
     '''An floating point :class:`AtomField`. By default 
 its :attr:`Field.index` is set to ``False``.
     '''

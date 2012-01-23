@@ -17,7 +17,7 @@ class TestRegistration(test.TestCase):
             self.assertFalse(meta.abstract)
             self.assertTrue(manager.session)
             self.assertEqual(manager.model,model)
-            self.assertEqual(manager.backend,manager.session.backend)
+            self.assertEqual(manager.backend,manager.session().backend)
             self.assertEqual(meta.app_label,'examples')
         
     def testUnregisterAll(self):
@@ -25,9 +25,9 @@ class TestRegistration(test.TestCase):
         orm.unregister()
         for model in apps:
             manager = model.objects
-            self.assertFalse(manager._session)
+            self.assertFalse(manager.backend)
             self.assertEqual(manager.model,model)
-            self.assertRaises(ModelNotRegistered, lambda : manager.session)
+            self.assertRaises(ModelNotRegistered, manager.session)
         
     def testFlushModel(self):
         self._register()

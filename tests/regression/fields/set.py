@@ -17,11 +17,13 @@ class TestSetField(test.TestCase):
     models = (Collection,Group)
     model = Collection
     
+    def setUp(self):
+        self.register()
+        
     def testSimple(self):
         m = self.model().save()
         m.numbers.add(1)
         m.numbers.update((1,2,3,4,5))
-        self.assertEqual(len(m._local_transaction._cachepipes),1)
         m.save()
         self.assertEqual(m.numbers.size(),5)
         
@@ -62,12 +64,15 @@ class TestCommands(test.TestCase):
 class TestOrderedSet(test.TestCase):
     model = Calendar
     models = (Calendar,DateValue)
+    
+    def setUp(self):
+        self.register()
         
     def fill(self, update = False):
         ts = Calendar(name = 'MyCalendar').save()
-        with DateValue.objects.transaction() as t:
+        with DateValue.objects.session().begin() as t:
             for dt,value in zip(dates,values):
-                DateValue(dt = dt,value = value).save(t)
+                t.add(DateValue(dt = dt,value = value))
         
         items = DateValue.objects.all()
         

@@ -34,7 +34,7 @@ def list_or_args(keys, args = None):
     return keys
 
 
-def timestamp_to_datetime(response):
+def timestamp_to_datetime(request, response, args):
     "Converts a unix timestamp to a Python datetime object"
     if not response:
         return None
@@ -65,10 +65,11 @@ def dict_merge(*dicts):
     return merged
 
 
-def parse_info(response, encoding = 'utf-8'):
-    '''Parse the result of Redis's INFO command into a Python dict.
+def parse_info(request, response, args):
+    '''Parse the response of Redis's INFO command into a Python dict.
 In doing so, convert byte data into unicode.'''
     info = {}
+    encoding = request.client.encoding
     response = response.decode(encoding)
     def get_value(value):
         if ',' not in value:
@@ -96,8 +97,8 @@ In doing so, convert byte data into unicode.'''
     return info
 
 
-def ts_pairs(response, withtimes = False, novalues = False, single = False,
-             **options):
+def ts_pairs(request, response, args, withtimes = False, novalues = False,
+             single = False, **options):
     '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
     if not response:
         return response
@@ -112,7 +113,7 @@ def ts_pairs(response, withtimes = False, novalues = False, single = False,
         return response
     
     
-def zset_score_pairs(response, **options):
+def zset_score_pairs(request, response, args, **options):
     """
     If ``withscores`` is specified in the options, return the response as
     a list of (value, score) pairs
@@ -122,25 +123,35 @@ def zset_score_pairs(response, **options):
     return zip(response[::2], map(float, response[1::2]))
 
 
-def int_or_none(response):
+def int_or_none(request, response, args):
     if response is None:
         return None
     return int(response)
 
 
-def float_or_none(response):
+def float_or_none(request, response, args):
     if response is None:
         return None
     return float(response)
 
 
-def bytes_to_string(result, encoding = 'utf-8'):
-    if isinstance(result,list):
-        return (res.decode(encoding) for res in result)
-    elif result is not None:
-        return result.decode(encoding)
+def bytes_to_string(request, response, args):
+    encoding = request.client.encoding
+    if isinstance(response,list):
+        return (res.decode(encoding) for res in response)
+    elif response is not None:
+        return response.decode(request.client.encoding)
     else:
-        return result
+        return response
+    
+
+def script_command(request, response, args, command = None, **options):
+    if command in ('FLUSH','KILL'):
+        return response == b'OK'
+    elif command == 'LOAD':
+        return response.decode(request.client.encoding)
+    else:
+        return [int(r) for r in response]
 
 
 class Redis(object):
@@ -150,16 +161,6 @@ class Redis(object):
     Connection and Pipeline derive from this, implementing how
     the commands are sent and received to the Redis server
     """
-    NO_KEY_COMMAND = frozenset((
-        'SUBSCRIBE', 'PSUBSCRIBE', 'UNSUBSCRIBE', 'PUNSUBSCRIBE',
-        'EVAL',
-        #
-        'AUTH','ECHO','PING','QUIT','SELECT',
-        #
-        'RANDOMKEY', 'BGREWRITEAOF', 'BGSAVE', 'CONFIG GET', 'CONFIG SET',
-        'CONFIG RESETSTAT', 'DBSIZE', 'DEBUG OBJECT', 'DEBUG SEGFAULT',
-        'FLUSHALL', 'FLUSHDB', 'INFO', 'LASTSAVE', 'MONITOR', 'SAVE',
-        'SHUTDOWN','SLAVEOF','SLOWLOG','SYNC'))
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'KEYS RANDOMKEY TYPE OBJECT HKEYS',
@@ -168,41 +169,52 @@ class Redis(object):
         string_keys_to_dict(
             'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
             'TSEXISTS RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
-            bool
+            lambda request, response, args : bool(response)
             ),
         string_keys_to_dict(
             'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
-            int
+            lambda request, response, args : int(response)
             ),
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
-            lambda r: is_int(r) and r or r == OK
+            lambda request, response, args: is_int(response) and response\
+                                             or response == OK
             ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
-            'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME '
+            'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME'
             'SAVE SELECT SET SHUTDOWN SLAVEOF WATCH UNWATCH',
-            lambda r: r == OK
+            lambda request, response, args: response == OK
             ),
-        string_keys_to_dict('BLPOP BRPOP', lambda r: r and tuple(r) or None),
+        string_keys_to_dict(
+            'BLPOP BRPOP',
+            lambda request, response, args: response and tuple(response) or None
+            ),
         string_keys_to_dict('SDIFF SINTER SMEMBERS SUNION',
-            lambda r: set(r)
+            lambda request, response, args: set(response)
             ),
-        string_keys_to_dict('ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
+        string_keys_to_dict(
+            'ZRANGE ZRANGEBYSCORE ZREVRANGE',
+            zset_score_pairs
+            ),
         string_keys_to_dict('TSRANGE TSRANGEBYTIME', ts_pairs),
         {
-            'BGREWRITEAOF': lambda r: \
-                r == 'Background rewriting of AOF file started',
-            'BGSAVE': lambda r: r == 'Background saving started',
-            'HGETALL': lambda r: pairs_to_dict(r),
+            'BGREWRITEAOF': lambda request, response, args: \
+                response == b'Background rewriting of AOF file started',
+            'BGSAVE': lambda request, response, args: \
+                response == b'Background saving started',
+            'HGETALL': pairs_to_dict,
             'INFO': parse_info,
             'LASTSAVE': timestamp_to_datetime,
-            'PING': lambda r: r == b'PONG',
-            'TTL': lambda r: r != -1 and r or None,
+            'PING': lambda request, response, args: response == b'PONG',
+            'TTL': lambda request, response, args: \
+                response != -1 and response or None,
             'ZRANK': int_or_none,
-            'EVAL': script_call_back
+            'EVALSHA': script_call_back,
+            'EVAL': script_call_back,
+            'SCRIPT': script_command,
         }
         )
 
@@ -229,6 +241,14 @@ class Redis(object):
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.signal_on_send = Signal()
         self.signal_on_received = Signal()
+        
+    @property
+    def client(self):
+        return self
+    
+    @property
+    def pipelined(self):
+        return self.client is not self
 
     def _get_db(self):
         return self.connection_pool.db
@@ -244,24 +264,30 @@ later execution. Apart from making a group of operations
 atomic, pipelines are useful for reducing the back-and-forth overhead
 between the client and server.
 """
-        return Pipeline(self.connection_pool,
-                        self.response_callbacks,
-                        self.signal_on_send,
-                        self.signal_on_received)
+        return Pipeline(self)
 
-    #### COMMAND EXECUTION AND PROTOCOL PARSING ####
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
         connection = self.connection_pool.get_connection()
-        return connection.execute_command(self.parse_response, *args, **options)
+        return connection.execute_command(self, *args, **options)
 
-    def parse_response(self, response, command_name, **options):
-        "Parses a response from the Redis server"
+    def _parse_response(self, request, response, command_name, args, options):
         if command_name in self.response_callbacks:
-            return self.response_callbacks[command_name](response, **options)
+            cbk = self.response_callbacks[command_name]
+            return cbk(request, response, args, **options)
         return response
+    
+    def parse_response(self, request):
+        "Parses a response from the Redis server"
+        return self._parse_response(request,
+                                    request.response,
+                                    request.command_name,
+                                    request.args,
+                                    request.options)
 
-    #### SERVER INFORMATION ####
+    ############################################################################
+    ##    SERVER INFORMATION
+    ############################################################################
     def bgrewriteaof(self):
         "Tell the Redis server to rewrite the AOF file from data in memory."
         return self.execute_command('BGREWRITEAOF')
@@ -899,8 +925,10 @@ time ``start`` and time ``end`` sorted in ascending order.
             pieces.append('novalues')
         return self.execute_command(*pieces, **{'withtimes': withtimes,
                                                 'novalues': novalues})
-    
-    #### HASH COMMANDS ####
+        
+    ############################################################################
+    ##    HASH COMMANDS
+    ############################################################################
     def hdel(self, key, field, *fields):
         '''Removes the specified ``fields`` from the hash stored at ``key``'''
         return self.execute_command('HDEL', key, field, *fields)
@@ -959,7 +987,9 @@ time ``start`` and time ``end`` sorted in ascending order.
         "Return the list of values within hash ``name``"
         return self.execute_command('HVALS', name)
 
-    # Scripting
+    ############################################################################
+    ##    Scripting
+    ############################################################################
     def eval(self, body, **kwargs):
         num_keys = len(kwargs)
         if num_keys:
@@ -978,11 +1008,13 @@ time ``start`` and time ``end`` sorted in ascending order.
         script = get_script(name)
         if not script:
             raise ValueError('No such script {0}'.format(name))
-        options['script_name'] = name
-        options['script_args'] = args
-        options['client'] = self
-        return self.execute_command('EVAL',
-                                    script.script, len(args), *args, **options)
+        return script.evalsha(self, *args, **options)
+        
+    def script_flush(self):
+        return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
+    
+    def script_load(self, script):
+        return self.execute_command('SCRIPT', 'LOAD', script, command = 'LOAD')
     
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
@@ -1011,14 +1043,34 @@ instance of an exception as a potential value. In general, these will be
 ResponseError exceptions, such as those raised when issuing a command
 on a key of a different datatype.
 """
-    def __init__(self, connection_pool,  response_callbacks,
-                 signal_on_send, signal_on_received):
-        self.connection_pool = connection_pool
-        self.response_callbacks = response_callbacks
-        self.signal_on_send = signal_on_send
-        self.signal_on_received = signal_on_received
+    def __init__(self, client):
+        self.__client = client
         self.reset()
-
+        
+    @property
+    def client(self):
+        return self.__client
+    
+    @property
+    def connection_pool(self):
+        return self.client.connection_pool
+    
+    @property
+    def response_callbacks(self):
+        return self.client.response_callbacks
+    
+    @property
+    def signal_on_send(self):
+        return self.client.signal_on_send
+    
+    @property
+    def signal_on_received(self):
+        return self.client.signal_on_received
+    
+    @property
+    def encoding(self):
+        return self.client.encoding
+    
     def reset(self):
         self.command_stack = []
         self.execute_command('MULTI')
@@ -1056,21 +1108,20 @@ Several callbacks can be added.
         self.command_stack[-1][2].append(callback)
         return self
                 
-    def parse_response(self, response, commands, **kwargs):
-        return list(self._parse_response(response[-1], commands[1:-1]))
+    def parse_response(self, request):
+        response = request.response
+        commands = request.args
+        return list(self._parse_list_response(request, response[-1], commands[1:-1]))
         
-    def _parse_response(self, response, commands):
-        self.signal_on_received.send(self,
-                                     commands = commands,
-                                     response = response)
+    def _parse_list_response(self, request, response, commands):
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
                 "pipeline execution")
-        parse_response = super(Pipeline,self).parse_response
+        parse_response = self._parse_response
         for r, cmd in zip(response, commands):
             if not isinstance(r, Exception):
                 args, options, callbacks = cmd
-                r = parse_response(r, args[0], **options)
+                r = parse_response(request, r, args[0], args[1:], options)
                 for callback in callbacks:
                     r = callback(r)
             yield r
@@ -1081,5 +1132,5 @@ Several callbacks can be added.
         commands = self.command_stack
         self.reset()
         conn = self.connection_pool.get_connection()
-        return conn.execute_pipeline(commands, self.parse_response)
+        return conn.execute_pipeline(self, commands)
 

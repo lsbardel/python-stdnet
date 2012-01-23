@@ -19,6 +19,9 @@ class ConnectionError(RedisError):
     
 class ResponseError(RedisError):
     pass
+
+class NoScriptError(RedisError):
+    pass
     
 class InvalidResponse(ResponseError):
     pass

@@ -1,10 +1,18 @@
 import os
+from hashlib import sha1
+from functools import partial
 
-from .py2py3 import zip
+from stdnet.utils import zip
+from .connection import RedisRequest
+from .exceptions import NoScriptError
 
 
-__all__ = ['RedisScript','ScriptBuilder','pairs_to_dict',
-           'read_lua_file','nil']
+__all__ = ['RedisScript',
+           'ScriptBuilder',
+           'pairs_to_dict',
+           'get_script',
+           'read_lua_file',
+           'nil']
 
 
 class nil(object):
@@ -47,7 +55,8 @@ class RedisScriptMeta(type):
             script = instance.script
             if isinstance(script,(list,tuple)):
                 script = '\n'.join(script)
-                instance.script = script 
+                instance.script = script
+            instance.sha1 = sha1(instance.script.encode('utf-8')).hexdigest()
             _scripts[new_class.__name__] = instance
         return new_class
     
@@ -55,6 +64,8 @@ RedisScriptBase = RedisScriptMeta('RedisScriptBase',(object,),{'abstract':True})
 
 
 class RedisScript(RedisScriptBase):
+    ''':class:`RedisScript` is a class which helps the sending and receiving
+lua scripts to redis via the ``eval`` or ``evalsha`` command.'''
     abstract = True
     script = None
         
@@ -62,17 +73,52 @@ class RedisScript(RedisScriptBase):
         return self.__class__.__name__
     __repr__ = __str__
     
-    def callback(self, response, args, **options):
+    def call(self, client, command, script, *args, **options):
+        options['script_name'] = str(self)
+        return client.execute_command(command, script, len(args),
+                                      *args, **options)
+        
+    def evalsha(self, client, *args, **options):
+        return self.call(client, 'EVALSHA', self.sha1, *args, **options)
+    
+    def eval(self, client, *args, **options):
+        return self.call(client, 'EVAL', self.script, *args, **options)
+        
+    def start_callback(self, request, response, args, **options):
+        if isinstance(response,NoScriptError):
+            client = request.client
+            if not client.pipelined:
+                pipe = client.pipeline()
+                pipe.script_load(self.script)
+                args = args[2:]
+                self.eval(pipe, self.script, *args, **options)
+                result = pipe.execute()
+                if isinstance(result, RedisRequest):
+                    return result.add_callback(
+                                partial(self._start_callback, args, options))
+                else:
+                    return self._start_callback(request, args, options, result)
+            else:
+                return response
+        else:
+            return self.callback(request, response, args, **options)
+    
+    def _start_callback(self, request, args, options, response):
+        #if response[0] == self.sha1:
+        return self.callback(request, response[1], args, **options)
+        
+    def callback(self, request, response, args, **options):
         return response
     
     
-def script_call_back(response, script_name = None, script_args = None,
-                     **options):
+def script_call_back(request, response, args, script_name = None, **options):
+    if response == b'NOSCRIPT No matching script. Please use EVAL.':
+        response = NoScriptError()
     s = _scripts.get(script_name)
     if not s:
         return response
     else:
-        return s.callback(response, script_args, **options)
+        return s.start_callback(request, response, args, **options)
     
 
 class ScriptCommand(object):

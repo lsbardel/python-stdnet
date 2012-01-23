@@ -1,8 +1,17 @@
+from hashlib import sha1
+
+from stdnet.lib import RedisScript, read_lua_file, get_script
+
 from .base import TestCase
 
 
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
+
+
+class test_script(RedisScript):
+    script = (read_lua_file('utils/redis.lua'),
+              '''return {1,2,3,4,5,6}''')
 
 
 class ScriptingCommandsTestCase(TestCase):
@@ -39,4 +48,17 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(c.get('xxxx'),b'moon')
         N = c.delpattern('x*')
         self.assertEqual(N,2)
+    
+    def testScript(self):
+        script = get_script('test_script')
+        self.assertTrue(script.script)
+        sha = sha1(script.script.encode('utf-8')).hexdigest()
+        self.assertEqual(script.sha1,sha)
         
+    def testEvalSha(self):
+        self.assertEqual(self.client.script_flush(),True)
+        r = self.client.script_call('test_script')
+        self.assertEqual(r,[1,2,3,4,5,6])
+        r = self.client.script_call('test_script')
+        self.assertEqual(r,[1,2,3,4,5,6])
+    

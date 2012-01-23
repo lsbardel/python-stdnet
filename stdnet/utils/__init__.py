@@ -3,7 +3,7 @@ import sys
 from itertools import chain
 from uuid import uuid4
 
-from stdnet.lib.py2py3 import *
+from .py2py3 import *
 
 if ispy3k:
     import pickle

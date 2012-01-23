@@ -28,13 +28,12 @@ from .base import Reader, fallback
 class RedisRequest(object):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
-    def __init__(self, connection, command_name, args,
-                 parse_response = None, release_connection = True,
-                 **options):
+    def __init__(self, client, connection, command_name, args,
+                 release_connection = True, **options):
+        self.client = client
         self.connection = connection
         self.command_name = command_name
         self.args = args
-        self.parse_response = parse_response
         self.release_connection = release_connection
         self.options = options
         self._response = None
@@ -46,6 +45,9 @@ handling of a single command from start to the response from the server.'''
             command = connection.pack_pipeline(args)
         else:
             command = connection.pack_command(command_name, *args)
+        self.client.signal_on_send.send(self.client.__class__,
+                                        command = command,
+                                        request = self)
         self.send(command)
 
     @property
@@ -73,7 +75,7 @@ handling of a single command from start to the response from the server.'''
         
     def _send(self, command):
         "Send the command to the socket"
-        c = self.connection.connect()
+        c = self.connection.connect(self)
         try:
             c.sock.sendall(command)
         except socket.error as e:
@@ -96,16 +98,13 @@ handling of a single command from start to the response from the server.'''
             self._send(command)
         
     def close(self):
+        self.client.signal_on_received.send(self.client.__class__,
+                                            request = self)
         c = self.connection
         try:
             if isinstance(self.response,ResponseError):
                 raise self.response
-            if self.parse_response:
-                self._response = self.parse_response(self.response,
-                                            self.command_name or self.args,
-                                            **self.options)
-            else:
-                self._response = self.response
+            self._response = self.client.parse_response(self)
         except:
             c.disconnect()
             raise
@@ -216,7 +215,7 @@ This class should not be directly initialized. Insteady use the
         '''Connection socket'''
         return self.__sock
             
-    def connect(self):
+    def connect(self, request):
         "Connects to the Redis server if not already connected"
         if self.__sock:
             return self
@@ -229,14 +228,14 @@ This class should not be directly initialized. Insteady use the
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__sock = sock
         try:
-            return self._connect()
+            return self._connect(request)
         except socket.error as e:
             raise ConnectionError(self._error_message(e))
 
-    def _connect(self):
+    def _connect(self, request):
         self.sock.settimeout(self.socket_timeout)
         self.sock.connect(self.address)
-        return self.on_connect()
+        return self.on_connect(request)
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -248,19 +247,21 @@ This class should not be directly initialized. Insteady use the
             return "Error %s connecting %s. %s." % \
                 (exception.args[0], self.address, exception.args[1])
 
-    def on_connect(self):
+    def on_connect(self, request):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
-        OK = b'OK'
+        client = request.client.client
         if self.password:
-            r = self.request('AUTH', self.password, release_connection = False)
-            if r.read_response() != OK:
+            r = self.request(client, 'AUTH', self.password,
+                             release_connection = False)
+            if not r.read_response():
                 raise ConnectionError('Invalid Password')
 
         # if a database is specified, switch to it
         if self.db:
-            r = self.request('SELECT', self.db, release_connection = False)
-            if r.read_response() != OK:
+            r = self.request(client, 'SELECT', self.db,
+                             release_connection = False)
+            if not r.read_response():
                 raise ConnectionError('Invalid Database')
             
         return self
@@ -314,22 +315,19 @@ command byte to be send to redis.'''
         pack = self.pack_command
         return b''.join(starmap(pack, (args[0] for args in commands)))
     
-    def request(self, command_name, *args, **options):
-        return self.request_class(self, command_name, args, **options)
+    def request(self, client, command_name, *args, **options):
+        return self.request_class(client, self, command_name, args, **options)
         
-    def execute_command(self, parse_response, command_name, *args, **options):
-        options['parse_response'] = parse_response
-        r = self.request(command_name, *args, **options)
-        return r.finish()
+    def execute_command(self, client, command_name, *args, **options):
+        return self.request(client, command_name, *args, **options).finish()
     
-    def execute_pipeline(self, commands, parse_response):
+    def execute_pipeline(self, client, commands):
         '''Execute a :class:`Pipeline` in the server.
 
 :parameter commands: the list of commands to execute in the server.
 :parameter parse_response: callback for parsing the response from server.
 :rtype: ?'''
-        r = self.request_class(self, None, commands,
-                               parse_response = parse_response)
+        r = self.request_class(client, self, None, commands)
         return r.finish()
 
 

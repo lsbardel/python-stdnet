@@ -57,9 +57,8 @@ limiting.'''
             for id,fdata in response:
                 yield id,None,dict(pairs_to_dict(fdata))
     
-    def callback(self, response, args, query = None, get = None,
-                 fields = None, fields_attributes = None,
-                 client = None, **kwargs):
+    def callback(self, request, response, args, query = None, get = None,
+                 fields = None, fields_attributes = None, **kwargs):
         meta = query.meta
         data, related = response
         if get:
@@ -73,7 +72,7 @@ limiting.'''
             data = self.build(data, fields, fields_attributes)
             related_fields = {}
             if related:
-                encoding = client.encoding
+                encoding = request.client.encoding
                 for fname,rdata,fields in related:
                     fname = native_str(fname, encoding)
                     fields = tuple(native_str(f, encoding) for f in fields)

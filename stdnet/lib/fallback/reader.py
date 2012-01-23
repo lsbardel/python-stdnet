@@ -1,5 +1,4 @@
-from stdnet.lib.py2py3 import BytesIO
-
+from stdnet.utils import BytesIO
 from stdnet.lib.exceptions import *
 
 

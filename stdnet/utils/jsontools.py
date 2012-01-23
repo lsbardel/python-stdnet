@@ -7,7 +7,8 @@ try:
 except ImportError:
     ndarray = None
     
-from stdnet.lib.py2py3 import iteritems
+from stdnet.utils import iteritems
+
 
 JSPLITTER = '__'
 

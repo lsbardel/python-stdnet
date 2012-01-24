@@ -73,18 +73,17 @@ from :class:`stdnet.Structure` base class.
 Creating Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:attribute:: struct
+Creating the five structures available in stdnet is accomplished by using struct
+object in the following way::
+    
+    from stdnet import orm
 
-    Creating the five structures available in stdnet is accomplished by using struct
-    object in the following way::
-    
-        from stdnet import struct
-    
-        l = struct.list()
-        s = struct.set()
-        o = struct.zset()
-        h = struct.hash()
-        t = struct.ts()
+    session = orm.Session(...)
+    l = session.add(orm.List())
+    s = session.add(orm.Set())
+    o = session.add(orm.Zset())
+    h = session.add(orm.HashTable())
+    t = session.add(orm.TS())
         
 Structure Base Class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

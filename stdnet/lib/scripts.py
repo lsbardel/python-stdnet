@@ -148,7 +148,7 @@ def load_missing_scripts(pipe, commands, results):
 :class:`NoScriptError`, it loads the scripts and perfrom a new evaluation.
 Commands which have *option* ``script_dependency`` set to the name
 of a missing script, are also re-executed.'''
-    toload = True
+    toload = False
     for r in results:
         if isinstance(r,NoScriptError):
             toload = True
@@ -192,7 +192,10 @@ of a missing script, are also re-executed.'''
 def _load_missing_scripts(results, positions, res):
     for i,r in zip(positions,res):
         if i == -1:
-            continue
+            if isinstance(r,Exception):
+                raise r
+            else:
+                continue
         results[i] = r
     return results
     
@@ -246,9 +249,11 @@ class ScriptBuilder(object):
             return self.redis.eval(self.script)
         
         
-countpattern = '''\
+class countpattern(RedisScript):
+    script = '''\
 return table.getn(redis.call('keys',KEYS[1]))
 '''
+    
 # Delete all keys from a pattern and return the total number of keys deleted
 # This fails when there are too many keys
 _delpattern = '''\

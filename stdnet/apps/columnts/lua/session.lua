@@ -23,48 +23,60 @@ end
 
 local tsid = KEYS[1]	--	timeseries id
 local N = table.getn(KEYS)
-local fields = redis.call('smembers', tsid .. ':fields')
+local tslen = redis.call('tslen', tsid) + 0
 
-nildata = '\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+-- 9 bytes string for nil data
+nildata = string.char(0,0,0,0,0,0,0,0,0)
 
--- First we process timestamps to remove
--- removing timestamps is inefficient!!! Use with care.
-local index = 1
+function tsfields()
+	return redis.call('keys', tsid .. ':field:*')
+end
+ 
+-- First we process timestamps to remove.
+-- Removing timestamps is inefficient!!! Use with care.
+local fields = tsfields()
+local index = 2
 local num_remove = KEYS[index] + index
 while index < num_remove do
-	index += 1
+	index = index + 1
 	timestamp = KEYS[index]
-	rank = redis.call('tsrank', tsid, timestamp)
-	if rank ~= false then
-		rank = rank + 0
-		for i,field in  pairs(fields) do
-			fieldid = tsid .. ':field:' .. field
-			data = redis.call('getrange', fieldid, (rank+1)*9, -1)
-			if rank > 0:
-				data = redis.call('getrange', fieldid, (rank-1)*9, rank*9) + data
+	if tslen > 0 then
+		rank = redis.call('tsrank', tsid, timestamp)
+		if rank ~= false then
+			rank = rank + 0
+			for i,field in pairs(fields) do
+				fieldid = tsid .. ':field:' .. field
+				data = redis.call('getrange', fieldid, (rank+1)*9, -1)
+				if rank > 0 then
+					data = redis.call('getrange', fieldid, (rank-1)*9, rank*9) + data
+				end
+				redis.call('set',fieldid,data)
 			end
-			redis.call('set',fieldid,data)
 		end
 	end
 end
-			
+
 -- Second remove fields
+index  = index + 1
 local num_strings = KEYS[index] + index
 while index < num_strings do
 	field = KEYS[index+1]
 	index = index + 1
-	redis.call('srem',field)
 	redis.call('del',  tsid .. ':field:' .. field)
 end
 
--- Last we process data to add
+-- Last we process data to add by looping over data fields
+local fields = tsfields()
 while index < N do
 	field = KEYS[index+1]
 	fieldid = tsid .. ':field:' .. field
 	index = index + 2
 	len_data = index + 2*KEYS[index]
+	if len_data > 0 and not redis.call('exists',fieldid) then
+		table.insert(fields,field)
+	end
 	while index < len_data do
-		timestamp = KEYS[index+1]
+		timestamp = KEYS[index+1] + 0
 		value = KEYS[index+2]
 		index = index + 2
 		-- Storing a string if value is bigger than 9 bits
@@ -73,22 +85,27 @@ while index < N do
 			value = string.sub(10,-1)
 			redis.call('set', tsid .. ':keys:' .. key, value)
 			value = string.sub(1,9)
-		rank = redis.call('tsrank', tsid, timestamp)
+		end
+		local rank = false
+		if tslen > 0 then
+			rank = redis.call('tsrank', tsid, timestamp)
+		end
 		-- not there, we need to insert/append a new value (hopefully append!)
-		if rank == false do
+		if not rank then
 			redis.call('tsadd', tsid, timestamp, 1)
-			rank = redis.call('tsrank', tsid)
-			len = redis.call('tslen', tsid) + 0
-			for i,fname in  pairs(fields) do
+			rank = redis.call('tsrank', tsid, timestamp)
+			tslen = redis.call('tslen', tsid) + 0
+			for i,fname in pairs(fields) do
 				fid = tsid .. ':field:' .. fname
 				data = nildata
 				-- not at the end of the string! inefficient insertion.
-				if rank < len - 1 then
-					data = nildata ... redis.call('getrange', fid, (rank+1)*9, -1)
+				if rank < tslen - 1 then
+					data = nildata .. redis.call('getrange', fid, (rank+1)*9, -1)
 				end	
 				redis.call('setrange', fid, 9*rank, data)
 			end
 		end
+		-- set the field value
 		redis.call('setrange', fieldid, 9*rank, value)
 	end
 end

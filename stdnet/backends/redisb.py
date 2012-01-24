@@ -373,6 +373,9 @@ def iteretor_pipelined(f):
         
     return _
 
+################################################################################
+##    STRUCTURES
+################################################################################
 
 class RedisStructure(BackendStructure):
     
@@ -449,6 +452,18 @@ class Zset(RedisStructure):
 
 class List(RedisStructure):
     
+    def pop_front(self):
+        return self.client.lpop(self.id)
+    
+    def pop_back(self):
+        return self.client.rpop(self.id)
+
+    def block_pop_front(self, timeout):
+        return self.client.blpop(self.id, timeout)
+    
+    def block_pop_front(self, timeout):
+        return self.client.brpop(self.id, timeout)
+    
     def flush(self):
         cache = self.instance.cache
         if cache.front:
@@ -460,8 +475,7 @@ class List(RedisStructure):
         return self.client.llen(self.id)
     
     def _iter(self):
-        for v in self.client.lrange(self.id, self.start, self.stop):
-            yield v
+        return iter(self.client.lrange(self.id, 0, -1))
 
 
 class Hash(RedisStructure):
@@ -734,11 +748,10 @@ class BackendDataServer(stdnet.BackendDataServer):
     def structure(self, instance, client = None):
         struct = struct_map.get(instance._meta.name)
         client = client if client is not None else self.client
-        return struct(instance, client)
+        return struct(instance, self, client)
         
     def flush_structure(self, sm, pipe = None):
         client = pipe or self.client
-        struct = struct_map.get(sm.meta.name)
         for instance in sm:
-            struct(instance,client).commit()
+            instance.commit(client)
         

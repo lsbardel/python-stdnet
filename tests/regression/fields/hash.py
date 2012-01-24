@@ -87,8 +87,6 @@ class TestMultiField(test.TestCase):
     def test_load_related(self):
         '''Use load_selected to load stastructure data'''
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.query().load_related():
-            data = getattr(m,cache,None)
-            self.assertTrue(data)
-            self.assertTrue(data.cache)
+        for m in self.model.objects.query().load_related('data'):
+            self.assertTrue(m.data.cache.cache)
         

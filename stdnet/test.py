@@ -49,6 +49,9 @@ will be unregistered after the :meth:`tearDown` method.'''
         for model in self.models:
             orm.register(model, self.backend)
     
+    def clear_all(self):
+        return self.backend.flush(pattern = self.prefix + '*')
+    
     def _pre_setup(self):
         if not self.models and self.model:
             self.models = (self.model,)
@@ -56,12 +59,11 @@ will be unregistered after the :meth:`tearDown` method.'''
         self.backend = getdb(prefix = self.prefix)
         if self.backend.name == 'redis':
             self.backend.client.script_flush()
-        return self.backend.flush(pattern = 'stdnet-test-*')
+        return self.clear_all()
         
     def _post_teardown(self):
         session = orm.Session(self.backend)
-        for model in self.models:
-            session.flush(model)
+        self.clear_all()
         orm.unregister()
     
     def __call__(self, result=None):

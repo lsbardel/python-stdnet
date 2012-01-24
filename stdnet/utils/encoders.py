@@ -46,7 +46,9 @@ class Default(Encoder):
         def loads(self, x, logger = None):
             if not isinstance(x,unicode):
                 x = str(x)
-            return x.decode(self.charset,self.encoding_errors)
+                return x.decode(self.charset,self.encoding_errors)
+            else:
+                return x
     
 
 class NumericDefault(Default):
@@ -133,12 +135,13 @@ remote data structures.'''
         self.object_hook = object_hook or DefaultJSONHook
         
     def dumps(self, x, logger = None):
-        s = json.dumps(x, cls=self.json_encoder)
-        return s.encode(self.charset,self.encoding_errors)
+        return json.dumps(x, cls=self.json_encoder)
+        #return s.encode(self.charset, self.encoding_errors)
     
     def loads(self, x, logger = None):
-        s = x.decode(self.charset,self.encoding_errors)
-        return json.loads(s, object_hook=self.object_hook)
+        if isinstance(x,bytes):
+            x = x.decode(self.charset, self.encoding_errors)
+        return json.loads(x, object_hook = self.object_hook)
 
 
 class DateTimeConverter(Encoder):

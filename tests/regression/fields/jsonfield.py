@@ -84,17 +84,17 @@ class TestJsonField(test.TestCase):
         
     def testEmpty(self):
         a = Statistics(dt = date.today())
-        self.assertEqual(a.data,{})
+        self.assertEqual(a.data,None)
         a.save()
-        self.assertEqual(a.data,{})
+        self.assertEqual(a.data,None)
         a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data,{})
+        self.assertEqual(a.data,None)
         
     def testValueError(self):
         a = Statistics(dt = date.today(),
                        data = {'mean': self})
         self.assertRaises(stdnet.FieldValueError,a.save)
-        self.assertTrue(a._dbdata['errors'])
+        self.assertTrue('data' in a._dbdata['errors'])
         
 
 class TestJsonFieldAsData(test.TestCase):
@@ -218,7 +218,7 @@ The `as_string` atttribute is set to ``False``.'''
         obj = self.model.objects.get(id = obj.id)
         #self.assertEqualDict(data,obj.data)
         
-    def testEmpty(self):
+    def testEmptyDict(self):
         r = self.model(name = 'bla', data = {'bla':'ciao'}).save()
         self.assertEqual(r.data, {'bla':'ciao'})
         r.data = None

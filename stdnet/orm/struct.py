@@ -176,10 +176,12 @@ can also be used as stand alone objects. For example::
         self.timeout = timeout
         self.setup(**kwargs)
         if self.instance is not None:
-            self.session = instance.session
+            if not self.id:
+                raise ValueError('Structure has instance but not id')
+            self.session = instance.session        
         
     def makeid(self):
-        return '{0}.{1}'.format(self._meta,str(uuid4())[:8])
+        return str(uuid4())[:8]
         
     def setup(self, **kwargs):
         pass
@@ -236,6 +238,14 @@ Do not override this function. Use :meth:`load_data` method instead.'''
     def load_data(self, data):
         loads = self.value_pickler.loads
         return (loads(v) for v in data)
+    
+    ############################################################################
+    ## INTERNALS
+    def backend_structure(self, client = None):
+        return self.session.backend.structure(self,client)
+    
+    def commit(self, client = None):
+        return self.backend_structure(client).commit()
 
 
 class PairMixin(object):
@@ -394,23 +404,21 @@ class List(Structure):
     '''A linked-list :class:`stdnet.Structure`.'''
     cache_class = listcache
         
-    def pop_back(self, transaction = None):
-        return self._unpicklefrom(self._pop_back, transaction, None,
-                                  self.pickler.loads)
+    def pop_back(self):
+        value = self.session.structure(self).pop_back()
+        return self.value_pickler.loads(value)
     
-    def pop_front(self, transaction = None):
-        return self._unpicklefrom(self._pop_front, transaction, None,
-                                  self.pickler.loads)
+    def pop_front(self):
+        value = self.session.structure(self).pop_front()
+        return self.value_pickler.loads(value)
     
-    def block_pop_back(self, timeout = None, transaction = None):
-        return self._unpicklefrom(self._block_pop_back, transaction, None,
-                                  lambda x : self.pickler.loads(x[1]),
-                                  timeout)
+    def block_pop_back(self, timeout = None):
+        value = self.session.structure(self).block_pop_back(timeout)
+        return self.value_pickler.loads(value)
     
     def block_pop_front(self, timeout = None, transaction = None):
-        return self._unpicklefrom(self._block_pop_front, transaction, None,
-                                  lambda x : self.pickler.loads(x[1]),
-                                  timeout)
+        value = self.session.structure(self).block_pop_front(timeout)
+        return self.value_pickler.loads(value)
     
     def push_back(self, value):
         '''Appends a copy of *value* to the end of the list.'''

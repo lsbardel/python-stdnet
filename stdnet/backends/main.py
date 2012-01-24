@@ -3,7 +3,6 @@ from inspect import isclass
 from stdnet.conf import settings
 from stdnet.utils import urlparse, encoders, itervalues, urlencode
 from stdnet.utils.importer import import_module
-from stdnet.lib.exceptions import ConnectionError 
 from stdnet.exceptions import *
 
 from .base import BackendDataServer

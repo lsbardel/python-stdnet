@@ -45,14 +45,17 @@ class ServerOperation(object):
     
     
 class BackendStructure(object):
-    __slots__ = ('instance', 'client', 'start', 'stop')
-    def __init__(self, instance, client):
+    __slots__ = ('instance', 'client', '_id')
+    def __init__(self, instance, backend, client):
         self.instance = instance
         self.client = client
-        self.start = 0
-        self.stop = -1
         if not instance.id:
             instance.id = instance.makeid()
+        if instance.instance is not None:
+            id = instance.id
+        else:
+            id = backend.basekey(self.instance._meta,self.instance.id)
+        self._id = id
             
     def commit(self):
         self.flush()
@@ -60,7 +63,7 @@ class BackendStructure(object):
     
     @property
     def id(self):
-        return self.instance.id
+        return self._id
     
     def flush(self):
         raise NotImplementedError()
@@ -232,7 +235,7 @@ this function for customizing their handling of connection parameters.'''
     def execute_session(self, session):
         raise NotImplementedError()
     
-    def structure(self, struct, session):
+    def structure(self, struct, clinet = None):
         raise NotImplementedError()
     
     def make_objects(self, meta, data, related_fields = None):
@@ -339,6 +342,9 @@ If the key does not exist, raise a ValueError exception."""
             self.delete(key)
 
     # PURE VIRTUAL METHODS
+    
+    def basekey(self, meta, *args):
+        raise NotImplementedError()
     
     def clear(self):
         """Remove *all* values from the database at once."""

@@ -7,7 +7,7 @@ from stdnet.utils import zip, to_bytestring, JSPLITTER
 from .signals import *
 
 
-__all__ = ['Query','QueryElement']
+__all__ = ['Query','QueryElement','intersect','union','difference']
 
 
 def iterable(value):

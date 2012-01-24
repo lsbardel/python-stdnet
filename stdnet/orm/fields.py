@@ -1,4 +1,3 @@
-import json
 import logging
 from copy import copy
 from hashlib import sha1
@@ -7,7 +6,7 @@ import time
 from datetime import date, datetime
 
 from stdnet.exceptions import *
-from stdnet.utils import pickle, json, DefaultJSONEncoder,\
+from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, to_string, is_string,\
                          to_bytestring, is_bytes_or_string, iteritems,\
@@ -646,6 +645,8 @@ which can be rather useful feature.
     
     def get_encoder(self, params):
         self.as_string = params.pop('as_string',True)
+        if not self.as_string:
+            self.default = self.default if isinstance(self.default,dict) else {}
         return encoders.Json(
                 charset = self.charset,
                 json_encoder = params.pop('encoder_class',DefaultJSONEncoder),
@@ -662,31 +663,37 @@ which can be rather useful feature.
     def serialize(self, value):
         if self.as_string:
             # dump as a string
-            return self.encoder.dumps(value)
+            return self.dumps(value)
         else:
             # unwind as a dictionary
             value = dict(dict_flat_generator(value,
                                              attname = self.attname,
-                                             dumps = self.encoder.dumps,
+                                             dumps = self.dumps,
                                              error = FieldValueError))
             # If the dictionary is empty we modify so that
             # an update is possible.
             if not value:
-                value = {self.attname: self.encoder.dumps(None)}
+                value = {self.attname: self.dumps(None)}
             elif value.get(self.attname,None) is None:
                 # TODO Better implementation of this is a ack!
                 # set the root value to an empty string to distinguish
                 # from None.
-                value[self.attname] = self.encoder.dumps('')
+                value[self.attname] = self.dumps('')
             return value
-                
+    
+    def dumps(self, value):
+        try:
+            return self.encoder.dumps(value)
+        except TypeError as e:
+            raise FieldValueError(str(e))
+        
     def value_from_data(self, instance, data):
         if self.as_string:
             return data.pop(self.attname,None)
         else:
             return flat_to_nested(data, instance = instance,
                                   attname = self.attname,
-                                  loads = self.loads)
+                                  loads = self.encoder.loads)
     
     def get_sorting(self, name, errorClass):
         pass

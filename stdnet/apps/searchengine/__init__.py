@@ -160,8 +160,8 @@ driver.
         
     def _index_item(self, session, item, words):    
         link = self._link_item_and_word
-        for word,c in iteritems(words):
-            session.add(link(item, word, c, session))
+        for word,count in iteritems(words):
+            session.add(link(item, word, count))
     
     def remove_item(self, session, item):
         '''\
@@ -203,10 +203,12 @@ searchable world in *text*'''
         elif not words:
             return None
         
-        return WordItem.objects.filter(model_type = q.model,
-                                       word__contains = words,
-                                       object_id__in = q)\
-                               .get_field('object_id')        
+        query = WordItem.objects.filter(model_type = q.model)\
+                                .get_field('object_id')
+        qs =  [q]
+        for word in words:
+            qs.append(query.filter(word = word))
+        return orm.intersect(qs)
         
     def add_tag(self, item, text):
         '''Add a tag to an object.

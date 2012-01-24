@@ -8,7 +8,7 @@ include docs/make.bat
 include docs/Makefile
 include docs/source/conf.py
 include stdnet/utils/dispatch/license.txt
-recursive-include stdnet/lib/lua *.lua
+recursive-include stdnet *.lua
 recursive-include lib *.py
 recursive-include lib/hiredis *
 include lib/src/reader.c

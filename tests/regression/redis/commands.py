@@ -626,6 +626,17 @@ class ServerCommandsTestCase(TestCase):
         self.assertEquals(self.client.zscore('a', 'a2'), 3.0)
         self.assertEquals(self.client.zscore('a', 'a3'), 8.0)
 
+    def testtimevalue(self):
+        self.client.zadd('goog', 100, 625.03)
+        self.client.zadd('goog', 101, 626)
+        self.client.zadd('goog', 102, 627.43)
+        self.client.zadd('goog', 103, 626)
+        self.client.zadd('goog', 104, 626.3)
+        self.assertEqual(self.client.zcard('goog'),4)
+        r = list(self.client.zrange('goog', 0, -1, withscores = True))
+        self.assertEqual(len(r),4)
+        self.assertEqual(r[2][1],103)
+        
     def test_zinterstore(self):
         self.make_zset('a', {'a1': 1, 'a2': 1, 'a3': 1})
         self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2})
@@ -910,7 +921,6 @@ class ServerCommandsTestCase(TestCase):
         # finally a key that's not an int
         self.client.hset('a', 'a3', 'foo')
         self.assertRaises(ResponseError, self.client.hincrby, 'a', 'a3')
-
 
     def test_hkeys(self):
         # key is not a hash

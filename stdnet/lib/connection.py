@@ -17,6 +17,7 @@ import socket
 import io
 from itertools import chain, starmap
 
+from stdnet import BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
                          to_string
@@ -25,7 +26,7 @@ from .exceptions import *
 from .base import Reader, fallback
 
 
-class RedisRequest(object):
+class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
     def __init__(self, client, connection, command_name, args,

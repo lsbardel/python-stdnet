@@ -14,6 +14,7 @@ class TestStdnetBranchCommand(TestCase):
             [(b'a2', 1)])
         
     def test_tsadd(self):
+        self.assertEqual(self.client.tslen('a'),0)
         self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')
         ts = list(self.client.tsrange('a', 0, -1, withtimes = True))
         self.assertEqual(ts, [(1, b'b'),(3, b'a'),(7, b'a')])
@@ -26,6 +27,8 @@ class TestStdnetBranchCommand(TestCase):
         self.assertEqual(self.client.tsrank('a',8),None)
         self.assertEqual(self.client.tsrank('a',-1),None)
         self.assertEqual(self.client.tsrank('a',5),None)
+        self.assertEqual(self.client.tsrank('b',5),None)
+        self.assertEqual(self.client.zrank('b',5),None)
         
     def test_tsrange_novalues(self):
         self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')

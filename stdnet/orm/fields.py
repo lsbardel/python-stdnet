@@ -642,45 +642,44 @@ which can be rather useful feature.
 '''
     type = 'json object'
     internal_type = 'serialized'
-    def __init__(self, *args, **kwargs):
-        kwargs['default'] = kwargs.get('default',{})
-        self.encoder_class = kwargs.pop('encoder_class',DefaultJSONEncoder)
-        self.decoder_hook  = kwargs.pop('decoder_hook',DefaultJSONHook)
-        self.as_string = kwargs.pop('as_string',True)
-        super(JSONField,self).__init__(*args, **kwargs)
+    default = None
+    
+    def get_encoder(self, params):
+        self.as_string = params.pop('as_string',True)
+        return encoders.Json(
+                charset = self.charset,
+                json_encoder = params.pop('encoder_class',DefaultJSONEncoder),
+                object_hook = params.pop('decoder_hook',DefaultJSONHook))
         
     def to_python(self, value):
-        if value is not None and not isinstance(value,dict):
-            if not value:
-                value = {}
-            else:
-                value = self.loads(value)
-        return value
+        if value is None:
+            return self.get_default()
+        try:
+            return self.encoder.loads(value)
+        except TypeError:
+            return value        
                     
     def serialize(self, value):
-        if value is not None:
-            if is_bytes_or_string(value):
-                value = self.to_python(value)
-            if self.as_string:
-                # dump as a string
-                value = self.dumps(value)
-            else:
-                # unwind as a dictionary
-                value = dict(dict_flat_generator(value, attname = self.attname,
-                                                 dumps = self.dumps,
-                                                 error = FieldValueError))
-                # If the dictionary is empty we modify so that
-                # an update is possible.
-                if not value:
-                    value = {self.attname: self.dumps(None)}
-                elif value.get(self.attname,None) is None:
-                    # TODO Better implementation of this is a ack!
-                    # set the root value to an empty string to distinguish
-                    # from None.
-                    value[self.attname] = self.dumps('')
-                    
-        return value
-    
+        if self.as_string:
+            # dump as a string
+            return self.encoder.dumps(value)
+        else:
+            # unwind as a dictionary
+            value = dict(dict_flat_generator(value,
+                                             attname = self.attname,
+                                             dumps = self.encoder.dumps,
+                                             error = FieldValueError))
+            # If the dictionary is empty we modify so that
+            # an update is possible.
+            if not value:
+                value = {self.attname: self.encoder.dumps(None)}
+            elif value.get(self.attname,None) is None:
+                # TODO Better implementation of this is a ack!
+                # set the root value to an empty string to distinguish
+                # from None.
+                value[self.attname] = self.encoder.dumps('')
+            return value
+                
     def value_from_data(self, instance, data):
         if self.as_string:
             return data.pop(self.attname,None)
@@ -688,21 +687,6 @@ which can be rather useful feature.
             return flat_to_nested(data, instance = instance,
                                   attname = self.attname,
                                   loads = self.loads)
-    
-    def dumps(self, value):
-        try:
-            return json.dumps(value, cls=self.encoder_class)
-        except TypeError as e:
-            raise FieldValueError(str(e))
-    
-    def loads(self, svalue):
-        if svalue is not None:
-            try:
-                svalue = to_string(svalue,self.charset)
-                return json.loads(svalue, object_hook = self.decoder_hook)
-            except:
-                logger.critical('Unhandled exception while loading Json\
- field {0}'.format(self), exc_info = True)
     
     def get_sorting(self, name, errorClass):
         pass

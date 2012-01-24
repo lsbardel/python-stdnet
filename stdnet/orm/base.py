@@ -185,8 +185,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
         dbdata = instance._dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
-        id = instance.id
-        idnew = not (id and id == dbdata.get('id'))
         
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():

@@ -175,10 +175,10 @@ class TestSearchEngine(TestCase):
     def testSearchModelSimple(self):
         item,_ = self.simpleadd()
         qs = Item.objects.search('python gains')
-        self.assertEqual(len(qs.queries),3)
-        self.assertEqual(qs.queries[0].field,'object_id')
-        self.assertEqual(qs.queries[1].field,'object_id')
-        self.assertEqual(qs.queries[2].field,'object_id')
+        self.assertEqual(qs.text,'python gains')
+        q = qs.construct()
+        self.assertEqual(q.keyword,'intersect')
+        self.assertEqual(len(q),2)
         self.assertEqual(qs.count(),1)
         self.assertEqual(item,qs[0])
         

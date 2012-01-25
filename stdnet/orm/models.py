@@ -172,16 +172,6 @@ is not available, it tries to create one from its :class:`Manager`.'''
         '''return a JSON serializable dictionary representation.'''
         return dict(self._to_json())
     
-    # UTILITY METHODS
-    
-    @classmethod
-    def manager_from_transaction(cls, transaction = None):
-        '''Obtain a manager from the transaction'''
-        if transaction:
-            return Manager(cls, transaction.backend)
-        else:
-            return cls.objects
-    
     # PICKLING SUPPORT
     
     def __getstate__(self):

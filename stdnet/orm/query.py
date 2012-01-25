@@ -202,6 +202,7 @@ class Select(QueryElement):
 
 def make_select(keyword,queries):
     data = queries[0].data.copy()
+    queries = [q.construct() for q in queries]
     data.update({'keyword': keyword, 'underlying': queries})
     return Select(**data)
 
@@ -434,8 +435,7 @@ fields.
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            q = self._meta.searchengine.search_model(q, self.text)
-            return self.__class__().filter(id__in = q)
+            return self._meta.searchengine.search_model(q, self.text)
         else:
             return q
                 

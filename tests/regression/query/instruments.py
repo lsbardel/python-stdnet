@@ -27,7 +27,8 @@ class TestFilter(FinanceTest):
         # test the redis internals
         if qs.backend.name == 'redis':
             rqs = qs.backend_query()
-            self.assertEqual(len(rqs.commands),2)
+            # evalsha, expire, scard
+            self.assertEqual(len(rqs.commands),3)
         self.assertEqual(qs.count(),1)
         obj = qs[0]
         self.assertEqual(obj.id,1)

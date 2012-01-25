@@ -80,9 +80,9 @@ class TestDateTimeSeriesTS(hashts.TestHashTimeSeries):
         a  = int(N/4)
         b  = 3*a
         with self.model.objects.transaction() as t:
-            ts.data.irange(0,a,t)
-            ts.data.irange(a,b,t)
-            ts.data.irange(b,-1,t)
+            ts.data.irange(0, a, t)
+            ts.data.irange(a, b, t)
+            ts.data.irange(b, -1, t)
         r1,r2,r3 = [list(r) for r in t.get_result()]
         with self.model.objects.transaction() as t:
             ts.data.range(r2[0][0],r2[-1][0],t)

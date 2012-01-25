@@ -44,10 +44,12 @@ class TestInspectionAndComparison(FinanceTest):
     def testHash(self):
         '''Test model instance hash'''
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')
-        self.assertRaises(TypeError,hash, inst)
+        h0 = hash(inst)
+        self.assertTrue(h0)
         inst.save()
         h = hash(inst)
         self.assertTrue(h)
+        self.assertNotEqual(h,h0)
         
     def testUniqueId(self):
         '''Test model instance unique id across different model'''

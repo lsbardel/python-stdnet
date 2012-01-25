@@ -24,11 +24,11 @@ from .scripts import nil, script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
 
 
-tuple_list = (tuple, list, set, frozenset)
+collection_list = (tuple, list, set, frozenset, dict)
 
 
 def list_or_args(keys, args = None):
-    if not isinstance(keys, tuple_list):
+    if not isinstance(keys, collection_list):
         keys = [keys]
     if args:
         keys.extend(args)

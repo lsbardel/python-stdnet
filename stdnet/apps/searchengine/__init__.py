@@ -1,7 +1,6 @@
 '''\
 This is a pure python implementation of the :class:`stdnet.orm.SearchEngine`
-interface. It is an experimental application which currentely requires the
-:ref:`stdnet redis <stdnetredis>` branch.
+interface.
 
 This is not intended to be the most full-featured text search available, but
 it does the job. For that, look into Sphinx_, Solr, or other alternatives.
@@ -15,7 +14,8 @@ Somewhere in your application create the search engine singletone::
      
     engine = SearchEngine(...)
  
-The engine works by registering models to it.
+The engine works by registering models to it via the
+:meth:`stdnet.orm.SearchEngine.register` method.
 For example::
 
     engine.register(MyModel)
@@ -23,9 +23,10 @@ For example::
 From now on, every time and instance of ``MyModel`` is created,
 the search engine will updated its indexes.
 
-To search, issue the command::
+To search, you use the :class:`stdnet.orm.Query` API::
 
-    search_result = engine.search(sometext)
+    query = self.session().query(MyModel)
+    search_result = query.search(sometext)
     
 If you would like to limit the search to some specified models::
 
@@ -158,57 +159,65 @@ driver.
         if full:
             Word.flush()
         
-    def _index_item(self, session, item, words):    
+    def _index_item(self, item, words, session):    
         link = self._link_item_and_word
         for word,count in iteritems(words):
             session.add(link(item, word, count))
     
-    def remove_item(self, session, item):
+    def remove_item(self, item_or_model, ids = None, session = None):
         '''\
 Remove indexes for *item*.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
 '''
+        session = session or item_or_model.session
         query = session.query(WordItem)
-        if isclass(item):
-            wi = query.filter(model_type = item)
+        if isclass(item_or_model):
+            wi = query.filter(model_type = item_or_model)
+            if ids is not None:
+                wi = wi.filter(object_id__in = ids)
         else:
-            wi = query.filter(model_type = item.__class__,
-                              object_id = item.id)
+            wi = query.filter(model_type = item_or_model.__class__,
+                              object_id = item_or_model.id)
         session.delete(wi)
     
     def words(self, text, for_search = False):
         '''Given a text string,
-return a list of :class:`stdnet.apps.searchengine.Word` instances
-associated with it. The word items can be used to perform search
-on registered models.'''
+return a list of :class:`Word` instances associated with it.
+The word items can be used to perform search on registered models.'''
         texts = self.words_from_text(text,for_search)
         if texts:
-            return list(Word.objects.filter(id__in = texts))
-        else:
-            return None
+            return Word.objects.filter(id__in = texts).all()
     
     def search(self, text, include = None, exclude = None):
         '''Full text search'''
         return list(self.items_from_text(text,include,exclude))
     
-    def search_model(self, q, text):
+    def search_model(self, q, text, lookup = 'in'):
         '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
-It return a list of :class:`stdnet.orm.QuerySet` instances for each
-searchable world in *text*'''
+It return a new :class:`stdnet.orm.QueryElem` instance from
+the input :class:`Query` and the *text* to search.'''
         words = self.words(text, for_search=True)
-        qsets = []
         if words is None:
-            return qsets
+            return q
         elif not words:
             return None
         
-        query = WordItem.objects.filter(model_type = q.model)\
-                                .get_field('object_id')
-        qs =  [q]
+        query = WordItem.objects.filter(model_type = q.model)
+        qs =  []
         for word in words:
-            qs.append(query.filter(word = word))
-        return orm.intersect(qs)
+            qs.append(query.filter(word = word).get_field('object_id'))
+            
+        if len(qs) > 1:
+            if lookup == 'in':
+                qs = orm.intersect(qs)
+            elif lookup == 'contains':
+                qs = orm.union(qs)
+            else:
+                raise valueError('Unknown lookup "{0}"'.format(lookup))
+        else:
+            qs = qs[0]
+        return orm.intersect((q,qs))
         
     def add_tag(self, item, text):
         '''Add a tag to an object.
@@ -257,7 +266,7 @@ searchable world in *text*'''
                 yield wi.word
                     
     def _link_item_and_word(self, item, word, count = 1, tag = False):
-        w = self.get_or_create(word, tag = tag)
+        w = self.get_or_create(word, tag = tag, session = item.session)
         return WordItem(word = w,
                         model_type = item.__class__,
                         object_id = item.id,
@@ -271,7 +280,7 @@ searchable world in *text*'''
         raise ValueError(
                 'Cound not iterate through item {0} fields'.format(item))
     
-    def get_or_create(self, word, tag = False):
+    def get_or_create(self, word, tag = False, session = None):
         # Internal for adding or creating words
         try:
             w = Word.objects.get(id = word)
@@ -281,7 +290,14 @@ searchable world in *text*'''
             else:
                 return w
         except Word.DoesNotExist:
-            return Word(id = word, tag = tag).save()
+            # we need to create a new word. Since Words have id known even when
+            # not persistent, we cann add the Word to the current session
+            # without saving
+            w = Word(id = word, tag = tag)
+            if session:
+                return session.add(w)
+            else:
+                return w.save()
    
 
 

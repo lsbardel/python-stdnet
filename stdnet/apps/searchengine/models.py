@@ -2,9 +2,21 @@
 Search Engine and Tagging models. Just two of them, one for storing Words and
 one for linking other objects to Words.
 '''
-__test__ = False
+from inspect import isclass
+
 from stdnet import orm
 from stdnet.utils import range, to_string
+
+
+class WordItemManager(orm.Manager):
+    
+    def for_model(self, model):
+        q = self.query()
+        if not isclass(model):
+            return q.filter(model_type = model.__class__,
+                            object_id = model.id)
+        else:
+            return q.filter(model_type = model)
 
 
 class Word(orm.StdModel):
@@ -47,6 +59,8 @@ class WordItem(orm.StdModel):
     
     def __unicode__(self):
         return self.word.__unicode__()
+    
+    objects = WordItemManager()
     
     @property
     def object(self):

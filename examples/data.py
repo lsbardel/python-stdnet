@@ -56,13 +56,14 @@ class finance_data(object):
     
     def create(self, test, use_transaction = True):
         session = test.session()
+        test.assertEqual(session.query(Instrument).count(),0)
         if use_transaction:
             with session.begin():
-                for name,typ,ccy in zip(self.inst_names,self.inst_types,\
-                                        self.inst_ccys):
-                    session.add(Instrument(name = name, type = typ, ccy = ccy))     
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
                     session.add(Fund(name = name, ccy = ccy))
+                for name,typ,ccy in zip(self.inst_names,self.inst_types,\
+                                        self.inst_ccys):
+                    session.add(Instrument(name = name, type = typ, ccy = ccy))
         else:
             test.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
@@ -73,6 +74,8 @@ class finance_data(object):
                 
         self.num_insts = session.query(Instrument).count()
         self.num_funds = session.query(Fund).count()
+        test.assertEqual(self.num_insts,len(self.inst_names))
+        test.assertEqual(self.num_funds,len(self.fund_names))
         return session
     
     def makePositions(self, test, use_transaction = True):

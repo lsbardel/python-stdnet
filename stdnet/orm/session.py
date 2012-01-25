@@ -191,7 +191,8 @@ An instance of this class is usually obtained by using the high level
         
     @property
     def backend(self):
-        return self.session.backend
+        if self.session:
+            return self.session.backend
     
     @property
     def is_open(self):
@@ -227,17 +228,18 @@ An instance of this class is usually obtained by using the high level
         if not self.is_open:
             raise InvalidTransaction('Invalid operation.\
  Transaction already closed.')
-        self.trigger(pre_commit)
-        return self.backend.execute_session(self.session, self.post_commit)
+        if self.pre_commit():
+            return self.backend.execute_session(self.session, self.post_commit)
+        else:
+            return self.post_commit()
         
-    def post_commit(self, response, commands):
+    def post_commit(self, response = None, commands = None):
         '''callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` has finished and results are available.
 
 :parameter response: list of results for each :class:`SessionModel`
     in :attr:`session`. Each element in the list is a two-element tuple
     with the :attr:`SessionModel.meta` element and a list of ids.
-    
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
@@ -245,6 +247,10 @@ An instance of this class is usually obtained by using the high level
         self.result = response
         session = self.session
         self.close()
+        if not response:
+            return self
+        
+        signals = []
         for meta,response,action in self.result:
             if not response:
                 continue
@@ -255,18 +261,24 @@ An instance of this class is usually obtained by using the high level
                 for id in response:
                     id = tpy(id)
                     ids.append(id)
-                post_delete.send(sm.model, ids = ids, transaction = self)
+                signals.append((post_delete.send, sm, ids))
             else:
                 for id in response:
                     id = tpy(id)
                     ids.append(id)
                 instances = sm.post_commit(ids)
-                post_commit.send(sm.model, instances = instances,
-                                 session = session, transaction = self)
+                signals.append((post_commit.send, sm, instances))
+                
+        # Once finished we send signals
+        for send,sm,instances in signals:
+            send(sm.model, instances = instances, session = session,
+                 transaction = self)
+            
         return self
     
     def close(self):
-        post_commit.send(Session, transaction = self)
+        if self.result:
+            post_commit.send(Session, transaction = self)
         for sm in self.session:
             if sm._delete_query:
                 sm._delete_query = []
@@ -274,10 +286,14 @@ An instance of this class is usually obtained by using the high level
         self.session = None
 
     # INTERNAL FUNCTIONS
-    def trigger(self, signal):
-        send = getattr(signal,'send')
+    def pre_commit(self):
+        send = pre_commit.send
+        sent = 0
         for sm in self.session:
-            send(sm.model, instances = sm, transaction = self)
+            if sm or sm._delete_query:
+                send(sm.model, instances = sm, transaction = self)
+                sent += 1
+        return sent
         
     # VIRTUAL FUNCTIONS
     

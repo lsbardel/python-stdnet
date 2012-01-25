@@ -3,7 +3,7 @@ from stdnet import test, orm, getdb
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
-from examples.models import SimpleModel
+from examples.models import SimpleModel, Instrument
 
 
 class TestSession(test.TestCase):
@@ -29,6 +29,15 @@ class TestSession(test.TestCase):
         session.commit()
         self.assertEqual(m.id,1)
         
+    def testCreate2Models(self):
+        # Tests a session with two models. This was for a bug
+        session = self.session()
+        with session.begin():
+            session.add(SimpleModel(code='pluto',group='planet'))
+            session.add(Instrument(name='bla',ccy='EUR',type='equity'))
+        self.assertEqual(session.query(Instrument).count(),1)
+        self.assertEqual(session.query(SimpleModel).count(),1)
+        
     def testSimpleFilter(self):
         session = self.session()
         with session.begin():
@@ -36,6 +45,7 @@ class TestSession(test.TestCase):
             session.add(SimpleModel(code='venus',group='planet'))
             session.add(SimpleModel(code='sun',group='star'))
         query = session.query(SimpleModel)
+        self.assertEqual(query.count(),3)
         self.assertEqual(query.session,session)
         all = query.all()
         self.assertEqual(len(all),3)

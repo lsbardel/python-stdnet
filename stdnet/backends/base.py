@@ -91,7 +91,7 @@ queries specified by :class:`stdnet.orm.Query`.
     def __init__(self, queryelem, timeout = 0, **kwargs):
         '''Initialize the query for the backend database.'''
         self.queryelem = queryelem
-        self.expire = max(timeout,30)
+        self.expire = max(timeout,10)
         self.timeout = timeout
         self.__count = None
         # build the queryset without performing any database communication

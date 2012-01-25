@@ -1,5 +1,7 @@
 .. _search:
 
+.. module:: stdnet.orm
+
 =============
 Search
 =============
@@ -13,6 +15,6 @@ an interface for implementing a full text search on model instances.
 Search Engine Interface
 ============================
 
-.. autoclass:: stdnet.orm.SearchEngine
+.. autoclass:: SearchEngine
    :members:
    :member-order: bysource

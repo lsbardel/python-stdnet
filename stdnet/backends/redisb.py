@@ -60,15 +60,11 @@ limiting.'''
     def callback(self, request, response, args, query = None, get = None,
                  fields = None, fields_attributes = None, **kwargs):
         meta = query.meta
-        data, related = response
         if get:
-            field = meta.dfields[get]
-            tpy = field.to_python
-            if get == 'id':
-                return [tpy(v) for v in data]
-            else:
-                return [tpy(v) for _,v[1] in data]
+            tpy = meta.dfields[get].to_python
+            return [tpy(v) for v in response]
         else:
+            data, related = response
             encoding = request.client.encoding
             data = self.build(data, fields, fields_attributes, encoding)
             related_fields = {}
@@ -123,6 +119,12 @@ class commit_session(RedisScript):
     
     def callback(self, request, response, args, sm = None, **kwargs):
         return session_result(sm.meta, response[0], 'save')
+    
+
+class move2set(RedisScript):
+    script = (read_lua_file('utils/redis.lua'),
+              read_lua_file('move2set.lua'))
+
         
 
 def redis_execution(pipe, result_type):
@@ -142,43 +144,13 @@ def redis_execution(pipe, result_type):
 ##    REDIS QUERY CLASS
 ################################################################################
 class RedisQuery(stdnet.BackendQuery):
-        
+    script_dep = {'script_dependency': ('build_query','move2set')}
+    
     def zism(self, r):
         return r is not None
     
     def sism(self, r):
         return r
-    
-    def build_from_query(self, queries):
-        '''Build a set of ids from an external query (a query on a
-different model) which has a *field* containing current model ids.'''
-        keys = []
-        pipe = self.pipe
-        backend = self.backend
-        sha = self._sha
-        for q in queries:
-            sha.write(q.__repr__().encode())
-            query = q.query
-            query._buildquery()
-            qset = query.qset.query_set
-            db = backend.client.db
-            if db != pipe.db:
-                raise ValueError('Indexes in a different database')
-                # In a different redis database. We need to move the set
-                query._meta.cursor.client.move(qset,pipe.db)
-                pipe.expire(qset,self.expire)
-                
-            skey = self.meta.tempkey()
-            okey = backend.basekey(meta,OBJ,'*->{0}'.format(q.field))
-            pipe.sort(qset, by = 'nosort', get = okey, storeset = skey)\
-                    .expire(skey,self.expire)
-            keys.append(skey)
-        if len(keys) == 1:
-            tkey = keys[0]
-        else:
-            tkey = self.meta.tempkey()
-            self.intersect(tkey,keys).expire(tkey,self.expire)
-        return tkey
     
     def accumulate(self, qs):
         # Accumulate a query
@@ -193,36 +165,48 @@ different model) which has a *field* containing current model ids.'''
             else:
                 be = child.backend_query(pipe = pipe)
                 args.extend(('key',be.query_key))
-                
+        
+        temp_key = True
         if qs.keyword == 'set':
             if qs.name == 'id' and not args:
-                return 'key',backend.basekey(meta,'id')
-            #elif len(args) == 2 and not args[0] and not qs.unique:
-            #    return 'key',backend.basekey(meta,'idx', args[1])
+                key = backend.basekey(meta,'id')
+                temp_key = False
             else:
                 bk = backend.basekey(meta)
                 key = backend.tempkey(meta)
                 unique = 'u' if qs.unique else ''
                 pipe.script_call('build_query', bk, p, key, qs.name,
                                  unique, qs.lookup, *args)
-                return 'key',key
-        # a select operation
         else:
             key = backend.tempkey(meta)
             args = args[1::2]
+            pipe.script_call('move2set', p, *args,
+                             **{'script_dependency':'build_query'})
             if qs.keyword == 'intersect':
-                getattr(pipe,p+'interstore')(key, args,
-                                             script_dependency = 'build_query')
+                getattr(pipe,p+'interstore')(key, args, **self.script_dep)
             elif qs.keyword == 'union':
-                getattr(pipe,p+'unionstore')(key, args,
-                                             script_dependency = 'build_query')
+                getattr(pipe,p+'unionstore')(key, args, **self.script_dep)
             elif qs.keyword == 'diff':
-                getattr(pipe,p+'diffstore')(key, args,
-                                            script_dependency = 'build_query')
+                getattr(pipe,p+'diffstore')(key, args, **self.script_dep)
             else:
                 raise ValueError('Could not perform "{0}" operation'\
                                  .format(qs.keyword))
-            return 'key',key
+    
+        # If e requires a different field other than id, perform a sort
+        # by nosort and get the object field.
+        gf = qs._get_field
+        if gf and gf != 'id':
+            bkey = key
+            if not temp_key:
+                temp_key = True
+                key = backend.tempkey(meta)
+            okey = backend.basekey(meta,OBJ,'*->{0}'.format(gf))
+            pipe.sort(bkey, by = 'nosort', get = okey, store = key)
+            
+        if temp_key:
+            pipe.expire(key, self.expire)
+            
+        return 'key',key
         
     def _build(self, pipe = None, **kwargs):
         '''Set up the query for redis'''
@@ -298,9 +282,9 @@ elements in the query.'''
         meta = self.meta
         order = self.order() or ()
         start, stop = self.get_redis_slice(slic)
-        get = self.queryelem._get_field
+        get = self.queryelem._get_field or ''
         fields_attributes = None
-        args = [self.query_key, backend.basekey(meta)]
+        args = [self.query_key, backend.basekey(meta), get]
         # if the get_field is available, we simply load that field
         if get:
             if get == 'id':
@@ -315,7 +299,7 @@ elements in the query.'''
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
                 fields_attributes = ()
-                
+        
         args.append(len(fields_attributes))
         args.extend(fields_attributes)
         args.extend(self.related_lua_args())
@@ -637,7 +621,6 @@ class BackendDataServer(stdnet.BackendDataServer):
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
         basekey = self.basekey
-        lua_data = []
         pipe = self.client.pipeline()
         for sm in session:
             sm.pre_commit()
@@ -653,7 +636,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                     bk = basekey(meta)
                     s = 'z' if meta.ordering else 's'
                     indices = list(self.flat_indices(meta))
-                    lua_data.extend((bk,s,N,len(indices)//2))
+                    lua_data = [bk,s,N,len(indices)//2]
                     lua_data.extend(indices)
                     for instance in sm:
                         state = instance.state()

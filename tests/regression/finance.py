@@ -20,7 +20,7 @@ class TestFinanceApplication(FinanceTest):
         self.assertEqual(obj.id,2)
         self.assertTrue(obj.name)
         obj2 = query.get(name = obj.name)
-        self.assertEqual(obj,obj2)
+        self.assertEqual(obj, obj2)
         
     def testLen(self):
         '''Simply test len of objects greater than zero'''

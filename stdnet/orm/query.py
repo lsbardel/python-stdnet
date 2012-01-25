@@ -35,33 +35,25 @@ class SessionModelBase(object):
 class Q(object):
     keyword = ''
     name = ''
-    def __init__(self, meta = None, session = None, select_related = None,
+    def __init__(self, meta, session, select_related = None,
                  ordering = None, fields = None, get_field = None,
                  name = None, keyword = None):
-        self.data = {'meta':meta,
-                     'session':session,
-                     'select_related': select_related,
+        self._meta = meta
+        self.session = session
+        self.data = {'select_related': select_related,
                      'ordering': ordering,
                      'fields': fields,
                      'get_field': get_field}
         self.name = name if name is not None else self.name
-        self.keyword = keyword if keyword is not None else self.keyword
-    
-    @property
-    def _meta(self):
-        return self.data['meta']
-    
+        self.keyword = keyword if keyword is not None else self.keyword 
+        
     @property
     def meta(self):
-        return self.data['meta']
+        return self._meta
     
     @property
     def model(self):
         return self._meta.model
-    
-    @property
-    def session(self):
-        return self.data['session']
     
     @property
     def select_related(self):
@@ -83,6 +75,32 @@ class Q(object):
     def backend(self):
         return self.session.backend
     
+    def get_field(self, field):
+        '''A :class:`Query` performs a series of operations and utimately
+generate of set of matched elements ``ids``. If on the other hand, a
+different field is required, it can be specified with the :meth:`get_field`
+method. For example, lets say a model has a field called ``object_id``
+which contains ids of another model, we could use::
+
+    qs = session.query(MyModel).get_field('object_id')
+    
+to obtain a set containing the values of matched elements ``object_id``
+fields.
+
+:parameter field: the name of the field which will be used to obtained the
+    matched elements value. Must be an index.
+:rtype: a new :class:`Query` instance.
+'''
+        if field != self._get_field:
+            if field not in self._meta.dfields:
+                raise QuerySetError('Model "{0}" has no field "{1}".'\
+                                    .format(self._meta,field))
+            q = self._clone()
+            q.data['get_field'] = field
+            return q
+        else:
+            return self
+        
     def __contains__(self, val):
         if isinstance(val,self.model):
             val = val.id
@@ -91,9 +109,21 @@ class Q(object):
     def construct(self):
         raise NotImplementedError()
     
+    def clear(self):
+        pass
+    
     def backend_query(self, **kwargs):
         '''Build a :class:`stdnet.BackedQuery`'''
         raise NotImplementedError()
+    
+    def _clone(self):
+        cls = self.__class__
+        q = cls.__new__(cls)
+        d = self.__dict__.copy()
+        d['data'] = d['data'].copy()
+        q.__dict__ = d
+        q.clear()
+        return q
     
     
 class EmptyQuery(Q):
@@ -201,10 +231,10 @@ class Select(QueryElement):
     
 
 def make_select(keyword,queries):
-    data = queries[0].data.copy()
+    first = queries[0]
     queries = [q.construct() for q in queries]
-    data.update({'keyword': keyword, 'underlying': queries})
-    return Select(**data)
+    return Select(first.meta, first.session, keyword = keyword,
+                  underlying = queries)
 
 def intersect(queries):
     return make_select('intersect',queries)
@@ -215,9 +245,8 @@ def union(queries):
 def difference(queries):
     return make_select('diff',queries)
 
-def queryset(qs):
-    data = qs.data.copy()
-    return QuerySet(**data)
+def queryset(qs, **kwargs):
+    return QuerySet(qs._meta,qs.session,**kwargs)
     
 
 class Query(Q):
@@ -405,32 +434,6 @@ for this function to be available.
         else:
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
-    
-    def get_field(self, field):
-        '''A :class:`Query` performs a series of operations and utimately
-generate of set of matched elements ``ids``. If on the other hand, a
-different field is required, it can be specified with the :meth:`get_field`
-method. For example, lets say a model has a field called ``object_id``
-which contains ids of another model, we could use::
-
-    qs = session.query(MyModel).get_field('object_id')
-    
-to obtain a set containing the values of matched elements ``object_id``
-fields.
-
-:parameter field: the name of the field which will be used to obtained the
-    matched elements value. Must be an index.
-:rtype: a new :class:`Query` instance.
-'''
-        if field != self._get_field:
-            if field not in self._meta.dfields:
-                raise QuerySetError('Model "{0}" has no field "{1}".'\
-                                    .format(self._meta,field))
-            q = self._clone()
-            q.data['get_field'] = field
-            return q
-        else:
-            return self
         
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
@@ -588,16 +591,7 @@ an exception is raised.
     
     ############################################################################
     # PRIVATE METHODS
-    ############################################################################
-    def _clone(self):
-        cls = self.__class__
-        q = cls.__new__(cls)
-        d = self.__dict__.copy()
-        d['data'] = d['data'].copy()
-        q.__dict__ = d
-        q.clear()
-        return q
-    
+    ############################################################################    
     def clear(self):
         self.__construct = None
         self.__slice_cache = None
@@ -639,6 +633,7 @@ an exception is raised.
             q = difference([q]+eargs)
         
         q = self.search_queries(q)
+        q.data = self.data.copy()
         return q
 
     def aggregate(self, kwargs):
@@ -676,12 +671,12 @@ an exception is raised.
                     v = field.index_value(v)
                 values.append(v)
                 
-            data = self.data.copy()
-            data.update({'name':field.attname,
-                         'underlying':tuple(values),
-                         'unique':field.unique,
-                         'lookup':lookup})
-            yield QuerySet(**data)
+            #data = self.data.copy()
+            data = {'name':field.attname,
+                    'underlying':tuple(values),
+                    'unique':field.unique,
+                    'lookup':lookup}
+            yield queryset(self, **data)
         
     def items(self, slic = None):
         '''Generator of instances in queryset.'''

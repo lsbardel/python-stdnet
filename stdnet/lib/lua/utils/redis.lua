@@ -6,9 +6,13 @@ type_table['list'] = 'llen'
 type_table['hash'] = 'hlen'
 type_table['string'] = 'strlen'
 
+function redis_type(key)
+	return redis.call('type',key)['ok']
+end
+
 -- The length of any structure in redis
 function redis_len(key)
-	typ = redis.call('type',key)['ok']
+	typ = redis_type(key)
     command = type_table[typ]
     if command then
     	return redis.call(command, key) + 0

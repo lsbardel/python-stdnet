@@ -33,11 +33,20 @@ class TestUniqueFilter(test.TestCase):
             for n,g in zip(codes,groups):
                 session.add(self.model(code = n, group = g))
     
+    def testFilterId(self):
+        session = self.session()
+        query = session.query(self.model)
+        obj = query.get(id = 2)
+        self.assertEqual(obj.id, 2)
+        self.assertTrue(obj.code)
+        obj2 = query.get(code = obj.code)
+        self.assertEqual(obj, obj2)
+    
     def testBadId(self):
         session = self.session()
         self.assertRaises(self.model.DoesNotExist,
                           session.query(self.model).get, id = -1)
-        
+    
     def testFilterSimple(self):
         session = self.session()
         query = session.query(self.model)
@@ -63,7 +72,7 @@ class TestUniqueFilter(test.TestCase):
             self.assertEqual(r.count(),SIZE-1)
             self.assertFalse(code in set((o.code for o in r)))
             
-    def testFilterIn(self):
+    def testFilterCodeIn(self):
         session = self.session()
         query = session.query(self.model)
         codes = randomcode(num = 3)
@@ -71,7 +80,7 @@ class TestUniqueFilter(test.TestCase):
         match = set((m.code for m in qs))
         self.assertEqual(codes,match)
         
-    def testExcludeIn(self):
+    def testExcludeCodeIn(self):
         session = self.session()
         query = session.query(self.model)
         codes = randomcode(num = 3)

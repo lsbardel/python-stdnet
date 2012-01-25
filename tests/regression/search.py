@@ -78,7 +78,7 @@ below will derive from this class.'''
         with session.begin():
             item = session.add(Item(name=name, counter = counter,
                     content=content if content is not None else python_content,
-                    related= related))
+                    related = related))
         return item
     
     def make_items(self, num = 30, content = False, related = None):
@@ -100,10 +100,9 @@ below will derive from this class.'''
                   related = None):
         item = self.make_item(name,counter,content,related)
         self.assertEqual(item.last_indexed.date(),date.today())
-        wi = self.session().query(WordItem).filter(model_type = Item,
-                                                   object_id = item.id)
+        wi = WordItem.objects.for_model(item)
         self.assertTrue(wi.count())
-        return item,wi
+        return item, wi
     
     def sometags(self, num = 10, minlen = 3):
         def _():
@@ -146,7 +145,8 @@ class TestMeta(TestCase):
         self.assertFalse(isinstance(w.id,bytes))
         
     def testAddWithNumbers(self):
-        item,wi = self.simpleadd(name = '20y', content = '')
+        item, wi = self.simpleadd(name = '20y', content = '')
+        wi = list(wi)
         self.assertEqual(len(wi),1)
         wi = wi[0]
         self.assertEqual(str(wi.word),'20y')
@@ -163,8 +163,11 @@ class TestSearchEngine(TestCase):
         engine = self.engine
         item,wi = self.simpleadd()
         wi = set((w.word for w in wi))
-        wi2 = engine.index_item(item)
-        wi2 = set((w.word for w in wi2))
+        session = engine.index_item(item)
+        self.assertTrue(session)
+        session.commit()
+        wi2 = set((w.word for w in WordItem.objects.for_model(item)))
+        # Lets get the words for item
         self.assertEqual(wi,wi2)
         
     def testSearchWords(self):
@@ -188,11 +191,11 @@ class TestSearchEngine(TestCase):
         item3,wi3 = self.simpleadd('queen',content='we will rock you')
         item4,wi4 = self.simpleadd('python',content='nothing here')
         qs = Item.objects.search('python')
+        qc = qs.construct()
+        self.assertEqual(len(qc),2)
+        self.assertEqual(qc.keyword,'intersect')
         self.assertEqual(qs.count(),2)
         qs = Item.objects.search('python learn')
-        for q in qs.queries[:]:
-            wis = q.query[:]
-            self.assertTrue(wis)
         self.assertEqual(qs.count(),1)
         self.assertEqual(qs[0].name,'python')
         
@@ -201,6 +204,9 @@ class TestSearchEngine(TestCase):
         self.simpleadd('king',content='england')
         self.simpleadd('nothing',content='empty', related = r)
         qs = Item.objects.search('planet')
+        qc = qs.construct()
+        self.assertEqual(len(qc),2)
+        self.assertEqual(qc.keyword,'intersect')
         self.assertEqual(qs.count(),1)
         
     def _testAddTag(self):
@@ -241,7 +247,7 @@ class TestSearchEngineWithRegistration(TestCase):
         words = list(Word.objects.all())
         item.delete()
         wis = WordItem.objects.filter(model_type = item.__class__)
-        self.assertFalse(wis)
+        self.assertFalse(wis.count(),0)
         self.assertEqual(len(words),len(Word.objects.all()))
     
     

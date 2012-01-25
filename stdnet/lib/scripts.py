@@ -177,9 +177,14 @@ of a missing script, are also re-executed.'''
                         pipe.add_callback(c)
         else:
             sc = options.get('script_dependency')
-            if sc in loaded:
-                pipe.command_stack.append(commands[i])
-                positions.append(i)
+            if sc:
+                if not isinstance(sc,(list,tuple)):
+                    sc = (sc,)
+                for s in sc:
+                    if s in loaded:
+                        pipe.command_stack.append(commands[i])
+                        positions.append(i)
+                        break
                 
     res = pipe.execute()
     if isinstance(res,RedisRequest):

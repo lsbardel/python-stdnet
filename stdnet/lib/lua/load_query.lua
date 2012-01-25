@@ -17,7 +17,8 @@ end
 -- Handle input arguments
 local rkey = KEYS[1]  -- Key containing the ids of the query
 local bk = KEYS[2] -- Base key for model
-local io = 3
+local get_field = KEYS[3]
+local io = 4
 local num_fields = KEYS[io] + 0
 local fields = table_slice(KEYS, io + 1, io + num_fields)
 local related
@@ -27,6 +28,10 @@ local ordering = KEYS[io+1]
 local start = KEYS[io+2] + 0
 local stop = KEYS[io+3] + 0
 io = io + 3
+
+if get_field ~= '' then
+	return redis_members(rkey)
+end
 
 -- Perform explicit custom ordering if required
 if ordering == 'explicit' then

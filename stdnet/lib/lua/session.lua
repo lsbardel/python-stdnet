@@ -50,7 +50,7 @@ function update_indices(s, score, bk, id, idkey, indices, uniques, add)
     end
 end
 
--- LOOP OVER INSTANCES TO ADD/CHANGE/DELETE
+-- LOOP OVER INSTANCES TO ADD/CHANGE
 results = {}
 local N = table.getn(KEYS)
 local i = 0

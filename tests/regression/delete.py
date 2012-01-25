@@ -2,7 +2,7 @@
 import datetime
 from random import randint
 
-from stdnet import test
+from stdnet import test, orm
 from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
@@ -56,7 +56,43 @@ class TestDeleteSimpleModel(test.TestCase):
         self.assertEqual(qs.count(),0)
         qs = query.filter(group = 'planet')
         self.assertEqual(qs.count(),1)
-
+     
+        
+class update_model(object):
+    
+    def __init__(self, test):
+        self.test = test
+        self.session = None
+        
+    def __call__(self, sender, instances = None, session = None,
+                 transaction = None, **kwargs):
+        self.session = session
+        self.instances = instances
+        self.transaction = transaction
+        
+        
+class TestPostDeleteSignal(test.TestCase):
+    model = SimpleModel
+            
+    def setUp(self):
+        self.update_model = update_model(self)
+        orm.post_delete.connect(self.update_model, sender = self.model)
+        
+    def tearDown(self):
+        orm.post_delete.disconnect(self.update_model, sender = self.model)
+        
+    def testSignal(self):
+        session = self.session()
+        
+        with session.begin():
+            m = session.add(self.model(code = 'ciao'))
+            m = session.add(self.model(code = 'bla'))
+            
+        session.query(self.model).delete()
+        u = self.update_model
+        self.assertEqual(u.session,session)
+        self.assertEqual(sorted(u.instances),[1,2])
+        
 
 class TestDeleteScalarFields(FinanceTest):
         

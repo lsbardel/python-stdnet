@@ -812,31 +812,31 @@ The first element is the score and the second is the value.'''
         "Return the score of element ``value`` in sorted set ``name``"
         return self.execute_command('ZSCORE', name, value, **options)
 
-    def zinterstore(self, dest, keys, aggregate=None, **options):
+    def zinterstore(self, dest, keys, *args, **options):
         """
         Intersect multiple sorted sets specified by ``keys`` into
         a new sorted set, ``dest``. Scores in the destination will be
         aggregated based on the ``aggregate``, or SUM if none is provided.
         """
-        return self._zaggregate('ZINTERSTORE', dest, keys, aggregate, **options)
+        keys = list_or_args(keys, args)
+        return self._zaggregate('ZINTERSTORE', dest, keys, **options)
     
-    def zunionstore(self, dest, keys, aggregate=None, **options):
+    def zunionstore(self, dest, keys, *args, **options):
         """
         Union multiple sorted sets specified by ``keys`` into
         a new sorted set, ``dest``. Scores in the destination will be
         aggregated based on the ``aggregate``, or SUM if none is provided.
         """
-        return self._zaggregate('ZUNIONSTORE', dest, keys, aggregate, **options)
+        keys = list_or_args(keys, args)
+        return self._zaggregate('ZUNIONSTORE', dest, keys, **options)
     
-    def zdiffstore(self, dest, keys, aggregate=None, withscores=None,**options):
+    def zdiffstore(self, dest, keys, *args, **options):
         """
         Compute the difference of multiple sorted sets specified by
         ``keys`` into a new sorted set, ``dest``.
         """
-        return self._zaggregate('ZDIFFSTORE', dest, keys,
-                                aggregate = aggregate,
-                                withscores = withscores,
-                                **options)
+        keys = list_or_args(keys, args)
+        return self._zaggregate('ZDIFFSTORE', dest, keys, **options)
 
     def _zaggregate(self, command, dest, keys,
                     aggregate=None, withscores = None, **options):

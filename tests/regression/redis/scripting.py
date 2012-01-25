@@ -70,6 +70,10 @@ class ScriptingCommandsTestCase(TestCase):
         N = c.delpattern('x*')
         self.assertEqual(N,2)
     
+    def testType(self):
+        r = self.client.eval("""return redis.call('type','sjdcvsd')['ok']""")
+        self.assertEqual(r,b'none')
+        
     def testScript(self):
         script = get_script('test_script')
         self.assertTrue(script.script)
@@ -109,3 +113,47 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(len(result),2)
         self.assertEqual(result[0],{'foo':[1,2]})
     
+    def testMove2Set(self):
+        self.client.sadd('foo',1,2,3,4,5)
+        self.client.lpush('bla',4,5,6,7,8)
+        r = self.client.script_call('move2set','s','foo','bla')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],1)
+        self.client.sinterstore('res1','foo','bla')
+        self.client.sunionstore('res2','foo','bla')
+        m1 = sorted((int(r) for r in self.client.smembers('res1')))
+        m2 = sorted((int(r) for r in self.client.smembers('res2')))
+        self.assertEqual(m1,[4,5])
+        self.assertEqual(m2,[1,2,3,4,5,6,7,8])
+    
+    def testMove2ZSet(self):
+        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
+        self.client.lpush('bla','d','e','f','g')
+        r = self.client.script_call('move2set','z','foo','bla')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],1)
+        self.client.zinterstore('res1','foo','bla')
+        self.client.zunionstore('res2','foo','bla')
+        m1 = sorted(self.client.zrange('res1',0,-1))
+        m2 = sorted(self.client.zrange('res2',0,-1))
+        self.assertEqual(m1,[b'd',b'e'])
+        self.assertEqual(m2,[b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
+        
+    def testMoveSetSet(self):
+        self.client.sadd('foo',1,2,3,4,5)
+        self.client.sadd('bla',4,5,6,7,8)
+        r = self.client.script_call('move2set','s','foo','bla')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],0)
+        
+    def testMove2List2(self):
+        self.client.lpush('foo',1,2,3,4,5)
+        self.client.lpush('bla',4,5,6,7,8)
+        r = self.client.script_call('move2set','s','foo','bla')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],2)
+        

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .models import StdModel
 from .fields import DateTimeField, CharField
-from .signals import post_commit
+from .signals import post_commit, post_delete
 
 
 class SearchEngine(object):
@@ -12,6 +12,9 @@ class SearchEngine(object):
 expose the base functionalities for full text-search on model instances.
 Stdnet also provides a :ref:`python implementation <apps-searchengine>`
 of this interface.
+
+The main methods to be implemented are :meth:`_index_item`
+and meth:`remove_index`.
     
 .. attribute:: word_middleware
     
@@ -20,8 +23,9 @@ of this interface.
     accepting an iterable of words and
     returning an iterable of words. Word middleware functions
     are added to the search engine via the
-    :meth:`stdnet.orm.SearchEngine.add_word_middleware`. For example
-    this function remove a group of words from the index::
+    :meth:`add_word_middleware` method.
+    
+    For example this function remove a group of words from the index::
     
         se = SearchEngine()
         
@@ -41,11 +45,11 @@ of this interface.
         self.add_processor(stdnet_processor())
         
     def register(self, model, related = None, tag_field = 'tags'):
-        '''Register a model to the search engine. By registering a model,
-every time an instance is created, it will be indexed by the
-search engine.
+        '''Register a :class:`StdModel` to the search engine.
+When registering a model, every time an instance is created, it will be
+indexed by the search engine.
 
-:parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter model: a :class:`StdModel` class.
 :parameter related: a list of related fields to include in the index.
 '''
         model._meta.searchengine = self
@@ -60,6 +64,7 @@ search engine.
         update_model = UpdateSE(self)
         self.REGISTERED_MODELS[model] = update_model
         post_commit.connect(update_model, sender = model)
+        post_delete.connect(update_model, sender = model)
             
     def words_from_text(self, text, for_search = False):
         '''Generator of indexable words in *text*.
@@ -99,17 +104,13 @@ Can and should be reimplemented by subclasses.'''
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
     
-    def index_item(self, session, item):
+    def index_item(self, item, session = None):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
-:parameter skipremove: If ``True`` it skip the remove step for
-                       improved performance.
-                       
-                       Default ``False``.
 """
-        self.remove_item(session, item)
+        self.remove_item(item, session = session)
         wft = self.words_from_text
         words = chain(*[wft(value) for value in\
                             self.item_field_iterator(item)])                
@@ -120,14 +121,16 @@ It extracts content from the given *item* and add it to the index.
             else:
                 wc[word] = 1
         
-        return self._index_item(session, item, wc)
+        session = session or item.session
+        self._index_item(item, wc, session)
+        return session
 
     def flush(self, full = False):
         '''Clean the search engine'''
         raise NotImplementedError
     
-    def remove_item(self, session, item):
-        '''Remove an item from the serach indices'''
+    def remove_item(self, item_or_model, ids = None, session = None):
+        '''Remove an item from the search indices'''
         raise NotImplementedError
     
     def search_model(self, model, text):
@@ -157,7 +160,7 @@ with the search engine.'''
     # ABSTRACT INTERNAL FUNCTIONS
     ################################################################
     
-    def _index_item(self, item, words):
+    def _index_item(self, item, words, session):
         raise NotImplementedError
     
     
@@ -166,20 +169,33 @@ class UpdateSE(object):
     def __init__(self, se):
         self.se = se
         
-    def __call__(self, instances, session = None, **kwargs):
+    def __call__(self, instances, session = None, signal = None, sender = None,
+                 **kwargs):
         '''An update on instances has occured. Propagate it to the search
 engine index models.'''
         if session is None:
             raise ValueError('No session available. Cannot updated indexes.')
+        if signal == post_delete:
+            self.remove(instances, session, sender)
+        else:
+            self.index(instances, session, sender)
+            
+    def index(self, instances, session, sender):
+        add = self.se.index_item
         with session.begin():
             for instance in instances:
-                state = instance.state()
-                if state.deleted:
-                    self.se.remove_item(instance)
-                elif not instance.last_indexed:
+                # TODO
+                # important for circular update. Need to improve
+                if not instance.last_indexed:
                     session.add(instance)
-                    self.se.index_item(session, instance)
-                    instance.last_indexed = datetime.now()    
+                    instance.last_indexed = datetime.now()
+                    add(instance, session)
+                    
+    def remove(self, instances, session, sender):
+        if sender:
+            with session.begin():
+                self.se.remove_item(sender, instances, session)
+                
         
         
 class stdnet_processor(object):

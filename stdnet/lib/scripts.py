@@ -11,6 +11,7 @@ __all__ = ['RedisScript',
            'ScriptBuilder',
            'pairs_to_dict',
            'get_script',
+           'registered_scripts',
            'read_lua_file',
            'nil']
 
@@ -30,6 +31,10 @@ def pairs_to_dict(response, encoding):
 _scripts = {}
 
 
+def registered_scripts():
+    return tuple(_scripts)
+
+ 
 def get_script(script):
     return _scripts.get(script)
 
@@ -90,26 +95,28 @@ lua scripts to redis via the ``evalsha`` command.
     def name(self):
         return self.__class__.__name__
     
-    def call(self, client, command, script, *args, **options):
+    def call(self, client, command, body, keys, *args, **options):
         options['script_name'] = str(self)
-        return client.execute_command(command, script, len(args),
-                                      *args, **options)
+        return client._eval(command, body, keys, *args, **options)
         
-    def evalsha(self, client, *args, **options):
-        return self.call(client, 'EVALSHA', self.sha1, *args, **options)
-        #return self.call(client, 'EVAL', self.script, *args, **options)
+    def eval(self, client, keys, *args, **options):
+        return self.call(client, 'EVAL', self.script, keys, *args, **options)
     
-    def load(self, client, *args, **options):
+    def evalsha(self, client, keys, *args, **options):
+        return self.call(client, 'EVALSHA', self.sha1, keys, *args, **options)
+    
+    def load(self, client, keys, *args, **options):
         client.script_load(self.script)
-        return self.evalsha(client, *args, **options)
+        return self.evalsha(client, keys, *args, **options)
         
     def start_callback(self, request, response, args, **options):
         if isinstance(response,NoScriptError):
             client = request.client
             if not client.pipelined:
-                args = args[2:]
+                num_keys = args[1]
+                keys, args = args[2:2+num_keys],args[2+num_keys:]
                 pipe = client.pipeline()
-                self.load(pipe, *args, **options)
+                self.load(pipe, keys, *args, **options)
                 result = pipe.execute()
                 if isinstance(result, RedisRequest):
                     return result.add_callback(lambda r : r[1])
@@ -133,8 +140,6 @@ lua scripts to redis via the ``evalsha`` command.
     
     
 def script_call_back(request, response, args, script_name = None, **options):
-    if response == b'NOSCRIPT No matching script. Please use EVAL.':
-        response = NoScriptError()
     s = _scripts.get(script_name)
     if not s:
         return response
@@ -165,13 +170,15 @@ of a missing script, are also re-executed.'''
             if name:
                 script = get_script(name)
                 if script:
-                    args = args[3:]
+                    s = 3 # Starts from 3 as the first argument is the command
+                    num_keys = args[s-1]
+                    keys, args = args[s:s+num_keys],args[s+num_keys:]
                     if script.name not in loaded:
                         positions.append(-1)
                         loaded.add(script.name)
-                        script.load(pipe, *args, **options)
+                        script.load(pipe, keys, *args, **options)
                     else:
-                        script.evalsha(pipe, *args, **options)
+                        script.evalsha(pipe, keys, *args, **options)
                     positions.append(i)
                     for c in callbacks:
                         pipe.add_callback(c)

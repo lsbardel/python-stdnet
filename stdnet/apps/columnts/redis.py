@@ -8,9 +8,10 @@ class RedisColumnTS(redisb.TS):
     
     def flush(self):
         cache = self.instance.cache
-        args = cache.flat()
-        if args:
-            return self.client.script_call('timeseries_session', self.id, *args)
+        keysargs = self.flat()
+        if keysargs:
+            keys, args = keysargs
+            return self.client.script_call('timeseries_session', keys, *args)
                     
     def fields(self):
         '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
@@ -39,6 +40,24 @@ class RedisColumnTS(redisb.TS):
     def add(self, dt, field, value):
         timestamp = self.pickler.dumps(dt)
         self.cache.add(timestamp, field, self.value_pickler.dumps(value))
+        
+    def flat(self):
+        cache = self.instance.cache
+        if cache.deleted_timestamps or cache.delete_fields or cache.fields:
+            # timestamps to delete
+            keys = (self.id, self.id + ':field:*')
+            args = [len(cache.deleted_timestamps)]
+            args.extend(cache.deleted_timestamps)
+            # fields to delete
+            args.append(len(cache.delete_fields))
+            args.extend(cache.delete_fields)
+            # For each field we have: field_name, len(vals), [t1,v1,t2,v2,...]
+            for field in cache.fields:
+                val = cache.fields[field]
+                args.append(field)
+                args.append(len(val))
+                args.extend(val.flat())
+            return keys, args
     
             
 redisb.struct_map['columnts'] = RedisColumnTS

@@ -21,7 +21,10 @@ class ResponseError(RedisError):
     pass
 
 class NoScriptError(RedisError):
-    pass
+    msg = 'NOSCRIPT No matching script. Please use EVAL.'
+    def __repr__(self):
+        return self.msg
+    __str__ = __repr__ 
     
 class InvalidResponse(ResponseError):
     pass

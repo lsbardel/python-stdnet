@@ -5,10 +5,11 @@
 '''
 from stdnet.conf import settings
 from stdnet.utils import PPath
+from stdnet import getdb
 p = PPath(__file__)
 p.add(module = 'pulsar', up = 1, down = ('pulsar',))
 
-from pulsar.apps.test import TestSuite, TestOptionPlugin
+from pulsar.apps.test import TestSuite, TestOptionPlugin, ExitTest
 from pulsar.apps.test.plugins import bench
 
 
@@ -20,6 +21,8 @@ class TestServer(TestOptionPlugin):
     
     def configure(self, cfg):
         settings.DEFAULT_BACKEND = cfg.server
+        settings.REDIS_PY_PARSER = cfg.http_py_parser
+        settings.redis_status()
         
 
 class TestDataSize(TestOptionPlugin):

@@ -694,7 +694,10 @@ an exception is raised.
         else:
             seq = []
             session = self.session
-            for el in self.backend_query().items(slic):
+            items = self.backend_query().items(slic)
+            if isinstance(items,Exception):
+                raise items
+            for el in items:
                 session.server_update(el)
                 seq.append(el)
             cache[key] = seq

@@ -1,8 +1,8 @@
-import datetime
+from datetime import date
 from random import randint
 
 from stdnet import test
-from stdnet.utils import populate, zip
+from stdnet.utils import populate, zip, iteritems
 
 from .models import Instrument, Fund, Position
 
@@ -18,9 +18,12 @@ class key_data(object):
              'big': 10000,
              'huge': 1000000}
     
-    def __init__(self, size, sizes = None, min_len = 10, max_len = 20):
+    def __init__(self, size, sizes = None, **kwargs):
         self.sizes = sizes or self.sizes
         self.size = self.sizes[size]
+        self.generate(**kwargs)
+        
+    def generate(self, min_len = 10, max_len = 20, **kwargs):
         self.keys = populate('string', self.size, min_len = min_len,
                              max_len = max_len)
         self.values = populate('string', self.size, min_len = min_len+10,
@@ -29,6 +32,23 @@ class key_data(object):
     def mapping(self, prefix = ''):
         for k,v in zip(self.keys,self.values):
             yield prefix+k,v
+            
+
+class tsdata(key_data):
+    
+    def generate(self, fields = None, datatype = 'float', 
+                 start = None, end = None, **kwargs):
+        fields = fields or ('data',)
+        start = start or date(1997,1,1)
+        end = end or date.today()
+        self.dates = populate('date', self.size, start = start, end = end)
+        self.fields = {}
+        for field in fields:
+            self.fields[field] = populate(datatype, self.size)
+        self.values = []
+        for i,dt in enumerate(self.dates):
+            vals = dict(((f,v[i]) for f,v in iteritems(self.fields)))
+            self.values.append((dt,vals))
 
 
 class finance_data(object):
@@ -51,8 +71,8 @@ class finance_data(object):
         self.inst_ccys = populate('choice',inst_len, choice_from = ccys_types)
         self.fund_names = populate('string',fund_len, min_len = 5, max_len = 20)
         self.fund_ccys = populate('choice',fund_len, choice_from = ccys_types)
-        self.dates =  populate('date',num_dates,start=datetime.date(2009,6,1),
-                         end=datetime.date(2010,6,6))
+        self.dates =  populate('date',num_dates,start=date(2009,6,1),
+                               end=date(2010,6,6))
     
     def create(self, test, use_transaction = True):
         session = test.session()
@@ -114,5 +134,6 @@ with different sizes by passing the'''
     def setUpClass(cls):
         size = cls.worker.cfg.size
         cls.data = finance_data(size = size)
+        
         
     

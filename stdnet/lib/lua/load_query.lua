@@ -17,16 +17,16 @@ end
 -- Handle input arguments
 local rkey = KEYS[1]  -- Key containing the ids of the query
 local bk = KEYS[2] -- Base key for model
-local get_field = KEYS[3]
-local io = 4
-local num_fields = KEYS[io] + 0
-local fields = table_slice(KEYS, io + 1, io + num_fields)
+local get_field = ARGV[1]
+local io = 2
+local num_fields = ARGV[io] + 0
+local fields = table_slice(ARGV, io + 1, io + num_fields)
 local related
 io = io + num_fields + 1
-related, io = unpack(related_fields(KEYS, io, KEYS[io] + 0))
-local ordering = KEYS[io+1]
-local start = KEYS[io+2] + 0
-local stop = KEYS[io+3] + 0
+related, io = unpack(related_fields(ARGV, io, ARGV[io] + 0))
+local ordering = ARGV[io+1]
+local start = ARGV[io+2] + 0
+local stop = ARGV[io+3] + 0
 io = io + 3
 
 if get_field ~= '' then
@@ -35,10 +35,10 @@ end
 
 -- Perform explicit custom ordering if required
 if ordering == 'explicit' then
-	local field = KEYS[io+1]
-	local alpha = KEYS[io+2]
-	local desc = KEYS[io+3]
-	local nested = KEYS[io+4] + 0
+	local field = ARGV[io+1]
+	local alpha = ARGV[io+2]
+	local desc = ARGV[io+3]
+	local nested = ARGV[io+4] + 0
 	local tkeys = {}
 	io = io + 4
 	-- nested sorting for foreign key fields
@@ -52,8 +52,8 @@ if ordering == 'explicit' then
 			while n < nested do
 				ion = io + 2*n
 				n = n + 1
-				key = KEYS[ion+1] .. ':obj:' .. value
-				name = KEYS[ion+2]
+				key = ARGV[ion+1] .. ':obj:' .. value
+				name = ARGV[ion+2]
 				value = redis.call('hget', key, name)
 			end
 			-- store value on temporary hash table

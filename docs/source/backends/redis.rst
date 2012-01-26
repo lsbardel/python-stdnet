@@ -65,15 +65,15 @@ Parser
 Stdnet is shipped with a redis parser written in python and a faster version
 written in C. In order to use the C parser you need to have installed
 cython_.
-The C parser wraps the priotocol parsing code in hiredis_ and it is available
-for both windows and linux. To compile the exenstions::
+The C parser wraps the protocol parsing code in hiredis_ and it is available
+for both windows and linux. To just compile the extensions::
 
     python setup.py build_ext
 
-If extensions are is installed the C parser will be the default parser
-unless you override the :ref:`settings.REDIS_PARSER <settings>` value
-and set it to ``python`` (you would want to do that mainly
-for benchmarking reasons).
+If extensions are are installed dusring setup,
+the C parser will be the default parser unless you set the
+:ref:`settings.REDIS_PY_PARSER <settings>` value to ``True``
+(you would want to do that mainly for benchmarking reasons).
 
 To check if the extensions are available::
 
@@ -82,6 +82,13 @@ To check if the extensions are available::
     True
     >>> _
         
+In windows you may need to install mingw_ and install using the command::
+
+    python setup.py build -c mingw32
+    python setup.py install
+
+
+.. _mingw: http://www.mingw.org/
 
 .. _redis-client:
 

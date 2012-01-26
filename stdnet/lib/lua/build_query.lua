@@ -1,10 +1,10 @@
 -- Script to aggregate a stdnet query
 bk = KEYS[1] -- base key for model
-s = KEYS[2] -- 's' for set or 'z' for sorted sets
-rkey = KEYS[3] -- the key where to store the structure containing the resuls
-name = KEYS[4]
-unique = KEYS[5]
-lookup = KEYS[6]
+rkey = KEYS[2] -- the key where to store the structure containing the resuls
+s = ARGV[1] -- 's' for set or 'z' for sorted sets
+name = ARGV[2]
+unique = ARGV[3]
+lookup = ARGV[4]
 
 -- Perform the union of the index for value val and the result key *rkey*
 -- The result is stored in *rkey*
@@ -34,12 +34,12 @@ function add (val)
 	end
 end
 
-i = 6
+i = 4
 local what
 local val
-while i < table.getn(KEYS) do
-	what = KEYS[i+1] -- what type of value is val, either a key or an actual value
-	val = KEYS[i+2]
+while i < # ARGV do
+	what = ARGV[i+1] -- what type of value is val, either a key or an actual value
+	val = ARGV[i+2]
 	i = i + 2
 	if unique == 'u' and name == 'id' then
 		if what == 'key' then

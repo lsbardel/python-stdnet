@@ -1,4 +1,6 @@
--- Collection of utilities used across several scripts
+-- Collection of utilities used across scripts.
+-- Included in all scripts
+-- SCRIPT_START_TIME = os.clock()
 type_table = {}
 type_table['set'] = 'scard'
 type_table['zset'] = 'zcard'
@@ -6,13 +8,18 @@ type_table['list'] = 'llen'
 type_table['hash'] = 'hlen'
 type_table['string'] = 'strlen'
 
+function redis_result(result)
+    return {result,os.clock() - SCRIPT_START_TIME}
+end
+
+
 function redis_type(key)
-	return redis.call('type',key)['ok']
+    return redis.call('type',key)['ok']
 end
 
 -- The length of any structure in redis
 function redis_len(key)
-	typ = redis_type(key)
+    typ = redis_type(key)
     command = type_table[typ]
     if command then
     	return redis.call(command, key) + 0
@@ -21,12 +28,12 @@ end
 
 -- Create a unique random key
 function redis_randomkey(prefix)
-	local rnd_key = prefix .. ':tmp:' .. math.random(1,100000000)
-	if redis.call('exists', rnd_key) + 0 == 1 then
-		return randomkey()
-	else
-		return rnd_key
-	end
+    local rnd_key = prefix .. ':tmp:' .. math.random(1,100000000)
+    if redis.call('exists', rnd_key) + 0 == 1 then
+        return randomkey()
+    else
+        return rnd_key
+    end
 end
 
 -- table of all memebers at key. If the key is a string returns an empty table

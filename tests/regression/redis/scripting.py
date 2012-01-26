@@ -1,6 +1,9 @@
 from hashlib import sha1
 import json
+import struct
 
+from stdnet.test import unittest
+from stdnet.conf import settings
 from stdnet.lib import RedisScript, read_lua_file, get_script
 from stdnet.lib.exceptions import NoScriptError
 
@@ -14,7 +17,7 @@ binary_set = lambda x : set(to_charlist(x))
 class test_script(RedisScript):
     script = (read_lua_file('utils/redis.lua'),
               '''\
-js = cjson.decode(KEYS[1])
+js = cjson.decode(ARGV[1])
 return cjson.encode(js)''')
     
     def callback(self, request, result, args, **options):
@@ -41,13 +44,14 @@ class ScriptingCommandsTestCase(TestCase):
 
     def testEvalSimple(self):
         self.client = self.get_client()
-        r = self.client.eval('return {1,2,3,4,5,6}')
+        r = self.client.eval('return {1,2,3,4,5,6}',None)
         self.assertTrue(isinstance(r,list))
         self.assertEqual(len(r),6)
         
     def testTable(self):
         self.client = self.get_client()
-        r = self.client.eval('return {name="mars", mass=0.11, orbit = 1.52}')
+        r = self.client.eval('return {name="mars", mass=0.11, orbit = 1.52}',
+                             None)
         self.assertTrue(isinstance(r,list))
         self.assertEqual(len(r), 0)
         
@@ -71,7 +75,8 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(N,2)
     
     def testType(self):
-        r = self.client.eval("""return redis.call('type','sjdcvsd')['ok']""")
+        r = self.client.eval("""return redis.call('type',KEYS[1])['ok']""",
+                             'sjdcvsd')
         self.assertEqual(r,b'none')
         
     def testScript(self):
@@ -84,22 +89,24 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(self.client.script_flush(),True)
         re = Receiver()
         self.client.signal_on_received.connect(re)
-        r = self.client.script_call('test_script',json.dumps([1,2,3,4,5,6]))
+        r = self.client.script_call('test_script',None,
+                                    json.dumps([1,2,3,4,5,6]))
         self.assertEqual(r,[1,2,3,4,5,6])
         self.assertEqual(len(re.get()),2)
-        r = self.client.script_call('test_script',json.dumps([1,2,3]))
+        r = self.client.script_call('test_script',None,json.dumps([1,2,3]))
         self.assertEqual(r,[1,2,3])
         self.assertEqual(len(re.get()),1)
         self.assertEqual(self.client.script_flush(),True)
         self.assertEqual(len(re.get()),1)
-        r = self.client.script_call('test_script',json.dumps([1,2,3,4,5,'bla']))
+        r = self.client.script_call('test_script',None,
+                                    json.dumps([1,2,3,4,5,'bla']))
         self.assertEqual(r,[1,2,3,4,5,'bla'])
         self.assertEqual(len(re.get()),2)
         
     def testEvalShaPipeline(self):
         self.assertEqual(self.client.script_flush(),True)
         pipe = self.client.pipeline()
-        pipe.script_call('test_script',['ciao']).sadd('bla','foo')
+        pipe.script_call('test_script',None,['ciao']).sadd('bla','foo')
         result = pipe.execute()
         self.assertTrue(isinstance(result[0],NoScriptError))
         self.assertTrue(result[1])
@@ -107,7 +114,7 @@ class ScriptingCommandsTestCase(TestCase):
     def testEvalShaPipeline(self):
         self.assertEqual(self.client.script_flush(),True)
         pipe = self.client.pipeline()
-        pipe.script_call('test_script',json.dumps({'foo':[1,2]}))\
+        pipe.script_call('test_script',None,json.dumps({'foo':[1,2]}))\
             .sadd('bla','foo')
         result = pipe.execute(load_script = True)
         self.assertEqual(len(result),2)
@@ -116,7 +123,7 @@ class ScriptingCommandsTestCase(TestCase):
     def testMove2Set(self):
         self.client.sadd('foo',1,2,3,4,5)
         self.client.lpush('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set','s','foo','bla')
+        r = self.client.script_call('move2set',('foo','bla'),'s')
         self.assertEqual(len(r),2)
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],1)
@@ -130,7 +137,7 @@ class ScriptingCommandsTestCase(TestCase):
     def testMove2ZSet(self):
         self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
         self.client.lpush('bla','d','e','f','g')
-        r = self.client.script_call('move2set','z','foo','bla')
+        r = self.client.script_call('move2set',('foo','bla'),'z')
         self.assertEqual(len(r),2)
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],1)
@@ -144,7 +151,7 @@ class ScriptingCommandsTestCase(TestCase):
     def testMoveSetSet(self):
         self.client.sadd('foo',1,2,3,4,5)
         self.client.sadd('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set','s','foo','bla')
+        r = self.client.script_call('move2set',('foo','bla'),'s')
         self.assertEqual(len(r),2)
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],0)
@@ -152,8 +159,37 @@ class ScriptingCommandsTestCase(TestCase):
     def testMove2List2(self):
         self.client.lpush('foo',1,2,3,4,5)
         self.client.lpush('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set','s','foo','bla')
+        r = self.client.script_call('move2set',('foo','bla'),'s')
         self.assertEqual(len(r),2)
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],2)
+        
+
+#@unittest.skipUnless(settings.redis_status() == 2, "Requires redis stdnet.")
+class TestStruct(TestCase):
+    
+    def testDouble(self):
+        c = self.client
+        numbers = [-4.45,3,5.89,23434234234.394,-239453.49]
+        for n in numbers:
+            # need this trick for python 2
+            sn = str(n)
+            n = float(sn)
+            r = c.eval("return struct.pack('>d',ARGV[1])", None, sn)
+            self.assertEqual(len(r),8)
+            rn = float(c.eval("return '' .. struct.unpack('>d',ARGV[1])",
+                              None, r))
+            self.assertAlmostEqual(n,rn,4)
+            pr = struct.pack('>d',n)
+            self.assertEqual(r,pr)
+            prn = struct.unpack('>d',pr)[0]
+    
+    def __testNaN(self):
+        c = self.client
+        n = float('nan')
+        pn = c.eval("return struct.pack('>d',ARGV[1])", n)
+        ppn = struct.pack('>d',n)
+        #pnr = float(c.eval("return '' .. struct.unpack('>d',NaN)"))
+        pnr = c.eval("return '' .. struct.unpack('>d',ARGV[1])", ppn)
+        self.asserEqual(pnr,'nan')
         

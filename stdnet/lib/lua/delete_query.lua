@@ -40,14 +40,14 @@ end
 
 bk = KEYS[1] -- base key for model
 rkey = KEYS[2] -- the key where to store the structure containing the resuls
-local s = KEYS[3]
-local length_indices = KEYS[4]
-local idx1 = 4
-local indices = table_slice(KEYS,idx1+1,idx1+length_indices)
-local uniques = table_slice(KEYS,idx1+length_indices+1,idx1+2*length_indices)
+local s = ARGV[1]
+local length_indices = ARGV[2]
+local idx1 = 2
+local indices = table_slice(ARGV,idx1+1,idx1+length_indices)
+local uniques = table_slice(ARGV,idx1+length_indices+1,idx1+2*length_indices)
 idx1 = idx1 + 2*length_indices + 1
-local length_multifields = KEYS[idx1]
-local multifields = table_slice(KEYS,idx1+1,idx1+length_multifields)
+local length_multifields = ARGV[idx1]
+local multifields = table_slice(ARGV,idx1+1,idx1+length_multifields)
 i = idx1 + length_multifields
 local idset = bk .. ':id'
 local ty = redis.call('type',rkey)['ok']

@@ -9,7 +9,7 @@ from stdnet import FieldValueError
 from stdnet.conf import settings
 from stdnet.utils import to_string, map, gen_unique_id, zip, native_str
 from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
-                        pairs_to_dict
+                        pairs_to_dict, registered_scripts, get_script
 from stdnet.lib.redis import flat_mapping, Pipeline
 
 from .base import BackendStructure, query_result, session_result
@@ -118,7 +118,7 @@ class commit_session(RedisScript):
     script = read_lua_file('session.lua')
     
     def callback(self, request, response, args, sm = None, **kwargs):
-        return session_result(sm.meta, response[0], 'save')
+        return session_result(sm.meta, response, 'save')
     
 
 class move2set(RedisScript):
@@ -158,12 +158,14 @@ class RedisQuery(stdnet.BackendQuery):
         backend = self.backend
         p = 'z' if self.meta.ordering else 's'
         meta = self.meta
+        keys = []
         args = []
         for child in qs:
             if getattr(child,'backend',None) != backend:
                 args.extend(('','' if child is None else child))
             else:
                 be = child.backend_query(pipe = pipe)
+                keys.append(be.query_key)
                 args.extend(('key',be.query_key))
         
         temp_key = True
@@ -175,19 +177,19 @@ class RedisQuery(stdnet.BackendQuery):
                 bk = backend.basekey(meta)
                 key = backend.tempkey(meta)
                 unique = 'u' if qs.unique else ''
-                pipe.script_call('build_query', bk, p, key, qs.name,
+                keys = [bk, key, bk+':*'] + keys
+                pipe.script_call('build_query', keys, p, qs.name,
                                  unique, qs.lookup, *args)
         else:
             key = backend.tempkey(meta)
-            args = args[1::2]
-            pipe.script_call('move2set', p, *args,
+            pipe.script_call('move2set', keys, p,
                              **{'script_dependency':'build_query'})
             if qs.keyword == 'intersect':
-                getattr(pipe,p+'interstore')(key, args, **self.script_dep)
+                getattr(pipe,p+'interstore')(key, keys, **self.script_dep)
             elif qs.keyword == 'union':
-                getattr(pipe,p+'unionstore')(key, args, **self.script_dep)
+                getattr(pipe,p+'unionstore')(key, keys, **self.script_dep)
             elif qs.keyword == 'diff':
-                getattr(pipe,p+'diffstore')(key, args, **self.script_dep)
+                getattr(pipe,p+'diffstore')(key, keys, **self.script_dep)
             else:
                 raise ValueError('Could not perform "{0}" operation'\
                                  .format(qs.keyword))
@@ -284,7 +286,8 @@ elements in the query.'''
         start, stop = self.get_redis_slice(slic)
         get = self.queryelem._get_field or ''
         fields_attributes = None
-        args = [self.query_key, backend.basekey(meta), get]
+        keys = (self.query_key, backend.basekey(meta))
+        args = [get]
         # if the get_field is available, we simply load that field
         if get:
             if get == 'id':
@@ -322,7 +325,7 @@ elements in the query.'''
                    'fields_attributes':fields_attributes,
                    'query':self,
                    'get':get}
-        return backend.client.script_call('load_query', *args, **options)    
+        return backend.client.script_call('load_query', keys, *args, **options)    
 
     def related_lua_args(self):
         '''Generator of load_related arguments'''
@@ -617,6 +620,16 @@ class BackendDataServer(stdnet.BackendDataServer):
             yield idx.attname
         for idx in meta.indices:
             yield 1 if idx.unique else 0
+            
+    def load_scripts(self, *names):
+        if not names:
+            names = registered_scripts()
+        pipe = self.client.pipeline()
+        for name in names:
+            script = get_script(name)
+            if script:
+                pipe.script_load(script.script)
+        return pipe.execute()
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
@@ -636,7 +649,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                     bk = basekey(meta)
                     s = 'z' if meta.ordering else 's'
                     indices = list(self.flat_indices(meta))
-                    lua_data = [bk,s,N,len(indices)//2]
+                    lua_data = [s,N,len(indices)//2]
                     lua_data.extend(indices)
                     for instance in sm:
                         state = instance.state()
@@ -655,7 +668,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                         lua_data.extend((action,id,score,len(data)))
                         lua_data.extend(data)
                     options = {'sm': sm}
-                    pipe.script_call('commit_session', *lua_data, **options)
+                    pipe.script_call('commit_session',
+                                     (bk,bk+':*'), *lua_data, **options)
     
         command, result = redis_execution(pipe, session_result)
         return callback(result, command)
@@ -677,9 +691,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             rmanager = getattr(meta.model,name)
             if rmanager.model == meta.model:
                 pipe.script_call('add_recursive',
-                                 bk,s,
-                                 backend_query.query_key,
-                                 rmanager.field.attname)
+                                 (bk, backend_query.query_key, bk + ':*'),
+                                 s, rmanager.field.attname)
             else:
                 rel_managers.append(rmanager)
         
@@ -688,12 +701,13 @@ class BackendDataServer(stdnet.BackendDataServer):
             self.accumulate_delete(pipe, rq)
         indices = list(self.flat_indices(meta))
         multi_fields = [field.name for field in meta.multifields]
-        lua_data = [bk, backend_query.query_key, s, len(indices)//2]
+        keys = (bk, backend_query.query_key, bk + ':*')
+        lua_data = [s, len(indices)//2]
         lua_data.extend(indices)
         lua_data.append(len(multi_fields))
         lua_data.extend(multi_fields)
         options = {'meta':meta}
-        pipe.script_call('delete_query', *lua_data, **options)
+        pipe.script_call('delete_query', keys, *lua_data, **options)
         return query
         
     def basekey(self, meta, *args):

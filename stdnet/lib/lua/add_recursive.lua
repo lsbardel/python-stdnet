@@ -1,8 +1,8 @@
 -- Script to aggregate recursive fields
 local bk = KEYS[1] -- base key for model
-local s = KEYS[2] -- 's' for set or 'z' for sorted sets
-local rkey = KEYS[3] -- the key where to store the structure containing the resuls
-local field = KEYS[4]
+local rkey = KEYS[2] -- the key where to store the structure containing the resuls
+local s = ARGV[1] -- 's' for set or 'z' for sorted sets
+local field = ARGV[2]
 local idset = bk .. ':id'
 
 -- add a value to a set (or sorted set)

@@ -22,7 +22,6 @@ function table_slice (values,i1,i2)
 end
 
 local tsid = KEYS[1]	--	timeseries id
-local N = table.getn(KEYS)
 local tslen = redis.call('tslen', tsid) + 0
 
 -- 9 bytes string for nil data
@@ -35,11 +34,11 @@ end
 -- First we process timestamps to remove.
 -- Removing timestamps is inefficient!!! Use with care.
 local fields = tsfields()
-local index = 2
-local num_remove = KEYS[index] + index
+local index = 1
+local num_remove = ARGV[index] + index
 while index < num_remove do
 	index = index + 1
-	timestamp = KEYS[index]
+	timestamp = ARGV[index]
 	if tslen > 0 then
 		rank = redis.call('tsrank', tsid, timestamp)
 		if rank ~= false then
@@ -58,26 +57,26 @@ end
 
 -- Second remove fields
 index  = index + 1
-local num_strings = KEYS[index] + index
+local num_strings = ARGV[index] + index
 while index < num_strings do
-	field = KEYS[index+1]
+	field = ARGV[index+1]
 	index = index + 1
 	redis.call('del',  tsid .. ':field:' .. field)
 end
 
 -- Last we process data to add by looping over data fields
 local fields = tsfields()
-while index < N do
-	field = KEYS[index+1]
+while index < # ARGV do
+	field = ARGV[index+1]
 	fieldid = tsid .. ':field:' .. field
 	index = index + 2
-	len_data = index + 2*KEYS[index]
+	len_data = index + 2*ARGV[index]
 	if len_data > 0 and not redis.call('exists',fieldid) then
 		table.insert(fields,field)
 	end
 	while index < len_data do
-		timestamp = KEYS[index+1] + 0
-		value = KEYS[index+2]
+		timestamp = ARGV[index+1] + 0
+		value = ARGV[index+2]
 		index = index + 2
 		-- Storing a string if value is bigger than 9 bits
 		if string.len(value) > 9 then

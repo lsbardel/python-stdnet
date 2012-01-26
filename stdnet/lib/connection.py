@@ -108,7 +108,10 @@ handling of a single command from start to the response from the server.'''
         c = self.connection
         try:
             if isinstance(self.response,ResponseError):
-                raise self.response
+                if str(self.response) == NoScriptError.msg:
+                    self.response = NoScriptError()
+                else:
+                    raise self.response
             self._response = self.client.parse_response(self)
         except:
             c.disconnect()
@@ -188,7 +191,7 @@ This class should not be directly initialized. Insteady use the
         self.encoding_errors = encoding_errors
         self.__sock = None
         if reader_class is None:
-            if settings.REDIS_PARSER == 'python':
+            if settings.REDIS_PY_PARSER:
                 reader_class = fallback.Reader
             else:
                 reader_class = Reader

@@ -21,13 +21,14 @@ overriding them.
     Default ``"stdnet"``.
     
     
-.. attribute:: settings.REDIS_PARSER
+.. attribute:: settings.REDIS_PY_PARSER
 
-    The redis parser to choose. By default it is set to ``None`` which causes
+    Set stdnet to use the internal python parser for redis.
+    By default it is set to ``False`` which causes
     the library to choose the best possible available. More information
     is contained in the :ref:`redis parser <redis-parser>` documentation.
     
-    Default ``None``.
+    Default ``False``.
 
 
 .. attribute:: settings.MAX_CONNECTIONS
@@ -58,9 +59,21 @@ class Settings(object):
         self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
         self.DEFAULT_KEYPREFIX  = 'stdnet.'
         self.CHARSET = 'utf-8'
-        self.REDIS_PARSER = None
+        self.REDIS_PY_PARSER = False
         self.MAX_CONNECTIONS = 2**31
         self.RedisConnectionClass = None
+    
+    def redis_status(self):
+        from stdnet import getdb
+        from stdnet.lib.redis import ConnectionError
+        db = getdb(self.DEFAULT_BACKEND)
+        status = 1
+        if db.name == 'redis':
+            status = db.client.redis_status()
+        if not status:
+            raise ConnectionError('No connection available for server\
+ at "{0}"'.format(self.DEFAULT_BACKEND))
+        return status
         
         
 settings = Settings()

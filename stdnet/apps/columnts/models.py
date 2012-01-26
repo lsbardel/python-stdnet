@@ -1,29 +1,11 @@
 '''A Redis timeseries module base on redis time-series and
 redis strings.
 '''
-from struct import pack, unpack
-
 from stdnet import orm
 from stdnet.lib import skiplist
-from stdnet.utils import encoders, iteritems, zip, ispy3k
+from stdnet.utils import encoders, iteritems, zip
 
-##########################################################
-# flags
-#
-#    \x00    nan
-#    \x01    int
-#    \x02    float
-#    \x03    small string (len <= 8)
-#    \x04    big string (len > 8)
-##########################################################
-
-nil = b'\x00'*9
-nil4 = b'\x00'*4
-nan = float('nan')
-float_to_bin = lambda f : pack('>d', f)
-bin_to_float = lambda f : unpack('>d', f)[0]
-int_to_bin = lambda f : pack('>i', f) + nil4
-bin_to_int = lambda f : unpack('>i', f[:4])[0]
+from .encoders import ValueEncoder
 
 
 class TimeseriesCache(object):
@@ -42,77 +24,13 @@ class TimeseriesCache(object):
         self.fields.clear()
         self.delete_fields.clear()
         self.deleted_timestamps.clear()
-        
-    def flat(self):
-        if self.deleted_timestamps or self.delete_fields or self.fields:
-            # timestamps to delete
-            args = [len(self.deleted_timestamps)]
-            args.extend(self.deleted_timestamps)
-            # fields to delete
-            args.append(len(self.delete_fields))
-            args.extend(self.delete_fields)
-            # For each field we have: field_name, len(vals), [t1,v1,t2,v2,...]
-            for field in self.fields:
-                val = self.fields[field]
-                args.append(field)
-                args.append(len(val))
-                args.extend(val.flat())
-            return args
-        
-        
-class ValueEncoder(encoders.Default):
-        
-    def dumps(self, value):
-        if value is None:
-            return nil
-        try:
-            value = float(value)
-            if value != value:
-                return nil
-            elif value == int(value):
-                return b'\x01'+int_to_bin(int(value))
-            else:
-                return b'\x02'+float_to_bin(value)
-        except ValueError:
-            value = super(ValueEncoder,self).dumps(value)
-            if len(value) <= 8:
-                return b'\x03'+value
-            else:
-                val = b'\x04'+sha1(value).hexdigest(value)[:8].encode('utf-8')
-                return val+value
-    
-    if ispy3k:
-        
-        def loads(self, value):
-            flag = value[0]
-            if flag == 0:
-                return nan 
-            elif flag == 1:
-                return bin_to_int(value[1:])
-            elif flag == 2:
-                return bin_to_float(value[1:])
-            else:
-                return super(ValueEncoder,self).loads(value[1:])
-    
-    else:
-        
-        def loads(self, value):
-            flag = ord(value[0])
-            if flag == 0:
-                return nan 
-            elif flag == 1:
-                return bin_to_int(value[1:])
-            elif flag == 2:
-                return bin_to_float(value[1:])
-            else:
-                return super(ValueEncoder,self).loads(value[1:])
 
 
 class ColumnTS(orm.Structure):
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
     value_pickler = ValueEncoder()
-        
+    
     def fields(self):
         '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
         return self.backend_structure().fields()

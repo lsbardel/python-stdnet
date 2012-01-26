@@ -13,7 +13,9 @@ except ImportError:
 
 from . import fallback
 
-#For now
+#TODO
+#For now we use the pure python implementation.
+skiplist = fallback.skiplist
 zset = fallback.zset
 
 

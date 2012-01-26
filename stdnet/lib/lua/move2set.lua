@@ -1,13 +1,13 @@
 -- Move a list of keys to sets or zsets
 local N = # KEYS
 local moved = 0
-local s = KEYS[1]
-if N > 1 then
+local s = ARGV[1]
+if N > 0 then
 	local typ = 'set'
 	if s == 'z' then
 		typ = 'zset'
 	end
-	local n = 1
+	local n = 0
 	while n < N do
 		n = n + 1
 		local key = KEYS[n]
@@ -32,4 +32,4 @@ if N > 1 then
 	end
 end
 
-return {N-1,moved}
+return {N,moved}

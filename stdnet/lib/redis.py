@@ -12,6 +12,7 @@ Copyright (c)
 '''
 import time
 from datetime import datetime
+from uuid import uuid4
 from functools import partial
 
 from stdnet.utils import zip, is_int, iteritems, is_string
@@ -862,6 +863,15 @@ The first element is the score and the second is the value.'''
     ############################################################################
     ##    TIMESERIES COMMANDS
     ############################################################################
+    def redis_status(self):
+        try:
+            self.execute_command('TSLEN', str(uuid4()))
+            return 2
+        except ConnectionError:
+            return 0
+        except ResponseError:
+            return 1
+        
     def tslen(self, name, **options):
         '''timeseries length'''
         return self.execute_command('TSLEN', name, **options)
@@ -984,25 +994,31 @@ time ``start`` and time ``end`` sorted in ascending order.
     ############################################################################
     ##    Scripting
     ############################################################################
-    def eval(self, body, **kwargs):
-        num_keys = len(kwargs)
-        if num_keys:
-            keys = []
-            args = []
-            for k,v in iteritems(kwargs):
-                keys.append(k)
-                args.append(v)
-            keys.extend(args)
+    def _eval(self, command, body, keys, *args, **options):
+        if keys:
+            if not isinstance(keys,collection_list):
+                params = (keys,)
+            else:
+                params = tuple(keys)
+            num_keys = len(params)
+            params = params + args
         else:
-            keys = ()
-        return self.execute_command('EVAL', body, num_keys, *keys)
+            num_keys = 0
+            params = args
+        return self.execute_command(command, body, num_keys, *params, **options)
     
-    def script_call(self, name, *args, **options):
+    def eval(self, body, keys, *args, **options):
+        return self._eval('EVAL', body, keys, *args, **options)
+    
+    def evlsha(self, body, keys, *args, **options):
+        return self._eval('EVALSHA', body, keys, *args, **options)
+    
+    def script_call(self, name, keys, *args, **options):
         '''Execute a registered lua script.'''
         script = get_script(name)
         if not script:
             raise ValueError('No such script {0}'.format(name))
-        return script.evalsha(self, *args, **options)
+        return script.evalsha(self, keys, *args, **options)
         
     def script_flush(self):
         return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
@@ -1010,6 +1026,9 @@ time ``start`` and time ``end`` sorted in ascending order.
     def script_load(self, script):
         return self.execute_command('SCRIPT', 'LOAD', script, command = 'LOAD')
     
+    ############################################################################
+    ##    Script commands
+    ############################################################################
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
         return self.script_call('delpattern', pattern)
@@ -1126,6 +1145,8 @@ Several callbacks can be added for a given command::
             args, options, callbacks = cmd
             if not isinstance(r, Exception):
                 r = parse_response(request, r, args[0], args[1:], options)
+            elif str(r) == NoScriptError.msg:
+                r = NoScriptError()
             for callback in callbacks:
                 r = callback(processed,r)
             processed.append(r)

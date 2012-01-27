@@ -4,8 +4,7 @@ import struct
 
 from stdnet.test import unittest
 from stdnet.conf import settings
-from stdnet.lib import RedisScript, read_lua_file, get_script
-from stdnet.lib.exceptions import NoScriptError
+from stdnet.lib import redis
 
 from .base import TestCase
 
@@ -14,8 +13,8 @@ to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
 
 
-class test_script(RedisScript):
-    script = (read_lua_file('utils/redis.lua'),
+class test_script(redis.RedisScript):
+    script = (redis.read_lua_file('utils/redis.lua'),
               '''\
 js = cjson.decode(ARGV[1])
 return cjson.encode(js)''')
@@ -80,7 +79,7 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(r,b'none')
         
     def testScript(self):
-        script = get_script('test_script')
+        script = redis.get_script('test_script')
         self.assertTrue(script.script)
         sha = sha1(script.script.encode('utf-8')).hexdigest()
         self.assertEqual(script.sha1,sha)

@@ -21,9 +21,12 @@ from stdnet import BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
                          to_string
+from stdnet.lib import RedisReader, fallback
 
 from .exceptions import *
-from .base import Reader, fallback
+
+
+__all__ = ['RedisRequest', 'ConnectionPool', 'Connection']
 
 
 class RedisRequest(BackendRequest):
@@ -161,7 +164,7 @@ class SyncRedisRequest(RedisRequest):
     
 class Connection(object):
     ''''Manages TCP or UNIX communication to and from a Redis server.
-This class should not be directly initialized. Insteady use the
+This class should not be directly initialized. Instead use the
 :class:`ConnectionPool`::
 
     from stdnet.lib.connection ConnectionPool
@@ -192,10 +195,11 @@ This class should not be directly initialized. Insteady use the
         self.__sock = None
         if reader_class is None:
             if settings.REDIS_PY_PARSER:
-                reader_class = fallback.Reader
+                reader_class = fallback.RedisReader
             else:
-                reader_class = Reader
-        self.parser = reader_class(InvalidResponse, ResponseError)
+                reader_class = RedisReader
+        self.parser = reader_class(InvalidResponse,
+                                   ResponseError)
 
     @property
     def address(self):
@@ -343,7 +347,7 @@ ConnectionClass = None
 
 
 class ConnectionPool(object):
-    "A :class:`Connection` pool."
+    "A :class:`Redis` :class:`Connection` pool."
     default_encoding = 'utf-8'
     
     def __init__(self, address, connection_class=None, db=0,

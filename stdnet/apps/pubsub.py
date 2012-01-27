@@ -3,7 +3,7 @@ from inspect import isclass
 from stdnet import getdb
 from stdnet.utils.encoders import Json
 from stdnet.utils import is_string
-from stdnet.lib.exceptions import ConnectionError
+from stdnet.lib import redis
 
 
 class PubSub(object):
@@ -84,7 +84,7 @@ class Subscriber(PubSub):
         try:
             connection.send_command(command, *channels)
             return self.parse_response()
-        except ConnectionError:
+        except redis.ConnectionError:
             connection.disconnect()
             # Connect manually here. If the Redis server is down, this will
             # fail and raise a ConnectionError as desired.

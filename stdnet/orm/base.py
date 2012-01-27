@@ -416,10 +416,17 @@ raised when trying to save an invalid instance.'''
     
     def async_handle(self, result, callback, *args, **kwargs):
         if isinstance(result,BackendRequest):
-            return result.add_callback(
-                        lambda res : callback(res, *args, **kwargs))
+            return result.add_callback(lambda res :\
+                        self.async_callback(callback, res, *args, **kwargs))
+        else:
+            return self.async_callback(callback, result, *args, **kwargs)
+        
+    def async_callback(self, callback, result, *args, **kwargs):
+        if isinstance(result, Exception):
+            raise result
         else:
             return callback(result, *args, **kwargs)
+    
     
 ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})
 

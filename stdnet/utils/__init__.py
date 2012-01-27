@@ -24,6 +24,16 @@ def gen_unique_id(short = True):
     return id
 
 
+def flat_mapping(mapping):
+    if isinstance(mapping,dict):
+        mapping = iteritems(mapping)
+    items = []
+    extend = items.extend
+    for pair in mapping:
+        extend(pair)
+    return items
+
+
 def _flat2d_gen(iterable):
     for v in iterable:
         yield v[0]

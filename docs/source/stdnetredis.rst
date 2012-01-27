@@ -45,19 +45,22 @@ removed from the first sorted sets only if the score is matched.
 
 .. _redis-timeseries:
 
-Timeseries
+Time-series
 ==========================
 
-Timeseries is an important data-structure not yet supported in redis,
-it is represented by a unique sorted associative container,
-that is to say it associates ordered unique times to values.
+:ref:`Time-series <http://en.wikipedia.org/wiki/Time_series>` is an important
+data-structure not yet supported in redis, it is represented by a unique sorted
+associative container, that is to say it associates ordered unique times to values.
 
-Values, which can be anything you like, are ordered with respect to double values (times),
-and can be accessed by times or rank (the order of times in the timeseries).
+Values, which can be anything you like, are ordered with respect to times
+(you could use unix timestamp, but any double value would do),
+and can be accessed by times or rank (the order of times in the time-series).
 Times are unique so that there will be only one value associated with a given time.
 
-Internally, values are added to a skip list which maintain
-sorting with respect to times.
+Internally, a time-series is implemented using the same skiplist implementation
+as :ref:`ordered sets <http://redis.io/commands#sorted_set>`.
+Values are added to a skip list which maintain sorting with respect to times.
+
 
 Performance::
 

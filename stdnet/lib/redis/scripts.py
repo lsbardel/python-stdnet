@@ -118,6 +118,8 @@ lua scripts to redis via the ``evalsha`` command.
                 pipe = client.pipeline()
                 self.load(pipe, keys, *args, **options)
                 result = pipe.execute()
+                if isinstance(result[0],Exception):
+                    raise result[0]
                 if isinstance(result, RedisRequest):
                     return result.add_callback(lambda r : r[1])
                 else:

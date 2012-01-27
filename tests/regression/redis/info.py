@@ -1,4 +1,4 @@
-from stdnet.lib.redisinfo import redis_info
+from stdnet.lib.redis import redis_info
 
 from .base import TestCase
 

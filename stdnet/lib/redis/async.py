@@ -1,4 +1,4 @@
-'''Asynchronous Redis Connection.
+'''Asynchronous Redis Connection For pulsar_ concurrent framework.
 
 Requires pulsar_
 
@@ -10,7 +10,6 @@ from pulsar import AsyncIOStream, Deferred
 
 from .exceptions import ConnectionError
 from . import connection
-
 
 
 class AsyncRedisRequest(connection.RedisRequest, Deferred):

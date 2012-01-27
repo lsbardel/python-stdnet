@@ -15,14 +15,17 @@ from datetime import datetime
 from uuid import uuid4
 from functools import partial
 
-from stdnet.utils import zip, is_int, iteritems, is_string
+from stdnet.utils import zip, is_int, iteritems, is_string, flat_mapping
 from stdnet.utils.dispatch import Signal
 
-from .connection import ConnectionPool, RedisRequest
+from .connection import *
 from .exceptions import *
 
 from .scripts import nil, script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
+
+
+__all__ = ['Redis','Pipeline']
 
 
 collection_list = (tuple, list, set, frozenset, dict)
@@ -53,16 +56,6 @@ def timestamp_to_datetime(request, response, args, **options):
 
 def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
-
-
-def flat_mapping(mapping):
-    if isinstance(mapping,dict):
-        mapping = iteritems(mapping)
-    items = []
-    extend = items.extend
-    for pair in mapping:
-        extend(pair)
-    return items
 
         
 def dict_merge(*dicts):
@@ -186,13 +179,13 @@ class Redis(object):
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
             lambda request, response, args, **options:\
-                is_int(response) and response or response == OK
+                is_int(response) and response or response == b'OK'
             ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
             'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME'
             'SAVE SELECT SET SHUTDOWN SLAVEOF WATCH UNWATCH',
-            lambda request, response, args, **options: response == OK
+            lambda request, response, args, **options: response == b'OK'
             ),
         string_keys_to_dict(
             'BLPOP BRPOP',

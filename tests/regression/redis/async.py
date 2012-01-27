@@ -1,7 +1,7 @@
 from stdnet.lib import redis
 from stdnet import test, getdb
 from stdnet.conf import settings
-from stdnet.lib.async import AsyncRedisConnection
+from stdnet.lib.redis.async import AsyncRedisConnection
 
 
 def makeredis(pool = None):

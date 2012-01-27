@@ -13,7 +13,7 @@ be of different types:
     * Sets
     * Sorted Sets
     * Hash tables
-    * Timeseries (only if you use the redis branch from lsbardel_)
+    * :ref:`Timeseries <redis-timeseries>` (only if you use the stdnet-redis_ branch)
     
 In other words, you can look at redis as a data structure server, the networked
 equivalent of the `standard template library in C++
@@ -110,6 +110,21 @@ Pipeline
    :members:
    :member-order: bysource
    
+   
+Connection Pool
+~~~~~~~~~~~~~~~
+.. autoclass:: ConnectionPool
+   :members:
+   :member-order: bysource
+   
+   
+Connection
+~~~~~~~~~~~~~~~
+.. autoclass:: Connection
+   :members:
+   :member-order: bysource
+   
+
 
 Redis Session
 ===============================
@@ -146,6 +161,6 @@ The list of arguments passed to the :mod:`stdnet.lib.lua.load_query` script:
    
    
 .. _Redis: http://redis.io/
-.. _lsbardel: https://github.com/lsbardel/redis
+.. _stdnet-redis: https://github.com/lsbardel/redis
 .. _cython: http://cython.org/
 .. _hiredis: https://github.com/antirez/hiredis

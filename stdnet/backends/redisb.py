@@ -7,13 +7,13 @@ from hashlib import sha1
 import stdnet
 from stdnet import FieldValueError
 from stdnet.conf import settings
-from stdnet.utils import to_string, map, gen_unique_id, zip, native_str
-from stdnet.lib import redis, ScriptBuilder, RedisScript, read_lua_file, \
-                        pairs_to_dict, registered_scripts, get_script
-from stdnet.lib.redis import flat_mapping, Pipeline
+from stdnet.utils import to_string, map, gen_unique_id, zip,\
+                             native_str, flat_mapping
+from stdnet.lib import redis
 
 from .base import BackendStructure, query_result, session_result
 
+pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
 
@@ -27,22 +27,22 @@ TMP = 'tmp'     # temorary key
 ################################################################################
 
 
-class build_query(RedisScript):
-    script = read_lua_file('build_query.lua')
+class build_query(redis.RedisScript):
+    script = redis.read_lua_file('build_query.lua')
     
 
-class add_recursive(RedisScript):
-    script = (read_lua_file('utils/redis.lua'),
-              read_lua_file('add_recursive.lua'))
+class add_recursive(redis.RedisScript):
+    script = (redis.read_lua_file('utils/redis.lua'),
+              redis.read_lua_file('add_recursive.lua'))
     
     
-class load_query(RedisScript):
+class load_query(redis.RedisScript):
     '''Rich script for loading a query result into stdnet. It handles
 loading of different fields, loading of related fields, sorting and
 limiting.'''
-    script = (read_lua_file('utils/table.lua'),
-              read_lua_file('utils/redis.lua'),
-              read_lua_file('load_query.lua'))
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('utils/redis.lua'),
+              redis.read_lua_file('load_query.lua'))
     
     def build(self, response, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
@@ -92,10 +92,10 @@ limiting.'''
             return self.build(data, fields, fields, encoding)
         
 
-class delete_query(RedisScript):
+class delete_query(redis.RedisScript):
     '''Lua script for bulk delete of an orm query, including cascade items.
 The first parameter is the model'''
-    script = read_lua_file('delete_query.lua')
+    script = redis.read_lua_file('delete_query.lua')
     
     def callback(self, request, response, args, meta = None, client = None,
                  **kwargs):
@@ -114,16 +114,16 @@ The first parameter is the model'''
             return response
     
 
-class commit_session(RedisScript):
-    script = read_lua_file('session.lua')
+class commit_session(redis.RedisScript):
+    script = redis.read_lua_file('session.lua')
     
     def callback(self, request, response, args, sm = None, **kwargs):
         return session_result(sm.meta, response, 'save')
     
 
-class move2set(RedisScript):
-    script = (read_lua_file('utils/redis.lua'),
-              read_lua_file('move2set.lua'))
+class move2set(redis.RedisScript):
+    script = (redis.read_lua_file('utils/redis.lua'),
+              redis.read_lua_file('move2set.lua'))
 
         
 
@@ -375,7 +375,7 @@ class RedisStructure(BackendStructure):
         
     @property
     def pipelined(self):
-        return isinstance(self.client,Pipeline)
+        return self.client.pipelined
     
     
 class Set(RedisStructure):
@@ -623,10 +623,10 @@ class BackendDataServer(stdnet.BackendDataServer):
             
     def load_scripts(self, *names):
         if not names:
-            names = registered_scripts()
+            names = redis.registered_scripts()
         pipe = self.client.pipeline()
         for name in names:
-            script = get_script(name)
+            script = redis.get_script(name)
             if script:
                 pipe.script_load(script.script)
         return pipe.execute()

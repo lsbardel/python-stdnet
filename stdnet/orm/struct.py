@@ -2,7 +2,7 @@ from uuid import uuid4
 from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
-from stdnet.lib import zset, skiplist, nil
+from stdnet.lib import zset, skiplist
 from stdnet import SessionNotAvailable
 
 from .base import ModelBase
@@ -238,6 +238,9 @@ Do not override this function. Use :meth:`load_data` method instead.'''
     def load_data(self, data):
         loads = self.value_pickler.loads
         return (loads(v) for v in data)
+    
+    def dbid(self):
+        return self.session.structure(self).id
     
     ############################################################################
     ## INTERNALS

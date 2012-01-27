@@ -1,8 +1,29 @@
+import os
 from datetime import date, datetime, timedelta
+
 from stdnet import test
-from stdnet.apps.columnts import ColumnTS, TimeSeriesField 
+from stdnet.apps.columnts import ColumnTS, TimeSeriesField
+from stdnet.apps.columnts.redis import script_path
+from stdnet.lib import redis
 
 
+this_path = os.path.split(os.path.abspath(__file__))[0]
+
+class timeseries_test1(redis.RedisScript):
+    script = (redis.read_lua_file('columnts.lua',script_path),
+              redis.read_lua_file('test1.lua',this_path))
+    
+
+class TestLuaClass(test.TestCase):
+    
+    def test1(self):
+        session = self.session()
+        ts = session.add(ColumnTS(id = 'bla'))
+        c = self.backend.client
+        r = c.script_call('timeseries_test1',ts.dbid())
+        self.assertEqual(r,b'OK')
+
+    
 class TestTimeSeries(test.TestCase):
     
     def makeGoogle(self):

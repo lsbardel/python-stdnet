@@ -1,7 +1,7 @@
 import os
 
 from stdnet.backends import redisb
-from stdnet.lib import read_lua_file, RedisScript
+from stdnet.lib import redis
 
 
 class RedisColumnTS(redisb.TS):
@@ -15,13 +15,14 @@ class RedisColumnTS(redisb.TS):
                     
     def fields(self):
         '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
-        prefix = self.id + ':field:'
-        start = len(prefix)
-        return tuple(sorted((f[start:] for f in self.client.keys(prefix+'*'))))
+        key = self.id + ':fields'
+        encoding = self.client.encoding
+        return tuple(sorted((f.decode(encoding) \
+                             for f in self.client.smembers(key))))
     
     def numfields(self):
         '''Number of fields'''
-        return self.client.script_call('countpattern',self.id + ':field:*')
+        return self.client.scard(self.id + ':fields')
     
     def range(self, start = 0, end = -1, fields = None):
         fields = fields or ()
@@ -64,19 +65,21 @@ redisb.struct_map['columnts'] = RedisColumnTS
 
 script_path = os.path.join(os.path.split(os.path.abspath(__file__))[0],'lua')
 
-class timeseries_session(RedisScript):
-    script = read_lua_file('session.lua',script_path)
+class timeseries_session(redis.RedisScript):
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('columnts.lua',script_path),
+              redis.read_lua_file('session.lua',script_path))
     
     
-class timeseries_query(RedisScript):
-    script = (read_lua_file('utils/table.lua'),
-              read_lua_file('query.lua',script_path))
+class timeseries_query(redis.RedisScript):
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('columnts.lua',script_path),
+              redis.read_lua_file('query.lua',script_path))
     
     def callback(self, request, response, args, **options):
         if isinstance(response,Exception):
             raise response
         encoding = request.client.encoding
         fields = [f.decode(encoding) for f in response[1::2]]
-        return response[0], zip(fields,response[2::2]) 
+        return response[0], zip(fields,response[2::2])
         
-    

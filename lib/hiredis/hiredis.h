@@ -34,9 +34,6 @@
 #include <stdio.h> /* for size_t */
 #include <stdarg.h> /* for va_list */
 #include <sys/time.h> /* for struct timeval */
-#if defined _WIN32
-//#	define	strerror_r(errnum, buf, buflen) strerror(buf, buflen, errnum)
-#endif
 
 #define HIREDIS_MAJOR 0
 #define HIREDIS_MINOR 10
@@ -86,6 +83,8 @@
 #define REDIS_REPLY_STATUS 5
 #define REDIS_REPLY_ERROR 6
 
+#define REDIS_MULTIBULKSTACK_SIZE 7
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -126,7 +125,7 @@ typedef struct redisReader {
     size_t pos; /* Buffer cursor */
     size_t len; /* Buffer length */
 
-    redisReadTask rstack[3];
+    redisReadTask rstack[REDIS_MULTIBULKSTACK_SIZE];
     int ridx; /* Index of current read task */
     void *reply; /* Temporary reply pointer */
 

@@ -71,20 +71,37 @@ class ColumnTS(orm.Structure):
         return self.async_handle(res, self._range)
     
     def rangebytime(self, start, end, fields = None):
-        res = self.backend_structure().range(start,end,fields)
+        res = self.backend_structure().rangebytime(start,end,fields)
         return self.async_handle(res, self._range)
     
-    def merge(self, series, weights, fields = None):
+    def stats(self, start, end, fields = None):
+        res = self.backend_structure().stats(start,end,fields)
+        return self.async_handle(res, self._stats)
+        
+    def merge(self, *series, **kwargs):
+        '''Merge series into one timeseries.
+        
+:parameters series: a list of tuples where the nth element is a tuple
+    of the form::
+
+    (ts_n1,ts_n2,..,ts_nMn,wight_n)
+
+The result will be calculated using the formula::
+
+    ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
+         ...
+'''
         if not self.session:
-            session = series[0].session
+            session = None
             for serie in series:
-                if session != serie.session:
-                    raise ValueError('Session of timeseries are different')
-            self.session = session
-        if len(series) != len(weights):
-            raise ValueError(
-                        'number of series different from number of weights.')
-        return self.backend_structure().merge(series, weights, fields or ())
+                for s in serie[:-1]:
+                    if not session:
+                        session = s.session
+                    elif session != s.session:
+                        raise ValueError('Session of timeseries are different')
+            session.add(self)
+        fields = kwargs.get('fields',None) or ()
+        return self.backend_structure().merge(series, fields)
         
     # INTERNALS
     
@@ -97,6 +114,15 @@ class ColumnTS(orm.Structure):
             vals[f] = [vloads(d) for d in data]
         return (dt,vals)
     
+    def _stats(self, result):
+        if result:
+            result['start'] = self.pickler.loads(result['start'])
+            result['stop'] = self.pickler.loads(result['stop'])
+            stats = result['stats']
+            for k in stats:
+                stats[k] = [float(v) for v in stats[k]]
+        return result
+        
     
 class TimeSeriesField(orm.MultiField):
     '''An experimenta timeseries field.'''

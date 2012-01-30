@@ -21,6 +21,7 @@ class RedisColumnTS(redisb.TS):
             keys, args = keysargs
             return self.client.script_call('timeseries_session', keys, *args)
         elif cache.merged_series:
+            keys, args = cache.merged_series
             return self.client.script_call('timeseries_merge', keys, *args)
     
     def allkeys(self):
@@ -78,17 +79,25 @@ class RedisColumnTS(redisb.TS):
                 args.extend(val.flat())
             return keys, args
     
-    def merge(self, series, weights, fields):
+    def merge(self, series, fields):
         keys = [self.id]
-        keys.extend((s.backend_structure().id for s in series))
         argv = [len(series)]
-        for w in weights:
-            if isinstance(w,orm.Structure):
-                w = w.backend_structure().id
-                keys.append(w)
-            argv.append(w)
+        for elems in series:
+            weight = elems[-1]
+            argv.append(weight)
+            tss = elems[:-1]
+            argv.append(len(tss))
+            for ts in tss:
+                k = ts.backend_structure().id
+                keys.append(k)
+                argv.append(k)
         argv.extend(fields)
         self.instance.cache.merged_series = (keys,argv)
+        
+    def stats(self, start, end, fields = None):
+        fields = fields or ()
+        return self.client.script_call('timeseries_stats', self.id, start, end,
+                                       len(fields), *fields)
         
             
 redisb.struct_map['columnts'] = RedisColumnTS
@@ -120,6 +129,20 @@ class timeseries_query(redis.RedisScript):
         if isinstance(response,Exception):
             raise response
         encoding = request.client.encoding
-        fields = [f.decode(encoding) for f in response[1::2]]
-        return response[0], zip(fields,response[2::2])
+        fields = (f.decode(encoding) for f in response[1::2])
+        return response[0], tuple(zip(fields,response[2::2]))
+        
+
+class timeseries_stats(redis.RedisScript):
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('columnts.lua',script_path),
+              redis.read_lua_file('stats.lua',script_path))
+    
+    def callback(self, request, response, args, **options):
+        encoding = request.client.encoding
+        result = dict(redis.pairs_to_dict(response,encoding))
+        if result:
+            result['stats'] =\
+                dict(redis.pairs_to_dict(result['stats'],encoding))
+        return result
         

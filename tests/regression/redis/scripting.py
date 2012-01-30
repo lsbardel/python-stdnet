@@ -174,14 +174,23 @@ class TestStruct(TestCase):
             # need this trick for python 2
             sn = str(n)
             n = float(sn)
+            # pack in lua
             r = c.eval("return struct.pack('>d',ARGV[1])", None, sn)
             self.assertEqual(len(r),8)
-            rn = float(c.eval("return '' .. struct.unpack('>d',ARGV[1])",
-                              None, r))
-            self.assertAlmostEqual(n,rn,4)
+            # pack in python
             pr = struct.pack('>d',n)
             self.assertEqual(r,pr)
-            prn = struct.unpack('>d',pr)[0]
+            # unpack lua-lua
+            rn = float(c.eval("return '' .. struct.unpack('>d',ARGV[1])",
+                              None, r))
+            # unpack python-lua
+            prn = float(c.eval("return '' .. struct.unpack('>d',ARGV[1])",
+                              None, pr))
+            self.assertAlmostEqual(n,rn,4)
+            self.assertAlmostEqual(prn,rn,4)
+            # unpack python python
+            pprn = struct.unpack('>d',pr)[0]
+            self.assertAlmostEqual(prn,pprn,4)
     
     def __testNaN(self):
         c = self.client

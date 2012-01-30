@@ -116,7 +116,7 @@ The first parameter is the model'''
     
 
 def structure_session_callback(sm, deleted, saved, processed, response):
-    if response:
+    if response and not isinstance(response,Exception):
         if deleted:
             processed.append(session_result(sm.meta, deleted, 'delete'))
         if saved:
@@ -651,7 +651,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         basekey = self.basekey
         pipe = self.client.pipeline()
         for sm in session:
-            sm.pre_commit()
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':
@@ -772,6 +771,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         for instance in sm:
             instance.commit(client)
             saved.append(instance.id)
-        #client.add_callback(
-        #        partial(structure_session_callback,sm,deleted,saved))
+        client.add_callback(
+                partial(structure_session_callback,sm,deleted,saved))
         

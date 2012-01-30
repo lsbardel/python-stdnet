@@ -130,24 +130,11 @@ for example ``group__name``.'''
     def toload(self):
         return self._valattr('toload')
     
-    def save(self):
-        '''A fast method for saving an object. Use this method with care
-since it commits changes to the backend database immediately. If a session
-is not available, it tries to create one from its :class:`Manager`.'''
+    def get_session(self):
         session = self.session
         if session is None:
             session = self.__class__.objects.session()
-        with session.begin():
-            session.add(self)
-        return self
-    
-    def delete(self):
-        session = self.session
-        if session is None:
-            session = self.__class__.objects.session()
-        with session.begin():
-            session.delete(self)
-        return self
+        return session
     
     def todict(self):
         '''Return a dictionary of serialised scalar field for pickling'''

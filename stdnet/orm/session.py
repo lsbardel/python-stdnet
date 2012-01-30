@@ -76,6 +76,8 @@ Session model."""
             return self._modified.get(id)
         elif id in self._deleted:
             return self._deleted.get(id)
+        elif id in self._loaded:
+            return self._loaded.get(id)
         
     def add(self, instance, modified):
         state = instance.state(update = True)
@@ -131,8 +133,7 @@ Session model."""
     def query(self):
         return self.session.query(self.model)
     
-    def pre_commit(self):
-        '''Build a delete query from deleted instances'''
+    def pre_commit(self, transaction):
         d = self.deleted
         if d:
             self._deleted.clear()
@@ -140,7 +141,14 @@ Session model."""
                 q = self.query().filter(id__in  = d)
                 self._delete_query.append(q.construct())
             else:
-                self._delete_query = tuple(itervalues(self._deleted))
+                self._delete_query.extend(d)
+            pre_delete.send(self.model, instances = self._delete_query,
+                            transaction = transaction)
+        cn = len(self)
+        if cn:
+            pre_commit.send(self.model, instances = self,
+                            transaction = transaction)
+        return len(self._delete_query) + cn
             
     def post_commit(self, ids):
         instances = []
@@ -236,12 +244,13 @@ An instance of this class is usually obtained by using the high level
             return self.post_commit()
         
     def post_commit(self, response = None, commands = None):
-        '''callback from the :class:`stdnet.BackendDataServer` once the
-:attr:`session` has finished and results are available.
+        '''Callback from the :class:`stdnet.BackendDataServer` once the
+:attr:`session` commit has finished and results are available.
 
 :parameter response: list of results for each :class:`SessionModel`
-    in :attr:`session`. Each element in the list is a two-element tuple
-    with the :attr:`SessionModel.meta` element and a list of ids.
+    in :attr:`session`. Each element in the list is a three-element tuple
+    with the :attr:`SessionModel.meta` element, a list of ids and the commit
+    action performed (one of ``save`` and ``delete``).
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
@@ -289,12 +298,9 @@ An instance of this class is usually obtained by using the high level
 
     # INTERNAL FUNCTIONS
     def pre_commit(self):
-        send = pre_commit.send
         sent = 0
         for sm in self.session:
-            if sm or sm._delete_query:
-                send(sm.model, instances = sm, transaction = self)
-                sent += 1
+            sent += sm.pre_commit(self)
         return sent
         
     # VIRTUAL FUNCTIONS
@@ -348,6 +354,9 @@ class Session(object):
     def __iter__(self):
         for sm in self._models.values():
             yield sm
+    
+    def __len__(self):
+        return len(self._models)
             
     def model(self, meta, make = False):
         sm = self._models.get(meta)

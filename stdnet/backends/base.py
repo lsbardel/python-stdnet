@@ -50,7 +50,7 @@ class BackendStructure(object):
         self.instance = instance
         self.client = client
         if not instance.id:
-            instance.id = instance.makeid()
+            raise ValueError('No id available')
         if instance.instance is not None:
             id = instance.id
         else:

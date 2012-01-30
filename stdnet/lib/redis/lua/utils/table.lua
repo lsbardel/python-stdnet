@@ -20,3 +20,12 @@ function table_slice (values,i1,i2)
     end
     return res
 end
+
+function flat_table(tbl)
+    result = {}
+    for name,value in pairs(tbl) do
+        table.insert(result,name)
+        table.insert(result,value)
+    end
+    return result
+end

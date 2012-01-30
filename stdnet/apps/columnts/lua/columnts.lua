@@ -49,22 +49,9 @@ columnts = {
     --
     -- Delete timeseries
     del = function(self)
-        keys = redis.call('keys', self.id + '*')
-        redis.call('del',unpack(keys))
-    end,
-    --
-    -- merge timeseries
-    -- tss: list of timeseries to merge
-    -- fields: list of fiedls to merge
-    -- weights: weights for each timeseries
-    -- mask: flag indicating how to perform the merge. One of (skip, null, interpolate)
-    merge = function (self, tss, weights, fields)
-        self:del()
-        assert(# tss == # weights)
-        -- First we copy the first timeseries across to self
-        for i,ts in ipairs(tss) do
-            local weight = weights[i]
-            self:addserie(ts,weights[i])
+        local keys = redis.call('keys', self.key .. '*')
+        if # keys > 0 then
+            redis.call('del',unpack(keys))
         end
     end,
     --
@@ -89,9 +76,10 @@ columnts = {
         return self:add(times, field_values, nil)
     end,
     --
-    -- Add a serie to self
-    addserie = function(self, ts, weight)
-        local times, field_values = unpack(ts:all(ts:fields()))
+    -- Add a timeseries, multiplied by the given weight, to self
+    addserie = function(self, ts, weight, fields)
+        local range = ts:range('tsrange', 0, -1, fields)
+        local times, field_values = unpack(range)
         return self:add(times, field_values, weight)
     end,
     --
@@ -123,31 +111,41 @@ columnts = {
     --
     -- return an array containg a range of the timeseries. The array
     -- contains two elements, an array of times and a dictionary of fields.
-    range = function(self, command, start, stop, fields)
+    range = function(self, command, start, stop, fields, unpack_values)
         local times = redis.call(command, self.key, start, stop, 'novalues')
         local len = # times
         if len == 0 then
             return times
         elseif command == 'tsrangebytime' then
+            -- get the start rank
             start = redis.call('tsrank', self.key, start)
         end
         stop = start + len
         local field_values = {}
         local data = {times, field_values}
-        if # fields == 0 then
+        if not fields or # fields == 0 then
             fields = self:fields()
         end
 
         for i,field in ipairs(fields) do
             local fkey = self:fieldkey(field)
             if redis.call('exists', fkey) then
-                local stop = 9
+                -- Get the string between start and stop from redis
                 local sdata = redis.call('getrange', fkey, 9*start, 9*stop)
                 local fdata = {}
                 local p = 0
-                while p < 9*len do
-                    table.insert(fdata,string.sub(sdata, p+1, p+9))
-                    p = p + 9
+                if unpack_values then
+                    local v
+                    while p < 9*len do
+                        v = self:unpack_value(string.sub(sdata, p+1, p+9))
+                        table.insert(fdata,v)
+                        p = p + 9
+                    end
+                else
+                    while p < 9*len do
+                        table.insert(fdata,string.sub(sdata, p+1, p+9))
+                        p = p + 9
+                    end
                 end
                 field_values[field] = fdata
             end
@@ -155,21 +153,41 @@ columnts = {
         return data
     end,
     --
-    -- unpack a single value
-    unpack_value = function (self, value)
-        local byte = string.byte(value)
-        assert(byte <= 4, 'Invald string to unpack')
-        if byte == 0 then
-            return nan
-        elseif byte == 1 then
-            return struct.unpack('>i',string.sub(value,2,5))
-        elseif byte == 2 then
-            return struct.unpack('>d',string.sub(value,2))
-        elseif byte == 3 then
-            return string.sub(value,3,3+string.byte(value,2))
-        else
-            return self:string_value(string.sub(value,2))
+    -- Calculate aggregate statistcs for a timeseries slice
+    stats = function(self, start, stop, fields)
+        local time_values = self:range('tsrange', start, stop, fields, true)
+        local times, field_values = unpack(time_values)
+        local sts = {}
+        local N = # times
+        if N == 0 then
+            return sts
         end
+        local result = {start = times[1], stop = times[N], len = N, stats = sts} 
+        for field, values in pairs(field_values) do
+            local N = 0
+            local min_val = 1.e10
+            local max_val =-1.e10
+            local sum_val = 0
+            local sum2_val = 0
+            for i,v in ipairs(values) do
+                if v == v then
+                    min_val = math.min(min_val, v)
+                    max_val = math.max(max_val, v)
+                    sum_val = sum_val + v
+                    sum2_val = sum2_val + v*v
+                    N = N + 1
+                end
+            end
+            if N > 0 then
+                sum_val = sum_val / N
+                sum2_val = sum2_val / N
+                sts[field] = {min_val .. '',
+                              max_val .. '',
+                              sum_val .. '',
+                              sum2_val .. ''}
+            end
+        end
+        return result
     end,
     --
     -- Add/replace field values. If weights are provided, the values in
@@ -193,8 +211,9 @@ columnts = {
                 end
             end
         end
-            
-        for index,timestamp in ipairs(times) do
+        
+        -- Loop over times
+        for index, timestamp in ipairs(times) do
             available_rank = self:rank(timestamp)
             if not available_rank then
                 redis.call('tsadd', self.key, timestamp, 1)
@@ -204,19 +223,20 @@ columnts = {
             end
             tslen = self:length()
             
+            -- Loop over fields
 	        for field, values in pairs(field_values) do
 	            -- add field to the fields set
 	            fkey = fields[field]
 	            value = values[index]
-	            -- not there, we need to insert/append a new value (hopefully append!)
+	            -- not there, we need to insert/append a new nil value (hopefully append!)
 	            if not available_rank then
 	                -- not at the end of the string! inefficient insertion.
 	                if rank < tslen - 1 then
-	                    data = nildata .. redis.call('getrange', fk, (rank+1)*9, -1)
+	                    data = nildata .. redis.call('getrange', fkey, (rank+1)*9, -1)
 	                else
 	                    data = nildata
 	                end 
-	                redis.call('setrange', fk, 9*rank, data)
+	                redis.call('setrange', fkey, 9*rank, data)
 	            end
 	            -- set the field value
 	            if weights then
@@ -225,7 +245,8 @@ columnts = {
 	                else
 	                    weight = weights[field]
 	                end
-	                value = weight*value
+	                value = weight*self:unpack_value(value)
+	                -- If the field was available add to the current value
 	                if available_rank then
 	                    value = value + self:rank_value(available_rank, field)
 	                end
@@ -244,6 +265,24 @@ columnts = {
     ----------------------------------------------------------------------------
     -- INTERNAL FUNCTIONS
     ----------------------------------------------------------------------------
+    --
+    -- unpack a single value
+    unpack_value = function (self, value)
+        local byte = string.byte(value)
+        --assert(string.len(value) == 9, 'Invalid string to unpack. Length is ' .. string.len(value))
+        if byte == 0 then
+            return nan
+        elseif byte == 1 then
+            return struct.unpack('>i',string.sub(value,2,5))
+        elseif byte == 2 then
+            return struct.unpack('>d',string.sub(value,2))
+        elseif byte == 3 then
+            return string.sub(value,3,3+string.byte(value,2))
+        else
+            assert(byte == 4, 'Invalid string to unpack')
+            return self:string_value(string.sub(value,2))
+        end
+    end,
     --
     -- pack a single value
     pack_value = function (self, value)
@@ -287,7 +326,7 @@ function columnts:new(key)
     local result = {}
     if type(key) == 'table' then
         for i,k in ipairs(key) do
-            result[i] = columns:new(k)
+            result[i] = columnts:new(k)
         end
         return result
     elseif isnumber(key) then
@@ -301,3 +340,25 @@ function columnts:new(key)
     end
 end
 
+function columnts:multiply(key, series)
+    local ts = columnts:new(key)
+    return ts
+end
+
+--
+-- merge timeseries
+-- elements: an array of dictionaries containing the weight and an arrray of timeseries to multiply
+-- fields: list of fiedls to merge
+function columnts:merge(key, elements, fields)
+    local result = columnts:new(key)
+    result:del()
+    -- First we copy the first timeseries across to self
+    for i,elem in ipairs(elements) do
+        local ts = elem.series[1]
+        if # elem.series > 1 then
+            ts = columnts:multiply(elem.series)
+        end
+        result:addserie(ts,elem.weight)
+    end
+    return result
+end

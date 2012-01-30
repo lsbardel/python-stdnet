@@ -178,7 +178,9 @@ can also be used as stand alone objects. For example::
         if self.instance is not None:
             if not self.id:
                 raise ValueError('Structure has instance but not id')
-            self.session = instance.session        
+            self.session = instance.session
+        elif not self.id:
+            self.id = self.makeid()
         
     def makeid(self):
         return str(uuid4())[:8]
@@ -204,12 +206,6 @@ can also be used as stand alone objects. For example::
             return iter(cache)
         else:
             return iter(self._iter())
-                
-    @withsession
-    def delete(self):
-        '''Delete the structure from the remote backend. If a transaction is
-specified, the data is pipelined and executed when the transaction completes.'''
-        self.session.delete(self)
         
     @withsession
     def size(self):

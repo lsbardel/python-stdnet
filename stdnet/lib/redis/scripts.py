@@ -113,16 +113,20 @@ lua scripts to redis via the ``evalsha`` command.
                 pipe = client.pipeline()
                 self.load(pipe, keys, *args, **options)
                 result = pipe.execute()
-                if isinstance(result[0],Exception):
-                    raise result[0]
                 if isinstance(result, RedisRequest):
-                    return result.add_callback(lambda r : r[1])
+                    return result.add_callback(
+                        lambda r : self.load_callback(request,r,args,**options))
                 else:
-                    return result[1]
+                    return self.load_callback(request, result, args, **options)
             else:
                 return response
         else:
             return self.callback(request, response, args, **options)
+        
+    def load_callback(self, request, result, args, **options):
+        if isinstance(result[0],Exception):
+            raise result[0]
+        return result[1]
     
     def callback(self, request, response, args, **options):
         '''This is the only method user should override when writing a new

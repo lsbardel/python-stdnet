@@ -9,28 +9,62 @@ dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
 
 
-class TestSet(test.TestCase):
+class StructMixin(object):
+    name = None
+    
+    def createOne(self):
+        raise NotImplementedError()
     
     def testMeta(self):
-        l = orm.Set()
-        self.assertEqual(l.id,None)
-        self.assertEqual(l.instance,None)
-        self.assertEqual(l.session,None)
-        self.assertEqual(l._meta.name,'set')
+        session = self.session()
+        l = self.createOne()
+        self.assertTrue(l.id)
+        self.assertEqual(l.instance, None)
+        self.assertEqual(l.session, None)
+        self.assertEqual(l._meta.name, self.name)
         self.assertEqual(l._meta.model._model_type,'structure')
+        self.assertFalse(l.state().persistent)
+        # add to a session
+        l = session.add(l)
+        # If no id available, adding to a session will automatically create one
+        self.assertTrue(l.id)
+        self.assertEqual(l.session, session)
+        self.assertEqual(l.size(), 0)
+        return l
         
+    def testDelete(self):
+        session = self.session()
+        with session.begin():
+            s = session.add(self.createOne())
+        self.assertTrue(s.session)
+        self.assertTrue(s.state().persistent)
+        self.assertFalse(s in session)
+        self.assertTrue(s.size())
+        s.delete()
+        self.assertEqual(s.size(),0)
+
+
+class TestSet(StructMixin,test.TestCase):
+    name = 'set'    
+    
+    def createOne(self):
+        s = orm.Set()
+        s.update((1,2,3,4,5,5))
+        return s
+            
     def testSimpleUpdate(self):
         # Typical usage
         session = self.session()
         s = session.add(orm.Set())
-        self.assertEqual(s.session,session)
-        self.assertEqual(s.instance,None)
-        self.assertEqual(s.id,None)
+        self.assertEqual(s.session, session)
+        self.assertEqual(s.instance, None)
         s.add(8)
         s.update((1,2,3,4,5,5))
+        self.assertFalse(s.state().persistent)
         session.commit()
         self.assertTrue(s.id)
         self.assertEqual(s.size(),6)
+        self.assertTrue(s.state().persistent)
         
     def testUpdateDelete(self):
         session = self.session()
@@ -45,10 +79,11 @@ class TestSet(test.TestCase):
         self.assertEqual(s.size(),2)
         with session.begin():
             s.difference_update((3,5,6,7))
-        self.assertEqual(s.size(),0)    
+        self.assertEqual(s.size(),0)
         
 
-class TestZset(test.TestCase):
+class TestZset(StructMixin,test.TestCase):
+    name = 'zset'
     result =  [(0.0022,'pluto'),
                (0.06,'mercury'),
                (0.11,'mars'),
@@ -58,10 +93,9 @@ class TestZset(test.TestCase):
                (17.2,'neptune'),
                (95.2,'saturn'),
                (317.8,'juppiter')]
-        
-    def planets(self):
-        session = self.session()
-        l = session.add(orm.Zset())
+    
+    def createOne(self):
+        l = orm.Zset()
         l.add(1,'earth')
         l.add(0.06,'mercury')
         l.add(317.8,'juppiter')
@@ -71,20 +105,22 @@ class TestZset(test.TestCase):
                   (0.11,'mars'),
                   (17.2,'neptune'),
                   (0.0022,'pluto')))
-        self.assertEqual(l.size(),0)
         self.assertEqual(len(l.cache.toadd),9)
+        return l
+        
+    def planets(self):
+        session = self.session()
+        l = session.add(self.createOne())
+        self.assertEqual(l.size(),0)
         session.commit()
+        self.assertTrue(l.state().persistent)
         self.assertEqual(l.size(),9)
         return l
             
-    def testMeta(self):
-        session = self.session()
-        l = session.add(orm.Zset())
-        self.assertEqual(l._meta.name,'zset')
-        self.assertEqual(l._meta.model._model_type,'structure')
-        self.assertEqual(l.size(),0)
+    def testMeta2(self):
+        l = self.testMeta()
         self.assertFalse(l.cache.cache)
-        self.assertFalse(l.cache.toadd)
+        self.assertTrue(l.cache.toadd)
         self.assertFalse(l.cache.toremove)
 
     def testZsetState(self):
@@ -121,20 +157,23 @@ class TestZset(test.TestCase):
         self.assertEqual(l.get(0.11),'mars')
 
 
-class TestList(test.TestCase):
-
-    def testMeta(self):
-        session = self.session()
-        l = session.add(orm.List())
-        self.assertEqual(l._meta.name,'list')
-        self.assertEqual(l._meta.model._model_type,'structure')
-        self.assertEqual(l.size(),0)
+class TestList(StructMixin, test.TestCase):
+    name = 'list'
+    
+    def createOne(self):
+        l = orm.List()
         l.push_back(3)
         l.push_back(5.6)
+        return l
+    
+    def testMeta2(self):
+        l = self.testMeta()
         l.push_back('save')
         l.push_back({'test': 1})
-        self.assertEqual(l.size(),0)
-        session.commit()
+        l.save()
+        sm = l.session.model(l._meta)
+        self.assertEqual(len(sm),0)
+        self.assertTrue(l in sm.loaded)
         self.assertEqual(l.size(),4)
         self.assertEqual(list(l),[3,5.6,'save',"{'test': 1}"])
         
@@ -153,17 +192,18 @@ class TestList(test.TestCase):
         self.assertEqual(list(l),[3,5.6,'save',{'test': 1},{'test': 2}])
     
 
-class TestHash(test.TestCase):
+class TestHash(StructMixin, test.TestCase):
+    name = 'hashtable'
     
-    def testMeta(self):
-        session = self.session()
-        h = session.add(orm.HashTable())
-        self.assertEqual(h._meta.name,'hashtable')
-        self.assertEqual(h._meta.model._model_type,'structure')
-        self.assertEqual(h.size(),0)
-        with session.begin() as t:
-            h['bla'] = 'foo'
-            h['pluto'] = 3
+    def createOne(self):
+        h = orm.HashTable()
+        h['bla'] = 'foo'
+        h['pluto'] = 3
+        return h
+    
+    def testMeta2(self):
+        h = self.testMeta()
+        h.save()
         self.assertEqual(h.size(),2)
         
     def testPop(self):
@@ -193,22 +233,24 @@ class TestHash(test.TestCase):
         self.assertRaises(KeyError, lambda : h['gggggg'])
         
 
-class TestTS(test.TestCase):
+class TestTS(StructMixin, test.TestCase):
+    name = 'ts'
     
-    def testMeta(self):
-        session = self.session()
-        ts = session.add(orm.TS())
-        self.assertEqual(ts._meta.name,'ts')
-        self.assertEqual(ts._meta.model._model_type,'structure')
-        self.assertEqual(ts.size(),0)
+    def createOne(self):
+        ts = orm.TS()
+        ts.update(zip(dates,values))
+        return ts
+        
+    def testMeta2(self):
+        ts = self.testMeta()
         self.assertFalse(ts.cache.cache)
-        self.assertFalse(ts.cache.toadd)
+        self.assertTrue(ts.cache.toadd)
         self.assertFalse(ts.cache.toremove)
         
     def testEmpty(self):
         session = self.session()
         ts = session.add(orm.TS())
-        self.assertFalse(ts.id)
+        self.assertTrue(ts.id)
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(),None)
         self.assertEqual(ts.back(),None)
@@ -216,8 +258,7 @@ class TestTS(test.TestCase):
         
     def testData(self):
         session = self.session()
-        ts = session.add(orm.TS())
-        ts.update(zip(dates,values))
+        ts = session.add(self.createOne())
         self.assertTrue(ts.cache.toadd)
         session.commit()
         self.assertEqual(ts.size(),len(dates))

@@ -1,17 +1,28 @@
 -- perform a linear combination of one or more timeseries and store the
 -- result in a new timeseries
-local num_series = ARGV[1] + 0
 local tsdest = KEYS[1]    --  Destination timeseries
-local tskeys = table_slice(KEYS,2,2+num_series) -- Series to merge
-local weights = table_slice(ARGV,2,2+num_series) -- Multiplication Weights
-local fields = table_slice(ARGV,3+num_series,-1)
-
-if # tskeys == 0 then
-    return {err = 'No timeseries given'}
+local j = 0
+local idx = 1
+local num_series = ARGV[idx] + 0
+local elements = {}
+while j < num_series do
+    local tss = {}
+    j = j + 1
+    elements[j] = {weight = ARGV[idx+1] + 0, series = tss}
+    local nseries = ARGV[idx+2] + 0
+    idx = idx + 2
+    local stop = idx + nseries
+    
+    while idx < stop do
+        table.insert(tss, columnts:new(ARGV[idx+1]))
+        idx = idx + 1
+    end
+    if # tss == 0 then
+        return {err = 'No timeseries given to merge ' .. nseries}
+    end
 end
+local fields = table_slice(ARGV, idx+1, -1)
 
-local ts = columnts.new(tsdest)
-local tss = columnts.new(tskeys)
-local weights = columnts.new(weights)
-ts.merge(tss, weights, fields)
+local ts = columnts:merge(tsdest, elements, fields)
+return ts:length()
 

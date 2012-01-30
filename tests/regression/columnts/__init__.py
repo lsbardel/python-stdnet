@@ -48,6 +48,12 @@ class TestTimeSeries(test.TestCase):
         self.assertEqual(ts.numfields(),0)
         self.assertEqual(ts.fields(),())
         
+    def testEmpty2(self):
+        session = self.session()
+        with session.begin():
+            ts = session.add(ColumnTS())
+        self.assertEqual(ts.size(),0)
+        
     def testAddSimple(self):
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))
@@ -107,6 +113,27 @@ class TestOperations(test.TestCase):
         cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         
+    def testSimpleStats(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+        dt,fields = ts1.range()
+        self.assertEqual(len(fields),6)
+        result = ts1.stats(0,-1)
+        self.assertTrue(result)
+        self.assertEqual(result['start'],dt[0])
+        self.assertEqual(result['stop'],dt[-1])
+        self.assertEqual(result['len'],len(dt))
+        stats = result['stats']
+        for field in ('a','b','c','d','f','g'):
+            self.assertTrue(field in stats)
+            stat_field = stats[field]
+            data = self.data1.fields[field]
+            self.assertAlmostEqual(stat_field[0], min(data))
+            self.assertAlmostEqual(stat_field[1], max(data))
+            
+        
     def test_merge2series(self):
         session = self.session()
         with session.begin():
@@ -119,7 +146,8 @@ class TestOperations(test.TestCase):
         self.assertEqual(ts2.size(),len(self.data2.unique_dates))
         self.assertEqual(ts2.numfields(),6)
         ts3 = ColumnTS(id = 'merged')
-        ts3.merge((ts1,ts2),(2,-1))
+        # merge ts1 with weight -1  and ts2 with weight 2
+        ts3.merge((ts1,-1),(ts2,2))
         session.commit()
         self.assertTrue(ts3.size())
         self.assertEqual(ts3.numfields(),6)

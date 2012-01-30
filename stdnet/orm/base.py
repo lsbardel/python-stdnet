@@ -424,6 +424,28 @@ raised when trying to save an invalid instance.'''
         self._dbdata['session'] = session
     session = property(__get_session,__set_session)
     
+    def get_session(self):
+        session = self.session
+        if session is None:
+            raise ValueError('No session available')
+        else:
+            return session
+        
+    def save(self):
+        '''A fast method for saving an object. Use this method with care
+since it commits changes to the backend database immediately. If a session
+is not available, it tries to create one from its :class:`Manager`.'''
+        session = self.get_session()
+        with session.begin():
+            session.add(self)
+        return self
+    
+    def delete(self):
+        session = self.get_session()
+        with session.begin():
+            session.delete(self)
+        return self
+    
     def async_handle(self, result, callback, *args, **kwargs):
         if isinstance(result,BackendRequest):
             return result.add_callback(lambda res :\

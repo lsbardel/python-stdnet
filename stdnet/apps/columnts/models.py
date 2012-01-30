@@ -11,6 +11,7 @@ from .encoders import ValueEncoder
 class TimeseriesCache(object):
     
     def __init__(self):
+        self.merged_series = None
         self.fields = {}
         self.delete_fields = set()
         self.deleted_timestamps = set()
@@ -21,6 +22,7 @@ class TimeseriesCache(object):
         self.fields[field].insert(timestamp,value)
         
     def clear(self):
+        self.merged_series = None
         self.fields.clear()
         self.delete_fields.clear()
         self.deleted_timestamps.clear()
@@ -72,6 +74,18 @@ class ColumnTS(orm.Structure):
         res = self.backend_structure().range(start,end,fields)
         return self.async_handle(res, self._range)
     
+    def merge(self, series, weights, fields = None):
+        if not self.session:
+            session = series[0].session
+            for serie in series:
+                if session != serie.session:
+                    raise ValueError('Session of timeseries are different')
+            self.session = session
+        if len(series) != len(weights):
+            raise ValueError(
+                        'number of series different from number of weights.')
+        return self.backend_structure().merge(series, weights, fields or ())
+        
     # INTERNALS
     
     def _range(self, result):

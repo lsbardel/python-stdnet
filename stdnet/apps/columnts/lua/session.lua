@@ -20,14 +20,16 @@ end
 -- Last we process data to add by looping over data fields
 while index < # ARGV do
 	local field = ARGV[index+1]
-	local field_value = {}
+	local times, values, field_values = {}, {}, {}
+	field_values[field] = values
 	index = index + 2
 	local len_data = index + 2*ARGV[index]
 	while index < len_data do
-		field_value[field] = ARGV[index+2]
-		ts:set(ARGV[index+1] + 0, field_value)
-		index = index + 2
+	    table.insert(times, ARGV[index+1] + 0)
+	    table.insert(values, ARGV[index+2])
+	    index = index + 2
 	end
+	ts:set(times, field_values)
 end
 		
 return ts:length()

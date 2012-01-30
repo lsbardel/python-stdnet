@@ -59,6 +59,9 @@ class ModelMeta(object):
     def __str__(self):
         return self.__repr__()
     
+    def pk_to_python(self, id):
+        return to_string(id)
+    
         
 class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
@@ -178,6 +181,9 @@ mapper.
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
+    
+    def pk_to_python(self, id):
+        return self.pk.to_python(id)
     
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
@@ -350,6 +356,10 @@ class ModelState(object):
             self.iid = instance.id
         else:
             self.iid = instance.id or 'new.{0}'.format(id(instance)) 
+    
+    @property
+    def action(self):
+        return 'delete' if self.deleted else 'save'
     
     def __repr__(self):
         if self.persistent:

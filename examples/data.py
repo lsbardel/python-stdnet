@@ -42,6 +42,7 @@ class tsdata(key_data):
         start = start or date(1997,1,1)
         end = end or date.today()
         self.dates = populate('date', self.size, start = start, end = end)
+        self.unique_dates = set(self.dates)
         self.fields = {}
         for field in fields:
             self.fields[field] = populate(datatype, self.size)

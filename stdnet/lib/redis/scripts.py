@@ -12,12 +12,7 @@ __all__ = ['RedisScript',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
-           'read_lua_file',
-           'nil']
-
-
-class nil(object):
-    pass
+           'read_lua_file']
 
 
 def pairs_to_dict(response, encoding):

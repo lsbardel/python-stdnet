@@ -58,12 +58,22 @@ class BackendStructure(object):
         self._id = id
             
     def commit(self):
-        self.flush()
-        self.instance.cache.clear()
+        instance = self.instance
+        if instance.state().deleted:
+            self.delete()
+        else:
+            self.flush()
+        instance.cache.clear()
     
     @property
     def id(self):
         return self._id
+    
+    def backend_structure(self):
+        return self
+    
+    def delete(self):
+        raise NotImplementedError()
     
     def flush(self):
         raise NotImplementedError()

@@ -1,5 +1,5 @@
 '''Benchmark filtering'''
-from stdnet import test, transaction
+from stdnet import test
 from stdnet.utils import zip
 from stdnet.utils import populate
 
@@ -19,13 +19,14 @@ class QueryTest(test.TestCase):
              'huge': 10000}
     
     def setUp(self):
+        self.register()
         size = self.sizes.get(getattr(self,'test_size','normal'))
         inst_names = populate('string',size, min_len = 5, max_len = 20)
         inst_types = populate('choice',size, choice_from = insts_types)
         inst_ccys  = populate('choice',size, choice_from = ccys_types)
-        with transaction(Instrument) as t:
+        with Instrument.session().begin() as t:
             for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
-                Instrument(name = name, type = typ, ccy = ccy).save(t)
+                t.add(Instrument(name = name, type = typ, ccy = ccy))
     
     def testCount(self):
         f = Instrument.objects.filter(ccy = 'EUR')

@@ -107,7 +107,7 @@ related keys (keys which are related to the instance rather than the model).'''
         # Lets add data
         self.adddata(obj)
         # The field id should be in the server keys
-        lkeys = backend.keys()
+        lkeys = list(backend.keys())
         self.assertTrue(field.id in lkeys)
         obj.delete()
         lkeys = list(backend.keys())

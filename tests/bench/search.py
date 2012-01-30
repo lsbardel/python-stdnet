@@ -1,13 +1,9 @@
 __benchmark__ = True
-from stdnet import test, orm
-from stdnet.utils import zip
 
-from . import regression
-from .fuzzy import makeItems, Item, Word, WordItem, SearchEngine
+from tests.regression import search
 
 
-class TestIndexItem(regression.TestCase):
-    autocomplete = False
+class TestIndexItem(search.TestCase):
         
     def setUp(self):
         makeItems(100,300)

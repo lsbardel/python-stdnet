@@ -1120,3 +1120,4 @@ class ServerCommandsTestCase(TestCase):
         for key in mapping.keys():
             bl = [v.encode() for v in mapping[key]]
             self.assertEqual(self.client.lrange(key, 0, -1), bl)
+

@@ -21,7 +21,7 @@ from stdnet.utils.dispatch import Signal
 from .connection import *
 from .exceptions import *
 
-from .scripts import nil, script_call_back, get_script, pairs_to_dict,\
+from .scripts import script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
 
 
@@ -151,6 +151,34 @@ def script_command(request, response, args, command = None, **options):
         return response.decode(request.client.encoding)
     else:
         return [int(r) for r in response]
+    
+
+def config_callback(request, response, args, **options):
+    if args[0] == 'GET':
+        encoding = request.client.encoding
+        return dict(((k,v.decode(encoding))\
+            for k,v in pairs_to_dict_cbk(request, response, args, **options)))
+    else:
+        return response == b'OK'
+    
+
+def slowlog_callback(request, response, args, **options):
+    if args[0] == 'GET':
+        encoding = request.client.encoding
+        commands = []
+        for id,ts,ms,command in response:
+            cmd = command.pop(0)
+            commands.append({'id':id,
+                             'microseconds':ms,
+                             'timestamp':ts,
+                             'command': cmd.decode(encoding),
+                             'args': tuple(command)
+                             })
+        return commands
+    elif args[0] == 'LEN':
+        return response
+    else:
+        return response == b'OK'
 
 
 class Redis(object):
@@ -216,6 +244,8 @@ class Redis(object):
             'EVALSHA': script_call_back,
             'EVAL': script_call_back,
             'SCRIPT': script_command,
+            'CONFIG': config_callback,
+            'SLOWLOG': slowlog_callback
         }
         )
 
@@ -364,6 +394,15 @@ instance is promoted to a master instead.
         if host is None and port is None:
             return self.execute_command("SLAVEOF", "NO", "ONE")
         return self.execute_command("SLAVEOF", host, port)
+    
+    def slowlog_get(self, entries = 1):
+        return self.execute_command("SLOWLOG", 'GET', entries)
+    
+    def slowlog_len(self):
+        return self.execute_command("SLOWLOG", 'LEN')
+    
+    def slowlog_reset(self):
+        return self.execute_command("SLOWLOG", 'RESET')
     
     #### BASIC KEY COMMANDS ####
     def append(self, key, value):
@@ -1102,7 +1141,7 @@ which will execute all commands queued in the pipe.
     
     def add_callback(self, callback):
         '''Adding a callback to the latest command in the pipeline.
-Tipycal usage::
+Typical usage::
 
     pipe.sadd('foo').add_callback(mycallback)
     
@@ -1136,12 +1175,13 @@ Several callbacks can be added for a given command::
         parse_response = self._parse_response
         for r, cmd in zip(response, commands):
             args, options, callbacks = cmd
+            command, args = args[0], args[1:]
             if not isinstance(r, Exception):
-                r = parse_response(request, r, args[0], args[1:], options)
+                r = parse_response(request, r, command, args, options)
             elif str(r) == NoScriptError.msg:
                 r = NoScriptError()
             for callback in callbacks:
-                r = callback(processed,r)
+                r = callback(processed, r)
             processed.append(r)
         return processed
 

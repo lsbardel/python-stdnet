@@ -1,5 +1,5 @@
 '''Benchmark deletion of instances.'''
-from stdnet import test, transaction
+from stdnet import test
 from stdnet.utils import populate, zip
 
 from examples.data import FinanceTest, Instrument, Fund, Position

@@ -133,12 +133,14 @@ Session model."""
     
     def pre_commit(self):
         '''Build a delete query from deleted instances'''
-        if self.model._model_type == 'object':
-            d = self.deleted
-            if d:
-                self._deleted.clear()
+        d = self.deleted
+        if d:
+            self._deleted.clear()
+            if self.model._model_type == 'object':
                 q = self.query().filter(id__in  = d)
                 self._delete_query.append(q.construct())
+            else:
+                self._delete_query = tuple(itervalues(self._deleted))
             
     def post_commit(self, ids):
         instances = []
@@ -152,7 +154,7 @@ Session model."""
         self.expunge(instance)
         if not state.deleted:
             if id:
-                id = instance._meta.pk.to_python(id)
+                #id = instance._meta.pk.to_python(id)
                 if state.persistent and instance.id != id:
                     raise ValueError('id has changed in the server from {0}\
  to {1}'.format(instance.id,id))
@@ -255,7 +257,7 @@ An instance of this class is usually obtained by using the high level
             if not response:
                 continue
             sm = session.model(meta, True)
-            tpy = meta.pk.to_python
+            tpy = meta.pk_to_python
             ids = []
             if action == 'delete':
                 for id in response:

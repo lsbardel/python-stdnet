@@ -1,10 +1,18 @@
 import os
 
+from stdnet import orm
 from stdnet.backends import redisb
 from stdnet.lib import redis
 
 
 class RedisColumnTS(redisb.TS):
+    
+    @property
+    def fieldsid(self):
+        return self.id + ':fields'
+    
+    def fieldid(self, field):
+        return self.id + ':field:' + field
     
     def flush(self):
         cache = self.instance.cache
@@ -12,17 +20,27 @@ class RedisColumnTS(redisb.TS):
         if keysargs:
             keys, args = keysargs
             return self.client.script_call('timeseries_session', keys, *args)
-                    
+        elif cache.merged_series:
+            return self.client.script_call('timeseries_merge', keys, *args)
+    
+    def allkeys(self):
+        return self.client.keys(self.id + '*')
+    
     def fields(self):
         '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
         key = self.id + ':fields'
         encoding = self.client.encoding
         return tuple(sorted((f.decode(encoding) \
                              for f in self.client.smembers(key))))
+        
+    def field(self, field):
+        '''Fetch an entire row field string from redis'''
+        return self.client.get(self.fieldid(field))
+        
     
     def numfields(self):
         '''Number of fields'''
-        return self.client.scard(self.id + ':fields')
+        return self.client.scard(self.fieldsid)
     
     def range(self, start = 0, end = -1, fields = None):
         fields = fields or ()
@@ -46,7 +64,7 @@ class RedisColumnTS(redisb.TS):
         cache = self.instance.cache
         if cache.deleted_timestamps or cache.delete_fields or cache.fields:
             # timestamps to delete
-            keys = (self.id, self.id + ':field:*')
+            keys = (self.id, self.id + '*')
             args = [len(cache.deleted_timestamps)]
             args.extend(cache.deleted_timestamps)
             # fields to delete
@@ -60,6 +78,18 @@ class RedisColumnTS(redisb.TS):
                 args.extend(val.flat())
             return keys, args
     
+    def merge(self, series, weights, fields):
+        keys = [self.id]
+        keys.extend((s.backend_structure().id for s in series))
+        argv = [len(series)]
+        for w in weights:
+            if isinstance(w,orm.Structure):
+                w = w.backend_structure().id
+                keys.append(w)
+            argv.append(w)
+        argv.extend(fields)
+        self.instance.cache.merged_series = (keys,argv)
+        
             
 redisb.struct_map['columnts'] = RedisColumnTS
 
@@ -70,6 +100,16 @@ class timeseries_session(redis.RedisScript):
               redis.read_lua_file('columnts.lua',script_path),
               redis.read_lua_file('session.lua',script_path))
     
+
+class timeseries_merge(redis.RedisScript):
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('columnts.lua',script_path),
+              redis.read_lua_file('merge.lua',script_path))
+    
+    def callback(self, request, response, args, **options):
+        if isinstance(response,Exception):
+            raise response
+        
     
 class timeseries_query(redis.RedisScript):
     script = (redis.read_lua_file('utils/table.lua'),

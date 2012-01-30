@@ -3,6 +3,7 @@
 from copy import copy
 import json
 from hashlib import sha1
+from functools import partial
 
 import stdnet
 from stdnet import FieldValueError
@@ -113,6 +114,16 @@ The first parameter is the model'''
         else:
             return response
     
+
+def structure_session_callback(sm, deleted, saved, processed, response):
+    if response:
+        if deleted:
+            processed.append(session_result(sm.meta, deleted, 'delete'))
+        if saved:
+            processed.append(session_result(sm.meta, saved, 'save'))
+    else:
+        return response
+
 
 class commit_session(redis.RedisScript):
     script = redis.read_lua_file('session.lua')
@@ -237,7 +248,8 @@ elements in the query.'''
             pipe.zcard(self.query_key, script_dependency = 'build_query')
         else:
             pipe.scard(self.query_key, script_dependency = 'build_query')
-        pipe.add_callback(lambda p,r : query_result(self.query_key,r))
+        pipe.add_callback(lambda processed, result :
+                                    query_result(self.query_key, result))
         self.commands, self.query_results = redis_execution(pipe, query_result)
         return self.query_results[-1].count
     
@@ -376,6 +388,9 @@ class RedisStructure(BackendStructure):
     @property
     def pipelined(self):
         return self.client.pipelined
+    
+    def delete(self):
+        return self.client.delete(self.id)
     
     
 class Set(RedisStructure):
@@ -748,7 +763,15 @@ class BackendDataServer(stdnet.BackendDataServer):
         return struct(instance, self, client)
         
     def flush_structure(self, sm, pipe = None):
-        client = pipe or self.client
+        client = pipe or self.client.pipeline()
+        saved = []
+        deleted = []
+        for instance in sm._delete_query:
+            instance.commit(client)
+            deleted.append(instance.id)
         for instance in sm:
             instance.commit(client)
+            saved.append(instance.id)
+        #client.add_callback(
+        #        partial(structure_session_callback,sm,deleted,saved))
         

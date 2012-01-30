@@ -2,9 +2,9 @@ __benchmark__ = True
 from datetime import datetime, date
 
 from stdnet import test
-from stdnet.apps.timeseries.tests.models import TimeSeries, HashTimeSeries
 from stdnet.utils import populate, todate, zip
 
+from examples.tsmodels import TimeSeries, HashTimeSeries
 
 NUM_DATES = 1000
 

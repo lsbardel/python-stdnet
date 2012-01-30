@@ -2,12 +2,25 @@ local nan = 0/0
 -- 9 bytes string for nil data
 local nildata = string.char(0,0,0,0,0,0,0,0,0)
 
+function isnumber(v)
+    return pcall(function() return v + 0 end)
+end
+
+function asnumber(v)
+    if isnumber(v) then
+        return v + 0
+    else
+        return nil
+    end
+end
+
 -- Column timeseries class
 columnts = {
     --
     -- Initialize
-    init = function (self,key)
+    init = function (self, key)
         self.key = key
+        self.fieldskey = key .. ':fields'
     end,
     --
     -- field key
@@ -17,7 +30,16 @@ columnts = {
     --
     -- all field names for this timeseries
     fields = function (self)
-        return redis.call('smembers', self.key .. ':fields')
+        return redis.call('smembers', self.fieldskey)
+    end,
+    --
+    -- a set of fields
+    fields_set = function(self)
+        f = {}
+        for _,name in ipairs(self:fields()) do
+            f[name] = self:fieldkey(name)
+        end
+        return f
     end,
     --
     -- Length of timeseries
@@ -25,23 +47,24 @@ columnts = {
         return redis.call('tslen', self.key) + 0
     end,
     --
+    -- Delete timeseries
+    del = function(self)
+        keys = redis.call('keys', self.id + '*')
+        redis.call('del',unpack(keys))
+    end,
+    --
     -- merge timeseries
     -- tss: list of timeseries to merge
     -- fields: list of fiedls to merge
     -- weights: weights for each timeseries
     -- mask: flag indicating how to perform the merge. One of (skip, null, interpolate)
-    merge = function (self, tss, fields, weights, mask)
+    merge = function (self, tss, weights, fields)
+        self:del()
         assert(# tss == # weights)
         -- First we copy the first timeseries across to self
         for i,ts in ipairs(tss) do
             local weight = weights[i]
-            local time_fields = ts.all(fields)
-            local time = time_fields[1]
-            local field_values = time_fields[2]
-            --for j,t in ipairs(time) do
-            --    local fvals = self:unpack_values(i,field_values)
-            --    self:add(t,fvals,weight)
-            --end
+            self:addserie(ts,weights[i])
         end
     end,
     --
@@ -62,13 +85,14 @@ columnts = {
     end,
     --
     -- Set field values at timestamp
-    set = function (self, timestamp, field_values)
-        return self:add_replace(timestamp, field_values, nil)
+    set = function (self, times, field_values)
+        return self:add(times, field_values, nil)
     end,
     --
-    -- Add field values at time
-    add = function (self, time, field_values, weights)
-        return self:add_replace(timestamp, field_values, weights)
+    -- Add a serie to self
+    addserie = function(self, ts, weight)
+        local times, field_values = unpack(ts:all(ts:fields()))
+        return self:add(times, field_values, weight)
     end,
     --
     -- shortcut for returning the whole range of a timeserie
@@ -97,7 +121,8 @@ columnts = {
         end
     end,
     --
-    -- return a table containg a range of the timeseries
+    -- return an array containg a range of the timeseries. The array
+    -- contains two elements, an array of times and a dictionary of fields.
     range = function(self, command, start, stop, fields)
         local times = redis.call(command, self.key, start, stop, 'novalues')
         local len = # times
@@ -147,50 +172,78 @@ columnts = {
         end
     end,
     --
-    ----------------------------------------------------------------------------
-    -- INTERNAL FUNCTIONS
-    ----------------------------------------------------------------------------
-    --
-    -- Add/replace field values. If weights are provided, values are added, otherwise
-    -- the are replaced.
-    add_replace = function (self, timestamp, field_values, weights)
-        local fields = self:fields()
-        local fkey,data,available_rank,weight
-        for field,value in pairs(field_values) do
-            redis.call('sadd', self.key .. ':fields', field)
-            if replace and string.len(value) > 9 then
-                key = string.sub(2,9)
-                value = string.sub(10)
-                redis.call('set', self.key .. ':key:' .. key, value)
-                value = string.sub(1,9)
+    -- Add/replace field values. If weights are provided, the values in
+    -- field_values are already unpacked and they are added to existing
+    -- values, otherwise the values are to be replaced
+    add = function (self, times, field_values, weights)
+        local fields = self:fields_set()
+        local tslen = self:length()
+        local ws = {}
+        local fkey, data, rank, available_rank, weight, value
+        
+        -- Make sure all fields are available and have same data length
+        for field, value in pairs(field_values) do
+            -- add field to the fields set
+            fkey = self:fieldkey(field)
+            if not fields[field] then
+                redis.call('sadd', self.fieldskey, field)
+                fields[field] = fkey
+                if tslen > 0 then
+                    redis.call('set', fkey, string.rep(nildata, tslen))
+                end
             end
+        end
+            
+        for index,timestamp in ipairs(times) do
             available_rank = self:rank(timestamp)
-            -- not there, we need to insert/append a new value (hopefully append!)
             if not available_rank then
                 redis.call('tsadd', self.key, timestamp, 1)
                 rank = redis.call('tsrank', self.key, timestamp)
-                for i,fname in pairs(fields) do
-                    fkey = self:fieldkey(fname)
-                    data = nildata
-                    -- not at the end of the string! inefficient insertion.
-                    if rank < self:length() - 1 then
-                        data = nildata .. redis.call('getrange', fkey, (rank+1)*9, -1)
-                    end 
-                    redis.call('setrange', fkey, 9*rank, data)
-                end
+            else
+                rank = available_rank
             end
-            -- set the field value
-            if weight then
-                weight = weights[field]
-                value = weight*value
-                if available_rank then
-                    value = value + self:rank_value(available_rank,field)
-                end
-                value = self:pack_value(value)
-            end
-            redis.call('setrange', fieldid, 9*rank, value)
-        end
+            tslen = self:length()
+            
+	        for field, values in pairs(field_values) do
+	            -- add field to the fields set
+	            fkey = fields[field]
+	            value = values[index]
+	            -- not there, we need to insert/append a new value (hopefully append!)
+	            if not available_rank then
+	                -- not at the end of the string! inefficient insertion.
+	                if rank < tslen - 1 then
+	                    data = nildata .. redis.call('getrange', fk, (rank+1)*9, -1)
+	                else
+	                    data = nildata
+	                end 
+	                redis.call('setrange', fk, 9*rank, data)
+	            end
+	            -- set the field value
+	            if weights then
+	                if isnumber(weights) then
+	                    weight = weights
+	                else
+	                    weight = weights[field]
+	                end
+	                value = weight*value
+	                if available_rank then
+	                    value = value + self:rank_value(available_rank, field)
+	                end
+	                value = self:pack_value(value)
+	            elseif string.len(value) > 9 then
+	                key = string.sub(value, 2, 9)
+	                redis.call('set', self.key .. ':key:' .. key, string.sub(value, 10))
+	                value = string.sub(value, 1, 9)
+	            end
+	            redis.call('setrange', fkey, 9*rank, value)
+	        end
+	    end
     end,
+
+    --
+    ----------------------------------------------------------------------------
+    -- INTERNAL FUNCTIONS
+    ----------------------------------------------------------------------------
     --
     -- pack a single value
     pack_value = function (self, value)
@@ -237,6 +290,8 @@ function columnts:new(key)
             result[i] = columns:new(k)
         end
         return result
+    elseif isnumber(key) then
+        return key + 0
     else
         for k,v in pairs(columnts) do
             result[k] = v

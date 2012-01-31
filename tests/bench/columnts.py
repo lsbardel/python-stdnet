@@ -10,25 +10,16 @@ class TestCase(test.TestCase):
     @classmethod
     def setUpClass(cls):
         size = cls.worker.cfg.size
-        cls.data = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         
     def setUp(self):
         self.backend.load_scripts()
-        
-    def load_data(self):
-        pass
-        
-    def startUp(self):
-        session = self.session()
-        self.ts = session.add(ColumnTS())
-        self.ts.update(self.data.values)
-        self.load_data()
     
 
-class SlowLogTestCase(TestCase):
+class SlowLogMixin(object):
     command = 'EXEC'
     
-    def setUp(self):
+    def resetlog(self):
         self.backend.load_scripts()
         c = self.backend.client
         self.slowlog = c.config_get('slowlog-log-slower-than')
@@ -38,16 +29,17 @@ class SlowLogTestCase(TestCase):
     def getTime(self, dt):
         log = self.backend.client.slowlog_get(100)
         self.assertEqual(log[0]['command'],self.command)
+        i = 0
+        ms = log[0]['microseconds']
         if self.command == 'EXEC':
             i = 1
             while log[i]['command'] != 'MULTI':
                 i += 1
+            ms += log[i]['microseconds']
         else:
             self.assertEqual(len(log),2)
-            i = 0
         self.assertEqual(log[i+1]['command'],'SLOWLOG')
         self.backend.client.slowlog_reset()
-        ms = log[1]['microseconds']
         return 0.000001*ms
     
     def tearDown(self):
@@ -56,36 +48,80 @@ class SlowLogTestCase(TestCase):
                                self.slowlog['slowlog-log-slower-than']))
         
 
-######### TEST CASES
+######### Create TEST CASES
 
 class CreateTest(TestCase):
     
+    def startUp(self):
+        session = self.session()
+        self.ts = session.add(ColumnTS())
+        self.ts.update(self.data1.values)
+        
     def testCommit(self):
         self.ts.session.commit()
         
     
-class CreateRedisTim(SlowLogTestCase):
+class CreateTestRedis(SlowLogMixin,CreateTest):
     
-    def testCommitRedis(self):
-        self.ts.session.commit()
+    def startUp(self):
+        super(CreateTestRedis,self).startUp()
+        self.resetlog()
     
     
-class OperationTest(TestCase):
+####### Stats Tests
+
+class StatTest(TestCase):
     
-    def load_data(self):
+    def setUp(self):
+        self.backend.load_scripts()
+        session = self.session()
+        self.ts = session.add(ColumnTS())
+        self.ts.update(self.data1.values)
         self.ts.session.commit()
         
     def testStats(self):
         self.ts.stats(0,-1)
         
         
-class OperationTestRedis(SlowLogTestCase):
+class StatTestRedis(SlowLogMixin, StatTest):
     command = 'EVAL'
-    def load_data(self):
-        self.ts.session.commit()
-        self.backend.client.slowlog_reset()
-        
-    def testStatsRedis(self):
-        self.ts.stats(0,-1)
-        
     
+    def startUp(self):
+        self.resetlog()
+        
+   
+##### Merge Tests
+
+class MergeTest(TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        size = cls.worker.cfg.size
+        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        
+    def setUp(self):
+        self.backend.load_scripts()
+        session = self.session()
+        with session.begin():
+            self.ts1 = session.add(ColumnTS())
+            self.ts1.update(self.data1.values)
+            self.ts2 = session.add(ColumnTS())
+            self.ts2.update(self.data2.values)
+            self.ts3 = session.add(ColumnTS())
+            self.ts3.update(self.data3.values)
+        self.assertTrue(self.ts1.size())
+        self.assertTrue(self.ts2.size())
+        self.assertTrue(self.ts3.size())
+        
+    def testMerge(self):
+        ts = ColumnTS()
+        ts.merge((self.ts1,1.5),(self.ts2,2),(self.ts3,-0.5))
+        ts.session.commit()
+        
+        
+class MergeTestRedis(SlowLogMixin, MergeTest):
+    
+    def startUp(self):
+        self.resetlog()

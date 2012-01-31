@@ -118,9 +118,9 @@ The first parameter is the model'''
 def structure_session_callback(sm, deleted, saved, processed, response):
     if response and not isinstance(response,Exception):
         if deleted:
-            processed.append(session_result(sm.meta, deleted, 'delete'))
+            return session_result(sm.meta, deleted, 'delete')
         if saved:
-            processed.append(session_result(sm.meta, saved, 'save'))
+            return session_result(sm.meta, saved, 'save')
     else:
         return response
 
@@ -141,13 +141,15 @@ class move2set(redis.RedisScript):
 def redis_execution(pipe, result_type):
     command = copy(pipe.command_stack)
     command.pop(0)
-    result = pipe.execute(load_script = True)
     results = []
-    for v in result:
-        if isinstance(v, Exception):
-            raise v
-        elif isinstance(v, result_type):
-            results.append(v)
+    if command:
+        result = pipe.execute(load_script = True)
+        results = []
+        for v in result:
+            if isinstance(v, Exception):
+                raise v
+            elif isinstance(v, result_type):
+                results.append(v)
     return command, results
     
     
@@ -397,10 +399,14 @@ class Set(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
+        result = None
         if cache.toadd:
             self.client.sadd(self.id, *cache.toadd)
+            result = True
         if cache.toremove:
             self.client.srem(self.id, *cache.toremove)
+            result = True
+        return result
     
     def size(self):
         return self.client.scard(self.id)
@@ -413,12 +419,16 @@ class Zset(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
+        result = None
         if cache.toadd:
             flat = cache.toadd.flat()
             self.client.zadd(self.id, *flat)
+            result = True
         if cache.toremove:
             flat = cache.toadd.flat()
             self.client.zadd(self.id, *flat)
+            result = True
+        return result
     
     def get(self, score):
         r = self.range(score,score,withscores=False)
@@ -468,10 +478,14 @@ class List(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
+        result = None
         if cache.front:
             self.client.lpush(self.id, *cache.front)
+            result = True
         if cache.back:
             self.client.rpush(self.id, *cache.back)
+            result = True
+        return result
     
     def size(self):
         return self.client.llen(self.id)
@@ -484,10 +498,14 @@ class Hash(RedisStructure):
     
     def flush(self):
         cache = self.instance.cache
+        result = None
         if cache.toadd:
             self.client.hmset(self.id, cache.toadd)
+            result = True
         if cache.toremove:
             self.client.hdel(self.id, *cache.toremove)
+            result = True
+        return result
         
     def size(self):
         return self.client.hlen(self.id)
@@ -526,10 +544,13 @@ class TS(Zset):
     
     def flush(self):
         cache = self.instance.cache
+        result = None
         if cache.toadd:
             self.client.tsadd(self.id, *cache.toadd.flat())
+            result = True
         if cache.toremove:
             raise NotImplementedError('Cannot remove. TSDEL not implemented')
+        return result
     
     def _iter(self):
         return iter(self.irange(novalues = True))
@@ -768,9 +789,13 @@ class BackendDataServer(stdnet.BackendDataServer):
         for instance in sm._delete_query:
             instance.commit(client)
             deleted.append(instance.id)
-        for instance in sm:
-            instance.commit(client)
-            saved.append(instance.id)
-        client.add_callback(
-                partial(structure_session_callback,sm,deleted,saved))
+        for instance in list(sm):
+            c = instance.commit(client)
+            if c is None:
+                sm.expunge(instance)
+            else:
+                saved.append(instance.id)
+        if deleted or saved:
+            client.add_callback(
+                    partial(structure_session_callback,sm,deleted,saved))
         

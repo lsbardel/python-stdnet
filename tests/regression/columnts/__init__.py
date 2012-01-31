@@ -8,6 +8,7 @@ from stdnet.lib import redis
 
 from examples.data import tsdata
 
+nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
 class timeseries_test1(redis.RedisScript):
@@ -53,6 +54,8 @@ class TestTimeSeries(test.TestCase):
         session = self.session()
         with session.begin():
             ts = session.add(ColumnTS())
+        self.assertEqual(ts.session,None)
+        session.add(ts)
         self.assertEqual(ts.size(),0)
         
     def testAddSimple(self):
@@ -86,6 +89,19 @@ class TestTimeSeries(test.TestCase):
         self.assertEqual(len(dt),2)
         self.assertTrue('pv' in fields)
         self.assertEqual(fields['pv'],[56.8,56])
+        
+    def testAddNil(self):
+        session = self.session()
+        ts = session.add(ColumnTS(id = 'goog'))
+        ts.add(date.today(),'pv',56)
+        ts.add(date.today()-timedelta(days=2),'pv',nan)
+        session.commit()
+        self.assertEqual(ts.size(),2)
+        dt,fields = ts.range()
+        self.assertEqual(len(dt),2)
+        self.assertTrue('pv' in fields)
+        n = fields['pv'][0]
+        self.assertNotEqual(n,n)
         
     def testGoogleDrop(self):
         ts = self.makeGoogle()
@@ -130,11 +146,10 @@ class TestOperations(test.TestCase):
         for field in ('a','b','c','d','f','g'):
             self.assertTrue(field in stats)
             stat_field = stats[field]
-            data = self.data1.fields[field]
+            data = self.data1.sorted_fields[field]
             self.assertAlmostEqual(stat_field[0], min(data))
             self.assertAlmostEqual(stat_field[1], max(data))
             
-        
     def test_merge2series(self):
         session = self.session()
         with session.begin():
@@ -152,4 +167,52 @@ class TestOperations(test.TestCase):
         session.commit()
         self.assertTrue(ts3.size())
         self.assertEqual(ts3.numfields(),6)
-        
+        times, fields = ts3.range()
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            if dt in self.data1.unique_dates and dt in self.data2.unique_dates:
+                for field,values in fields.items():
+                    res = 2*v2[field] - v1[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                self.assertTrue(v1 is None or v2 is None)
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)
+                 
+    def test_merge3series(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts2 = session.add(ColumnTS())
+            ts3 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+            ts2.update(self.data2.values)
+            ts3.update(self.data3.values)
+        self.assertEqual(ts1.size(),self.data1.length)
+        self.assertEqual(ts2.size(),self.data2.length)
+        self.assertEqual(ts3.size(),self.data3.length)
+        with session.begin():
+            ts = ColumnTS(id = 'merged')
+            ts.merge((ts1,0.5),(ts2,1.3),(ts3,-2.65))
+            self.assertEqual(ts.session,session)
+        length = ts.size()
+        self.assertTrue(length >= max(self.data1.length,self.data2.length,
+                                      self.data3.length))
+        self.assertEqual(ts.numfields(),6)
+        times, fields = ts.range()
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            v3 = ts3.get(dt)
+            if v1 is not None and v2 is not None and v3 is not None:
+                for field,values in fields.items():
+                    res = 0.5*v1[field] + 1.3*v2[field] - 2.65*v3[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)

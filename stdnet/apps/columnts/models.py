@@ -66,14 +66,19 @@ class ColumnTS(orm.Structure):
     def size(self):
         return self.backend_structure().size()
     
-    def range(self, start = 0, end = -1, fields = None):
+    def range(self, start = 0, end = -1, fields = None, callback = None):
         res = self.backend_structure().range(start,end,fields)
-        return self.async_handle(res, self._range)
+        return self.async_handle(res, callback or self._range)
     
-    def rangebytime(self, start, end, fields = None):
+    def rangebytime(self, start, end, fields = None, callback = None):
+        start = self.pickler.dumps(start)
+        end = self.pickler.dumps(end)
         res = self.backend_structure().rangebytime(start,end,fields)
-        return self.async_handle(res, self._range)
+        return self.async_handle(res, callback or self._range)
     
+    def get(self, dt, *fields):
+        return self.rangebytime(dt, dt, fields, self._get)
+        
     def stats(self, start, end, fields = None):
         res = self.backend_structure().stats(start,end,fields)
         return self.async_handle(res, self._stats)
@@ -113,6 +118,14 @@ The result will be calculated using the formula::
         for f,data in result[1]:
             vals[f] = [vloads(d) for d in data]
         return (dt,vals)
+    
+    def _get(self, result):
+        dt,fields = self._range(result)
+        if dt:
+            if len(fields) == 1:
+                return tuple(fields.values())[0]
+            else:
+                return dict(((f,fields[f][0]) for f in fields))
     
     def _stats(self, result):
         if result:

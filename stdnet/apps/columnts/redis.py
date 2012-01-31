@@ -51,8 +51,6 @@ class RedisColumnTS(redisb.TS):
         
     def rangebytime(self, start, end, fields = None):
         fields = fields or ()
-        start = self.pickler.dumps(start)
-        end = self.pickler.dumps(end)
         return self.client.script_call('timeseries_query', self.id,
                                       'tsrangebytime',
                                        start, end, len(fields), *fields)

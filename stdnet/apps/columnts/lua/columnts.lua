@@ -46,7 +46,7 @@ columnts = {
     --
     -- Return the ordered list of times
     times = function (self)
-        return redis.call('tsrange', 0, -1, 'novalues')
+        return redis.call('tsrange', self.key, 0, -1, 'novalues')
     end,
     --
     -- The rank of timestamp in the timeseries
@@ -103,20 +103,20 @@ columnts = {
     -- contains two elements, an array of times and a dictionary of fields.
     range = function(self, command, start, stop, fields, unpack_values)
         local times = redis.call(command, self.key, start, stop, 'novalues')
+        local field_values = {}
+        local data = {times, field_values}
         local len = # times
         if len == 0 then
-            return times
+            return data
         elseif command == 'tsrangebytime' then
             -- get the start rank
             start = redis.call('tsrank', self.key, start)
         end
         stop = start + len
-        local field_values = {}
-        local data = {times, field_values}
         if not fields or # fields == 0 then
             fields = self:fields()
         end
-
+        -- loop over fields
         for i,field in ipairs(fields) do
             local fkey = self:fieldkey(field)
             if redis.call('exists', fkey) then
@@ -185,9 +185,11 @@ columnts = {
     -- values, otherwise the values are to be replaced
     add = function (self, times, field_values, weights)
         local fields = self:fields_set()
-        local tslen = self:length()
+        local tslen = self:length() + 0
         local ws = {}
-        local fkey, data, rank, rank9, available_rank, weight, value, v1
+        local fkey, data, rank, rank9, available, weight, value, dvalue, v1
+        local new_serie = tslen == 0
+        local time_set = {}
         
         -- Make sure all fields are available and have same data length
         for field, value in pairs(field_values) do
@@ -202,54 +204,83 @@ columnts = {
             end
         end
         
+        -- we are adding to an existing timeseries. We need to insert
+        -- missing fields
+        if weights and not new_serie then
+            local times = self:times()
+            for index, timestamp in ipairs(times) do
+                time_set[timestamp] = false
+            end
+        end
+        
         -- Loop over times
         for index, timestamp in ipairs(times) do
-            available_rank = self:rank(timestamp)
-            -- Add a new timestamp
-            if not available_rank then
+            time_set[timestamp] = true
+            available = self:rank(timestamp)
+            -- This is a new timestamp as well as data in the fields strings
+            if not available then
                 redis.call('tsadd', self.key, timestamp, 1)
-                rank = redis.call('tsrank', self.key, timestamp)
+                rank = redis.call('tsrank', self.key, timestamp) + 0
+                rank9 = 9*rank
                 tslen = self:length()
+                -- loop over all fields and/append add new data to the strings
+                for field, fkey in pairs(fields) do
+                    -- not at the end of the string! inefficient insertion.
+                    if rank < tslen - 1 then
+                        data = nildata .. redis.call('getrange', fkey, rank9, -1)
+                    else
+                        data = nildata
+                    end 
+                    redis.call('setrange', fkey, rank9, data)
+                end
+            -- No need to insert a new timestamp
             else
-                rank = available_rank
+                rank = available + 0
+                rank9 = 9*rank
             end
-            rank9 = 9*rank
-            -- Loop over fields
-	        for field, values in pairs(field_values) do
-	            -- add field to the fields set
-	            fkey = fields[field]
-	            value = values[index]
-	            -- not there, we need to insert/append a new nil value (hopefully append!)
-	            if not available_rank then
-	                -- not at the end of the string! inefficient insertion.
-	                if rank < tslen - 1 then
-	                    data = nildata .. redis.call('getrange', fkey, rank9+9, -1)
-	                else
-	                    data = nildata
-	                end 
-	                redis.call('setrange', fkey, rank9, data)
-	            end
-	            -- set the field value
-	            if weights then
-	                if isnumber(weights) then
-	                    weight = weights
-	                else
-	                    weight = weights[field]
-	                end
-	                value = weight*self:unpack_value(value)
-	                -- If the field was available add to the current value
-	                if available_rank then
-	                    v1 = redis.call('getrange', fkey, rank9, rank+9)
-	                    value = value + self:unpack_value(v1)
-	                end
-	                value = self:pack_value(value)
-	            elseif string.len(value) > 9 then
-	                key = string.sub(value, 2, 9)
-	                redis.call('set', self.key .. ':key:' .. key, string.sub(value, 10))
-	                value = string.sub(value, 1, 9)
-	            end
-	            redis.call('setrange', fkey, rank9, value)
+            
+            -- Loop over fields if we are setting a value of the value is available
+            if weights or available or new_serie then
+    	        for field, values in pairs(field_values) do
+    	            -- add field to the fields set
+    	            fkey = fields[field]
+    	            value = values[index]
+    	            -- set the field value
+    	            if weights then
+    	                if isnumber(weights) then
+    	                    weight = weights
+    	                else
+    	                    weight = weights[field]
+    	                end
+    	                dvalue = weight*self:unpack_value(value)
+    	                -- If the value is a number
+    	                if dvalue == dvalue then
+    	                    -- If the field was available add to the current value
+    	                    if not new_serie then
+    	                        v1 = redis.call('getrange', fkey, rank9, rank9+9)
+    	                        dvalue = dvalue + self:unpack_value(v1)
+    	                    end
+    	                    value = self:pack_value(dvalue)
+    	                end
+    	            elseif string.len(value) > 9 then
+    	                key = string.sub(value, 2, 9)
+    	                redis.call('set', self.key .. ':key:' .. key, string.sub(value, 10))
+    	                value = string.sub(value, 1, 9)
+    	            end
+    	            redis.call('setrange', fkey, rank9, value)
+    	        end
 	        end
+	    end
+	    
+	    if weight and not new_table then
+	        for timestamp, avail in pairs(time_set) do
+	            if not avail then
+	               rank9 = redis.call('tsrank', self.key, timestamp)*9
+	               for field, fkey in pairs(fields) do 
+                        redis.call('setrange', fkey, rank9, nildata)
+	               end
+	           end
+	       end
 	    end
     end,
 
@@ -348,9 +379,9 @@ function columnts:merge(key, elements, fields)
     for i,elem in ipairs(elements) do
         local ts = elem.series[1]
         if # elem.series > 1 then
-            ts = columnts:multiply(elem.series)
+            ts = columnts:multiply(elem.series, fields)
         end
-        result:addserie(ts,elem.weight)
+        result:addserie(ts, elem.weight, fields)
     end
     return result
 end

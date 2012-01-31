@@ -60,10 +60,11 @@ class BackendStructure(object):
     def commit(self):
         instance = self.instance
         if instance.state().deleted:
-            self.delete()
+            result = self.delete()
         else:
-            self.flush()
+            result = self.flush()
         instance.cache.clear()
+        return result
     
     @property
     def id(self):

@@ -96,28 +96,49 @@ Session model."""
         return instance
     
     def delete(self, instance):
-        if self.expunge(instance):
+        '''delete an *instance*'''
+        instance = self.pop(instance)
+        if instance is not None:
             state = instance.state()
             if state.persistent:
                 state.deleted = True
                 self._deleted[state.iid] = instance
             else:
                 instance.session = None
-        return instance
+            return instance
     
-    def expunge(self, instance):
+    def pop(self, instance):
         '''Remove *instance* from the :class:`Session`. Instance could be a
-:class:`Model` or an id.'''
+:class:`Model` or an id.
+
+:parameter instance: a :class:`Model` or an *id*
+:rtype: the :class:`Model` removed from session or ``None`` if
+    it was not in the session.
+'''
         if isinstance(instance,self.meta.model):
             iid = instance.state().iid
         else:
             iid = instance
-        r = False
+        instance = None
         for d in (self._new,self._modified,self._loaded,self._deleted):
             if iid in d:
+                if instance is not None:
+                    raise ValueError(\
+                    'Critical error. Instance {0} is duplicated'.format(iid))
                 instance = d.pop(iid)
-                r = True
-        return r
+        return instance
+        
+    def expunge(self, instance):
+        '''Remove *instance* from the :class:`Session`. Instance could be a
+:class:`Model` or an id.
+
+:parameter instance: a :class:`Model` or an *id*
+:rtype: the :class:`Model` removed from session or ``None`` if
+    it was not in the session.
+'''
+        instance = self.pop(instance)
+        instance.session = None
+        return instance
     
     def get_delete_query(self, **kwargs):
         queries = self._delete_query
@@ -159,9 +180,12 @@ Session model."""
     
     def server_update(self, instance, id = None):
         state = instance.state()
-        self.expunge(instance)
+        inst = self.pop(instance)
         if not state.deleted:
-            if id:
+            if id is not None:
+                if inst is None:
+                    raise ValueError('instance not available in session')
+                instance = inst
                 #id = instance._meta.pk.to_python(id)
                 if state.persistent and instance.id != id:
                     raise ValueError('id has changed in the server from {0}\
@@ -173,6 +197,7 @@ Session model."""
             return instance
         else:
             instance.state().deleted = True
+            instance.session = None
 
 
 class Transaction(ServerOperation):
@@ -438,7 +463,6 @@ from the **kwargs** parameters.
                 sm._delete_query.append(q)
             return q
         else:
-            instance.session = self
             return sm.delete(instance)
         
     def delete_query(self, query):

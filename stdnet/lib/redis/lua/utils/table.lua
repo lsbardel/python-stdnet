@@ -21,6 +21,8 @@ function table_slice (values,i1,i2)
     return res
 end
 
+-- Convert a dictionary into a flat array. For example {bla = 'foo', planet = 'mars'}
+-- becomes {'bla', 'foo', 'planet', 'mars'}
 function flat_table(tbl)
     result = {}
     for name,value in pairs(tbl) do
@@ -28,4 +30,17 @@ function flat_table(tbl)
         table.insert(result,value)
     end
     return result
+end
+
+-- Return True if v is a number
+function isnumber(v)
+    return pcall(function() return v + 0 end)
+end
+
+function asnumber(v)
+    if isnumber(v) then
+        return v + 0
+    else
+        return nil
+    end
 end

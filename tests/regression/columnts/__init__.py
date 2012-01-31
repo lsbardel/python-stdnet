@@ -11,7 +11,8 @@ from examples.data import tsdata
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
 class timeseries_test1(redis.RedisScript):
-    script = (redis.read_lua_file('columnts.lua',script_path),
+    script = (redis.read_lua_file('utils/table.lua'),
+              redis.read_lua_file('columnts.lua',script_path),
               redis.read_lua_file('test1.lua',this_path))
     
 

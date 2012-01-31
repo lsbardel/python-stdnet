@@ -1,18 +1,7 @@
+-- Not a number
 local nan = 0/0
 -- 9 bytes string for nil data
 local nildata = string.char(0,0,0,0,0,0,0,0,0)
-
-function isnumber(v)
-    return pcall(function() return v + 0 end)
-end
-
-function asnumber(v)
-    if isnumber(v) then
-        return v + 0
-    else
-        return nil
-    end
-end
 
 -- Column timeseries class
 columnts = {
@@ -23,7 +12,7 @@ columnts = {
         self.fieldskey = key .. ':fields'
     end,
     --
-    -- field key
+    -- field data key
     fieldkey = function (self, field)
         return self.key .. ':field:' .. field
     end,
@@ -67,7 +56,8 @@ columnts = {
     --
     -- Return the unpacked value of field at rank
     rank_value = function (self, rank, field)
-        local value = redis.call('getrange',self:fieldkey(field),9*rank,9*rank+9)
+        local r = 9*rank
+        local value = redis.call('getrange',self:fieldkey(field),r,r+9)
         return self:unpack_value(value)
     end,
     --
@@ -197,7 +187,7 @@ columnts = {
         local fields = self:fields_set()
         local tslen = self:length()
         local ws = {}
-        local fkey, data, rank, available_rank, weight, value
+        local fkey, data, rank, rank9, available_rank, weight, value, v1
         
         -- Make sure all fields are available and have same data length
         for field, value in pairs(field_values) do
@@ -215,14 +205,15 @@ columnts = {
         -- Loop over times
         for index, timestamp in ipairs(times) do
             available_rank = self:rank(timestamp)
+            -- Add a new timestamp
             if not available_rank then
                 redis.call('tsadd', self.key, timestamp, 1)
                 rank = redis.call('tsrank', self.key, timestamp)
+                tslen = self:length()
             else
                 rank = available_rank
             end
-            tslen = self:length()
-            
+            rank9 = 9*rank
             -- Loop over fields
 	        for field, values in pairs(field_values) do
 	            -- add field to the fields set
@@ -232,11 +223,11 @@ columnts = {
 	            if not available_rank then
 	                -- not at the end of the string! inefficient insertion.
 	                if rank < tslen - 1 then
-	                    data = nildata .. redis.call('getrange', fkey, (rank+1)*9, -1)
+	                    data = nildata .. redis.call('getrange', fkey, rank9+9, -1)
 	                else
 	                    data = nildata
 	                end 
-	                redis.call('setrange', fkey, 9*rank, data)
+	                redis.call('setrange', fkey, rank9, data)
 	            end
 	            -- set the field value
 	            if weights then
@@ -248,7 +239,8 @@ columnts = {
 	                value = weight*self:unpack_value(value)
 	                -- If the field was available add to the current value
 	                if available_rank then
-	                    value = value + self:rank_value(available_rank, field)
+	                    v1 = redis.call('getrange', fkey, rank9, rank+9)
+	                    value = value + self:unpack_value(v1)
 	                end
 	                value = self:pack_value(value)
 	            elseif string.len(value) > 9 then
@@ -256,7 +248,7 @@ columnts = {
 	                redis.call('set', self.key .. ':key:' .. key, string.sub(value, 10))
 	                value = string.sub(value, 1, 9)
 	            end
-	            redis.call('setrange', fkey, 9*rank, value)
+	            redis.call('setrange', fkey, rank9, value)
 	        end
 	    end
     end,
@@ -279,7 +271,7 @@ columnts = {
         elseif byte == 3 then
             return string.sub(value,3,3+string.byte(value,2))
         else
-            assert(byte == 4, 'Invalid string to unpack')
+            assert(byte == 4, 'Invalid string to unpack. First byte is ' .. byte)
             return self:string_value(string.sub(value,2))
         end
     end,
@@ -290,7 +282,7 @@ columnts = {
             if value == value then
                 return string.char(2) .. struct.pack('>d', value)
             else
-                return nan
+                return nildata
             end
         else
             local n = string.len(value)

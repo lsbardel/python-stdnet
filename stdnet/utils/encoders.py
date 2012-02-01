@@ -1,15 +1,29 @@
-'''Classes used for encoding and decoding field values.'''
+'''Classes used for encoding and decoding :class:`stdnet.orm.Field` values.'''
 import json
+from datetime import datetime, date
 
 from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\
                          ispy3k, date2timestamp, timestamp2date
+
+if ispy3k:
+    str_type = str
+else:
+    str_type = unicode
+
     
 
 class Encoder(object):
     '''Virtaul class for encoding data in
 :ref:`remote strcutures <structures-backend>`. It exposes two methods
-for serializing and loading data to and from the data server.'''
+for serializing and loading data to and from the data server.
+
+.. attribute:: type
+
+    The type of data once loaded into python
+'''
+    type = None
+    
     def dumps(self, x, logger = None):
         '''Serialize data for database'''
         raise NotImplementedError
@@ -21,6 +35,8 @@ for serializing and loading data to and from the data server.'''
         
 class Default(Encoder):
     '''The default unicode encoder'''
+    type = str_type
+    
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
         self.charset = charset
         self.encoding_errors = encoding_errors
@@ -64,6 +80,7 @@ class NumericDefault(Default):
         
     
 class Double(Encoder):
+    type = float
     
     def loads(self, x, logger = None):
         return float(x)
@@ -74,6 +91,8 @@ class Double(Encoder):
     
 class Bytes(Encoder):
     '''The binary unicode encoder'''
+    type = bytes
+    
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
         self.charset = charset
         self.encoding_errors = encoding_errors
@@ -98,6 +117,8 @@ class NoEncoder(Encoder):
 class PythonPickle(Encoder):
     '''A safe pickle serializer. By default we use protocol 2 for compatibility
 between python 2 and python 3.'''
+    type = bytes
+    
     def __init__(self, protocol = 2):
         self.protocol = protocol
         
@@ -146,6 +167,8 @@ remote data structures.'''
 
 class DateTimeConverter(Encoder):
     '''Convert to and from datetime.datetime and unix timestamps'''
+    type = datetime
+    
     def dumps(self, value, logger = None):
         return date2timestamp(value)
     
@@ -154,7 +177,9 @@ class DateTimeConverter(Encoder):
     
 
 class DateConverter(DateTimeConverter):
+    type = date
     '''Convert to and from datetime.date and unix timestamps'''
+    
     def loads(self, value, logger = None):
         return timestamp2date(value).date()
     

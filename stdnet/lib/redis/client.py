@@ -252,20 +252,18 @@ class Redis(object):
     # commands that should NOT pull data off the network buffer when executed
     SUBSCRIPTION_COMMANDS = set((b'SUBSCRIBE', b'UNSUBSCRIBE'))
 
-    def __init__(self, host='localhost', port=6379,
+    def __init__(self, address = None,
                  db=0, password=None, socket_timeout=None,
                  connection_pool=None, encoding = 'utf-8',
-                 prefix = ''):
+                 prefix = '', **kwargs):
         if not connection_pool:
-            kwargs = {
-                'db': db,
-                'password': password,
-                'socket_timeout': socket_timeout,
-                'host': host,
-                'port': port,
-                'encoding': encoding
-                }
-            connection_pool = ConnectionPool(**kwargs)
+            kwargs.update({
+                    'db': db,
+                    'password': password,
+                    'socket_timeout': socket_timeout,
+                    'encoding': encoding
+                })
+            connection_pool = ConnectionPool(address, **kwargs)
         self.prefix = prefix
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding

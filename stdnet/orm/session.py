@@ -608,9 +608,6 @@ if their managers have the same backend database.'''
     def query(self):
         return self.session().query(self.model)
     
-    def all(self):
-        return self.query().all()
-    
     def filter(self, **kwargs):
         return self.query().filter(**kwargs)
     

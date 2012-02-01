@@ -108,10 +108,9 @@ columnts = {
         local len = # times
         if len == 0 then
             return data
-        elseif command == 'tsrangebytime' then
-            -- get the start rank
-            start = redis.call('tsrank', self.key, start)
         end
+        -- get the start rank (Also when we use tsrange. Important)
+        start = redis.call('tsrank', self.key, times[1])
         stop = start + len
         if not fields or # fields == 0 then
             fields = self:fields()

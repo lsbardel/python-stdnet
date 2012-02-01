@@ -350,8 +350,10 @@ class ConnectionPool(object):
     "A :class:`Redis` :class:`Connection` pool."
     default_encoding = 'utf-8'
     
-    def __init__(self, address, connection_class=None, db=0,
+    def __init__(self, address, connection_class = None, db = 0,
                  max_connections=None, **connection_kwargs):
+        if not address:
+            raise ValueError('Redis connection address not supplied')
         self.__address = address
         self.__db = db
         self.connection_class = connection_class or\

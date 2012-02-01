@@ -2,6 +2,7 @@ import os
 from datetime import date, datetime, timedelta
 
 from stdnet import test
+from stdnet.utils import encoders
 from stdnet.apps.columnts import ColumnTS, TimeSeriesField
 from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
@@ -58,6 +59,24 @@ class TestTimeSeries(test.TestCase):
         session.add(ts)
         self.assertEqual(ts.size(),0)
         
+    def testFrontBack(self):
+        session = self.session()
+        ts = session.add(ColumnTS(pickler = encoders.DateConverter()))
+        self.assertEqual(ts.size(),0)
+        self.assertEqual(ts.front(), None)
+        self.assertEqual(ts.back(), None)
+        d2 = date.today()
+        d1 = d2 - timedelta(days=2)
+        ts.add(d2,'foo',-5.2)
+        ts.add(d1,'foo',789.3)
+        self.assertEqual(ts.size(),0)
+        self.assertEqual(ts.front(), None)
+        self.assertEqual(ts.back(), None)
+        session.commit()
+        self.assertEqual(ts.size(),2)
+        self.assertEqual(ts.front(), (d1,{'foo':789.3}))
+        self.assertEqual(ts.back(), (d2,{'foo':-5.2}))
+        
     def testAddSimple(self):
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))
@@ -83,7 +102,7 @@ class TestTimeSeries(test.TestCase):
         self.assertTrue(raw_data)
         self.assertEqual(len(raw_data),18)
         #
-        data = ts.range()
+        data = ts.irange()
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(dt),2)
@@ -97,7 +116,7 @@ class TestTimeSeries(test.TestCase):
         ts.add(date.today()-timedelta(days=2),'pv',nan)
         session.commit()
         self.assertEqual(ts.size(),2)
-        dt,fields = ts.range()
+        dt,fields = ts.irange()
         self.assertEqual(len(dt),2)
         self.assertTrue('pv' in fields)
         n = fields['pv'][0]
@@ -111,7 +130,7 @@ class TestTimeSeries(test.TestCase):
         
     def testRange(self):
         ts = self.makeGoogle()
-        data = ts.range()
+        data = ts.irange()
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(fields),4)
@@ -135,7 +154,7 @@ class TestOperations(test.TestCase):
         with session.begin():
             ts1 = session.add(ColumnTS())
             ts1.update(self.data1.values)
-        dt,fields = ts1.range()
+        dt,fields = ts1.irange()
         self.assertEqual(len(fields),6)
         result = ts1.stats(0,-1)
         self.assertTrue(result)
@@ -167,7 +186,7 @@ class TestOperations(test.TestCase):
         session.commit()
         self.assertTrue(ts3.size())
         self.assertEqual(ts3.numfields(),6)
-        times, fields = ts3.range()
+        times, fields = ts3.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)
@@ -202,7 +221,7 @@ class TestOperations(test.TestCase):
         self.assertTrue(length >= max(self.data1.length,self.data2.length,
                                       self.data3.length))
         self.assertEqual(ts.numfields(),6)
-        times, fields = ts.range()
+        times, fields = ts.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)

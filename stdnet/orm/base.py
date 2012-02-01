@@ -13,7 +13,12 @@ from .fields import Field, AutoField, orderinginfo
 from .session import Manager, setup_managers
 
 
-__all__ = ['Metaclass','Model','ModelBase','StdNetType', 'from_uuid']
+__all__ = ['Metaclass',
+           'Model',
+           'ModelBase',
+           'ModelType', # Metaclass for all stdnet ModelBase classes
+           'StdNetType', # derived from ModelType, metaclass fro StdModel
+           'from_uuid']
 
 
 def get_fields(bases, attrs):

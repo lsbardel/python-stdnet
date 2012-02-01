@@ -43,13 +43,13 @@ class RedisColumnTS(redisb.TS):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
     
-    def range(self, start = 0, end = -1, fields = None):
+    def irange(self, start = 0, end = -1, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_query', self.id,
                                        'tsrange',
                                        start, end, len(fields), *fields)
         
-    def rangebytime(self, start, end, fields = None):
+    def range(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_query', self.id,
                                       'tsrangebytime',

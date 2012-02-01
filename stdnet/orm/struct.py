@@ -13,7 +13,8 @@ __all__ = ['Structure',
            'Set',
            'Zset',
            'HashTable',
-           'TS']
+           'TS',
+           'OrderedMixin']
 
 
 ################################################################################
@@ -209,9 +210,8 @@ can also be used as stand alone objects. For example::
         
     @withsession
     def size(self):
-        '''Number of elements in structure. If no transaction is
-supplied, use the backend default cursor.'''
-        return self.session.backend.structure(self).size()
+        '''Number of elements in structure.'''
+        return self.backend_structure().size()
     
     @withsession
     def __contains__(self, value):
@@ -380,23 +380,22 @@ a float value.'''
     def count(self, start, stop):
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        return self.session.structure(self).count(s1, s2)
+        return self.backend_structure().count(s1, s2)
         
     def rank(self, value):
         value = self.pickler.dumps(value)
-        return self.session.structure(self).rank(value)
+        return self.backend_structure().rank(value)
     
-    def range(self, start, stop):
+    def range(self, start, stop, callback = None, **kwargs):
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        data = self.session.structure(self).range(s1,s2)
-        return self.load_data(data)
+        res = self.backend_structure().range(s1, s2, **kwargs)
+        return self.async_handle(res, callback or self.load_data)
     
-    def irange(self, start = 0, end = -1):
+    def irange(self, start = 0, end = -1, callback = None, **kwargs):
         '''Return a range between start and end key.'''
-        data = self.session.structure(self).irange(start,end)
-        return self.load_data(data)
-        
+        res = self.backend_structure().irange(start, end, **kwargs)
+        return self.async_handle(res, callback or self.load_data)
 
 
 class List(Structure):

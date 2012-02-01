@@ -19,10 +19,46 @@ init_data = {'set':{'count':0,'size':0},
 
 OBJECT_VERSION = StrictVersion('2.4.0')
 
-
-class RedisKeyData(orm.Model):
     
-    def __init__(self, key, typ, len, ttl, enc):
+class RedisDbData(orm.ModelBase):
+    
+    def __init__(self, version = None, rpy = None, db = None, keys = None,
+                 expires = None):
+        self.version = version
+        self.rpy = rpy
+        self.id = db
+        if rpy and db is None:
+            self.id = rpy.db
+        self.keys = keys
+        self.expires = expires
+    
+    def delete(self):
+        rpy = self.rpy
+        if rpy:
+            if rpy.db != self.id:
+                db = rpy.db
+                rpy.select(self.id)
+                rpy.flushdb()
+                rpy.select(db)
+            else:
+                rpy.flushdb()
+        
+    @property
+    def db(self):
+        return self.id
+    
+    def __unicode__(self):
+        return '{0}'.format(self.id)
+    
+    def stats(self):
+        if not hasattr(self,'_stats'):
+            self._stats = RedisStats(self.rpy, self.version)
+        return self._stats
+
+
+class RedisKeyData(orm.ModelBase):
+    
+    def __init__(self, key = None, typ = None, len = 0, ttl = None, enc = None):
         self.key = key
         self.type = typ
         self.length = len
@@ -129,42 +165,6 @@ class RedisStats(object):
         if ttl == -1:
             ttl = False
         return RedisKeyData(key,typ,l,ttl,enc)
-
-    
-class RedisDbData(orm.Model):
-    
-    def __init__(self, version = None, rpy = None, db = None, keys = None,
-                 expires = None):
-        self.version = version
-        self.rpy = rpy
-        self.id = db
-        if rpy and db is None:
-            self.id = rpy.db
-        self.keys = keys
-        self.expires = expires
-    
-    def delete(self):
-        rpy = self.rpy
-        if rpy:
-            if rpy.db != self.id:
-                db = rpy.db
-                rpy.select(self.id)
-                rpy.flushdb()
-                rpy.select(db)
-            else:
-                rpy.flushdb()
-        
-    @property
-    def db(self):
-        return self.id
-    
-    def __unicode__(self):
-        return '{0}'.format(self.id)
-    
-    def stats(self):
-        if not hasattr(self,'_stats'):
-            self._stats = RedisStats(self.rpy, self.version)
-        return self._stats
 
 
 class RedisData(list):

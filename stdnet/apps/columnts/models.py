@@ -28,10 +28,22 @@ class TimeseriesCache(object):
         self.deleted_timestamps.clear()
 
 
-class ColumnTS(orm.Structure):
+class ColumnTS(orm.TS):
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
     value_pickler = ValueEncoder()
+    
+    def front(self, *fields):
+        '''Return the front pair of the structure'''
+        v,f = tuple(self.irange(0, 0, fields = fields))
+        if v:
+            return (v[0],dict(((field,f[field][0]) for field in f)))
+    
+    def back(self, *fields):
+        '''Return the back pair of the structure'''
+        v,f = tuple(self.irange(-1, -1, fields = fields))
+        if v:
+            return (v[0],dict(((field,f[field][0]) for field in f)))
     
     def fields(self):
         '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
@@ -63,21 +75,18 @@ class ColumnTS(orm.Structure):
         for dt,v in mapping:
             add(dt,v)
     
-    def size(self):
-        return self.backend_structure().size()
+    def irange(self, start = 0, end = -1, fields = None, callback = None):
+        res = self.backend_structure().irange(start, end, fields)
+        return self.async_handle(res, callback or self.load_data)
     
-    def range(self, start = 0, end = -1, fields = None, callback = None):
-        res = self.backend_structure().range(start,end,fields)
-        return self.async_handle(res, callback or self._range)
-    
-    def rangebytime(self, start, end, fields = None, callback = None):
+    def range(self, start, end, fields = None, callback = None):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
-        res = self.backend_structure().rangebytime(start,end,fields)
-        return self.async_handle(res, callback or self._range)
+        res = self.backend_structure().range(start,end,fields)
+        return self.async_handle(res, callback or self.load_data)
     
     def get(self, dt, *fields):
-        return self.rangebytime(dt, dt, fields, self._get)
+        return self.range(dt, dt, fields, self._get)
         
     def stats(self, start, end, fields = None):
         res = self.backend_structure().stats(start,end,fields)
@@ -110,7 +119,7 @@ The result will be calculated using the formula::
         
     # INTERNALS
     
-    def _range(self, result):
+    def load_data(self, result):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
         dt = [loads(t) for t in result[0]]
@@ -120,7 +129,7 @@ The result will be calculated using the formula::
         return (dt,vals)
     
     def _get(self, result):
-        dt,fields = self._range(result)
+        dt,fields = self.load_data(result)
         if dt:
             if len(fields) == 1:
                 return tuple(fields.values())[0]
@@ -139,5 +148,7 @@ The result will be calculated using the formula::
     
 class TimeSeriesField(orm.MultiField):
     '''An experimenta timeseries field.'''
-    default_value_pickler = ValueEncoder()
+
+    def structure_class(self):
+        return ColumnTS
     

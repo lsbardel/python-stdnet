@@ -184,9 +184,11 @@ engine index models.'''
         add = self.se.index_item
         with session.begin():
             for instance in instances:
+                # Index only if the last_index field was loaded
+                # or it is available
                 # TODO
                 # important for circular update. Need to improve
-                if not instance.last_indexed:
+                if not getattr(instance,'last_indexed',True):
                     session.add(instance)
                     instance.last_indexed = datetime.now()
                     add(instance, session)

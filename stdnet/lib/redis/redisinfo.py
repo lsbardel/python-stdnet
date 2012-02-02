@@ -58,12 +58,17 @@ class RedisDbData(orm.ModelBase):
 
 class RedisKeyData(orm.ModelBase):
     
-    def __init__(self, key = None, typ = None, len = 0, ttl = None, enc = None):
-        self.key = key
-        self.type = typ
-        self.length = len
+    def __init__(self, type = None, length = 0, ttl = None, encoding = None,
+                 idle = None, **kwargs):
+        self.type = type
+        self.length = length
         self.time_to_expiry = ttl
-        self.encoding = enc
+        self.encoding = encoding
+        self.idle = idle
+        
+    @property
+    def key(self):
+        return self.id
         
     def __unicode__(self):
         return self.key
@@ -87,7 +92,7 @@ class RedisStats(object):
     @property
     def keys(self):
         if not hasattr(self,'_keys'):
-            self._keys = self.r.keys()
+            self._keys = self.r.script_call('keyinfo','*')
         return self._keys
     
     def size(self):
@@ -105,11 +110,9 @@ class RedisStats(object):
         return iter(self.data)
     
     def _iterate(self, data):
-        get_key = self.get_key
-        rpy = self.r
-        for key in data:
-            keys = key.decode()
-            yield get_key(key)
+        for info in data:
+            self.incr_count(info.type,info.length)
+            yield info
     
     def all(self):
         '''Return a generator over info on all keys'''
@@ -121,50 +124,6 @@ class RedisStats(object):
         data = self.cached_data()[slic]
         return self._iterate(data)
     
-    def get_key(self, key):
-        '''Retrive the type and length of a redis key.
-        '''
-        r = self.r
-        pipe = r.pipeline()
-        pipe.type(key).ttl(key)
-        # Not working yet!
-        #if self.version >= OBJECT_VERSION:
-        #    pipe.object('encoding',key)
-        tt = pipe.execute()
-        typ = tt[0]
-        enc = None
-        if typ == 'set':
-            cl = pipe.scard(key).srandmember(key).execute()
-            l = cl[0]
-            self.incr_count(typ,len(cl[1]))       
-        elif typ == 'zset':
-            cl = pipe.zcard(key).zrange(key,0,0).execute()
-            l = cl[0]
-            self.incr_count(typ,len(cl[1][0]))
-        elif typ == 'list':
-            cl = pipe.llen(key).lrange(key,0,0).execute()
-            l = cl[0]
-            self.incr_count(typ,len(cl[1][0]))
-        elif typ == 'hash':
-            l = r.hlen(key)
-            self.incr_count(typ)
-        elif typ == 'ts':
-            l = r.execute_command('TSLEN', key)
-            self.incr_count(typ)
-        elif typ == 'string':
-            try:
-                l = r.strlen(key)
-            except:
-                l = None
-            self.incr_count(typ)
-        else:
-            self.incr_count('unknown')
-            typ = None
-            l = None
-        ttl = tt[1]
-        if ttl == -1:
-            ttl = False
-        return RedisKeyData(key,typ,l,ttl,enc)
 
 
 class RedisData(list):

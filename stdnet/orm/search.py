@@ -152,9 +152,11 @@ with the search engine.'''
         self.flush(full)
         n = 0
         for model in self.REGISTERED_MODELS:
-            for obj in model.objects.all():
+            fields = tuple((f.name for f in model._meta.scalarfields\
+                            if f.type == 'text'))
+            for obj in model.objects.query().load_only(*fields):
                 n += 1
-                self.index_item(obj,True)
+                self.index_item(obj)
         return n
 
     # ABSTRACT INTERNAL FUNCTIONS

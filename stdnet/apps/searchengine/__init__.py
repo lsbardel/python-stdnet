@@ -155,9 +155,9 @@ driver.
                 yield word
     
     def flush(self, full = False):
-        WordItem.flush()
+        WordItem.objects.flush()
         if full:
-            Word.flush()
+            Word.objects.flush()
         
     def _index_item(self, item, words, session):    
         link = self._link_item_and_word

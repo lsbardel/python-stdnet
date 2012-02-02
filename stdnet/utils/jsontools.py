@@ -110,22 +110,25 @@ by the *splitter* parameters.
     separator = separator or JSPLITTER
     val = {}
     flat_vals = {}
-    for key in data:
+    for key,value in iteritems(data):
+        if value is None:
+            continue
         keys = key.split(separator)
         # first key equal to the attribute name
         if attname:
             if keys.pop(0) != attname:
                 continue
-        v = loads(data[key]) if loads else data[key]
+        if loads:
+            value = loads(value)
         # if an instance is available, inject the flat attribute
         if not keys:
-            if v is None:
+            if value is None:
                 val = flat_vals = {}
                 break
             else:
                 continue
         else:
-            flat_vals[key] = v
+            flat_vals[key] = value
         
         d = val
         lk = keys[-1]
@@ -140,13 +143,13 @@ by the *splitter* parameters.
                     d[k] = nd
             d = nd
         if lk not in d:
-            d[lk] = v
+            d[lk] = value
         else:
-            d[lk][''] = v
+            d[lk][''] = value
             
     if instance and flat_vals:
         for k,v in iteritems(flat_vals):
-            setattr(instance,k,v)
+            setattr(instance,k,value)
             
     return val
 

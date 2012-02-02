@@ -31,6 +31,8 @@ Ver. 0.7.0 - Development
   via the :attr:`stdnet.struct` singleton.
 * Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
   of model instances.
+* Indexes for :class:`stdnet.orm.ForeignKey` fields are stored at sets with
+  keys obtained from the field ``attrname`` rather than ``name``.
 * Added :meth:`stdnet.orm.StdModel.clone` method for cloning model instances.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and

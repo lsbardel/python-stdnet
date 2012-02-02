@@ -80,7 +80,7 @@ class TestMultiField(test.TestCase):
         '''Get the model and check that no data-structure data
  has been loaded.'''
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.all():
+        for m in self.model.objects.query():
             data = getattr(m,cache,None)
             self.assertFalse(data)
         

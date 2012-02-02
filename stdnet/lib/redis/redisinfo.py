@@ -19,29 +19,35 @@ init_data = {'set':{'count':0,'size':0},
 
 OBJECT_VERSION = StrictVersion('2.4.0')
 
+
+__all__ = ['RedisDb',
+           'RedisKey',
+           'RedisDataFormatter',
+           'redis_info']
+
     
-class RedisDbData(orm.ModelBase):
+class RedisDb(orm.ModelBase):
     
-    def __init__(self, version = None, rpy = None, db = None, keys = None,
+    def __init__(self, version = None, client = None, db = None, keys = None,
                  expires = None):
         self.version = version
-        self.rpy = rpy
+        self.client = client
         self.id = db
-        if rpy and db is None:
-            self.id = rpy.db
+        if client and db is None:
+            self.id = client.db
         self.keys = keys
         self.expires = expires
     
     def delete(self):
-        rpy = self.rpy
-        if rpy:
-            if rpy.db != self.id:
-                db = rpy.db
-                rpy.select(self.id)
-                rpy.flushdb()
-                rpy.select(db)
+        client = self.client
+        if client:
+            if client.db != self.id:
+                db = client.db
+                client.select(self.id)
+                client.flushdb()
+                client.select(db)
             else:
-                rpy.flushdb()
+                client.flushdb()
         
     @property
     def db(self):
@@ -49,82 +55,52 @@ class RedisDbData(orm.ModelBase):
     
     def __unicode__(self):
         return '{0}'.format(self.id)
-    
-    def stats(self):
-        if not hasattr(self,'_stats'):
-            self._stats = RedisStats(self.rpy, self.version)
-        return self._stats
 
 
-class RedisKeyData(orm.ModelBase):
+class RedisKeyManager(object):
     
-    def __init__(self, type = None, length = 0, ttl = None, encoding = None,
-                 idle = None, **kwargs):
+    def all(self, db):
+        keys = []
+        stats = init_data.copy()
+        append = keys.append
+        for info in self.keys(db, None, '*'):
+            append(info)
+            d = stats[info.type]
+            d['count'] += 1
+            d['size'] += info.length
+        return keys,stats
+    
+    def keys(self, db, keys, *patterns):
+        for info in db.client.script_call('keyinfo', keys, *patterns):
+            info.database = db
+            yield info
+            
+    def delete(self, instances):
+        if instances:
+            keys = tuple((instance.id for instance in instances))
+            return instances[0].client.delete(*keys)
+    
+    
+class RedisKey(orm.ModelBase):
+    database = None
+    def __init__(self, client = None, type = None, length = 0, ttl = None,
+                 encoding = None, idle = None, **kwargs):
+        self.client = client
         self.type = type
         self.length = length
         self.time_to_expiry = ttl
         self.encoding = encoding
         self.idle = idle
-        
+    
+    objects = RedisKeyManager()
+    
     @property
     def key(self):
         return self.id
-        
+    
     def __unicode__(self):
         return self.key
     
-    def delete(self):
-        pass
-
-
-class RedisStats(object):
-    
-    def __init__(self, rpy, version = None):
-        self.version = version
-        self.r = rpy
-        self._data = init_data.copy()
-
-    @property
-    def data(self):
-        self.all()
-        return self._data
-      
-    @property
-    def keys(self):
-        if not hasattr(self,'_keys'):
-            self._keys = self.r.script_call('keyinfo','*')
-        return self._keys
-    
-    def size(self):
-        return self.r.dbsize()
-    
-    def incr_count(self, t, s = 0):
-        d = self._data[t]
-        d['count'] += 1
-        d['size'] += s
-        
-    def __len__(self):
-        return self.size()
-    
-    def __iter__(self):
-        return iter(self.data)
-    
-    def _iterate(self, data):
-        for info in data:
-            self.incr_count(info.type,info.length)
-            yield info
-    
-    def all(self):
-        '''Return a generator over info on all keys'''
-        if not hasattr(self,'_all'):
-            self._all = list(self._iterate(self.keys))
-        return self._all
-    
-    def __getitem__(self, slic):
-        data = self.cached_data()[slic]
-        return self._iterate(data)
-    
-
 
 class RedisData(list):
     
@@ -133,7 +109,7 @@ class RedisData(list):
         super(RedisData,self).__init__(*args, **kwargs)
         
     def append(self, **kwargs):
-        instance = RedisDbData(self.version,**kwargs)
+        instance = RedisDb(self.version,**kwargs)
         super(RedisData,self).append(instance)
     
     @property
@@ -205,8 +181,8 @@ class RedisDataFormatter(object):
     
 class RedisInfo(object):
     
-    def __init__(self, rpy, version, info, formatter):
-        self.rpy = rpy
+    def __init__(self, client, version, info, formatter):
+        self.client = client
         self.version = version
         self.info = info
         self._panels = OrderedDict()
@@ -240,7 +216,7 @@ class RedisInfo(object):
         databases = []
         for k,n,data in self.dbs(kdata):
             keydb = data['keys']
-            rd.append(rpy = self.rpy, db = n, keys = data['keys'],
+            rd.append(client = self.client, db = n, keys = data['keys'],
                       expires = data['expires'])
         self.databases = rd
     
@@ -294,12 +270,12 @@ class RedisInfo22(RedisInfo):
             self.makepanel(name)
             
             
-def redis_info(rpy, formatter = None):
-    info = rpy.info()
+def redis_info(client, formatter = None):
+    info = client.info()
     version = get_version(info)
     formatter = formatter or RedisDataFormatter()
     if StrictVersion(version) >= StrictVersion('2.2.0'):
-        return RedisInfo22(rpy,version,info,formatter)
+        return RedisInfo22(client,version,info,formatter)
     else:
         raise NotImplementedError('Redis must be of version 2.2 or higher')
     

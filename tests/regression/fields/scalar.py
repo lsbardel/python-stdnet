@@ -33,7 +33,7 @@ class TestAtomFields(test.TestCase):
     def testFilter(self):
         session = self.create()
         query = session.query(self.model)
-        all = query.all()
+        all = query.query()
         self.assertEqual(len(dates),len(all))
         N = 0
         done_dates = set()
@@ -56,7 +56,7 @@ class TestAtomFields(test.TestCase):
                 objs = TestDateModel.objects.filter(dt = dt)
                 N += objs.count()
                 objs.delete()
-        all = TestDateModel.objects.all()
+        all = TestDateModel.objects.query()
         self.assertEqual(len(all),0)
         
         done_dates = set()

@@ -223,7 +223,7 @@ class TestSearchEngine(TestCase):
     def _testAddTags(self):
         engine = self.engine
         self.make_items(num=100)
-        for item in Item.objects.all():
+        for item in Item.objects.query():
             self.assertTrue(engine.add_tag(item,self.sometags()))
         tags = self.engine.alltags()
         self.assertTrue(tags)
@@ -244,10 +244,10 @@ class TestSearchEngineWithRegistration(TestCase):
         
     def testDelete(self):
         item = self.make_item()
-        words = list(Word.objects.all())
+        words = list(Word.objects.query())
         item.delete()
         wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertFalse(wis.count(),0)
-        self.assertEqual(len(words),len(Word.objects.all()))
+        self.assertEqual(len(words),len(Word.objects.query()))
     
     

@@ -18,26 +18,26 @@ class TestTwitter(test.TestCase):
     models = (User,Post)
 
     def setUp(self):
-        with User.transaction() as t:
+        with User.objects.transaction() as t:
             for username,password in zip(usernames,passwords):
                 User(username = username, password = password).save(t)
         
     def testRelated(self):
-        users = User.objects.all()
+        users = User.objects.query()
         user1 = users[0]
         user2 = users[1]
         user3 = users[2]
         user1.following.add(user3)
-        followers = list(user3.followers.all())
+        followers = list(user3.followers.query())
         self.assertEqual(len(followers),1)
         user2.following.add(user3)
-        followers = list(user3.followers.all())
+        followers = list(user3.followers.query())
         self.assertEqual(len(followers),2)
     
     def testFollowers(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
-        users = list(User.objects.all())
+        users = list(User.objects.query())
         N = len(users)
         
         count = []
@@ -49,18 +49,18 @@ class TestTwitter(test.TestCase):
                 uset.add(tofollow)
                 user.following.add(tofollow)
             count.append(len(uset))
-            self.assertTrue(user.following.all().count()>0)
+            self.assertTrue(user.following.query().count()>0)
         
         for user,N in zip(users,count):
-            all_following = user.following.all()
+            all_following = user.following.query()
             self.assertEqual(all_following.count(),N)
             for following in all_following:
-                self.assertTrue(user in following.followers.all())
+                self.assertTrue(user in following.followers.query())
                 
     def testFollowersTransaction(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
-        users = list(User.objects.all())
+        users = list(User.objects.query())
         N = len(users)
         
         # Follow users
@@ -72,11 +72,11 @@ class TestTwitter(test.TestCase):
                     following.add(tofollow, transaction = t)
         
         for user in users:
-            for following in user.following.all():
-                self.assertTrue(user in following.followers.all())
+            for following in user.following.query():
+                self.assertTrue(user in following.followers.query())
             
     def testMessages(self):
-        users = User.objects.all()
+        users = User.objects.query()
         N = len(users)
         id = randint(1,N)
         user = User.objects.get(id = id)

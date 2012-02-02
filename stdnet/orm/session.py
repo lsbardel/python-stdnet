@@ -97,7 +97,7 @@ Session model."""
     
     def delete(self, instance):
         '''delete an *instance*'''
-        instance = self.pop(instance)
+        instance = self.pop(instance) or instance
         if instance is not None:
             state = instance.state()
             if state.persistent:

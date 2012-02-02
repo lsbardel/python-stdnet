@@ -10,7 +10,7 @@ __all__ = ['get_serializer',
 _serializers = {}
 
 
-def get_serializer(name):
+def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
 available an exception will raise. A common use usage pattern::
 
@@ -20,7 +20,8 @@ available an exception will raise. A common use usage pattern::
 
 '''
     if name in _serializers:
-        return _serializers[name]
+        serializer = _serializers[name]
+        return serializer(**options)
     else:
         raise ValueError('Unknown serializer {0}.'.format(name))
     
@@ -33,21 +34,24 @@ Register a new serializer to the library.
 :parameter serializer: an instance or a derived class of a :class:`stdnet.orm.Serializer`
                        class or a callable.
 '''
-    if isclass(serializer):
-        serializer = serializer()
+    if not isclass(serializer):
+        serializer = serializer.__class__
     _serializers[name] = serializer
     
     
 class Serializer(object):
     '''The stdnet serializer base class.'''
     
+    def __init__(self, **options):
+        self.options = options
+        
     @property
     def data(self):
         if not hasattr(self,'_data'):
             self._data = []
         return self._data
     
-    def serialize(self, qs, **options):
+    def serialize(self, qs):
         data = self.data.append(self.get_data(qs))
     
     def get_data(self, qs):
@@ -58,22 +62,22 @@ class Serializer(object):
         return {'model':model,
                 'data':data}
     
-    def write(self, stream, **options):
+    def write(self, stream = None):
         raise NotImplementedError
     
     
 class JsonSerializer(Serializer):
             
-    def write(self, stream = None, **options):
+    def write(self, stream = None):
         stream = stream or StringIO()
-        line = json.dumps(self.data,stream,**options)
+        line = json.dumps(self.data, stream, **self.options)
         stream.write(line)
         return stream
         
         
 class CsvSerializer(Serializer):
             
-    def write(self, stream = None, **options):
+    def write(self, stream = None):
         stream = stream or StringIO()
         if self.data:
             if len(self.data) > 1:
@@ -82,12 +86,12 @@ class CsvSerializer(Serializer):
             data = self.data[0]['data']
             if data:
                 fields = list(data[0])
-                w = DictWriter(stream,fields,**options)
+                w = DictWriter(stream,fields, **self.options)
                 w.writeheader()
                 for row in data:
                     w.writerow(row)
         return stream
             
 
-_serializers['json'] = JsonSerializer()
-_serializers['csv'] = CsvSerializer()
+register_serializer('json', JsonSerializer)
+register_serializer('csv', CsvSerializer)

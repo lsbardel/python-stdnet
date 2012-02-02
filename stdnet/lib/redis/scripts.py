@@ -5,7 +5,7 @@ from functools import partial
 from stdnet.utils import zip
 from .connection import RedisRequest
 from .exceptions import NoScriptError
-from .redisinfo import RedisKeyData
+from .redisinfo import RedisKey
 
 
 __all__ = ['RedisScript',
@@ -292,11 +292,13 @@ class keyinfo(RedisScript):
     script = read_lua_file('keyinfo.lua')
     
     def callback(self, request, response, args, **options):
+        client = request.client
         encoding = request.encoding
         for key,typ,len,ttl,enc,idle in response:
-            yield RedisKeyData(id = key.decode(encoding),\
-                               type = typ.decode(encoding),\
-                               length = len,
-                               ttl = ttl if ttl != -1 else False,\
-                               encoding = enc.decode(encoding),\
-                               idle = idle)
+            yield RedisKey(id = key.decode(encoding),\
+                           client = client,
+                           type = typ.decode(encoding),\
+                           length = len,
+                           ttl = ttl if ttl != -1 else False,\
+                           encoding = enc.decode(encoding),\
+                           idle = idle)

@@ -13,8 +13,8 @@ class TestInfo(TestCase):
         
     def testSimple(self):
         info = self.info
-        self.assertTrue(info.rpy)
-        self.assertEqual(info.rpy.db,self.db)
+        self.assertTrue(info.client)
+        self.assertEqual(info.client.db,self.db)
         self.assertTrue(info.version)
         self.assertTrue(info.formatter)
         self.assertEqual(info.formatter.format_name('ciao'),'ciao')
@@ -27,5 +27,5 @@ class TestInfo(TestCase):
         self.assertTrue(dbs)
         self.assertTrue(isinstance(dbs,list))
         db = dbs[0]
-        self.assertEqual(db.rpy,info.rpy)
+        self.assertEqual(db.client,info.client)
     

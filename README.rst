@@ -26,6 +26,21 @@ Requirements
 * Optional Cython_ for faster redis protocol parser.
 * You need access to a Redis_ server.
 
+Philosophy
+===============
+Key-valued pairs databases have many differences from traditional relational databases,
+most important being they do not use ``SQL`` as their query language,
+storage does not require a fixed table schemas and usually they do not support
+complex queries.
+
+StdNet aims to accommodate a flexible schema and join type operations via
+a lightweight object relational mapper.
+Importantly, it is designed with large data sets in mind. You pull data
+you need, nothing more, nothing less.
+Bandwidth and server round-trips can be reduced to the bare minimum
+so that your application is fast and memory efficient.
+
+
 Installing 
 ================================
 To install, download, uncompress and type::

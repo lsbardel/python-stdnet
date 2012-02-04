@@ -73,8 +73,8 @@ from :class:`stdnet.Structure` base class.
 Creating Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Creating the five structures available in stdnet is accomplished by using struct
-object in the following way::
+Creating the five structures available in stdnet is accomplished 
+in the following way::
     
     from stdnet import orm
 
@@ -84,6 +84,28 @@ object in the following way::
     o = session.add(orm.Zset())
     h = session.add(orm.HashTable())
     t = session.add(orm.TS())
+    
+If no ``id`` is specified, stdnet will create one for you::
+
+    >>> l.id
+    '2d0cbac9'
+    >>>
+    
+To add data you have two options: immediate commit or transactions. For example,
+lets add elements to a set::
+    
+    >>> s.update((4,6,'bla',foo',4))
+    >>> s.size()
+    4
+    
+ or we could use transactions to combine several updates together.
+ To use a transaction we do::
+ 
+    with session.begin():
+        s.update((4,6,'bla',foo',4))
+        h['foo'] = 56
+        o.add(3,'a zset element with score 3')
+    
         
 Structure Base Class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

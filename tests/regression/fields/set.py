@@ -74,7 +74,7 @@ class TestOrderedSet(test.TestCase):
             for dt,value in zip(dates,values):
                 t.add(DateValue(dt = dt,value = value))
         
-        items = DateValue.objects.all()
+        items = DateValue.objects.query()
         
         if update:
             ts.data.update(items)

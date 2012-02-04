@@ -21,10 +21,7 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
     
     def adddata(self,d):
         d.data.update(self.data)
-        self.assertEqual(d.data.size(),0)
-        d.save()
-        data = d.data
-        self.assertEqual(data.size(),len(self.data))
+        self.assertEqual(d.data.size(),len(self.data))
     
     def fill(self):
         d = Dictionary.objects.get(name = 'test')
@@ -36,11 +33,13 @@ class TestHashField(test.TestCase,test.TestMultiFieldMixin):
     
     def testAdd(self):
         d = Dictionary.objects.get(name = 'test')
-        for k,v in iteritems(self.data):
-            d.data.add(k,v)
-        self.assertEqual(d.data.size(),0)
-        d.save()
-        data = d.data
+        self.assertTrue(d.session)
+        self.assertTrue(d in d.session)
+        with d.session.begin():
+            for k,v in iteritems(self.data):
+                d.data.add(k,v)
+            self.assertEqual(d.data.size(),0)
+        self.assertTrue(d.data.size(),0)
         
     def testKeys(self):
         d = self.fill()

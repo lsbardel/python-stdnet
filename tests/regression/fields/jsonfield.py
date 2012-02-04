@@ -50,6 +50,8 @@ class TestJsonField(test.TestCase):
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
+        self.assertEqual(field.type,'json object')
+        self.assertEqual(field.index,False)
         self.assertEqual(field.as_string,True)
         
     def testCreate(self):
@@ -167,6 +169,8 @@ The `as_string` atttribute is set to ``False``.'''
         obj = m.save()
         obj = self.model.objects.get(id = obj.id)
         self.assertEqual(obj.data['dt'].date(),date.today())
+        self.assertEqual(obj.data__dt.date(),date.today())
+        self.assertEqual(obj.data['pv']['mean']['1y'],1.0)
         self.assertEqual(obj.data__pv__mean__1y,1.0)
         self.assertEqual(obj.data__dt.date(),date.today())
         

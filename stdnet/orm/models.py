@@ -159,6 +159,16 @@ for example ``group__name``.'''
         '''return a JSON serializable dictionary representation.'''
         return dict(self._to_json())
     
+    def score(self):
+        '''Obtain a score for the instance. This function is valid only if the
+model has available an implicit ordering via the :attr:`Metaclass.ordering`
+attribute.'''
+        if self._meta.ordering:
+            field = self._meta.ordering.field
+            return field.scorefun(getattr(self,field.name))
+        else:
+            raise ValueError('Cannot obtain score for {0}'.format(self))
+         
     # PICKLING SUPPORT
     
     def __getstate__(self):

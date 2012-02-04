@@ -1,21 +1,74 @@
 import json
 from copy import copy
+from itertools import chain
 
 from stdnet import getdb, ServerOperation
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
-                                InvalidTransaction
+                                InvalidTransaction, SessionNotAvailable
 
 from .query import Q, Query, EmptyQuery, SessionModelBase
 from .signals import *
 
 
-__all__ = ['Session','SessionModel','Manager','Transaction']
+__all__ = ['Session',
+           'SessionModel',
+           'Manager',
+           'Transaction',
+           'commit_when_no_transaction',
+           'withsession']
 
 
 def is_query(query):
     return isinstance(query,Q)
+
+
+def commit_element_when_no_transaction(f):
+    
+    def _(self, element, modified = True):
+        r = f(self, element, modified = modified)
+        if modified and not self.transaction:
+            self.commit()
+        return r
+
+    _.__name__ = f.__name__
+    _.__doc__ = f.__doc__
+    return _
+    
+    
+def commit_when_no_transaction(f):
+    '''Decorator for committing changes when the instance session is
+not in a transaction.'''
+    def _(self, *args, **kwargs):
+        r = f(self, *args, **kwargs)
+        session = self.session
+        # no session available. Raise Exception
+        if not session:
+            raise SessionNotAvailable('Session not available')
+        session.add(self)
+        return r
+    
+    _.__name__ = f.__name__
+    _.__doc__ = f.__doc__
+    return _
+
+
+def withsession(f):
+    '''Decorator for instance methods which require a :class:`Session`
+available to perform their call. If a session is not available. It raises
+a :class:`SessionNotAvailable` exception.
+'''
+    def _(self, *args, **kwargs):
+        if self.session:
+            return f(self, *args, **kwargs)
+        else:
+            raise SessionNotAvailable(
+                        'Cannot perform operation. No session available')
+
+    _.__name__ = f.__name__
+    _.__doc__ = f.__doc__        
+    return _
 
 
 class SessionModel(SessionModelBase):
@@ -30,18 +83,17 @@ class SessionModel(SessionModelBase):
         self._loaded = {}
     
     def __len__(self):
-        return len(self._new) + len(self._modified) + len(self._deleted)
+        return len(self._new) + len(self._modified) + len(self._deleted) +\
+                len(self._loaded)
         
     def __iter__(self):
         """Iterate over all pending or persistent instances within this
 Session model."""
-        for v in itervalues(self._new):
-            yield v
-        for m in itervalues(self._modified):
-            yield m
-        for d in itervalues(self._deleted):
-            yield d
-          
+        return iter(self.all())
+    
+    def all(self):
+        return chain(self._new,self._modified,self._loaded,self._deleted)
+      
     @property
     def model(self):
         return self.meta.model
@@ -58,18 +110,29 @@ Session model."""
     
     @property
     def loaded(self):
-        "The set of all instances marked as 'deleted' within this ``Session``"
+        '''The set of all unmodified, but not deleted, instances within this
+:class:`Session`.'''
         return frozenset(itervalues(self._loaded))
     
     @property
     def deleted(self):
-        "The set of all instances marked as 'deleted' within this ``Session``"
+        '''The set of all instances marked as 'deleted' within this
+:class:`Session`.'''
         return frozenset(itervalues(self._deleted))
+    
+    @property
+    def dirty(self):
+        '''The set of all instances which have changed, but not deleted,
+within this :class:`Session`.'''
+        return frozenset(chain(itervalues(self._new),
+                               itervalues(self._modified)))
     
     def __contains__(self, instance):
         iid = instance.state().iid
-        return iid in self._new or iid in self._deleted\
-                                or iid in self._modified
+        return iid in self._new or\
+               iid in self._modified or\
+               iid in self._deleted or\
+               iid in self._loaded
                                      
     def get(self, id):
         if id in self._modified:
@@ -79,16 +142,28 @@ Session model."""
         elif id in self._loaded:
             return self._loaded.get(id)
         
-    def add(self, instance, modified):
-        state = instance.state(update = True)
-        iid = state.iid
+    def add(self, instance, modified = True, persistent = None):
+        state = instance.state()
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
+        self.pop(state.iid)
+        persistent = persistent if persistent is not None else state.persistent
+        if persistent:
+            if 'id' in instance._dbdata:
+                id = instance._dbdata['id']
+                if id != instance.id:
+                    raise ValueError('Incopatible id "{0}". It should be {1}'
+                                     .format(id,instance.id))
+            else:
+                instance._dbdata['id'] = instance.id
+        else:
+            instance._dbdata.pop('id',None)
+        state = instance.state(update = True)
+        iid = state.iid
         if state.persistent:
             if modified:
-                self._loaded.pop(iid,None)
                 self._modified[iid] = instance
-            elif state not in self._modified:
+            else:
                 self._loaded[iid] = instance
         else:
             self._new[iid] = instance
@@ -120,7 +195,7 @@ Session model."""
         else:
             iid = instance
         instance = None
-        for d in (self._new,self._modified,self._loaded,self._deleted):
+        for d in (self._new, self._modified, self._loaded, self._deleted):
             if iid in d:
                 if instance is not None:
                     raise ValueError(\
@@ -171,33 +246,34 @@ Session model."""
                             transaction = transaction)
         return len(self._delete_query) + cn
             
-    def post_commit(self, ids):
+    def post_commit(self, results):
+        '''Process results after a commit.
+:parameter results: iterator over :class:`stdnet.instance_session_result`
+    items.
+:rtype: a two elements tuple containing a list of instances saved and
+    a list of ids of instances deleted.'''
+        tpy = self.meta.pk_to_python
         instances = []
-        for instance,id in zip(self,ids):
-            self.server_update(instance, id)
-            instances.append(instance)
-        return instances
-    
-    def server_update(self, instance, id = None):
-        state = instance.state()
-        inst = self.pop(instance)
-        if not state.deleted:
-            if id is not None:
-                if inst is None:
-                    raise ValueError('instance not available in session')
-                instance = inst
-                #id = instance._meta.pk.to_python(id)
-                if state.persistent and instance.id != id:
-                    raise ValueError('id has changed in the server from {0}\
- to {1}'.format(instance.id,id))
-                elif not state.persistent:
-                    instance.id = id
-                instance._dbdata['id'] = instance.id
-            self.add(instance, False)
-            return instance
-        else:
-            instance.state().deleted = True
-            instance.session = None
+        deleted = []
+        # The length of results must be the same as the length of
+        # all committed instances
+        for result in results:
+            instance = self.pop(result.iid)
+            id = tpy(result.id)
+            if result.deleted:
+                deleted.append(id)
+            else:
+                if instance is None:
+                    raise InvalidTransaction('{0} session received id "{1}"\
+ which is not in the session.'.format(self,result.iid))
+                instance.id = id
+                instance = self.add(instance,
+                                    modified = False,
+                                    persistent = result.persistent)
+                if instance.state().persistent:
+                    instances.append(instance)
+                    
+        return instances, deleted
 
 
 class Transaction(ServerOperation):
@@ -226,7 +302,7 @@ An instance of this class is usually obtained by using the high level
         
     @property
     def backend(self):
-        if self.session:
+        if self.session is not None:
             return self.session.backend
     
     @property
@@ -234,10 +310,10 @@ An instance of this class is usually obtained by using the high level
         return not hasattr(self,'_result')
     
     def add(self, instance):
-        self.session.add(instance)
+        return self.session.add(instance)
         
     def delete(self, instance):
-        self.session.delete(instance)
+        return self.session.delete(instance)
                         
     def __enter__(self):
         return self
@@ -287,23 +363,15 @@ An instance of this class is usually obtained by using the high level
             return self
         
         signals = []
-        for meta,response,action in self.result:
+        for meta,response in self.result:
             if not response:
                 continue
             sm = session.model(meta, True)
-            tpy = meta.pk_to_python
-            ids = []
-            if action == 'delete':
-                for id in response:
-                    id = tpy(id)
-                    ids.append(id)
-                signals.append((post_delete.send, sm, ids))
-            else:
-                for id in response:
-                    id = tpy(id)
-                    ids.append(id)
-                instances = sm.post_commit(ids)
-                signals.append((post_commit.send, sm, instances))
+            saved, deleted = sm.post_commit(response)
+            if deleted:
+                signals.append((post_delete.send, sm, deleted))
+            if saved:
+                signals.append((post_commit.send, sm, saved))
                 
         # Once finished we send signals
         for send,sm,instances in signals:
@@ -341,17 +409,6 @@ class Session(object):
 .. attribute:: backend
 
     the :class:`stdnet.BackendDataServer` instance
-    
-.. attribute:: autocommit
-
-    When ``True``, the :class:`Session`` does not keep a persistent transaction
-    running, and will acquire connections from the engine on an as-needed basis,
-    returning them immediately after their use.
-    Flushes will begin and commit (or possibly rollback) their own transaction
-    if no transaction is present. When using this mode, the :meth:`begin`
-    method may be used to begin a transaction explicitly.
-          
-    Default: ``False``. 
           
 .. attribute:: transaction
 
@@ -363,10 +420,9 @@ class Session(object):
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, autocommit = False, query_class = None):
+    def __init__(self, backend, query_class = None):
         self.backend = getdb(backend)
         self.transaction = None
-        self.autocommit = autocommit
         self._models = OrderedDict()
         self.query_class = query_class or Query
     
@@ -382,7 +438,13 @@ class Session(object):
     
     def __len__(self):
         return len(self._models)
-            
+    
+    @property
+    def dirty(self):
+        '''set of all changed instances in the session'''
+        return frozenset(chain(*tuple((sm.dirty for sm\
+                                        in itervalues(self._models)))))
+    
     def model(self, meta, make = False):
         sm = self._models.get(meta)
         if sm is None:
@@ -437,6 +499,7 @@ from the **kwargs** parameters.
         if sm:
             return sm.get(id)
         
+    @commit_element_when_no_transaction
     def add(self, instance, modified = True):
         '''Add an *instance* to the session.
         
@@ -446,9 +509,10 @@ from the **kwargs** parameters.
 '''
         sm = self.model(instance._meta,True)
         instance.session = self
-        return sm.add(instance,modified)
+        return sm.add(instance, modified)
     
-    def delete(self, instance):
+    @commit_element_when_no_transaction
+    def delete(self, instance, **kwargs):
         '''Add an *instance* to the session instances to be deleted.
         
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
@@ -489,43 +553,11 @@ empty keys associated with the model will exists after this operation.'''
         return instance in sm if sm is not None else False
         
     def commit(self):
-        """Flush pending changes and commit the current transaction.
-
-        If no transaction is in progress, this method raises an
-        InvalidRequestError.
-
-        By default, the :class:`.Session` also expires all database
-        loaded state on all ORM-managed attributes after transaction commit.
-        This so that subsequent operations load the most recent 
-        data from the database.   This behavior can be disabled using
-        the ``expire_on_commit=False`` option to :func:`.sessionmaker` or
-        the :class:`.Session` constructor.
-
-        If a subtransaction is in effect (which occurs when begin() is called
-        multiple times), the subtransaction will be closed, and the next call
-        to ``commit()`` will operate on the enclosing transaction.
-
-        For a session configured with autocommit=False, a new transaction will
-        be begun immediately after the commit, but note that the newly begun
-        transaction does *not* use any connection resources until the first
-        SQL is actually emitted.
-
-        """
+        """Commit the current transaction.
+If no transaction is in progress, this method open one a."""
         if self.transaction is None:
-            if not self.autocommit:
-                self.begin()
-            else:
-                raise InvalidTransaction('No transaction was started')
+            self.begin()
         return self.transaction.commit()
-    
-    def server_update(self, instance, id = None):
-        '''Callback by the :class:`stdnet.BackendDataServer` once the commit is
-finished. Remove the deleted instances and updated the modified and new
-instances.'''
-        if hasattr(instance,'_meta'):
-            sm = self.model(instance._meta,True)
-            instance.session = self
-            return sm.server_update(instance, id)
         
     def structure(self, instance):
         '''Return a :class:`stdnet.BackendStructure` for a given

@@ -48,11 +48,11 @@ in this test class so that we can use the manager in a parallel test suite.'''
         root = query.filter(parent = None)
         self.assertEqual(len(root),1)
         root = root[0]
-        children = root.children.all()
+        children = root.children.query()
         self.assertTrue(children)
         for child in children:
             self.assertEqual(child.parent,root)
-            children2 = child.children.all()
+            children2 = child.children.query()
             self.assertTrue(children2)
             for child2 in children2:
                 self.assertEqual(child2.parent,child)
@@ -133,8 +133,8 @@ class TestRelatedManager(FinanceTest):
         session = self.session()
         inst = session.query(Instrument).get(id = 1)
         fund = session.query(Fund).get(id = 1)
-        positions1 = session.query(Position).filter(fund = fund).all()
-        positions = fund.positions.all()
+        positions1 = session.query(Position).filter(fund = fund)
+        positions = fund.positions.query()
         self.assertTrue(positions)
         for p in positions:
             self.assertEqual(p.fund,fund)

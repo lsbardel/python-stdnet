@@ -668,7 +668,7 @@ an exception is raised.
                 if isinstance(v, Q):
                     v = v.construct()
                 else:
-                    v = field.index_value(v)
+                    v = field.serialize(v)
                 values.append(v)
                 
             #data = self.data.copy()
@@ -697,8 +697,10 @@ an exception is raised.
             items = self.backend_query().items(slic)
             if isinstance(items,Exception):
                 raise items
+            model = self.model
             for el in items:
-                session.server_update(el)
+                if isinstance(el,model):
+                    session.add(el,modified=False)
                 seq.append(el)
             cache[key] = seq
             return seq

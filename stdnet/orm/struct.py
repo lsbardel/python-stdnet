@@ -6,6 +6,7 @@ from stdnet.lib import zset, skiplist
 from stdnet import SessionNotAvailable
 
 from .base import ModelBase
+from .session import commit_when_no_transaction, withsession
 
 
 __all__ = ['Structure',
@@ -103,23 +104,6 @@ class tscache(hashcache):
         self.cache = skiplist()
         self.toadd = skiplist()
         self.toremove = set()
-
-
-def withsession(f):
-    '''Decorator for instance methods which require a :class:`Session`
-available to perform their call. If a session is not available. It raises
-a :class:`SessionNotAvailable` exception.
-'''
-    def _(self, *args, **kwargs):
-        if self.session:
-            return f(self, *args, **kwargs)
-        else:
-            raise SessionNotAvailable(
-                        'Cannot perform operation. No session available')
-
-    _.__name__ = f.__name__
-    _.__doc__ = f.__doc__        
-    return _
 
 
 ################################################################################
@@ -236,17 +220,45 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return (loads(v) for v in data)
     
     def dbid(self):
-        return self.session.structure(self).id
+        return self.backend_structure().id
     
     ############################################################################
     ## INTERNALS
+    @withsession
     def backend_structure(self, client = None):
         return self.session.backend.structure(self,client)
+
+
+
+
+class Set(Structure):
+    '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
+    cache_class = setcache
     
-    def commit(self, client = None):
-        return self.backend_structure(client).commit()
-
-
+    @commit_when_no_transaction
+    def add(self, value):
+        '''Add *value* to the set'''
+        return self.cache.update((self.value_pickler.dumps(value),))
+    
+    @commit_when_no_transaction
+    def update(self, values):
+        '''Add iterable *values* to the set'''
+        d = self.value_pickler.dumps
+        return self.cache.update(tuple((d(v) for v in values)))
+        
+    @commit_when_no_transaction
+    def discard(self, value):
+        '''Remove an element *value* from a set if it is a member.'''
+        return self.cache.remove((self.value_pickler.dumps(value),))
+    remove = discard
+    
+    @commit_when_no_transaction
+    def difference_update(self, values):
+        '''Remove an iterable of *values* from the set.'''
+        d = self.value_pickler.dumps
+        return self.cache.remove(tuple((d(v) for v in values)))
+    
+    
 class PairMixin(object):
     '''A mixin for handling structures with which holds pairs.'''
     pickler = encoders.NoEncoder()
@@ -290,13 +302,23 @@ If the element is not available return the default value.
         data = self.session.structure(self).items()
         return self.load_data(data)
         
-    def add(self, *pair):
+    def pair(self, pair):
         '''Add a *pair* to the structure.'''
-        if len(pair) != 2:
+        if len(pair) == 1:
+            # if only one value is passed, the value must implement a
+            # score function which retrieve the first value of the pair
+            # (score in zset, timevalue in timeseries, field value in hashtable)
+            return (pair[0].score(),pair[0])
+        elif len(pair) != 2:
             raise TypeError('add expected 2 arguments, got {0}'\
                             .format(len(pair)))
+        else:
+            return pair
+        
+    def add(self, *pair):
         self.update((pair,))
         
+    @commit_when_no_transaction
     def update(self, mapping):
         '''Add *mapping* dictionary to hashtable.
 Equivalent to python dictionary update method.
@@ -309,7 +331,12 @@ Equivalent to python dictionary update method.
         dumps = self.value_pickler.dumps
         if isinstance(mapping,dict):
             mapping = iteritems(mapping)
-        return [(tokey(k),dumps(v)) for k,v in mapping]
+        p = self.pair
+        for pair in mapping:
+            if not isinstance(pair,tuple):
+                pair = pair,
+            k,v = p(pair)
+            yield tokey(k),dumps(v)
 
     def load_data(self, mapping):
         loads = self.pickler.loads
@@ -338,8 +365,9 @@ class KeyValueMixin(PairMixin):
             else:
                 raise
         
+    @commit_when_no_transaction
     def remove(self, *keys):
-        '''Remove *keys* from the hashtable.'''
+        '''Remove *keys* from the key-value container.'''
         dumps = self.pickler.dumps
         self.cache.remove([dumps(v) for v in keys])
         
@@ -418,37 +446,15 @@ class List(Structure):
         value = self.session.structure(self).block_pop_front(timeout)
         return self.value_pickler.loads(value)
     
+    @commit_when_no_transaction
     def push_back(self, value):
         '''Appends a copy of *value* to the end of the list.'''
         self.cache.push_back(self.value_pickler.dumps(value))
     
+    @commit_when_no_transaction
     def push_front(self, value):
         '''Appends a copy of *value* to the beginning of the list.'''
         self.cache.push_front(self.value_pickler.dumps(value))
-
-
-class Set(Structure):
-    '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
-    cache_class = setcache
-     
-    def add(self, value):
-        '''Add *value* to the set'''
-        self.cache.update((self.value_pickler.dumps(value),))
-
-    def update(self, values):
-        '''Add iterable *values* to the set'''
-        d = self.value_pickler.dumps
-        self.cache.update(tuple((d(v) for v in values)))
-            
-    def discard(self, value):
-        '''Remove an element *value* from a set if it is a member.'''
-        self.cache.remove((self.value_pickler.dumps(value),))
-    remove = discard
-        
-    def difference_update(self, values):
-        '''Remove an iterable of *values* from the set.'''
-        d = self.value_pickler.dumps
-        self.cache.remove(tuple((d(v) for v in values)))
 
 
 class Zset(OrderedMixin, PairMixin, Set):

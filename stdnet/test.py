@@ -95,8 +95,8 @@ related keys (keys which are related to the instance rather than the model).'''
         # get the field database key
         field_key = to_string(field.id)
         self.assertTrue(id in field_key)
-        
-        backend = obj.objects.backend
+        #
+        backend = obj.session.backend
         keys = backend.instance_keys(obj)
         # field id should be in instance keys
         self.assertTrue(field.id in keys)

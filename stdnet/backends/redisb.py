@@ -3,7 +3,9 @@
 from copy import copy
 import json
 from hashlib import sha1
+from itertools import chain
 from functools import partial
+from collections import namedtuple
 
 import stdnet
 from stdnet import FieldValueError
@@ -12,11 +14,13 @@ from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping
 from stdnet.lib import redis
 
-from .base import BackendStructure, query_result, session_result
+from .base import BackendStructure, query_result, session_result,\
+                    instance_session_result
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
 EMPTY_DICT = {}
+
 
 ################################################################################
 #    prefixes for data
@@ -100,36 +104,37 @@ The first parameter is the model'''
     
     def callback(self, request, response, args, meta = None, client = None,
                  **kwargs):
-        return session_result(meta, response, 'delete')
-        if response:
-            meta = sm.meta
-            tpy = meta.pk.to_python
-            ids = []
-            rem = sm.expunge
-            for id in response:
-                id = tpy(id)
-                rem(id)
-                ids.append(id)
-            return ids
-        else:
-            return response
+        res = (instance_session_result(r,False,r,True) for r in response)
+        return session_result(meta, res)
     
-
-def structure_session_callback(sm, deleted, saved, processed, response):
-    if response and not isinstance(response,Exception):
-        if deleted:
-            return session_result(sm.meta, deleted, 'delete')
-        if saved:
-            return session_result(sm.meta, saved, 'save')
-    else:
-        return response
-
 
 class commit_session(redis.RedisScript):
     script = redis.read_lua_file('session.lua')
     
-    def callback(self, request, response, args, sm = None, **kwargs):
-        return session_result(sm.meta, response, 'save')
+    def callback(self, request, response, args, sm = None, iids = None,
+                 **kwargs):
+        response = self._wrap(response, iids)
+        return session_result(sm.meta, response)
+    
+    def _wrap(self, response, iids):
+        for r,iid in zip(response,iids):
+            yield instance_session_result(iid,True,r,False)
+    
+    
+def structure_session_callback(sm, processed, response):
+    if not isinstance(response,Exception):
+        results = []
+        for p in chain(processed,(response,)):
+            if isinstance(p,instance_session_result):
+                if p.deleted:
+                    if p.persistent:
+                        raise InvalidTransaction('Could not delete {0}'\
+                                                 .format(p.instance))
+                results.append(p)
+        if results:
+            return session_result(sm.meta, results)
+    else:
+        return response
     
 
 class move2set(redis.RedisScript):
@@ -377,7 +382,8 @@ def iteretor_pipelined(f):
 ################################################################################
 ##    STRUCTURES
 ################################################################################
-
+    
+    
 class RedisStructure(BackendStructure):
     
     @iteretor_pipelined
@@ -390,7 +396,7 @@ class RedisStructure(BackendStructure):
     @property
     def pipelined(self):
         return self.client.pipelined
-    
+        
     def delete(self):
         return self.client.delete(self.id)
     
@@ -679,14 +685,16 @@ class BackendDataServer(stdnet.BackendDataServer):
             elif model_type == 'object':
                 delquery = sm.get_delete_query(pipe = pipe)
                 self.accumulate_delete(pipe, delquery)
-                N = len(sm)
+                dirty = sm.dirty
+                N = len(dirty)
                 if N:
                     bk = basekey(meta)
                     s = 'z' if meta.ordering else 's'
                     indices = list(self.flat_indices(meta))
                     lua_data = [s,N,len(indices)//2]
                     lua_data.extend(indices)
-                    for instance in sm:
+                    processed = []
+                    for instance in dirty:
                         state = instance.state()
                         if not instance.is_valid():
                             raise FieldValueError(
@@ -702,7 +710,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                         action = 'c' if state.persistent else 'a'
                         lua_data.extend((action,id,score,len(data)))
                         lua_data.extend(data)
-                    options = {'sm': sm}
+                        processed.append(state.iid)
+                    options = {'sm': sm, 'iids': processed}
                     pipe.script_call('commit_session',
                                      (bk,bk+':*'), *lua_data, **options)
     
@@ -781,21 +790,28 @@ class BackendDataServer(stdnet.BackendDataServer):
         struct = struct_map.get(instance._meta.name)
         client = client if client is not None else self.client
         return struct(instance, self, client)
+    
+    def flush_structure(self, sm, pipe):
+        processed = False
+        for instance in chain(sm._delete_query,sm.dirty):
+            processed = True
+            state = instance.state()
+            binstance = instance.backend_structure(pipe)
+            n = len(pipe.command_stack)
+            binstance.commit()
+            script_dependency = []
+            for c in pipe.command_stack[n:]:
+                script_name = c[1].get('script_name')
+                if script_name:
+                    script_dependency.append(script_name)
+            pipe.exists(binstance.id, script_dependency = script_dependency)
+            pipe.add_callback(lambda p,result:\
+                    instance_session_result(state.iid,
+                                            result,
+                                            instance.id,
+                                            state.deleted))
+        if processed:
+            pipe.add_callback(
+                        partial(structure_session_callback,sm))
         
-    def flush_structure(self, sm, pipe = None):
-        client = pipe or self.client.pipeline()
-        saved = []
-        deleted = []
-        for instance in sm._delete_query:
-            instance.commit(client)
-            deleted.append(instance.id)
-        for instance in list(sm):
-            c = instance.commit(client)
-            if c is None:
-                sm.expunge(instance)
-            else:
-                saved.append(instance.id)
-        if deleted or saved:
-            client.add_callback(
-                    partial(structure_session_callback,sm,deleted,saved))
         

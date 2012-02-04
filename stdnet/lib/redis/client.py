@@ -25,7 +25,7 @@ from .scripts import script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
 
 
-__all__ = ['Redis','Pipeline']
+__all__ = ['Redis','RedisProxy','Pipeline']
 
 
 collection_list = (tuple, list, set, frozenset, dict)
@@ -418,9 +418,9 @@ instance is promoted to a master instead.
         """
         return self.execute_command('DECRBY', name, amount)
 
-    def exists(self, name):
+    def exists(self, name, **options):
         "Returns a boolean indicating whether key ``name`` exists"
-        return self.execute_command('EXISTS', name)
+        return self.execute_command('EXISTS', name, **options)
     __contains__ = exists
 
     def expire(self, name, time):
@@ -1064,31 +1064,10 @@ time ``start`` and time ``end`` sorted in ascending order.
         return self.script_call('delpattern', pattern)
 
 
-class Pipeline(Redis):
-    """A :class:`Pipeline` provide a way to commit multiple commands
-to the Redis server in one transmission.
-This is convenient for batch processing, such as
-saving all the values in a list to Redis.
-
-All commands executed within a pipeline are wrapped with MULTI and EXEC
-calls. This guarantees all commands executed in the pipeline will be
-executed atomically.
-
-Check `redis transactions <http://redis.io/topics/transactions>`_
-for further information.
-
-Any command raising an exception does *not* halt the execution of
-subsequent commands in the pipeline. Instead, the exception is caught
-and its instance is placed into the response list returned by
-:meth:`execute`.
-Code iterating over the response list should be able to deal with an
-instance of an exception as a potential value. In general, these will be
-ResponseError exceptions, such as those raised when issuing a command
-on a key of a different datatype.
-"""
+class RedisProxy(Redis):
+    
     def __init__(self, client):
         self.__client = client
-        self.reset()
         
     @property
     def client(self):
@@ -1113,6 +1092,33 @@ on a key of a different datatype.
     @property
     def encoding(self):
         return self.client.encoding
+    
+    
+class Pipeline(RedisProxy):
+    """A :class:`Pipeline` provide a way to commit multiple commands
+to the Redis server in one transmission.
+This is convenient for batch processing, such as
+saving all the values in a list to Redis.
+
+All commands executed within a pipeline are wrapped with MULTI and EXEC
+calls. This guarantees all commands executed in the pipeline will be
+executed atomically.
+
+Check `redis transactions <http://redis.io/topics/transactions>`_
+for further information.
+
+Any command raising an exception does *not* halt the execution of
+subsequent commands in the pipeline. Instead, the exception is caught
+and its instance is placed into the response list returned by
+:meth:`execute`.
+Code iterating over the response list should be able to deal with an
+instance of an exception as a potential value. In general, these will be
+ResponseError exceptions, such as those raised when issuing a command
+on a key of a different datatype.
+"""
+    def __init__(self, client):
+        super(Pipeline,self).__init__(client)
+        self.reset()
     
     def reset(self):
         self.command_stack = []

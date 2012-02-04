@@ -10,7 +10,7 @@ The :class:`Session` is designed along the lines of sqlalchemy_. It establishes
 all conversations with the database and represents a *holding zone* for all the
 objects which you have loaded or associated with it during its lifespan.
 
-It also provides the entrypoint to acquire a :class:`Query` object, which sends
+It also provides the entry point to acquire a :class:`Query` object, which sends
 queries to the database using the :attr:`Session.backend`, the session
 database connection.
 

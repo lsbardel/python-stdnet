@@ -12,6 +12,7 @@ type_table['set'] = 'scard'
 type_table['zset'] = 'zcard'
 type_table['list'] = 'llen'
 type_table['hash'] = 'hlen'
+type_table['ts'] = 'tslen'  -- stdnet branch
 type_table['string'] = 'strlen'
 local stats = {}
 local typ, command, len

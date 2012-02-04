@@ -148,8 +148,11 @@ of a related model.'''
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
     
-    def session(self):
-        if self.related_instance:
+    def session(self, transaction = None):
+        '''Retrieve the session for this :class:`RelatedManager`.'''
+        if transaction:
+            return transaction.session
+        elif self.related_instance:
             session = self.related_instance.session
             if session is not None:
                 return session
@@ -184,32 +187,35 @@ def makeMany2ManyRelatedManager(formodel):
 many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
-attribute of the model.'''       
-        def add(self, value, **kwargs):
-            '''Add *value*, an instance of ``self.formodel``,
-            to the throw model.'''
+attribute of the model.'''
+        def session_kwargs(self, value, transaction, **kwargs):
             if not isinstance(value,self.formodel):
                 raise FieldValueError(
                         '%s is not an instance of %s' % (value,self.for_model))
             # Get the related manager
-            session = self.session()
             kwargs.update({self.formodel._meta.name: value,
                            self.relmodel._meta.name: self.related_instance})
-            return session.add(self.model(**kwargs))
+            return self.session(transaction), kwargs
+    
+        def add(self, value, transaction = None, **kwargs):
+            '''Add *value*, an instance of ``self.formodel``,
+            to the throw model.'''
+            session, kwargs = self.session_kwargs(value, transaction, **kwargs)
+            m = session.add(self.model(**kwargs))
+            # if not in a transaction, commit the session right away
+            if not session.transaction:
+                session.commit()
+            return m
         
-        def remove(self, value):
+        def remove(self, value, transaction = None):
             '''Remove *value*, an instance of ``self.model`` from the set of
     elements contained by the field.'''
-            if not isinstance(value,self.model):
-                raise FieldValueError(
-                            '%s is not an instance of %s' % (value,self.to._meta))
-            trans = transaction or value.local_transaction()
-            related = getattr(value, self.to_name)
-            self.st.discard(value, transaction = trans)
-            related.st.discard(self.related_instance, transaction = trans)
-            # If not part of a wider transaction, commit changes
-            if not transaction:
-                trans.commit()
+            session, kwargs = self.session_kwargs(value, transaction)
+            query = session.query(self.model).filter(**kwargs)
+            session.delete(query)
+            # if not in a transaction, commit the session right away
+            if not session.transaction:
+                session.commit()
 
     Many2ManyRelatedManager.formodel = formodel
     return Many2ManyRelatedManager

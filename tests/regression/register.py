@@ -37,10 +37,10 @@ class TestRegistration(test.TestCase):
         self._register()
         SimpleModel(code = 'test').save()
         orm.flush_models(excludes = ('examples.simplemodel',))
-        qs = SimpleModel.objects.all()
+        qs = SimpleModel.objects.query()
         self.assertTrue(qs)
         orm.flush_models()
-        qs = SimpleModel.objects.all()
+        qs = SimpleModel.objects.query()
         self.assertFalse(qs)
         
     def testFromUuid(self):

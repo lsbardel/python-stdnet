@@ -252,37 +252,31 @@ function users should never call.'''
     def todelete(self):
         return False
     
-    ##    CONVERTERS
+    ############################################################################
+    ##    FIELD CONVERTERS
+    ############################################################################
     
     def to_python(self, value):
         """Converts the input value into the expected Python
 data type, raising :class:`stdnet.FieldValueError` if the data
 can't be converted.
 Returns the converted value. Subclasses should override this."""
-        if hasattr(value,'id'):
-            return value.id
-        else:
-            return value
-        
+        return value
+    
     def serialize(self, value):
         '''It returns a representation of *value* to store in the database.
 If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
-        return value
+        return self.to_python(value)
     
     def json_serialize(self, value):
         '''Return a representation of this field which is compatible with
  JSON.'''
         return None
     
-    def index_value(self, value):
-        '''A value which is used by indexes to generate keys. By default it
-invokes the :meth:`to_python` method.'''
-        return self.to_python(value)
-    
     def scorefun(self, value):
         '''Function which evaluate a score from the field value. Used by
 the ordering alorithm'''
-        raise FieldValueError('Cannot obtain score from {0}'.format(self))
+        return self.to_python(value)
     
 
 class AtomField(Field):
@@ -297,8 +291,12 @@ value with a specific data type. it can be of four different types:
 * floating point
 * symbol
 '''
-    def json_serialize(self, value):
-        return self.to_python(value)
+    def to_python(self, value):
+        if hasattr(value,'id'):
+            return value.id
+        else:
+            return value
+    json_serialize = to_python
     
 
 class BooleanField(AtomField):
@@ -313,7 +311,6 @@ class BooleanField(AtomField):
     
     @field_value_error
     def to_python(self, value):
-        value = super(BooleanField,self).to_python(value)
         if value in NONE_EMPTY:
             return self.get_default()
         else:
@@ -321,9 +318,7 @@ class BooleanField(AtomField):
     
     def serialize(self, value):
         return 1 if value else 0
-    index_value = serialize
-    scorefun = index_value
-    
+    scorefun = serialize
     
     
 class IntegerField(AtomField):
@@ -340,7 +335,6 @@ class IntegerField(AtomField):
             return self.get_default()
         else:
             return self.python_type(value)
-    scorefun = to_python
     
     
 class AutoField(IntegerField):
@@ -372,18 +366,6 @@ a :class:`datetime.date` instance.'''
     default = None
     
     @field_value_error
-    def serialize(self, value):
-        if value not in NONE_EMPTY:
-            if isinstance(value,date):
-                value = date2timestamp(value)
-            else:
-                raise FieldValueError('Field %s is not a valid date' % self)
-        return value
-    scorefun = serialize
-    json_serialize = serialize
-    index_value = serialize
-    
-    @field_value_error
     def to_python(self, value):
         if value not in NONE_EMPTY:
             if isinstance(value,date):
@@ -394,6 +376,17 @@ a :class:`datetime.date` instance.'''
             return value
         else:
             return self.get_default()
+        
+    @field_value_error
+    def serialize(self, value):
+        if value not in NONE_EMPTY:
+            if isinstance(value, date):
+                value = date2timestamp(value)
+            else:
+                raise FieldValueError('Field %s is not a valid date' % self)
+        return value
+    scorefun = serialize
+    json_serialize = serialize
         
         
 class DateTimeField(DateField):
@@ -436,10 +429,8 @@ or other entities. They are indexes by default.'''
         else:
             return self.get_default()
         
-    @field_value_error
-    def serialize(self, value):
-        if value is not None:
-            return self.encoder.dumps(value, logger = logger)
+    def scorefun(self, value):
+        raise FieldValueError('Could not obtain score')
         
         
 class CharField(SymbolField):
@@ -475,6 +466,13 @@ In python this is converted to `bytes`.'''
     internal_type = 'bytes'
     default = b''
     
+    @field_value_error
+    def to_python(self, value):
+        if value is not None:
+            return self.encoder.loads(value)
+        else:
+            return self.get_default()
+        
     def json_serialize(self, value):
         return base64.b64encode(self.serialize(value)).decode(self.charset)
     
@@ -490,6 +488,10 @@ if accessed from external programs. Consider the :class:`ForeignKey`
 or :class:`JSONField` fields as more general alternatives.'''
     type = 'object'
     default = None
+    
+    def serialize(self, value):
+        if value is not None:
+            return self.encoder.dumps(value)
         
     def get_encoder(self, params):
         return encoders.PythonPickle(protocol = 2)
@@ -565,7 +567,7 @@ the relation from the related object back to self.
             self.register_with_related_model()
     
     def scorefun(self, value):
-        if isinstance(value,self.relmodel):
+        if isinstance(value, self.relmodel):
             return value.scorefun()
         else:
             raise FieldValueError('cannot evaluate score of {0}'.format(value))
@@ -576,7 +578,6 @@ the relation from the related object back to self.
             return value.id
         else:
             return self.relmodel._meta.pk_to_python(value)
-    serialize = to_python
     json_serialize = to_python
         
     def filter(self, session, name, value):

@@ -8,6 +8,7 @@ from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 
 from examples.data import tsdata
+from tests.regression import struct
 
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
@@ -28,36 +29,34 @@ class TestLuaClass(test.TestCase):
         self.assertEqual(r,b'OK')
 
     
-class TestTimeSeries(test.TestCase):
+class TestTimeSeries(struct.StructMixin, test.TestCase):
+    structure = ColumnTS
+    name = 'columnts'
+    
+    def createOne(self, session):
+        ts = session.add(ColumnTS(id = 'goog'))
+        ts.add(date(2012,1,23),{'open':586, 'high':588.66,
+                                'low':583.16, 'close':585.52})
+        ts.update(((date(2012,1,20),{'open':590.53, 'high':591,
+                                    'low':581.7, 'close':585.99}),
+                   (date(2012,1,19),{'open':640.99, 'high':640.99,
+                                    'low':631.46, 'close':639.57})))
+        self.assertTrue(len(ts.cache.fields['open']),2)
+        self.assertTrue(len(ts.cache.fields),4)
+        return ts
     
     def makeGoogle(self):
         session = self.session()
         with session.begin():
-            ts = session.add(ColumnTS(id = 'goog'))
-            ts.add(date(2012,1,23),{'open':586, 'high':588.66,
-                                    'low':583.16, 'close':585.52})
-            ts.update(((date(2012,1,20),{'open':590.53, 'high':591,
-                                        'low':581.7, 'close':585.99}),
-                       (date(2012,1,19),{'open':640.99, 'high':640.99,
-                                        'low':631.46, 'close':639.57})))
-            self.assertTrue(len(ts.cache.fields['open']),2)
-            self.assertTrue(len(ts.cache.fields),4)
+            ts = self.createOne(session)
         return ts
             
-    def testEmpty(self):
+    def testEmpty2(self):
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.numfields(),0)
         self.assertEqual(ts.fields(),())
-        
-    def testEmpty2(self):
-        session = self.session()
-        with session.begin():
-            ts = session.add(ColumnTS())
-        self.assertEqual(ts.session,None)
-        session.add(ts)
-        self.assertEqual(ts.size(),0)
         
     def testFrontBack(self):
         session = self.session()

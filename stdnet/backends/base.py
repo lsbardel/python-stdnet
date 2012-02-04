@@ -6,11 +6,18 @@ from stdnet.utils import zip, iteritems, itervalues, encoders
 
 
 __all__ = ['BackendDataServer', 'ServerOperation', 'BackendQuery',
-           'session_result','query_result']
+           'session_result',
+           'instance_session_result',
+           'query_result']
 
 
-session_result = namedtuple('session_result','meta result action')
 query_result = namedtuple('query_result','key count')
+# tuple containing information about a commit/delete operation on the backend
+# server. Id is the id in the session, persistent is a boolean indicating
+# if the instance is persistent on the backend, bid is the id in the backend.
+instance_session_result = namedtuple('instance_session_result',
+                                     'iid persistent id deleted')
+session_result = namedtuple('session_result','meta results') 
 
 
 def intid(id):
@@ -51,13 +58,15 @@ class BackendStructure(object):
         self.client = client
         if not instance.id:
             raise ValueError('No id available')
+        # if structure has no instance create the database id
         if instance.instance is not None:
             id = instance.id
         else:
             id = backend.basekey(self.instance._meta,self.instance.id)
         self._id = id
-            
+    
     def commit(self):
+        '''Commit to backend server.'''
         instance = self.instance
         if instance.state().deleted:
             result = self.delete()

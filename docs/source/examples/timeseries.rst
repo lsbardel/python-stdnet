@@ -5,8 +5,8 @@ Time Series
 ======================================
 
 A very simple example on how to manage timeseries_ data.
-It requires the ``quantredis`` branch of redis
-(see :ref:`redis timeseries API <redis-timeseries>`).
+It requires the :ref:`stdnet redis branch <stdnetredis>` which
+add :ref:`timeseries commands <redis-timeseries>` to vanilla redis.
 
 
 Define the model

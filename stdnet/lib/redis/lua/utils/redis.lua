@@ -6,6 +6,7 @@ type_table['set'] = 'scard'
 type_table['zset'] = 'zcard'
 type_table['list'] = 'llen'
 type_table['hash'] = 'hlen'
+type_table['ts'] = 'tslen'
 type_table['string'] = 'strlen'
 
 function redis_result(result)
@@ -36,7 +37,9 @@ function redis_randomkey(prefix)
     end
 end
 
--- table of all memebers at key. If the key is a string returns an empty table
+-- table of all members at key.
+-- If the key is a string returns an empty table
+-- If an argumnet is passed with value true all elements of the structure are returned.
 function redis_members(key, ...)
 	local typ = redis.call('type',key)['ok']
 	if table.getn(arg) > 0 then
@@ -60,6 +63,12 @@ function redis_members(key, ...)
 		else
 			return redis.call('hkeys', key)
 		end
+	elseif typ == 'ts' then
+	    if all then
+            return redis.call('tsrange', key, 0, -1, 'withtimes')
+        else
+            return redis.call('tsrange', key, 0, -1)
+        end
 	else
 		return {}
 	end

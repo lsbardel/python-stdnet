@@ -4,8 +4,8 @@ from random import uniform
 from stdnet import test, orm
 from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
-                             
-from examples.tsmodels import HashTimeSeries, DateHashTimeSeries
+
+from examples.tsmodels import TimeSeries, DateTimeSeries
 
 
 NUM_DATES = 300
@@ -20,28 +20,26 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
-    model   = HashTimeSeries
-    mkdate  = datetime
+class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
+    model = TimeSeries
+    mkdate = datetime
     
     def setUp(self):
         self.register()
         self.model(ticker = 'GOOG').save()
         
-    def get_object_and_field(self, ticker = 'GOOG'):
-        obj = self.model.objects.get(ticker = ticker)
-        return obj,obj.data
-    
     def adddata(self, obj, data = None):
         data = data or testdata
         obj.data.update(data)
-        self.assertEqual(obj.data.size(),0)
-        obj.save()
-        data = obj.data
-        self.assertEqual(data.size(),len(data))
+        self.assertEqual(obj.data.size(),len(data))
         
     def get(self, ticker = 'GOOG'):
-        return self.get_object_and_field(ticker)[0]
+        return self.model.objects.get(ticker = ticker)
+    
+    def get_object_and_field(self):
+        '''Needed by the TestMultiFieldMixin.'''
+        ts = self.get()
+        return ts, ts.data
         
     def filldata(self, data = None):
         d = self.get()
@@ -59,7 +57,6 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
             self.assertEqual(y,target[1])
             for dt in dategenerator(x,y):
                 ts.data.add(dt,uniform(0,1))
-        ts.save()
         self.assertEqual(ts.data_start,C)
         self.assertEqual(ts.data_end,D)
         
@@ -69,7 +66,6 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertEqual(ts.data_end,None)
         mkdate = self.mkdate
         ts.data.update(testdata2)
-        ts.save()
         start = ts.data_start
         end   = ts.data_end
         p = start
@@ -106,11 +102,9 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         dt2 = self.mkdate(2010,6,6)
         ts.data[dt1] = 56
         ts.data[dt2] = 88
-        ts.save()
         self.assertEqual(ts.data[dt1],56)
         self.assertEqual(ts.data[dt2],88)
         ts.data[dt1] = "ciao"
-        ts.save()
         self.assertEqual(ts.data[dt1],"ciao")
         
     def testInterval(self):
@@ -213,19 +207,104 @@ class TestHashTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         with session.begin():
             session.add(self.model(ticker = 'AMZN'))
         # we have now to instances
-        query = session.query(self.model)
-        m1,m2 = query.all()
+        m1,m2 = session.query(self.model).all()
         self.assertEqual(m1.session,m2.session)
         with session.begin():
             m1.data.update(testdata)
             m2.data.update(testdata2)
+        self.assertTrue(m1.size())
+        self.assertTrue(m2.size())
         
-        for m in query.load_related('data'):
+        for m in session.query(self.model).load_related('data'):
             self.assertTrue(m.data.cache.cache)
         
+    def testitems2(self):
+        ts = self.filldata(testdata2)
+        for k,v in ts.data.items():
+            self.assertEqual(v,testdata2[todate(k)])
+            
+    def testiRange(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        self.assertTrue(N)
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        self.assertEqual(r1[-1],r2[0])
+        self.assertEqual(r2[-1],r3[0])
+        self.assertEqual(r1[0],ts.data.front())
+        self.assertEqual(r3[-1],ts.data.back())
+        T = len(r1)+len(r2)+len(r3)
+        self.assertEqual(T,N+2)
+        self.assertEqual(len(r1),a+1)
+        self.assertEqual(len(r2),b-a+1)
+        self.assertEqual(len(r3),N-b)
+        
+    def __testiRangeTransaction(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        self.assertTrue(N)
+        a  = int(N/4)
+        b  = 3*a
+        with self.model.objects.transaction() as t:
+            ts.data.irange(0,a,t)
+            ts.data.irange(a,b,t)
+            ts.data.irange(b,-1,t)
+            ts.data.front(t)
+            ts.data.back(t)
+        c = lambda x : x if isinstance(x,date) else list(x)
+        r1,r2,r3,front,back = [c(r) for r in t.get_result()]
+        self.assertEqual(r1[-1],r2[0])
+        self.assertEqual(r2[-1],r3[0])
+        self.assertEqual(r1[0][0],front)
+        self.assertEqual(r3[-1][0],back)
+        T = len(r1)+len(r2)+len(r3)
+        self.assertEqual(T,N+2)
+        self.assertEqual(len(r1),a+1)
+        self.assertEqual(len(r2),b-a+1)
+        self.assertEqual(len(r3),N-b)
+        
+    def testRange(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        r4 = list(ts.data.range(r2[0][0],r2[-1][0]))
+        self.assertEqual(r4[0],r2[0])
+        self.assertEqual(r4[-1],r2[-1])
+        
+    def __testRangeTransaction(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        with self.model.objects.transaction() as t:
+            ts.data.irange(0, a, t)
+            ts.data.irange(a, b, t)
+            ts.data.irange(b, -1, t)
+        r1,r2,r3 = [list(r) for r in t.get_result()]
+        with self.model.objects.transaction() as t:
+            ts.data.range(r2[0][0],r2[-1][0],t)
+        r4 = [list(r) for r in t.get_result()][0]
+        self.assertEqual(r4[0],r2[0])
+        self.assertEqual(r4[-1],r2[-1])
+        
+    def testCount(self):
+        ts = self.filldata(testdata2)
+        N  = ts.data.size()
+        a  = int(N/4)
+        b  = 3*a
+        r1 = list(ts.data.irange(0,a))
+        r2 = list(ts.data.irange(a,b))
+        r3 = list(ts.data.irange(b,-1))
+        self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)
 
-class TestDateHashTimeSeries(TestHashTimeSeries):
-    model = DateHashTimeSeries
+
+class TestDateSeries(TestDateTimeSeries):
+    model = DateTimeSeries
     mkdate = date
-    
-    

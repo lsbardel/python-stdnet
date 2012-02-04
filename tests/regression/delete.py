@@ -90,7 +90,7 @@ class TestPostDeleteSignal(test.TestCase):
             
         session.query(self.model).delete()
         u = self.update_model
-        self.assertEqual(u.session,session)
+        self.assertEqual(u.session, session)
         self.assertEqual(sorted(u.instances),[1,2])
         
 
@@ -184,8 +184,6 @@ class TestDeleteStructuredFields(test.TestCase):
         self.assertEqual(data.instance,d)
         self.assertTrue(data.id)
         d.data.update(self.data)
-        self.assertEqual(d.data.size(),0)
-        session.commit()
         self.assertEqual(data.size(),len(self.data))
         return d
     

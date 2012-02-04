@@ -18,9 +18,10 @@ class TestTwitter(test.TestCase):
     models = (User,Post)
 
     def setUp(self):
+        self.register()
         with User.objects.transaction() as t:
             for username,password in zip(usernames,passwords):
-                User(username = username, password = password).save(t)
+                t.add(User(username = username, password = password))
         
     def testRelated(self):
         users = User.objects.query()
@@ -64,7 +65,7 @@ class TestTwitter(test.TestCase):
         N = len(users)
         
         # Follow users
-        with transaction(User) as t:
+        with User.objects.transaction() as t:
             for user in users:
                 n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
                 following = user.following

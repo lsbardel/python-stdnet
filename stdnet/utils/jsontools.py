@@ -148,8 +148,8 @@ by the *splitter* parameters.
             d[lk][''] = value
             
     if instance and flat_vals:
-        for k,v in iteritems(flat_vals):
-            setattr(instance,k,value)
+        for attr, value in iteritems(flat_vals):
+            setattr(instance, attr, value)
             
     return val
 

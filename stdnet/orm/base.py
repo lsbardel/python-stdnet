@@ -348,29 +348,35 @@ def meta_options(abstract = False,
     
 
 class ModelState(object):
-    __slots__ = ('persistent','deleted','iid')
+    __slots__ = ('_persistent','deleted','_iid')
     def __init__(self, instance):
-        self.persistent = False
+        self._persistent = False
         self.deleted = False
         dbdata = instance._dbdata
         if instance.id and 'id' in dbdata:
             if instance.id != dbdata['id']:
                 raise ValueError('Id has changed from {0} to {1}.'\
                                  .format(instance.id,dbdata['id']))
-            self.persistent = True
-            self.iid = instance.id
+            self._persistent = True
+            iid = instance.id
         else:
-            self.iid = instance.id or 'new.{0}'.format(id(instance)) 
+            iid = instance.id or 'new.{0}'.format(id(instance))
+        self._iid = iid
+    
+    @property
+    def persistent(self):
+        return self._persistent
+    
+    @property
+    def iid(self):
+        return self._iid
     
     @property
     def action(self):
         return 'delete' if self.deleted else 'save'
     
     def __repr__(self):
-        if self.persistent:
-            return 'persistent' + (' deleted' if self.deleted else '')
-        else:
-            return 'new'
+        return self.iid + (' deleted' if self.deleted else '')
     __str__ = __repr__
     
     
@@ -379,6 +385,7 @@ class Model(UnicodeMixin):
 attribute which provides the univarsal unique identifier for an instance of a
 model.'''
     _model_type = None
+    objects = None
     DoesNotExist = ObjectNotFound
     '''Exception raised when an instance of a model does not exist.'''
     DoesNotValidate = ObjectNotValidated
@@ -401,10 +408,7 @@ raised when trying to save an invalid instance.'''
         return not self.__eq__(other)
     
     def __hash__(self):
-        if self.id:
-            return hash(self.uuid)
-        else:
-            return id(self)
+        return hash(self.get_uuid(self.state().iid))
     
     def state(self, update = False):
         if 'state' not in self._dbdata or update:

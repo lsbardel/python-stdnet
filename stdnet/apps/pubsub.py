@@ -4,33 +4,34 @@ from stdnet import getdb
 from stdnet.utils.encoders import Json
 from stdnet.utils import is_string
 from stdnet.lib import redis
-
-
-class PubSub(object):
     
-    def __init__(self, server = None, pickler = Json, shard_hint = None):
+    
+class Publisher(object):
+    
+    def __init__(self, server = None, pickler = Json):
         if isclass(pickler):
             pickler = pickler()
         self.pickler = pickler
         self.client = getdb(server).client
-    
-    
-class Publisher(PubSub):
-    
+        
     def publish(self, channel, data):
         data = self.pickler.dumps(data)
         return self.client.execute_command('PUBLISH', channel, data)
     
     
-class Subscriber(PubSub):
+class Subscriber(redis.RedisProxy):
     
-    def __init__(self, *args, **kwargs):
-        super(Subscriber,self).__init__(*args, **kwargs)
-        self.shard_hint = kwargs.get('shard_hint')
+    def __init__(self, server = None, pickler = Json):
+        if isclass(pickler):
+            pickler = pickler()
+        self.pickler = pickler
+        client = getdb(server).client
+        super(Subscriber,self).__init__(client)
         self.connection = None
         self.subscription_count = 0
         self.channels = set()
         self.patterns = set()
+        self.options = {'release_connection': False}
         self.subscribe_commands = set(
             (b'subscribe', b'psubscribe', b'unsubscribe', b'punsubscribe')
             )
@@ -76,14 +77,11 @@ class Subscriber(PubSub):
                 except KeyError:
                     pass
         if self.connection is None:
-            self.connection = self.client.connection_pool.get_connection(
-                'pubsub',
-                self.shard_hint
-                )
+            self.connection = self.client.connection_pool.get_connection()
         connection = self.connection
         try:
-            connection.send_command(command, *channels)
-            return self.parse_response()
+            return connection.execute_command(self, command,
+                                              *channels, **self.options)
         except redis.ConnectionError:
             connection.disconnect()
             # Connect manually here. If the Redis server is down, this will
@@ -98,9 +96,9 @@ class Subscriber(PubSub):
             connection.send_command(command, channels)
             return self.parse_response()
 
-    def parse_response(self):
+    def parse_response(self, request):
         "Parse the response from a publish/subscribe command"
-        response = self.connection.read_response()
+        response = request.response
         if response[0] in self.subscribe_commands:
             self.subscription_count = response[2]
             # if we've just unsubscribed from the remaining channels,

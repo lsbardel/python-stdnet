@@ -83,7 +83,7 @@ class TestFinanceApplication(FinanceTest):
         total_positions = len(positions)
         totp = 0
         for instrument in session.query(Instrument):
-            pos  = list(instrument.positions.all())
+            pos  = list(instrument.positions.query())
             for p in pos:
                 self.assertTrue(isinstance(p,Position))
                 self.assertEqual(p.instrument,instrument)
@@ -95,7 +95,7 @@ class TestFinanceApplication(FinanceTest):
         session = self.data.makePositions(self)
         instruments = session.query(Instrument)
         for instrument in instruments:
-            positions = instrument.positions.all()
+            positions = instrument.positions.query()
             funds = {}
             flist = []
             for pos in positions:

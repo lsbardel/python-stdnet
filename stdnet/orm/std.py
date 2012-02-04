@@ -15,14 +15,12 @@ __all__ = ['MultiField',
 
 class MultiFieldStructureProxy(object):
     
-    def __init__(self, name, factory, cache_name, pickler,
-                 value_pickler, scorefun):
+    def __init__(self, name, factory, cache_name, pickler, value_pickler):
         self.name = name
         self.factory = factory
         self.cache_name = cache_name
         self.pickler = pickler
         self.value_pickler = value_pickler
-        self.scorefun  = scorefun
         
     def __get__(self, instance, instance_type=None):
         if instance is None:
@@ -49,10 +47,10 @@ class MultiFieldStructureProxy(object):
         session = instance.session
         backend = session.backend
         id = backend.basekey(instance._meta, 'obj', instance.id, self.name)
-        stru = self.factory(id = id, instance = instance,
+        stru = self.factory(id = id,
+                            instance = instance,
                             pickler = self.pickler,
-                            value_pickler = self.value_pickler,
-                            scorefun = self.scorefun)
+                            value_pickler = self.value_pickler)
         # add the structure to the session
         session.add(stru)
         return stru
@@ -100,15 +98,14 @@ a stand alone structure in the back-end server with very little effort.
     
     Default: ``None``.
 '''
-    default_pickler = encoders.Json()
-    default_value_pickler = None
+    default_pickler = None
+    default_value_pickler = encoders.Json()
     
     def __init__(self,
                  model = None,
                  pickler = None,
                  value_pickler = None,
                  required = False,
-                 scorefun = None,
                  **kwargs):
         # Force required to be false
         super(MultiField,self).__init__(required = False, **kwargs)
@@ -118,7 +115,6 @@ a stand alone structure in the back-end server with very little effort.
         self.primary_key = False
         self.pickler = pickler
         self.value_pickler = value_pickler
-        self.scorefun = scorefun
         
     def register_with_model(self, name, model):
         super(MultiField,self).register_with_model(name, model)
@@ -129,26 +125,22 @@ a stand alone structure in the back-end server with very little effort.
     
     def _set_relmodel(self, relmodel):
         self.relmodel = relmodel
-        if not self.pickler:
-            self.pickler = related.ModelFieldPickler(self.relmodel)
         self._register_with_model()
         
     def _register_with_model(self):
-        self._install_encoders()
+        if not self.value_pickler:
+            if self.relmodel:
+                self.value_pickler = related.ModelFieldPickler(self.relmodel)
+            else:
+                self.value_pickler = self.default_value_pickler
         self.pickler = self.pickler or self.default_pickler
-        self.value_pickler = self.value_pickler or self.default_value_pickler
         setattr(self.model,
                 self.name,
                 MultiFieldStructureProxy(self.name,
                                          self.structure_class(),
                                          self.get_cache_name(),
                                          pickler = self.pickler,
-                                         value_pickler = self.value_pickler,
-                                         scorefun = self.scorefun))
-    
-    def _install_encoders(self):
-        if self.relmodel and not self.pickler:
-            self.pickler = related.ModelFieldPickler(self.relmodel)
+                                         value_pickler = self.value_pickler))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)

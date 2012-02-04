@@ -21,13 +21,6 @@ class TransactionReceiver(object):
 class TestTransactions(test.TestCase):
     model = SimpleModel
     
-    def setUp(self):
-        self.client = self.backend.client
-        self.client.flushdb()
-    
-    def tearDown(self):
-        self.client.flushdb()
-        
     def testCreate(self):
         session = self.session()
         query = session.query(self.model)
@@ -39,7 +32,7 @@ class TestTransactions(test.TestCase):
             s = session.add(self.model(code = 'test',
                                        description = 'just a test'))
             self.assertFalse(s.id)
-            session.add(self.model(code = 'test2',
+            s2 = session.add(self.model(code = 'test2',
                                    description = 'just a test'))
             
         all = query.all()
@@ -65,25 +58,27 @@ class TestTransactions(test.TestCase):
         self.assertRaises(self.model.DoesNotExist,
                           query.get, id=s.id)
         
-    def testSingleTransaction(self):
+    def testNoTransaction(self):
         session = self.session()
         s = session.add(orm.Set())
         l = session.add(orm.List())
-        self.assertEqual(l.size(),0)
         h = session.add(orm.HashTable())
+        self.assertEqual(l.size(),0)
         r = TransactionReceiver()
         orm.post_commit.connect(r, orm.Session)
-        session.add(self.model(code = 'test', description = 'just a test'))
+        m = session.add(self.model(code = 'test', description = 'just a test'))
+        # add an entry to the hashtable
         h.add('test','bla')
+        self.assertEqual(len(r.transactions),2)
         l.push_back(5)
         l.push_back(8)
         s.update((2,3,4,5,6,7))
-        session.commit()
+        self.assertEqual(len(r.transactions),5)
+        self.assertTrue(m.state().persistent)
         self.assertEqual(s.size(),6)
         self.assertEqual(h.size(),1)
         self.assertEqual(l.size(),2)
         self.assertEqual(len(session.query(self.model).all()),1)
-        self.assertEqual(len(r.transactions),1)
         
         
 class TestMultiFieldTransaction(test.TestCase):

@@ -1,6 +1,6 @@
 from datetime import date
 
-from stdnet import test, orm
+from stdnet import test, orm, InvalidTransaction
 from stdnet.utils import encoders, zip
 from stdnet.utils.populate import populate
 
@@ -10,61 +10,120 @@ values = populate('float',len(dates),start=0,end=1000)
 
 
 class StructMixin(object):
+    structure = None
     name = None
     
-    def createOne(self):
+    def createOne(self, session):
+        '''Create a structure and add few elements. Must return the structure
+itself.'''
         raise NotImplementedError()
     
     def testMeta(self):
         session = self.session()
-        l = self.createOne()
+        # start the transaction
+        session.begin()
+        l = self.createOne(session)
         self.assertTrue(l.id)
         self.assertEqual(l.instance, None)
-        self.assertEqual(l.session, None)
+        self.assertEqual(l.session, session)
         self.assertEqual(l._meta.name, self.name)
         self.assertEqual(l._meta.model._model_type,'structure')
         self.assertFalse(l.state().persistent)
-        # add to a session
-        l = session.add(l)
-        # If no id available, adding to a session will automatically create one
-        self.assertTrue(l.id)
-        self.assertEqual(l.session, session)
+        self.assertTrue(l in session)
         self.assertEqual(l.size(), 0)
+        #
+        sm = session.model(l._meta)
+        self.assertTrue(l in sm.new)
+        self.assertTrue(l in sm.dirty)
+        self.assertFalse(l in sm.modified)
+        self.assertFalse(l in sm.loaded)
         return l
+    
+    def testCommit(self):
+        l = self.testMeta()
+        l.session.commit()
+        self.assertTrue(l.state().persistent)
+        self.assertTrue(l.size())
+        self.assertTrue(l in l.session)
+        sm = l.session.model(l._meta)
+        self.assertFalse(l in sm.new)
+        self.assertFalse(l in sm.dirty)
+        self.assertFalse(l in sm.modified)
+        self.assertTrue(l in sm.loaded)
+        
+    def testTransaction(self):
+        session = self.session()
+        with session.begin():
+            l = self.createOne(session)
+            # Trying to save within a section will throw an InvalidTransaction
+            self.assertRaises(InvalidTransaction, l.save)
+            # Same for delete
+            self.assertRaises(InvalidTransaction, l.delete)
+            self.assertFalse(l.state().persistent)
+            sm = session.model(l._meta)
+            self.assertTrue(l in sm.new)
+            self.assertTrue(l in sm.dirty)
+            self.assertFalse(l in sm.modified)
+            self.assertFalse(l in sm.loaded)
+        self.assertTrue(l.size())
+        self.assertTrue(l.state().persistent)            
         
     def testDelete(self):
         session = self.session()
         with session.begin():
-            s = session.add(self.createOne())
+            s = self.createOne(session)
         self.assertTrue(s.session)
         self.assertTrue(s.state().persistent)
-        self.assertFalse(s in session)
+        self.assertFalse(s.state().deleted)
+        self.assertTrue(s in session)
+        self.assertFalse(s in session.dirty)
         self.assertTrue(s.size())
         s.delete()
         self.assertEqual(s.size(),0)
+        self.assertNotEqual(s.session,None)
+        self.assertFalse(s in session)
+        
+    def testEmpty(self):
+        session = self.session()
+        with session.begin():
+            l = session.add(self.structure())
+        self.assertEqual(l.size(),0)
+        self.assertEqual(l.session,session)
+        sm = session.model(l._meta)
+        self.assertTrue(l in session)
+        self.assertTrue(l in session.dirty)
+        self.assertFalse(l.state().persistent)
+        self.assertFalse(l.state().deleted)
+        self.assertFalse(l in sm.modified)
+        self.assertFalse(l in sm.loaded)
+        self.assertTrue(l in sm.new)
 
 
 class TestSet(StructMixin,test.TestCase):
-    name = 'set'    
+    structure = orm.Set
+    name = 'set'
     
-    def createOne(self):
-        s = orm.Set()
+    def createOne(self, session):
+        s = session.add(orm.Set())
         s.update((1,2,3,4,5,5))
         return s
             
     def testSimpleUpdate(self):
-        # Typical usage
+        # Typical usage. Add a set to a session
         session = self.session()
         s = session.add(orm.Set())
+        # if not id provided, an id is created
+        self.assertTrue(s.id)
         self.assertEqual(s.session, session)
         self.assertEqual(s.instance, None)
-        s.add(8)
-        s.update((1,2,3,4,5,5))
+        self.assertEqual(s.size(),0)
         self.assertFalse(s.state().persistent)
-        session.commit()
-        self.assertTrue(s.id)
-        self.assertEqual(s.size(),6)
+        # this add and commit to the backend server
+        s.add(8)
+        self.assertEqual(s.size(),1)
         self.assertTrue(s.state().persistent)
+        s.update((1,2,3,4,5,5))
+        self.assertEqual(s.size(),6)
         
     def testUpdateDelete(self):
         session = self.session()
@@ -83,6 +142,7 @@ class TestSet(StructMixin,test.TestCase):
         
 
 class TestZset(StructMixin,test.TestCase):
+    structure = orm.Zset
     name = 'zset'
     result =  [(0.0022,'pluto'),
                (0.06,'mercury'),
@@ -94,8 +154,8 @@ class TestZset(StructMixin,test.TestCase):
                (95.2,'saturn'),
                (317.8,'juppiter')]
     
-    def createOne(self):
-        l = orm.Zset()
+    def createOne(self, session):
+        l = session.add(orm.Zset())
         l.add(1,'earth')
         l.add(0.06,'mercury')
         l.add(317.8,'juppiter')
@@ -110,7 +170,8 @@ class TestZset(StructMixin,test.TestCase):
         
     def planets(self):
         session = self.session()
-        l = session.add(self.createOne())
+        session.begin()
+        l = self.createOne(session)
         self.assertEqual(l.size(),0)
         session.commit()
         self.assertTrue(l.state().persistent)
@@ -158,10 +219,11 @@ class TestZset(StructMixin,test.TestCase):
 
 
 class TestList(StructMixin, test.TestCase):
+    structure = orm.List
     name = 'list'
     
-    def createOne(self):
-        l = orm.List()
+    def createOne(self, session):
+        l = session.add(orm.List())
         l.push_back(3)
         l.push_back(5.6)
         return l
@@ -170,41 +232,42 @@ class TestList(StructMixin, test.TestCase):
         l = self.testMeta()
         l.push_back('save')
         l.push_back({'test': 1})
-        l.save()
+        l.session.commit()
         sm = l.session.model(l._meta)
-        self.assertEqual(len(sm),0)
+        self.assertEqual(len(sm),1)
+        self.assertFalse(l in sm.dirty)
         self.assertTrue(l in sm.loaded)
         self.assertEqual(l.size(),4)
         self.assertEqual(list(l),[3,5.6,'save',"{'test': 1}"])
         
     def testJsonList(self):
-        session = self.session()
-        l = session.add(orm.List(value_pickler = encoders.Json()))
-        self.assertEqual(l.size(),0)
-        l.push_back(3)
-        l.push_back(5.6)
-        l.push_back('save')
-        l.push_back({'test': 1})
-        l.push_back({'test': 2})
-        self.assertEqual(l.size(),0)
-        session.commit()
+        with self.session().begin() as t:
+            l = t.add(orm.List(value_pickler = encoders.Json()))
+            l.push_back(3)
+            l.push_back(5.6)
+            l.push_back('save')
+            l.push_back({'test': 1})
+            l.push_back({'test': 2})
         self.assertEqual(l.size(),5)
         self.assertEqual(list(l),[3,5.6,'save',{'test': 1},{'test': 2}])
     
 
 class TestHash(StructMixin, test.TestCase):
+    structure = orm.HashTable
     name = 'hashtable'
     
-    def createOne(self):
-        h = orm.HashTable()
+    def createOne(self, session):
+        h = session.add(orm.HashTable())
         h['bla'] = 'foo'
         h['pluto'] = 3
         return h
-    
-    def testMeta2(self):
-        h = self.testMeta()
-        h.save()
-        self.assertEqual(h.size(),2)
+        
+    def testNoTransaction(self):
+        session = self.session()
+        d = session.add(orm.HashTable())
+        d['bla'] = 5676
+        self.assertEqual(d.size(),1)
+        self.assertEqual(d['bla'],5676)
         
     def testPop(self):
         session = self.session()
@@ -234,10 +297,11 @@ class TestHash(StructMixin, test.TestCase):
         
 
 class TestTS(StructMixin, test.TestCase):
+    structure = orm.TS
     name = 'ts'
     
-    def createOne(self):
-        ts = orm.TS()
+    def createOne(self, session):
+        ts = session.add(orm.TS())
         ts.update(zip(dates,values))
         return ts
         
@@ -247,7 +311,7 @@ class TestTS(StructMixin, test.TestCase):
         self.assertTrue(ts.cache.toadd)
         self.assertFalse(ts.cache.toremove)
         
-    def testEmpty(self):
+    def testEmpty2(self):
         session = self.session()
         ts = session.add(orm.TS())
         self.assertTrue(ts.id)
@@ -258,7 +322,8 @@ class TestTS(StructMixin, test.TestCase):
         
     def testData(self):
         session = self.session()
-        ts = session.add(self.createOne())
+        session.begin()
+        ts = self.createOne(session)
         self.assertTrue(ts.cache.toadd)
         session.commit()
         self.assertEqual(ts.size(),len(dates))

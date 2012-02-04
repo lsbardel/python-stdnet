@@ -22,7 +22,7 @@ class TestManyToMany(test.TestCase):
         self.assertEqual(role1.profiles.query().count(),1)
         self.assertEqual(role2.profiles.query().count(),1)
         
-        p2 = role1.profiles.all()[0]
+        p2 = role1.profiles.query()[0]
         self.assertEqual(p2.profile,profile)
         
     def testMeta(self):
@@ -50,39 +50,47 @@ class TestManyToMany(test.TestCase):
         
     def testDelete1(self):
         self.addsome()
-        profile = Profile.objects.get(id = 1)
-        self.assertEqual(profile.roles.all().count(),2)
+        session = self.session()
+        profile = session.query(Profile).get(id = 1)
+        self.assertEqual(profile.roles.query().count(),2)
         profile.delete()
-        for role in Role.objects.all():
-            self.assertEqual(role.profiles.all().count(),0)
+        roles = session.query(Role).all()
+        self.assertTrue(roles)
+        for role in roles:
+            self.assertEqual(role.profiles.query().count(),0)
     
     def testDelete2(self):
         self.addsome()
-        roles = Role.objects.all()
+        session = self.session()
+        roles = session.query(Role)
         self.assertEqual(roles.count(),2)
         roles.delete()
-        self.assertEqual(Role.objects.all().count(),0)
-        profile = Profile.objects.get(id = 1)
-        self.assertEqual(profile.roles.all().count(),0)
+        self.assertEqual(session.query(Role).count(),0)
+        profile = session.query(Profile).get(id = 1)
+        self.assertEqual(profile.roles.query().count(),0)
         profile.delete()
         
     def testRemove(self):
-        p1 = Profile().save()
-        p2 = Profile().save()
-        role,created = Role.objects.get_or_create(name='admin')
+        session = self.session()
+        with session.begin():
+            p1 = session.add(Profile())
+            p2 = session.add(Profile())
+        role, created = session.get_or_create(Role, name='admin')
+        if created:
+            role.save()
         self.assertTrue(role.id)
         p1.roles.add(role)
         p2.roles.add(role)
-        profiles = role.profiles.all()
+        profiles = role.profiles.query()
         self.assertEqual(profiles.count(),2)
         p2.roles.add(role)
-        profiles = role.profiles.all()
+        profiles = role.profiles.query()
         self.assertEqual(profiles.count(),2)
         p2.roles.remove(role)
-        profiles = role.profiles.all()
+        profiles = role.profiles.query()
         self.assertEqual(profiles.count(),1)
         p1.roles.remove(role)
-        profiles = role.profiles.all()
+        profiles = role.profiles.query()
         self.assertEqual(profiles.count(),0)
 
 

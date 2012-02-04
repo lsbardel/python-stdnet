@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import stdnet
-from stdnet import test
+from stdnet import test, FieldValueError
 from stdnet.utils import populate, zip, is_string, to_string, unichr, ispy3k
 
 from examples.models import TestDateModel, DateData,\
@@ -33,7 +33,7 @@ class TestAtomFields(test.TestCase):
     def testFilter(self):
         session = self.create()
         query = session.query(self.model)
-        all = query.query()
+        all = query.all()
         self.assertEqual(len(dates),len(all))
         N = 0
         done_dates = set()
@@ -80,16 +80,14 @@ class TestCharFields(test.TestCase):
             
     def testUnicode(self):
         unicode_string = unichr(500) + to_string('ciao') + unichr(300)
-        m = self.model(code = unicode_string).save()
-        code = m.todict()['code']
+        self.model(code = unicode_string).save()
+        m = self.model.objects.get(id = 1)
+        self.assertEqual(m.code, unicode_string)
         if ispy3k:
             self.assertEqual(str(m),unicode_string)
         else:
+            code = unicode_string.encode('utf-8')
             self.assertEqual(str(m),code)
-        self.assertTrue(isinstance(code,bytes))
-        self.assertEqual(code.decode('utf-8'),unicode_string)
-        m = self.model.objects.get(id = m.id)
-        self.assertEqual(m.code,unicode_string)
         
     
 class TestNumericData(test.TestCase):
@@ -127,7 +125,7 @@ class TestIntegerField(test.TestCase):
         self.assertEqual(p.in_navigation,1)
         p = Page(in_navigation = '4')
         self.assertEqual(p.in_navigation,4)
-        self.assertRaises(ValueError, p = Page, in_navigation = 'foo')
+        self.assertRaises(FieldValueError, p = Page, in_navigation = 'foo')
         p.save()
         self.assertEqual(p.in_navigation,4)
         p = Page.objects.get(id = p.id)
@@ -135,7 +133,7 @@ class TestIntegerField(test.TestCase):
         
     def testNotValidated(self):
         p = Page().save()
-        self.assertRaises(ValueError, Page, in_navigation = 'bla')
+        self.assertRaises(FieldValueError, Page, in_navigation = 'bla')
         
     def testZeroValue(self):
         p = Page(in_navigation = 0)
@@ -177,15 +175,28 @@ class TestBoolField(test.TestCase):
         self.assertEqual(len(self.model._meta.indices),1)
         index = self.model._meta.indices[0]
         self.assertEqual(index.type,'bool')
-        self.assertEqual(index.scorefun(True),1)
-        self.assertEqual(index.scorefun(False),0)
+        self.assertEqual(index.index,True)
+        self.assertEqual(index.name,index.attname)
+        return index
+        
+    def testSerializeAndScoreFun(self):
+        index = self.testMeta()
+        for fname in ('scorefun','serialize'):
+            func = getattr(index,fname)
+            self.assertEqual(func(True),1)
+            self.assertEqual(func(False),0)
+            self.assertEqual(func(4),1)
+            self.assertEqual(func(0),0)
+            self.assertEqual(func('bla'),1)
+            self.assertEqual(func(''),0)
+            self.assertEqual(func(None),0)
         
     def testBoolValue(self):
         d = self.model(pv = 1.).save()
         d = self.model.objects.get(id = d.id)
         self.assertEqual(d.ok,False)
         d.ok = 'jasxbhjaxsbjxsb'
-        self.assertRaises(ValueError, d.save)
+        self.assertRaises(FieldValueError, d.save)
         d.ok = True
         d.save()
         d = self.model.objects.get(id = d.id)
@@ -200,6 +211,11 @@ class TestByteField(test.TestCase):
         
     def testMetaData(self):
         field = SimpleModel._meta.dfields['somebytes']
+        self.assertEqual(field.type,'bytes')
+        self.assertEqual(field.internal_type,'bytes')
+        self.assertEqual(field.index,False)
+        self.assertEqual(field.name,field.attname)
+        return field
         
     def testValue(self):
         v = SimpleModel(code='one', somebytes=to_string('hello'))
@@ -225,18 +241,31 @@ class TestPickleObjectField(test.TestCase):
     def setUp(self):
         self.register()
         
+    def testMetaData(self):
+        field = self.model._meta.dfields['data']
+        self.assertEqual(field.type,'object')
+        self.assertEqual(field.internal_type,'bytes')
+        self.assertEqual(field.index,False)
+        self.assertEqual(field.name,field.attname)
+        return field
+    
     def testOkObject(self):
-        v = Environment(data = ['ciao','pippo']).save()
+        v = self.model(data = ['ciao','pippo'])
         self.assertEqual(v.data, ['ciao','pippo'])
-        v = Environment.objects.get(id = v.id)
+        v.save()
+        self.assertEqual(v.data, ['ciao','pippo'])
+        v = self.model.objects.get(id = v.id)
         self.assertEqual(v.data, ['ciao','pippo'])
         
     def testRecursive(self):
         '''Silly test to test both pickle field and pickable instace'''
-        v = Environment(data = ('ciao','pippo', 4, {})).save()
-        v2 = Environment(data = v).save()
-        v3 = Environment.objects.get(id = v2.id)
-        self.assertEqual(v3.data, v)
+        v = self.model(data = ('ciao','pippo', 4, {})).save()
+        v2 = self.model(data = v)
+        self.assertEqual(v2.data,v)
+        v2.save()
+        self.assertEqual(v2.data,v)
+        v2 = self.model.objects.get(id = v2.id)
+        self.assertEqual(v2.data, v)
     
 
 class TestErrorAtomFields(test.TestCase):

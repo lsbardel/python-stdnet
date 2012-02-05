@@ -340,11 +340,13 @@ def meta_options(abstract = False,
                  app_label = None,
                  ordering = None,
                  modelkey = None,
+                 unique_together = None,
                  **kwargs):
     return {'abstract': abstract,
             'app_label':app_label,
             'ordering':ordering,
-            'modelkey':modelkey}
+            'modelkey':modelkey,
+            'unique_together':unique_together}
     
 
 class ModelState(object):

@@ -8,7 +8,7 @@ from functools import partial
 from collections import namedtuple
 
 import stdnet
-from stdnet import FieldValueError
+from stdnet import FieldValueError, CommitException
 from stdnet.conf import settings
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping
@@ -113,12 +113,16 @@ class commit_session(redis.RedisScript):
     
     def callback(self, request, response, args, sm = None, iids = None,
                  **kwargs):
-        response = self._wrap(response, iids)
+        response = self._wrap(request, response, iids)
         return session_result(sm.meta, response)
     
-    def _wrap(self, response, iids):
-        for r,iid in zip(response,iids):
-            yield instance_session_result(iid,True,r,False)
+    def _wrap(self, request, response, iids):
+        for id,iid in zip(response,iids):
+            if isinstance(id,list):
+                msg = id[1].decode(request.encoding)
+                raise CommitException(msg)
+            else:
+                yield instance_session_result(iid,True,id,False)
     
     
 def structure_session_callback(sm, processed, response):

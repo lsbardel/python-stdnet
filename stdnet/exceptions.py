@@ -16,6 +16,11 @@ class InvalidTransaction(StdNetException):
 with models registered with different backends.'''
     pass
 
+class CommitException(StdNetException):
+    '''A :class:`StdNetException` raised when trying to create a transaction
+with models registered with different backends.'''
+    pass
+
 class AlreadyRegistered(StdNetException):
     pass
 

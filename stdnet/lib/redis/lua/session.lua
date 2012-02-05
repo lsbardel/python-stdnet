@@ -21,14 +21,22 @@ function table_slice (values,i1,i2)
     return res
 end
 
--- Add or remove indices for an instance
+-- Add or remove indices for an instance.
+-- Return nothing if the update was succesful otherwise it returns the
+-- error message (constaints were violated)
 function update_indices(s, score, bk, id, idkey, indices, uniques, add)
+    errors = {}
     for i,name in pairs(indices) do
         value = redis.call('hget', idkey, name)
         if uniques[i] == '1' then
             idxkey = bk .. ':uni:' .. name
             if add then
-                redis.call('hset', idxkey, value, id)
+                if redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
+                    -- remove field `name` from the instance hashtable so that
+                    -- the next call to update_indices won't delete the index
+                    redis.call('hdel', idkey, name)
+                    table.insert(errors, 'Unique constraint "' .. name .. '" violated.')
+                end
             else
                 redis.call('hdel', idxkey, value)
             end
@@ -48,6 +56,7 @@ function update_indices(s, score, bk, id, idkey, indices, uniques, add)
 	        end
 	    end
     end
+    return errors
 end
 
 -- LOOP OVER INSTANCES TO ADD/CHANGE
@@ -72,14 +81,18 @@ while j < num_instances do
     local idx0 = i+4
     local length_data = ARGV[idx0] + 0
     local data = table_slice(ARGV,idx0+1,idx0+length_data)
+    local created_id = false
     i = idx0 + length_data
 
     -- ID NOT AVAILABLE. CREATE ONE
     if id == '' then
-        id = redis.call('incr',bk .. ':ids')
+        created_id = true
+        id = redis.call('incr', bk .. ':ids')
     end
     local idkey = bk .. ':obj:' .. id
+    local original_values = {}
     if action == 'c' then
+        original_values = redis.call('hgetall', idkey)
         update_indices(s, score, bk, id, idkey, indices, uniques, false)
     end
     if s == 's' then
@@ -88,11 +101,30 @@ while j < num_instances do
         redis.call('zadd', idset, score, id)
     end
     if length_data > 0 then
-       redis.call('hmset', idkey, unpack(data))
+        redis.call('hmset', idkey, unpack(data))
     end
-    update_indices(s, score, bk, id, idkey, indices, uniques, true)
     j = j + 1
-    result[j] = id
+    local error = update_indices(s, score, bk, id, idkey, indices, uniques, true)
+    -- An error has occured. Rollback changes.
+    if # error > 0 then
+        -- Remove indices
+        error = error[1]
+        update_indices(s, score, bk, id, idkey, indices, uniques, false)
+        if action ~= 'c' then
+            redis.call('del', idkey)
+            redis.call(s .. 'rem', idset, id)
+            if created_id then
+                redis.call('decr', bk .. ':ids')
+                id = ''
+            end
+        elseif # original_values > 0 then
+            redis.call('hmset', idkey, unpack(original_values))
+            update_indices(s, score, bk, id, idkey, indices, uniques, true)
+        end
+        result[j] = {id, error}
+    else
+        result[j] = id
+    end
 end
 
 return result

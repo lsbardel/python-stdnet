@@ -149,7 +149,10 @@ of a related model.'''
         return self.__class__(self.field, self.model, instance)
     
     def session(self, transaction = None):
-        '''Retrieve the session for this :class:`RelatedManager`.'''
+        '''Retrieve the session for this :class:`RelatedManager`.
+
+:parameter transaction: an optional session :class:`Transaction` to use.
+:rtype: a :class:`Session`.'''
         if transaction:
             return transaction.session
         elif self.related_instance:

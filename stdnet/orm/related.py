@@ -1,5 +1,5 @@
 import stdnet
-from stdnet.utils import encoders
+from stdnet.utils import encoders, iteritems
 from stdnet import FieldValueError
 
 from .session import Manager
@@ -191,24 +191,28 @@ many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
 attribute of the model.'''
-        def session_kwargs(self, value, transaction, **kwargs):
+        def session_kwargs(self, value, transaction):
             if not isinstance(value,self.formodel):
                 raise FieldValueError(
                         '%s is not an instance of %s' % (value,self.for_model))
             # Get the related manager
-            kwargs.update({self.formodel._meta.name: value,
-                           self.relmodel._meta.name: self.related_instance})
+            kwargs = {self.formodel._meta.name: value,
+                      self.relmodel._meta.name: self.related_instance}
             return self.session(transaction), kwargs
     
         def add(self, value, transaction = None, **kwargs):
             '''Add *value*, an instance of ``self.formodel``,
             to the throw model.'''
-            session, kwargs = self.session_kwargs(value, transaction, **kwargs)
-            m = session.add(self.model(**kwargs))
-            # if not in a transaction, commit the session right away
-            if not session.transaction:
-                session.commit()
-            return m
+            session, kw = self.session_kwargs(value, transaction)
+            try:
+                m = session.query(self.model).get(**kw)
+                if not kwargs:
+                    return m
+            except self.model.DoesNotExist:
+                m = self.model(**kw)
+            for k,v in iteritems(kwargs):
+                setattr(m,k,v)
+            return session.add(m)
         
         def remove(self, value, transaction = None):
             '''Remove *value*, an instance of ``self.model`` from the set of

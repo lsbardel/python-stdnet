@@ -224,5 +224,10 @@ attribute of the model.'''
             if not session.transaction:
                 session.commit()
 
+        def relquery(self, transaction = None):
+            ids = self.query().get_field(self.formodel._meta.name)
+            session = self.session(transaction)
+            return session.query(self.formodel).filter(id__in = ids)
+            
     Many2ManyRelatedManager.formodel = formodel
     return Many2ManyRelatedManager

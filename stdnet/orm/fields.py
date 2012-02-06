@@ -4,6 +4,7 @@ from hashlib import sha1
 from collections import namedtuple
 import time
 from datetime import date, datetime
+from base64 import b64encode
 
 from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
@@ -473,8 +474,10 @@ In python this is converted to `bytes`.'''
         else:
             return self.get_default()
         
+    @field_value_error
     def json_serialize(self, value):
-        return base64.b64encode(self.serialize(value)).decode(self.charset)
+        if value is not None:
+            return b64encode(self.serialize(value)).decode(self.charset)
     
     def get_encoder(self, params):
         return encoders.Bytes(self.charset)
@@ -531,7 +534,7 @@ the relation from the related object back to self.
             self.related_manager_class = related_manager_class
         super(ForeignKey,self).__init__(**kwargs)
         if not model:
-            raise stdnet.FieldError('Model not specified')
+            raise FieldError('Model not specified')
         self.relmodel = model
         self.related_name = related_name
     
@@ -549,7 +552,7 @@ the relation from the related object back to self.
             self.related_name = related_name
             self._register_with_related_model()
         else:
-            raise stdnet.FieldError('Duplicated related name "{0}"\
+            raise FieldError('Duplicated related name "{0}"\
  in model "{1}" and field {2}'.format(related_name,meta,self))
     
     def _register_with_related_model(self):

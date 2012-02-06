@@ -3,6 +3,87 @@ from time import mktime
 from datetime import datetime, timedelta, date
 
 
+class Interval(object):
+    __slots__ = ('_interval')
+    
+    def __init__(self, start, end):
+        self._interval = (start,end)
+    
+    def __repr__(self):
+        return repr(self._interval)
+    __str__ = __repr__
+    
+    def __getitem__(self, idx):
+        return self._interval[idx]
+    
+    def __iter__(self):
+        return iter(self._interval)
+    
+    @property
+    def start(self):
+        return self._interval[0]
+    
+    @property
+    def end(self):
+        return self._interval[1]
+
+    def __lt__(self, other):
+        return self.end < other.start
+    
+    def __gt__(self, other):
+        return self.start > other.end
+    
+    def __eq__(self, other):
+        return self.start == other.start and self.end == other.end
+    
+    def union(self, other):
+        return Interval(min(self.start,other.start),
+                        max(self.end,other.end))
+    
+    
+class Intervals(list):
+
+    def start(self):
+        if self:
+            return self[0].start
+            
+    def end(self):
+        if self:
+            return self[-1].end
+    
+    def extend(self, data):
+        for d in data:
+            self.append(d)
+            
+    def append(self, interval):
+        for idx,intv in enumerate(self):
+            if interval < intv:
+                self.insert(idx,interval)
+                return
+            elif interval > intv:
+                continue
+            else:
+                self[idx] = interval.union(intv)
+                return self.check()
+        super(Intervals,self).append(interval)
+        
+    def check(self):
+        merged = True
+        while merged and len(self) > 1:
+            merged = False
+            for idx,interval in enumerate(self[:-1]):
+                other = self[idx+1]
+                if interval < other:
+                    continue
+                elif interval > other:
+                    raise ValueError()
+                else:
+                    self[idx] = interval.merge(other)
+                    self.pop(idx+1)
+                    merged = True
+                    break
+                
+                
 def date2timestamp(dte):
     '''Convert a *dte* into a valid unix timestamp.'''
     seconds = mktime(dte.timetuple())
@@ -40,7 +121,8 @@ def default_parse_interval(dt, delta = 0):
     
 def missing_intervals(startdate, enddate, start, end,
                       dateconverter = None,
-                      parseinterval = None):
+                      parseinterval = None,
+                      intervals = None):
     '''Given a ``startdate`` and an ``enddate`` dates, evaluate the
 date intervals from which data is not available. It return a list of
 two-dimensional tuples containing start and end date for the interval.
@@ -49,41 +131,37 @@ The list could countain 0,1 or 2 tuples.'''
     dateconverter = dateconverter or todate
     startdate = dateconverter(parseinterval(startdate,0))
     enddate   = max(startdate,dateconverter(parseinterval(enddate,0)))
-
-    calc_intervals = []
+    
+    if intervals is not None and not isinstance(intervals,Intervals):
+        intervals = Intervals(intervals)
+        
+    calc_intervals = Intervals()
     # we have some history already
     if start:
-        # the startdate is already in the database
+        # the startdate not available
         if startdate < start:
             calc_start = startdate
             calc_end = parseinterval(start, -1)
             if calc_end >= calc_start:
-                calc_intervals.append((calc_start, calc_end))
+                calc_intervals.append(Interval(calc_start, calc_end))
 
         if enddate > end:
             calc_start = parseinterval(end, 1)
             calc_end = enddate
             if calc_end >= calc_start:
-                calc_intervals.append((calc_start, calc_end))
+                calc_intervals.append(Interval(calc_start, calc_end))
     else:
         start = startdate
         end = enddate
-        calc_intervals.append((startdate, enddate))
+        calc_intervals.append(Interval(startdate, enddate))
 
     if calc_intervals:
-        # There are calculation intervals, which means the
-        # start and aned date have changed
-        N = len(calc_intervals)
-        start1 = calc_intervals[0][0]
-        end1 = calc_intervals[N - 1][1]
-        if start:
-            start = min(start, start1)
-            end = max(end, end1)
-        else:
-            start = start1
-            end = end1
+        if intervals:
+            calc_intervals.extend(intervals)
+    elif intervals:
+        calc_intervals = intervals
 
-    return calc_intervals  
+    return calc_intervals        
 
 
 def dategenerator(start, end, step = 1, desc = False):

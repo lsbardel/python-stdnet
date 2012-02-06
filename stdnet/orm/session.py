@@ -240,11 +240,11 @@ within this :class:`Session`.'''
                 self._delete_query.extend(d)
             pre_delete.send(self.model, instances = self._delete_query,
                             transaction = transaction)
-        cn = len(self)
-        if cn:
-            pre_commit.send(self.model, instances = self,
+        dirty = self.dirty
+        if dirty:
+            pre_commit.send(self.model, instances = dirty,
                             transaction = transaction)
-        return len(self._delete_query) + cn
+        return len(self._delete_query) + len(dirty)
             
     def post_commit(self, results):
         '''Process results after a commit.

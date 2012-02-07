@@ -615,8 +615,10 @@ They can also exclude instances from the query::
             return self.__class__.__name__
     __repr__ = __str__
 
-    def session(self):
-        if not self.backend:
+    def session(self, transaction = None):
+        if transaction:
+            return transaction.session
+        elif not self.backend:
             raise ModelNotRegistered("Model '{0}' is not registered with a\
  backend database. Cannot use manager.".format(self.model))
         return Session(self.backend)
@@ -637,8 +639,8 @@ if their managers have the same backend database.'''
         return self.session().begin()
     
     # SESSION Proxy methods
-    def query(self):
-        return self.session().query(self.model)
+    def query(self, transaction = None):
+        return self.session(transaction=transaction).query(self.model)
     
     def filter(self, **kwargs):
         return self.query().filter(**kwargs)

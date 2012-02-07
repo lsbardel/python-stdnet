@@ -22,13 +22,26 @@ class TestTwitter(test.TestCase):
         with User.objects.transaction() as t:
             for username,password in zip(usernames,passwords):
                 t.add(User(username = username, password = password))
+                
+    def testMeta(self):
+        following = User.following
+        followers = User.followers
+        self.assertEqual(following.formodel,User)
+        self.assertEqual(following.relmodel,User)
+        through = following.through
+        self.assertEqual(through,followers.through)
+        self.assertEqual(len(through._meta.dfields),3)
+        self.assertEqual(following.name_relmodel,'user2')
+        self.assertEqual(followers.name_relmodel,'user')
         
     def testRelated(self):
         users = User.objects.query()
         user1 = users[0]
         user2 = users[1]
         user3 = users[2]
-        user1.following.add(user3)
+        r = user1.following.add(user3)
+        self.assertEqual(r.user2, user1)
+        self.assertEqual(r.user, user3)
         followers = list(user3.followers.query())
         self.assertEqual(len(followers),1)
         user2.following.add(user3)

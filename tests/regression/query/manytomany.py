@@ -7,7 +7,7 @@ from examples.m2m import Composite, Element, CompositeElement
     
 class TestManyToMany(test.TestCase):
     models = (Role, Profile)
-    
+        
     def addsome(self):
         session = self.session()
         with session.begin():
@@ -19,6 +19,13 @@ class TestManyToMany(test.TestCase):
             profile.roles.add(role1)
             profile.roles.add(role2)
             
+        t1 = role1.profiles.throughquery().all()
+        t2 = role2.profiles.throughquery().all()
+        self.assertEqual(len(t1),1)
+        self.assertEqual(len(t2),1)
+        self.assertEqual(t1[0].role,role1)
+        self.assertEqual(t2[0].role,role2)
+        
         self.assertEqual(role1.profiles.query().count(),1)
         self.assertEqual(role2.profiles.query().count(),1)
         
@@ -26,14 +33,20 @@ class TestManyToMany(test.TestCase):
         self.assertEqual(p2.profile,profile)
         
     def testMeta(self):
-        manager = Profile.roles
-        self.assertEqual(manager.model._meta.name,'profile_role')
-        self.assertEqual(manager.relmodel,Profile)
-        self.assertEqual(manager.formodel,Role)
-        manager = Role.profiles
-        self.assertEqual(manager.model._meta.name,'profile_role')
-        self.assertEqual(manager.relmodel,Role)
-        self.assertEqual(manager.formodel,Profile)
+        roles = Profile.roles
+        self.assertEqual(roles.model._meta.name,'profile_role')
+        self.assertEqual(roles.relmodel,Profile)
+        self.assertEqual(roles.name_relmodel,'profile')
+        self.assertEqual(roles.formodel,Role)
+        profiles = Role.profiles
+        self.assertEqual(profiles.model._meta.name,'profile_role')
+        self.assertEqual(profiles.relmodel,Role)
+        self.assertEqual(profiles.formodel,Profile)
+        self.assertEqual(profiles.name_relmodel,'role')
+        #
+        through = roles.through
+        self.assertEqual(through,profiles.through)
+        self.assertEqual(len(through._meta.dfields),3)
         
     def testMetaInstance(self):
         p = Profile()

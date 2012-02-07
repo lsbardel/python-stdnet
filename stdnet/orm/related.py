@@ -58,10 +58,12 @@ signals.class_prepared.connect(do_pending_lookups)
 
 
 def Many2ManyThroughModel(field):
-    '''Create a Many2Many through table with two foreign key fields'''
+    '''Create a Many2Many through model with two foreign key fields'''
     from stdnet.orm import StdNetType, StdModel, ForeignKey
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
+    if name_model == name_relmodel:
+        name_model += '2'
     through = field.through
     if through is None:
         name = '{0}_{1}'.format(name_model,name_relmodel)
@@ -70,11 +72,15 @@ def Many2ManyThroughModel(field):
         
     # The field
     field1 = ForeignKey(field.model, related_name = field.name,
-            related_manager_class = makeMany2ManyRelatedManager(field.relmodel))
+            related_manager_class = makeMany2ManyRelatedManager(field.relmodel,
+                                                                name_model,
+                                                                through))
     field1.register_with_model(name_model, through)
     
     field2 = ForeignKey(field.relmodel, related_name = field.related_name,
-            related_manager_class = makeMany2ManyRelatedManager(field.model))
+            related_manager_class = makeMany2ManyRelatedManager(field.model,
+                                                                name_relmodel,
+                                                                through))
     field2.register_with_model(name_relmodel, through)
 
 
@@ -173,9 +179,10 @@ via a simple attribute of the model.'''
     def relmodel(self):
         return self.field.relmodel
     
-    def query(self):
+    def query(self, transaction = None):
         kwargs = {self.field.name: self.related_instance}
-        return super(RelatedManager,self).query().filter(**kwargs)
+        return super(RelatedManager,self).query(transaction = transaction)\
+                                         .filter(**kwargs)
     
     def query_from_query(self, query):
         session = query.session
@@ -183,7 +190,7 @@ via a simple attribute of the model.'''
                              fargs = {self.field.name: query}) 
             
 
-def makeMany2ManyRelatedManager(formodel):
+def makeMany2ManyRelatedManager(formodel, name_relmodel, through):
 
     class Many2ManyRelatedManager(One2ManyRelatedManager):
         '''A specialized :class:`Manager` for handling
@@ -197,7 +204,7 @@ attribute of the model.'''
                         '%s is not an instance of %s' % (value,self.for_model))
             # Get the related manager
             kwargs = {self.formodel._meta.name: value,
-                      self.relmodel._meta.name: self.related_instance}
+                      self.name_relmodel: self.related_instance}
             return self.session(transaction), kwargs
     
         def add(self, value, transaction = None, **kwargs):
@@ -220,14 +227,17 @@ attribute of the model.'''
             session, kwargs = self.session_kwargs(value, transaction)
             query = session.query(self.model).filter(**kwargs)
             session.delete(query)
-            # if not in a transaction, commit the session right away
-            if not session.transaction:
-                session.commit()
-
-        def relquery(self, transaction = None):
-            ids = self.query().get_field(self.formodel._meta.name)
+        
+        def throughquery(self, transaction = None):
+            return super(Many2ManyRelatedManager,self).query(
+                                                    transaction = transaction)
+        
+        def query(self, transaction = None):
+            ids = self.throughquery().get_field(self.formodel._meta.name)
             session = self.session(transaction)
             return session.query(self.formodel).filter(id__in = ids)
             
     Many2ManyRelatedManager.formodel = formodel
+    Many2ManyRelatedManager.name_relmodel = name_relmodel
+    Many2ManyRelatedManager.through = through
     return Many2ManyRelatedManager

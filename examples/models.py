@@ -190,6 +190,9 @@ class User(orm.StdModel):
 ##############################################
 class Role(orm.StdModel):
     name = orm.SymbolField()
+    
+    def __unicode__(self):
+        return self.name
 
 
 class Profile(orm.StdModel):

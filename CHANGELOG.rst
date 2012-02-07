@@ -3,7 +3,7 @@ Ver. 0.7.0 - Development
 * Backward incompatible changes in the API.
 * It requires redis_ 2.6 or higher.
 * Tons of new features including a richer query API, improved performance via custom
-  query options, more flexible transactions, lua scripting for redis_ and
+  query options, more flexible transactions, lua_ scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
 * Redesign of :class:`stdnet.orm.ManyToManyField` which now uses a ``through`` model
   for building the many to many relationship.
@@ -41,7 +41,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **435 regression tests** with **80%** coverage.
+* **443 regression tests** with **80%** coverage.
 
 .. _vers06:
 
@@ -278,3 +278,4 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _hiredis: https://github.com/pietern/hiredis-py
 .. _pulsar: http://packages.python.org/pulsar/
 .. _unittest2: http://pypi.python.org/pypi/unittest2
+.. _lua: http://www.lua.org/

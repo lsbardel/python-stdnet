@@ -1,32 +1,18 @@
 import time
 from time import mktime
 from datetime import datetime, timedelta, date
+from collections import namedtuple
 
 
-class Interval(object):
-    __slots__ = ('_interval')
+class Interval(namedtuple('IntervalBase','start end')):
     
     def __init__(self, start, end):
-        self._interval = (start,end)
+        if start > end:
+            raise ValueError('Bad interval.')
     
-    def __repr__(self):
-        return repr(self._interval)
-    __str__ = __repr__
+    def __reduce__(self):
+        return tuple,(tuple(self),)
     
-    def __getitem__(self, idx):
-        return self._interval[idx]
-    
-    def __iter__(self):
-        return iter(self._interval)
-    
-    @property
-    def start(self):
-        return self._interval[0]
-    
-    @property
-    def end(self):
-        return self._interval[1]
-
     def __lt__(self, other):
         return self.end < other.start
     
@@ -43,6 +29,14 @@ class Interval(object):
     
 class Intervals(list):
 
+    def __init__(self, data = None):
+        super(Intervals,self).__init__()
+        if data:
+            self.extend(data)
+            
+    def __reduce__(self):
+        return list,(list(self),)
+    
     def start(self):
         if self:
             return self[0].start
@@ -56,6 +50,8 @@ class Intervals(list):
             self.append(d)
             
     def append(self, interval):
+        if not isinstance(interval,Interval):
+            interval = Interval(*interval)
         for idx,intv in enumerate(self):
             if interval < intv:
                 self.insert(idx,interval)
@@ -78,7 +74,7 @@ class Intervals(list):
                 elif interval > other:
                     raise ValueError()
                 else:
-                    self[idx] = interval.merge(other)
+                    self[idx] = interval.union(other)
                     self.pop(idx+1)
                     merged = True
                     break

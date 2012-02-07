@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from stdnet import test
 from stdnet.utils import encoders
-from stdnet.apps.columnts import ColumnTS, TimeSeriesField
+from stdnet.apps.columnts import ColumnTS
 from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 

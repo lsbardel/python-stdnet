@@ -1,4 +1,9 @@
+'''Experimental!
+This is an experimental module for converting ColumnTS into
+dynts.timeseries.
+'''
 from stdnet.apps.columnts import models as columnts
+from stdnet import orm 
 
 import numpy as ny
 
@@ -50,24 +55,34 @@ class ColumnTS(columnts.ColumnTS):
         return ts.front()
     
 
-def environment_ts(start, end, envs):
-    '''Fast retrieval of environment timeseries.'''
-    tts = None
-    for env in envs:
-        dates = []
-        values = []
-        for dt,val in env.data.range(start,end):
-            dates.append(dt)
-            values.append(val)
-        tts = timeseries(dates,values, name = str(env))
-        if tts is None:
-            tts = ts
-        else:
-            tts = tts.merge(ts)
-    return tts
-
+class TS(orm.TS):
     
-class TimeSeriesField(columnts.TimeSeriesField):
+    def irange(self, start = 0, end = -1, **kwargs):
+        kwargs['raw'] = True
+        return super(TS,self).irange(start, end, **kwargs)
+    
+    def range(self, start, stop, **kwargs):
+        kwargs['raw'] = True
+        return super(TS,self).range(start, stop, **kwargs)
+    
+    def load_data(self, response):
+        loads = self.pickler.loads
+        vloads = self.value_pickler.loads
+        times = [loads(float(t)) for t in response[::2]]
+        values = [vloads(v) for v in response[1::2]]
+        return timeseries(date = times,
+                          data = values,
+                          name = self.id,
+                          val_type = None)        
+        
+
+class TimeSeriesField(orm.TimeSeriesField):
+    
+    def structure_class(self):
+        return TS
+    
+    
+class ColumnTSField(columnts.ColumnTSField):
     
     def structure_class(self):
         return ColumnTS

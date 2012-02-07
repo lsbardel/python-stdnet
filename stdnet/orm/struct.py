@@ -216,6 +216,7 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         self.cache.set_cache(self.load_data(data))
         
     def load_data(self, data):
+        '''Load data from the :class:`stdnet.BackendDataServer`.'''
         loads = self.value_pickler.loads
         return (loads(v) for v in data)
     

@@ -97,19 +97,19 @@ In doing so, convert byte data into unicode.'''
 
 
 def ts_pairs(request, response, args, withtimes = False, novalues = False,
-             single = False, **options):
+             single = False, raw = False, **options):
     '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
-    if not response:
-        return response
-    elif withtimes and not novalues:
-        times = (float(t) for t in response[::2])
-        return zip(times, response[1::2])
-    elif novalues:
-        return (float(t) for t in response)
-    elif options.get('single') and len(response) == 1:
-        return response[0]
-    else:
-        return response
+    if not raw:
+        if not response:
+            return response
+        elif withtimes and not novalues:
+            times = (float(t) for t in response[::2])
+            return zip(times, response[1::2])
+        elif novalues:
+            return (float(t) for t in response)
+        elif options.get('single') and len(response) == 1:
+            return response[0]
+    return response
     
     
 def zset_score_pairs(request, response, args, **options):

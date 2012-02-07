@@ -460,14 +460,16 @@ class Zset(RedisStructure):
         return self.client.zcount(self.id, start, stop)
     
     
-    def range(self, start, end, desc = False, withscores = True):
+    def range(self, start, end, desc = False, withscores = True, **options):
         return self.client.zrangebyscore(self.id, start, end,
                                          desc = desc,
-                                         withscores = withscores)
+                                         withscores = withscores, **options)
     
-    def irange(self, start = 0, stop = -1, desc = False, withscores = True):
+    def irange(self, start = 0, stop = -1, desc = False, withscores = True,
+               **options):
         return self.client.zrange(self.id, start, stop,
-                                  desc = desc, withscores = withscores)
+                                  desc = desc, withscores = withscores,
+                                  **options)
     
     def items(self):
         for v,score in self.irange():
@@ -573,18 +575,19 @@ class TS(Zset):
     def count(self, start, stop):
         return self.client.tscount(self.id, start, stop)
 
-    def range(self, time_start, time_stop, desc = False, withscores = True):
+    def range(self, time_start, time_stop, desc = False, withscores = True,
+              **options):
         return self.client.tsrangebytime(self.id, time_start, time_stop,
-                                         withtimes = withscores)
+                                         withtimes = withscores, **options)
             
     def irange(self, start=0, stop=-1, desc = False, withscores = True,
-               novalues = False):
+               novalues = False, **options):
         return self.client.tsrange(self.id, start, stop,
                                    withtimes = withscores,
-                                   novalues = novalues)
+                                   novalues = novalues, **options)
     
-    def items(self):
-        return self.irange()
+    def items(self, **options):
+        return self.irange(**options)
 
         
 struct_map = {'set':Set,

@@ -49,6 +49,23 @@ class ColumnTS(columnts.ColumnTS):
         ts = self.load_data(result)
         return ts.front()
     
+
+def environment_ts(start, end, envs):
+    '''Fast retrieval of environment timeseries.'''
+    tts = None
+    for env in envs:
+        dates = []
+        values = []
+        for dt,val in env.data.range(start,end):
+            dates.append(dt)
+            values.append(val)
+        tts = timeseries(dates,values, name = str(env))
+        if tts is None:
+            tts = ts
+        else:
+            tts = tts.merge(ts)
+    return tts
+
     
 class TimeSeriesField(columnts.TimeSeriesField):
     

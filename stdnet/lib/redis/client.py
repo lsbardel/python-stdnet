@@ -545,7 +545,7 @@ can be one of: refcount, encoding, idletime.'''
         return self.execute_command('OBJECT', subcommand, name)
 
     #### LIST COMMANDS ####
-    def blpop(self, keys, timeout=0):
+    def blpop(self, keys, timeout=0, **options):
         """
         LPOP a value off of the first non-empty list
         named in the ``keys`` list.
@@ -561,9 +561,9 @@ can be one of: refcount, encoding, idletime.'''
         else:
             keys = list(keys)
         keys.append(timeout)
-        return self.execute_command('BLPOP', *keys)
+        return self.execute_command('BLPOP', *keys, **options)
 
-    def brpop(self, keys, timeout=0):
+    def brpop(self, keys, timeout=0, **options):
         """
         RPOP a value off of the first non-empty list
         named in the ``keys`` list.
@@ -579,30 +579,30 @@ can be one of: refcount, encoding, idletime.'''
         else:
             keys = list(keys)
         keys.append(timeout)
-        return self.execute_command('BRPOP', *keys)
+        return self.execute_command('BRPOP', *keys, **options)
 
-    def lindex(self, name, index):
+    def lindex(self, name, index, **options):
         """
         Return the item from list ``name`` at position ``index``
 
         Negative indexes are supported and will return an item at the
         end of the list
         """
-        return self.execute_command('LINDEX', name, index)
+        return self.execute_command('LINDEX', name, index, **options)
 
-    def llen(self, name):
+    def llen(self, name, **options):
         "Return the length of the list ``name``"
-        return self.execute_command('LLEN', name)
+        return self.execute_command('LLEN', name, **options)
 
-    def lpop(self, name):
+    def lpop(self, name, **options):
         "Remove and return the first item of the list ``name``"
-        return self.execute_command('LPOP', name)
+        return self.execute_command('LPOP', name, **options)
 
-    def lpush(self, name, *values):
+    def lpush(self, name, *values, **options):
         "Push ``values`` onto the head of the list ``name``"
-        return self.execute_command('LPUSH', name, *values)
+        return self.execute_command('LPUSH', name, *values, **options)
 
-    def lrange(self, name, start, end):
+    def lrange(self, name, start, end, **options):
         """
         Return a slice of the list ``name`` between
         position ``start`` and ``end``
@@ -610,21 +610,21 @@ can be one of: refcount, encoding, idletime.'''
         ``start`` and ``end`` can be negative numbers just like
         Python slicing notation
         """
-        return self.execute_command('LRANGE', name, start, end)
+        return self.execute_command('LRANGE', name, start, end, **options)
 
-    def lrem(self, name, value, num=0):
+    def lrem(self, name, value, num=0, **options):
         """
         Remove the first ``num`` occurrences of ``value`` from list ``name``
 
         If ``num`` is 0, then all occurrences will be removed
         """
-        return self.execute_command('LREM', name, num, value)
+        return self.execute_command('LREM', name, num, value, **options)
 
-    def lset(self, name, index, value):
+    def lset(self, name, index, value, **options):
         "Set ``position`` of list ``name`` to ``value``"
-        return self.execute_command('LSET', name, index, value)
+        return self.execute_command('LSET', name, index, value, **options)
 
-    def ltrim(self, name, start, end):
+    def ltrim(self, name, start, end, **options):
         """
         Trim the list ``name``, removing all values not within the slice
         between ``start`` and ``end``
@@ -632,22 +632,22 @@ can be one of: refcount, encoding, idletime.'''
         ``start`` and ``end`` can be negative numbers just like
         Python slicing notation
         """
-        return self.execute_command('LTRIM', name, start, end)
+        return self.execute_command('LTRIM', name, start, end, **options)
 
-    def rpop(self, name):
+    def rpop(self, name, **options):
         "Remove and return the last item of the list ``name``"
-        return self.execute_command('RPOP', name)
+        return self.execute_command('RPOP', name, **options)
 
-    def rpoplpush(self, src, dst):
+    def rpoplpush(self, src, dst, **options):
         """
         RPOP a value off of the ``src`` list and atomically LPUSH it
         on to the ``dst`` list.  Returns the value.
         """
-        return self.execute_command('RPOPLPUSH', src, dst)
+        return self.execute_command('RPOPLPUSH', src, dst, **options)
 
-    def rpush(self, name, *values):
+    def rpush(self, name, *values, **options):
         "Push ``values`` onto the tail of the list ``name``"
-        return self.execute_command('RPUSH', name, *values)
+        return self.execute_command('RPUSH', name, *values, **options)
 
     def sort(self, name, start=None, num=None, by=None, get=None,
             desc=False, alpha=False, store=None, storeset=None,

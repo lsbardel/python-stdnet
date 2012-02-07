@@ -28,11 +28,15 @@ class TestTwitter(test.TestCase):
         followers = User.followers
         self.assertEqual(following.formodel,User)
         self.assertEqual(following.relmodel,User)
+        self.assertEqual(followers.formodel,User)
+        self.assertEqual(followers.relmodel,User)
         through = following.through
         self.assertEqual(through,followers.through)
         self.assertEqual(len(through._meta.dfields),3)
-        self.assertEqual(following.name_relmodel,'user2')
-        self.assertEqual(followers.name_relmodel,'user')
+        self.assertEqual(following.name_relmodel,'user')
+        self.assertEqual(following.name_formodel,'user2')
+        self.assertEqual(followers.name_relmodel,'user2')
+        self.assertEqual(followers.name_formodel,'user')
         
     def testRelated(self):
         users = User.objects.query()
@@ -40,10 +44,11 @@ class TestTwitter(test.TestCase):
         user2 = users[1]
         user3 = users[2]
         r = user1.following.add(user3)
-        self.assertEqual(r.user2, user1)
-        self.assertEqual(r.user, user3)
-        followers = list(user3.followers.query())
+        self.assertEqual(r.user, user1)
+        self.assertEqual(r.user2, user3)
+        followers = user3.followers.query().all()
         self.assertEqual(len(followers),1)
+        self.assertEqual(followers[0],user1)
         user2.following.add(user3)
         followers = list(user3.followers.query())
         self.assertEqual(len(followers),2)

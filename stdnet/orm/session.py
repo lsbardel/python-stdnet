@@ -124,8 +124,11 @@ Session model."""
     def dirty(self):
         '''The set of all instances which have changed, but not deleted,
 within this :class:`Session`.'''
-        return frozenset(chain(itervalues(self._new),
-                               itervalues(self._modified)))
+        return frozenset(self.iterdirty())
+        
+    def iterdirty(self):
+        '''Ordered iterator over dirty elements.'''
+        return iter(chain(itervalues(self._new), itervalues(self._modified)))
     
     def __contains__(self, instance):
         iid = instance.state().iid
@@ -240,7 +243,7 @@ within this :class:`Session`.'''
                 self._delete_query.extend(d)
             pre_delete.send(self.model, instances = self._delete_query,
                             transaction = transaction)
-        dirty = self.dirty
+        dirty = tuple(self.iterdirty())
         if dirty:
             pre_commit.send(self.model, instances = dirty,
                             transaction = transaction)

@@ -2,9 +2,10 @@
 bk = KEYS[1] -- base key for model
 rkey = KEYS[2] -- the key where to store the structure containing the resuls
 s = ARGV[1] -- 's' for set or 'z' for sorted sets
-name = ARGV[2]
-unique = ARGV[3]
-lookup = ARGV[4]
+name = ARGV[2] -- Field name
+unique = ARGV[3] -- 'u' if field is unique '' otherwise
+lookup = ARGV[4] -- Not yet used
+
 
 -- Perform the union of the index for value val and the result key *rkey*
 -- The result is stored in *rkey*
@@ -17,7 +18,7 @@ function union (val)
 	end
 end
 
--- add a value to a set (or sorted set)
+-- add a value to a 'rkey' set if the value is in the 'idset'
 function add (val)
 	if val ~= false then
 	    idset = bk .. ':id'
@@ -34,6 +35,18 @@ function add (val)
 	end
 end
 
+-- Add values stored at key to the 'rkey' set. `oper` is the operation
+-- to perform for the values in container at `key` (either add or union)
+function addkey(key, oper)
+    local processed = {}
+    for _,v in ipairs(redis_members(key)) do
+        if not processed[v] then
+            oper(v)
+        end
+        processed[v] = true
+    end
+end
+
 i = 4
 local what
 local val
@@ -43,7 +56,7 @@ while i < # ARGV do
 	i = i + 2
 	if unique == 'u' and name == 'id' then
 		if what == 'key' then
-			union(val) -- straightforward union
+		    addkey(val,add)
 		else
 			add(val) -- straightforward add of a member
 		end
@@ -53,11 +66,11 @@ while i < # ARGV do
 		if what == 'key' then
 			-- This lookup is quite rare
 			if s == 's' then
-				for i,v in pairs(redis.call('smembers', val)) do
+				for _,v in ipairs(redis.call('smembers', val)) do
 					add(redis.call('hget', mapkey, v))
 				end
 			else
-				for i,v in pairs(redis.call('zrange', val, 0, -1)) do
+				for _,v in ipairs(redis.call('zrange', val, 0, -1)) do
 					add(redis.call('hget', mapkey, v))
 				end
 			end
@@ -65,16 +78,7 @@ while i < # ARGV do
 			add(redis.call('hget', mapkey, val))
 		end
 	elseif what == 'key' then
-	    -- An index with a key, The key may be a set, a zset or a list
-		if s == 's' then
-			for i,v in pairs(redis.call('smembers', val)) do
-				union(v)
-			end
-		else
-			for i,v in pairs(redis.call('zrange', val, 0, -1)) do
-				union(v)
-			end
-		end
+	    addkey(val, union)
 	else
 		union(val)
 	end

@@ -33,7 +33,8 @@ TMP = 'tmp'     # temorary key
 
 
 class build_query(redis.RedisScript):
-    script = redis.read_lua_file('build_query.lua')
+    script = (redis.read_lua_file('utils/redis.lua'),
+              redis.read_lua_file('build_query.lua'))
     
 
 class add_recursive(redis.RedisScript):
@@ -166,6 +167,7 @@ def redis_execution(pipe, result_type):
 ##    REDIS QUERY CLASS
 ################################################################################
 class RedisQuery(stdnet.BackendQuery):
+    card = None
     script_dep = {'script_dependency': ('build_query','move2set')}
     
     def zism(self, r):
@@ -220,12 +222,14 @@ class RedisQuery(stdnet.BackendQuery):
         # by nosort and get the object field.
         gf = qs._get_field
         if gf and gf != 'id':
+            field_attribute = meta.dfields[gf].attname
             bkey = key
             if not temp_key:
                 temp_key = True
                 key = backend.tempkey(meta)
-            okey = backend.basekey(meta,OBJ,'*->{0}'.format(gf))
+            okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
             pipe.sort(bkey, by = 'nosort', get = okey, store = key)
+            self.card = getattr(pipe,'llen')
             
         if temp_key:
             pipe.expire(key, self.expire)
@@ -234,31 +238,29 @@ class RedisQuery(stdnet.BackendQuery):
         
     def _build(self, pipe = None, **kwargs):
         '''Set up the query for redis'''
-        backend = self.backend
-        client = backend.client
-        self.pipe = pipe if pipe is not None else client.pipeline()
+        self.pipe = pipe if pipe is not None else self.backend.client.pipeline()
         what, key = self.accumulate(self.queryelem)
         if what == 'key':
             self.query_key = key
         else:
-            raise valueError('Critical error while building query')
-        if self.meta.ordering:
-            self.ismember = getattr(client,'zrank')
-            self.card = getattr(client,'scard')
-            self._check_member = self.zism
-        else:
-            self.ismember = getattr(client,'sismember')
-            self.card = getattr(client,'zcard')
-            self._check_member = self.sism
+            raise ValueError('Critical error while building query')
     
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
         pipe = self.pipe
-        if self.meta.ordering:
-            pipe.zcard(self.query_key, script_dependency = 'build_query')
+        if not self.card:
+            if self.meta.ordering:
+                self.ismember = getattr(self.backend.client,'zrank')
+                self.card = getattr(self.pipe,'zcard')
+                self._check_member = self.zism
+            else:
+                self.ismember = getattr(self.backend.client,'sismember')
+                self.card = getattr(self.pipe,'scard')
+                self._check_member = self.sism
         else:
-            pipe.scard(self.query_key, script_dependency = 'build_query')
+            self.ismember = None
+        self.card(self.query_key, script_dependency = 'build_query')
         pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
         self.commands, self.query_results = redis_execution(pipe, query_result)
@@ -689,7 +691,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             elif model_type == 'object':
                 delquery = sm.get_delete_query(pipe = pipe)
                 self.accumulate_delete(pipe, delquery)
-                dirty = sm.dirty
+                dirty = tuple(sm.iterdirty())
                 N = len(dirty)
                 if N:
                     bk = basekey(meta)

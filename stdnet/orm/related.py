@@ -62,8 +62,9 @@ def Many2ManyThroughModel(field):
     from stdnet.orm import StdNetType, StdModel, ForeignKey
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
+    # The two models are the same.
     if name_model == name_relmodel:
-        name_model += '2'
+        name_relmodel += '2'
     through = field.through
     if through is None:
         name = '{0}_{1}'.format(name_model,name_relmodel)
@@ -74,12 +75,14 @@ def Many2ManyThroughModel(field):
     field1 = ForeignKey(field.model, related_name = field.name,
             related_manager_class = makeMany2ManyRelatedManager(field.relmodel,
                                                                 name_model,
+                                                                name_relmodel,
                                                                 through))
     field1.register_with_model(name_model, through)
     
     field2 = ForeignKey(field.relmodel, related_name = field.related_name,
             related_manager_class = makeMany2ManyRelatedManager(field.model,
                                                                 name_relmodel,
+                                                                name_model,
                                                                 through))
     field2.register_with_model(name_relmodel, through)
 
@@ -190,8 +193,9 @@ via a simple attribute of the model.'''
                              fargs = {self.field.name: query}) 
             
 
-def makeMany2ManyRelatedManager(formodel, name_relmodel, through):
-
+def makeMany2ManyRelatedManager(formodel, name_relmodel,
+                                name_formodel, through):
+    '''formodel is the model which the manager .'''
     class Many2ManyRelatedManager(One2ManyRelatedManager):
         '''A specialized :class:`Manager` for handling
 many-to-many relationships under the hood.
@@ -201,9 +205,9 @@ attribute of the model.'''
         def session_kwargs(self, value, transaction):
             if not isinstance(value,self.formodel):
                 raise FieldValueError(
-                        '%s is not an instance of %s' % (value,self.for_model))
+                    '%s is not an instance of %s' % (value,self.formodel._meta))
             # Get the related manager
-            kwargs = {self.formodel._meta.name: value,
+            kwargs = {self.name_formodel: value,
                       self.name_relmodel: self.related_instance}
             return self.session(transaction), kwargs
     
@@ -233,11 +237,12 @@ attribute of the model.'''
                                                     transaction = transaction)
         
         def query(self, transaction = None):
-            ids = self.throughquery().get_field(self.formodel._meta.name)
+            ids = self.throughquery().get_field(self.name_formodel)
             session = self.session(transaction)
             return session.query(self.formodel).filter(id__in = ids)
             
     Many2ManyRelatedManager.formodel = formodel
     Many2ManyRelatedManager.name_relmodel = name_relmodel
+    Many2ManyRelatedManager.name_formodel = name_formodel 
     Many2ManyRelatedManager.through = through
     return Many2ManyRelatedManager

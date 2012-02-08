@@ -73,7 +73,7 @@ class TS(orm.TS):
         return timeseries(date = times,
                           data = values,
                           name = self.id,
-                          val_type = None)        
+                          dtype = object)
         
 
 class TimeSeriesField(orm.TimeSeriesField):

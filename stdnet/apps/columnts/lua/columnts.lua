@@ -22,6 +22,11 @@ columnts = {
         return redis.call('smembers', self.fieldskey)
     end,
     --
+    -- num fields
+    num_fields = function (self)
+        return redis.call('scard', self.fieldskey) + 0
+    end,
+    --
     -- a set of fields
     fields_set = function(self)
         f = {}
@@ -218,10 +223,12 @@ columnts = {
         local fields = self:fields_set()
         local tslen = self:length() + 0
         local ws = {}
-        local fkey, data, rank, rank9, available, weight, value, dvalue, v1
+        local fkey, data, rank, rank9, available, weight, value, dvalue, v1, mul
         local new_serie = tslen == 0
         local time_set = {}
         if tsmul then
+            assert(tsmul:length() > 0, 'Timeseries ' .. ts.key .. ' not available')
+            assert(tsmul:num_fields() == 1, 'Timeseries ' .. ts.key .. ' has more than one field')
             tsmul = tsmul:asdict()
         end
         
@@ -287,6 +294,14 @@ columnts = {
     	                    weight = weights[field]
     	                end
     	                dvalue = weight*self:unpack_value(value)
+    	                if tsmul then
+    	                   mul = tsmul[timestamp]
+    	                   if mul then
+    	                       dvalue = mul*dvalue
+    	                   else
+    	                       dvalue = nan
+    	                   end
+    	                end
     	                -- If the value is a number
     	                if dvalue == dvalue then
     	                    -- If the field was available add to the current value
@@ -397,28 +412,15 @@ function columnts:new(key)
     end
 end
 
+
+--
+-- merge timeseries
+-- elements: an array of dictionaries containing the weight and an array of timeseries to multiply
+-- fields: list of fiedls to merge
 -- Multiply timeseries. At the moment this only works for two timeseries
 -- ts1*ts2, with ts1 being a one field timeseries and ts2 being and N-fields timeseries.
 -- It multiplies the field in ts1 for each fields in ts2 and store the result at key
 -- with fields names given by ts2.
-function columnts:multiply(key, series)
-    local ts = columnts:new(key)
-    assert( # series <= 2, 'Too many timeseries. Cannot perform operation')
-    if # series == 1 then
-        return series[1]
-    end
-    local tim1, value1 = unpack(series[1].all())
-    local time, values = unpack(series[2].all())
-    for i,dt in ipairs(time) do
-        
-    end
-    return ts
-end
-
---
--- merge timeseries
--- elements: an array of dictionaries containing the weight and an arrray of timeseries to multiply
--- fields: list of fiedls to merge
 function columnts:merge(key, elements, fields)
     local result = columnts:new(key)
     result:del()
@@ -426,12 +428,10 @@ function columnts:merge(key, elements, fields)
     for i,elem in ipairs(elements) do
         assert( # elem.series <= 2, 'Too many timeseries. Cannot perform operation')
         -- More than one timeseries. Create the timeseries obtain by multiplying them
-        local ts,tsmul
+        local ts,tsmul = elem.series[1]
         if # elem.series == 2 then
-            ts = elem.series[2]
             tsmul = elem.series[1]
-        else
-            ts = elem.series[1]
+            ts = elem.series[2]
         end
         result:addserie(ts, elem.weight, fields, tsmul)
     end

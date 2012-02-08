@@ -66,11 +66,43 @@ columnts = {
         return self:add(times, field_values, nil)
     end,
     --
+    -- A representation of the timeseries as a dictionary.
+    -- If only one field is available, the values wiil be the field values
+    -- otherwise it will be a dictionary of fields
+    asdict = function(self, fields)
+        if self:length() == 0 then
+            return nil
+        end
+        local times, field_values = unpack(self:range('tsrange', 0, -1, fields))
+        local result = {}
+        local field_name
+        local count = 0
+        for fname,field in pairs(field_names) do
+            count = count + 1
+            field_name = fname
+        end
+        if count == 1 then
+            field_values = field_values[field_name]
+            for i,time in ipairs(times) do
+                result[time] = field_values[i]
+            end
+        else
+            for i,time in ipairs(times) do
+                fvalues = {}
+                for fname,field in pairs(field_names) do
+                    fvalues[fname] = field_values[fname][i]
+                end
+                result[time] = fvalues
+            end
+        end
+        return result
+    end,
+    --
     -- Add a timeseries, multiplied by the given weight, to self
-    addserie = function(self, ts, weight, fields)
+    addserie = function(self, ts, weight, fields, tsmul)
         local range = ts:range('tsrange', 0, -1, fields)
         local times, field_values = unpack(range)
-        return self:add(times, field_values, weight)
+        return self:add(times, field_values, weight, tsmul)
     end,
     --
     -- shortcut for returning the whole range of a timeserie
@@ -182,13 +214,16 @@ columnts = {
     -- Add/replace field values. If weights are provided, the values in
     -- field_values are already unpacked and they are added to existing
     -- values, otherwise the values are to be replaced
-    add = function (self, times, field_values, weights)
+    add = function (self, times, field_values, weights, tsmult)
         local fields = self:fields_set()
         local tslen = self:length() + 0
         local ws = {}
         local fkey, data, rank, rank9, available, weight, value, dvalue, v1
         local new_serie = tslen == 0
         local time_set = {}
+        if tsmul then
+            tsmul = tsmul:asdict()
+        end
         
         -- Make sure all fields are available and have same data length
         for field, value in pairs(field_values) do
@@ -362,8 +397,21 @@ function columnts:new(key)
     end
 end
 
+-- Multiply timeseries. At the moment this only works for two timeseries
+-- ts1*ts2, with ts1 being a one field timeseries and ts2 being and N-fields timeseries.
+-- It multiplies the field in ts1 for each fields in ts2 and store the result at key
+-- with fields names given by ts2.
 function columnts:multiply(key, series)
     local ts = columnts:new(key)
+    assert( # series <= 2, 'Too many timeseries. Cannot perform operation')
+    if # series == 1 then
+        return series[1]
+    end
+    local tim1, value1 = unpack(series[1].all())
+    local time, values = unpack(series[2].all())
+    for i,dt in ipairs(time) do
+        
+    end
     return ts
 end
 
@@ -376,11 +424,16 @@ function columnts:merge(key, elements, fields)
     result:del()
     -- First we copy the first timeseries across to self
     for i,elem in ipairs(elements) do
-        local ts = elem.series[1]
-        if # elem.series > 1 then
-            ts = columnts:multiply(elem.series, fields)
+        assert( # elem.series <= 2, 'Too many timeseries. Cannot perform operation')
+        -- More than one timeseries. Create the timeseries obtain by multiplying them
+        local ts,tsmul
+        if # elem.series == 2 then
+            ts = elem.series[2]
+            tsmul = elem.series[1]
+        else
+            ts = elem.series[1]
         end
-        result:addserie(ts, elem.weight, fields)
+        result:addserie(ts, elem.weight, fields, tsmul)
     end
     return result
 end

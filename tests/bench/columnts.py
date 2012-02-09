@@ -51,7 +51,7 @@ class SlowLogMixin(object):
 ######### Create TEST CASES
 
 class CreateTest(TestCase):
-    
+    '''Create the timeseries'''
     def startUp(self):
         session = self.session()
         self.ts = session.add(ColumnTS())

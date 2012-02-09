@@ -154,6 +154,7 @@ def redis_execution(pipe, result_type):
     results = []
     if command:
         result = pipe.execute(load_script = True)
+        command = {'commands':command,'raw_result':result}
         results = []
         for v in result:
             if isinstance(v, Exception):

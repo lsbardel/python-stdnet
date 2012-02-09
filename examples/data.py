@@ -35,7 +35,7 @@ class key_data(object):
             
 
 class tsdata(key_data):
-    
+    '''Data generator for ColumnTS'''
     def generate(self, fields = None, datatype = 'float', 
                  start = None, end = None, **kwargs):
         fields = fields or ('data',)
@@ -64,9 +64,28 @@ class tsdata(key_data):
                 self.sorted_fields[field].append(fields[field])
         self.sorted_values = (sdates,self.sorted_fields)
         self.length = len(sdates)
-            
-            
 
+
+class hash_data(key_data):
+    sizes = {'tiny': (20,20), # fields/average field size
+             'small': (100,50),
+             'normal': (500,200),
+             'big': (2000,1000),
+             'huge': (10000,5000)}
+    
+    def generate(self, fieldtype = 'string', **kwargs):
+        fsize,dsize = self.size
+        if fieldtype == 'date':
+            self.fields = populate('date', fsize,
+                              start = date(1971,12,30),
+                              end = date.today())
+        else:
+            self.fields = populate('string', fsize, min_len = 5, max_len = 30)
+        self.data = populate('string', fsize, min_len = dsize, max_len = dsize)
+    
+    def items(self):
+        return zip(self.fields,self.data)
+    
 
 class finance_data(object):
     sizes = {'tiny': (20,3,10,1), # positions = 20*100*3 = 30

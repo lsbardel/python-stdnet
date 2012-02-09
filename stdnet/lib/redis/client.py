@@ -25,7 +25,10 @@ from .scripts import script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
 
 
-__all__ = ['Redis','RedisProxy','Pipeline']
+__all__ = ['Redis',
+           'RedisProxy',
+           'Pipeline',
+           ]
 
 
 collection_list = (tuple, list, set, frozenset, dict)
@@ -268,8 +271,6 @@ class Redis(object):
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
-        self.signal_on_send = Signal()
-        self.signal_on_received = Signal()
         
     @property
     def client(self):
@@ -1080,14 +1081,6 @@ class RedisProxy(Redis):
     @property
     def response_callbacks(self):
         return self.client.response_callbacks
-    
-    @property
-    def signal_on_send(self):
-        return self.client.signal_on_send
-    
-    @property
-    def signal_on_received(self):
-        return self.client.signal_on_received
     
     @property
     def encoding(self):

@@ -22,11 +22,20 @@ from stdnet.conf import settings
 from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
                          to_string
 from stdnet.lib import RedisReader, fallback
+from stdnet.utils.dispatch import Signal
 
 from .exceptions import *
 
 
-__all__ = ['RedisRequest', 'ConnectionPool', 'Connection']
+__all__ = ['RedisRequest',
+           'ConnectionPool',
+           'Connection',
+           'redis_before_send',
+           'redis_after_receive']
+
+
+redis_before_send = Signal(providing_args=["request", "commands"])
+redis_after_receive = Signal(providing_args=["request"])
 
 
 class RedisRequest(BackendRequest):
@@ -49,9 +58,9 @@ handling of a single command from start to the response from the server.'''
             command = connection.pack_pipeline(args)
         else:
             command = connection.pack_command(command_name, *args)
-        self.client.signal_on_send.send(self.client.__class__,
-                                        command = command,
-                                        request = self)
+        redis_before_send.send(client.__class__,
+                               request = self,
+                               command = command)
         self.send(command)
 
     @property
@@ -106,8 +115,7 @@ handling of a single command from start to the response from the server.'''
             self._send(command)
         
     def close(self):
-        self.client.signal_on_received.send(self.client.__class__,
-                                            request = self)
+        redis_after_receive.send(self.client.__class__, request = self)
         c = self.connection
         try:
             if isinstance(self.response,ResponseError):

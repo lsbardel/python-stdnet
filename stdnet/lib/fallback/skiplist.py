@@ -33,7 +33,7 @@ class End(object):
 NIL = Node(End(), None, [], [])
 
 
-class skiplist:
+class skiplist(object):
     '''Sorted collection supporting O(log n) insertion, removal,
 and lookup by rank.'''
 

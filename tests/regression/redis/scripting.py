@@ -28,7 +28,7 @@ class Receiver(object):
     def __init__(self):
         self.requests = []
         
-    def __call__(self, sender, request = None, **kwargs):
+    def __call__(self, sender, request, **kwargs):
         self.requests.append(request)
         
     def get(self):
@@ -87,7 +87,7 @@ class ScriptingCommandsTestCase(TestCase):
     def testEvalSha(self):
         self.assertEqual(self.client.script_flush(),True)
         re = Receiver()
-        self.client.signal_on_received.connect(re)
+        redis.redis_after_receive.connect(re)
         r = self.client.script_call('test_script',None,
                                     json.dumps([1,2,3,4,5,6]))
         self.assertEqual(r,[1,2,3,4,5,6])
@@ -101,6 +101,7 @@ class ScriptingCommandsTestCase(TestCase):
                                     json.dumps([1,2,3,4,5,'bla']))
         self.assertEqual(r,[1,2,3,4,5,'bla'])
         self.assertEqual(len(re.get()),2)
+        redis.redis_after_receive.disconnect(re)
         
     def testEvalShaPipeline(self):
         self.assertEqual(self.client.script_flush(),True)

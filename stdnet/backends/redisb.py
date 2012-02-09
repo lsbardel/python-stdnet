@@ -31,6 +31,15 @@ IDX = 'idx'     # the set of indexes for a field value
 TMP = 'tmp'     # temorary key
 ################################################################################
 
+def redis_before_send(sender, request, command, **kwargs):
+    client  = request.client
+    if hasattr(client,'request_info'):
+        client.request_info.update({'request':request,
+                                    'raw_command':command,
+                                    'commands': copy(client.command_stack)})
+    
+redis.redis_before_send.connect(redis_before_send)
+
 
 class build_query(redis.RedisScript):
     script = (redis.read_lua_file('utils/redis.lua'),
@@ -149,19 +158,17 @@ class move2set(redis.RedisScript):
         
 
 def redis_execution(pipe, result_type):
-    command = copy(pipe.command_stack)
-    command.pop(0)
+    pipe.request_info = {}
+    result = pipe.execute(load_script = True)
     results = []
-    if command:
-        result = pipe.execute(load_script = True)
-        command = {'commands':command,'raw_result':result}
-        results = []
+    info = pipe.__dict__.pop('request_info',None)
+    if result:
         for v in result:
             if isinstance(v, Exception):
                 raise v
             elif isinstance(v, result_type):
                 results.append(v)
-    return command, results
+    return info, results
     
     
 ################################################################################

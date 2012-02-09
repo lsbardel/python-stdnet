@@ -230,8 +230,6 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return self.session.backend.structure(self,client)
 
 
-
-
 class Set(Structure):
     '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
     cache_class = setcache

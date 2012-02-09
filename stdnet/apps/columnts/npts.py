@@ -2,8 +2,9 @@
 This is an experimental module for converting ColumnTS into
 dynts.timeseries.
 '''
-from stdnet.apps.columnts import models as columnts
-from stdnet import orm 
+from stdnet import orm
+
+from . import models as columnts 
 
 import numpy as ny
 
@@ -56,6 +57,18 @@ class ColumnTS(columnts.ColumnTS):
     
 
 class TS(orm.TS):
+    
+    def front(self):
+        '''Return the front pair of the structure'''
+        ts = self.irange(0, 0)
+        if ts:
+            return ts.start(),ts[0]
+    
+    def back(self):
+        '''Return the back pair of the structure'''
+        ts = self.irange(-1, -1)
+        if ts:
+            return ts.end(),ts[0]
     
     def irange(self, start = 0, end = -1, **kwargs):
         kwargs['raw'] = True

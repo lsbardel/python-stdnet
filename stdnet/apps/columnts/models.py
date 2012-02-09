@@ -148,7 +148,7 @@ The result will be calculated using the formula::
     
 class ColumnTSField(orm.MultiField):
     '''An experimenta timeseries field.'''
-
+    
     def structure_class(self):
         return ColumnTS
     

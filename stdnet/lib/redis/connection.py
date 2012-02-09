@@ -49,6 +49,7 @@ handling of a single command from start to the response from the server.'''
         self.args = args
         self.release_connection = release_connection
         self.options = options
+        self._raw_response = []
         self._response = None
         self.response = connection.parser.gets()
         # if the command_name is missing, it means it is a pipeline of commands
@@ -80,6 +81,10 @@ handling of a single command from start to the response from the server.'''
             return self.response is not False
         else:
             return len(self.response) == self.num_responses
+        
+    @property
+    def raw_response(self):
+        return b''.join(self._raw_response)
                     
     def __str__(self):
         if self.command_name:
@@ -134,6 +139,7 @@ handling of a single command from start to the response from the server.'''
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
         parser = self.connection.parser
         parser.feed(data)
+        self._raw_response.append(data)
         if self.command_name:
             self.response = parser.gets()
             if self.response is not False:

@@ -22,7 +22,7 @@ class MultiFieldStructureProxy(object):
         self.pickler = pickler
         self.value_pickler = value_pickler
         
-    def __get__(self, instance, instance_type=None):
+    def __get__(self, instance, instance_type = None):
         if instance is None:
             return self
         if instance.id is None:
@@ -128,6 +128,7 @@ a stand alone structure in the back-end server with very little effort.
         self._register_with_model()
         
     def _register_with_model(self):
+        data_structure_class = self.structure_class()
         if not self.value_pickler:
             if self.relmodel:
                 self.value_pickler = related.ModelFieldPickler(self.relmodel)
@@ -137,7 +138,7 @@ a stand alone structure in the back-end server with very little effort.
         setattr(self.model,
                 self.name,
                 MultiFieldStructureProxy(self.name,
-                                         self.structure_class(),
+                                         data_structure_class,
                                          self.get_cache_name(),
                                          pickler = self.pickler,
                                          value_pickler = self.value_pickler))

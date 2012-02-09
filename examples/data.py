@@ -67,11 +67,11 @@ class tsdata(key_data):
 
 
 class hash_data(key_data):
-    sizes = {'tiny': (20,20), # fields/average field size
-             'small': (100,50),
-             'normal': (500,200),
-             'big': (2000,1000),
-             'huge': (10000,5000)}
+    sizes = {'tiny': (50,30), # fields/average field size
+             'small': (300,100),
+             'normal': (1000,300),
+             'big': (5000,1000),
+             'huge': (20000,5000)}
     
     def generate(self, fieldtype = 'string', **kwargs):
         fsize,dsize = self.size

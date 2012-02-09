@@ -1,5 +1,6 @@
 from stdnet import orm
 from stdnet.utils import encoders, todatetime, todate, missing_intervals
+from stdnet.apps.columnts import ColumnTSField 
 
         
 class TimeSeries(orm.StdModel):
@@ -55,3 +56,8 @@ class BigTimeSeries(DateTimeSeries):
     data  = orm.TimeSeriesField(
                     pickler = encoders.DateConverter(),
                     value_pickler = encoders.PythonPickle())
+
+
+class ColumnTimeSeries(orm.StdModel):
+    ticker = orm.SymbolField(unique = True)
+    data = ColumnTSField()

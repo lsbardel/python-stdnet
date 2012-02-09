@@ -129,12 +129,15 @@ a stand alone structure in the back-end server with very little effort.
         
     def _register_with_model(self):
         data_structure_class = self.structure_class()
+        self.value_pickler = self.value_pickler or\
+                                            data_structure_class.value_pickler
+        self.pickler = self.pickler or data_structure_class.pickler or\
+                            self.default_pickler
         if not self.value_pickler:
             if self.relmodel:
                 self.value_pickler = related.ModelFieldPickler(self.relmodel)
             else:
                 self.value_pickler = self.default_value_pickler
-        self.pickler = self.pickler or self.default_pickler
         setattr(self.model,
                 self.name,
                 MultiFieldStructureProxy(self.name,

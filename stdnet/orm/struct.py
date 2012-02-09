@@ -152,6 +152,7 @@ can also be used as stand alone objects. For example::
     Default ``None``.
     '''
     _model_type = 'structure'
+    pickler = None
     value_pickler = None
     def __init__(self, instance = None, timeout = 0, value_pickler = None,
                  **kwargs):

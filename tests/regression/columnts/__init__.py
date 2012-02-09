@@ -3,15 +3,19 @@ from datetime import date, datetime, timedelta
 
 from stdnet import test
 from stdnet.utils import encoders
-from stdnet.apps.columnts import ColumnTS
+from stdnet.apps.columnts import ColumnTS, ValueEncoder
 from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 
 from examples.data import tsdata
+from examples.tsmodels import ColumnTimeSeries
+
 from tests.regression import struct
+
 
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
+
 
 class timeseries_test1(redis.RedisScript):
     script = (redis.read_lua_file('utils/table.lua'),
@@ -234,3 +238,17 @@ class TestOperations(test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
+                    
+                    
+class TestColumnTSField(test.TestCase):
+    model = ColumnTimeSeries
+    
+    def setUp(self):
+        self.register()
+        
+    def testMeta(self):
+        meta = self.model._meta
+        self.assertTrue(len(meta.multifields),1)
+        m = meta.multifields[0]
+        self.assertEqual(m.name,'data')
+        self.assertTrue(isinstance(m.value_pickler,ValueEncoder))

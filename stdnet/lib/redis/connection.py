@@ -95,9 +95,9 @@ handling of a single command from start to the response from the server.'''
     def __repr__(self):
         return self.__str__()
         
-    def _send(self, command):
+    def _send(self, command, counter = 1):
         "Send the command to the socket"
-        c = self.connection.connect(self)
+        c = self.connection.connect(self, counter)
         try:
             c.sock.sendall(command)
         except socket.error as e:
@@ -117,7 +117,7 @@ handling of a single command from start to the response from the server.'''
             # timed out
             self.connection.disconnect(release_connection = False)
             # if this _send() call fails, then the error will be raised
-            self._send(command)
+            self._send(command, 2)
         
     def close(self):
         redis_after_receive.send(self.client.__class__, request = self)
@@ -153,7 +153,7 @@ handling of a single command from start to the response from the server.'''
             if len(self.response) == self.num_responses:
                 self.close()
             
-    def finish(self):
+    def execute_command(self):
         raise NotImplementedError
         
 
@@ -172,7 +172,7 @@ class SyncRedisRequest(RedisRequest):
             self.parse(stream)
         return self._response
     
-    def finish(self):
+    def execute_command(self):
         return self.read_response()
     
     
@@ -241,7 +241,7 @@ This class should not be directly initialized. Instead use the
         '''Connection socket'''
         return self.__sock
             
-    def connect(self, request):
+    def connect(self, request, counter = 1):
         "Connects to the Redis server if not already connected"
         if self.__sock:
             return self
@@ -254,14 +254,14 @@ This class should not be directly initialized. Instead use the
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__sock = sock
         try:
-            return self._connect(request)
+            return self._connect(request, counter)
         except socket.error as e:
             raise ConnectionError(self._error_message(e))
 
-    def _connect(self, request):
+    def _connect(self, request, counter):
         self.sock.settimeout(self.socket_timeout)
         self.sock.connect(self.address)
-        return self.on_connect(request)
+        return self.on_connect(request, counter)
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -273,7 +273,7 @@ This class should not be directly initialized. Instead use the
             return "Error %s connecting %s. %s." % \
                 (exception.args[0], self.address, exception.args[1])
 
-    def on_connect(self, request):
+    def on_connect(self, request, counter):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
         client = request.client.client
@@ -281,14 +281,15 @@ This class should not be directly initialized. Instead use the
             r = self.request(client, 'AUTH', self.password,
                              release_connection = False)
             if not r.read_response():
-                raise ConnectionError('Invalid Password')
+                raise ConnectionError('Invalid Password ({0})'.format(counter))
 
         # if a database is specified, switch to it
         if self.db:
             r = self.request(client, 'SELECT', self.db,
                              release_connection = False)
             if not r.read_response():
-                raise ConnectionError('Invalid Database')
+                raise ConnectionError('Invalid Database "{0}". ({1})'\
+                                      .format(self.db,counter))
             
         return self
 
@@ -345,7 +346,8 @@ command byte to be send to redis.'''
         return self.request_class(client, self, command_name, args, **options)
         
     def execute_command(self, client, command_name, *args, **options):
-        return self.request(client, command_name, *args, **options).finish()
+        return self.request(client, command_name, *args, **options)\
+                   .execute_command()
     
     def execute_pipeline(self, client, commands):
         '''Execute a :class:`Pipeline` in the server.
@@ -353,8 +355,8 @@ command byte to be send to redis.'''
 :parameter commands: the list of commands to execute in the server.
 :parameter parse_response: callback for parsing the response from server.
 :rtype: ?'''
-        r = self.request_class(client, self, None, commands)
-        return r.finish()
+        return self.request_class(client, self, None, commands)\
+                   .execute_command()
 
 
 ConnectionClass = None

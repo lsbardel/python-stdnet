@@ -40,8 +40,8 @@ class ColumnTS(columnts.ColumnTS):
             vals = []
             for f,data in va:
                 fields.append(f)
-                vals.append([vloads(d) for d in data])
-            values = ny.array(vals).transpose()
+                vals.append((vloads(v) for v in data))
+            values = ny.array(list(zip(*vals)))
             name = tsname(*fields)
         else:
             name = None

@@ -256,8 +256,10 @@ class Redis(object):
     SUBSCRIPTION_COMMANDS = set((b'SUBSCRIBE', b'UNSUBSCRIBE'))
 
     def __init__(self, address = None,
-                 db=0, password=None, socket_timeout=None,
-                 connection_pool=None, encoding = 'utf-8',
+                 db=0, password=None,
+                 socket_timeout=None,
+                 connection_pool=None,
+                 encoding = 'utf-8',
                  prefix = '', **kwargs):
         if not connection_pool:
             kwargs.update({

@@ -1013,14 +1013,14 @@ class ServerCommandsTestCase(TestCase):
             [b'1', b'2', b'3'])
 
     def test_sort_all_options(self):
-        self.client['user:1:username'] = 'zeus'
-        self.client['user:2:username'] = 'titan'
-        self.client['user:3:username'] = 'hermes'
-        self.client['user:4:username'] = 'hercules'
-        self.client['user:5:username'] = 'apollo'
-        self.client['user:6:username'] = 'athena'
-        self.client['user:7:username'] = 'hades'
-        self.client['user:8:username'] = 'dionysus'
+        self.client['user:1:username'] = 'zeus'         #7 
+        self.client['user:2:username'] = 'titan'        #6
+        self.client['user:3:username'] = 'hermes'       #5
+        self.client['user:4:username'] = 'hercules'     #4
+        self.client['user:5:username'] = 'apollo'       #0
+        self.client['user:6:username'] = 'athena'       #1
+        self.client['user:7:username'] = 'hades'        #3
+        self.client['user:8:username'] = 'dionysus'     #2
 
         self.client['user:1:favorite_drink'] = 'yuengling'
         self.client['user:2:favorite_drink'] = 'rum'
@@ -1035,8 +1035,8 @@ class ServerCommandsTestCase(TestCase):
         num = self.client.sort('gods', start=2, num=4, by='user:*:username',
             get='user:*:favorite_drink', desc=True, alpha=True, store='sorted')
         self.assertEquals(num, 4)
-        self.assertEquals(self.client.lrange('sorted', 0, 10),
-            [b'vodka', b'milk', b'gin', b'apple juice'])
+        res = self.client.lrange('sorted', 0, 10)
+        self.assertEquals(res, [b'vodka', b'milk', b'gin', b'apple juice'])
 
     # PUBSUB
     def _test_pubsub(self):

@@ -36,8 +36,9 @@ class TestCase(test.TestCase):
             self.client.hset(key, k, v)
 
     def make_list(self, name, l):
-        for i in l:
-            self.client.rpush(name, i)
+        l = tuple(l)
+        self.client.rpush(name, *l)
+        self.assertEqual(self.client.llen(name),len(l))
             
     def make_set(self, name, l):
         for i in l:

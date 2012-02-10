@@ -10,6 +10,40 @@ Since than it has moved on a different direction.
 Copyright (c) 2011 Luca Sbardella
     BSD License
 
+A note on TCP performance.
+
+TCP depends on several factors for performance. Two of the most important
+
+* the link bandwidth, or LB, the rate at which packets can be transmitted
+  on the network
+* the round-trip time, or RTT, the delay between a segment being sent and
+  its acknowledgment from the peer.
+  
+These two values determine what is called the Bandwidth Delay Product (BDP)::
+
+    BDP = LB * RTT
+    
+
+If your application communicates over a 100Mbps local area network with a
+50 ms RTT, the BDP is::
+
+    100MBps * 0.050 sec / 8 = 0.625MB = 625KB
+    
+I divide by 8 to convert from bits to bytes communicated.
+
+The BDP is the theoretical optimal TCP socket buffer size,  If the buffer is
+too small, the TCP window cannot fully open, and this limits performance.
+If it's too large, precious memory resources can be wasted.
+If you set the buffer just right, you can fully utilize the available
+bandwidth.
+
+In the example above the optimal buffer size is 625KB.
+To obtain the buffer sizes used by the socket you can use
+    
+    import socket
+    s = socket.socket()
+    s.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    s.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 '''
 import os
 import errno
@@ -34,6 +68,7 @@ __all__ = ['RedisRequest',
            'redis_after_receive']
 
 
+# SIGNALS
 redis_before_send = Signal(providing_args=["request", "commands"])
 redis_after_receive = Signal(providing_args=["request"])
 
@@ -41,6 +76,7 @@ redis_after_receive = Signal(providing_args=["request"])
 class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
+    retry = 1
     def __init__(self, client, connection, command_name, args,
                  release_connection = True, **options):
         self.client = client
@@ -59,6 +95,7 @@ handling of a single command from start to the response from the server.'''
             command = connection.pack_pipeline(args)
         else:
             command = connection.pack_command(command_name, *args)
+        # breadcast BEFORE SEND signal
         redis_before_send.send(client.__class__,
                                request = self,
                                command = command)
@@ -109,15 +146,16 @@ handling of a single command from start to the response from the server.'''
                 (_errno, errmsg))
 
     def send(self, command):
-        "Send an already packed command to the Redis server"
-        try:
-            self._send(command)
-        except ConnectionError:
-            # retry the command once in case the socket connection simply
-            # timed out
-            self.connection.disconnect(release_connection = False)
-            # if this _send() call fails, then the error will be raised
-            self._send(command, 2)
+        ''''Send an already packed command to the Redis server. Try :attr:`retry`
+times before raising an error. The socket may have timed-out.'''
+        r = 1
+        while r < self.retry:
+            try:
+                return self._send(command, r)
+            except ConnectionError:
+                self.connection.disconnect(release_connection = False)
+            r += 1
+        return self._send(command, r)
         
     def close(self):
         redis_after_receive.send(self.client.__class__, request = self)
@@ -193,6 +231,10 @@ This class should not be directly initialized. Instead use the
 .. attribute:: parser
 
     instance of a Redis parser.
+    
+.. attribute:: sock
+
+    Python socket which handle the sending and receiving of data.
 '''
     request_class = SyncRedisRequest
     
@@ -240,16 +282,31 @@ This class should not be directly initialized. Instead use the
     def sock(self):
         '''Connection socket'''
         return self.__sock
-            
+
+    @property
+    def WRITE_BUFFER_SIZE(self):
+        return self.pool.WRITE_BUFFER_SIZE
+    
+    @property
+    def READ_BUFFER_SIZE(self):
+        return self.pool.READ_BUFFER_SIZE
+    
     def connect(self, request, counter = 1):
-        "Connects to the Redis server if not already connected"
+        "Connects to the Redis server if not already connected."
         if self.__sock:
             return self
         if self.socket_type == 'TCP':
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # Disables Nagle's algorithm so that we send the data we mean and
+            # better speed.
+            # (check http://en.wikipedia.org/wiki/Nagle%27s_algorithm)
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            #sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+            # set the socket buffer size
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF,
+                            self.WRITE_BUFFER_SIZE)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,
+                            self.READ_BUFFER_SIZE)
         elif self.socket_type == 'UNIX':
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__sock = sock
@@ -382,6 +439,8 @@ class ConnectionPool(object):
         self._created_connections = 0
         self._available_connections = []
         self._in_use_connections = set()
+        self.WRITE_BUFFER_SIZE = 128 * 1024
+        self.READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
 
     def __hash__(self):
         return hash((self.address,self.db,self.connection_class))

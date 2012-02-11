@@ -134,9 +134,9 @@ handling of a single command from start to the response from the server.'''
         
     def _send(self, command, counter = 1):
         "Send the command to the socket"
-        c = self.connection.connect(self, counter)
+        self.connection.connect(self, counter)
         try:
-            c.sock.sendall(command)
+            self.connection.sock.sendall(command)
         except socket.error as e:
             if len(e.args) == 1:
                 _errno, errmsg = 'UNKNOWN', e.args[0]
@@ -190,14 +190,11 @@ times before raising an error. The socket may have timed-out.'''
                 self.response.append(response)
             if len(self.response) == self.num_responses:
                 self.close()
-            
-    def execute_command(self):
-        raise NotImplementedError
         
 
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
-    def read_response(self):
+    def recv(self):
         sock = self.connection.sock
         while not self.done:
             try:
@@ -209,9 +206,6 @@ class SyncRedisRequest(RedisRequest):
                 raise ConnectionError("Socket closed on remote end")
             self.parse(stream)
         return self._response
-    
-    def execute_command(self):
-        return self.read_response()
     
     
 class Connection(object):
@@ -294,7 +288,7 @@ This class should not be directly initialized. Instead use the
     def connect(self, request, counter = 1):
         "Connects to the Redis server if not already connected."
         if self.__sock:
-            return self
+            return
         if self.socket_type == 'TCP':
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -337,18 +331,18 @@ This class should not be directly initialized. Instead use the
         if self.password:
             r = self.request(client, 'AUTH', self.password,
                              release_connection = False)
-            if not r.read_response():
+            if not r.recv():
                 raise ConnectionError('Invalid Password ({0})'.format(counter))
 
         # if a database is specified, switch to it
         if self.db:
             r = self.request(client, 'SELECT', self.db,
                              release_connection = False)
-            if not r.read_response():
+            if not r.recv():
                 raise ConnectionError('Invalid Database "{0}". ({1})'\
                                       .format(self.db,counter))
             
-        return self
+        return request
 
     def disconnect(self, release_connection = True):
         "Disconnects from the Redis server"
@@ -404,7 +398,7 @@ command byte to be send to redis.'''
         
     def execute_command(self, client, command_name, *args, **options):
         return self.request(client, command_name, *args, **options)\
-                   .execute_command()
+                   .recv()
     
     def execute_pipeline(self, client, commands):
         '''Execute a :class:`Pipeline` in the server.
@@ -413,7 +407,7 @@ command byte to be send to redis.'''
 :parameter parse_response: callback for parsing the response from server.
 :rtype: ?'''
         return self.request_class(client, self, None, commands)\
-                   .execute_command()
+                   .recv()
 
 
 ConnectionClass = None

@@ -20,10 +20,10 @@ class TestCase(test.TestCase):
     
     def setUp(self):
         self.client = self.get_client()
-        self.client.flushdb()
+        return self.client.flushdb()
     
     def tearDown(self):
-        self.client.flushdb()
+        return self.client.flushdb()
         
     def get_client(self, pool = None, build = False):
         if pool or build:

@@ -21,18 +21,18 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
     def send(self, command):
         c = self.connection.connect(self)
         if c:
-            return c.add_callback(lambda r : self._send(command,r), True)
+            return c.add_callback(lambda result : self._send(command), True)
         else:
             return self._send(command)
         
-    def _send(self, command, conn_result = None):
+    def _send(self, command):
         stream = self.connection.stream
         return stream.write(command,
                     lambda num_bytes : stream.read(self.parse))
                    
     def close(self):
         super(AsyncRedisRequest,self).close()
-        self.callback(self.response)
+        self.callback(self._response)
     
     def add_errback(self, expected, error):
         return self.add_callback(partial(self.check_result,
@@ -42,6 +42,9 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
         if result != expected:
             raise error
         return result
+    
+    def recv(self):
+        return self
 
 
 class AsyncRedisConnection(connection.Connection):
@@ -50,24 +53,28 @@ class AsyncRedisConnection(connection.Connection):
     def _connect(self, request, counter):
         self.stream = AsyncIOStream(self.sock)
         return self.stream.connect(self.address,
-                                partial(self.on_connect,counter,request))
+                                partial(self.on_connect,request,counter))
         
     def on_connect(self, request, counter, result = None):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
-        OK = b'OK'
-        r = None
-        if self.password:
-            r = self.request('AUTH', self.password)\
-                        .add_errback(OK,ConnectionError('Invalid Password'))
-
+        r = self._auth(request) if self.password else None
         # if a database is specified, switch to it
         if self.db:
-            return r.add_callback(self.select) if r else self.select()
+            return r.add_callback(partial(self._select,request)) if r\
+                     else self._select(request)
         else:
             return r
         
-    def select(self, result = None):
-        return self.request('SELECT', self.db)\
-                .add_errback(OK, ConnectionError('Invalid Database'))
+    def _auth(self, request):
+        client = request.client.client
+        return self.request(client, 'AUTH', self.password,
+                            release_connection = False)\
+                .add_errback(True, ConnectionError('Invalid Password'))
+                
+    def _select(self, request, result = None):
+        client = request.client.client
+        return self.request(client, 'SELECT', self.db,
+                            release_connection = False)\
+                .add_errback(True, ConnectionError('Invalid Database'))
         

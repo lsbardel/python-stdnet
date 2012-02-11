@@ -2,6 +2,7 @@
 '''Stdnet asynchronous test suite. Requires pulsar or nose
 '''
 import sys
+import os
 
 from stdnet.conf import settings
 from stdnet.utils import PPath
@@ -38,8 +39,9 @@ if __name__ == '__main__':
     if len(argv) > 1 and argv[1] == 'nose':
         pulsar = None
         sys.argv.pop(1)
-        
+    
     if pulsar:
+        os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',
                     modules = ('tests',),
@@ -48,5 +50,6 @@ if __name__ == '__main__':
                   )
         suite.start()
     else:
+        os.environ['stdnet_test_suite'] = 'nose'
         import nose
         nose.main()

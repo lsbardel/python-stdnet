@@ -397,7 +397,7 @@ command byte to be send to redis.'''
         return self.request_class(client, self, command_name, args, **options)
         
     def execute_command(self, client, command_name, *args, **options):
-        return self.request(client, command_name, *args, **options)\
+        return self.request_class(client, self, command_name, args, **options)\
                    .recv()
     
     def execute_pipeline(self, client, commands):

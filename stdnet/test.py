@@ -18,7 +18,7 @@ else:
  the unitest2 package')
         exit(0)
 
-from stdnet import orm, getdb
+from stdnet import orm, getdb, BackendRequest
 from stdnet.utils import to_string, gen_unique_id
 
 
@@ -34,6 +34,10 @@ some utility functions for tesing in a parallel test suite.
 '''    
     models = ()
     model = None
+    
+    def backend_params(self):
+        '''Optional backend parameters'''
+        return {}
     
     def session(self, **kwargs):
         '''Create a new :class:`stdnet.orm.Session` bind to the
@@ -56,10 +60,14 @@ will be unregistered after the :meth:`tearDown` method.'''
         if not self.models and self.model:
             self.models = (self.model,)
         self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
-        self.backend = getdb(prefix = self.prefix)
+        self.backend = getdb(prefix = self.prefix, **self.backend_params())
+        r = None
         if self.backend.name == 'redis':
-            self.backend.client.script_flush()
-        return self.clear_all()
+            r = self.backend.client.script_flush()
+        if isinstance(r,BackendRequest):
+            return r.add_callback(lambda r : self.clear_all())
+        else:
+            return self.clear_all()
         
     def _post_teardown(self):
         session = orm.Session(self.backend)

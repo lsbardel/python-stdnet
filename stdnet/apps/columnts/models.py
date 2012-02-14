@@ -1,11 +1,14 @@
 '''A Redis timeseries module base on redis time-series and
 redis strings.
 '''
-from stdnet import orm
+from stdnet import orm, SessionNotAvailable
 from stdnet.lib import skiplist
 from stdnet.utils import encoders, iteritems, zip
 
 from .encoders import ValueEncoder
+
+class nostore:
+    pass
 
 
 class TimeseriesCache(object):
@@ -79,6 +82,10 @@ class ColumnTS(orm.TS):
         res = self.backend_structure().irange(start, end, fields)
         return self.async_handle(res, callback or self.load_data)
     
+    def irange_and_delete(self):
+        res = self.backend_structure().irange(0, -1, delete = True)
+        return self.async_handle(res, self.load_data)
+    
     def range(self, start, end, fields = None, callback = None):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
@@ -91,31 +98,42 @@ class ColumnTS(orm.TS):
     def stats(self, start, end, fields = None):
         res = self.backend_structure().stats(start,end,fields)
         return self.async_handle(res, self._stats)
-        
+    
     def merge(self, *series, **kwargs):
+        session = self.session
+        for serie in series:
+            if len(series) < 2:
+                raise ValueError('merge requires tuples of length 2 or more')
+            for s in serie[1:]:
+                if not session:
+                    session = s.session
+                elif session != s.session:
+                    raise ValueError('Session of timeseries are different')
+        if not session:
+            raise SessionNotAvailable('No session available')
+        self.session = session
+        fields = kwargs.get('fields') or ()
+        self.backend_structure().merge(series, fields)
+        session.add(self)
+        
+    @classmethod 
+    def merged_series(cls, *series, **kwargs):
         '''Merge series into one timeseries.
         
 :parameters series: a list of tuples where the nth element is a tuple
     of the form::
 
-    (ts_n1,ts_n2,..,ts_nMn,wight_n)
+    (wight_n,ts_n1,ts_n2,..,ts_nMn)
 
 The result will be calculated using the formula::
 
     ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
          ...
 '''
-        if not self.session:
-            session = None
-            for serie in series:
-                for s in serie[:-1]:
-                    if not session:
-                        session = s.session
-                    elif session != s.session:
-                        raise ValueError('Session of timeseries are different')
-            session.add(self)
-        fields = kwargs.get('fields',None) or ()
-        return self.backend_structure().merge(series, fields)
+        kwargs['store'] = False
+        target = cls()
+        target.merge(*series, **kwargs)
+        return target.irange_and_delete()
         
     # INTERNALS
     

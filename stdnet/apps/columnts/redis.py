@@ -43,17 +43,18 @@ class RedisColumnTS(redisb.TS):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
     
-    def irange(self, start = 0, end = -1, fields = None):
+    def irange(self, start = 0, end = -1, fields = None, delete = False):
         fields = fields or ()
+        delete = 1 if delete else 0
         return self.client.script_call('timeseries_query', self.id,
                                        'tsrange',
-                                       start, end, len(fields), *fields)
+                                       start, end, delete, len(fields), *fields)
         
     def range(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_query', self.id,
                                       'tsrangebytime',
-                                       start, end, len(fields), *fields)
+                                       start, end, 0, len(fields), *fields)
     
     def add(self, dt, field, value):
         timestamp = self.pickler.dumps(dt)
@@ -78,12 +79,11 @@ class RedisColumnTS(redisb.TS):
             return keys, args
     
     def merge(self, series, fields):
-        keys = [self.id]
         argv = [len(series)]
+        keys = [self.id]
         for elems in series:
-            weight = elems[-1]
-            argv.append(weight)
-            tss = elems[:-1]
+            argv.append(elems[0])   # add weight
+            tss = elems[1:]
             argv.append(len(tss))
             for ts in tss:
                 k = ts.backend_structure().id

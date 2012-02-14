@@ -193,7 +193,7 @@ class TestOperations(test.TestCase):
         self.assertEqual(ts2.numfields(),6)
         ts3 = ColumnTS(id = 'merged')
         # merge ts1 with weight -1  and ts2 with weight 2
-        ts3.merge((ts1,-1),(ts2,2))
+        ts3.merge((-1,ts1),(2,ts2))
         session.commit()
         self.assertTrue(ts3.size())
         self.assertEqual(ts3.numfields(),6)
@@ -226,7 +226,7 @@ class TestOperations(test.TestCase):
         self.assertEqual(ts3.size(),self.data3.length)
         with session.begin():
             ts = ColumnTS(id = 'merged')
-            ts.merge((ts1,0.5),(ts2,1.3),(ts3,-2.65))
+            ts.merge((0.5,ts1),(1.3,ts2),(-2.65,ts3))
             self.assertEqual(ts.session,session)
         length = ts.size()
         self.assertTrue(length >= max(self.data1.length,self.data2.length,
@@ -246,39 +246,73 @@ class TestOperations(test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-    
-    def testAddMultiply(self):
+
+    def testAddMultiply1(self):
         session = self.session()
         with session.begin():
             ts1 = session.add(ColumnTS())
             ts2 = session.add(ColumnTS())
-            ts3 = session.add(ColumnTS())
-            ts4 = session.add(ColumnTS())
+            mul1 = session.add(ColumnTS())
             ts1.update(self.data1.values)
             ts2.update(self.data2.values)
-            ts3.update(self.data_mul1.values)
-            ts4.update(self.data_mul2.values)
+            mul1.update(self.data_mul1.values)
         self.assertEqual(ts1.size(),self.data1.length)
         self.assertEqual(ts2.size(),self.data2.length)
-        self.assertEqual(ts3.size(),self.data_mul1.length)
-        self.assertEqual(ts4.size(),self.data_mul2.length)
+        self.assertEqual(mul1.size(),self.data_mul1.length)
         with session.begin():
             ts = ColumnTS(id = 'merged')
-            ts.merge((ts3,ts1,1.5),(ts4,ts2,-1.2))
+            ts.merge((1.5,mul1,ts1),(-1.2,ts2))
             self.assertEqual(ts.session,session)
         length = ts.size()
         self.assertTrue(length >= max(self.data1.length,
-                                      self.data2.length,
-                                      self.data_mul1.length,
-                                      self.data_mul2.length))
+                                      self.data2.length))
         self.assertEqual(ts.numfields(),6)
         times, fields = ts.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)
             v2 = ts2.get(dt)
-            m1 = ts3.get(dt)
-            m2 = ts4.get(dt)
+            m1 = mul1.get(dt)
+            if v1 is not None and v2 is not None and m1 is not None:
+                m1 = m1[0]
+                for field,values in fields.items():
+                    res = 1.5*m1*v1[field] - 1.2*v2[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)
+                        
+    def testAddMultiply(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts2 = session.add(ColumnTS())
+            mul1 = session.add(ColumnTS())
+            mul2 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+            ts2.update(self.data2.values)
+            mul1.update(self.data_mul1.values)
+            mul2.update(self.data_mul2.values)
+        self.assertEqual(ts1.size(),self.data1.length)
+        self.assertEqual(ts2.size(),self.data2.length)
+        self.assertEqual(mul1.size(),self.data_mul1.length)
+        self.assertEqual(mul2.size(),self.data_mul2.length)
+        with session.begin():
+            ts = ColumnTS(id = 'merged')
+            ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2))
+            self.assertEqual(ts.session,session)
+        length = ts.size()
+        self.assertTrue(length >= max(self.data1.length,
+                                      self.data2.length))
+        self.assertEqual(ts.numfields(),6)
+        times, fields = ts.irange()
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            m1 = mul1.get(dt)
+            m2 = mul2.get(dt)
             if v1 is not None and v2 is not None and m1 is not None\
                      and m2 is not None:
                 m1 = m1[0]
@@ -290,6 +324,30 @@ class TestOperations(test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
+                    
+    def testMultiplyNoStore(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts2 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+            ts2.update(self.data2.values)
+        self.assertEqual(ts1.size(),self.data1.length)
+        self.assertEqual(ts2.size(),self.data2.length)
+        times, fields = ColumnTS.merged_series((1.5,ts1),(-1.2,ts2))
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            if v1 is not None and v2 is not None:
+                for field,values in fields.items():
+                    res = 1.5*v1[field] - 1.2*v2[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)
+
 
 class TestColumnTSField(test.TestCase):
     model = ColumnTimeSeries

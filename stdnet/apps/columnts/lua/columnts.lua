@@ -72,30 +72,31 @@ columnts = {
     end,
     --
     -- A representation of the timeseries as a dictionary.
-    -- If only one field is available, the values wiil be the field values
-    -- otherwise it will be a dictionary of fields
+    -- If only one field is available, values will be the field values
+    -- otherwise it will be a dictionary of fields.
+    -- *Values are unpacked*
     asdict = function(self, fields)
         if self:length() == 0 then
             return nil
         end
-        local times, field_values = unpack(self:range('tsrange', 0, -1, fields))
+        local times, field_values = unpack(self:all(fields))
         local result = {}
         local field_name
         local count = 0
-        for fname,field in pairs(field_names) do
+        for fname,field in pairs(field_values) do
             count = count + 1
             field_name = fname
         end
         if count == 1 then
             field_values = field_values[field_name]
             for i,time in ipairs(times) do
-                result[time] = field_values[i]
+                result[time] = self:unpack_value(field_values[i])
             end
         else
             for i,time in ipairs(times) do
                 fvalues = {}
                 for fname,field in pairs(field_names) do
-                    fvalues[fname] = field_values[fname][i]
+                    fvalues[fname] = self:unpack_value(field_values[fname][i])
                 end
                 result[time] = fvalues
             end
@@ -218,8 +219,9 @@ columnts = {
     --
     -- Add/replace field values. If weights are provided, the values in
     -- field_values are already unpacked and they are added to existing
-    -- values, otherwise the values are to be replaced
-    add = function (self, times, field_values, weights, tsmult)
+    -- values, otherwise the values are to be replaced. tsmul is an optional
+    -- single field timeseries which multiply each field in self.
+    add = function (self, times, field_values, weights, tsmul)
         local fields = self:fields_set()
         local tslen = self:length() + 0
         local ws = {}
@@ -227,8 +229,8 @@ columnts = {
         local new_serie = tslen == 0
         local time_set = {}
         if tsmul then
-            assert(tsmul:length() > 0, 'Timeseries ' .. ts.key .. ' not available')
-            assert(tsmul:num_fields() == 1, 'Timeseries ' .. ts.key .. ' has more than one field')
+            assert(tsmul:length() > 0, 'Timeseries ' .. tsmul.key .. ' not available')
+            assert(tsmul:num_fields() == 1, 'Timeseries ' .. tsmul.key .. ' has more than one field. Cannot be used tu multiply timeseries.')
             tsmul = tsmul:asdict()
         end
         
@@ -245,8 +247,8 @@ columnts = {
             end
         end
         
-        -- we are adding to an existing timeseries. We need to insert
-        -- missing fields
+        -- we are adding to an existing timeseries.
+        -- Get the self times and filla dictionary of boolean set to false
         if weights and not new_serie then
             local times = self:times()
             for index, timestamp in ipairs(times) do
@@ -309,6 +311,8 @@ columnts = {
     	                        v1 = redis.call('getrange', fkey, rank9, rank9+9)
     	                        dvalue = dvalue + self:unpack_value(v1)
     	                    end
+    	                    value = self:pack_value(dvalue)
+    	                else
     	                    value = self:pack_value(dvalue)
     	                end
     	            elseif string.len(value) > 9 then

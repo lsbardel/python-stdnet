@@ -15,7 +15,6 @@ while j < num_series do
     local nseries = ARGV[idx+2] + 0
     idx = idx + 2
     local stop = idx + nseries
-    
     while idx < stop do
         table.insert(tss, columnts:new(ARGV[idx+1]))
         idx = idx + 1
@@ -28,4 +27,3 @@ local fields = table_slice(ARGV, idx+1, -1)
 
 local ts = columnts:merge(tsdest, elements, fields)
 return ts:length()
-

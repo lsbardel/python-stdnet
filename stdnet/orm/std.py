@@ -34,8 +34,9 @@ class MultiFieldStructureProxy(object):
             cache_val = getattr(instance, cache_name)
             if not isinstance(cache_val,Structure):
                 raise AttributeError()
-            else:
-                return cache_val
+            elif cache_val.session != instance.session and instance.session:
+                instance.session.add(cache_val)
+            return cache_val
         except AttributeError:
             structure = self.get_structure(instance)
             setattr(instance, cache_name, structure)

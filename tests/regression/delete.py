@@ -56,8 +56,7 @@ class TestDeleteSimpleModel(test.TestCase):
         self.assertEqual(qs.count(),0)
         qs = query.filter(group = 'planet')
         self.assertEqual(qs.count(),1)
-     
-        
+    
 class update_model(object):
     
     def __init__(self, test):
@@ -93,6 +92,21 @@ class TestPostDeleteSignal(test.TestCase):
         self.assertEqual(u.session, session)
         self.assertEqual(sorted(u.instances),[1,2])
         
+
+class TestDeleteMethod(FinanceTest):
+    '''Test the delete method in models and in queries.'''
+    def setUp(self):
+        self.register()
+        
+    def testDeleteAll(self):
+        session = self.data.create(self)
+        instruments = Instrument.objects.query()
+        count = instruments.count()
+        self.assertTrue(count)
+        ids = instruments.delete()
+        self.assertTrue(ids)
+        self.assertEqual(len(ids),count)
+    
 
 class TestDeleteScalarFields(FinanceTest):
         

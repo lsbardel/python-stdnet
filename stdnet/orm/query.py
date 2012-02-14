@@ -543,10 +543,12 @@ objects on the server side.'''
         return self.backend_query().count()
     
     def delete(self):
-        '''Delete all matched elements of the :class:`Query`.'''
+        '''Delete all matched elements of the :class:`Query`. It returns the
+list of ids deleted.'''
         session = self.session
-        with session.begin():
+        with session.begin() as t:
             session.delete(self)
+        return t.deleted.get(self._meta)
     
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''

@@ -302,6 +302,8 @@ An instance of this class is usually obtained by using the high level
     def __init__(self, session, name = None):
         self.name = name or self.default_name
         self.session = session
+        self.deleted = {}
+        self.saved = {}
         
     @property
     def backend(self):
@@ -359,7 +361,7 @@ An instance of this class is usually obtained by using the high level
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
         self.commands = commands
-        self.result = response
+        self.result = response        
         session = self.session
         self.close()
         if not response:
@@ -372,8 +374,10 @@ An instance of this class is usually obtained by using the high level
             sm = session.model(meta, True)
             saved, deleted = sm.post_commit(response)
             if deleted:
+                self.deleted[meta] = deleted
                 signals.append((post_delete.send, sm, deleted))
             if saved:
+                self.saved[meta] = saved
                 signals.append((post_commit.send, sm, saved))
                 
         # Once finished we send signals

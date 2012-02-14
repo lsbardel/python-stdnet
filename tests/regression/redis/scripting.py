@@ -165,7 +165,6 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(r[1],2)
         
 
-#@unittest.skipUnless(settings.redis_status() == 2, "Requires redis stdnet.")
 class TestStruct(TestCase):
     
     def testDouble(self):
@@ -192,6 +191,28 @@ class TestStruct(TestCase):
             # unpack python python
             pprn = struct.unpack('>d',pr)[0]
             self.assertAlmostEqual(prn,pprn,4)
+            
+    def testInt(self):
+        c = self.client
+        numbers = [3,4,5,6,7,-10,-23456]
+        for n in numbers:
+            # pack in lua
+            r = c.eval("return struct.pack('>i',ARGV[1])", None, n)
+            self.assertEqual(len(r),4)
+            # pack in python
+            pr = struct.pack('>i',n)
+            self.assertEqual(r,pr)
+            # unpack lua-lua
+            rn = int(c.eval("return '' .. struct.unpack('>i',ARGV[1])",
+                              None, r))
+            # unpack python-lua
+            prn = int(c.eval("return '' .. struct.unpack('>i',ARGV[1])",
+                              None, pr))
+            self.assertEqual(n,rn,4)
+            self.assertEqual(prn,rn,4)
+            # unpack python python
+            pprn = struct.unpack('>i',pr)[0]
+            self.assertEqual(prn,pprn,4)
     
     def __testNaN(self):
         c = self.client

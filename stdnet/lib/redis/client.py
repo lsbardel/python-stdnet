@@ -897,13 +897,16 @@ The first element is the score and the second is the value.'''
     ##    TIMESERIES COMMANDS
     ############################################################################
     def redis_status(self):
+        '''Check if redis has timeseries commands. Return one of "vanilla" for
+standard redis, "stdnet" for redis stdnet branch or "" if there
+is no connection.'''
         try:
             self.execute_command('TSLEN', str(uuid4()))
-            return 2
+            return 'stdnet'
         except ConnectionError:
-            return 0
+            return ''
         except ResponseError:
-            return 1
+            return 'vanilla'
         
     def tslen(self, name, **options):
         '''timeseries length'''

@@ -52,7 +52,8 @@ To change settings::
     
     settings.DEFAULT_BACKEND = 'redis://127.0.0.1:6379/?db=5'
 '''
-    
+import os
+
 class Settings(object):
 
     def __init__(self):
@@ -67,12 +68,13 @@ class Settings(object):
         from stdnet import getdb
         from stdnet.lib.redis import ConnectionError
         db = getdb(self.DEFAULT_BACKEND)
-        status = 1
+        status = "ok"
         if db.name == 'redis':
             status = db.client.redis_status()
         if not status:
             raise ConnectionError('No connection available for server\
  at "{0}"'.format(self.DEFAULT_BACKEND))
+        os.environ['stdnet_backend_status'] = status
         return status
         
         

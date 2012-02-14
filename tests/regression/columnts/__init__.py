@@ -12,7 +12,7 @@ from examples.tsmodels import ColumnTimeSeries
 
 from tests.regression import struct
 
-
+skipUnless = test.unittest.skipUnless
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
@@ -23,6 +23,8 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1.lua',this_path))
     
 
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
 class TestLuaClass(test.TestCase):
     
     def test1(self):
@@ -32,7 +34,9 @@ class TestLuaClass(test.TestCase):
         r = c.script_call('timeseries_test1',ts.dbid())
         self.assertEqual(r,b'OK')
 
-    
+
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')    
 class TestTimeSeries(struct.StructMixin, test.TestCase):
     structure = ColumnTS
     name = 'columnts'
@@ -143,6 +147,8 @@ class TestTimeSeries(struct.StructMixin, test.TestCase):
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
         
 
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
 class TestOperations(test.TestCase):
     
     @classmethod
@@ -151,6 +157,8 @@ class TestOperations(test.TestCase):
         cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        cls.data_mul1 = tsdata(size = size, fields = ('eurusd',))
+        cls.data_mul2 = tsdata(size = size, fields = ('gbpusd',))
         
     def testSimpleStats(self):
         session = self.session()
@@ -238,8 +246,51 @@ class TestOperations(test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-                    
-                    
+    
+    def testAddMultiply(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts2 = session.add(ColumnTS())
+            ts3 = session.add(ColumnTS())
+            ts4 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+            ts2.update(self.data2.values)
+            ts3.update(self.data_mul1.values)
+            ts4.update(self.data_mul2.values)
+        self.assertEqual(ts1.size(),self.data1.length)
+        self.assertEqual(ts2.size(),self.data2.length)
+        self.assertEqual(ts3.size(),self.data_mul1.length)
+        self.assertEqual(ts4.size(),self.data_mul2.length)
+        with session.begin():
+            ts = ColumnTS(id = 'merged')
+            ts.merge((ts3,ts1,1.5),(ts4,ts2,-1.2))
+            self.assertEqual(ts.session,session)
+        length = ts.size()
+        self.assertTrue(length >= max(self.data1.length,
+                                      self.data2.length,
+                                      self.data_mul1.length,
+                                      self.data_mul2.length))
+        self.assertEqual(ts.numfields(),6)
+        times, fields = ts.irange()
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            m1 = ts3.get(dt)
+            m2 = ts4.get(dt)
+            if v1 is not None and v2 is not None and m1 is not None\
+                     and m2 is not None:
+                m1 = m1[0]
+                m2 = m2[0]
+                for field,values in fields.items():
+                    res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)
+
 class TestColumnTSField(test.TestCase):
     model = ColumnTimeSeries
     

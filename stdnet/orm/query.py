@@ -121,6 +121,8 @@ fields.
         q = cls.__new__(cls)
         d = self.__dict__.copy()
         d['data'] = d['data'].copy()
+        if self.unions:
+            d['unions'] = copy(self.unions)
         q.__dict__ = d
         q.clear()
         return q
@@ -325,6 +327,7 @@ criteria and options associated with it.
         '''A :class:`Query` is not initialized directly.'''
         self.fargs  = kwargs.pop('fargs',None)
         self.eargs  = kwargs.pop('eargs',None)
+        self.unions = kwargs.pop('unions',())
         self.text  = kwargs.pop('text',None)
         super(Query,self).__init__(*args,**kwargs)
         self.clear()
@@ -405,6 +408,18 @@ to ``EXCEPT`` in a ``SQL SELECT`` statement.
         else:
             return self
     
+    def union(self, *queries):
+        '''Return a new :class:`Query` obtained form the union of this
+:class:`Query` and *queries*. For example, lets say we want to have the union
+of two queries obtained from the :meth:`filter` method::
+
+    query = session.query(MyModel)
+    qs = query.filter(field1 = 'bla').union(query.filter(field2 = 'foo')) 
+'''
+        q = self._clone()
+        q.unions += queries
+        return q
+        
     def sort_by(self, ordering):
         '''Sort the query by the given field
         
@@ -614,6 +629,7 @@ an exception is raised.
         else:
             fargs = None
         
+        # no filters, get the whole set
         if not fargs:
             q = queryset(self)
         elif len(fargs) > 1:
@@ -634,6 +650,9 @@ an exception is raised.
         if eargs:
             q = difference([q]+eargs)
         
+        if self.unions:
+            q = union((q,)+self.unions)
+            
         q = self.search_queries(q)
         q.data = self.data.copy()
         return q

@@ -23,6 +23,11 @@ def gen_unique_id(short = True):
         id = id[:8]
     return id
 
+    
+def grouper(n, iterable, padvalue=None):
+    "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
+    return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
+
 
 def flat_mapping(mapping):
     if isinstance(mapping,dict):

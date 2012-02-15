@@ -184,7 +184,8 @@ engine index models.'''
             
     def index(self, instances, session, sender):
         add = self.se.index_item
-        with session.begin():
+        with session.begin(name = 'Update search indexes',
+                           signal_commit = False):
             for instance in instances:
                 # Index only if the last_index field was loaded
                 # or it is available
@@ -197,7 +198,8 @@ engine index models.'''
                     
     def remove(self, instances, session, sender):
         if sender:
-            with session.begin():
+            with session.begin(name = 'Remove search indexes',
+                               signal_commit = False):
                 self.se.remove_item(sender, instances, session)
                 
         

@@ -143,17 +143,7 @@ DateTimeField
 .. _objectfields:
    
 Object Type Fields
-==========================
-
-.. _foreignkey:
-   
-ForeignKey
-~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.orm.ForeignKey
-   :members:
-   :member-order: bysource
-   
+==========================   
 
 JSONField
 ~~~~~~~~~~~~~~~~~~~~
@@ -178,6 +168,31 @@ ModelField
    :members:
    :member-order: bysource
    
+
+.. _relatedfields:
+   
+Related Fields
+==========================
+
+.. _foreignkey:
+   
+ForeignKey
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.orm.ForeignKey
+   :members:
+   :member-order: bysource
+   
+   
+.. _manytomany:
+   
+ManyToManyField
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.orm.ManyToManyField
+   :members:
+   :member-order: bysource
+
    
 .. _model-field-structure:
 
@@ -210,14 +225,6 @@ HashField
 ~~~~~~~~~~
 
 .. autoclass:: stdnet.orm.HashField
-   :members:
-   :member-order: bysource
-
-
-ManyToManyField
-~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.orm.ManyToManyField
    :members:
    :member-order: bysource
 

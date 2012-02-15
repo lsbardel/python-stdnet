@@ -157,18 +157,18 @@ class move2set(redis.RedisScript):
 
         
 
+def results_and_erros(results, result_type):
+    if results:
+        for v in results:
+            if isinstance(v, Exception) or isinstance(v, result_type):
+                yield v
+                
+                
 def redis_execution(pipe, result_type):
     pipe.request_info = {}
-    result = pipe.execute(load_script = True)
-    results = []
+    results = pipe.execute(load_script = True)
     info = pipe.__dict__.pop('request_info',None)
-    if result:
-        for v in result:
-            if isinstance(v, Exception):
-                raise v
-            elif isinstance(v, result_type):
-                results.append(v)
-    return info, results
+    return info, results_and_erros(results, result_type)
     
     
 ################################################################################
@@ -271,7 +271,8 @@ elements in the query.'''
         self.card(self.query_key, script_dependency = 'build_query')
         pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
-        self.commands, self.query_results = redis_execution(pipe, query_result)
+        self.commands, res = redis_execution(pipe, query_result)
+        self.query_results = list(res)
         return self.query_results[-1].count
     
     def order(self):

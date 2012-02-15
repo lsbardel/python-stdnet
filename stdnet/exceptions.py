@@ -19,7 +19,9 @@ with models registered with different backends.'''
 class CommitException(StdNetException):
     '''A :class:`StdNetException` raised when trying to create a transaction
 with models registered with different backends.'''
-    pass
+    def __init__(self, msg, failures = 1):
+        self.failures = failures
+        super(CommitException,self).__init__(msg)
 
 class AlreadyRegistered(StdNetException):
     pass

@@ -102,7 +102,7 @@ class ColumnTS(orm.TS):
     def merge(self, *series, **kwargs):
         session = self.session
         for serie in series:
-            if len(series) < 2:
+            if len(serie) < 2:
                 raise ValueError('merge requires tuples of length 2 or more')
             for s in serie[1:]:
                 if not session:

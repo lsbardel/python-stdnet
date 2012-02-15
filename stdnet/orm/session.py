@@ -6,7 +6,8 @@ from stdnet import getdb, ServerOperation
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
-                                InvalidTransaction, SessionNotAvailable
+                                InvalidTransaction, SessionNotAvailable,\
+                                CommitException
 
 from .query import Q, Query, EmptyQuery, SessionModelBase
 from .signals import *
@@ -242,10 +243,11 @@ within this :class:`Session`.'''
                 self._delete_query.append(q.construct())
             else:
                 self._delete_query.extend(d)
-            pre_delete.send(self.model, instances = self._delete_query,
-                            transaction = transaction)
+            if transaction.signal_delete:
+                pre_delete.send(self.model, instances = self._delete_query,
+                                transaction = transaction)
         dirty = tuple(self.iterdirty())
-        if dirty:
+        if dirty and transaction.signal_commit:
             pre_commit.send(self.model, instances = dirty,
                             transaction = transaction)
         return len(self._delete_query) + len(dirty)
@@ -281,28 +283,63 @@ within this :class:`Session`.'''
 
 
 class Transaction(ServerOperation):
-    '''Transaction class for pipelining commands to the back-end.
-An instance of this class is usually obtained by using the high level
-:func:`stdnet.transaction` function.
+    '''Transaction class for pipelining commands to the backend server.
+An instance of this class is usually obtained via the :meth:`Session.begin`
+or the :meth:`Manager.transaction` methods::
 
-.. attribute:: name
-
-    Transaction name
+    t = session.begin()
     
+or using the ``with`` context manager::
+
+    with session.begin() as t:
+        ...
+
 .. attribute:: session
 
-    the :class:`Session` for this :class:`Transaction`.
+    :class:`Session` which is being transacted.
+    
+.. attribute:: name
+
+    Optional :class:`Transaction` name
     
 .. attribute:: backend
 
     the :class:`stdnet.BackendDataServer` to which the transaction
     is being performed.
-    '''
+
+.. attribute:: signal_commit
+    
+    If ``True``, a signal for each model in the transaction is triggered
+    just after changes are committed.
+    The signal carries a list of updated ``instances`` of the model,
+    the :class:`Session` and the :class:`Transaction` itself.
+    
+    default ``True``.
+        
+.. attribute:: signal_delete
+    
+    If ``True`` a signal for each model in the transaction is triggered
+    just after deletion of instances.
+    The signal carries the list ``ids`` of deleted instances of the mdoel,
+    the :class:`Session` and the :class:`Transaction` itself.
+    
+    default ``True``.
+    
+.. attribute:: logger
+
+    Optional python logging object
+'''
     default_name = 'transaction'
     
-    def __init__(self, session, name = None):
+    def __init__(self, session, name = None,
+                 signal_commit = True, signal_delete = True,
+                 signal_session = True, logger = None):
         self.name = name or self.default_name
         self.session = session
+        self.signal_commit = signal_commit
+        self.signal_delete = signal_delete
+        self.signal_session = signal_session
+        self.logger = logger
         self.deleted = {}
         self.saved = {}
         
@@ -316,9 +353,11 @@ An instance of this class is usually obtained by using the high level
         return not hasattr(self,'_result')
     
     def add(self, instance):
+        '''A convenience proxy for :meth:`Session.add` method.'''
         return self.session.add(instance)
         
     def delete(self, instance):
+        '''A convenience proxy for :meth:`Session.delete` method.'''
         return self.session.delete(instance)
                         
     def __enter__(self):
@@ -353,6 +392,7 @@ An instance of this class is usually obtained by using the high level
     def post_commit(self, response = None, commands = None):
         '''Callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` commit has finished and results are available.
+Results can contain errors.
 
 :parameter response: list of results for each :class:`SessionModel`
     in :attr:`session`. Each element in the list is a three-element tuple
@@ -369,27 +409,43 @@ An instance of this class is usually obtained by using the high level
             return self
         
         signals = []
-        for meta,response in self.result:
+        exceptions = []
+        for result in self.result:
+            if isinstance(result,Exception):
+                exceptions.append(result)
+                continue
+            meta, response = result
             if not response:
                 continue
             sm = session.model(meta, True)
             saved, deleted = sm.post_commit(response)
             if deleted:
                 self.deleted[meta] = deleted
-                signals.append((post_delete.send, sm, deleted))
+                if self.signal_delete:
+                    signals.append((post_delete.send, sm, deleted))
             if saved:
                 self.saved[meta] = saved
-                signals.append((post_commit.send, sm, saved))
+                if self.signal_commit:
+                    signals.append((post_commit.send, sm, saved))
                 
         # Once finished we send signals
         for send,sm,instances in signals:
             send(sm.model, instances = instances, session = session,
                  transaction = self)
-            
+        
+        if exceptions:
+            failures = len(exceptions) 
+            if failures > 1:
+                error = 'There were {0} exceptions during commit.\n\n'\
+                            .format(failures)
+                error += '\n\n'.join((str(e) for e in e))
+            else:
+                error = str(exceptions)
+            raise CommitException(error, failures = failures)
         return self
     
     def close(self):
-        if self.result:
+        if self.result and self.signal_session:
             post_commit.send(Session, transaction = self)
         for sm in self.session:
             if sm._delete_query:
@@ -466,13 +522,13 @@ class Session(object):
         else:
             self._models.clear()
             
-    def begin(self, name = None):
+    def begin(self, **options):
         '''Begin a new class:`Transaction`.
 If this :class:`Session` is already within a transaction, an error is raised.'''
         if self.transaction is not None:
             raise InvalidTransaction("A transaction is already begun.")
         else:
-            self.transaction = Transaction(self, name = name)
+            self.transaction = Transaction(self, **options)
         return self.transaction
     
     def query(self, model, query_class = None, **kwargs):
@@ -579,7 +635,7 @@ If no transaction is in progress, this method open one a."""
         
 class Manager(object):
     '''A manager class for models. Each :class:`StdModel`
-class contains at least one manager which can be accessed by the ``objects``
+contains at least one manager which can be accessed via the ``objects``
 class attribute::
 
     class MyModel(orm.StdModel):
@@ -587,21 +643,22 @@ class attribute::
         flag = orm.BooleanField()
         
     MyModel.objects
-
-Managers are shortcut of :class:`Session` instances for a model class.
-Managers are used to construct queries for object retrieval.
-Queries can be constructed by selecting instances with specific fields
-using a where or limit clause, or a combination of them::
-
-    MyModel.objects.filter(group = 'bla')
     
-    MyModel.objects.filter(group__in = ['bla','foo'])
+Managers are used as :class:`Session` and :class:`Query` factories
+for a given :class:`StdModel`::
 
-    MyModel.objects.filter(group__in = ['bla','foo'], flag = True)
+    session = MyModel.objects.session()
+    query = MyModel.objects.query()
+
+.. attribute:: model
+
+    The :class:`StdModel` for this :class:`Manager`. This attribute is
+    assigned by the Object relational mapper at runtime.
     
-They can also exclude instances from the query::
+.. attribute:: backend
 
-    MyModel.objects.exclude(group = 'bla')
+    The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
+    
 '''
     def __init__(self, model = None, backend = None):
         self.register(model, backend)
@@ -624,6 +681,7 @@ They can also exclude instances from the query::
     __repr__ = __str__
 
     def session(self, transaction = None):
+        '''Returns a new :class:`Session`.'''
         if transaction:
             return transaction.session
         elif not self.backend:
@@ -631,8 +689,8 @@ They can also exclude instances from the query::
  backend database. Cannot use manager.".format(self.model))
         return Session(self.backend)
     
-    def transaction(self, *models):
-        '''Return a transaction instance. If models are specified, it check
+    def transaction(self, *models, **kwargs):
+        '''Return a :class:`Transaction`. If models are specified, it check
 if their managers have the same backend database.'''
         backend = self.backend
         for model in models:
@@ -644,10 +702,11 @@ if their managers have the same backend database.'''
                 raise InvalidTransaction("Models {0} are registered\
      with a different databases. Cannot create transaction"\
                 .format(', '.join(('{0}'.format(m) for m in models))))
-        return self.session().begin()
+        return self.session().begin(**kwargs)
     
     # SESSION Proxy methods
     def query(self, transaction = None):
+        '''Returns a new :class:`Query` for the :attr:`Manager.model`.'''
         return self.session(transaction=transaction).query(self.model)
     
     def filter(self, **kwargs):

@@ -33,6 +33,7 @@ if ispy3k: # Python 3
     
     from urllib import parse as urlparse
     from io import StringIO, BytesIO
+    from itertools import zip_longest
     
     urlencode = urlparse.urlencode
     
@@ -57,7 +58,7 @@ else: # Python 2
     itervalues = lambda d : d.itervalues()
     iteritems = lambda d : d.iteritems()
     int_type = (types.IntType, types.LongType)
-    from itertools import izip as zip, imap as map
+    from itertools import izip as zip, imap as map, izip_longest as zip_longest
     range = xrange
     
     import urlparse

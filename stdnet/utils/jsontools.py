@@ -176,3 +176,30 @@ def dict_flat_generator(value, attname = None, splitter = JSPLITTER,
             for k,v2 in dict_flat_generator(val,attname,splitter,dumps,
                                             key,error, field):
                 yield k,v2
+
+
+def addmul_number_dicts(*series):
+    '''Utility function for multiplying dictionary by a numeric value and
+add the results.
+
+:parameter series: a tuple of two elements tuples.
+    Each serie is of the form::
+    
+        (weight,dictionary)
+        
+    where ``weight`` is a number and ``dictionary`` is a dictionary with
+    numeric values.
+    
+Only common fields are aggregated.
+'''
+    if not series:
+        return
+    keys = set(series[0][1])
+    for serie in series[1:]:
+        keys.intersection_update(serie[1])
+    
+    result = {}
+    for key in keys:
+        result[key] = sum((weight*d[key] for weight,d in series))
+    return result
+    

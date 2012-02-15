@@ -10,15 +10,16 @@ array = {
     -- Initialize with key and optional initial size and value
     init = function (self, key, size, value)
         self.key = key
-        self:allocate(size, value)
+        self:resize(size, value)
     end,
     -- length of array
     length = function (self)
         return (redis.call('strlen', self.key) + 0)/8
     end,
     -- Allocate extra size for the array
-    allocate = function (self, size, value)
+    resize = function (self, size, value)
         if size then
+            size = size + 0
             local length = self:length()
             if size > length then
                 if value then
@@ -30,26 +31,54 @@ array = {
                 redis.call('setrange', self.key, 8*length, value)
             end
         end
+        return self:length()
     end,
     --
-    get = function(self, index)
+    get = function (self, index, packed)
         index = index + 0
         assert(index > 0 and index <= self:length(),"Out of bound.")
         local start = 8*(index - 1)
-        return self:unpack(redis.call('getrange', self.key, start, start+8))
+        local val = redis.call('getrange', self.key, start, start+7)
+        if packed then
+            return val
+        else
+            return self:unpack(val)
+        end
     end,
-    set = function(self, index, value)
+    set = function(self, index, value, packed)
         index = index + 0
         assert(index > 0 and index <= self:length(),"Out of bound.")
         local start = 8*(index - 1)
-        value = self:pack(value)
-        return self:unpack(redis.call('setrange', self.key, start, value))
+        if packed then
+            value = self:pack(value)
+        end
+        return redis.call('setrange', self.key, start, value)
+    end,
+    --
+    -- push_back
+    push_back = function(self, value, packed)
+        local start = 8*self:length()
+        if not packed then
+            value = self:pack(value)
+        end
+        redis.call('setrange', self.key, start, value)
+    end,
+    --
+    all_raw = function(self)
+        data = {}
+        local i=0,start
+        while i < self:length() do
+            start = 8*i
+            i = i + 1
+            data[i] = redis.call('getrange', self.key, start, start+7)
+        end
+        return data
     end,
     --
     -- Internal functions
     pack = function(self, value)
         return pack('>d',value)
-    end
+    end,
     unpack = function(self, value)
         return unpack('>d',value)
     end
@@ -59,7 +88,7 @@ array = {
 columnts_meta = {
     __index = function(self,index)
         return self:get(index)
-    end
+    end,
     __newindex = function(self,index)
         return self:set(index,value)
     end
@@ -67,7 +96,7 @@ columnts_meta = {
 -- Constructor
 function array:new(key)
     local result = {}
-    for k,v in pairs(columnts) do
+    for k,v in pairs(array) do
         result[k] = v
     end
     result:init(key)

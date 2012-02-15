@@ -146,6 +146,18 @@ class TestTimeSeries(struct.StructMixin, test.TestCase):
         self.assertEqual(high[1],(datetime(2012,1,20),591))
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
         
+    def testRangeField(self):
+        ts = self.makeGoogle()
+        data = ts.irange(fields = ('low','high','badone'))
+        self.assertEqual(len(data),2)
+        dt,fields = data
+        self.assertEqual(len(fields),2)
+        low = list(zip(dt,fields['low']))
+        high = list(zip(dt,fields['high']))
+        self.assertEqual(high[0],(datetime(2012,1,19),640.99))
+        self.assertEqual(high[1],(datetime(2012,1,20),591))
+        self.assertEqual(high[2],(datetime(2012,1,23),588.66))
+        
 
 skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
            'Requires stdnet-redis')
@@ -348,6 +360,49 @@ class TestOperations(test.TestCase):
                     v = values[i]
                     self.assertNotEqual(v,v)
 
+    def testFields(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts2 = session.add(ColumnTS())
+            mul1 = session.add(ColumnTS())
+            mul2 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+            ts2.update(self.data2.values)
+            mul1.update(self.data_mul1.values)
+            mul2.update(self.data_mul2.values)
+        self.assertEqual(ts1.size(),self.data1.length)
+        self.assertEqual(ts2.size(),self.data2.length)
+        self.assertEqual(mul1.size(),self.data_mul1.length)
+        self.assertEqual(mul2.size(),self.data_mul2.length)
+        with session.begin():
+            ts = ColumnTS(id = 'merged')
+            ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2),
+                     fields = ('a','b','c','badone'))
+            self.assertEqual(ts.session,session)
+        length = ts.size()
+        self.assertTrue(length >= max(self.data1.length,
+                                      self.data2.length))
+        self.assertEqual(ts.numfields(),3)
+        self.assertEqual(ts.fields(),('a','b','c'))
+        times, fields = ts.irange()
+        for i,dt in enumerate(times):
+            dt = dt.date()
+            v1 = ts1.get(dt)
+            v2 = ts2.get(dt)
+            m1 = mul1.get(dt)
+            m2 = mul2.get(dt)
+            if v1 is not None and v2 is not None and m1 is not None\
+                     and m2 is not None:
+                m1 = m1[0]
+                m2 = m2[0]
+                for field,values in fields.items():
+                    res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
+                    self.assertAlmostEqual(values[i],res)
+            else:
+                for values in fields.values():
+                    v = values[i]
+                    self.assertNotEqual(v,v)
 
 class TestColumnTSField(test.TestCase):
     model = ColumnTimeSeries

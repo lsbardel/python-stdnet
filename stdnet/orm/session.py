@@ -175,7 +175,8 @@ within this :class:`Session`.'''
     
     def delete(self, instance):
         '''delete an *instance*'''
-        instance = self.pop(instance) or instance
+        inst = self.pop(instance)
+        instance = inst if inst is not None else instance
         if instance is not None:
             state = instance.state()
             if state.persistent:

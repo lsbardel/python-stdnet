@@ -15,7 +15,8 @@ __all__ = ['Structure',
            'Zset',
            'HashTable',
            'TS',
-           'OrderedMixin']
+           'OrderedMixin',
+           'NumberArray']
 
 
 ################################################################################
@@ -231,34 +232,10 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return self.session.backend.structure(self,client)
 
 
-class Set(Structure):
-    '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
-    cache_class = setcache
-    
-    @commit_when_no_transaction
-    def add(self, value):
-        '''Add *value* to the set'''
-        return self.cache.update((self.value_pickler.dumps(value),))
-    
-    @commit_when_no_transaction
-    def update(self, values):
-        '''Add iterable *values* to the set'''
-        d = self.value_pickler.dumps
-        return self.cache.update(tuple((d(v) for v in values)))
-        
-    @commit_when_no_transaction
-    def discard(self, value):
-        '''Remove an element *value* from a set if it is a member.'''
-        return self.cache.remove((self.value_pickler.dumps(value),))
-    remove = discard
-    
-    @commit_when_no_transaction
-    def difference_update(self, values):
-        '''Remove an iterable of *values* from the set.'''
-        d = self.value_pickler.dumps
-        return self.cache.remove(tuple((d(v) for v in values)))
-    
-    
+################################################################################
+##    Mixins Structures
+################################################################################
+
 class PairMixin(object):
     '''A mixin for handling structures with which holds pairs.'''
     pickler = encoders.NoEncoder()
@@ -426,13 +403,64 @@ a float value.'''
         return self.async_handle(res, callback or self.load_data)
 
 
-class List(Structure):
-    '''A linked-list :class:`stdnet.Structure`.'''
+class Sequence(object):
     cache_class = listcache
+    
+    @commit_when_no_transaction
+    def push_back(self, value):
+        '''Appends a copy of *value* to the end of the list.'''
+        self.cache.push_back(self.value_pickler.dumps(value))
+        return self
         
+    @commit_when_no_transaction
     def pop_back(self):
         value = self.session.structure(self).pop_back()
         return self.value_pickler.loads(value)
+    
+    @commit_when_no_transaction
+    def __getitem__(self, index):
+        value = self.session.structure(self).get(index)
+        return self.value_pickler.loads(value)
+    
+    def __setitem__(self, index, value):
+        value = self.value_pickler.dumps(value)
+        self.session.structure(self).set(index,value)
+    
+    
+################################################################################
+##    STRUCTURES
+################################################################################
+
+class Set(Structure):
+    '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
+    cache_class = setcache
+    
+    @commit_when_no_transaction
+    def add(self, value):
+        '''Add *value* to the set'''
+        return self.cache.update((self.value_pickler.dumps(value),))
+    
+    @commit_when_no_transaction
+    def update(self, values):
+        '''Add iterable *values* to the set'''
+        d = self.value_pickler.dumps
+        return self.cache.update(tuple((d(v) for v in values)))
+        
+    @commit_when_no_transaction
+    def discard(self, value):
+        '''Remove an element *value* from a set if it is a member.'''
+        return self.cache.remove((self.value_pickler.dumps(value),))
+    remove = discard
+    
+    @commit_when_no_transaction
+    def difference_update(self, values):
+        '''Remove an iterable of *values* from the set.'''
+        d = self.value_pickler.dumps
+        return self.cache.remove(tuple((d(v) for v in values)))
+    
+    
+class List(Sequence, Structure):
+    '''A linked-list :class:`stdnet.Structure`.'''
     
     def pop_front(self):
         value = self.session.structure(self).pop_front()
@@ -445,11 +473,6 @@ class List(Structure):
     def block_pop_front(self, timeout = None, transaction = None):
         value = self.session.structure(self).block_pop_front(timeout)
         return self.value_pickler.loads(value)
-    
-    @commit_when_no_transaction
-    def push_back(self, value):
-        '''Appends a copy of *value* to the end of the list.'''
-        self.cache.push_back(self.value_pickler.dumps(value))
     
     @commit_when_no_transaction
     def push_front(self, value):
@@ -509,4 +532,18 @@ not available with vanilla redis. Check the
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
     cache_class = tscache 
+    
+    
+class Array(Sequence, Structure):
+    
+    def resize(self, size):
+        return self.backend_structure().resize(size)
+    
+    def capacity(self):
+        return self.backend_structure().capacity()
+    
+    
+class NumberArray(Array):
+    '''A compact :class:`Array` containing numbers.'''
+    value_pickler = encoders.CompactDouble()
     

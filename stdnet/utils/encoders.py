@@ -1,6 +1,7 @@
 '''Classes used for encoding and decoding :class:`stdnet.orm.Field` values.'''
 import json
 from datetime import datetime, date
+from struct import pack, unpack
 
 from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\
@@ -182,4 +183,25 @@ class DateConverter(DateTimeConverter):
     
     def loads(self, value, logger = None):
         return timestamp2date(value).date()
+    
+    
+class CompactDouble(Encoder):
+    type = float
+    nil = b'\x00'*8
+    nan = float('nan')
+            
+    def dumps(self, value):
+        if value is None:
+            return self.nil
+        value = float(value)
+        if value != value:
+            return self.nil
+        else:
+            return pack('>d', value)
+    
+    def loads(self, value):
+        if value == self.nil:
+            return self.nan
+        else:
+            return unpack('>d', value)[0]
     

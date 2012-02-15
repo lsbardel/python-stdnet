@@ -597,12 +597,70 @@ class TS(Zset):
     def items(self, **options):
         return self.irange(**options)
 
+
+class NumberArray(RedisStructure):
+    
+    def flush(self):
+        cache = self.instance.cache
+        result = None
+        if cache.back:
+            self.client.script_call('numberarray_pushback', self.id,
+                                    *cache.back)
+            result = True
+        return result
+    
+    def get(self, index):
+        return self.client.script_call('numberarray_getset', self.id,
+                                       'get', index+1)
+    
+    def set(self, value):
+        return self.client.script_call('numberarray_getset', self.id,
+                                       'set', index+1, value)
+    
+    def _iter(self):
+        return iter(self.client.script_call('numberarray_all_raw', self.id))
+    
+    def resize(self, size, value = None):
+        if value is not None:
+            argv = (size,value)
+        else:
+            argv = (size,)
+        return self.client.script_call('numberarray_resize', self.id, *argv)
+    
+    def size(self):
+        return self.client.strlen(self.id)//8
+    
+
+class numberarray_resize(redis.RedisScript):
+    script = (redis.read_lua_file('numberarray.lua'),
+              '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
+    
+class numberarray_all_raw(redis.RedisScript):
+    script = (redis.read_lua_file('numberarray.lua'),
+              '''return array:new(KEYS[1]):all_raw()''')
+    
+class numberarray_getset(redis.RedisScript):
+    script = (redis.read_lua_file('numberarray.lua'),
+              '''local a = array:new(KEYS[1])
+if ARGV[1] == 'get' then
+    return a:get(ARGV[2],true)
+else
+    a:set(ARGV[2],ARGV[3],true)
+end''')
+    
+class numberarray_pushback(redis.RedisScript):
+    script = (redis.read_lua_file('numberarray.lua'),
+              '''local a = array:new(KEYS[1])
+for _,v in ipairs(ARGV) do
+    a:push_back(v,true)
+end''')
         
 struct_map = {'set':Set,
               'list':List,
               'zset':Zset,
               'hashtable':Hash,
-              'ts':TS}
+              'ts':TS,
+              'numberarray':NumberArray}
 
 
 ################################################################################

@@ -156,7 +156,7 @@ columnts = {
         -- loop over fields
         for i,field in ipairs(fields) do
             local fkey = self:fieldkey(field)
-            if redis.call('exists', fkey) then
+            if redis.call('exists', fkey) + 0 == 1 then
                 -- Get the string between start and stop from redis
                 local sdata = redis.call('getrange', fkey, 9*start, 9*stop)
                 local fdata = {}

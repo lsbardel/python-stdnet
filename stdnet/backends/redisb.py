@@ -655,13 +655,6 @@ class numberarray_pushback(redis.RedisScript):
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)
 end''')
-        
-struct_map = {'set':Set,
-              'list':List,
-              'zset':Zset,
-              'hashtable':Hash,
-              'ts':TS,
-              'numberarray':NumberArray}
 
 
 ################################################################################
@@ -671,6 +664,12 @@ class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     connection_pools = {}
     _redis_clients = {}
+    struct_map = {'set':Set,
+                  'list':List,
+                  'zset':Zset,
+                  'hashtable':Hash,
+                  'ts':TS,
+                  'numberarray':NumberArray}
         
     def setup_connection(self, address, **params):
         self.namespace = params.get('prefix',settings.DEFAULT_KEYPREFIX)
@@ -688,7 +687,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         rpy = redis.Redis(connection_pool = cp)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
-        self.delete = rpy.delete
+        #self.delete = rpy.delete
         self.keys = rpy.keys
         return rpy
     
@@ -861,11 +860,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             f = getattr(obj,field.attname)
             keys.append(f.id)
         return keys
-
-    def structure(self, instance, client = None):
-        struct = struct_map.get(instance._meta.name)
-        client = client if client is not None else self.client
-        return struct(instance, self, client)
     
     def flush_structure(self, sm, pipe):
         processed = False

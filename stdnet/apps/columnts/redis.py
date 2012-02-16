@@ -97,8 +97,9 @@ class RedisColumnTS(redisb.TS):
         return self.client.script_call('timeseries_stats', self.id, start, end,
                                        len(fields), *fields)
         
-            
-redisb.struct_map['columnts'] = RedisColumnTS
+
+# Add the redis structure to the struct map in the backend class
+redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS
 
 script_path = os.path.join(os.path.split(os.path.abspath(__file__))[0],'lua')
 

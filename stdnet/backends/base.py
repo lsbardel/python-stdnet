@@ -185,6 +185,7 @@ It must implement the *loads* and *dumps* methods.'''
     Transaction = None
     Query = None
     structure_module = None
+    struct_map = {}
     
     def __init__(self, name, address, pickler = None,
                  charset = 'utf-8', connection_string = '',
@@ -197,15 +198,6 @@ It must implement the *loads* and *dumps* methods.'''
         self.connection_string = connection_string
         self.params = params
         self.client = self.setup_connection(address, **params)
-        
-    def setup_connection(self, address, **params):
-        '''Callback during initialization. Implementation should override
-this function for customizing their handling of connection parameters.'''
-        raise NotImplementedError()
-    
-    def execute_session(self, session, callback):
-        '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
-        raise NotImplementedError()
 
     @property
     def name(self):
@@ -234,29 +226,12 @@ this function for customizing their handling of connection parameters.'''
         return self.connection_string
     __str__ = __repr__
     
-    def createdb(self, name):
-        pass
-    
     def isempty(self):
         '''Returns ``True`` if the database has no keys.'''
         keys = self.keys()
         if not hasattr(keys,'__len__'):
             keys = list(keys)
         return len(keys)
-    
-    def model_keys(self, meta):
-        '''Return a list of database keys used by model *model*'''
-        raise NotImplementedError()
-        
-    def instance_keys(self, obj):
-        '''Return a list of database keys used by instance *obj*'''
-        raise NotImplementedError()
-    
-    def execute_session(self, session):
-        raise NotImplementedError()
-    
-    def structure(self, struct, clinet = None):
-        raise NotImplementedError()
     
     def make_objects(self, meta, data, related_fields = None):
         '''Generator of :class:`stdnet.orm.StdModel` instances with data
@@ -293,93 +268,43 @@ from database.
                         value = rdata.get(rid)
                         setattr(obj,field.name,value)
             yield obj
+            
+    def structure(self, instance, client = None):
+        '''Create a backend :class:`stdnet.orm.Structure` handler.'''
+        struct = self.struct_map.get(instance._meta.name)
+        if struct is None:
+            raise ModelNotAvailable('structure "{0}" is not available for\
+ backend "{1}"'.format(instance._meta.name,self))
+        client = client if client is not None else self.client
+        return struct(instance, self, client)
         
-    def set(self, id, value, timeout = None):
-        timeout = timeout or 0
-        value = self.pickler.dumps(value)
-        return self._set(id,value,timeout)
-    
-    def get(self, id, default = None):
-        v = self._get(id)
-        if v:
-            return self.pickler.loads(v)
-        else:
-            return default
-
-    def get_many(self, keys):
-        """
-        Fetch a bunch of keys from the cache. For certain backends (memcached,
-        pgsql) this can be *much* faster when fetching multiple values.
-
-        Returns a dict mapping each key in keys to its value. If the given
-        key is missing, it will be missing from the response dict.
-        """
-        d = {}
-        for k in keys:
-            val = self.get(k)
-            if val is not None:
-                d[k] = val
-        return d
-
-    def has_key(self, key):
-        """
-        Returns True if the key is in the cache and has not expired.
-        """
-        return self.get(key) is not None
-
-    def incr(self, key, delta=1):
-        """
-        Add delta to value in the cache. If the key does not exist, raise a
-        ValueError exception.
-        """
-        if key not in self:
-            raise ValueError("Key '%s' not found" % key)
-        new_value = self.get(key) + delta
-        self.set(key, new_value)
-        return new_value
-
-    def decr(self, key, delta=1):
-        """Subtract delta from value in the cache.
-If the key does not exist, raise a ValueError exception."""
-        return self.incr(key, -delta)
-
-    def __contains__(self, key):
-        """
-        Returns True if the key is in the cache and has not expired.
-        """
-        # This is a separate method, rather than just a copy of has_key(),
-        # so that it always has the same functionality as has_key(), even
-        # if a subclass overrides it.
-        return self.has_key(key)
-
-    def delete_many(self, keys):
-        """
-        Set a bunch of values in the cache at once.  For certain backends
-        (memcached), this is much more efficient than calling delete() multiple
-        times.
-        """
-        for key in keys:
-            self.delete(key)
-
     # PURE VIRTUAL METHODS
+    
+    def setup_connection(self, address, **params):
+        '''Callback during initialization. Implementation should override
+this function for customizing their handling of connection parameters.'''
+        raise NotImplementedError()
+    
+    def execute_session(self, session, callback):
+        '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
+        raise NotImplementedError()
     
     def basekey(self, meta, *args):
         raise NotImplementedError()
     
+    def model_keys(self, meta):
+        '''Return a list of database keys used by model *model*'''
+        raise NotImplementedError()
+        
+    def instance_keys(self, obj):
+        '''Return a list of database keys used by instance *obj*'''
+        raise NotImplementedError()
+    
+    def keys(self):
+        raise NotImplementedError
+    
     def clear(self):
         """Remove *all* values from the database at once."""
-        raise NotImplementedError
-    
-    def keys(self, pattern = '*'):
-        raise NotImplementedError
-        
-    def _set(self, id, value, timeout):
-        raise NotImplementedError
-    
-    def _get(self, id):
-        raise NotImplementedError
-    
-    def _set_keys(self):
         raise NotImplementedError
     
     def flush(self, meta):

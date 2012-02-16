@@ -278,6 +278,10 @@ from database.
         client = client if client is not None else self.client
         return struct(instance, self, client)
         
+    def clean(self, meta):
+        '''Remove temporary keys for a model'''
+        pass
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address, **params):
@@ -300,17 +304,14 @@ this function for customizing their handling of connection parameters.'''
         '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError()
     
-    def keys(self):
-        raise NotImplementedError
+    def as_cache(self):
+        raise NotImplementedError('This backend cannot be used as cache')
     
     def clear(self):
         """Remove *all* values from the database at once."""
-        raise NotImplementedError
+        raise NotImplementedError()
     
-    def flush(self, meta):
-        raise NotImplementedError
-    
-    def clean(self, meta):
-        raise NotImplementedError
+    def flush(self, meta = None, pattern = None):
+        raise NotImplementedError()
     
 

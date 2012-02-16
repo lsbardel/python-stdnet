@@ -3,60 +3,7 @@ from stdnet.utils import populate, zip, iteritems, to_string
 
 from examples.models import Dictionary
 
-keys = populate('string', 200)
-values = populate('string', 200, min_len = 20, max_len = 300)
-
-
-class TestHashField(test.TestCase,test.TestMultiFieldMixin):
-    model = Dictionary
-    
-    def setUp(self):
-        self.register()
-        d = Dictionary(name = 'test').save()
-        self.data = dict(zip(keys,values))
-        
-    def get_object_and_field(self):
-        d = Dictionary.objects.get(name = 'test')
-        return d,d.data
-    
-    def adddata(self,d):
-        d.data.update(self.data)
-        self.assertEqual(d.data.size(),len(self.data))
-    
-    def fill(self):
-        d = Dictionary.objects.get(name = 'test')
-        self.adddata(d)
-        return Dictionary.objects.get(name = 'test')
-    
-    def testUpdate(self):
-        self.fill()
-    
-    def testAdd(self):
-        d = Dictionary.objects.get(name = 'test')
-        self.assertTrue(d.session)
-        self.assertTrue(d in d.session)
-        with d.session.begin():
-            for k,v in iteritems(self.data):
-                d.data.add(k,v)
-            self.assertEqual(d.data.size(),0)
-        self.assertTrue(d.data.size(),0)
-        
-    def testKeys(self):
-        d = self.fill()
-        for k in d.data:
-            self.data.pop(k)
-        self.assertEqual(len(self.data),0)
-    
-    def testItems(self):
-        d = self.fill()
-        for k,v in d.data.items():
-            self.assertEqual(v,self.data.pop(k))
-        self.assertEqual(len(self.data),0)
-        
-    def testValues(self):
-        d = self.fill()
-        values = list(d.data.values())
-        self.assertEqual(len(self.data),len(values))
+from .struct import TestMultiFieldMixin
         
 
 class TestMultiField(test.TestCase):

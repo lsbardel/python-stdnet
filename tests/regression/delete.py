@@ -194,7 +194,7 @@ class TestDeleteStructuredFields(test.TestCase):
         d = session.query(Dictionary).get(name = name)
         self.assertEqual(len(session._models),1)
         data = d.data
-        self.assertEqual(len(session._models),2)
+        self.assertEqual(len(session._models),1)
         self.assertEqual(data.instance,d)
         self.assertTrue(data.id)
         d.data.update(self.data)

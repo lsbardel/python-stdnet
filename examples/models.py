@@ -112,6 +112,10 @@ class SimpleList(orm.StdModel):
     names = orm.ListField()
     
     
+class SimpleString(orm.StdModel):
+    data = orm.StringField() 
+    
+    
 class TestDateModel(orm.StdModel):
     person = orm.SymbolField()
     name = orm.SymbolField()

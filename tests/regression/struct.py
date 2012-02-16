@@ -349,6 +349,25 @@ class TestTS(StructMixin, test.TestCase):
         self.assertEqual(ts.get(date(1990,1,1),1),1)
         self.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
     
+
+class TestString(StructMixin, test.TestCase):
+    structure = orm.String
+    name = 'string'
+    
+    def createOne(self, session):
+        a = session.add(self.structure())
+        a.push_back('this is a test')
+        return a
+    
+    def testIncr(self):
+        session = self.session()
+        a = session.add(self.structure())
+        self.assertEqual(a.incr(),1)
+        self.assertEqual(a.incr(),2)
+        self.assertEqual(a.incr(3),5)
+        self.assertEqual(a.incr(-7),-2)
+        
+    
     
 class TestNumberArray(StructMixin, test.TestCase):
     structure = orm.NumberArray

@@ -130,11 +130,11 @@ for example ``group__name``.'''
     def toload(self):
         return self._valattr('toload')
     
-    def get_session(self):
-        session = self.session
-        if session is None:
-            session = self.__class__.objects.session()
-        return session
+    def obtain_session(self):
+        if self.session is not None:
+            return self.session.session()
+        else:
+            return self.__class__.objects.session()
     
     def todict(self):
         '''Return a dictionary of serialised scalar field for pickling'''

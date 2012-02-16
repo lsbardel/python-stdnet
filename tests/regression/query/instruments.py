@@ -1,5 +1,4 @@
 from stdnet import test
-from stdnet.utils import populate, zip
 
 from examples.models import Instrument
 from examples.data import FinanceTest

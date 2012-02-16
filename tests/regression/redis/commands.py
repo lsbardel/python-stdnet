@@ -181,9 +181,9 @@ class ServerCommandsTestCase(TestCase):
         self.assertEquals(self.client['b'], b'2')
 
     def test_setex(self):
-        self.assertEquals(self.client.setex('a', '1', 60), True)
-        self.assertEquals(self.client['a'], b'1')
+        self.assertEquals(self.client.set('a', '1', 60), True)
         self.assertEquals(self.client.ttl('a'), 60  )
+        self.assertEquals(self.client['a'], b'1')
 
     def test_setnx(self):
         self.assert_(self.client.setnx('a', '1'))

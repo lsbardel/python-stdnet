@@ -41,7 +41,7 @@ if ordering == 'explicit' then
 	local nested = ARGV[io+4] + 0
 	local tkeys = {}
 	io = io + 4
-	-- nested sorting for foreign key fields
+    -- nested sorting for foreign key fields
 	if nested > 0 then
 		-- generate a temporary key where to store the hash table holding
 		-- the values to sort with
@@ -65,10 +65,15 @@ if ordering == 'explicit' then
 		--bykey = skey .. '->*'
 		bykey = skey .. '*'
 		--redis.call('expire', skey, 5)
+	elseif field == 'id' then
+	   bykey = nil
 	else
 		bykey = bk .. ':obj:*->' .. field
 	end
-	local sortargs = {'BY',bykey}
+	local sortargs = {}
+	if bykey then
+	   sortargs = {'BY',bykey}
+	end
 	if start > 0 or stop ~= -1 then
 		table.insert(sortargs,'LIMIT')
 		table.insert(sortargs,start)
@@ -87,8 +92,6 @@ else
 		ids = redis.call('zrevrange', rkey, start, stop)
 	elseif ordering == 'ASC' then
 		ids = redis.call('zrange', rkey, start, stop)
-	elseif start > 0 or stop ~= -1 then
-		ids = redis.call('sort', rkey, 'LIMIT', start, stop, 'ALPHA')
 	else
 		ids = redis.call('smembers', rkey)
 	end

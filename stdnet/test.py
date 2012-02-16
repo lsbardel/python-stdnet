@@ -19,7 +19,7 @@ else:
         exit(0)
 
 from stdnet import orm, getdb, BackendRequest
-from stdnet.utils import to_string, gen_unique_id
+from stdnet.utils import gen_unique_id
 
 
 class TestCase(unittest.TestCase):
@@ -81,45 +81,7 @@ to perform cleanup, registration and unregistration.
         self._pre_setup()
         super(TestCase, self).__call__(result)
         self._post_teardown()
-                    
-        
-class TestMultiFieldMixin(object):
-    '''Test class which add a couple of tests for multi fields. You need to implement the
-    get_object_and_field and adddata methods'''
     
-    def get_object_and_field(self):
-        raise NotImplementedError
-    
-    def adddata(self, obj):
-        raise NotImplementedError
-    
-    def testMultiFieldId(self):
-        '''Here we check for multifield specific stuff like the instance
-related keys (keys which are related to the instance rather than the model).'''
-        # get instance and field, the field has no data here
-        obj, field = self.get_object_and_field()
-        # get the object id
-        id = to_string(obj.id)
-        # get the field database key
-        field_key = to_string(field.id)
-        self.assertTrue(id in field_key)
-        #
-        backend = obj.session.backend
-        keys = backend.instance_keys(obj)
-        # field id should be in instance keys
-        self.assertTrue(field.id in keys)
-        lkeys = list(backend.keys())
-        # the field has no data, so there is no key in the database
-        self.assertFalse(field.id in lkeys)
-        #
-        # Lets add data
-        self.adddata(obj)
-        # The field id should be in the server keys
-        lkeys = list(backend.keys())
-        self.assertTrue(field.id in lkeys)
-        obj.delete()
-        lkeys = list(backend.keys())
-        self.assertFalse(field.id in lkeys)
         
 
  

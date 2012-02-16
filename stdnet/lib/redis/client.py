@@ -505,19 +505,15 @@ instance is promoted to a master instead.
         return self.execute_command('RENAMENX', src, dst)
 
 
-    def set(self, name, value):
-        """
-        Set the value at key ``name`` to ``value``
-        """
-        return self.execute_command('SET', name, value)
+    def set(self, name, value, timeout = None):
+        """Execute the ``SET`` command to set the value at key ``name``
+to ``value``. If a ``timeout`` is available and positive,
+the ``SETEX`` command is executed instead."""
+        if timeout and timeout > 0:
+            return self.execute_command('SETEX', name, timeout, value)
+        else:
+            return self.execute_command('SET', name, value)
     __setitem__ = set
-
-    def setex(self, name, value, time):
-        """
-        Set the value of key ``name`` to ``value``
-        that expires in ``time`` seconds
-        """
-        return self.execute_command('SETEX', name, time, value)
 
     def setnx(self, name, value):
         "Set the value of key ``name`` to ``value`` if key doesn't exist"

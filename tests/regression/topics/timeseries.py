@@ -6,7 +6,7 @@ from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
-
+from tests.regression.fields.struct import TestMultiFieldMixin
 
 NUM_DATES = 300
 
@@ -20,31 +20,26 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
+class TestDateTimeSeries(TestMultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
+    defaultS = {'ticker': 'GOOG'}
     
-    def setUp(self):
-        self.register()
-        self.model(ticker = 'GOOG').save()
-        
     def adddata(self, obj, data = None):
         data = data or testdata
         obj.data.update(data)
         self.assertEqual(obj.data.size(),len(data))
         
+    def make(self, ticker = 'GOOG'):
+        return self.model(ticker = ticker).save()
+    
     def get(self, ticker = 'GOOG'):
         return self.model.objects.get(ticker = ticker)
-    
-    def get_object_and_field(self):
-        '''Needed by the TestMultiFieldMixin.'''
-        ts = self.get()
-        return ts, ts.data
         
     def filldata(self, data = None):
-        d = self.get()
+        d = self.make()
         self.adddata(d, data)
-        return self.get(ticker = d.ticker)
+        return self.get()
 
     def interval(self, a, b, targets, C, D):
         ts = self.get()
@@ -61,7 +56,7 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertEqual(ts.data_end,D)
         
     def testFrontBack(self):
-        ts = self.get()
+        ts = self.make()
         self.assertEqual(ts.data_start,None)
         self.assertEqual(ts.data_end,None)
         mkdate = self.mkdate
@@ -97,7 +92,7 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertEqual(len(data),0)
     
     def testUpdate(self):
-        ts = self.get()
+        ts = self.make()
         dt1 = self.mkdate(2010,5,6)
         dt2 = self.mkdate(2010,6,6)
         ts.data[dt1] = 56
@@ -110,7 +105,7 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
     def testInterval(self):
         '''Test interval handling'''
         mkdate = self.mkdate
-        ts = self.get()
+        ts = self.make()
         self.assertEqual(ts.data_start,None)
         self.assertEqual(ts.data_end,None)
         #
@@ -166,7 +161,7 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.interval(A6,B6,[[default_parse_interval(B5,1),B6]],A4,B6)
         
     def testSetLen(self):
-        ts = self.get()
+        ts = self.make()
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
         dt2 = mkdate(2010,4,1)
@@ -181,7 +176,7 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertFalse(mkdate(2000,4,13) in ts.data)
         
     def testGet(self):
-        ts = self.get()
+        ts = self.make()
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
         dt2 = mkdate(2010,4,1)
@@ -203,7 +198,8 @@ class TestDateTimeSeries(test.TestCase,test.TestMultiFieldMixin):
         self.assertTrue(data)
         
     def testloadrelated(self):
-        session=  self.session()
+        self.make()
+        session = self.session()
         with session.begin():
             session.add(self.model(ticker = 'AMZN'))
         # we have now to instances

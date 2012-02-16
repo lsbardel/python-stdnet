@@ -78,7 +78,8 @@ def getdb(backend_uri = None, **kwargs):
 def getcache(backend_uri = None, encoder = encoders.PythonPickle, **kwargs):
     if isclass(encoder):
         encoder = encoder()
-    return getdb(backend_uri = backend_uri, pickler = encoder, **kwargs) 
+    db = getdb(backend_uri = backend_uri, pickler = encoder, **kwargs)
+    return db.as_cache() 
 
 
 class CacheClass(object):

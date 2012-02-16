@@ -45,8 +45,8 @@ class FieldError(StdNetException):
     '''Generic Field error'''
     pass
 
-class MultiFieldError(StdNetException):
-    '''A :class:`stdnet.FieldError` for :class:stdnet.orm.MultiField`.'''
+class StructureFieldError(StdNetException):
+    '''A :class:`stdnet.FieldError` for :class:stdnet.orm.StructureField`.'''
     pass
 
 class FieldValueError(FieldError):

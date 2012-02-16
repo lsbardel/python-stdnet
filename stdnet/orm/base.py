@@ -234,7 +234,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
             N += self.cursor.flush(self)
         return N
 
-    def get_sorting(self, sortby, errorClass):
+    def get_sorting(self, sortby, errorClass = None):
         s = None
         desc = False
         if sortby.startswith('-'):
@@ -255,6 +255,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                 if nested:
                     sortby = f.attname
                 return orderinginfo(sortby, f, desc, self.model, nested)
+        errorClass = errorClass or ValueError
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
         
@@ -435,28 +436,48 @@ raised when trying to save an invalid instance.'''
         self._dbdata['session'] = session
     session = property(__get_session,__set_session)
     
-    def get_session(self):
-        session = self.session
-        if session is None:
-            raise ValueError('No session available')
+    def get_session(self, use_current_session = True):
+        if use_current_session:
+            session = self.session
+            if session is None:
+                session = self.obtain_session()
         else:
-            return session
+            session = self.obtain_session()
+        if session is None:
+            raise SessionNotAvailable('No session available')
+        return session
         
-    def save(self):
-        '''A fast method for saving an object. Use this method with care
-since it commits changes to the backend database immediately. If a session
-is not available, it tries to create one from its :class:`Manager`.'''
-        session = self.get_session()
+    def obtain_session(self):
+        pass
+    
+    def save(self, use_current_session = True):
+        '''A direct method for saving an object.
+Do not use this method when using :class:`Transaction`.
+This method always commit changes immediately and if the session
+is a transaction an eror will occur.
+If a session is not available, it tries to create one
+from its :class:`Manager`.'''
+        session = self.get_session(use_current_session)
         with session.begin():
             session.add(self)
         return self
     
-    def delete(self):
-        session = self.get_session()
+    def delete(self, use_current_session = True):
+        session = self.get_session(use_current_session)
         with session.begin():
             session.delete(self)
         return self
     
+    def force_save(self):
+        '''Same as the :meth:`save` method, however this method never
+uses the current session. Instead it creates a new one for immediate commit.'''
+        return self.save(use_current_session = False)
+    
+    def force_delete(self):
+        '''Same as the :meth:`delete` method, however this method never
+uses the current session. Instead it creates a new one for immediate commit.'''
+        return self.delete(use_current_session = False)
+        
     def async_handle(self, result, callback, *args, **kwargs):
         if isinstance(result,BackendRequest):
             return result.add_callback(lambda res :\

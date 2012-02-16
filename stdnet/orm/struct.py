@@ -1,7 +1,8 @@
 from uuid import uuid4
 from collections import namedtuple
 
-from stdnet.utils import iteritems, itervalues, missing_intervals, encoders
+from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
+                            BytesIO
 from stdnet.lib import zset, skiplist
 from stdnet import SessionNotAvailable
 
@@ -10,6 +11,7 @@ from .session import commit_when_no_transaction, withsession
 
 
 __all__ = ['Structure',
+           'String',
            'List',
            'Set',
            'Zset',
@@ -23,6 +25,21 @@ __all__ = ['Structure',
 ##    CACHE CLASSES
 ################################################################################
 
+class stringcache(object):
+    
+    def __init__(self):
+        self.clear()
+    
+    def getvalue(self):
+        return self.data.getvalue()
+    
+    def push_back(self, v):
+        self.data.write(v)
+        
+    def clear(self):
+        self.data = BytesIO()
+    
+    
 class listcache(object):
     
     def __init__(self):
@@ -168,6 +185,12 @@ can also be used as stand alone objects. For example::
             self.session = instance.session
         elif not self.id:
             self.id = self.makeid()
+        
+    def obtain_session(self):
+        if self.session is not None:
+            return self.session.session()
+        elif self.instance is not None:
+            return self.instance.obtain_session()
         
     def makeid(self):
         return str(uuid4())[:8]
@@ -324,7 +347,7 @@ Equivalent to python dictionary update method.
     
 
 class KeyValueMixin(PairMixin):
-        
+    '''A mixin for key-valued pair containes.'''
     def __delitem__(self, key):
         '''Immediately remove an element. To remove with transactions use the
 :meth:`remove` method`.'''
@@ -412,12 +435,10 @@ class Sequence(object):
         self.cache.push_back(self.value_pickler.dumps(value))
         return self
         
-    @commit_when_no_transaction
     def pop_back(self):
         value = self.session.structure(self).pop_back()
         return self.value_pickler.loads(value)
     
-    @commit_when_no_transaction
     def __getitem__(self, index):
         value = self.session.structure(self).get(index)
         return self.value_pickler.loads(value)
@@ -532,6 +553,16 @@ not available with vanilla redis. Check the
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
     cache_class = tscache 
+    
+    
+class String(Sequence, Structure):
+    '''A String :class:`Sequence` of bytes.
+'''
+    cache_class = stringcache
+    value_pickler = encoders.Bytes()
+
+    def incr(self, v = 1):
+        return self.backend_structure().incr(v)
     
     
 class Array(Sequence, Structure):

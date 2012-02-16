@@ -275,26 +275,24 @@ elements in the query.'''
         self.query_results = list(res)
         return self.query_results[-1].count
     
-    def order(self):
+    def order(self, last):
         '''Perform ordering with respect model fields.'''
-        if self.queryelem.ordering:
-            last = self.queryelem.ordering
-            desc = 'DESC' if last.desc else ''
-            field = last.name
-            nested = last.nested
-            nested_args = []
-            while nested:
-                meta = nested.model._meta
-                nested_args.extend((self.backend.basekey(meta),nested.name))
-                last = nested
-                nested = nested.nested
-            meth = ''
-            if last.field.internal_type == 'text':
-                meth = 'ALPHA'
-            
-            args = [field, meth, desc, len(nested_args)//2]
-            args.extend(nested_args)
-            return args
+        desc = 'DESC' if last.desc else ''
+        field = last.name
+        nested = last.nested
+        nested_args = []
+        while nested:
+            meta = nested.model._meta
+            nested_args.extend((self.backend.basekey(meta),nested.name))
+            last = nested
+            nested = nested.nested
+        meth = ''
+        if last.field.internal_type == 'text':
+            meth = 'ALPHA'
+        
+        args = [field, meth, desc, len(nested_args)//2]
+        args.extend(nested_args)
+        return args
             
     def _has(self, val):
         r = self.ismember(self.query_key, val)
@@ -303,12 +301,10 @@ elements in the query.'''
     def get_redis_slice(self, slic):
         if slic:
             start = slic.start or 0
-            stop = slic.stop or -1
-            if stop > 0:
-                stop -= 1
+            stop = slic.stop
         else:
             start = 0
-            stop = -1
+            stop = None
         return start,stop
     
     def _items(self, slic):
@@ -316,8 +312,27 @@ elements in the query.'''
         # the load_query lua script
         backend = self.backend
         meta = self.meta
-        order = self.order() or ()
+        name = ''
+        order = ()
         start, stop = self.get_redis_slice(slic)
+        if self.queryelem.ordering:
+            order = self.order(self.queryelem.ordering)
+        elif meta.ordering:
+            name = 'DESC' if meta.ordering.desc else 'ASC'
+        elif start or stop is not None:
+            order = self.order(meta.get_sorting('id'))
+        # Wen using the sort algorithm redis requires the number of element
+        # not the stop index
+        if order:
+            name = 'explicit'
+            if stop is None:
+                stop = self.execute_query()
+            elif stop < 0:
+                stop += self.execute_query()
+            stop -= start
+        elif stop is None:
+            stop = -1
+                
         get = self.queryelem._get_field or ''
         fields_attributes = None
         keys = (self.query_key, backend.basekey(meta))
@@ -340,18 +355,6 @@ elements in the query.'''
         args.append(len(fields_attributes))
         args.extend(fields_attributes)
         args.extend(self.related_lua_args())
-        
-        if order:
-            if start and stop == -1:
-                stop = self.execute_query()-1
-            if stop != -1:
-                stop = stop - start + 1
-            name = 'explicit'
-        else:
-            name = ''
-            if meta.ordering:
-                name = 'DESC' if meta.ordering.desc else 'ASC'
-        
         args.extend((name,start,stop))
         args.extend(order)
                     
@@ -415,6 +418,24 @@ class RedisStructure(BackendStructure):
     def delete(self):
         return self.client.delete(self.id)
     
+    
+class String(RedisStructure):
+    
+    def flush(self):
+        cache = self.instance.cache
+        result = None
+        data = cache.getvalue()
+        if data:
+            self.client.append(self.id, data)
+            result = True
+        return result
+    
+    def size(self):
+        return self.client.strlen(self.id)
+    
+    def incr(self, num = 1):
+        return self.client.incr(self.id, num)
+            
     
 class Set(RedisStructure):
     
@@ -669,7 +690,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                   'zset':Zset,
                   'hashtable':Hash,
                   'ts':TS,
-                  'numberarray':NumberArray}
+                  'numberarray':NumberArray,
+                  'string': String}
         
     def setup_connection(self, address, **params):
         self.namespace = params.get('prefix',settings.DEFAULT_KEYPREFIX)
@@ -687,9 +709,23 @@ class BackendDataServer(stdnet.BackendDataServer):
         rpy = redis.Redis(connection_pool = cp)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
-        #self.delete = rpy.delete
-        self.keys = rpy.keys
+        #self.keys = rpy.keys
         return rpy
+    
+    def as_cache(self):
+        return self
+    
+    def set(self, id, value, timeout = None):
+        timeout = timeout or 0
+        value = self.pickler.dumps(value)
+        return self.client.set(id, value, timeout)
+    
+    def get(self, id, default = None):
+        v = self.client.get(id)
+        if v:
+            return self.pickler.loads(v)
+        else:
+            return default
     
     def cursor(self, pipelined = False):
         return self.client.pipeline() if pipelined else self.client

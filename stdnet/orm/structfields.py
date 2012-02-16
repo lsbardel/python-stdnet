@@ -6,14 +6,15 @@ from . import related
 from .struct import *
 
 
-__all__ = ['MultiField',
+__all__ = ['StructureField',
+           'StringField',
            'SetField',
            'ListField',
            'HashField',
            'TimeSeriesField']
 
 
-class MultiFieldStructureProxy(object):
+class StructureFieldProxy(object):
     
     def __init__(self, name, factory, cache_name, pickler, value_pickler):
         self.name = name
@@ -26,7 +27,7 @@ class MultiFieldStructureProxy(object):
         if instance is None:
             return self
         if instance.id is None:
-            raise MultiFieldError('id for %s is not available.\
+            raise StructureFieldError('id for %s is not available.\
  Call save on instance before accessing %s.' % (instance._meta,self.name))
         cache_name = self.cache_name
         cache_val = None
@@ -48,16 +49,13 @@ class MultiFieldStructureProxy(object):
         session = instance.session
         backend = session.backend
         id = backend.basekey(instance._meta, 'obj', instance.id, self.name)
-        stru = self.factory(id = id,
+        return self.factory(id = id,
                             instance = instance,
                             pickler = self.pickler,
                             value_pickler = self.value_pickler)
-        # add the structure to the session
-        session.add(stru)
-        return stru
 
 
-class MultiField(Field):
+class StructureField(Field):
     '''Virtual class for fields which are proxies to remote
 :ref:`data structures <structures-backend>` such as :class:`stdnet.List`,
 :class:`stdnet.Set`, :class:`stdnet.OrderedSet` and :class:`stdnet.HashTable`.
@@ -109,7 +107,7 @@ a stand alone structure in the back-end server with very little effort.
                  required = False,
                  **kwargs):
         # Force required to be false
-        super(MultiField,self).__init__(required = False, **kwargs)
+        super(StructureField,self).__init__(required = False, **kwargs)
         self.relmodel = model
         self.index = False
         self.unique = False
@@ -118,7 +116,7 @@ a stand alone structure in the back-end server with very little effort.
         self.value_pickler = value_pickler
         
     def register_with_model(self, name, model):
-        super(MultiField,self).register_with_model(name, model)
+        super(StructureField,self).register_with_model(name, model)
         if self.relmodel:
             related.load_relmodel(self,self._set_relmodel)
         else:
@@ -141,11 +139,11 @@ a stand alone structure in the back-end server with very little effort.
                 self.value_pickler = self.default_value_pickler
         setattr(self.model,
                 self.name,
-                MultiFieldStructureProxy(self.name,
-                                         data_structure_class,
-                                         self.get_cache_name(),
-                                         pickler = self.pickler,
-                                         value_pickler = self.value_pickler))
+                StructureFieldProxy(self.name,
+                                    data_structure_class,
+                                    self.get_cache_name(),
+                                    pickler = self.pickler,
+                                    value_pickler = self.value_pickler))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -166,7 +164,7 @@ a stand alone structure in the back-end server with very little effort.
         setattr(instance,self.get_cache_name(),data)
         
 
-class SetField(MultiField):
+class SetField(StructureField):
     '''A field maintaining an unordered collection of values. It is initiated
 without any argument other than an optional model class.
 When accessed from the model instance, it returns an instance of
@@ -190,7 +188,7 @@ It can be used in the following way::
         return Zset if self.ordered else Set
     
 
-class ListField(MultiField):
+class ListField(StructureField):
     '''A field maintaining a list of values.
 When accessed from the model instance,
 it returns an instance of :class:`stdnet.List` structure. For example::
@@ -220,7 +218,7 @@ Can be used as::
         return List        
 
 
-class HashField(MultiField):
+class HashField(StructureField):
     '''A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric.
 it returns an instance of :class:`stdnet.HashTable` structure.
@@ -245,3 +243,10 @@ To be used with subclasses of :class:`TimeSeriesBase`'''
     def structure_class(self):
         return TS
         
+        
+class StringField(StructureField):
+    default_value_pickler = None
+    
+    def structure_class(self):
+        return String
+    

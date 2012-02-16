@@ -164,7 +164,7 @@ The result will be calculated using the formula::
         return result
         
     
-class ColumnTSField(orm.MultiField):
+class ColumnTSField(orm.StructureField):
     '''An experimenta timeseries field.'''
     
     def structure_class(self):

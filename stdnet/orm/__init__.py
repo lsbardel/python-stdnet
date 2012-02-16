@@ -6,7 +6,7 @@ from .query import *
 from .session import *
 from .struct import *
 from .fields import *
-from .std import *
+from .structfields import *
 from .signals import *
 from .globals import hashmodel, JSPLITTER
 from .utils import *

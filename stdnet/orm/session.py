@@ -503,6 +503,10 @@ class Session(object):
     def __len__(self):
         return len(self._models)
     
+    def session(self):
+        '''Create a new session from this :class:`Session`'''
+        return self.__class__(self.backend,self.query_class)
+        
     @property
     def dirty(self):
         '''set of all changed instances in the session'''

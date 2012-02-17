@@ -3,8 +3,8 @@ import copy
 import hashlib
 import weakref
 
-from stdnet import BackendRequest
-from stdnet.utils import zip, to_bytestring, to_string, UnicodeMixin
+from stdnet import BackendRequest, AsyncObject
+from stdnet.utils import zip, to_bytestring, to_string
 from stdnet.exceptions import *
 
 from . import signals
@@ -383,7 +383,7 @@ class ModelState(object):
     __str__ = __repr__
     
     
-class Model(UnicodeMixin):
+class Model(AsyncObject):
     '''A mixin class for :class:`StdModel`. It implements the :attr:`uuid`
 attribute which provides the univarsal unique identifier for an instance of a
 model.'''
@@ -478,19 +478,6 @@ uses the current session. Instead it creates a new one for immediate commit.'''
 uses the current session. Instead it creates a new one for immediate commit.'''
         return self.delete(use_current_session = False)
         
-    def async_handle(self, result, callback, *args, **kwargs):
-        if isinstance(result,BackendRequest):
-            return result.add_callback(lambda res :\
-                        self.async_callback(callback, res, *args, **kwargs))
-        else:
-            return self.async_callback(callback, result, *args, **kwargs)
-        
-    def async_callback(self, callback, result, *args, **kwargs):
-        if isinstance(result, Exception):
-            raise result
-        else:
-            return callback(result, *args, **kwargs)
-    
     
 ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})
 

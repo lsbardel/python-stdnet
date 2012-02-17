@@ -164,6 +164,32 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],2)
         
+    # ZSET SCRIPTING COMMANDS
+    
+    def testzpopbyrank(self):
+        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
+        res = self.client.zpopbyrank('foo',0)
+        rem = self.client.zrange('foo',0,-1)
+        self.assertEqual(len(rem),4)
+        self.assertEqual(rem,[b'b',b'c',b'd',b'e'])
+        self.assertEqual(res,[b'a'])
+        res = self.client.zpopbyrank('foo',0,2)
+        self.assertEqual(res,[b'b',b'c',b'd'])
+        rem = self.client.zrange('foo',0,-1)
+        self.assertEqual(rem,[b'e'])
+        
+    def testzpopbyscore(self):
+        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
+        res = self.client.zpopbyscore('foo',2)
+        rem = self.client.zrange('foo',0,-1)
+        self.assertEqual(len(rem),4)
+        self.assertEqual(rem,[b'a',b'c',b'd',b'e'])
+        self.assertEqual(res,[b'b'])
+        res = self.client.zpopbyscore('foo',0,4.5)
+        self.assertEqual(res,[b'a',b'c',b'd'])
+        rem = self.client.zrange('foo',0,-1)
+        self.assertEqual(rem,[b'e'])
+        
 
 class TestStruct(TestCase):
     

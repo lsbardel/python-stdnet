@@ -11,6 +11,10 @@ RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 pending_lookups = {}
 
 
+__all__ = ['LazyForeignKey',
+           'ModelFieldPickler']
+
+
 class ModelFieldPickler(encoders.Encoder):
     '''An encoder for :class:`StdModel` instances.'''
     def __init__(self, model):
@@ -88,7 +92,7 @@ def Many2ManyThroughModel(field):
 
 
 class LazyForeignKey(object):
-
+    '''Descriptor for a :class:`ForeignKey` field.'''
     def __init__(self, field):
         self.field = field
 
@@ -114,17 +118,19 @@ class LazyForeignKey(object):
                                   % self._field.name)
         field = self.field
         if value is not None and not isinstance(value, field.relmodel):
-            raise ValueError('Cannot assign "%r": "%s" must be a "%s" instance.' %
+            raise ValueError(
+                        'Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
         
         cache_name = self.field.get_cache_name()
-        # If we're setting the value of a OneToOneField to None, we need to clear
+        # If we're setting the value of a OneToOneField to None,
+        # we need to clear
         # out the cache on any old related object. Otherwise, deleting the
         # previously-related object will also cause this object to be deleted,
         # which is wrong.
         if value is None:
-            # Look up the previously-related object, which may still be available
-            # since we've not yet cleared out the related field.
+            # Look up the previously-related object, which may still
+            # be available since we've not yet cleared out the related field.
             related = getattr(instance, cache_name, None)
             if related:
                 try:

@@ -27,8 +27,6 @@ Ver. 0.7.0 - Development
 * :class:`stdnet.orm.PickleObjectField` uses the pickle protocol 2 for compatibility
   between python 2 and python 3.
 * Refactored the ``save`` and ``delete`` method of model instances.
-* Remote :ref:`remote data structures <structures-backend>` can be accessed
-  via the :attr:`stdnet.struct` singleton.
 * Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
   of model instances.
 * Indexes for :class:`stdnet.orm.ForeignKey` fields are stored at sets with
@@ -41,7 +39,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **477 regression tests** with **80%** coverage.
+* **482 regression tests** with **80%** coverage.
 
 .. _vers06:
 

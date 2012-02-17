@@ -65,14 +65,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
 .. attribute:: index
 
     Probably the most important field attribute, it establish if
-    the field creates indexes for queries.
-    An index is implemented as a :class:`stdnet.Set` 
-    in the :class:`stdnet.BackendDataServer` unless the
-    the :attr:`stdnet.orm.base.Metaclass.ordering` attribute is set
-    to a model field, in which case indexes are implemented using
-    :class:`stdnet.OrderedSet`. More information on the
-    :ref:`sorting <sorting>` documentation.
-    
+    the field creates indexes for queries.    
     If you don't need to query the field you should set this value to
     ``False``, it will save you memory.
     
@@ -172,9 +165,6 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.default = extras.pop('default',self.default)
         self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
-        
-    def _handle_extras(self, **extras):
-        self.error_extras(extras)
         
     def get_encoder(self, params):
         return None
@@ -279,6 +269,13 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
 the ordering alorithm'''
         return self.to_python(value)
     
+    ############################################################################
+    ##    TOOLS
+    ############################################################################
+    
+    def _handle_extras(self, **extras):
+        '''Callback to hadle extra arguments during initialization.'''
+        self.error_extras(extras)
 
 class AtomField(Field):
     '''The base class for fields containing ``atoms``.

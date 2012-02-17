@@ -7,6 +7,7 @@ from .struct import *
 
 
 __all__ = ['StructureField',
+           'StructureFieldProxy',
            'StringField',
            'SetField',
            'ListField',
@@ -15,50 +16,62 @@ __all__ = ['StructureField',
 
 
 class StructureFieldProxy(object):
-    
-    def __init__(self, name, factory, cache_name, pickler, value_pickler):
-        self.name = name
+    '''A descriptor for a :class:`StructureField`.'''
+    def __init__(self, field, factory):
+        self.field = field
         self.factory = factory
-        self.cache_name = cache_name
-        self.pickler = pickler
-        self.value_pickler = value_pickler
+        self.cache_name = field.get_cache_name()
+        
+    @property
+    def name(self):
+        return self.field.name
         
     def __get__(self, instance, instance_type = None):
-        if instance is None:
-            return self
-        if instance.id is None:
-            raise StructureFieldError('id for %s is not available.\
+        if not self.field.class_field:
+            if instance is None:
+                return self
+            if instance.id is None:
+                raise StructureFieldError('id for %s is not available.\
  Call save on instance before accessing %s.' % (instance._meta,self.name))
+        else:
+            instance = instance_type
         cache_name = self.cache_name
         cache_val = None
+        if self.field.class_field:
+            session = instance.objects.session()
+        else:
+            session = instance.session
         try:
             cache_val = getattr(instance, cache_name)
-            if not isinstance(cache_val,Structure):
+            if not isinstance(cache_val, Structure):
                 raise AttributeError()
-            elif cache_val.session != instance.session and instance.session:
-                instance.session.add(cache_val)
-            return cache_val
+            structure = cache_val 
         except AttributeError:
-            structure = self.get_structure(instance)
+            structure = self.get_structure(instance, session)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
                 structure.set_cache(cache_val)
-            return structure
+        structure.session = session
+        return structure
         
-    def get_structure(self, instance):
-        session = instance.session
-        backend = session.backend
-        id = backend.basekey(instance._meta, 'obj', instance.id, self.name)
+    def get_structure(self, instance, session):
+        if self.field.class_field:
+            id = session.backend.basekey(instance._meta, 'struct', self.name)
+            instance = None
+        else:
+            id = session.backend.basekey(instance._meta, 'obj', instance.id,
+                                         self.name)
         return self.factory(id = id,
                             instance = instance,
-                            pickler = self.pickler,
-                            value_pickler = self.value_pickler)
+                            pickler = self.field.pickler,
+                            value_pickler = self.field.value_pickler,
+                            **self.field.struct_params)
 
 
 class StructureField(Field):
-    '''Virtual class for fields which are proxies to remote
-:ref:`data structures <structures-backend>` such as :class:`stdnet.List`,
-:class:`stdnet.Set`, :class:`stdnet.OrderedSet` and :class:`stdnet.HashTable`.
+    '''Virtual base class for :class:`Field` which are proxies to
+:ref:`data structures <model-structures>` such as :class:`List`,
+:class:`Set`, :class:`OrderedSet` and :class:`HashTable`.
 
 Sometimes you want to structure your data model without breaking it up
 into multiple entities. For example, you might want to define model
@@ -71,8 +84,12 @@ that contains a list of messages an instance receive::
         messages = orm.ListField()
 
 By defining structured fields in a model, an instance of that model can access
-a stand alone structure in the back-end server with very little effort.
+a stand alone structure in the back-end server with very little effort::
 
+    m = MyModel.objects.get(id = 1)
+    m.messages.push_back('Hello there!')
+
+Behind the scenes, this functionality is implemented by Python descriptors_.
 
 :parameter model: an optional :class:`stdnet.orm.StdModel` class. If
     specified, the structured will contains ids of instances of the model.
@@ -80,22 +97,39 @@ a stand alone structure in the back-end server with very little effort.
     
 .. attribute:: relmodel
 
-    Optional :class:`stdnet.otm.StdModel` class contained in the structure.
+    Optional :class:`StdModel` class contained in the structure.
     It can also be specified as a string.
-    
-.. attribute:: pickler
-
-    an instance of :class:`stdnet.utils.encoders.Encoder` used to serialize
-    and userialize data. It contains the ``dumps`` and ``loads`` methods.
-    
-    Default :class:`stdnet.utils.encoders.Json`.
     
 .. attribute:: value_pickler
 
-    Same as the :attr:`pickler` attribute, this serializer is applaied to values
-    (used by hash table)
+    An :class:`stdnet.utils.encoders.Encoder` used to encode and decode
+    values.
+    
+    Default: :class:`stdnet.utils.encoders.Json`.    
+    
+.. attribute:: pickler
+
+    Same as the :attr:`value_pickler` attribute, this serializer is applied
+    to keys, rather than values, in :class:`StructureField`
+    of :class:`PairMixin` type (these include :class:`HashField`,
+    :class:`TimeSeriesField` and ordered :class:`SetField`)
     
     Default: ``None``.
+    
+.. attribute:: class_field
+
+    If ``True`` this :class:`StructureField` is a class field (it belongs to
+    the model class rather than model instances). For example::
+    
+        class MyModel(orm.StdModel):
+            ...
+            updates = orm.List(class_field = True)
+            
+        MyModel.updates.push_back(1)
+    
+    Default: ``False``.
+    
+.. _descriptors: http://users.rcn.com/python/download/Descriptor.htm
 '''
     default_pickler = None
     default_value_pickler = encoders.Json()
@@ -104,16 +138,21 @@ a stand alone structure in the back-end server with very little effort.
                  model = None,
                  pickler = None,
                  value_pickler = None,
-                 required = False,
+                 class_field = False,
                  **kwargs):
         # Force required to be false
-        super(StructureField,self).__init__(required = False, **kwargs)
+        super(StructureField,self).__init__(**kwargs)
         self.relmodel = model
+        self.required = False
         self.index = False
         self.unique = False
         self.primary_key = False
+        self.class_field = class_field
         self.pickler = pickler
         self.value_pickler = value_pickler
+    
+    def _handle_extras(self, **extras):
+        self.struct_params = extras
         
     def register_with_model(self, name, model):
         super(StructureField,self).register_with_model(name, model)
@@ -139,11 +178,7 @@ a stand alone structure in the back-end server with very little effort.
                 self.value_pickler = self.default_value_pickler
         setattr(self.model,
                 self.name,
-                StructureFieldProxy(self.name,
-                                    data_structure_class,
-                                    self.get_cache_name(),
-                                    pickler = self.pickler,
-                                    value_pickler = self.value_pickler))
+                StructureFieldProxy(self, data_structure_class))
 
     def add_to_fields(self):
         self.model._meta.multifields.append(self)
@@ -158,7 +193,7 @@ a stand alone structure in the back-end server with very little effort.
         return True
     
     def structure_class(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def set_cache(self, instance, data):
         setattr(instance,self.get_cache_name(),data)

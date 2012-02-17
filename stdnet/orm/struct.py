@@ -17,8 +17,11 @@ __all__ = ['Structure',
            'Zset',
            'HashTable',
            'TS',
+           'NumberArray',
+           # Mixins
            'OrderedMixin',
-           'NumberArray']
+           'PairMixin',
+           'KeyValueMixin']
 
 
 ################################################################################
@@ -505,13 +508,21 @@ class Zset(OrderedMixin, PairMixin, Set):
     '''An ordered version of :class:`Set`.'''
     pickler = encoders.Double()
     cache_class = zsetcache
-        
+    
     def _iter(self):
         # Override the KeyValueMixin so that it iterates over values rather
         # scores
         loads = self.value_pickler.loads
         for v in self.session.structure(self):
             yield loads(v)
+            
+    def ipop(self, start, stop = None, **options):
+        '''pop a range from the set'''
+        return self.backend_structure().ipop(start, stop, **options)
+        
+    def pop(self, start, stop = None, **options):
+        '''pop a score range from the set'''
+        return self.backend_structure().pop(start, stop, **options)
             
     
 class HashTable(KeyValueMixin, Structure):

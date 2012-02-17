@@ -22,7 +22,7 @@ __ http://pypi.python.org/pypi/python-stdnet/
 
 Requirements
 =================
-* Python 2.6 to Python 3.3.
+* Python 2.6 to Python 3.3. Single codebase.
 * Optional Cython_ for faster redis protocol parser.
 * You need access to a Redis_ server.
 

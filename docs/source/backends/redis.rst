@@ -37,9 +37,15 @@ specify the namespace for all keys associated with it::
     >>> rdb.basekey(Word._meta)
     'bla.searchengine.word'
      
+Instances
+~~~~~~~~~~~~~~~
+
 Each :class:`stdnet.orm.StdModel` instance is mapped into a redis **Hash table**.
 The hash table key is uniquely evaluated by the model hash and
-the *id* of the model instance.
+the *id* of the model instance and it is stored at::
+
+    <<basekey>>:obj:<<id>>
+    
 
 The hash fields and values are given by the field name and values of the
 model instance.
@@ -48,14 +54,43 @@ model instance.
 Indexes
 ~~~~~~~~~~~~~~~~~
 
-Indexes are obtained by using sets or sorted sets with keys obtained using the
+Indexes are obtained by using sets with keys obtained using the
 following form::
 
     <<basekey>>:idx:<<field name>>:<<field value>>
 
+If the model specify an :ref:`implicit ordering <implicit-sorting>` via the
+:attr:`stdnet.orm.base.Metaclass.ordering` attribute, indexes are stored
+in sorted sets rather than sets.
+
+
 Indices are updated and removed via the ``update_indices`` function in the
 ``section.lua`` script.
 
+
+Unique Constratins
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For some models you may need to specify certain field to be unique across
+the Model. For example the following ``User`` model::
+
+    class User(orm.StdModel):
+        username = orm.SymbolField(unique = True)
+        emauil = orm.SymbolField(unique = True)
+        password = orm.CharField(required = True)
+
+specifies two constrains.
+In redis these constraints are stored into two separate hash tables with
+key given by::
+
+    <<basekey>>:uni:<<field name>>
+    
+Therefore our ``User`` model will have two additional hash tables at::
+
+    <<basekey>>:uni:username
+    <<basekey>>:uni:email
+    
+Each hash table map a field value to the ``id`` containing that value
 
 .. _redis-parser:
 

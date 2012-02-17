@@ -11,4 +11,5 @@ from .signals import *
 from .globals import hashmodel, JSPLITTER
 from .utils import *
 from .search import SearchEngine
+from .related import *
         

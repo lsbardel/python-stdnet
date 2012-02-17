@@ -19,7 +19,7 @@ In the context of relational databases a
 a referential constraint between two tables.
 
 For stdnet is exactly the same thing. The field store the ``id`` of a
-related :class:`stdnet.orm.StdModel`` instance.
+related :class:`stdnet.orm.StdModel` instance.
 Behind the scenes, this functionality is implemented by Python descriptors_.
 This shouldn't really matter to you, but we point it out here for the curious.
 

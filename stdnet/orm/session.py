@@ -45,7 +45,7 @@ not in a transaction.'''
         r = f(self, *args, **kwargs)
         session = self.session
         # no session available. Raise Exception
-        if not session:
+        if session is None:
             raise SessionNotAvailable('Session not available')
         session.add(self)
         return r
@@ -61,7 +61,7 @@ available to perform their call. If a session is not available. It raises
 a :class:`SessionNotAvailable` exception.
 '''
     def _(self, *args, **kwargs):
-        if self.session:
+        if self.session is not None:
             return f(self, *args, **kwargs)
         else:
             raise SessionNotAvailable(

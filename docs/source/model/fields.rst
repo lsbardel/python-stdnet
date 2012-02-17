@@ -42,15 +42,15 @@ Field
 AtomField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.AtomField
+.. autoclass:: AtomField
    :members:
    :member-order: bysource
 
 
-MultiField
+StructureField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.MultiField
+.. autoclass:: StructureField
    :members:
    :member-order: bysource
    
@@ -60,7 +60,7 @@ MultiField
 Atom Fields
 ===========================
 
-Atom Fields derived from :class:`stdnet.orm.AtomField` and, as the name says,
+Atom Fields derived from :class:`AtomField` and, as the name says,
 they represent the simplest data in a model. Their representation in python,
 is one of ``bytes``, ``strings``, ``numbers`` or ``dates``.
 
@@ -202,13 +202,13 @@ Data-structure Fields
 These fields are remote data-structures such as list, sets and hash tables.
 They can be bound to models so that
 many-to-many objects relationship can be established. All the data-structure
-fields derives from :class:`stdnet.orm.MultiField`.
+fields derives from :class:`StructureField`.
 
 
 ListField
 ~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ListField
+.. autoclass:: ListField
    :members:
    :member-order: bysource
    
@@ -216,7 +216,7 @@ ListField
 SetField
 ~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.SetField
+.. autoclass:: SetField
    :members:
    :member-order: bysource
    
@@ -224,8 +224,21 @@ SetField
 HashField
 ~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.HashField
+.. autoclass:: HashField
    :members:
    :member-order: bysource
 
+
+.. _model-field-descriptors:
+
+Descriptors
+===================
+
+.. autoclass:: LazyForeignKey
+   :members:
+   :member-order: bysource   
    
+   
+.. autoclass:: StructureFieldProxy
+   :members:
+   :member-order: bysource

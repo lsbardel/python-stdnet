@@ -819,10 +819,17 @@ The first element is the score and the second is the value.'''
         """
         return self.execute_command('ZRANK', name, value, **options)
 
-    def zrem(self, name, value, **options):
+    def zrem(self, name, *values, **options):
         "Remove member ``value`` from sorted set ``name``"
-        return self.execute_command('ZREM', name, value, **options)
+        return self.execute_command('ZREM', name, *values, **options)
 
+    def zremrangebyrank(self, name, start, stop, **options):
+        ''''Remove all elements in the sorted set ``name`` with rank
+        between ``start`` and ``stop``.
+        '''
+        return self.execute_command('ZREMRANGEBYRANK', name, start, stop,
+                                    **options)
+        
     def zremrangebyscore(self, name, min, max, **options):
         """
         Remove all elements in the sorted set ``name`` with scores
@@ -867,6 +874,30 @@ The first element is the score and the second is the value.'''
         """
         keys = list_or_args(keys, args)
         return self._zaggregate('ZDIFFSTORE', dest, keys, **options)
+    
+    # zset script commands
+    
+    def zpopbyrank(self, name, start, stop = None, withscores = False,
+                   desc = False, **options):
+        '''Pop a range by rank'''
+        options['withscores'] = withscores
+        stop = stop if stop is not None else start
+        return self.script_call('zpop', name,
+                                'rank',
+                                start, stop, int(desc), int(withscores),
+                                **options)
+        
+    def zpopbyscore(self, name, start, stop = None, withscores = False,
+                    desc = False, **options):
+        '''Pop a range by score'''
+        options['withscores'] = withscores
+        stop = stop if stop is not None else start
+        return self.script_call('zpop', name,
+                                'score',
+                                start, stop, int(desc), int(withscores),
+                                **options)
+        
+        
 
     def _zaggregate(self, command, dest, keys,
                     aggregate=None, withscores = None, **options):

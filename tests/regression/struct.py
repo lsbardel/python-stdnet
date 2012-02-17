@@ -197,7 +197,9 @@ class TestZset(StructMixin,test.TestCase):
         
     def testiRange(self):
         l = self.planets()
-        r = l.irange()
+        # Get the whole range
+        r = list(l.irange())
+        self.assertEqual(r,self.result)
         
     def testIter(self):
         '''test a very simple zset with integer'''

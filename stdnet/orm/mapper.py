@@ -2,7 +2,7 @@ import copy
 import logging
 from stdnet.utils import is_bytes_or_string
 from stdnet.utils.importer import import_module
-from stdnet import getdb
+from stdnet import getdb, ModelNotRegistered
 
 from .base import StdNetType, AlreadyRegistered
 from .session import Manager, Session
@@ -120,7 +120,10 @@ registered models.'''
         except KeyError:
             return
         for attr in dir(model):
-            elem = getattr(model,attr)
+            try:
+                elem = getattr(model,attr)
+            except ModelNotRegistered:
+                continue
             if isinstance(elem,Manager):
                 elem.backend = None
     else:

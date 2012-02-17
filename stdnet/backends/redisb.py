@@ -467,8 +467,8 @@ class Zset(RedisStructure):
             self.client.zadd(self.id, *flat)
             result = True
         if cache.toremove:
-            flat = cache.toadd.flat()
-            self.client.zadd(self.id, *flat)
+            flat = tuple((el[1] for el in cache.toremove))
+            self.client.zrem(self.id, *flat)
             result = True
         return result
     
@@ -489,22 +489,36 @@ class Zset(RedisStructure):
     def count(self, start, stop):
         return self.client.zcount(self.id, start, stop)
     
-    
     def range(self, start, end, desc = False, withscores = True, **options):
-        return self.client.zrangebyscore(self.id, start, end,
-                                         desc = desc,
-                                         withscores = withscores, **options)
+        return self.async_handle(
+                self.client.zrangebyscore(self.id, start, end, desc = desc,
+                                          withscores = withscores, **options),
+                self._range, withscores)
     
     def irange(self, start = 0, stop = -1, desc = False, withscores = True,
                **options):
-        return self.client.zrange(self.id, start, stop,
-                                  desc = desc, withscores = withscores,
-                                  **options)
+        return self.async_handle(
+                    self.client.zrange(self.id, start, stop, desc = desc,
+                                       withscores = withscores, **options),
+                    self._range, withscores)
+    
+    def ipop(self, start, stop = None, **options):
+        return self.client.zpopbyrank(start, stop, **options)
+        
+    def pop(self, start, stop = None, **options):
+        return self.client.zpopbyscore(start, stop, **options)
     
     def items(self):
-        for v,score in self.irange():
-            yield score,v
+        return self.irange()
     
+    # PRIVATE
+    
+    def _range(self, result, withscores):
+        if withscores:
+            return ((score,v) for v,score in result)
+        else:
+            return result
+        
 
 class List(RedisStructure):
     

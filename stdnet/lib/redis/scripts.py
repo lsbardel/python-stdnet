@@ -291,6 +291,10 @@ return n
 class zpop(RedisScript):
     script = read_lua_file('zpop.lua')
     
+    def callback(self, request, response, args, **options):
+        if not response or not options['withscores']:
+            return response
+        return zip(response[::2], map(float, response[1::2]))
     
 
 class keyinfo(RedisScript):

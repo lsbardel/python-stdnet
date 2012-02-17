@@ -2,10 +2,14 @@ import json
 from collections import namedtuple
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, iteritems, itervalues, encoders
+from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin
 
 
-__all__ = ['BackendDataServer', 'ServerOperation', 'BackendQuery',
+__all__ = ['BackendRequest',
+           'AsyncObject',
+           'BackendDataServer',
+           'ServerOperation',
+           'BackendQuery',
            'session_result',
            'instance_session_result',
            'query_result']
@@ -26,7 +30,30 @@ def intid(id):
     except ValueError:
         return id
 
+
+class BackendRequest(object):
+    '''Signature class for Stdnet Request classes'''
+    pass
+
+
+class AsyncObject(UnicodeMixin):
+    '''A class for handling asynchronous requests. The main method here
+is :meth:`async_handle`. Avery time there is a result from the server,
+this method should be called.'''
+    def async_handle(self, result, callback, *args, **kwargs):
+        if isinstance(result,BackendRequest):
+            return result.add_callback(lambda res :\
+                        self.async_callback(callback, res, *args, **kwargs))
+        else:
+            return self.async_callback(callback, result, *args, **kwargs)
         
+    def async_callback(self, callback, result, *args, **kwargs):
+        if isinstance(result, Exception):
+            raise result
+        else:
+            return callback(result, *args, **kwargs)
+        
+                
 class Keys(object):
     
     def __init__(self,id,timeout,pipeline):
@@ -51,8 +78,9 @@ class ServerOperation(object):
         return self.commands is not None
     
     
-class BackendStructure(object):
+class BackendStructure(AsyncObject):
     __slots__ = ('instance', 'client', '_id')
+    
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.client = client

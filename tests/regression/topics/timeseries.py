@@ -1,3 +1,4 @@
+import os
 from datetime import date, datetime
 from random import uniform
 
@@ -7,6 +8,8 @@ from stdnet.utils import populate, todate, zip, dategenerator,\
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
 from tests.regression.fields.struct import TestMultiFieldMixin
+
+skipUnless = test.unittest.skipUnless
 
 NUM_DATES = 300
 
@@ -19,7 +22,8 @@ alldata2  = list(zip(dates2,values))
 testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
-
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
 class TestDateTimeSeries(TestMultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
@@ -301,6 +305,8 @@ class TestDateTimeSeries(TestMultiFieldMixin, test.TestCase):
         self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)
 
 
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
 class TestDateSeries(TestDateTimeSeries):
     model = DateTimeSeries
     mkdate = date

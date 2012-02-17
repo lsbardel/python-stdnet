@@ -1,3 +1,4 @@
+'''Defines Metaclasses and Base classes for stdnet Models.'''
 import sys
 import copy
 import hashlib
@@ -70,7 +71,7 @@ class ModelMeta(object):
         
 class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
-which maps an :class:`StdModel` into an object in the in a remote
+which maps a :class:`StdModel` into an object in the in a remote
 :class:`stdnet.BackendDataServer`.
 An instance is initiated by the orm when a :class:`StdModel` class is created.
 

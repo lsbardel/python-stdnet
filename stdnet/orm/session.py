@@ -765,7 +765,10 @@ def setup_managers(model):
     objects = getattr(model,'objects',None)
     managers.append(new_manager(model,'objects',objects))
     for name in dir(model):
-        value = getattr(model,name)
+        try:
+            value = getattr(model,name)
+        except ModelNotRegistered:
+            continue
         if name != 'objects' and isinstance(value,Manager):
             managers.append(new_manager(model,name,value))
     model._managers = managers

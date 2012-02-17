@@ -288,6 +288,11 @@ end
 return n
 '''
 
+class zpop(RedisScript):
+    script = read_lua_file('zpop.lua')
+    
+    
+
 class keyinfo(RedisScript):
     script = read_lua_file('keyinfo.lua')
     

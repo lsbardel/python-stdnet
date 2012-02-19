@@ -36,6 +36,10 @@ class TestFilter(FinanceTest):
         self.assertEqual(len(q1),N-1)
         for id,q in enumerate(q1,1):
             self.assertEqual(q.id,id)
+        q1 = qs[2:4]
+        self.assertEqual(len(q1),2)
+        self.assertEqual(q1[0].id,3)
+        self.assertEqual(q1[1].id,4)
             
     def testUnsortedSliceToEnd(self):
         session = self.session()
@@ -44,11 +48,23 @@ class TestFilter(FinanceTest):
         self.assertTrue(N)
         q1 = qs[0:]
         self.assertEqual(len(q1),N)
-        for id,q in enumerate(q1,1):
-            self.assertEqual(q.id,id)
+        # This time the result is sorted by ids
         q1 = qs[3:]
         self.assertEqual(len(q1),N-3)
         for id,q in enumerate(q1,4):
             self.assertEqual(q.id,id)
-
+            
+    def testSliceBack(self):
+        session = self.session()
+        qs = session.query(self.model)
+        N = qs.count()
+        self.assertTrue(N)
+        q1 = qs[-2:]
+        self.assertEqual(len(q1),2)
+        self.assertEqual(q1[0].id,N-1)
+        self.assertEqual(q1[1].id,N)
+        # This time the result is sorted by ids
+        q1 = qs[-2:-1]
+        self.assertEqual(len(q1),1)
+        self.assertEqual(q1[0].id,N-1)
     

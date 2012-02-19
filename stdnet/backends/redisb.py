@@ -319,15 +319,18 @@ elements in the query.'''
         elif meta.ordering:
             name = 'DESC' if meta.ordering.desc else 'ASC'
         elif start or stop is not None:
-            order = self.order(meta.get_sorting('id'))
+            order = self.order(meta.get_sorting(meta.pkname()))
         # Wen using the sort algorithm redis requires the number of element
         # not the stop index
         if order:
             name = 'explicit'
+            N = self.execute_query()
             if stop is None:
-                stop = self.execute_query()
+                stop = N
             elif stop < 0:
-                stop += self.execute_query()
+                stop += N
+            if start < 0:
+                start += N
             stop -= start
         elif stop is None:
             stop = -1

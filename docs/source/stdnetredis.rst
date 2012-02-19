@@ -6,27 +6,18 @@ Stdnet Redis branch
 
 During the development of stdnet_ we came across several design decisions, some
 more critical than others, and most of them were resolved coding the client
-only. However, more exotic features such as an efficient full text search and
-time series required hacking on the server side.
+only. However, more exotic features, such as the time series structure,
+required hacking on the server side.
 
 For this reason we have the stdnet-redis_ branch.
-
-
-Will stdnet-redis_ branch merged into redis_ master? This is a question for redis
-core developers.
 
 
 Sorted sets
 ==================================
 
-For some bizzare reasons redis does not have a ``zdiffstore`` command.
+For some reasons redis does not have a ``zdiffstore`` command.
 For 99% of applications this is not an issue, but when using stdnet_ with
 models which have an :ref:`implicit sorting <implicit-sorting>` it becomes one.
-Sorted sets are like sets, a collection of elements with no repetion, but
-unlike sets they are ordered with respect a score.
-
-Sorted sets allow stdnet to implement models with an implicit sorting
-with respect to a model field.
 
 
 ZDIFFSTORE
@@ -48,7 +39,7 @@ removed from the first sorted sets only if the score is matched.
 Time-series
 ==========================
 
-:ref:`Time-series <http://en.wikipedia.org/wiki/Time_series>` is an important
+Time-series_ is an important
 data-structure not yet supported in redis, it is represented by a unique sorted
 associative container, that is to say it associates ordered unique times to values.
 
@@ -58,7 +49,7 @@ and can be accessed by times or rank (the order of times in the time-series).
 Times are unique so that there will be only one value associated with a given time.
 
 Internally, a time-series is implemented using the same skiplist implementation
-as :ref:`ordered sets <http://redis.io/commands#sorted_set>`.
+as ordered sets.
 Values are added to a skip list which maintain sorting with respect to times.
 
 
@@ -137,37 +128,9 @@ Count element in range by ``time``::
 
     tscount key time_start,time_end
     
-This command is similar to :ref:`ZCOUNT http://redis.io/commands/zcount` for
-sorted sets.
+This command is similar to ZCOUNT_ for sorted sets.
 
-    
-    
-Sorting
-==================
-
-The stdnet branch includes a slightly modified sort_ command which can accept
-an extra parameter called ``storeset``.
-
-This is similar to the ``store`` parameter with the only
-difference that the result of the sorting algorithm will be stored
-in a set rather than in a list.
-
-At this point, the interested reader may spot a conundrum here. Why would you want
-to store the result of a sort algorithm into a data structure which 
-does not maintain ordering?
-
-The usage of this parameter in conjunction with the ``BY nosort`` inputs
-in the following patter::
-
-    SORT mydata BY nosort GET object_* STORESET resultkey
-    
-or::
-
-    SORT mydata BY nosort GET *_field STORESET resultkey
-    
-Essentially not performing any sorting whatsoever, instead the command
-aggregated fields of hashtable/s into a set.
-
+.. _ZCOUNT: http://redis.io/commands/zcount
 
 Source code changes
 ==========================
@@ -185,9 +148,6 @@ t_zset.c
 * Modified so that ``t_ts.c`` can use its internals.
 * Modified ``zunionInterGenericCommand`` function to accommodate the ZDIFFSTORE command.
 
-sort.c
---------
-* Modified the ``sortCommand`` to accomodate for the ``storeset`` parameter.
 
 Tests
 -------
@@ -202,3 +162,4 @@ To run the timeseries tests::
 .. _sort:  http://redis.io/commands/sort
 .. _stdnet-redis: https://github.com/lsbardel/redis
 .. _stdnet: http://lsbardel.github.com/python-stdnet/
+.. _Time-series: http://en.wikipedia.org/wiki/Time_series

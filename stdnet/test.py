@@ -64,8 +64,8 @@ will be unregistered after the :meth:`tearDown` method.'''
         r = None
         if self.backend.name == 'redis':
             r = self.backend.client.script_flush()
-        if isinstance(r,BackendRequest):
-            return r.add_callback(lambda r : self.clear_all())
+        if isinstance(r, BackendRequest):
+            return r.add_callback(lambda r: self.clear_all())
         else:
             return self.clear_all()
         

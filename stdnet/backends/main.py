@@ -13,6 +13,7 @@ __all__ = ['getdb', 'getcache', 'CacheClass']
 
 BACKENDS = {
     'redis': 'redisb',
+    'dynamo': 'dynamob'
 }
 
 
@@ -21,7 +22,7 @@ def parse_backend_uri(backend_uri):
 It returns a (scheme, host, params) tuple."""
     r = urlparse.urlsplit(backend_uri)
     scheme, host = r.scheme, r.netloc
-    if scheme not in ('https','http'):
+    if scheme not in ('https', 'http'):
         query = r.path
         path = ''
         if query:
@@ -61,7 +62,7 @@ def get_connection_string(scheme, address, params):
     return scheme + '://' + address
     
     
-def getdb(backend_uri = None, **kwargs):
+def getdb(backend_uri=None, **kwargs):
     '''get a backend database'''
     if isinstance(backend_uri,BackendDataServer):
         return backend_uri
@@ -75,7 +76,7 @@ def getdb(backend_uri = None, **kwargs):
     return _getdb(scheme, address, params)
 
 
-def getcache(backend_uri = None, encoder = encoders.PythonPickle, **kwargs):
+def getcache(backend_uri=None, encoder = encoders.PythonPickle, **kwargs):
     if isclass(encoder):
         encoder = encoder()
     db = getdb(backend_uri = backend_uri, pickler = encoder, **kwargs)
@@ -89,9 +90,9 @@ class CacheClass(object):
         scheme = params.pop('type','redis')
         self.db = _getdb(scheme, host, params)
         self.timeout = self.db.default_timeout
-        self.get     = self.db.get
-        self.set     = self.db.set
-        self.delete  = self.db.delete
+        self.get = self.db.get
+        self.set = self.db.set
+        self.delete = self.db.delete
         self.has_key = self.db.has_key
-        self.clear   = self.db.clear
+        self.clear = self.db.clear
         

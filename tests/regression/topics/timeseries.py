@@ -22,12 +22,13 @@ alldata2  = list(zip(dates2,values))
 testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
+
 skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
            'Requires stdnet-redis')
 class TestDateTimeSeries(TestMultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
-    defaultS = {'ticker': 'GOOG'}
+    defaults = {'ticker': 'GOOG'}
     
     def adddata(self, obj, data = None):
         data = data or testdata

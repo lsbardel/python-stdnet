@@ -9,7 +9,6 @@ from collections import namedtuple
 
 import stdnet
 from stdnet import FieldValueError, CommitException
-from stdnet.conf import settings
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping
 from stdnet.lib import redis
@@ -708,7 +707,6 @@ class BackendDataServer(stdnet.BackendDataServer):
                   'string': String}
         
     def setup_connection(self, address, **params):
-        self.namespace = params.get('prefix',settings.DEFAULT_KEYPREFIX)
         addr = address.split(':')
         if len(addr) == 2:
             try:
@@ -830,10 +828,14 @@ class BackendDataServer(stdnet.BackendDataServer):
                             if v is not None:
                                 score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
-                        id = instance.id or ''
+                        if state.persistent:
+                            action = 'c'
+                            id = state.iid
+                        else:
+                            action = 'a'
+                            id = instance.pkvalue() or ''
                         data = flat_mapping(data)
-                        action = 'c' if state.persistent else 'a'
-                        lua_data.extend((action,id,score,len(data)))
+                        lua_data.extend((action, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
                     options = {'sm': sm, 'iids': processed}
@@ -878,12 +880,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         options = {'meta':meta}
         pipe.script_call('delete_query', keys, *lua_data, **options)
         return query
-        
-    def basekey(self, meta, *args):
-        """Calculate the key to access model data in the backend backend."""
-        key = '{0}{1}'.format(self.namespace,meta.modelkey)
-        postfix = ':'.join((str(p) for p in args if p is not None))
-        return '{0}:{1}'.format(key,postfix) if postfix else key
     
     def tempkey(self, meta, name = None):
         return self.basekey(meta, TMP, name if name is not None else\

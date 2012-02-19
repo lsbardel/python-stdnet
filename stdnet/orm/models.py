@@ -40,7 +40,8 @@ class StdModel(StdNetBase):
     _loadedfields = None
     _state = None
     
-    def __init__(self, id = None, **kwargs):
+    def __init__(self, **kwargs):
+        kwargs.pop(self._meta.pkname(),None)
         for field in self._meta.scalarfields:
             self.set_field_value(field, kwargs.pop(field.name,None))
         if kwargs:

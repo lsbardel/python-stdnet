@@ -52,6 +52,9 @@ class ModelMeta(object):
         self.modelkey = modelkey
         hashmodel(model)
         
+    def pkname(self):
+        return 'id'
+    
     def maker(self):
         model = self.model
         return model.__new__(model)
@@ -168,25 +171,30 @@ mapper.
         self.timeout = 0
         self.related = {}
         self.verbose_name = verbose_name or self.name
-        # Check if ID field exists
-        try:
-            pk = fields['id']
-        except:
-            # ID field not available, create one
-            pk = AutoField(primary_key = True)
-        pk.register_with_model('id',model)
-        self.pk = pk
-        if not self.pk.primary_key:
-            raise FieldError("Primary key must be named id")
-        for name,field in fields.items():
-            if name == 'id':
-                continue
-            field.register_with_model(name,model)
+        # Check if PK field exists
+        pk = None
+        pkname = 'id'
+        for name in fields:
+            field = fields[name]
             if field.primary_key:
-                raise FieldError("Primary key already available %s." % name)
+                if pk is not None:
+                    raise FieldError("Primary key already available %s." % name)
+                pk = field
+                pkname = name
+        if pk is None:
+            # ID field not available, create one
+            pk = AutoField(primary_key=True)
+        pk.register_with_model(pkname, model)
+        fields.pop(pkname, None)
+        self.pk = pk
+        for name,field in fields.items():
+            field.register_with_model(name, model)
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
+    
+    def pkname(self):
+        return self.pk.name
     
     def pk_to_python(self, id):
         return self.pk.to_python(id)
@@ -357,15 +365,16 @@ class ModelState(object):
         self._persistent = False
         self.deleted = False
         dbdata = instance._dbdata
-        if instance.id and 'id' in dbdata:
-            if instance.id != dbdata['id']:
+        pkname = instance._meta.pkname()
+        pkvalue = getattr(instance, pkname)
+        if pkvalue and pkname in dbdata:
+            if pkvalue != dbdata[pkname]:
                 raise ValueError('Id has changed from {0} to {1}.'\
-                                 .format(instance.id,dbdata['id']))
+                                 .format(pkvalue,dbdata[pkname]))
             self._persistent = True
-            iid = instance.id
-        else:
-            iid = instance.id or 'new.{0}'.format(id(instance))
-        self._iid = iid
+        elif not pkvalue:
+            pkvalue = 'new.{0}'.format(id(instance))
+        self._iid = pkvalue
     
     @property
     def persistent(self):
@@ -396,9 +405,10 @@ model.'''
     '''Exception raised when an instance of a model does not validate. Usually
 raised when trying to save an invalid instance.'''
     
-    def __new__(cls, id = None, **kwargs):
+    def __new__(cls, **kwargs):
         o = super(Model,cls).__new__(cls)
-        o.id = id
+        pkname = cls._meta.pkname()
+        setattr(o, pkname, kwargs.pop(pkname,None))
         o._dbdata = {}
         return o
         
@@ -418,6 +428,9 @@ raised when trying to save an invalid instance.'''
         if 'state' not in self._dbdata or update:
             self._dbdata['state'] = ModelState(self)
         return self._dbdata['state']
+    
+    def pkvalue(self):
+        return getattr(self,self._meta.pkname())
     
     @classmethod
     def get_uuid(cls, id):

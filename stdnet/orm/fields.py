@@ -11,7 +11,8 @@ from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, to_string, is_string,\
                          to_bytestring, is_bytes_or_string, iteritems,\
-                         encoders, flat_to_nested, dict_flat_generator
+                         encoders, flat_to_nested, dict_flat_generator,\
+                         string_type
 
 from . import related
 from .globals import get_model_from_hash, JSPLITTER
@@ -133,9 +134,14 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     If ``True`` the field will be hidden from search algorithms.
     
     Default ``False``.
+    
+.. attribute:; python_type
+
+    The python ``type`` for the :class:`Field`.
 '''
     default = None
     type = None
+    python_type = None
     index = True
     ordered = False
     charset = None
@@ -196,7 +202,7 @@ function users should never call.'''
         self.meta  = meta
         meta.dfields[name] = self
         meta.fields.append(self)
-        if name is not 'id':
+        if not self.primary_key:
             self.add_to_fields()
             
     def add_to_fields(self):
@@ -290,8 +296,8 @@ value with a specific data type. it can be of four different types:
 * symbol
 '''
     def to_python(self, value):
-        if hasattr(value,'id'):
-            return value.id
+        if hasattr(value, '_meta'):
+            return value.pkvalue()
         else:
             return value
     json_serialize = to_python
@@ -360,6 +366,7 @@ class DateField(AtomField):
 a :class:`datetime.date` instance.'''
     type = 'date'
     internal_type = 'numeric'
+    python_type = date
     ordered = True
     default = None
     
@@ -391,6 +398,7 @@ class DateTimeField(DateField):
     '''A date :class:`AtomField` represented in Python by
 a :class:`datetime.datetime` instance.'''
     type = 'datetime'
+    python_type = datetime
     index = False
     
     @field_value_error
@@ -412,6 +420,7 @@ A symbol holds a unicode string as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.'''
     type = 'text'
+    python_type = string_type
     internal_type = 'text'
     charset = 'utf-8'
     default = ''
@@ -462,6 +471,7 @@ class ByteField(CharField):
 In python this is converted to `bytes`.'''
     type = 'bytes'
     internal_type = 'bytes'
+    python_type = bytes
     default = b''
     
     @field_value_error
@@ -522,6 +532,7 @@ the relation from the related object back to self.
 '''
     type = 'related object'
     internal_type = 'numeric'
+    python_type = int
     proxy_class = related.LazyForeignKey
     related_manager_class = related.One2ManyRelatedManager
     

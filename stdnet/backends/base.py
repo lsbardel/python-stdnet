@@ -1,6 +1,7 @@
 import json
 from collections import namedtuple
 
+from stdnet.conf import settings
 from stdnet.exceptions import *
 from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin
 
@@ -217,7 +218,7 @@ It must implement the *loads* and *dumps* methods.'''
     
     def __init__(self, name, address, pickler = None,
                  charset = 'utf-8', connection_string = '',
-                 **params):
+                 prefix = None, **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
@@ -225,6 +226,8 @@ It must implement the *loads* and *dumps* methods.'''
         self.pickler = pickler or encoders.NoEncoder()
         self.connection_string = connection_string
         self.params = params
+        self.namespace = prefix if prefix is not None else\
+                         settings.DEFAULT_KEYPREFIX
         self.client = self.setup_connection(address, **params)
 
     @property
@@ -310,18 +313,27 @@ from database.
         '''Remove temporary keys for a model'''
         pass
     
+    def basekey(self, meta, *args):
+        """Calculate the key to access model data.
+        
+:parameter meta: a :class:`stdnet.orm.Metaclass`.
+:parameter args: optional list of strings which are attached to the basekey.
+:rtype: a native string
+"""
+        key = '{0}{1}'.format(self.namespace,meta.modelkey)
+        postfix = ':'.join((str(p) for p in args if p is not None))
+        return '{0}:{1}'.format(key,postfix) if postfix else key
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address, **params):
         '''Callback during initialization. Implementation should override
-this function for customizing their handling of connection parameters.'''
+this function for customizing their handling of connection parameters. It
+must return a instance of the backend handler.'''
         raise NotImplementedError()
     
     def execute_session(self, session, callback):
         '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
-        raise NotImplementedError()
-    
-    def basekey(self, meta, *args):
         raise NotImplementedError()
     
     def model_keys(self, meta):

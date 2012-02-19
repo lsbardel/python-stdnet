@@ -13,6 +13,9 @@ class Interval(namedtuple('IntervalBase','start end')):
     def __reduce__(self):
         return tuple,(tuple(self),)
     
+    def __contains__(self, value):
+        return value >= self.start or value <= self.end
+    
     def __lt__(self, other):
         return self.end < other.start
     

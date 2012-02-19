@@ -109,7 +109,7 @@ class RedisData(list):
         super(RedisData,self).__init__(*args, **kwargs)
         
     def append(self, **kwargs):
-        instance = RedisDb(self.version,**kwargs)
+        instance = RedisDb(version = self.version, **kwargs)
         super(RedisData,self).append(instance)
     
     @property

@@ -152,16 +152,18 @@ within this :class:`Session`.'''
             raise ValueError('State is deleted. Cannot add.')
         self.pop(state.iid)
         persistent = persistent if persistent is not None else state.persistent
+        pkname = instance._meta.pkname()
         if persistent:
-            if 'id' in instance._dbdata:
-                id = instance._dbdata['id']
-                if id != instance.id:
-                    raise ValueError('Incopatible id "{0}". It should be {1}'
-                                     .format(id,instance.id))
+            if pkname in instance._dbdata:
+                pkvalue = instance._dbdata[pkname]
+                if pkvalue != instance.pkvalue():
+                    raise ValueError(
+                            'Incompatible primary key "{0}". It should be {1}'
+                            .format(pkvalue,instance.pkvalue()))
             else:
-                instance._dbdata['id'] = instance.id
+                instance._dbdata[pkname] = instance.pkvalue()
         else:
-            instance._dbdata.pop('id',None)
+            instance._dbdata.pop(pkname,None)
         state = instance.state(update = True)
         iid = state.iid
         if state.persistent:
@@ -272,7 +274,7 @@ within this :class:`Session`.'''
                 if instance is None:
                     raise InvalidTransaction('{0} session received id "{1}"\
  which is not in the session.'.format(self,result.iid))
-                instance.id = id
+                setattr(instance, instance._meta.pkname(), id)
                 instance = self.add(instance,
                                     modified = False,
                                     persistent = result.persistent)

@@ -65,8 +65,8 @@ if ordering == 'explicit' then
 		--bykey = skey .. '->*'
 		bykey = skey .. '*'
 		--redis.call('expire', skey, 5)
-	elseif field == 'id' then
-	   bykey = nil
+	elseif field == '' then
+	    bykey = nil
 	else
 		bykey = bk .. ':obj:*->' .. field
 	end
@@ -74,16 +74,16 @@ if ordering == 'explicit' then
 	if bykey then
 	   sortargs = {'BY',bykey}
 	end
-	if start > 0 or stop ~= -1 then
-		table.insert(sortargs,'LIMIT')
-		table.insert(sortargs,start)
-		table.insert(sortargs,stop)
+	if start > 0 or stop > 0 then
+		table.insert(sortargs, 'LIMIT')
+		table.insert(sortargs, start)
+		table.insert(sortargs, stop)
 	end
 	if alpha == 'ALPHA' then
-		table.insert(sortargs,alpha)
+		table.insert(sortargs, alpha)
 	end
 	if desc == 'DESC' then
-		table.insert(sortargs,desc)
+		table.insert(sortargs, desc)
 	end
 	ids = redis.call('sort', rkey, unpack(sortargs))
 	redis_delete(tkeys)

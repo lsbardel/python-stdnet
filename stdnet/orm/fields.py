@@ -549,6 +549,8 @@ the relation from the related object back to self.
     def register_with_related_model(self):
         # add the RelatedManager proxy to the model holding the field
         setattr(self.model, self.name, self.proxy_class(self))
+        setattr(self.model, self.get_query_attname(),
+                related.LazyForeignQuery(self))
         related.load_relmodel(self, self._set_relmodel)
         
     def _set_relmodel(self, relmodel):
@@ -571,6 +573,9 @@ the relation from the related object back to self.
         
     def get_attname(self):
         return '%s_id' % self.name
+    
+    def get_query_attname(self):
+        return '%s_query' % self.name
     
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)

@@ -980,6 +980,11 @@ class ServerCommandsTestCase(TestCase):
         self.make_list('a', '3214')
         self.assertEquals(self.client.sort('a', start=0, num=2), [b'1', b'2'])
         self.assertEquals(self.client.sort('a', start=2, num=2), [b'3', b'4'])
+        
+    def test_sort_limited_zset(self):
+        self.make_zset('a', {3: 1, 2: 2, 1: 3, 4: 4})
+        self.assertEquals(self.client.sort('a', start=0, num=2), [b'1', b'2'])
+        self.assertEquals(self.client.sort('a', start=2, num=2), [b'3', b'4'])
 
     def test_sort_by(self):
         self.client['score:1'] = 8

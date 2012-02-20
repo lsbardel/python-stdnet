@@ -95,8 +95,8 @@ class ColumnTS(orm.TS):
     def get(self, dt, *fields):
         return self.range(dt, dt, fields, self._get)
         
-    def stats(self, start, end, fields = None):
-        res = self.backend_structure().stats(start,end,fields)
+    def stats(self, start, end, fields=None):
+        res = self.backend_structure().stats(start, end, fields)
         return self.async_handle(res, self._stats)
     
     def merge(self, *series, **kwargs):
@@ -105,10 +105,8 @@ class ColumnTS(orm.TS):
             if len(serie) < 2:
                 raise ValueError('merge requires tuples of length 2 or more')
             for s in serie[1:]:
-                if not session:
+                if session is None:
                     session = s.session
-                elif session != s.session:
-                    raise ValueError('Session of timeseries are different')
         if not session:
             raise SessionNotAvailable('No session available')
         self.session = session

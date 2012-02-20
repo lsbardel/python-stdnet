@@ -289,6 +289,8 @@ elements in the query.'''
         if last.field.internal_type == 'text':
             meth = 'ALPHA'
         
+        if field == last.model._meta.pkname():
+            field = ''
         args = [field, meth, desc, len(nested_args)//2]
         args.extend(nested_args)
         return args
@@ -491,24 +493,29 @@ class Zset(RedisStructure):
     def count(self, start, stop):
         return self.client.zcount(self.id, start, stop)
     
-    def range(self, start, end, desc = False, withscores = True, **options):
+    def range(self, start, end, desc=False, withscores=True, **options):
         return self.async_handle(
-                self.client.zrangebyscore(self.id, start, end, desc = desc,
-                                          withscores = withscores, **options),
+                self.client.zrangebyscore(self.id, start, end, desc=desc,
+                                          withscores=withscores, **options),
                 self._range, withscores)
     
-    def irange(self, start = 0, stop = -1, desc = False, withscores = True,
-               **options):
+    def irange(self, start=0, stop=-1, desc=False, withscores=True, **options):
         return self.async_handle(
                     self.client.zrange(self.id, start, stop, desc = desc,
                                        withscores = withscores, **options),
                     self._range, withscores)
     
-    def ipop(self, start, stop = None, **options):
-        return self.client.zpopbyrank(start, stop, **options)
+    def ipop(self, start, stop=None, withscores=False, **options):
+        return self.async_handle(
+                self.client.zpopbyrank(self.id, start, stop,
+                                       withscores = withscores, **options),
+                self._range, withscores)
         
-    def pop(self, start, stop = None, **options):
-        return self.client.zpopbyscore(start, stop, **options)
+    def pop(self, start, stop=None, withscores=False, **options):
+        return self.async_handle(
+                self.client.zpopbyscore(self.id, start, stop,
+                                        withscores=withscores, **options),
+                self._range, withscores)
     
     def items(self):
         return self.irange()

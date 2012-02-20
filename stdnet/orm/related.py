@@ -11,7 +11,8 @@ RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 pending_lookups = {}
 
 
-__all__ = ['LazyForeignKey',
+__all__ = ['LazyForeignQuery',
+           'LazyForeignKey',
            'ModelFieldPickler']
 
 
@@ -91,10 +92,25 @@ def Many2ManyThroughModel(field):
     field2.register_with_model(name_relmodel, through)
 
 
-class LazyForeignKey(object):
+class LazyForeignQuery(object):
     '''Descriptor for a :class:`ForeignKey` field.'''
     def __init__(self, field):
         self.field = field
+    
+    def filter(self, instance):
+        val = getattr(instance, self.field.attname)
+        if val is not None:
+            return {self.field.relmodel._meta.pkname(): val}
+    
+    def __get__(self, instance, instance_type=None):
+        if instance is None:
+            return self
+        f = self.filter(instance)
+        if f:
+            return instance.session.query(self.field.relmodel).filter(**f)
+        
+        
+class LazyForeignKey(LazyForeignQuery):
 
     def __get__(self, instance, instance_type=None):
         if instance is None:

@@ -140,7 +140,7 @@ class EmptyQuery(Q):
         return 0
     
     def construct(self):
-        return None
+        return self
     
     @property
     def executed(self):
@@ -577,7 +577,7 @@ This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         q = self.construct()
         if q is None:
-            return EmptyQuery()
+            return EmptyQuery(self._meta, self.session)
         else:
             return q.backend_query(**kwargs)
     
@@ -625,7 +625,7 @@ an exception is raised.
             for f in fargs:
                 # no values to filter on. empty result.
                 if not f.valid:
-                    return EmptyQuery()
+                    return EmptyQuery(self._meta, self.session)
         else:
             fargs = None
         

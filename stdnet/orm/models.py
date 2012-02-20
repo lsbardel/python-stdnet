@@ -169,7 +169,18 @@ attribute.'''
             return field.scorefun(getattr(self,field.name))
         else:
             raise ValueError('Cannot obtain score for {0}'.format(self))
-         
+        
+    def load_fields(self, *fields):
+        '''Load extra fields to this :class:`StdModel`.'''
+        if self._loadedfields:
+            meta = self._meta
+            kwargs = {meta.pkname(): self.pkvalue()}
+            obj = self.__class__.objects.query().load_only(fields).get(**kwargs)
+            for name in fields:
+                field = meta.dfields.get(name)
+                if field is not None:
+                    setattr(self,field.attname,getattr(obj,field.attname,None))
+        
     # PICKLING SUPPORT
     
     def __getstate__(self):

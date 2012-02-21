@@ -92,10 +92,15 @@ class RedisColumnTS(redisb.TS):
         argv.extend(fields)
         self.instance.cache.merged_series = (keys,argv)
         
+    def istats(self, start, end, fields = None):
+        fields = fields or ()
+        return self.client.script_call('timeseries_stats', self.id,
+                'tsrange', start, end, len(fields), *fields)
+
     def stats(self, start, end, fields = None):
         fields = fields or ()
-        return self.client.script_call('timeseries_stats', self.id, start, end,
-                                       len(fields), *fields)
+        return self.client.script_call('timeseries_stats', self.id,
+                'tsrangebytime', start, end, len(fields), *fields)
         
 
 # Add the redis structure to the struct map in the backend class
@@ -132,6 +137,17 @@ class timeseries_query(redis.RedisScript):
         return response[0], tuple(zip(fields,response[2::2]))
         
 
+def safe2number(v):
+    try:
+        v = float(v)
+    except:
+        return v
+    try:
+        vi = int(v)
+    except:
+        return v
+    return vi if vi == v else v
+    
 class timeseries_stats(redis.RedisScript):
     script = (redis.read_lua_file('utils/table.lua'),
               redis.read_lua_file('columnts.lua',script_path),
@@ -139,9 +155,13 @@ class timeseries_stats(redis.RedisScript):
     
     def callback(self, request, response, args, **options):
         encoding = request.client.encoding
-        result = dict(redis.pairs_to_dict(response,encoding))
+        result = dict(redis.pairs_to_dict(response,encoding,safe2number))
         if result:
-            result['stats'] =\
-                dict(redis.pairs_to_dict(result['stats'],encoding))
+            result['stats'] = dict(self.stats_dict(result['stats'],encoding))
         return result
         
+    def stats_dict(self, stats, encoding):
+        pd = redis.pairs_to_dict
+        for k,v in pd(stats,encoding):
+            yield k,dict(pd(v,encoding,safe2number))
+            

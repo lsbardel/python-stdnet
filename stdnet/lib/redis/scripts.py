@@ -16,10 +16,14 @@ __all__ = ['RedisScript',
            'read_lua_file']
 
 
-def pairs_to_dict(response, encoding):
+def pairs_to_dict(response, encoding, value_encoder = 0):
     "Create a dict given a list of key/value pairs"
     if response:
-        return zip((r.decode(encoding) for r in response[::2]), response[1::2])
+        v1 = (r.decode(encoding) for r in response[::2])
+        v2 = response[1::2]
+        if value_encoder:
+            v2 = (value_encoder(v) for v in v2)
+        return zip(v1,v2)
     else:
         return ()
 

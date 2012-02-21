@@ -1,4 +1,5 @@
 from struct import pack, unpack
+from hashlib import sha1
  
 from stdnet.utils import encoders, ispy3k
 
@@ -21,6 +22,22 @@ int_to_bin = lambda f : pack('>i', f) + nil4
 bin_to_int = lambda f : unpack('>i', f[:4])[0]
 
 
+class DoubleEncoder(encoders.Default):
+    
+    def dumps(self, value):
+        try:
+            value = float(value)
+            return b'\x02'+float_to_bin(value)
+        except (TypeError,ValueError):
+            return nil
+    
+    def loads(self, value): 
+        if value[0] == 2:
+            return bin_to_float(value[1:])
+        else:
+            return nan
+        
+            
 class ValueEncoder(encoders.Default):
     value_length = 9
             

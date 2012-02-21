@@ -76,7 +76,7 @@ redis_after_receive = Signal(providing_args=["request"])
 class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
-    retry = 1
+    retry = 2
     def __init__(self, client, connection, command_name, args,
                  release_connection = True, **options):
         self.client = client
@@ -92,14 +92,13 @@ handling of a single command from start to the response from the server.'''
         # in the args input parameter
         if not self.command_name:
             self.response = []
-            command = connection.pack_pipeline(args)
+            self.command = connection.pack_pipeline(args)
         else:
-            command = connection.pack_command(command_name, *args)
-        # breadcast BEFORE SEND signal
+            self.command = connection.pack_command(command_name, *args)
+        # broadcast BEFORE SEND signal
         redis_before_send.send(client.__class__,
                                request = self,
-                               command = command)
-        self.send(command)
+                               command = self.command)
 
     @property
     def num_responses(self):
@@ -133,7 +132,7 @@ handling of a single command from start to the response from the server.'''
         return self.__str__()
         
     def _send(self, command, counter = 1):
-        "Send the command to the socket"
+        "Send the command to the server"
         self.connection.connect(self, counter)
         try:
             self.connection.sock.sendall(command)
@@ -144,18 +143,6 @@ handling of a single command from start to the response from the server.'''
                 _errno, errmsg = e.args
             raise ConnectionError("Error %s while writing to socket. %s." % \
                 (_errno, errmsg))
-
-    def send(self, command):
-        ''''Send an already packed command to the Redis server. Try :attr:`retry`
-times before raising an error. The socket may have timed-out.'''
-        r = 1
-        while r < self.retry:
-            try:
-                return self._send(command, r)
-            except ConnectionError:
-                self.connection.disconnect(release_connection = False)
-            r += 1
-        return self._send(command, r)
         
     def close(self):
         redis_after_receive.send(self.client.__class__, request = self)
@@ -195,15 +182,29 @@ times before raising an error. The socket may have timed-out.'''
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
     def recv(self):
+        r = 1
+        while r < self.retry:
+            try:
+                return self._sendrecv(r)
+            except ConnectionError as e:
+                if e.retry:
+                    self.connection.disconnect(release_connection = False)
+                    r += 1
+                else:
+                    raise
+        return self._sendrecv(r)
+    
+    def _sendrecv(self, counter):
+        self._send(self.command, counter)
         sock = self.connection.sock
         while not self.done:
             try:
                 stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             except (socket.error, socket.timeout) as e:
                 raise ConnectionError("Error while reading from socket: %s" % \
-                    (e.args,))
+                        (e.args,))
             if not stream:
-                raise ConnectionError("Socket closed on remote end")
+                raise ConnectionError("Socket closed on remote end", True)
             self.parse(stream)
         return self._response
     

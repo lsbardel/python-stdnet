@@ -95,7 +95,13 @@ class ColumnTS(orm.TS):
     def get(self, dt, *fields):
         return self.range(dt, dt, fields, self._get)
         
+    def istats(self, start=0, end=-1, fields=None):
+        res = self.backend_structure().istats(start, end, fields)
+        return self.async_handle(res, self._stats)
+    
     def stats(self, start, end, fields=None):
+        start = self.pickler.dumps(start)
+        end = self.pickler.dumps(end)
         res = self.backend_structure().stats(start, end, fields)
         return self.async_handle(res, self._stats)
     
@@ -156,9 +162,6 @@ The result will be calculated using the formula::
         if result:
             result['start'] = self.pickler.loads(result['start'])
             result['stop'] = self.pickler.loads(result['stop'])
-            stats = result['stats']
-            for k in stats:
-                stats[k] = [float(v) for v in stats[k]]
         return result
         
     

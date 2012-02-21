@@ -179,7 +179,7 @@ class TestOperations(test.TestCase):
             ts1.update(self.data1.values)
         dt,fields = ts1.irange()
         self.assertEqual(len(fields),6)
-        result = ts1.stats(0,-1)
+        result = ts1.istats(0,-1)
         self.assertTrue(result)
         self.assertEqual(result['start'],dt[0])
         self.assertEqual(result['stop'],dt[-1])
@@ -189,8 +189,31 @@ class TestOperations(test.TestCase):
             self.assertTrue(field in stats)
             stat_field = stats[field]
             data = self.data1.sorted_fields[field]
-            self.assertAlmostEqual(stat_field[0], min(data))
-            self.assertAlmostEqual(stat_field[1], max(data))
+            self.assertAlmostEqual(stat_field['min'], min(data))
+            self.assertAlmostEqual(stat_field['max'], max(data))
+            
+    def testStatsByTime(self):
+        session = self.session()
+        with session.begin():
+            ts1 = session.add(ColumnTS())
+            ts1.update(self.data1.values)
+        dt,fields = ts1.irange()
+        self.assertEqual(len(fields),6)
+        dt = dt[5:-5]
+        start = dt[0]
+        end = dt[-1]
+        result = ts1.stats(start,end)
+        self.assertTrue(result)
+        self.assertEqual(result['start'],start)
+        self.assertEqual(result['stop'],end)
+        self.assertEqual(result['len'],len(dt))
+        stats = result['stats']
+        for field in ('a','b','c','d','f','g'):
+            self.assertTrue(field in stats)
+            stat_field = stats[field]
+            data = self.data1.sorted_fields[field][5:-4]
+            self.assertAlmostEqual(stat_field['min'], min(data))
+            self.assertAlmostEqual(stat_field['max'], max(data))
             
     def test_merge2series(self):
         session = self.session()

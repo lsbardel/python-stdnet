@@ -7,7 +7,9 @@ class AuthenticationError(RedisError):
     pass
     
 class ConnectionError(RedisError):
-    pass
+    def __init__(self, msg, retry = False):
+        self.retry = retry
+        super(ConnectionError,self).__init__(msg)
     
 class ResponseError(RedisError):
     pass

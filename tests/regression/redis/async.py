@@ -17,7 +17,7 @@ def makeredis(pool = None):
     return cursor.client
     
 
-skipUnless(os.environ['stdnet_test_suite'] == 'pulsar','Requires pulsar')
+skipUnless(os.environ['stdnet_test_suite']=='pulsar', 'Requires pulsar')
 class RedisCommands(TestCase):
     
     @classmethod
@@ -37,7 +37,7 @@ class RedisCommands(TestCase):
         yield self.async.assertTrue(self.client.delete('a'))
         
         
-skipUnless(os.environ['stdnet_test_suite'] == 'pulsar','Requires pulsar')
+skipUnless(os.environ['stdnet_test_suite']=='pulsar', 'Requires pulsar')
 class AsyncStdnet(TestCase):
     model = SimpleModel
     
@@ -45,7 +45,7 @@ class AsyncStdnet(TestCase):
         from stdnet.lib.redis.async import AsyncRedisConnection
         return {'connection_class': AsyncRedisConnection}
     
-    def testcreate(self):
+    def __testcreate(self):
         m = SimpleModel(code = 'bla').save()
         
     

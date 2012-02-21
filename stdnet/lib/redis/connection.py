@@ -85,6 +85,7 @@ handling of a single command from start to the response from the server.'''
         self.args = args
         self.release_connection = release_connection
         self.options = options
+        self.tried = 0
         self._raw_response = []
         self._response = None
         self.response = connection.parser.gets()
@@ -131,11 +132,11 @@ handling of a single command from start to the response from the server.'''
     def __repr__(self):
         return self.__str__()
         
-    def _send(self, command, counter = 1):
+    def _send(self):
         "Send the command to the server"
-        self.connection.connect(self, counter)
+        self.connection.connect(self, self.tried)
         try:
-            self.connection.sock.sendall(command)
+            self.connection.sock.sendall(self.command)
         except socket.error as e:
             if len(e.args) == 1:
                 _errno, errmsg = 'UNKNOWN', e.args[0]
@@ -182,20 +183,20 @@ handling of a single command from start to the response from the server.'''
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
     def recv(self):
-        r = 1
-        while r < self.retry:
+        self.tried = 1
+        while self.tried < self.retry:
             try:
-                return self._sendrecv(r)
+                return self._sendrecv()
             except ConnectionError as e:
                 if e.retry:
                     self.connection.disconnect(release_connection = False)
-                    r += 1
+                    self.tried += 1
                 else:
                     raise
-        return self._sendrecv(r)
+        return self._sendrecv()
     
-    def _sendrecv(self, counter):
-        self._send(self.command, counter)
+    def _sendrecv(self):
+        self._send()
         sock = self.connection.sock
         while not self.done:
             try:
@@ -341,7 +342,7 @@ This class should not be directly initialized. Instead use the
                              release_connection = False)
             if not r.recv():
                 raise ConnectionError('Invalid Database "{0}". ({1})'\
-                                      .format(self.db,counter))
+                                      .format(self.db, counter))
             
         return request
 

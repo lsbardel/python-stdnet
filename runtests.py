@@ -9,6 +9,7 @@ from stdnet.utils import PPath
 from stdnet import getdb
 p = PPath(__file__)
 
+os.environ['stdnet_backend_status'] = 'initial'
 pulsar = p.add(module = 'pulsar', up = 1, down = ('pulsar',))
 if pulsar:    
     from pulsar.apps.test import TestSuite, TestOptionPlugin

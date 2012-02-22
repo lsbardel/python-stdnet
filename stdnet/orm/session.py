@@ -70,8 +70,7 @@ a :class:`SessionNotAvailable` exception.
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__        
     return _
-
-
+    
 class SessionModel(SessionModelBase):
     '''A :class:`SessionModel` is the container of all objects for a given
 :class:`Model` in a stdnet :class:`Session`.'''
@@ -147,6 +146,9 @@ within this :class:`Session`.'''
             return self._loaded.get(id)
         
     def add(self, instance, modified = True, persistent = None):
+        '''Add a new instance to the session.
+        
+:rtype: The instance added to the session'''
         state = instance.state()
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
@@ -176,7 +178,7 @@ within this :class:`Session`.'''
         
         return instance
     
-    def delete(self, instance):
+    def delete(self, instance, session):
         '''delete an *instance*'''
         inst = self.pop(instance)
         instance = inst if inst is not None else instance
@@ -185,6 +187,7 @@ within this :class:`Session`.'''
             if state.persistent:
                 state.deleted = True
                 self._deleted[state.iid] = instance
+                instance.session = session
             else:
                 instance.session = None
             return instance
@@ -204,10 +207,12 @@ within this :class:`Session`.'''
         instance = None
         for d in (self._new, self._modified, self._loaded, self._deleted):
             if iid in d:
-                if instance is not None:
+                inst = d.pop(iid)
+                if instance is None:
+                    instance = inst
+                elif inst is not instance:
                     raise ValueError(\
                     'Critical error. Instance {0} is duplicated'.format(iid))
-                instance = d.pop(iid)
         return instance
         
     def expunge(self, instance):
@@ -263,9 +268,14 @@ within this :class:`Session`.'''
         tpy = self.meta.pk_to_python
         instances = []
         deleted = []
+        errors = []
         # The length of results must be the same as the length of
         # all committed instances
         for result in results:
+            if isinstance(result,Exception):
+                errors.append(result.__class__(
+                'Exception while commiting {0}. {1}'.format(self.meta,result)))
+                continue
             instance = self.pop(result.iid)
             id = tpy(result.id)
             if result.deleted:
@@ -281,9 +291,21 @@ within this :class:`Session`.'''
                 if instance.state().persistent:
                     instances.append(instance)
                     
-        return instances, deleted
+        return instances, deleted, errors
 
 
+class SessionStructure(SessionModel):
+    '''A :class:`SessionStructure` is the container of all objects for a given
+:class:`Structure` in a stdnet :class:`Session`.'''
+    def add(self, instance, modified = True, persistent = None):
+        state = instance.state()
+        state.deleted = False
+        if not modified:
+            self.pop(instance)
+        self._modified[state.iid] = instance
+        return instance
+    
+    
 class Transaction(ServerOperation):
     '''Transaction class for pipelining commands to the backend server.
 An instance of this class is usually obtained via the :meth:`Session.begin`
@@ -420,7 +442,8 @@ Results can contain errors.
             if not response:
                 continue
             sm = session.model(meta, True)
-            saved, deleted = sm.post_commit(response)
+            saved, deleted, errors = sm.post_commit(response)
+            exceptions.extend(errors)
             if deleted:
                 self.deleted[meta] = deleted
                 if self.signal_delete:
@@ -442,7 +465,7 @@ Results can contain errors.
                             .format(failures)
                 error += '\n\n'.join((str(e) for e in e))
             else:
-                error = str(exceptions)
+                error = str(exceptions[0])
             raise CommitException(error, failures = failures)
         return self
     
@@ -518,7 +541,10 @@ class Session(object):
     def model(self, meta, make = False):
         sm = self._models.get(meta)
         if sm is None:
-            sm = SessionModel(meta,self)
+            if meta.model._model_type == 'structure':
+                sm = SessionStructure(meta, self)
+            else:
+                sm = SessionModel(meta, self)
             self._models[meta] = sm
         return sm
     
@@ -577,7 +603,7 @@ from the **kwargs** parameters.
 :parameter modified: a boolean flag indictaing if the instance was modified.
     
 '''
-        sm = self.model(instance._meta,True)
+        sm = self.model(instance._meta, True)
         instance.session = self
         return sm.add(instance, modified)
     
@@ -587,7 +613,7 @@ from the **kwargs** parameters.
         
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
 '''
-        sm = self.model(instance._meta,True)
+        sm = self.model(instance._meta, True)
         # not an instance of a Model. Assume it is a query.
         if is_query(instance):
             if instance.session is not self:
@@ -597,7 +623,7 @@ from the **kwargs** parameters.
                 sm._delete_query.append(q)
             return q
         else:
-            return sm.delete(instance)
+            return sm.delete(instance, self)
         
     def delete_query(self, query):
         meta = query._meta

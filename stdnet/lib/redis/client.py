@@ -74,7 +74,7 @@ In doing so, convert byte data into unicode.'''
     encoding = request.client.encoding
     response = response.decode(encoding)
     def get_value(value):
-        if ',' not in value:
+        if ',' and '=' not in value:
             return value
         sub_dict = {}
         for item in value.split(','):

@@ -185,9 +185,9 @@ can also be used as stand alone objects. For example::
         if self.instance is not None:
             if not self.id:
                 raise ValueError('Structure has instance but not id')
-            self.session = instance.session
         elif not self.id:
             self.id = self.makeid()
+        self._dbdata['id'] = self.id
         
     def obtain_session(self):
         if self.session is not None:

@@ -129,9 +129,9 @@ class commit_session(redis.RedisScript):
         for id,iid in zip(response,iids):
             if isinstance(id,list):
                 msg = id[1].decode(request.encoding)
-                raise CommitException(msg)
+                yield CommitException(msg)
             else:
-                yield instance_session_result(iid,True,id,False)
+                yield instance_session_result(iid, True, id, False)
     
     
 def structure_session_callback(sm, processed, response):

@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from stdnet import test
 from stdnet.utils import encoders
-from stdnet.apps.columnts import ColumnTS, ValueEncoder
+from stdnet.apps.columnts import ColumnTS, ValueEncoder, DoubleEncoder, nil
 from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 
@@ -427,6 +427,9 @@ class TestOperations(test.TestCase):
                     v = values[i]
                     self.assertNotEqual(v,v)
 
+
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
 class TestColumnTSField(test.TestCase):
     model = ColumnTimeSeries
     
@@ -438,4 +441,22 @@ class TestColumnTSField(test.TestCase):
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
         self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler,ValueEncoder))
+        self.assertTrue(isinstance(m.value_pickler, ValueEncoder))
+        
+        
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
+           'Requires stdnet-redis')
+class TestDoubleEncoder(test.TestCase):
+    
+    def ts(self):
+        return ColumnTS(value_pickler = DoubleEncoder())
+    
+    def testMeta(self):
+        ts = self.ts()
+        self.assertTrue(isinstance(ts.value_pickler,DoubleEncoder))
+        self.assertEqual(ts.value_pickler.dumps('ciao'),nil)
+        self.assertEqual(ts.value_pickler.dumps(None),nil)
+        v = ts.value_pickler.loads(nil)
+        self.assertNotEqual(v,v)
+        
+        

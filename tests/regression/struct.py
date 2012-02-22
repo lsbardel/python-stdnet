@@ -18,6 +18,16 @@ class StructMixin(object):
 itself.'''
         raise NotImplementedError()
     
+    def asserGroups(self, l):
+        sm = l.session.model(l._meta)
+        self.assertEqual(len(sm),1)
+        self.assertTrue(l.session)
+        self.assertTrue(l.state().persistent)
+        self.assertFalse(l in sm.new)
+        self.assertTrue(l in sm.dirty)
+        self.assertTrue(l in sm.modified)
+        self.assertFalse(l in sm.loaded)
+        
     def testMeta(self):
         session = self.session()
         # start the transaction
@@ -27,16 +37,12 @@ itself.'''
         self.assertEqual(l.instance, None)
         self.assertEqual(l.session, session)
         self.assertEqual(l._meta.name, self.name)
-        self.assertEqual(l._meta.model._model_type,'structure')
-        self.assertFalse(l.state().persistent)
+        self.assertEqual(l._meta.model._model_type, 'structure')
+        #Structure have always the persistent flag set to True
+        self.assertTrue(l.state().persistent)
         self.assertTrue(l in session)
         self.assertEqual(l.size(), 0)
-        #
-        sm = session.model(l._meta)
-        self.assertTrue(l in sm.new)
-        self.assertTrue(l in sm.dirty)
-        self.assertFalse(l in sm.modified)
-        self.assertFalse(l in sm.loaded)
+        self.asserGroups(l)
         return l
     
     def testCommit(self):
@@ -45,11 +51,7 @@ itself.'''
         self.assertTrue(l.state().persistent)
         self.assertTrue(l.size())
         self.assertTrue(l in l.session)
-        sm = l.session.model(l._meta)
-        self.assertFalse(l in sm.new)
-        self.assertFalse(l in sm.dirty)
-        self.assertFalse(l in sm.modified)
-        self.assertTrue(l in sm.loaded)
+        self.asserGroups(l)
         
     def testTransaction(self):
         session = self.session()
@@ -59,24 +61,16 @@ itself.'''
             self.assertRaises(InvalidTransaction, l.save)
             # Same for delete
             self.assertRaises(InvalidTransaction, l.delete)
-            self.assertFalse(l.state().persistent)
-            sm = session.model(l._meta)
-            self.assertTrue(l in sm.new)
-            self.assertTrue(l in sm.dirty)
-            self.assertFalse(l in sm.modified)
-            self.assertFalse(l in sm.loaded)
+            self.assertTrue(l.state().persistent)
+            self.asserGroups(l)
         self.assertTrue(l.size())
-        self.assertTrue(l.state().persistent)            
+        self.assertTrue(l.state().persistent)
         
     def testDelete(self):
         session = self.session()
         with session.begin():
             s = self.createOne(session)
-        self.assertTrue(s.session)
-        self.assertTrue(s.state().persistent)
-        self.assertFalse(s.state().deleted)
-        self.assertTrue(s in session)
-        self.assertFalse(s in session.dirty)
+        self.asserGroups(s)
         self.assertTrue(s.size())
         s.delete()
         self.assertEqual(s.size(),0)
@@ -87,16 +81,11 @@ itself.'''
         session = self.session()
         with session.begin():
             l = session.add(self.structure())
+        self.asserGroups(l)
         self.assertEqual(l.size(),0)
         self.assertEqual(l.session,session)
-        sm = session.model(l._meta)
-        self.assertTrue(l in session)
-        self.assertTrue(l in session.dirty)
-        self.assertFalse(l.state().persistent)
+        self.asserGroups(l)
         self.assertFalse(l.state().deleted)
-        self.assertFalse(l in sm.modified)
-        self.assertFalse(l in sm.loaded)
-        self.assertTrue(l in sm.new)
 
 
 class TestSet(StructMixin,test.TestCase):
@@ -117,7 +106,6 @@ class TestSet(StructMixin,test.TestCase):
         self.assertEqual(s.session, session)
         self.assertEqual(s.instance, None)
         self.assertEqual(s.size(),0)
-        self.assertFalse(s.state().persistent)
         # this add and commit to the backend server
         s.add(8)
         self.assertEqual(s.size(),1)
@@ -188,12 +176,12 @@ class TestZset(StructMixin,test.TestCase):
         '''test a very simple zset with integer'''
         session = self.session()
         z = session.add(orm.Zset())
-        self.assertFalse(z.state().persistent)
+        self.assertTrue(z.state().persistent)
         self.assertTrue(z in session)
-        self.assertEqual(z.session,session)
+        self.assertEqual(z.session, session)
         session.delete(z)
         self.assertFalse(z in session)
-        self.assertEqual(z.session, None)
+        self.assertTrue(z.session)
         
     def testiRange(self):
         l = self.planets()
@@ -235,10 +223,7 @@ class TestList(StructMixin, test.TestCase):
         l.push_back('save')
         l.push_back({'test': 1})
         l.session.commit()
-        sm = l.session.model(l._meta)
-        self.assertEqual(len(sm),1)
-        self.assertFalse(l in sm.dirty)
-        self.assertTrue(l in sm.loaded)
+        self.asserGroups(l)
         self.assertEqual(l.size(),4)
         self.assertEqual(list(l),[3,5.6,'save',"{'test': 1}"])
         

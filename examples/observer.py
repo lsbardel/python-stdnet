@@ -58,6 +58,9 @@ class UpdateZset(orm.Zset):
     def __init__(self, *args, **kwargs):
         self.penalty = kwargs.pop('penalty',self.penalty)
         super(UpdateZset,self).__init__(*args, **kwargs)
+    
+    def add(self, instance):
+        self.update((instance,))
         
     def dump_data(self, instances):
         for instance in instances:

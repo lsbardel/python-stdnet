@@ -135,7 +135,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
     Default ``False``.
     
-.. attribute:; python_type
+.. attribute:: python_type
 
     The python ``type`` for the :class:`Field`.
 '''
@@ -467,7 +467,7 @@ It accept an additional attribute
     
     
 class ByteField(CharField):
-    '''A field which contains binary data.
+    '''A :class:`CharField` which contains binary data.
 In python this is converted to `bytes`.'''
     type = 'bytes'
     internal_type = 'bytes'
@@ -629,7 +629,9 @@ behaviour and how the field is stored in the back-end server.
                     
     Default ``True``.
 
-For example, lets consider the following::
+In other words, a :class:`JSONField` with ``as_string`` attribute set to
+``False`` is a multifield, in the sense that it generates several
+field-value pairs. For example, lets consider the following::
 
     class MyModel(orm.StdModel):
         name = orm.SymbolField()

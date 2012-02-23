@@ -8,7 +8,7 @@ from .struct import *
 from .fields import *
 from .structfields import *
 from .signals import *
-from .globals import hashmodel, JSPLITTER
+from .globals import *
 from .utils import *
 from .search import SearchEngine
 from .related import *

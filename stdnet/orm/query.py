@@ -7,7 +7,8 @@ from stdnet.utils import zip, to_bytestring, JSPLITTER
 from .signals import *
 
 
-__all__ = ['Query','QueryElement','intersect','union','difference']
+__all__ = ['Query','QueryElement','EmptyQuery',
+           'intersect','union','difference']
 
 
 def iterable(value):
@@ -578,6 +579,8 @@ result stored for future retrieval.'''
         q = self.construct()
         if q is None:
             return EmptyQuery(self._meta, self.session)
+        elif isinstance(q, EmptyQuery):
+            return q
         else:
             return q.backend_query(**kwargs)
     

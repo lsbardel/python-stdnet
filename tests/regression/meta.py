@@ -51,6 +51,10 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertTrue(h)
         self.assertNotEqual(h,h0)
         
+    def testmodelFromHash(self):
+        m = orm.get_model_from_hash(Instrument._meta.hash)
+        self.assertEqual(m, Instrument)
+        
     def testUniqueId(self):
         '''Test model instance unique id across different model'''
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')

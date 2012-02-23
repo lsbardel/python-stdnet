@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 import stdnet
 from stdnet import test, orm
-from stdnet.utils import nested_json_value, date2timestamp, timestamp2date,\
+from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper
 
 from examples.models import Statistics3
@@ -12,7 +12,7 @@ from examples.models import Statistics3
 class TestUtils(test.TestCase):
     model = Statistics3
     
-    def testNestedJasonValue(self):
+    def __testNestedJasonValue(self):
         data = {'data':1000,
                 'folder1':{'folder11':1,
                            'folder12':2,
@@ -55,6 +55,14 @@ class TestUtils(test.TestCase):
         r = addmul_number_dicts((2,d1),(-1,d2))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla'],7)
+        self.assertEqual(r['foo'],2.5)
+        
+    def test_addmul_nested_dicts(self):
+        d1 = {'bla': {'bla1': 2.5}, 'foo': 1.1}
+        d2 = {'bla': {'bla1': -2}, 'foo': -0.3, 'moon': 8.5}
+        r = addmul_number_dicts((2,d1),(-1,d2))
+        self.assertEqual(len(r),2)
+        self.assertEqual(r['bla']['bla1'],7)
         self.assertEqual(r['foo'],2.5)
         
     def testGrouper(self):

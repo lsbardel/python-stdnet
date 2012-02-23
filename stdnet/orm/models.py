@@ -2,7 +2,7 @@ import copy
 import json
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, JSPLITTER, iteritems
+from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 
 from .base import StdNetType, Model
 from .session import Session, Manager
@@ -149,11 +149,12 @@ for example ``group__name``.'''
         return odict
     
     def _to_json(self):
-        if self.id:
-            yield 'id',self.id
+        pk = self.pkvalue()
+        if pk:
+            yield self._meta.pkname(),pk
             for field,value in self.fieldvalue_pairs():
                 value = field.json_serialize(value)
-                if value is not None:
+                if value not in EMPTYJSON:
                     yield field.name,value
             
     def tojson(self):
@@ -200,6 +201,22 @@ attribute.'''
             setattr(self,field.attname,field.to_python(value))
         self._dbdata = data.get('__dbdata__',{})
     
+    @classmethod
+    def from_base64_data(cls, **kwargs):
+        o = cls()
+        meta = cls._meta
+        pkname = meta.pkname()
+        for name,value in iteritems(kwargs):
+            if name == pkname:
+                field = meta.pk
+            elif name in meta.dfields:
+                field = meta.dfields[name]
+            else:
+                continue
+            value = field.to_python(value)
+            setattr(o,field.attname,value)
+        return o
+            
     
 def model_to_dict(instance, fields = None, exclude = None):
     if isinstance(instance,StdModel):

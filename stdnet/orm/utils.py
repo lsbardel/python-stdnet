@@ -2,6 +2,8 @@ import json
 from csv import DictWriter
 from inspect import isclass
 
+from stdnet.utils import StringIO
+
 __all__ = ['get_serializer',
            'register_serializer',
            'Serializer']
@@ -14,7 +16,7 @@ def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
 available an exception will raise. A common use usage pattern::
 
-    qs = MyModel.objects.all().order_by('id')
+    qs = MyModel.objects.query().sort_by('id')
     s = orm.get_serializer('json')
     s.serialize(qs)
 
@@ -58,12 +60,16 @@ class Serializer(object):
         data = []
         for obj in qs:
             data.append(obj.tojson())
-            model = str(obj._meta)
-        return {'model':model,
+            meta = obj._meta            
+        return {'model':str(meta),
+                'hash':meta.hash,
                 'data':data}
     
     def write(self, stream = None):
-        raise NotImplementedError
+        raise NotImplementedError()
+    
+    def load(self, stream):
+        raise NotImplementedError()
     
     
 class JsonSerializer(Serializer):
@@ -73,7 +79,15 @@ class JsonSerializer(Serializer):
         line = json.dumps(self.data, stream, **self.options)
         stream.write(line)
         return stream
-        
+
+    def load(self, stream):
+        data = json.loads(stream, **self.options)
+        for model_data in data:
+            model = data['hash']
+            with model.objects.transaction() as t:
+                for item_data in data['data']:
+                    t.add(model.from_base64_data(**item_data))
+            
         
 class CsvSerializer(Serializer):
             

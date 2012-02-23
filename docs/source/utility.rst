@@ -12,19 +12,21 @@ Default Settings
 .. automodule:: stdnet.conf
 
 
+.. module:: stdnet.orm
+
 Model Utilities
 ============================
 
 Instance form UUID
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.from_uuid
+.. autofunction:: from_uuid
 
 
 Model Iterator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.model_iterator
+.. autofunction:: model_iterator
 
 
 Flush Models
@@ -32,9 +34,6 @@ Flush Models
 
 .. autofunction:: stdnet.orm.flush_models
 
-
-
-.. module:: stdnet.utils
 
 .. _serialize-models:
 
@@ -47,32 +46,34 @@ different formats.
 Get serializer
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.get_serializer
+.. autofunction:: get_serializer
 
 
 Register serializer
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.register_serializer
+.. autofunction:: register_serializer
 
 
 Serializer
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.Serializer
+.. autoclass:: Serializer
    :members:
    :member-order: bysource
    
+
+.. module:: stdnet.utils
    
 JSON utilities
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.utils.jsontools.JSONDateDecimalEncoder
+.. autoclass:: JSONDateDecimalEncoder
    :members:
    :member-order: bysource
 
 
-.. autoclass:: stdnet.utils.jsontools.date_decimal_hook
+.. autoclass:: date_decimal_hook
    :members:
    :member-order: bysource
       
@@ -84,7 +85,7 @@ JSON utilities
 Encoders
 =======================
 
-.. autoclass:: stdnet.utils.encoders.Encoder
+.. autoclass:: Encoder
    :members:
    :member-order: bysource
 
@@ -92,7 +93,7 @@ Encoders
 No Encoder
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.utils.encoders.NoEncoder
+.. autoclass:: NoEncoder
    :members:
    :member-order: bysource
 
@@ -100,7 +101,7 @@ No Encoder
 Default
 ~~~~~~~~~~~~~~~~~~~~
    
-.. autoclass:: stdnet.utils.encoders.Default
+.. autoclass:: Default
    :members:
    :member-order: bysource
 
@@ -108,7 +109,7 @@ Default
 Bytes
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.utils.encoders.Bytes
+.. autoclass:: Bytes
    :members:
    :member-order: bysource
 
@@ -116,7 +117,7 @@ Bytes
 Json
 ~~~~~~~~~~~~~~~~~~~~
    
-.. autoclass:: stdnet.utils.encoders.Json
+.. autoclass:: Json
    :members:
    :member-order: bysource
 
@@ -124,7 +125,7 @@ Json
 Python Pickle
 ~~~~~~~~~~~~~~~~~~~~
    
-.. autoclass:: stdnet.utils.encoders.PythonPickle
+.. autoclass:: PythonPickle
    :members:
    :member-order: bysource
 
@@ -132,7 +133,7 @@ Python Pickle
 DateTimeConverter
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.utils.encoders.DateTimeConverter
+.. autoclass:: DateTimeConverter
    :members:
    :member-order: bysource
    
@@ -140,7 +141,7 @@ DateTimeConverter
 DateConverter
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.utils.encoders.DateConverter
+.. autoclass:: DateConverter
    :members:
    :member-order: bysource
 

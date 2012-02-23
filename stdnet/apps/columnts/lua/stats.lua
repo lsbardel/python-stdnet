@@ -22,7 +22,7 @@ function stats(self, command, start, stop, fields)
         local max_val =-1.e10
         local sum_val = 0
         local sum2_val = 0
-        local dsum, dsum2, dsum3, dsum4 = 0,0,0,0
+        local dsum, dsum2, dsum3, dsum4 = 0, 0, 0, 0
         local p, dv = nan
         for i,v in ipairs(values) do
             if v == v then
@@ -42,16 +42,16 @@ function stats(self, command, start, stop, fields)
                 N = N + 1
             end
         end
-        if N > 0 then
+        if N > 1 then
             sts[field] = {'N',N,
                           'min',min_val .. '',
                           'max',max_val .. '',
                           'sum',sum_val/N .. '',
                           'sum2',sum2_val/N .. '',
-                          'dsum',dsum/N .. '',
-                          'dsum2',dsum2/N .. '',
-                          'dsum3',dsum3/N .. '',
-                          'dsum4',dsum4/N .. ''}
+                          'dsum',dsum/(N-1) .. '',
+                          'dsum2',dsum2/(N-1) .. '',
+                          'dsum3',dsum3/(N-1) .. '',
+                          'dsum4',dsum4/(N-1) .. ''}
         end
     end
     return result

@@ -16,6 +16,7 @@ class SimpleModel(orm.StdModel):
     description = orm.CharField()
     somebytes = orm.ByteField()
     object = orm.PickleObjectField(required = False)
+    cached_data = orm.ByteField(as_cache = True)
     
     objects = CustomManager()
     

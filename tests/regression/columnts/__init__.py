@@ -51,6 +51,8 @@ class TestTimeSeries(struct.StructMixin, test.TestCase):
                                     'low':631.46, 'close':639.57})))
         self.assertTrue(len(ts.cache.fields['open']),2)
         self.assertTrue(len(ts.cache.fields),4)
+        # test bad add
+        self.assertRaises(TypeError, ts.add, date(2012,1,20), 1, 2, 3)
         return ts
     
     def makeGoogle(self):

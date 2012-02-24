@@ -137,6 +137,9 @@ class EmptyQuery(Q):
     def __len__(self):
         return 0
     
+    def __iter__(self):
+        return iter(())
+    
     def count(self):
         return 0
     

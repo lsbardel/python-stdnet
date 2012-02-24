@@ -5,16 +5,13 @@
 Tutorial 1
 ============================
 
-In this section we will walk you though all the main aspects of the library,
-following a simple application as example.
-We will refer back to the :ref:`library API <model-index>`
-as much as possible so that
-advanced configuration parameters and functionalities can be investigated.
+Here we deal with model implementation and creating instances persistent
+in a backend database.
 
 
 .. _creating-models:
 
-Creating Models
+Writing Models
 ==========================
 
 Defining stdnet *models* is achieved by subclassing the
@@ -34,11 +31,10 @@ The API should look familiar if you have come across django_
 web framework. :ref:`Fields <model-field>` (name in the Author model,
 title and author in the Book model) are specified as attribute of models.
 But while fields in django are the python representation of the columns in the
-backend database table, fields in stdnet are the fields of a redis hash table
-which represents an instance of a model.
-
-Information is available regarding how models instances are mapped into
-:ref:`the redis backend <redis-backend>`.
+backend database table, fields in stdnet are stored in different ways, depending
+on the :ref:`backend <db-index>` used.
+For example, in :ref:`redis <redis-server>`, fields are equivalent to the
+fields of a redis hash table which represents an instance of a model.
  
 
 .. _tutorial-application:
@@ -49,7 +45,12 @@ An application
 Let's start with tutorial application: a small hedge fund.
 You never know it may become useful in the future!
 
-The application uses the following three models::
+The application uses the following three models,
+
+* A ``Fund`` which stores information about several ``Position``
+* A ``Position`` is an investment on a particular funancial ``Instrument``.
+
+A minimal ``stdnet`` implementation can look like this::
 
     from stdnet import orm
     

@@ -9,7 +9,6 @@ from .redisinfo import RedisKey
 
 
 __all__ = ['RedisScript',
-           'ScriptBuilder',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
@@ -238,33 +237,6 @@ class ScriptCommand(object):
         command = name + ')'
         self.builder.append(command)
         return self.builder
-        
-        
-class ScriptBuilder(object):
-    
-    def __init__(self, redis):
-        self.redis = redis
-        self.script = None
-        self.lines = []
-    
-    def __getattr__(self, name):
-        return ScriptCommand(self, name)
-    
-    def append(self, line):
-        if self.script:
-            raise ValueError('Script has been executed already. Run clear')
-        self.lines.append(line)
-        
-    def clear(self):
-        self.script = None
-        self.lines = []
-        
-    def execute(self):
-        if self.lines:
-            lines = self.lines
-            lines.append('return res')
-            self.script = '\n'.join(lines)
-            return self.redis.eval(self.script)
         
         
 class countpattern(RedisScript):

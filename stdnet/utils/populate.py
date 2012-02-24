@@ -60,10 +60,7 @@ Supported data-types
     '''
     data = []
     converter = converter or def_converter
-    if datatype == 'string' and not choice_from:
-        for s in range(size):
-            data.append(converter(random_string(**kwargs)))
-    elif datatype == 'date':
+    if datatype == 'date':
         date_end   = end or date.today()
         date_start = start or date(1990,1,1)
         delta    = date_end - date_start
@@ -94,6 +91,3 @@ def random_string(min_len = 3, max_len = 20, **kwargs):
 
 def random_date(date_start, delta):
     return date_start + timedelta(days = randint(0,delta))
-    
-    
-    

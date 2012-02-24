@@ -1,3 +1,4 @@
+'''Tests meta classes and corner cases of the library'''
 import inspect
 
 from stdnet import test, orm
@@ -6,6 +7,7 @@ from stdnet.exceptions import QuerySetError
 from stdnet.orm import model_to_dict, model_iterator
 from stdnet.orm.base import StdNetType
 
+from examples.models import SimpleModel
 from examples.data import FinanceTest, Instrument, Fund, Position
 
 
@@ -51,6 +53,10 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertTrue(h)
         self.assertNotEqual(h,h0)
         
+    def testmodelFromHash(self):
+        m = orm.get_model_from_hash(Instrument._meta.hash)
+        self.assertEqual(m, Instrument)
+        
     def testUniqueId(self):
         '''Test model instance unique id across different model'''
         inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')
@@ -60,6 +66,12 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertEqual(len(v),2)
         self.assertEqual(v[0],inst._meta.hash)
         self.assertEqual(v[1],str(inst.id))
+        
+    def testModelValueError(self):
+        self.assertRaises(ValueError, Instrument, bla = 'foo')
+        self.assertRaises(ValueError, Instrument, name = 'bee', bla = 'foo')
+        self.assertRaises(ValueError, Instrument, name = 'bee', bla = 'foo',
+                          foo = 'pippo')
 
 
 class PickleSupport(test.TestCase):
@@ -97,3 +109,20 @@ class TestRegistration(test.TestCase):
         for m in d:
             self.assertTrue(inspect.isclass(m))
             self.assertTrue(isinstance(m,StdNetType))
+
+
+class TestStdModelMethods(test.TestCase):
+    model = SimpleModel
+    
+    def setUp(self):
+        self.register()
+        
+    def testClone(self):
+        s = SimpleModel(code = 'pluto', group = 'planet',
+                        cached_data = 'blabla').save()
+        self.assertEqual(s.cached_data,b'blabla')
+        self.assertEqual(s.id,1)
+        c = s.clone()
+        self.assertEqual(c.id,None)
+        self.assertFalse(c.cached_data)
+        

@@ -201,7 +201,7 @@ the input :class:`Query` and the *text* to search.'''
         if words is None:
             return q
         elif not words:
-            return None
+            return orm.EmptyQuery(q.meta,q.session)
         
         query = WordItem.objects.filter(model_type = q.model)
         qs =  []

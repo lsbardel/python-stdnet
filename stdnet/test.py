@@ -59,6 +59,8 @@ will be unregistered after the :meth:`tearDown` method.'''
     def _pre_setup(self):
         if not self.models and self.model:
             self.models = (self.model,)
+        if not self.model and self.models:
+            self.model = self.models[0]
         self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
         self.backend = getdb(prefix = self.prefix, **self.backend_params())
         r = None

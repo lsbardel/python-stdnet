@@ -35,6 +35,23 @@ def get_fields(bases, attrs):
     return fields
 
 
+def make_app_label(new_class, app_label = None):
+    if app_label is None:
+        model_module = sys.modules[new_class.__module__]
+        try:
+            bits = model_module.__name__.split('.')
+            if bits[0] == 'stdnet' and bits[1] == 'orm':
+                bits = bits[-1:]
+            else:
+                bits = bits[-2:]
+                if bits[-1] == 'models':
+                    bits.pop()
+            app_label = '.'.join(bits)
+        except:
+            app_label = ''
+    return app_label
+
+
 class ModelMeta(object):
     '''A class for storing meta data of a :class:`Model` class.'''
     def __init__(self, model, app_label = None, modelkey = None,
@@ -42,7 +59,7 @@ class ModelMeta(object):
         self.abstract = abstract
         self.model = model
         self.model._meta = self
-        self.app_label = app_label
+        self.app_label = make_app_label(model, app_label)
         self.name = model.__name__.lower()
         if not modelkey:
             if self.app_label:
@@ -50,7 +67,8 @@ class ModelMeta(object):
             else:
                 modelkey = self.name
         self.modelkey = modelkey
-        hashmodel(model)
+        if not abstract:
+            hashmodel(model)
         
     def pkname(self):
         return 'id'
@@ -230,18 +248,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
                             data[name] = svalue
                                 
         return len(errors) == 0
-    
-    def flush(self):
-        '''Fast method for clearing the whole table including related tables'''
-        N = 0
-        for rel in self.related.values():
-            rmeta = rel._meta
-            # This avoid circular reference
-            if rmeta is not self:
-                N += rmeta.flush()
-        if self.cursor:
-            N += self.cursor.flush(self)
-        return N
 
     def get_sorting(self, sortby, errorClass = None):
         s = None
@@ -269,7 +275,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
  It is not a scalar field.'.format(sortby))
         
     def backend_fields(self, fields):
-        '''Return a tuple containing a list
+        '''Return a two elements tuple containing a list
 of fields names and a list of field attribute names.'''
         dfields = self.dfields
         processed = set()
@@ -313,9 +319,9 @@ class ModelType(type):
     
     @classmethod    
     def make(cls, name, bases, attrs, meta):
-        model = type.__new__(cls, name, bases, attrs)
-        meta = ModelMeta(model)
-        return model
+        new_class = type.__new__(cls, name, bases, attrs) 
+        ModelMeta(new_class)
+        return new_class
 
 
 class StdNetType(ModelType):
@@ -323,25 +329,17 @@ class StdNetType(ModelType):
     @classmethod
     def make(cls, name, bases, attrs, meta):
         if meta:
-            kwargs   = meta_options(**meta.__dict__)
+            kwargs = meta_options(**meta.__dict__)
         else:
-            kwargs   = meta_options()
+            kwargs = meta_options()
             
         # remove and build field list
-        fields    = get_fields(bases, attrs)        
+        fields = get_fields(bases, attrs)        
         # create the new class
         new_class = type.__new__(cls, name, bases, attrs)
         setup_managers(new_class)
         app_label = kwargs.pop('app_label')
-        
-        if app_label is None:
-            model_module = sys.modules[new_class.__module__]
-            try:
-                app_label = model_module.__name__.split('.')[-2]
-            except:
-                app_label = ''
-        
-        meta = Metaclass(new_class,fields,app_label=app_label,**kwargs)
+        Metaclass(new_class, fields, app_label=app_label, **kwargs)
         signals.class_prepared.send(sender=new_class)
         return new_class
     

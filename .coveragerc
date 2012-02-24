@@ -1,3 +1,3 @@
 [run]
 source = stdnet
-omit = stdnet/utils/fallbacks/*,stdnet/test/*,stdnet/contrib/searchengine/tests/*,stdnet/contrib/timeseries/tests/*,stdnet/contrib/tasks/tests/*
+omit = stdnet/utils/fallbacks/*

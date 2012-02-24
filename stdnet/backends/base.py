@@ -25,13 +25,6 @@ instance_session_result = namedtuple('instance_session_result',
 session_result = namedtuple('session_result','meta results') 
 
 
-def intid(id):
-    try:
-        return int(id)
-    except ValueError:
-        return id
-
-
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
     pass
@@ -42,7 +35,7 @@ class AsyncObject(UnicodeMixin):
 is :meth:`async_handle`. Avery time there is a result from the server,
 this method should be called.'''
     def async_handle(self, result, callback, *args, **kwargs):
-        if isinstance(result,BackendRequest):
+        if isinstance(result, BackendRequest):
             return result.add_callback(lambda res :\
                         self.async_callback(callback, res, *args, **kwargs))
         else:
@@ -53,18 +46,7 @@ this method should be called.'''
             raise result
         else:
             return callback(result, *args, **kwargs)
-        
-                
-class Keys(object):
-    
-    def __init__(self,id,timeout,pipeline):
-        self.timeout = timeout
-        self.value = None
-        pipeline[id] = self
-        
-    def add(self, value):
-        self.value = value
-        
+
 
 class ServerOperation(object):
     
@@ -187,19 +169,19 @@ queries specified by :class:`stdnet.orm.Query`.
     
     # VIRTUAL FUNCTIONS
     
-    def _has(self, val):
-        raise NotImplementedError
+    def _has(self, val):    # pragma: no cover
+        raise NotImplementedError()
     
-    def _items(self, slic):
-        raise NotImplementedError
+    def _items(self, slic):     # pragma: no cover
+        raise NotImplementedError()
     
-    def _build(self, **kwargs):
-        raise NotImplementedError
+    def _build(self, **kwargs):     # pragma: no cover
+        raise NotImplementedError()
     
-    def _execute_query(self):
+    def _execute_query(self):       # pragma: no cover
         '''Execute the query without fetching data from server. Must
  be implemented by data-server backends.'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
 
 class BackendDataServer(object):
@@ -326,32 +308,32 @@ from database.
     
     # PURE VIRTUAL METHODS
     
-    def setup_connection(self, address, **params):
+    def setup_connection(self, address, **params):  # pragma: no cover
         '''Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.'''
         raise NotImplementedError()
     
-    def execute_session(self, session, callback):
+    def execute_session(self, session, callback):   # pragma: no cover
         '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
         raise NotImplementedError()
     
-    def model_keys(self, meta):
+    def model_keys(self, meta):     # pragma: no cover
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
         
-    def instance_keys(self, obj):
+    def instance_keys(self, obj):   # pragma: no cover
         '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError()
     
-    def as_cache(self):
+    def as_cache(self):     # pragma: no cover
         raise NotImplementedError('This backend cannot be used as cache')
     
-    def clear(self):
+    def clear(self):    # pragma: no cover
         """Remove *all* values from the database at once."""
         raise NotImplementedError()
     
-    def flush(self, meta = None, pattern = None):
+    def flush(self, meta = None, pattern = None):   # pragma: no cover
         raise NotImplementedError()
     
 

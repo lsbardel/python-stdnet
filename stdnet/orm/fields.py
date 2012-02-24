@@ -135,9 +135,15 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
     Default ``False``.
     
-.. attribute:; python_type
+.. attribute:: python_type
 
     The python ``type`` for the :class:`Field`.
+    
+.. attribute:: as_cache
+
+    If ``True`` the field contains cached data.
+    
+    Default ``False``.
 '''
     default = None
     type = None
@@ -149,7 +155,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     internal_type = None
     
     def __init__(self, unique = False, ordered = None, primary_key = False,
-                 required = True, index = None, hidden = None,
+                 required = True, index = None, hidden = None, as_cache = False,
                  **extras):
         self.primary_key = primary_key
         index = index if index is not None else self.index
@@ -167,7 +173,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.meta = None
         self.name = None
         self.model = None
-        self.as_cache = False
+        self.as_cache = as_cache
         self.default = extras.pop('default',self.default)
         self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
@@ -443,31 +449,20 @@ or other entities. They are indexes by default.'''
 class CharField(SymbolField):
     '''A text :class:`SymbolField` which is never an index.
 It contains unicode and by default and :attr:`Field.required`
-is set to ``False``.
-
-It accept an additional attribute
-
-.. attribute:: as_cache
-
-    If ``True`` the field contains cached data.
-    
-    Default ``False``.
-'''
+is set to ``False``.'''
     def __init__(self, *args, **kwargs):
         kwargs['index'] = False
         kwargs['unique'] = False
         kwargs['primary_key'] = False
-        as_cache = kwargs.pop('as_cache',False)
         self.max_length = kwargs.pop('max_length',None) # not used for now 
         required = kwargs.get('required',None)
         if required is None:
             kwargs['required'] = False
         super(CharField,self).__init__(*args, **kwargs)
-        self.as_cache = as_cache
     
     
 class ByteField(CharField):
-    '''A field which contains binary data.
+    '''A :class:`CharField` which contains binary data.
 In python this is converted to `bytes`.'''
     type = 'bytes'
     internal_type = 'bytes'
@@ -629,7 +624,9 @@ behaviour and how the field is stored in the back-end server.
                     
     Default ``True``.
 
-For example, lets consider the following::
+In other words, a :class:`JSONField` with ``as_string`` attribute set to
+``False`` is a multifield, in the sense that it generates several
+field-value pairs. For example, lets consider the following::
 
     class MyModel(orm.StdModel):
         name = orm.SymbolField()

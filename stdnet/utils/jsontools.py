@@ -10,8 +10,16 @@ except ImportError:
 from stdnet.utils import iteritems
 
 
-JSPLITTER = '__'
+__ALL__ = ['JSPLITTER','EMPTYJSON',
+           'date2timestamp','totimestamp',
+           'totimestamp2','todatetime',
+           'JSONDateDecimalEncoder','date_decimal_hook',
+           'DefaultJSONEncoder','DefaultJSONHook',
+           'flat_to_nested','dict_flat_generator',
+           'addmul_number_dicts']
 
+JSPLITTER = '__'
+EMPTYJSON = (b'', '', None)
 date2timestamp = lambda dte : int(time.mktime(dte.timetuple()))
 
 
@@ -68,31 +76,6 @@ def date_decimal_hook(dct):
 
 DefaultJSONEncoder = JSONDateDecimalEncoder
 DefaultJSONHook = date_decimal_hook
-    
-class JSONRPCEncoder(json.JSONEncoder):
-    """
-    Provide custom serializers for JSON-RPC.
-    """
-    def default(self, obj):
-        if isinstance(obj, date) or isinstance(obj, datetime):
-            return date2timestamp(obj)
-        else:
-            raise exceptions.JSONEncodeException(\
-                            "%r is not JSON serializable" % (obj,))
-        
-
-def nested_json_value(instance, attname, separator):
-    '''Extract a values from a nested dictionary.
-
-:parameter instance: and instance of an object.
-:parameter attname:: the attribute name'''
-    fields = attname.split(separator)
-    data = getattr(instance,fields[0])
-    for field in fields[1:]:
-        data = data[field]
-    if isinstance(data,dict):
-        data = data['']
-    return data
 
 
 def flat_to_nested(data, instance = None, attname = None,
@@ -178,6 +161,21 @@ def dict_flat_generator(value, attname = None, splitter = JSPLITTER,
                 yield k,v2
 
 
+def value_type(data):
+    v = None
+    for d in data:
+        typ = 0
+        if isinstance(d,(tuple,list)):
+            typ = 1
+        elif isinstance(d,dict):
+            typ = 2
+        if v is None:
+            v = typ
+        elif v != typ:
+            raise ValueError('Inconsistent types')
+    return v
+
+  
 def addmul_number_dicts(*series):
     '''Utility function for multiplying dictionary by a numeric value and
 add the results.
@@ -194,12 +192,16 @@ Only common fields are aggregated.
 '''
     if not series:
         return
-    keys = set(series[0][1])
-    for serie in series[1:]:
-        keys.intersection_update(serie[1])
-    
-    result = {}
-    for key in keys:
-        result[key] = sum((weight*d[key] for weight,d in series))
-    return result
+    vtype = value_type((s[1] for s in series))
+    if vtype == 0:
+        return sum((weight*d for weight,d in series))
+    elif vtype == 2:
+        keys = set(series[0][1])
+        for serie in series[1:]:
+            keys.intersection_update(serie[1])
+        result = {}
+        for key in keys:
+            key_series = tuple((weight,d[key]) for weight,d in series)
+            result[key] = addmul_number_dicts(*key_series)
+        return result
     

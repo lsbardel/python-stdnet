@@ -10,6 +10,7 @@ build/*
 .settings/*
 docs/build/*
 .coverage
+htmlcov/*
 .project
 .pydevproject
 MANIFEST

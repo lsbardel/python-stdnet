@@ -106,7 +106,17 @@ class TestDeleteMethod(FinanceTest):
         ids = instruments.delete()
         self.assertTrue(ids)
         self.assertEqual(len(ids),count)
-    
+        
+    def testDeleteMultiQueries(self):
+        session = self.data.create(self)
+        query = session.query(Instrument)
+        with session.begin() as t:
+            t.delete(query.filter(ccy = 'EUR'))
+            t.delete(query.filter(id__in = (1,2,3,4,5,6)))
+        for inst in query.all():
+            self.assertFalse(inst.id in (1,2,3,4,5,6))
+            self.assertNotEqual(inst.ccy,'EUR')
+        
 
 class TestDeleteScalarFields(FinanceTest):
         

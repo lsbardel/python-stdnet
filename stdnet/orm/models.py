@@ -2,7 +2,7 @@ import copy
 import json
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, JSPLITTER, iteritems
+from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 
 from .base import StdNetType, Model
 from .session import Session, Manager
@@ -74,13 +74,15 @@ class StdModel(StdNetBase):
                             processed.add(name)
                             yield field
     
-    def fieldvalue_pairs(self):
+    def fieldvalue_pairs(self, exclude_cache = False):
         '''Generator of fields,values pairs. Fields correspond to
 the ones which have been loaded (usually all of them) or
 not loaded but modified.
 Check the :ref:`load_only <performance-loadonly>` query function for more
 details.'''
         for field in self._meta.scalarfields:
+            if exclude_cache and field.as_cache:
+                continue
             name = field.attname
             if hasattr(self,name):
                 yield field,getattr(self,name)
@@ -105,19 +107,21 @@ for example ``group__name``.'''
                     return instance
             return instance
     
-    def clone(self, id = None, **data):
+    def clone(self, **data):
         '''Utility method for cloning the instance as a new object.
         
-:parameter id: Optional new id.
-:parameter data: addtitional data to override.
-:rtype: an instance of this class
+:parameter data: additional which override field data.
+:rtype: a new instance of this class.
 '''
-        fields = self.todict()
+        meta = self._meta
+        pkname = meta.pkname()
+        pkvalue = data.pop(pkname, None) 
+        fields = self.todict(exclude_cache = True)
         fields.update(data)
-        fields.pop('id',None)
-        fields.pop('__dbdata__',None)
+        fields.pop(pkname,None)
+        fields.pop('__dbdata__', None)
         instance = self._meta.maker()
-        instance.__setstate__((id, None, fields))
+        instance.__setstate__((pkvalue, None, fields))
         return instance
     
     def is_valid(self):
@@ -127,48 +131,37 @@ for example ``group__name``.'''
 :rtype: Boolean indicating if the model validates.'''
         return self._meta.is_valid(self)
     
-    @property
-    def toload(self):
-        return self._valattr('toload')
-    
     def obtain_session(self):
         if self.session is not None:
             return self.session.session()
         else:
             return self.__class__.objects.session()
     
-    def todict(self):
-        '''Return a dictionary of serialised scalar field for pickling'''
+    def todict(self, exclude_cache = False):
+        '''Return a dictionary of serialised scalar field for pickling.
+If the *exclude_cache* flag is ``True``, fields with :attr:`Field.as_cache`
+attribute set to ``True`` will be excluded.'''
         odict = {}
-        for field,value in self.fieldvalue_pairs():
+        for field,value in self.fieldvalue_pairs(exclude_cache = exclude_cache):
             value = field.serialize(value)
             if value:
                 odict[field.name] = value
         if 'id' in self._dbdata:
-            odict['__dbdata__'] = {'id':self._dbdata['id']}
+            odict['__dbdata__'] = {'id': self._dbdata['id']}
         return odict
     
     def _to_json(self):
-        if self.id:
-            yield 'id',self.id
+        pk = self.pkvalue()
+        if pk:
+            yield self._meta.pkname(),pk
             for field,value in self.fieldvalue_pairs():
                 value = field.json_serialize(value)
-                if value is not None:
+                if value not in EMPTYJSON:
                     yield field.name,value
             
     def tojson(self):
         '''return a JSON serializable dictionary representation.'''
         return dict(self._to_json())
-    
-    def score(self):
-        '''Obtain a score for the instance. This function is valid only if the
-model has available an implicit ordering via the :attr:`Metaclass.ordering`
-attribute.'''
-        if self._meta.ordering:
-            field = self._meta.ordering.field
-            return field.scorefun(getattr(self,field.name))
-        else:
-            raise ValueError('Cannot obtain score for {0}'.format(self))
         
     def load_fields(self, *fields):
         '''Load extra fields to this :class:`StdModel`.'''
@@ -200,6 +193,22 @@ attribute.'''
             setattr(self,field.attname,field.to_python(value))
         self._dbdata = data.get('__dbdata__',{})
     
+    @classmethod
+    def from_base64_data(cls, **kwargs):
+        o = cls()
+        meta = cls._meta
+        pkname = meta.pkname()
+        for name,value in iteritems(kwargs):
+            if name == pkname:
+                field = meta.pk
+            elif name in meta.dfields:
+                field = meta.dfields[name]
+            else:
+                continue
+            value = field.to_python(value)
+            setattr(o,field.attname,value)
+        return o
+            
     
 def model_to_dict(instance, fields = None, exclude = None):
     if isinstance(instance,StdModel):

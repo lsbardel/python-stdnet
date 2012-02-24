@@ -15,8 +15,7 @@ the equivalent of columns in a traditional relational databases.
     in a traditional relational database. Stdnet fields can be added, removed or
     changed without requiring any time consuming database migration!
     
-    This is an added bonus which can be of high importance when prototyping but
-    it can lead to loss of data if a user abuses it.
+    This is an added bonus which can be of high importance when prototyping.
  
 
 .. _fieldbaseclasses:

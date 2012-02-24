@@ -5,19 +5,6 @@ import os
 import sys
 import types
 
-
-VERSION = (0, 1, 0)
-
-def get_version():
-    return '.'.join(map(str,VERSION))
-
-__version__ = get_version()
-__license__   = "BSD"
-__author__    = "Luca Sbardella"
-__contact__   = "luca.sbardella@gmail.com"
-__homepage__  = "https://github.com/lsbardel/py2py3"
-
-
 ispy3k = int(sys.version[0]) >= 3
 
 UTF8 = 'utf-8'

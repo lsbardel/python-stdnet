@@ -12,10 +12,10 @@ class TestPubSub(test.TestCase):
     def testSimple(self):
         s = Subscriber()
         p = Publisher()
-        r = s.subscribe('test')
-        self.assertEqual(p.publish('test','hello world!'),1)
-        self.assertTrue(s.connection)
-        self.assertEqual(s.subscription_count,1)
+        # subscribe to 'test' message queue
+        s.subscribe('test')
+        self.assertEqual(s.subscription_count(), 1)
+        self.assertEqual(p.publish('test','hello world!'), 1)
         res = list(s.pull(count = 1))
         self.assertEqual(len(res),1)
         res = res[0]

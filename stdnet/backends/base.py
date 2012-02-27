@@ -336,4 +336,7 @@ must return a instance of the backend handler.'''
     def flush(self, meta = None, pattern = None):   # pragma: no cover
         raise NotImplementedError()
     
+    def subscriber(self):   # pragma: no cover
+        raise NotImplementedError()
+    
 

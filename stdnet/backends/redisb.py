@@ -940,4 +940,5 @@ class BackendDataServer(stdnet.BackendDataServer):
             pipe.add_callback(
                         partial(structure_session_callback,sm))
         
-        
+    def subscriber(self):
+        return redis.Subscriber(self.client)    

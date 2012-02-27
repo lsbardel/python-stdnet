@@ -1,13 +1,12 @@
 from inspect import isclass
 
-from stdnet import getdb
+from stdnet import getdb, AsyncObject
 from stdnet.utils.encoders import Json
 from stdnet.utils import is_string
-from stdnet.lib import redis
     
     
 class Publisher(object):
-    
+    '''Class which publish messages to message queues.'''
     def __init__(self, server = None, pickler = Json):
         if isclass(pickler):
             pickler = pickler()
@@ -16,117 +15,40 @@ class Publisher(object):
         
     def publish(self, channel, data):
         data = self.pickler.dumps(data)
+        #return self.backend.publish(channel, data)
         return self.client.execute_command('PUBLISH', channel, data)
     
     
-class Subscriber(redis.RedisProxy):
-    
+class Subscriber(AsyncObject):
+    '''Subscribe to '''
     def __init__(self, server = None, pickler = Json):
         if isclass(pickler):
             pickler = pickler()
         self.pickler = pickler
-        client = getdb(server).client
-        super(Subscriber,self).__init__(client)
-        self.connection = None
-        self.subscription_count = 0
-        self.channels = set()
-        self.patterns = set()
-        self.options = {'release_connection': False}
-        self.subscribe_commands = set(
-            (b'subscribe', b'psubscribe', b'unsubscribe', b'punsubscribe')
-            )
-        
-    def __del__(self):
-        try:
-            if self.connection and (self.channels or self.patterns):
-                self.connection.disconnect()
-            self.disconnect()
-        except:
-            pass
+        self.client = getdb(server).subscriber()
         
     def disconnect(self):
-        if self.connection:
-            self.client.connection_pool.release(self.connection)
-            self.connection = None
-            
-    def subscribe(self, channels):
-        return self.execute_command('SUBSCRIBE', channels, self.channels)
+        self.client.disconnect()
     
+    def subscription_count(self):
+        return self.client.subscription_count()
+    
+    def subscribe(self, channels):
+        return self.client.subscribe(channels)
+     
     def unsubscribe(self, channels):
-        return self.execute_command('UNSUBSCRIBE', channels, self.channels,
-                                    False)
+        return self.client.unsubscribe(channels)
     
     def psubscribe(self, channels):
-        return self.execute_command('PSUBSCRIBE', channels, self.patterns)
+        return self.client.psubscribe(channels)
     
     def punsubscribe(self, channels):
-        return self.execute_command('PUNSUBSCRIBE', channels, self.patterns,
-                                    False)
-    
-    def execute_command(self, command, channels, container, add = True):
-        "Execute a publish/subscribe command"
-        if is_string(channels):
-            channels = [channels]
-        if add:
-            for c in channels:
-                container.add(c)
-        else:
-            for c in channels:
-                try:
-                    container.remove(c)
-                except KeyError:
-                    pass
-        if self.connection is None:
-            self.connection = self.client.connection_pool.get_connection()
-        connection = self.connection
-        try:
-            return connection.execute_command(self, command,
-                                              *channels, **self.options)
-        except redis.ConnectionError:
-            connection.disconnect()
-            # Connect manually here. If the Redis server is down, this will
-            # fail and raise a ConnectionError as desired.
-            connection.connect()
-            # resubscribe to all channels and patterns before
-            # resending the current command
-            for channel in self.channels:
-                self.subscribe(channel)
-            for pattern in self.patterns:
-                self.psubscribe(pattern)
-            connection.send_command(command, channels)
-            return self.parse_response()
-
-    def parse_response(self, request):
-        "Parse the response from a publish/subscribe command"
-        response = request.response
-        if response[0] in self.subscribe_commands:
-            self.subscription_count = response[2]
-            # if we've just unsubscribed from the remaining channels,
-            # release the connection back to the pool
-            if not self.subscription_count:
-                self.disconnect()
-        #data = self.pickler.dumps(data)
-        return response
+        return self.client.punsubscribe(channels)
     
     def pull(self, timeout = None, count = None):
-        c = 0
-        loads = self.pickler.loads
-        while self.subscription_count and (count and c < count):
-            r = self.parse_response()
-            c += 1
-            if r[0] == b'pmessage':
-                msg = {
-                    'type': 'pmessage',
-                    'pattern': r[1].decode('utf-8'),
-                    'channel': r[2].decode('utf-8'),
-                    'data': loads(r[3])
-                }
-            else:
-                msg = {
-                    'type': 'message',
-                    'pattern': None,
-                    'channel': r[1].decode('utf-8'),
-                    'data': loads(r[2])
-                }
-            yield msg
-    
+        '''Retrieve new messages from the subscribed channels.
+
+:parameter timeout: Optional timeout in seconds.
+:parameter count: Optional number of messages to retrieve.'''
+        return self.client.pull(timeout, count, self.pickler.loads)
+       

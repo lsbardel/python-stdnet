@@ -88,18 +88,18 @@ handling of a single command from start to the response from the server.'''
         self.tried = 0
         self._raw_response = []
         self._response = None
+        self._is_pipeline = False
         self.response = connection.parser.gets()
         # if the command_name is missing, it means it is a pipeline of commands
         # in the args input parameter
-        if not self.command_name:
+        if self.command_name is None:
+            self._is_pipeline = True
             self.response = []
             self.command = connection.pack_pipeline(args)
-        else:
+        elif self.command_name:
             self.command = connection.pack_command(command_name, *args)
-        # broadcast BEFORE SEND signal
-        redis_before_send.send(client.__class__,
-                               request = self,
-                               command = self.command)
+        else:
+            self.command = None
 
     @property
     def num_responses(self):
@@ -109,15 +109,19 @@ handling of a single command from start to the response from the server.'''
             return len(self.args)
         
     @property
+    def is_pipeline(self):
+        return self._is_pipeline
+    
+    @property
     def encoding(self):
         return self.client.encoding
     
     @property
     def done(self):
-        if self.command_name:
-            return self.response is not False
-        else:
+        if self.is_pipeline:
             return len(self.response) == self.num_responses
+        else:
+            return self.response is not False
         
     @property
     def raw_response(self):
@@ -134,6 +138,10 @@ handling of a single command from start to the response from the server.'''
         
     def _send(self):
         "Send the command to the server"
+        # broadcast BEFORE SEND signal
+        redis_before_send.send(self.client.__class__,
+                               request = self,
+                               command = self.command)
         self.connection.connect(self, self.tried)
         try:
             self.connection.sock.sendall(self.command)
@@ -163,20 +171,21 @@ handling of a single command from start to the response from the server.'''
         
     def parse(self, data):
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
+        self._raw_response.append(data)
         parser = self.connection.parser
         parser.feed(data)
         self._raw_response.append(data)
-        if self.command_name:
-            self.response = parser.gets()
-            if self.response is not False:
-                self.close()
-        else:
+        if self.is_pipeline:
             while 1:
                 response = parser.gets()
                 if response is False:
                     break
                 self.response.append(response)
             if len(self.response) == self.num_responses:
+                self.close()
+        else:
+            self.response = parser.gets()
+            if self.response is not False:
                 self.close()
         
 
@@ -197,6 +206,9 @@ class SyncRedisRequest(RedisRequest):
     
     def _sendrecv(self):
         self._send()
+        return self.read_response()
+    
+    def read_response(self):
         sock = self.connection.sock
         while not self.done:
             try:
@@ -410,7 +422,6 @@ command byte to be send to redis.'''
 :rtype: ?'''
         return self.request_class(client, self, None, commands)\
                    .recv()
-
 
 ConnectionClass = None
 

@@ -17,6 +17,7 @@ class SimpleModel(orm.StdModel):
     somebytes = orm.ByteField()
     object = orm.PickleObjectField(required = False)
     cached_data = orm.ByteField(as_cache = True)
+    timestamp = orm.DateTimeField(as_cache = True)
     
     objects = CustomManager()
     
@@ -215,6 +216,12 @@ class Statistics(orm.StdModel):
 class Statistics3(orm.StdModel):
     name = orm.SymbolField()
     data = orm.JSONField(as_string = False)
+    
+    
+class ComplexModel(orm.StdModel):
+    name = orm.SymbolField()
+    timestamp = orm.DateTimeField(as_cache = True)
+    data = orm.JSONField(as_string = False, as_cache = True)
     
     
     

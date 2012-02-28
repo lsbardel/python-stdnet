@@ -349,6 +349,10 @@ elements in the query.'''
                 fields, fields_attributes = meta.backend_fields((get,))
         else:
             fields = self.queryelem.fields or None
+            if fields:
+                fields = set(fields)
+                fields.update(self.queryelem.select_related or ())
+                fields = tuple(fields)
             if fields == ('id',):
                 fields_attributes = fields
             elif fields:
@@ -839,7 +843,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                                 score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         if state.persistent:
-                            action = 'c'
+                            action = 'o' if instance.has_all_data else 'c'
                             id = state.iid
                         else:
                             action = 'a'

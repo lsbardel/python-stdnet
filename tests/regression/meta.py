@@ -1,5 +1,6 @@
 '''Tests meta classes and corner cases of the library'''
 import inspect
+from datetime import datetime
 
 from stdnet import test, orm
 from stdnet.utils import populate, pickle
@@ -7,7 +8,7 @@ from stdnet.exceptions import QuerySetError
 from stdnet.orm import model_to_dict, model_iterator
 from stdnet.orm.base import StdNetType
 
-from examples.models import SimpleModel
+from examples.models import SimpleModel, ComplexModel
 from examples.data import FinanceTest, Instrument, Fund, Position
 
 
@@ -126,3 +127,39 @@ class TestStdModelMethods(test.TestCase):
         self.assertEqual(c.id,None)
         self.assertFalse(c.cached_data)
         
+    def test_clear_cache_fields(self):
+        fields = self.model._meta.dfields
+        self.assertTrue(fields['timestamp'].as_cache)
+        self.assertFalse(fields['timestamp'].required)
+        self.assertFalse(fields['timestamp'].index)
+        m = self.model(code = 'bla', timestamp = datetime.now()).save()
+        self.assertTrue(m.timestamp)
+        m.clear_cache_fields()
+        self.assertEqual(m.timestamp,None)
+        m.save()
+        m = self.model.objects.get(id = 1)
+        self.assertEqual(m.timestamp,None)
+        
+
+class TestComplexModel(test.TestCase):
+    model = ComplexModel
+    
+    def setUp(self):
+        self.register()
+    
+    def testJsonClear(self):
+        m = self.model(name ='bla',
+                       data = {'italy':'rome', 'england':'london'}).save()
+        m = self.model.objects.query().load_only('name').get(id = 1)
+        self.assertFalse(m.has_all_data)
+        m.data = {'france':'paris'}
+        m.save()
+        m = self.model.objects.query().get(id = 1)
+        self.assertEqual(m.data,{'italy':'rome',
+                                 'england':'london',
+                                 'france':'paris'})
+        self.assertEqual(m.data__italy,'rome')
+        m.data = None
+        m.save()
+        m = self.model.objects.query().get(id = 1)
+        self.assertEqual(m.data, {})

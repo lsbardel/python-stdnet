@@ -5,14 +5,9 @@ from struct import pack, unpack
 
 from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          JSONDateDecimalEncoder, DefaultJSONHook,\
-                         ispy3k, date2timestamp, timestamp2date
+                         ispy3k, date2timestamp, timestamp2date,\
+                         string_type
 
-if ispy3k:
-    str_type = str
-else:
-    str_type = unicode
-
-    
 
 class Encoder(object):
     '''Virtaul class for encoding data in
@@ -36,7 +31,7 @@ for serializing and loading data to and from the data server.
         
 class Default(Encoder):
     '''The default unicode encoder'''
-    type = str_type
+    type = string_type
     
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
         self.charset = charset

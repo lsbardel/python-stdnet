@@ -24,6 +24,7 @@ available in :mod:`stdnet`.
    :maxdepth: 1
    
    tutorial
+   query
    tutorial2
    performance
    timeseries

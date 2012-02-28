@@ -141,7 +141,9 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: as_cache
 
-    If ``True`` the field contains cached data.
+    If ``True`` the field contains data which is considered cache and
+    therefore always reproducible. Field marked as cahe, have :attr:`required`
+    always ``False``.
     
     Default ``False``.
 '''
@@ -160,20 +162,25 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         self.primary_key = primary_key
         index = index if index is not None else self.index
         if primary_key:
-            self.unique   = True
+            self.unique = True
             self.required = True
-            self.index    = True
+            self.index = True
+            self.as_cache = False
         else:
             self.unique = unique
             self.required = required
+            self.as_cache = as_cache
             self.index = True if unique else index
+        if self.as_cache:
+            self.required = False
+            self.unique = False
+            self.index = False
         self.charset = extras.pop('charset',self.charset)
         self.ordered = ordered if ordered is not None else self.ordered
         self.hidden = hidden if hidden is not None else self.hidden
         self.meta = None
         self.name = None
         self.model = None
-        self.as_cache = as_cache
         self.default = extras.pop('default',self.default)
         self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
@@ -616,38 +623,43 @@ behaviour and how the field is stored in the back-end server.
 
     Default: :class:`stdnet.utils.jsontools.date_decimal_hook`.
                 
-:parameter as_string: a flag indicating if data should be serialized
-    into a JSON string. If the value is set to ``False`` the JSON data
-    is stored as a field of the instance prefixed with the field name
-    and double underscore ``__``. If ``True`` it is stored as a 
-    standard JSON string on the field.
+:parameter as_string: Set the :attr:`as_string` attribute.
                     
     Default ``True``.
 
-In other words, a :class:`JSONField` with ``as_string`` attribute set to
-``False`` is a multifield, in the sense that it generates several
-field-value pairs. For example, lets consider the following::
+.. attribute:: as_string
 
-    class MyModel(orm.StdModel):
-        name = orm.SymbolField()
-        data = orm.JSONField(as_string = False)
+    A boolean indicating if data should be serialized
+    into a single JSON string or the should be used to create several
+    fields prefixed with the field name
+    and double underscore ``__``.
+                    
+    Default ``True``.
+
+    In other words, a :class:`JSONField` with ``as_string`` attribute set to
+    ``False`` is a multifield, in the sense that it generates several
+    field-value pairs. For example, lets consider the following::
     
-And::
-
-    >>> m = MyModel(name = 'bla',
-                    data = {pv: {'': 0.5, 'mean': 1, 'std': 3.5}})
-    >>> m.cleaned_data
-    {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
+        class MyModel(orm.StdModel):
+            name = orm.SymbolField()
+            data = orm.JSONField(as_string = False)
+        
+    And::
+    
+        >>> m = MyModel(name = 'bla',
+                        data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
+        >>> m.cleaned_data
+        {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
  'data__pv__std': '3.5', 'data': '""'}
-    >>>
+        >>>
+        
+    The reason for setting ``as_string`` to ``False`` is to enable
+    sorting of instances with respect to its fields::
     
-The reason for setting ``as_string`` to ``False`` is to enable
-sorting of instances with respect to its fields::
-
-    >>> MyModel.objects.all().sort_by('data__pv__std')
-    >>> MyModel.objects.all().sort_by('-data__pv')
-
-which can be rather useful feature.
+        >>> MyModel.objects.all().sort_by('data__pv__std')
+        >>> MyModel.objects.all().sort_by('-data__pv')
+    
+    which can be rather useful feature.
 '''
     type = 'json object'
     internal_type = 'serialized'

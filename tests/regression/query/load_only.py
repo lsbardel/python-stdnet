@@ -1,7 +1,7 @@
 from stdnet import test
 from stdnet.utils import zip
 
-from examples.models import SimpleModel, Person, Group
+from examples.models import SimpleModel, Person, Group, Statistics3
 
 
 class LoadOnly(test.TestCase):
@@ -20,6 +20,23 @@ class LoadOnly(test.TestCase):
                              description = 'blabla'))
             s.add(self.model(code = 'e', group = 'group1',
                              description = 'blabla'))
+        
+    def testMeta(self):
+        s = self.session()
+        query = s.query(self.model)
+        qs = query.load_only('id')
+        for m in qs:
+            self.assertEqual(m._loadedfields,())
+            self.assertEqual(m.has_all_data, False)
+        qs = query.load_only('code','group')
+        for m in qs:
+            self.assertEqual(m._loadedfields,('code','group'))
+            self.assertEqual(m.has_all_data, False)
+        for m in query:
+            self.assertEqual(m._loadedfields, None)
+            self.assertEqual(m.has_all_data, True)
+        m = self.model(code = 'bla', group = 'foo')
+        self.assertEqual(m.has_all_data, False)
         
     def test_idonly(self):
         s = self.session()
@@ -134,4 +151,37 @@ class LoadOnlyRelated(test.TestCase):
             g = m.group
             self.assertTrue(isinstance(g,Group))
             
-            
+
+class TestFieldReplace(test.TestCase):
+    model = Statistics3
+    
+    def setUp(self):
+        s = self.session()
+        with s.begin():
+            s.add(self.model(name = 'a',
+                             data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}}))
+        
+    def testLoadOnly(self):
+        session = self.session()
+        query = session.query(self.model)
+        s = query.load_only('name','data__pv').get(id = 1)
+        self.assertEqual(s.name,'a')
+        self.assertEqual(s.data__pv,0.5)
+        self.assertFalse(s.has_all_data)
+        s.data = {'pv':{'mean':2}}
+        with session.begin() as t:
+            t.add(s)
+        # remove s from session so that we reloaded it
+        self.assertEqual(session.expunge(s),s)
+        s = query.get(id = 1)
+        self.assertTrue(s.has_all_data)
+        self.assertEqual(s.data, {'pv': {'': 0.5, 'mean': 2, 'std': 3.5}})
+        s.data = {'bla': {'foo': -1}}
+        with session.begin() as t:
+            t.add(s)
+        # remove s from session so that we reloaded it
+        self.assertEqual(session.expunge(s),s)
+        s = query.get(id = 1)
+        self.assertTrue(s.has_all_data)
+        self.assertEqual(s.data, {'bla': {'foo': -1}})
+        

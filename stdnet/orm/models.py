@@ -52,6 +52,12 @@ class StdModel(StdNetBase):
                 keys += ' is an'
             raise ValueError("%s invalid keyword for %s." % (keys,self._meta))
     
+    @property
+    def has_all_data(self):
+        '''``True`` if this :class:`StdModel` instance has all backend data
+loaded. This only apply to persistent instances.'''
+        return self.state().persistent and self._loadedfields is None
+    
     def loadedfields(self):
         '''Generator of fields loaded from database'''
         if self._loadedfields is None:
@@ -92,6 +98,13 @@ details.'''
         setattr(self, field.attname, value)
         return value
     
+    def clear_cache_fields(self):
+        '''Set cache fields to ``None``. Check :attr:`Field.as_cache`
+for information regarding fields which are considered cache.'''
+        for field in self._meta.scalarfields:
+            if field.as_cache:
+                setattr(self,field.name,None)
+                
     def get_attr_value(self, attr):
         '''Retrive the *value* for a *attr* name. The attr can be nested,
 for example ``group__name``.'''
@@ -165,7 +178,7 @@ attribute set to ``True`` will be excluded.'''
         
     def load_fields(self, *fields):
         '''Load extra fields to this :class:`StdModel`.'''
-        if self._loadedfields:
+        if self._loadedfields is not None:
             meta = self._meta
             kwargs = {meta.pkname(): self.pkvalue()}
             obj = self.__class__.objects.query().load_only(fields).get(**kwargs)

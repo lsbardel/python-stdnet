@@ -22,7 +22,7 @@ if ARGV[1] == 'rank' then
 -- POP by SCORE
 else
     if desc == 1 then
-        range = redis.call('ZrevRANGEBYSCORE', key, unpack(args))
+        range = redis.call('ZREVRANGEBYSCORE', key, unpack(args))
     else
         range = redis.call('ZRANGEBYSCORE', key, unpack(args))
     end

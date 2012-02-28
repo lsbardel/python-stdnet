@@ -54,7 +54,7 @@ indexed by the search engine.
 '''
         model._meta.searchengine = self
         if self.last_indexed not in model._meta.dfields:
-            field = DateTimeField(required = False)
+            field = DateTimeField(required = False, as_cache = True)
             field.register_with_model('last_indexed',model)
         if tag_field:
             field = CharField()

@@ -7,21 +7,7 @@ Tutorial 2
 We dig deeper into our example by exploring additional features of
 the API, including the manipulation of related models and transactions.
 
-.. _one-to-many:
 
-One-to-many relationships
-================================
-
-The *Position* model defined in :ref:`tutorial 1 <tutorial-application>`
-contains two :class:`stdnet.orm.ForeignKey` fields.
-In the context of relational databases a
-`foreign key <http://en.wikipedia.org/wiki/Foreign_key>`_ is
-a referential constraint between two tables.
-
-For stdnet is exactly the same thing. The field store the ``id`` of a
-related :class:`stdnet.orm.StdModel` instance.
-Behind the scenes, this functionality is implemented by Python descriptors_.
-This shouldn't really matter to you, but we point it out here for the curious.
 
 
 .. _model-transactions:

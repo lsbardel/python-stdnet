@@ -91,9 +91,12 @@ while j < num_instances do
     end
     local idkey = bk .. ':obj:' .. id
     local original_values = {}
-    if action == 'c' then
+    if action == 'o' or action == 'c' then  -- override or change
         original_values = redis.call('hgetall', idkey)
         update_indices(s, score, bk, id, idkey, indices, uniques, false)
+        if action == 'o' then
+            redis.call('del', idkey)
+        end
     end
     if s == 's' then
         redis.call('sadd', idset, id)
@@ -110,7 +113,7 @@ while j < num_instances do
         -- Remove indices
         error = error[1]
         update_indices(s, score, bk, id, idkey, indices, uniques, false)
-        if action ~= 'c' then
+        if action == 'a' then
             redis.call('del', idkey)
             redis.call(s .. 'rem', idset, id)
             if created_id then

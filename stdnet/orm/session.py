@@ -482,11 +482,6 @@ Results can contain errors.
             sent += sm.pre_commit(self)
         return sent
         
-    # VIRTUAL FUNCTIONS
-    
-    def _execute(self):
-        raise NotImplementedError
-
 
 class Session(object):
     '''The manager of persistent operations on the backend data server for
@@ -545,9 +540,11 @@ class Session(object):
             self._models[meta] = sm
         return sm
     
-    def expunge(self, meta = None):
-        if meta:
-            return self._models.pop(meta,None)
+    def expunge(self, instance = None):
+        if instance is not None:
+            sm = self._models.get(instance._meta)
+            if sm:
+                return sm.expunge(instance)
         else:
             self._models.clear()
             
@@ -619,11 +616,6 @@ from the **kwargs** parameters.
             return instance
         else:
             return sm.delete(instance, self)
-        
-    def delete_query(self, query):
-        meta = query._meta
-        sm = self.model(query._meta, True)
-        sm._delete_query.append(query)
          
     def flush(self, model):
         '''Completely flush a :class:`Model` from the database. No keys

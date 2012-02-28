@@ -7,9 +7,9 @@ import types
 
 ispy3k = int(sys.version[0]) >= 3
 
-UTF8 = 'utf-8'
 
-if ispy3k: # Python 3
+# Python 3
+if ispy3k:      # pragma: no cover
     string_type = str
     itervalues = lambda d : d.values()
     iteritems = lambda d : d.items()
@@ -40,7 +40,8 @@ if ispy3k: # Python 3
             return s.decode(encoding)
         return s
         
-else: # Python 2
+# Python 2
+else:   # pragma: no cover
     string_type = unicode
     itervalues = lambda d : d.itervalues()
     iteritems = lambda d : d.iteritems()
@@ -76,12 +77,12 @@ is_bytes_or_string = lambda x : isinstance(x,string_type) or isinstance(x,bytes)
 
 
 
-def to_bytestring(s, encoding=UTF8, errors='strict'):
+def to_bytestring(s, encoding='utf-8', errors='strict'):
     """Returns a bytestring version of 's',
 encoded as specified in 'encoding'."""
     if isinstance(s,bytes):
-        if encoding != UTF8:
-            return s.decode(UTF8, errors).encode(encoding, errors)
+        if encoding != 'utf-8':
+            return s.decode('utf-8', errors).encode(encoding, errors)
         else:
             return s
         
@@ -91,7 +92,7 @@ encoded as specified in 'encoding'."""
     return s.encode(encoding, errors)
 
 
-def to_string(s, encoding=UTF8, errors='strict'):
+def to_string(s, encoding='utf-8', errors='strict'):
     """Inverse of to_bytestring"""
     if isinstance(s,bytes):
         return s.decode(encoding,errors)

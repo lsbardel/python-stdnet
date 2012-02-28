@@ -1,4 +1,5 @@
 import json
+import sys
 from csv import DictWriter
 from inspect import isclass
 
@@ -8,11 +9,22 @@ from .base import get_model_from_hash
 
 __all__ = ['get_serializer',
            'register_serializer',
+           'unregister_serializer',
+           'all_serializers',
            'Serializer']
 
 
 _serializers = {}
 
+
+if sys.version_info < (2,7):    # pragma: no cover
+    def writeheader(dw):
+        # hack to handle writeheader in python 2.6
+        dw.writerow(dict(((k,k) for k in dw.fieldnames)))
+else:   # pragma: no cover
+    def writeheader(dw):
+        dw.writeheader()
+    
 
 def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
@@ -29,7 +41,6 @@ available an exception will raise. A common use usage pattern::
     else:
         raise ValueError('Unknown serializer {0}.'.format(name))
     
-    
 def register_serializer(name, serializer):
     '''\
 Register a new serializer to the library.
@@ -42,12 +53,22 @@ Register a new serializer to the library.
         serializer = serializer.__class__
     _serializers[name] = serializer
     
+def unregister_serializer(name):
+    return _serializers.pop(name,None)
+
+def all_serializers():
+    return sorted(_serializers)
+    
     
 class Serializer(object):
     '''The stdnet serializer base class.'''
+    default_options = {}
+    arguments = ()
     
     def __init__(self, **options):
-        self.options = options
+        opts = self.default_options.copy()
+        opts.update(((v,options[v]) for v in options if v in self.arguments))
+        self.options = opts
         
     @property
     def data(self):
@@ -56,16 +77,8 @@ class Serializer(object):
         return self._data
     
     def serialize(self, qs):
-        data = self.data.append(self.get_data(qs))
-    
-    def get_data(self, qs):
-        data = []
-        for obj in qs:
-            data.append(obj.tojson())
-            meta = obj._meta            
-        return {'model':str(meta),
-                'hash':meta.hash,
-                'data':data}
+        '''Serialize a :class:`Query` *qs*.'''
+        raise NotImplementedError()
     
     def write(self, stream = None):
         raise NotImplementedError()
@@ -75,7 +88,20 @@ class Serializer(object):
     
     
 class JsonSerializer(Serializer):
-            
+    arguments = ('indent',)
+    
+    def get_data(self, qs):
+        data = []
+        for obj in qs:
+            data.append(obj.tojson())
+            meta = obj._meta            
+        return {'model':str(meta),
+                'hash':meta.hash,
+                'data':data}
+        
+    def serialize(self, qs):
+        self.data.append(self.get_data(qs))
+        
     def write(self, stream = None):
         stream = stream or StringIO()
         line = json.dumps(self.data, stream, **self.options)
@@ -92,18 +118,37 @@ class JsonSerializer(Serializer):
             
         
 class CsvSerializer(Serializer):
-            
+    default_options = {'lineterminator': '\n'}
+    
+    def serialize(self, qs):
+        if self.data:
+            raise ValueError('Cannot serialize more than one model into CSV')
+        fields = None
+        data = []
+        for obj in qs:
+            js = obj.tojson()
+            if fields is None:
+                fields = set(js)
+            else:
+                fields.update(js)
+            data.append(js)
+            meta = obj._meta
+        ordered_fields = [meta.pkname()]
+        ordered_fields.extend((f.name for f in meta.scalarfields\
+                                if f.name in fields))
+        data = {'fieldnames': ordered_fields,
+                'hash': meta.hash,
+                'data': data}
+        self.data.append(data)
+                
     def write(self, stream = None):
         stream = stream or StringIO()
         if self.data:
-            if len(self.data) > 1:
-                print('Cannot serialize more than one model into CSV')
-                return stream
+            fieldnames = self.data[0]['fieldnames']
             data = self.data[0]['data']
             if data:
-                fields = list(data[0])
-                w = DictWriter(stream,fields, **self.options)
-                w.writeheader()
+                w = DictWriter(stream, fieldnames, **self.options)
+                writeheader(w)
                 for row in data:
                     w.writerow(row)
         return stream

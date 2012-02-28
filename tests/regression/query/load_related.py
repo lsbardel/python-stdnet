@@ -90,6 +90,22 @@ class load_related(FinanceTest):
         pos = query.load_related('instrument','id')
         self.assertEqual(len(pos.select_related),1)
         self.assertEqual(pos.select_related['instrument'],set())
+        
+    def testLoadRelatedLoadOnly(self):
+        self.data.makePositions(self)
+        session = self.session()
+        query = session.query(Position)
+        inst = Position._meta.dfields['instrument']
+        q = query.load_only('dt','size').load_related('instrument')
+        self.assertEqual(q.fields,('dt','size'))
+        for p in q:
+            self.assertEqual(set(p._loadedfields),
+                             set(('dt','instrument','size')))
+            cache = inst.get_cache_name()
+            val = getattr(p, cache, None)
+            self.assertTrue(val)
+            self.assertTrue(isinstance(val,inst.relmodel))
+        
     
 
 class load_related_structure(test.TestCase):

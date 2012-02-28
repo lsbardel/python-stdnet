@@ -4,13 +4,20 @@ from stdnet.apps.pubsub import Publisher, Subscriber
 
 class TestPubSub(test.TestCase):
     
-    def testPublisher(self):
+    def setUp(self):
+        self.s = Subscriber()
+        
+    def __tearDown(self):
+        self.s.unsubscribe()
+        self.s.punsubscribe()
+        
+    def __testPublisher(self):
         p = Publisher()
         self.assertTrue(p.pickler)
         self.assertTrue(p.client)
         
-    def testSimple(self):
-        s = Subscriber()
+    def __testSimple(self):
+        s = self.s
         p = Publisher()
         # subscribe to 'test' message queue
         s.subscribe('test')

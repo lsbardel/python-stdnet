@@ -188,10 +188,13 @@ handling of a single command from start to the response from the server.'''
             if self.response is not False:
                 self.close()
         
+    def execute(self):
+        raise NotImplementedError()
+    
 
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
-    def recv(self):
+    def execute(self):
         self.tried = 1
         while self.tried < self.retry:
             try:
@@ -343,16 +346,16 @@ This class should not be directly initialized. Instead use the
         # if a password is specified, authenticate
         client = request.client.client
         if self.password:
-            r = self.request(client, 'AUTH', self.password,
-                             release_connection = False)
-            if not r.recv():
+            r = self.execute_command(client, 'AUTH', self.password,
+                                     release_connection = False)
+            if not r:
                 raise ConnectionError('Invalid Password ({0})'.format(counter))
 
         # if a database is specified, switch to it
         if self.db:
-            r = self.request(client, 'SELECT', self.db,
-                             release_connection = False)
-            if not r.recv():
+            r = self.execute_command(client, 'SELECT', self.db,
+                                     release_connection = False)
+            if not r:
                 raise ConnectionError('Invalid Database "{0}". ({1})'\
                                       .format(self.db, counter))
             
@@ -406,13 +409,10 @@ This class should not be directly initialized. Instead use the
 command byte to be send to redis.'''
         pack = self.pack_command
         return b''.join(starmap(pack, (args[0] for args in commands)))
-    
-    def request(self, client, command_name, *args, **options):
-        return self.request_class(client, self, command_name, args, **options)
         
     def execute_command(self, client, command_name, *args, **options):
         return self.request_class(client, self, command_name, args, **options)\
-                   .recv()
+                   .execute()
     
     def execute_pipeline(self, client, commands):
         '''Execute a :class:`Pipeline` in the server.
@@ -420,8 +420,7 @@ command byte to be send to redis.'''
 :parameter commands: the list of commands to execute in the server.
 :parameter parse_response: callback for parsing the response from server.
 :rtype: ?'''
-        return self.request_class(client, self, None, commands)\
-                   .recv()
+        return self.request_class(client, self, None, commands).execute()
 
 ConnectionClass = None
 

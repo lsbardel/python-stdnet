@@ -31,7 +31,7 @@ class SerializerMixin(object):
         
     def testLoad(self):
         s = self.testDump()
-        data = s.write()
+        data = s.write().getvalue()
         self.model.objects.flush()
         s.load(data)
         

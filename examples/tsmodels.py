@@ -31,9 +31,6 @@ class TimeSeries(orm.StdModel):
     def size(self):
         '''number of dates in timeseries'''
         return self.data.size()
-    
-    class Meta:
-        abstract = True
         
     def intervals(self, startdate, enddate, parseinterval = None):
         '''Given a ``startdate`` and an ``enddate`` dates, evaluate the date intervals

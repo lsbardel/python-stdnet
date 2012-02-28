@@ -27,11 +27,11 @@ class RedisCommands(TestCase):
     def get_client(self, pool = None, build = False):
         return self.client
 
-    def __test_get_and_set(self):
+    def test_get_and_set(self):
         yield self.async.assertTrue(self.client.set('a','ciao'))
         yield self.async.assertEquals(self.client.get('a'), b'ciao')
         
-    def __test_delete(self):
+    def test_delete(self):
         yield self.async.assertFalse(self.client.delete('a'))
         yield self.async.assertTrue(self.client.set('a','foo'))
         yield self.async.assertTrue(self.client.delete('a'))

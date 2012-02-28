@@ -78,17 +78,21 @@ class Subscriber(RedisProxy):
     
     def execute_command(self, command, channels, container, add = True):
         "Internal function which execute a publish/subscribe command."
+        channels = channels or ()
         if is_string(channels):
             channels = [channels]
         if add:
             for c in channels:
                 container.add(c)
         else:
-            for c in channels:
-                try:
-                    container.remove(c)
-                except KeyError:
-                    pass
+            if not channels:
+                container.clear()
+            else:
+                for c in channels:
+                    try:
+                        container.remove(c)
+                    except KeyError:
+                        pass
         if self.connection is None:
             self.connection = self.client.connection_pool.get_connection()
         connection = self.connection

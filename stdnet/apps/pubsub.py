@@ -36,13 +36,13 @@ class Subscriber(AsyncObject):
     def subscribe(self, channels):
         return self.client.subscribe(channels)
      
-    def unsubscribe(self, channels):
+    def unsubscribe(self, channels = None):
         return self.client.unsubscribe(channels)
     
     def psubscribe(self, channels):
         return self.client.psubscribe(channels)
     
-    def punsubscribe(self, channels):
+    def punsubscribe(self, channels = None):
         return self.client.punsubscribe(channels)
     
     def pull(self, timeout = None, count = None):

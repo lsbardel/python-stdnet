@@ -18,16 +18,16 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
         Deferred.__init__(self)
         connection.RedisRequest.__init__(self, *args, **kwargs)
         
-    def send(self, command):
+    def send(self):
         c = self.connection.connect(self)
         if c:
-            return c.add_callback(lambda result : self._send(command), True)
+            return c.add_callback(lambda result : self._send(), True)
         else:
-            return self._send(command)
+            return self._send()
         
-    def _send(self, command):
+    def _send(self):
         stream = self.connection.stream
-        return stream.write(command,
+        return stream.write(self.command,
                     lambda num_bytes : stream.read(self.parse))
                    
     def close(self):
@@ -43,7 +43,8 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
             raise error
         return result
     
-    def recv(self):
+    def execute(self):
+        self.send()
         return self
 
 
@@ -68,13 +69,13 @@ class AsyncRedisConnection(connection.Connection):
         
     def _auth(self, request):
         client = request.client.client
-        return self.request(client, 'AUTH', self.password,
-                            release_connection = False)\
+        return self.execute_command(client, 'AUTH', self.password,
+                                    release_connection = False)\
                 .add_errback(True, ConnectionError('Invalid Password'))
                 
     def _select(self, request, result = None):
         client = request.client.client
-        return self.request(client, 'SELECT', self.db,
-                            release_connection = False)\
-                .add_errback(True, ConnectionError('Invalid Database'))
+        return self.execute_command(client, 'SELECT', self.db,
+                                    release_connection = False)\
+                   .add_errback(True, ConnectionError('Invalid Database'))
         

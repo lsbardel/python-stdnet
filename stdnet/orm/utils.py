@@ -4,6 +4,8 @@ from inspect import isclass
 
 from stdnet.utils import StringIO
 
+from .base import get_model_from_hash
+
 __all__ = ['get_serializer',
            'register_serializer',
            'Serializer']
@@ -83,9 +85,9 @@ class JsonSerializer(Serializer):
     def load(self, stream):
         data = json.loads(stream, **self.options)
         for model_data in data:
-            model = data['hash']
+            model = get_model_from_hash(model_data['hash'])
             with model.objects.transaction() as t:
-                for item_data in data['data']:
+                for item_data in model_data['data']:
                     t.add(model.from_base64_data(**item_data))
             
         

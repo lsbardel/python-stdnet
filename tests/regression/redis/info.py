@@ -26,9 +26,8 @@ class TestInfo(TestCase):
         dbs = info.databases
         self.assertTrue(dbs)
         self.assertTrue(isinstance(dbs,list))
-        db = dbs[0]
-        self.assertEqual(db.client,info.client)
         for db in dbs:
+            self.assertEqual(db.id,db.client.db)
             self.assertEqual(len(info.db(db.id)),2)
             self.assertEqual(len(info.db(db.db)),2)
         

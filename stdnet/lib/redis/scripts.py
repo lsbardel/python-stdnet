@@ -273,6 +273,11 @@ class zpop(RedisScript):
         return zip(response[::2], map(float, response[1::2]))
     
 
+class zdiffstore(RedisScript):
+    script = read_lua_file('zdiffstore.lua')
+    
+    
+    
 class keyinfo(RedisScript):
     script = read_lua_file('keyinfo.lua')
     

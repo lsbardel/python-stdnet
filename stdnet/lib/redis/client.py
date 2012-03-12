@@ -254,13 +254,15 @@ class Redis(object):
 
     # commands that should NOT pull data off the network buffer when executed
     SUBSCRIPTION_COMMANDS = set((b'SUBSCRIBE', b'UNSUBSCRIBE'))
+    _STATUS = ''
 
     def __init__(self, address = None,
                  db=0, password=None,
                  socket_timeout=None,
                  connection_pool=None,
                  encoding = 'utf-8',
-                 prefix = '', **kwargs):
+                 prefix = '', check_status = True,
+                 **kwargs):
         if not connection_pool:
             kwargs.update({
                     'db': db,
@@ -273,6 +275,11 @@ class Redis(object):
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
+        if check_status:
+            rstatus = Redis(address=connection_pool.address,
+                            password=password,
+                            check_status=False)
+            self._STATUS = rstatus.redis_status()
         
     @property
     def client(self):
@@ -873,7 +880,17 @@ The first element is the score and the second is the value.'''
         ``keys`` into a new sorted set, ``dest``.
         """
         keys = list_or_args(keys, args)
-        return self._zaggregate('ZDIFFSTORE', dest, keys, **options)
+        using = options.pop('using',self._STATUS) or self._STATUS
+        if using == 'stdnet':
+            return self._zaggregate('ZDIFFSTORE', dest, keys, **options)
+        else:
+            keys = (dest,) + tuple(keys)
+            withscores = options.pop('withscores',False)
+            if withscores:
+                withscores = 'withscores'
+            else:
+                withscores = ''
+            return self.script_call('zdiffstore', keys, withscores, **options)
     
     # zset script commands
     
@@ -917,7 +934,7 @@ The first element is the score and the second is the value.'''
             pieces.append(aggregate)
         if withscores:
             pieces.append('WITHSCORES')
-            pieces.append(aggregate)
+            pieces.append(withscores)
         return self.execute_command(*pieces, **options)
     
     ############################################################################

@@ -2,7 +2,7 @@
 local dest = KEYS[1]
 local withscores = ARGV[1]
 local key = KEYS[2]
-if dest ~= key then
+if dest ~= key then --  Small optimization which takes care of the -= operation
     redis.call('del', dest)
     local data = redis.call('zrange',key,0,-1,'WITHSCORES')
     local i = 0
@@ -12,12 +12,11 @@ if dest ~= key then
     end
 end
 local i = 2
-if withscores == 'withscores' then    -- REMOVE ONLY IF SCORE MACHES, OTHERWISE SUBTRACT SCORE
+if withscores == 'withscores' then    -- REMOVE ONLY IF SUBTRACTING SCORES IS EQUAL TO 0
     while i < # KEYS do
         local data = redis.call('zrange',KEYS[i+1],0,-1,'WITHSCORES')
         i = i + 1
         local j = 0
-        local s
         while j < # data do
             value, score = data[j+1], data[j+2]
             j = j + 2

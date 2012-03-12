@@ -4,7 +4,8 @@ from datetime import date, datetime
 import stdnet
 from stdnet import test, orm
 from stdnet.utils import date2timestamp, timestamp2date,\
-                            addmul_number_dicts, grouper
+                            addmul_number_dicts, grouper,\
+                            _format_int
 
 from examples.models import Statistics3
 
@@ -64,7 +65,10 @@ class TestUtils(test.TestCase):
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla']['bla1'],7)
         self.assertEqual(r['foo'],2.5)
-        
+    
+    
+class testFunctions(test.TestCase):
+    
     def testGrouper(self):
         r = grouper(2,[1,2,3,4,5,6,7])
         self.assertFalse(hasattr(r,'__len__'))
@@ -72,5 +76,10 @@ class TestUtils(test.TestCase):
         r = grouper(3,'abcdefg','x')
         self.assertFalse(hasattr(r,'__len__'))
         self.assertEqual(list(r),[('a','b','c'),('d','e','f'),('g','x','x')])
-    
-    
+        
+    def testFormatInt(self):
+        self.assertEqual(_format_int(4500),'4,500')
+        self.assertEqual(_format_int(4500780),'4,500,780')
+        self.assertEqual(_format_int(500),'500')
+        self.assertEqual(_format_int(-780),'-780')
+        self.assertEqual(_format_int(-4500780),'-4,500,780')

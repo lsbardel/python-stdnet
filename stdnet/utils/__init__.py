@@ -5,10 +5,10 @@ from uuid import uuid4
 
 from .py2py3 import *
 
-if ispy3k:
+if ispy3k:  # pragma: no cover
     import pickle
     unichr = chr
-else:
+else:   # pragma: no cover
     import cPickle as pickle
     unichr = unichr 
     
@@ -28,6 +28,17 @@ def grouper(n, iterable, padvalue=None):
     "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
     return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
 
+def _format_int(val):
+    positive = val >= 0
+    sval = ''.join(reversed(','.join((''.join(g) for g in\
+                               grouper(3,reversed(str(abs(val))),'')))))
+    return sval if positive else '-'+sval
+    
+def format_int(val):
+    try: # for python 2.7 and up
+        return '{:,}'.format(val)
+    except ValueError:  # pragma nocover
+        _format_int(val)
 
 def flat_mapping(mapping):
     if isinstance(mapping,dict):

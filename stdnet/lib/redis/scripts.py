@@ -216,28 +216,6 @@ def _load_missing_scripts(results, positions, res):
         results[i] = r
     return results
     
-                
-class ScriptCommand(object):
-    __slots__ = ('builder','name')
-    
-    def __init__(self, builder, name):
-        self.builder = builder
-        self.name = name
-        
-    def __repr__(self):
-        return self.name
-    __str__ = __repr__
-    
-    def __call__(self, key, *args):
-        sargs = ','.join(("'"+a+"'" if isinstance(a,str)\
-                           else str(a) for a in args))
-        name = "res = redis.call('"+self.name+"','"+key+"'"
-        if sargs:
-            name += ',' + sargs
-        command = name + ')'
-        self.builder.append(command)
-        return self.builder
-        
         
 class countpattern(RedisScript):
     script = '''\

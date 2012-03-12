@@ -11,6 +11,7 @@ Copyright (c)
 .. _redis-py: https://github.com/andymccurdy/redis-py
 '''
 import time
+from copy import copy
 from datetime import datetime
 from uuid import uuid4
 from functools import partial
@@ -215,7 +216,7 @@ class Redis(object):
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
             'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME'
-            'SAVE SELECT SET SHUTDOWN SLAVEOF WATCH UNWATCH',
+            'SAVE SET SHUTDOWN SLAVEOF WATCH UNWATCH',
             lambda request, response, args, **options: response == b'OK'
             ),
         string_keys_to_dict(
@@ -252,8 +253,6 @@ class Redis(object):
         }
         )
 
-    # commands that should NOT pull data off the network buffer when executed
-    SUBSCRIPTION_COMMANDS = set((b'SUBSCRIBE', b'UNSUBSCRIBE'))
     _STATUS = ''
 
     def __init__(self, address = None,
@@ -296,6 +295,11 @@ class Redis(object):
     def __eq__(self, other):
         return self.connection_pool == other.connection_pool
     
+    def clone(self, **kwargs):
+        c = copy(self)
+        c.connection_pool = self.connection_pool.clone(**kwargs)
+        return c
+        
     def pipeline(self):
         """
 Return a new :class:`Pipeline` that can queue multiple commands for

@@ -39,7 +39,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **508 regression tests** with **85%** coverage.
+* **508 regression tests** with **86%** coverage.
 
 .. _vers06:
 

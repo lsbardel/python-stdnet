@@ -403,7 +403,7 @@ model.'''
     '''Exception raised when an instance of a model does not validate. Usually
 raised when trying to save an invalid instance.'''
     
-    def __new__(cls, **kwargs):
+    def __new__(cls, *args, **kwargs):
         o = super(Model,cls).__new__(cls)
         pkname = cls._meta.pkname()
         setattr(o, pkname, kwargs.pop(pkname,None))

@@ -49,6 +49,7 @@ import os
 import errno
 import socket
 import io
+from copy import copy
 from itertools import chain, starmap
 
 from stdnet import BackendRequest
@@ -433,8 +434,8 @@ class ConnectionPool(object):
                  max_connections=None, **connection_kwargs):
         if not address:
             raise ValueError('Redis connection address not supplied')
-        self.__address = address
-        self.__db = db
+        self._address = address
+        self._db = db
         self.connection_class = connection_class or\
                                 settings.RedisConnectionClass or\
                                 Connection
@@ -442,22 +443,25 @@ class ConnectionPool(object):
         if 'encoding' not in connection_kwargs:
             connection_kwargs['encoding'] = self.default_encoding
         self.max_connections = max_connections or settings.MAX_CONNECTIONS
+        self.WRITE_BUFFER_SIZE = 128 * 1024
+        self.READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
+        self._init()
+        
+    def _init(self):
         self._created_connections = 0
         self._available_connections = []
         self._in_use_connections = set()
-        self.WRITE_BUFFER_SIZE = 128 * 1024
-        self.READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
 
     def __hash__(self):
         return hash((self.address,self.db,self.connection_class))
     
     @property
     def address(self):
-        return self.__address
+        return self._address
     
     @property
     def db(self):
-        return self.__db
+        return self._db
     
     @property
     def encoding(self):
@@ -497,3 +501,12 @@ class ConnectionPool(object):
         for connection in all_conns:
             connection.disconnect()
 
+    def clone(self, **kwargs):
+        c = copy(self)
+        c._init()
+        for k,v in kwargs.items():
+            if k in ('address','db'):
+                k = '_'+k
+            setattr(c, k, v)
+        return c
+        

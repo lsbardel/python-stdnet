@@ -164,6 +164,24 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],2)
         
+    def testKeyInfo(self):
+        self.client.set('planet','mars')
+        self.client.lpush('foo',1,2,3,4,5)
+        self.client.lpush('bla',4,5,6,7,8)
+        keys = list(self.client.script_call('keyinfo',(),'*'))
+        self.assertEqual(len(keys),3)
+        d = dict(((k.id,k) for k in keys))
+        self.assertEqual(d['planet'].length,4)
+        self.assertEqual(d['planet'].type,'string')
+        self.assertEqual(d['planet'].encoding,'raw')
+        
+    def testKeyInfo2(self):
+        self.client.set('planet','mars')
+        self.client.lpush('foo',1,2,3,4,5)
+        self.client.lpush('bla',4,5,6,7,8)
+        keys = list(self.client.script_call('keyinfo',('planet','bla')))
+        self.assertEqual(len(keys),2)
+        
     # ZSET SCRIPTING COMMANDS
     
     def testzpopbyrank(self):
@@ -189,6 +207,7 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(res,[b'a',b'c',b'd'])
         rem = self.client.zrange('foo',0,-1)
         self.assertEqual(rem,[b'e'])
+        
         
 
 class TestStruct(TestCase):

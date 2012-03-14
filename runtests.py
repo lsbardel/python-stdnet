@@ -8,10 +8,24 @@ from stdnet.conf import settings
 from stdnet.utils import PPath
 from stdnet import getdb
 
-import tests
+try:
+    import nose
+except:
+    nose = None
+    
 p = PPath(__file__)
-
 pulsar = p.add(module = 'pulsar', up = 1, down = ('pulsar',))
+
+def noseoption(argv,*vals,**kwargs):
+    if vals:
+        for val in vals:
+            if val in argv:
+                return
+        argv.append(vals[0])
+        value = kwargs.get('value')
+        if value is not None:
+            argv.append(value)
+            
 if pulsar:    
     from pulsar.apps.test import TestSuite, TestOptionPlugin
     from pulsar.apps.test.plugins import bench
@@ -36,7 +50,8 @@ if pulsar:
      "normal", "big", "huge".'
         default = 'small'
             
-if __name__ == '__main__':
+def start():
+    global pulsar
     argv = sys.argv
     if len(argv) > 1 and argv[1] == 'nose':
         pulsar = None
@@ -51,7 +66,16 @@ if __name__ == '__main__':
                                bench.BenchMark(),)
                   )
         suite.start()
-    else:
+    elif nose:
         os.environ['stdnet_test_suite'] = 'nose'
-        import nose
-        nose.main()
+        argv = list(sys.argv)
+        noseoption(argv, '-w', value = 'tests/regression')
+        noseoption(argv, '--all-modules')
+        nose.main(argv=argv)
+    else:
+        print('To run tests you need either pulsar or nose.')
+        exit(0)
+
+if __name__ == '__main__':
+    start()
+    

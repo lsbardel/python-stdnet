@@ -42,54 +42,7 @@ from stdnet import orm
 from stdnet.utils import to_string, iteritems
 
 from .models import Word, WordItem, Tag
-from .ignore import STOP_WORDS, PUNCTUATION_CHARS
-from .processors.metaphone import dm as double_metaphone
-from .processors.porter import PorterStemmer
-
-
-class stopwords:
-    
-    def __init__(self, stp):
-        self.stp = stp
-        
-    def __call__(self, words):
-        stp = self.stp
-        for word in words:
-            if word not in stp:
-                yield word
-        
-        
-def metaphone_processor(words):
-    '''Double metaphone word processor.'''
-    for word in words:
-        for w in double_metaphone(word):
-            if w:
-                w = w.strip()
-                if w:
-                    yield w
-                    
-
-def tolerant_metaphone_processor(words):
-    '''Double metaphone word processor slightly modified so that when no
-words are returned by the algorithm, the original word is returned.'''
-    for word in words:
-        r = 0
-        for w in double_metaphone(word):
-            if w:
-                w = w.strip()
-                if w:
-                    r += 1
-                    yield w
-        if not r:
-            yield word
-                
-                
-def stemming_processor(words):
-    '''Double metaphone word processor'''
-    stem = PorterStemmer().stem
-    for word in words:
-        word = stem(word, 0, len(word)-1)
-        yield word
+from . import processors
 
     
 class SearchEngine(orm.SearchEngine):
@@ -131,19 +84,19 @@ driver.
                  splitters = None):
         super(SearchEngine,self).__init__()
         self.MIN_WORD_LENGTH = min_word_length
-        stop_words = stop_words if stop_words is not None else STOP_WORDS
-        splitters = splitters if splitters is not None else PUNCTUATION_CHARS
+        splitters = splitters if splitters is not None else\
+                    processors.PUNCTUATION_CHARS
         if splitters: 
             self.punctuation_regex = re.compile(\
                                     r"[%s]" % re.escape(splitters))
         else:
             self.punctuation_regex = None
-        if stop_words:
-            self.add_word_middleware(stopwords(stop_words),False)
+        # The stop words middleware is only used for the indexing part
+        self.add_word_middleware(processors.stopwords(stop_words), False)
         if stemming:
-            self.add_word_middleware(stemming_processor)
+            self.add_word_middleware(processors.stemming_processor)
         if metaphone:
-            self.add_word_middleware(tolerant_metaphone_processor)
+            self.add_word_middleware(processors.tolerant_metaphone_processor)
         
     def split_text(self, text):
         if self.punctuation_regex:
@@ -159,7 +112,7 @@ driver.
         if full:
             Word.objects.flush()
         
-    def _index_item(self, item, words, session):    
+    def add_item(self, item, words, session):    
         link = self._link_item_and_word
         for word,count in iteritems(words):
             session.add(link(item, word, count))

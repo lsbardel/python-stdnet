@@ -18,7 +18,7 @@ from . import related
 from .globals import get_model_from_hash, JSPLITTER
 
 
-orderinginfo = namedtuple('orderinginfo','name field desc model nested')
+orderinginfo = namedtuple('orderinginfo','name field desc model nested, auto')
 
 logger = logging.getLogger('stdnet.orm')
 

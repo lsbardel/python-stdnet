@@ -3,10 +3,9 @@ from random import randint
 from datetime import date
 
 from stdnet import test
-from stdnet.utils import to_string, range
-from stdnet.apps.searchengine import SearchEngine, double_metaphone
+from stdnet.utils import to_string, range, populate
+from stdnet.apps.searchengine import SearchEngine, processors
 from stdnet.apps.searchengine.models import Word, WordItem
-from stdnet.utils import populate
 
 from examples.wordsearch.basicwords import basic_english_words
 from examples.wordsearch.models import Item, RelatedItem
@@ -57,8 +56,8 @@ NUM_WORDS = 40
 WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                               choice_from = basic_english_words))\
                                for i in range(size))
-
-
+    
+    
 class TestCase(test.TestCase):
     '''Mixin for testing the search engine. No tests implemented here,
 just registration and some utility functions. All search-engine tests
@@ -75,34 +74,47 @@ below will derive from this class.'''
     
     def make_item(self,name='python',counter=10,content=None,related=None):
         session = self.session()
+        content = content if content is not None else python_content
         with session.begin():
-            item = session.add(Item(name=name, counter = counter,
-                    content=content if content is not None else python_content,
-                    related = related))
+            item = session.add(Item(name=name,
+                                    counter = counter,
+                                    content=content,
+                                    related = related))
         return item
     
     def make_items(self, num = 30, content = False, related = None):
+        '''Bulk creation of Item for testing search engine. Return a set
+of words which have been included in the Items.'''
         names = populate('choice', num, choice_from=basic_english_words)
         session = self.session()
+        words = set()
         if content:
             contents = WORDS_GROUPS(num)
         else:
             contents = ['']*num
         with session.begin():
-            for name,co in zip(names,contents):
+            for name, content in zip(names,contents):
                 if len(name) > 3:
+                    words.add(name)
+                    if content:
+                        words.update(content.split())
                     session.add(Item(name=name,
                                      counter=randint(0,10),
-                                     content = co,
-                                     related = related))
+                                     content=content,
+                                     related=related))
+        wis = WordItem.objects.for_model(Item)
+        self.assertTrue(wis.count())
+        return words
     
     def simpleadd(self, name = 'python', counter = 10, content = None,
                   related = None):
-        item = self.make_item(name,counter,content,related)
-        self.assertEqual(item.last_indexed.date(),date.today())
-        wi = WordItem.objects.for_model(item)
-        self.assertTrue(wi.count())
-        return item, wi
+        item = self.make_item(name, counter, content, related)
+        self.assertEqual(item.last_indexed.date(), date.today())
+        wis = WordItem.objects.for_model(item).all()
+        self.assertTrue(wis)
+        for wi in wis:
+            self.assertEqual(wi.object, item)
+        return item, wis
     
     def sometags(self, num = 10, minlen = 3):
         def _():
@@ -126,10 +138,20 @@ class TestMeta(TestCase):
         self.assertEqual(list(eg.words_from_text('bla bla____bla')),\
                          ['bla','bla','bla'])
         
+    def testSplitters(self):
+        eg = SearchEngine(splitters = False)
+        self.assertEqual(eg.punctuation_regex, None)
+        words = list(eg.split_text('pippo:pluto'))
+        self.assertEqual(len(words),1)
+        self.assertEqual(words[0],'pippo:pluto')
+        words = list(eg.split_text('pippo: pluto'))
+        self.assertEqual(len(words),2)
+        self.assertEqual(words[0],'pippo:')
+        
     def testMetaphone(self):
         '''Test metaphone algorithm'''
         for name in NAMES:
-            d = double_metaphone(name)
+            d = processors.double_metaphone(name)
             self.assertEqual(d,NAMES[name])
     
     def testRegistered(self):
@@ -209,6 +231,35 @@ class TestSearchEngine(TestCase):
         self.assertEqual(qc.keyword,'intersect')
         self.assertEqual(qs.count(),1)
         
+    def testBigSearch(self):
+        words = self.make_items(num = 30, content = True)
+        sw = ' '.join(populate('choice', 1, choice_from = words))
+        qs = Item.objects.query().search(sw)
+        self.assertTrue(qs)
+        
+    def testFlush(self):
+        self.make_items()
+        self.engine.flush()
+        self.assertFalse(WordItem.objects.query())
+        self.assertTrue(Word.objects.query())
+        
+    def testFlushFull(self):
+        self.make_items()
+        self.engine.flush(full=True)
+        self.assertFalse(WordItem.objects.query())
+        self.assertFalse(Word.objects.query())
+        
+    def testDelete(self):
+        item = self.make_item()
+        words = list(Word.objects.query())
+        item.delete()
+        wis = WordItem.objects.filter(model_type = item.__class__)
+        self.assertFalse(wis.count(),0)
+        self.assertEqual(len(words),len(Word.objects.query()))
+    
+    
+class TestTags(TestCase):
+    
     def _testAddTag(self):
         item = self.make_item()
         engine = self.engine
@@ -227,27 +278,28 @@ class TestSearchEngine(TestCase):
             self.assertTrue(engine.add_tag(item,self.sometags()))
         tags = self.engine.alltags()
         self.assertTrue(tags)
-    
-    
-class TestSearchEngineWithRegistration(TestCase):
         
-    def make_item(self,**kwargs):
-        item = super(TestSearchEngineWithRegistration,self).make_item(**kwargs)
-        wis = WordItem.objects.filter(model_type = item.__class__)
-        self.assertTrue(wis)
-        for wi in wis:
-            self.assertEqual(wi.object,item)
-        return item
+        
+class TestCoverage(TestCase):
+    
+    def setUp(self):
+        eg = SearchEngine(metaphone = False)
+        eg.add_word_middleware(processors.metaphone_processor)
+        self.register()
+        self.engine = eg
+        self.engine.register(Item,('related',))
         
     def testAdd(self):
-        self.make_item()
+        item, wi = self.simpleadd('pink',
+                                  content='the dark side of the moon 10y')
+        wi = set((str(w.word) for w in wi))
+        self.assertEqual(len(wi),4)
+        self.assertFalse('10y' in wi)
         
-    def testDelete(self):
-        item = self.make_item()
-        words = list(Word.objects.query())
-        item.delete()
-        wis = WordItem.objects.filter(model_type = item.__class__)
-        self.assertFalse(wis.count(),0)
-        self.assertEqual(len(words),len(Word.objects.query()))
-    
+    def testRepr(self):
+        item, wi = self.simpleadd('pink',
+                                  content='the dark side of the moon 10y')
+        for w in wi:
+            self.assertEqual(str(w),str(w.word))
+            
     

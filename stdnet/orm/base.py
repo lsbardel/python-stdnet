@@ -1,6 +1,6 @@
 '''Defines Metaclasses and Base classes for stdnet Models.'''
 import sys
-import copy
+from copy import copy, deepcopy
 import hashlib
 import weakref
 
@@ -17,6 +17,7 @@ from .session import Manager, setup_managers
 __all__ = ['Metaclass',
            'Model',
            'ModelBase',
+           'autoincrement',
            'ModelType', # Metaclass for all stdnet ModelBase classes
            'StdNetType', # derived from ModelType, metaclass fro StdModel
            'from_uuid']
@@ -26,7 +27,7 @@ def get_fields(bases, attrs):
     fields = {}
     for base in bases:
         if hasattr(base, '_meta'):
-            fields.update(copy.deepcopy(base._meta.dfields))
+            fields.update(deepcopy(base._meta.dfields))
     
     for name,field in list(attrs.items()):
         if isinstance(field,Field):
@@ -140,8 +141,8 @@ mapper.
 .. attribute:: ordering
 
     Optional name of a :class:`stdnet.orm.Field` in the :attr:`model`.
-    If provided, indeces will be sorted with respect the value of the
-    field specidied.
+    If provided, model indices will be sorted with respect to the value of the
+    specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
     
     Default: ``None``.
@@ -252,16 +253,19 @@ Return ``True`` if the instance is ready to be saved to database.'''
     def get_sorting(self, sortby, errorClass = None):
         s = None
         desc = False
-        if sortby.startswith('-'):
+        if isinstance(sortby,autoincrement):
+            f = self.pk
+            return orderinginfo(sortby, f, desc, self.model, None, True)
+        elif sortby.startswith('-'):
             desc = True
             sortby = sortby[1:]
         if sortby == 'id':
             f = self.pk
-            return orderinginfo(f.attname, f, desc, self.model, None)
+            return orderinginfo(f.attname, f, desc, self.model, None, False)
         else:
             if sortby in self.dfields:
                 f = self.dfields[sortby]
-                return orderinginfo(f.attname, f, desc, self.model, None)
+                return orderinginfo(f.attname, f, desc, self.model, None, False)
             sortbys = sortby.split(JSPLITTER)
             s0 = sortbys[0]
             if len(sortbys) > 1 and s0 in self.dfields:
@@ -269,7 +273,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                 nested = f.get_sorting(JSPLITTER.join(sortbys[1:]),errorClass)
                 if nested:
                     sortby = f.attname
-                return orderinginfo(sortby, f, desc, self.model, nested)
+                return orderinginfo(sortby, f, desc, self.model, nested, False)
         errorClass = errorClass or ValueError
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
@@ -307,7 +311,51 @@ which needs to be deleted when *instance* is deleted.'''
                                          if field.todelete())
         return [fid for fid in gen if fid]
         
+
+class autoincrement(object):
+    '''An :class:`autoincrement` is used in a :class:`StdModel` Meta
+class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
+
+.. attribute:: incrby
+
+    The ammount to increment the score by when a duplicate element is saved.
     
+    Default: 1.
+    
+For example, the :class:`stdnet.apps.searchengine.Word` model is defined as::
+
+    class Word(orm.StdModel):
+        id = orm.SymbolField(primary_key = True)
+        
+        class Meta:
+            ordering = -autoincrement()
+    
+This means every time we save a new instance of Word, and that instance has
+an id already available, the score of that word is incremented by the
+:attr:`incrby` attribute.
+
+'''
+    def __init__(self, incrby = 1, desc = False):
+        self.incrby = incrby
+        self._asce = -1 if desc else 1
+        
+    def __neg__(self):
+        c = copy(self)
+        c._asce *= -1
+        return c
+    
+    @property
+    def desc(self):
+        return True if self._asce == -1 else False
+    
+    def __repr__(self):
+        return ('' if self._asce == 1 else '-') + '{0}({1})'\
+            .format(self.__class__.__name__,self.incrby)
+    
+    def __str__(self):
+        return self.__repr__()       
+        
+        
 class ModelType(type):
     '''StdModel python metaclass'''
     is_base_class = True

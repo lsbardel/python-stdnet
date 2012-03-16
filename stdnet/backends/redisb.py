@@ -838,9 +838,13 @@ class BackendDataServer(stdnet.BackendDataServer):
                                         json.dumps(instance._dbdata['errors']))
                         score = MIN_FLOAT
                         if meta.ordering:
-                            v = getattr(instance,meta.ordering.name,None)
-                            if v is not None:
-                                score = meta.ordering.field.scorefun(v)
+                            if meta.ordering.auto:
+                                score = 'auto {0}'.format(\
+                                                    meta.ordering.name.incrby) 
+                            else:
+                                v = getattr(instance,meta.ordering.name,None)
+                                if v is not None:
+                                    score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         if state.persistent:
                             action = 'o' if instance.has_all_data else 'c'

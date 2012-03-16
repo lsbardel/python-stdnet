@@ -54,6 +54,14 @@ Query
    .. automethod:: __init__
 
 
+autoincrement
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: autoincrement
+   :members:
+   :member-order: bysource
+   
+
 .. _model-structures:
 
 Data Structures

@@ -23,27 +23,12 @@ class Word(orm.StdModel):
     '''Model which hold a word as primary key'''
     id = orm.SymbolField(primary_key = True)
     tag = orm.BooleanField(default = False)
-    # denormalised fields for frequency
-    frequency = orm.IntegerField(default = 0)
-    model_frequency = orm.HashField()
     
     def __unicode__(self):
         return self.id
     
-    def update_frequency(self):
-        f = 0
-        mf = {}
-        for item in self.items().all():
-            m = item.model_type
-            if m in mf:
-                mf[m] += 1
-            else:
-                mf[m] = 1
-            f += 1
-        self.model_frequency.delete()
-        self.model_frequency.update(mf)
-        self.frequency = f
-        self.save()
+    class Meta:
+        ordering = -orm.autoincrement()
 
 
 class WordItem(orm.StdModel):
@@ -61,6 +46,10 @@ class WordItem(orm.StdModel):
         return self.word.__unicode__()
     
     objects = WordItemManager()
+    
+    class Meta:
+        ordering = -orm.autoincrement()
+        unique_together = ('word', 'model_type', 'object_id')
     
     @property
     def object(self):

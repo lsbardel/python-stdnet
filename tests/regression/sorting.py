@@ -162,3 +162,4 @@ class TestOrderingModel(TestSort):
 class TestOrderingModelDesc(TestOrderingModel):
     model = SportAtDate2
     desc = True
+

@@ -13,8 +13,8 @@ expose the base functionalities for full text-search on model instances.
 Stdnet also provides a :ref:`python implementation <apps-searchengine>`
 of this interface.
 
-The main methods to be implemented are :meth:`_index_item`
-and meth:`remove_index`.
+The main methods to be implemented are :meth:`add_item`,
+:meth:`remove_index` and :meth:`search_model`.
     
 .. attribute:: word_middleware
     
@@ -29,12 +29,17 @@ and meth:`remove_index`.
     
         se = SearchEngine()
         
-        def stopwords(words):
-            for word in words:
-                if word not in ('this','that','and'):
-                    yield word
+        class stopwords(object):
+            
+            def __init__(self, *swords):
+                self.swords = set(swords)
+                
+            def __call__(self, words):
+                for word in words:
+                    if word not in self.swords:
+                        yield word
         
-        se.add_word_middleware(stopwords)
+        se.add_word_middleware(stopwords('and','or','this','that',...))
 """
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
@@ -72,8 +77,16 @@ This functions loop through the :attr:`word_middleware` attribute
 to process the text.
 
 :parameter text: string from which to extract words.
+:parameter for_search: flag indicating if the the words will be used for search
+    or to index the database. This flug is used in conjunction with the
+    middleware flag *for_search*. If this flag is ``True`` (i.e. we need to
+    search the database for the words in *text*), only the
+    middleware functions in :attr:`word_middleware` enabled for searching are
+    used.
+    
+    Default: ``False``.
 
-return a list of cleaned words.
+return a *list* of cleaned words.
 '''
         if not text:
             return []
@@ -100,7 +113,13 @@ Can and should be reimplemented by subclasses.'''
             self.ITEM_PROCESSORS.append(processor)
 
     def add_word_middleware(self, middleware, for_search = True):
-        '''Add a *middleware* function for preprocessing words to be indexed.'''
+        '''Add a *middleware* function to the list of :attr:`word_middleware`,
+for preprocessing words to be indexed.
+
+:parameter middleware: a callable receving an iterable over words.
+:parameter for_search: flag indicating if the *middleware* can be used for the
+    text to search. Default: ``True``.
+'''
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
     
@@ -122,26 +141,8 @@ It extracts content from the given *item* and add it to the index.
                 wc[word] = 1
         
         session = session or item.session
-        self._index_item(item, wc, session)
+        self.add_item(item, wc, session)
         return session
-
-    def flush(self, full = False):
-        '''Clean the search engine'''
-        raise NotImplementedError
-    
-    def remove_item(self, item_or_model, ids = None, session = None):
-        '''Remove an item from the search indices'''
-        raise NotImplementedError
-    
-    def search_model(self, model, text):
-        '''Search *text* in *model* instances. This is the functions
-needing implementation by custom serach engines.
-
-:parameter model: a :class:`stdnet.orm.StdModel` class.
-:parameter text: text to search
-:rtype: A :class:`stdnet.orm.query.QuerySet` of model instances containing the
-    text to search.'''
-        raise NotImplementedError
     
     def reindex(self, full = True):
         '''Reindex models by removing items in
@@ -159,10 +160,35 @@ with the search engine.'''
                 self.index_item(obj)
         return n
 
-    # ABSTRACT INTERNAL FUNCTIONS
+    # ABSTRACT FUNCTIONS
     ################################################################
     
-    def _index_item(self, item, words, session):
+    def remove_item(self, item_or_model, ids = None, session = None):
+        '''Remove an item from the search indices'''
+        raise NotImplementedError
+    
+    def add_item(self, item, words, session):
+        '''Create indices for *item* and each word in *words*.
+
+:parameter item: a *model* instance to be indexed. It does not need to be
+    a class;`stdnet.orm.StdModel`.
+:parameter words: iterable over words. This iterable has been obtained from the
+    text in *item* via the :attr:`word_middleware`.
+'''
+        raise NotImplementedError
+    
+    def search_model(self, model, text):
+        '''Search *text* in *model* instances. This is the functions
+needing implementation by custom serach engines.
+
+:parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter text: text to search
+:rtype: A :class:`stdnet.orm.query.QuerySet` of model instances containing the
+    text to search.'''
+        raise NotImplementedError
+    
+    def flush(self, full = False):
+        '''Clean the search engine'''
         raise NotImplementedError
     
     

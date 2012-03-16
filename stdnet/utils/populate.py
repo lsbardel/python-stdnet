@@ -20,43 +20,43 @@ def populate(datatype = 'string', size  = 10,
 Useful for populating database with data for fuzzy testing.
 Supported data-types
     
-    * *string*
-        For example::
-            
-            populate('string',100, min_len=3, max_len=10)
+* *string*
+    For example::
         
-        create a 100 elements list with random strings
-        with random length between 3 and 10
+        populate('string',100, min_len=3, max_len=10)
+    
+    create a 100 elements list with random strings
+    with random length between 3 and 10
+    
+* *date*
+    For example::
         
-    * *date*
-        For example::
-            
-            from datetime import date
-            populate('date',200, start = date(1997,1,1), end = date.today())
+        from datetime import date
+        populate('date',200, start = date(1997,1,1), end = date.today())
+    
+    create a 200 elements list with random datetime.date objects
+    between *start* and *end*
+    
+* *integer*
+    For example::
         
-        create a 200 elements list with random datetime.date objects
-        between *start* and *end*
+        populate('integer',200, start = 0, end = 1000)
+    
+    create a 200 elements list with random int between *start* and *end*
+    
+* *float*
+    For example::
         
-    * *integer*
-        For example::
-            
-            populate('integer',200, start = 0, end = 1000)
-        
-        create a 200 elements list with random int between *start* and *end*
-        
-    * *float*
-        For example::
-            
-            populate('float', 200, start = 0, end = 10)
-        
-        create a 200 elements list with random floats between *start* and *end*
+        populate('float', 200, start = 0, end = 10)
+    
+    create a 200 elements list with random floats between *start* and *end*
 
-    * *choice* (elements of an iterable)
-        For example::
-            
-            populate('choice', 200, choice_from = ['pippo','pluto','blob'])
+* *choice* (elements of an iterable)
+    For example::
         
-        create a 200 elements list with random elements from *choice_from*
+        populate('choice', 200, choice_from = ['pippo','pluto','blob'])
+    
+    create a 200 elements list with random elements from *choice_from*.
     '''
     data = []
     converter = converter or def_converter
@@ -76,9 +76,9 @@ Supported data-types
         end = end or 10
         for s in range(size):
             data.append(converter(uniform(start,end)))
-    elif datatype == 'choice' or choice_from:
+    elif datatype == 'choice' and choice_from:
         for s in range(size):
-            data.append(choice(choice_from))
+            data.append(choice(list(choice_from)))
     else:
         for s in range(size):
             data.append(converter(random_string(**kwargs)))

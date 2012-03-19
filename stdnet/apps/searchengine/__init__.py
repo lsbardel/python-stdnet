@@ -41,7 +41,7 @@ from inspect import isclass
 from stdnet import orm
 from stdnet.utils import to_string, iteritems
 
-from .models import Word, WordItem, Tag
+from .models import WordItem
 from . import processors
 
     
@@ -107,19 +107,19 @@ driver.
                 word = word.lower()
                 yield word
     
-    def flush(self, full = False):
+    def flush(self):
         WordItem.objects.flush()
-        if full:
-            Word.objects.flush()
         
-    def add_item(self, item, words, session):    
-        link = self._link_item_and_word
-        for word,count in iteritems(words):
-            session.add(link(item, word, count))
+    def add_item(self, item, words, session):
+        for word in words:
+            wi = WordItem(word = word,
+                          model_type = item.__class__,
+                          object_id = item.id)
+            session.add(wi)
     
     def remove_item(self, item_or_model, ids = None, session = None):
-        '''\
-Remove indexes for *item*.
+        '''
+Remove indexes for *item_or_model*.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
 '''
@@ -134,14 +134,6 @@ Remove indexes for *item*.
                               object_id = item_or_model.id)
         session.delete(wi)
     
-    def words(self, text, for_search = False):
-        '''Given a text string,
-return a list of :class:`Word` instances associated with it.
-The word items can be used to perform search on registered models.'''
-        texts = self.words_from_text(text,for_search)
-        if texts:
-            return Word.objects.filter(id__in = texts).all()
-    
     def search(self, text, include = None, exclude = None):
         '''Full text search'''
         return list(self.items_from_text(text,include,exclude))
@@ -150,12 +142,9 @@ The word items can be used to perform search on registered models.'''
         '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
 It return a new :class:`stdnet.orm.QueryElem` instance from
 the input :class:`Query` and the *text* to search.'''
-        words = self.words(text, for_search=True)
-        if words is None:
-            return q
-        elif not words:
-            return orm.EmptyQuery(q.meta,q.session)
-        
+        words = self.words_from_text(text, for_search=True)
+        if not words:
+            return q        
         query = WordItem.objects.filter(model_type = q.model)
         qs =  []
         for word in words:
@@ -171,39 +160,6 @@ the input :class:`Query` and the *text* to search.'''
         else:
             qs = qs[0]
         return orm.intersect((q,qs))
-        
-    def add_tag(self, item, text):
-        '''Add a tag to an object.
-    If the object already has the tag associated with it do nothing.
-    
-    :parameter item: instance of :class:`stdnet.orm.StdModel`.
-    :parameter tag: a string for the tag name or a :class:`Tag` instance.
-    
-    It returns an instance of :class:`TaggedItem`.
-    '''
-        linked = []
-        link = self._link_item_and_word
-        for word in self.words_from_text(text):
-            ctag = self.get_or_create(word, tag = True)
-            linked.append(link(item, ctag))
-        return linked
-    
-    def tags_for_item(self, item):
-        return list(self.words_for_item(item, True))                
-
-    def alltags(self, *models):
-        '''Return a dictionary where keys are tag names and values are integers
-        representing how many times the corresponding tag has been used against
-        the Model classes in question.'''
-        tags = {}
-        for wi in WordItem.objects.filter(model_type__in = models):
-            word = wi.word
-            if word.tag:
-                if word in tags:
-                    tags[word] += 1
-                else:
-                    tags[word] = 1
-        return tags
 
     # INTERNALS
 
@@ -217,13 +173,6 @@ the input :class:`Query` and the *text* to search.'''
         else:
             for wi in wis:
                 yield wi.word
-                    
-    def _link_item_and_word(self, item, word, count = 1, tag = False):
-        w = self.get_or_create(word, tag = tag, session = item.session)
-        return WordItem(word = w,
-                        model_type = item.__class__,
-                        object_id = item.id,
-                        count = count)
     
     def item_field_iterator(self, item):
         for processor in self.ITEM_PROCESSORS:
@@ -232,26 +181,3 @@ the input :class:`Query` and the *text* to search.'''
                 return result
         raise ValueError(
                 'Cound not iterate through item {0} fields'.format(item))
-    
-    def get_or_create(self, word, tag = False, session = None):
-        # Internal for adding or creating words
-        try:
-            w = Word.objects.get(id = word)
-            if tag and not w.tag:
-                w.tag = True
-                return w.save()
-            else:
-                return w
-        except Word.DoesNotExist:
-            # we need to create a new word. Since Words have id known even when
-            # not persistent, we cann add the Word to the current session
-            # without saving
-            w = Word(id = word, tag = tag)
-            if session:
-                return session.add(w)
-            else:
-                return w.save()
-   
-
-
-

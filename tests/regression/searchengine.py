@@ -5,7 +5,7 @@ from datetime import date
 from stdnet import test
 from stdnet.utils import to_string, range, populate
 from stdnet.apps.searchengine import SearchEngine, processors
-from stdnet.apps.searchengine.models import Word, WordItem
+from stdnet.apps.searchengine.models import WordItem
 
 from examples.wordsearch.basicwords import basic_english_words
 from examples.wordsearch.models import Item, RelatedItem
@@ -64,7 +64,7 @@ just registration and some utility functions. All search-engine tests
 below will derive from this class.'''
     metaphone = True
     stemming = True
-    models = (Word, WordItem, Item, RelatedItem)
+    models = (WordItem, Item, RelatedItem)
     
     def setUp(self):
         self.register()

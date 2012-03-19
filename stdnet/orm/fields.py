@@ -38,6 +38,7 @@ __all__ = ['Field',
            'PickleObjectField',
            'ModelField',
            'ManyToManyField',
+           'CompositeIdField',
            'JSPLITTER']
 
 NONE_EMPTY = (None,'')
@@ -295,6 +296,7 @@ the ordering alorithm'''
     def _handle_extras(self, **extras):
         '''Callback to hadle extra arguments during initialization.'''
         self.error_extras(extras)
+
 
 class AtomField(Field):
     '''The base class for fields containing ``atoms``.
@@ -823,5 +825,15 @@ This model contains two :class:`ForeignKeys`, one to model holding the
     
     def add_to_fields(self):
         #A many to many field is a dummy field. All it does it provides a proxy
-        #for the through model with added syntaxic sugar
+        #for the through model.
         self.meta.dfields.pop(self.name)
+        
+        
+class CompositeIdField(Field):
+    
+    def __init__(self, *fields, **kwargs):
+        kwargs['primary_key'] = True
+        super(CompositeIdField,self).__init__(**kwargs)
+        self.fields = fields
+    
+    

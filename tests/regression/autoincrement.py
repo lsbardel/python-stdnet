@@ -1,9 +1,9 @@
 from stdnet import test, orm
-from stdnet.apps.searchengine.models import Word, WordItem
+from stdnet.apps.searchengine.models import WordItem
 
 
 class TestCase(test.TestCase):
-    models = (Word, WordItem)
+    model = WordItem
     
     def setUp(self):
         self.register()
@@ -22,6 +22,6 @@ class TestCase(test.TestCase):
         self.assertEqual(b.desc,True)
         self.assertEqual(str(b),'-autoincrement(3)')
         
-    def testSimple(self):
-        w = Word(id='ciao').save()
-        self.assertEqual(w.id,'ciao')
+    #def testSimple(self):
+    #    w = WordItem(word='ciao').save()
+    #    self.assertEqual(w.id,'ciao')

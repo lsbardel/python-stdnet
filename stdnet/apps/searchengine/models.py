@@ -19,37 +19,24 @@ class WordItemManager(orm.Manager):
             return q.filter(model_type = model)
 
 
-class Word(orm.StdModel):
-    '''Model which hold a word as primary key'''
-    id = orm.SymbolField(primary_key = True)
-    tag = orm.BooleanField(default = False)
-    
-    def __unicode__(self):
-        return self.id
-    
-    class Meta:
-        ordering = -orm.autoincrement()
-
-
 class WordItem(orm.StdModel):
     '''A model for associating :class:`Word` instances with general
 :class:`stdnet.orm.StdModel` instances.'''
-    word = orm.ForeignKey(Word, related_name = 'items')
+    id = orm.CompositeIdField('word','model_type','object_id')
+    #
+    word = orm.SymbolField()
     '''tag instance'''
     model_type = orm.ModelField()
     '''Model type'''
     object_id = orm.SymbolField()
-    '''Model instance id'''
-    count = orm.IntegerField(index = False, default = 1)
     
     def __unicode__(self):
-        return self.word.__unicode__()
+        return self.word
     
     objects = WordItemManager()
     
     class Meta:
         ordering = -orm.autoincrement()
-        unique_together = ('word', 'model_type', 'object_id')
     
     @property
     def object(self):
@@ -58,28 +45,4 @@ class WordItem(orm.StdModel):
             self._object = self.model_type.objects.get(id = self.object_id)
         return self._object
     
-
-class Tag(Word):
-    pass
-
-
-class TagItem():
-    '''A model for associating :class:`Word` instances with general
-:class:`stdnet.orm.StdModel` instances.'''
-    tag = orm.ForeignKey(Tag, related_name = 'items')
-    '''tag instance'''
-    model_type = orm.ModelField()
-    '''Model type'''
-    object_id = orm.SymbolField()
-    '''Model instance id'''
-    
-    def __unicode__(self):
-        return self.word.__unicode__()
-    
-    @property
-    def object(self):
-        '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
-        if not hasattr(self,'_object'):
-            self._object = self.model_type.objects.get(id = self.object_id)
-        return self._object
     

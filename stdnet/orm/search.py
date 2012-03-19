@@ -133,15 +133,8 @@ It extracts content from the given *item* and add it to the index.
         wft = self.words_from_text
         words = chain(*[wft(value) for value in\
                             self.item_field_iterator(item)])                
-        wc = {}
-        for word in words:
-            if word in wc:
-                wc[word] += 1
-            else:
-                wc[word] = 1
-        
         session = session or item.session
-        self.add_item(item, wc, session)
+        self.add_item(item, words, session)
         return session
     
     def reindex(self, full = True):

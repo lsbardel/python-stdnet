@@ -809,6 +809,15 @@ class BackendDataServer(stdnet.BackendDataServer):
             if script:
                 pipe.script_load(script.script)
         return pipe.execute()
+    
+    def pk_info(self, meta):
+        pk = meta.pk
+        if pk.type == 'auto':
+            return ('auto',)
+        elif pk.type == 'composite':
+            return (len(pk.fields),) + pk.fields
+        else:
+            return ('',)
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
@@ -829,6 +838,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                     s = 'z' if meta.ordering else 's'
                     indices = list(self.flat_indices(meta))
                     lua_data = [s,N,len(indices)//2]
+                    lua_data.extend(self.pk_info(meta))
                     lua_data.extend(indices)
                     processed = []
                     for instance in dirty:

@@ -18,14 +18,6 @@ SearchEngine
    :member-order: bysource
    
    
-Word
-~~~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: Word
-   :members:
-   :member-order: bysource
-   
-   
 WordItem
 ~~~~~~~~~~~~~~~~~~~~~~
    

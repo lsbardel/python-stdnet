@@ -66,7 +66,7 @@ is one of ``bytes``, ``strings``, ``numbers`` or ``dates``.
 IntegerField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.IntegerField
+.. autoclass:: IntegerField
    :members:
    :member-order: bysource
 
@@ -74,7 +74,7 @@ IntegerField
 BooleanField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.BooleanField
+.. autoclass:: BooleanField
    :members:
    :member-order: bysource
 
@@ -82,7 +82,7 @@ BooleanField
 AutoField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.AutoField
+.. autoclass:: AutoField
    :members:
    :member-order: bysource
 
@@ -90,7 +90,7 @@ AutoField
 FloatField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.FloatField
+.. autoclass:: FloatField
    :members:
    :member-order: bysource   
 
@@ -98,7 +98,7 @@ FloatField
 SymbolField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.SymbolField
+.. autoclass:: SymbolField
    :members:
    :member-order: bysource
    
@@ -106,7 +106,7 @@ SymbolField
 CharField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.CharField
+.. autoclass:: CharField
    :members:
    :member-order: bysource
  
@@ -114,7 +114,7 @@ CharField
 ByteField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ByteField
+.. autoclass:: ByteField
    :members:
    :member-order: bysource
  
@@ -124,7 +124,7 @@ ByteField
 DateField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.DateField
+.. autoclass:: DateField
    :members:
    :member-order: bysource
    
@@ -134,10 +134,17 @@ DateField
 DateTimeField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.DateTimeField
+.. autoclass:: DateTimeField
    :members:
    :member-order: bysource
    
+   
+CompositeIdField
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: CompositeIdField
+   :members:
+   :member-order: bysource
 
 .. _objectfields:
    
@@ -147,7 +154,7 @@ Object Type Fields
 JSONField
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.JSONField
+.. autoclass:: JSONField
    :members:
    :member-order: bysource
    
@@ -155,7 +162,7 @@ JSONField
 PickleObjectField
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.PickleObjectField
+.. autoclass:: PickleObjectField
    :members:
    :member-order: bysource
    
@@ -163,7 +170,7 @@ PickleObjectField
 ModelField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ModelField
+.. autoclass:: ModelField
    :members:
    :member-order: bysource
    
@@ -178,7 +185,7 @@ Related Fields
 ForeignKey
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ForeignKey
+.. autoclass:: ForeignKey
    :members:
    :member-order: bysource
    
@@ -188,7 +195,7 @@ ForeignKey
 ManyToManyField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ManyToManyField
+.. autoclass:: ManyToManyField
    :members:
    :member-order: bysource
 

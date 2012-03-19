@@ -85,6 +85,8 @@ function update_indices(score, id, idkey, oldid, add)
     return errors
 end
 
+-- Update a composite ID. Composite IDs are formed by two or more fields
+-- in an unique way.
 function update_composite_id(original_values, data)
     local fields = {}
     local j = 0
@@ -121,15 +123,15 @@ while j < num_instances do
     local data = table_slice(ARGV,idx0+1,idx0+length_data)
     local created_id = false
     local autoincr = false
-    local newid = false
     local errors = {}
     if score:find(' ') == 5 then
         score = score:sub(6) + 0
         autoincr = true
     end
+    j = j + 1
     i = idx0 + length_data
 
-    -- ID NOT AVAILABLE.
+    -- AUTO ID
     if auto_id then
         if id == '' then
             created_id = true
@@ -156,12 +158,18 @@ while j < num_instances do
 	            redis.call('del', idkey)
 	        end
 	    end
+	    -- Composite ID
 	    if composite_id then
-	        local iddata = update_composite_id(original_values, data)
-	        id = iddata[1]
-	        data = iddata[2]
-	        idkey = bk .. ':obj:' .. id
+	        id, data = unpack(update_composite_id(original_values, data))
 	    end
+	    if id ~= oldid then
+	        idkey = bk .. ':obj:' .. id
+            if s == 's' then
+                redis.call('srem', idset, oldid)
+            else
+                redis.call('zrem', idset, oldid)
+            end
+        end
 	    if s == 's' then
 	        redis.call('sadd', idset, id)
 	    elseif autoincr then
@@ -172,7 +180,6 @@ while j < num_instances do
 	    if length_data > 0 then
 	        redis.call('hmset', idkey, unpack(data))
 	    end
-	    j = j + 1
 	    errors = update_indices(score, id, idkey, oldid, true)
 	    -- An error has occured. Rollback changes.
 	    if # errors > 0 then

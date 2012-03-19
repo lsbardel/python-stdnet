@@ -32,10 +32,12 @@ Use the manager for convenience.'''
         
     def testFailSave(self):
         t1 = self.make()
-        self.assertEqual(t1.id,t1._dbdata['id'])
+        self.assertEqual(t1.id, t1._dbdata['id'])
         self.assertTrue(t1.state().persistent)
         t1.id = genid()
-        self.assertRaises(ValueError,t1.save)
+        t1.save()
+        self.assertEqual(t1.id, t1._dbdata['id'])
+        self.assertEqual(self.model.objects.query().count(),2)
         
     def test_clone(self):
         t1 = self.make()
@@ -60,6 +62,10 @@ Use the manager for convenience.'''
         tasks = list(Task.objects.query())
         self.assertEqual(len(tasks),1)
         self.assertEqual(tasks[0].id,t2.id)
+        
+    def testFail(self):
+        t = Task(name = 'pluto')
+        self.assertRaises(Exception, t.save)
 
 
 class CompositeId(test.TestCase):

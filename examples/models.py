@@ -262,6 +262,16 @@ class Task(orm.StdModel):
         instance = super(Task,self).clone(**kwargs)
         instance.timestamp = None
         return instance
+
+####################################################
+# Composite ID
+class WordBook(orm.StdModel):
+    id = orm.CompositeIdField('word','book')
+    word = orm.SymbolField()
+    book = orm.SymbolField()
+    
+    def __unicode__(self):
+        return self.id
     
 
 ################################################################################
@@ -275,3 +285,4 @@ class ObjectAnalytics(orm.StdModel):
         if not hasattr(self,'_object'):
             self._object = self.model_type.objects.get(id = self.object_id)
         return self._object
+

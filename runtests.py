@@ -49,6 +49,23 @@ if pulsar:
         desc = 'Size of the dataset to test. Choose one between "tiny", "small",\
      "normal", "big", "huge".'
         default = 'small'
+        
+if nose:
+    from nose import plugins
+    
+    class StdnetServer(plugins.Plugin):
+    
+        def options(self, parser, env=os.environ):
+            parser.add_option('--server',
+                          dest='server',
+                          default='',
+                          help="Backend server where to run tests [{0}]"\
+                                    .format(settings.DEFAULT_BACKEND))
+    
+        def configure(self, options, conf):
+            self.enabled = True
+            if options.server:
+                settings.DEFAULT_BACKEND = options.server    
             
 def start():
     global pulsar
@@ -71,7 +88,7 @@ def start():
         argv = list(sys.argv)
         noseoption(argv, '-w', value = 'tests/regression')
         noseoption(argv, '--all-modules')
-        nose.main(argv=argv)
+        nose.main(argv=argv, addplugins=[StdnetServer()])
     else:
         print('To run tests you need either pulsar or nose.')
         exit(0)

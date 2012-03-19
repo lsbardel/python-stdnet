@@ -156,14 +156,7 @@ within this :class:`Session`.'''
         persistent = persistent if persistent is not None else state.persistent
         pkname = instance._meta.pkname()
         if persistent:
-            if pkname in instance._dbdata:
-                pkvalue = instance._dbdata[pkname]
-                if pkvalue != instance.pkvalue():
-                    raise ValueError(
-                            'Incompatible primary key "{0}". It should be {1}'
-                            .format(pkvalue,instance.pkvalue()))
-            else:
-                instance._dbdata[pkname] = instance.pkvalue()
+            instance._dbdata[pkname] = instance.pkvalue()
         else:
             instance._dbdata.pop(pkname,None)
         state = instance.state(update = True)

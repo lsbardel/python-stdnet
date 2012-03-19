@@ -85,7 +85,7 @@ function update_indices(score, id, idkey, oldid, add)
     return errors
 end
 
-function update_composite_id(composite_id, original_values, data)
+function update_composite_id(original_values, data)
     local fields = {}
     local j = 0
     while j < # original_values do
@@ -101,7 +101,7 @@ function update_composite_id(composite_id, original_values, data)
     local joiner = ''
     for _,name in ipairs(composite_id) do
         newid = newid .. joiner .. name .. ':' .. fields[name]
-        joiner = ', '
+        joiner = ','
     end
     local flat_data = {}
     for name,value in pairs(data) do

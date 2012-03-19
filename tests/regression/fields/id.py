@@ -5,7 +5,7 @@ import time
 import stdnet
 from stdnet import test
 
-from examples.models import Task
+from examples.models import Task, WordBook
 
 
 def genid():
@@ -60,3 +60,24 @@ Use the manager for convenience.'''
         tasks = list(Task.objects.query())
         self.assertEqual(len(tasks),1)
         self.assertEqual(tasks[0].id,t2.id)
+
+
+class CompositeId(test.TestCase):
+    model = WordBook
+    
+    def setUp(self):
+        self.register()
+        
+    def testMeta(self):
+        id = self.model._meta.pk
+        self.assertEqual(id.type,'composite')
+        self.assertEqual(id.fields,('word','book'))
+    
+    def testCreate(self):
+        m = self.model(word='hello',book='world').save()
+        self.assertEqual(m.id,'word:hello,book:world')
+        m.word = 'beautiful'
+        m.save()
+        self.assertEqual(m.id,'word:beautiful,book:world')
+        self.assertEqual(self.model.objects.query().count(),1)
+        

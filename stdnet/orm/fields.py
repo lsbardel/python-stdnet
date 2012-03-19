@@ -829,8 +829,8 @@ This model contains two :class:`ForeignKeys`, one to model holding the
         self.meta.dfields.pop(self.name)
         
         
-class CompositeIdField(Field):
-    
+class CompositeIdField(SymbolField):
+    type = 'composite'    
     def __init__(self, *fields, **kwargs):
         kwargs['primary_key'] = True
         super(CompositeIdField,self).__init__(**kwargs)

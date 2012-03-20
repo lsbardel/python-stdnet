@@ -21,7 +21,7 @@ query_result = namedtuple('query_result','key count')
 # server. Id is the id in the session, persistent is a boolean indicating
 # if the instance is persistent on the backend, bid is the id in the backend.
 instance_session_result = namedtuple('instance_session_result',
-                                     'iid persistent id deleted')
+                                     'iid persistent id deleted score')
 session_result = namedtuple('session_result','meta results') 
 
 

@@ -405,10 +405,11 @@ def meta_options(abstract = False,
     
 
 class ModelState(object):
-    __slots__ = ('_persistent','deleted','_iid')
+    __slots__ = ('_persistent','deleted','_iid','score')
     def __init__(self, instance):
         self._persistent = False
         self.deleted = False
+        self.score = 0
         dbdata = instance._dbdata
         pkname = instance._meta.pkname()
         pkvalue = getattr(instance, pkname)

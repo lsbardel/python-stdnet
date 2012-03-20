@@ -113,7 +113,7 @@ The first parameter is the model'''
     
     def callback(self, request, response, args, meta = None, client = None,
                  **kwargs):
-        res = (instance_session_result(r,False,r,True) for r in response)
+        res = (instance_session_result(r,False,r,True,0) for r in response)
         return session_result(meta, res)
     
 
@@ -126,12 +126,13 @@ class commit_session(redis.RedisScript):
         return session_result(sm.meta, response)
     
     def _wrap(self, request, response, iids):
-        for id,iid in zip(response,iids):
-            if isinstance(id,list):
-                msg = id[1].decode(request.encoding)
-                yield CommitException(msg)
+        for id, iid in zip(response,iids):
+            id, flag, info = id
+            if int(flag):
+                yield instance_session_result(iid, True, id, False, float(info))
             else:
-                yield instance_session_result(iid, True, id, False)
+                msg = info.decode(request.encoding)
+                yield CommitException(msg)
     
     
 def structure_session_callback(sm, processed, response):
@@ -953,7 +954,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                     instance_session_result(state.iid,
                                             result,
                                             instance.id,
-                                            state.deleted))
+                                            state.deleted,
+                                            0))
         if processed:
             pipe.add_callback(
                         partial(structure_session_callback,sm))

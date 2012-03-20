@@ -158,7 +158,7 @@ while j < num_instances do
 	            redis.call('del', idkey)
 	        end
 	    end
-	    -- Composite ID
+	    -- Composite ID. Calculate new ID and data
 	    if composite_id then
 	        id, data = unpack(update_composite_id(original_values, data))
 	    end
@@ -172,8 +172,8 @@ while j < num_instances do
         end
 	    if s == 's' then
 	        redis.call('sadd', idset, id)
-	    elseif autoincr then
-	        score = redis.call('zincr', idset, score, id)
+	    elseif autoincr then   --  Autoincrement score if id is repeated
+	        score = redis.call('zincrby', idset, score, id)
 	    else
 	        redis.call('zadd', idset, score, id)
 	    end
@@ -201,9 +201,9 @@ while j < num_instances do
 	    end
 	end
 	if # errors > 0 then
-        result[j] = {id, errors[1]}
+        result[j] = {id, 0, errors[1]}
     else
-        result[j] = id
+        result[j] = {id, 1, score}
     end
 end
 

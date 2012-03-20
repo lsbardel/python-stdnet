@@ -278,6 +278,7 @@ within this :class:`Session`.'''
                 instance = self.add(instance,
                                     modified = False,
                                     persistent = result.persistent)
+                instance.state().score = result.score
                 if instance.state().persistent:
                     instances.append(instance)
                     

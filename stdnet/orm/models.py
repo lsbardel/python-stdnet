@@ -38,7 +38,6 @@ class StdModel(StdNetBase):
     _model_type = 'object'
     is_base_class = True
     _loadedfields = None
-    _state = None
     
     def __init__(self, **kwargs):
         kwargs.pop(self._meta.pkname(),None)

@@ -1,9 +1,11 @@
 from stdnet import test, orm
 from stdnet.apps.searchengine.models import WordItem
 
+from examples.models import SimpleModel
+
 
 class TestCase(test.TestCase):
-    model = WordItem
+    models = (WordItem, SimpleModel)
     
     def setUp(self):
         self.register()
@@ -22,6 +24,16 @@ class TestCase(test.TestCase):
         self.assertEqual(b.desc,True)
         self.assertEqual(str(b),'-autoincrement(3)')
         
-    #def testSimple(self):
-    #    w = WordItem(word='ciao').save()
-    #    self.assertEqual(w.id,'ciao')
+    def testSimple(self):
+        m = SimpleModel(code = 'pluto').save()
+        w = WordItem(word='ciao', model_type = SimpleModel,
+                     object_id = m.id).save()
+        self.assertEqual(WordItem.objects.query().count(),1)
+        w = WordItem(word='ciao', model_type = SimpleModel,
+                     object_id = m.id).save()
+        self.assertEqual(WordItem.objects.query().count(),1)
+        self.assertEqual(w.state().score,2)
+        w = WordItem(word='ciao', model_type = SimpleModel,
+                     object_id = m.id).save()
+        self.assertEqual(WordItem.objects.query().count(),1)
+        self.assertEqual(w.state().score,3)

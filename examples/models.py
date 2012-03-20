@@ -25,8 +25,6 @@ class SimpleModel(orm.StdModel):
         return self.code
     
     
-    
-
 #####################################################################
 #    FINANCE APPLICATION
 class Base(orm.StdModel):

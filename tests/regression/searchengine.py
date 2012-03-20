@@ -156,15 +156,6 @@ class TestMeta(TestCase):
     
     def testRegistered(self):
         self.assertTrue(Item in self.engine.REGISTERED_MODELS)
-                
-    def testWordModel(self):
-        # This tests was put in place because the Word model was
-        # not working properly in Python 3
-        session = self.session()
-        with session.begin():
-            session.add(Word(id = 'bla'))
-        w = session.query(Word).get(id = 'bla')
-        self.assertFalse(isinstance(w.id,bytes))
         
     def testAddWithNumbers(self):
         item, wi = self.simpleadd(name = '20y', content = '')
@@ -241,21 +232,13 @@ class TestSearchEngine(TestCase):
         self.make_items()
         self.engine.flush()
         self.assertFalse(WordItem.objects.query())
-        self.assertTrue(Word.objects.query())
-        
-    def testFlushFull(self):
-        self.make_items()
-        self.engine.flush(full=True)
-        self.assertFalse(WordItem.objects.query())
-        self.assertFalse(Word.objects.query())
         
     def testDelete(self):
         item = self.make_item()
-        words = list(Word.objects.query())
+        words = list(WordItem.objects.query())
         item.delete()
         wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertFalse(wis.count(),0)
-        self.assertEqual(len(words),len(Word.objects.query()))
     
     
 class TestTags(TestCase):

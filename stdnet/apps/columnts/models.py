@@ -84,10 +84,10 @@ class ColumnTS(orm.TS):
         res = self.backend_structure().irange(0, -1, delete = True)
         return self.async_handle(res, self.load_data)
     
-    def range(self, start, end, fields = None, callback = None):
+    def range(self, start, end, fields=None, callback=None):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
-        res = self.backend_structure().range(start,end,fields)
+        res = self.backend_structure().range(start, end, fields)
         return self.async_handle(res, callback or self.load_data)
     
     def get(self, dt, *fields):

@@ -29,8 +29,8 @@ class ColumnTS(columnts.ColumnTS):
     def load_data(self, result):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        dt,va = result
-        if result[0]:
+        dt, va = result
+        if result[0] and va:
             dates = ny.array([loads(t) for t in dt])
             # fromiter does not work for object arrays
             #dates = ny.fromiter((loads(t) for t in dt),

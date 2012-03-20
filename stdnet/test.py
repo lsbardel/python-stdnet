@@ -70,7 +70,11 @@ will be unregistered after the :meth:`tearDown` method.'''
             return r.add_callback(lambda r: self.clear_all())
         else:
             return self.clear_all()
-        
+    
+    def load_scripts(self):
+        if self.backend.name == 'redis':
+            self.backend.load_scripts()
+            
     def _post_teardown(self):
         session = orm.Session(self.backend)
         self.clear_all()

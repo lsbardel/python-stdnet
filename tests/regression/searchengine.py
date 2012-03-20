@@ -68,10 +68,14 @@ below will derive from this class.'''
     
     def setUp(self):
         self.register()
-        self.engine = SearchEngine(metaphone = self.metaphone,
-                                   stemming = self.stemming)
+        self.engine = self.make_engine()
         self.engine.register(Item,('related',))
+        self.load_scripts()
     
+    def make_engine(self):
+        return SearchEngine(metaphone = self.metaphone,
+                            stemming = self.stemming)
+        
     def make_item(self,name='python',counter=10,content=None,related=None):
         session = self.session()
         content = content if content is not None else python_content
@@ -109,7 +113,6 @@ of words which have been included in the Items.'''
     def simpleadd(self, name = 'python', counter = 10, content = None,
                   related = None):
         item = self.make_item(name, counter, content, related)
-        self.assertEqual(item.last_indexed.date(), date.today())
         wis = WordItem.objects.for_model(item).all()
         self.assertTrue(wis)
         for wi in wis:
@@ -166,7 +169,6 @@ class TestMeta(TestCase):
         
         
 class TestSearchEngine(TestCase):
-    tag = 'search'
     
     def testSimpleAdd(self):
         self.simpleadd()
@@ -174,18 +176,16 @@ class TestSearchEngine(TestCase):
     def testDoubleEntries(self):
         '''Test an item indexed twice'''
         engine = self.engine
-        item,wi = self.simpleadd()
+        item, wi = self.simpleadd()
         wi = set((w.word for w in wi))
-        session = engine.index_item(item)
-        self.assertTrue(session)
-        session.commit()
+        item.save()
         wi2 = set((w.word for w in WordItem.objects.for_model(item)))
         # Lets get the words for item
         self.assertEqual(wi,wi2)
         
     def testSearchWords(self):
         self.simpleadd()
-        words = self.engine.words('python gains')
+        words = list(self.engine.words_from_text('python gains'))
         self.assertTrue(len(words)>=2)
         
     def testSearchModelSimple(self):
@@ -239,38 +239,14 @@ class TestSearchEngine(TestCase):
         item.delete()
         wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertFalse(wis.count(),0)
-    
-    
-class TestTags(TestCase):
-    
-    def _testAddTag(self):
-        item = self.make_item()
-        engine = self.engine
-        wi = engine.add_tag(item, 'language programming')
-        self.assertTrue(wi)
-        self.assertEqual(len(wi),2)
-        tags = engine.tags_for_item(item)
-        self.assertEqual(len(tags),2)
-        tags = engine.alltags()
-        self.assertEqual(len(tags),2)
-        
-    def _testAddTags(self):
-        engine = self.engine
-        self.make_items(num=100)
-        for item in Item.objects.query():
-            self.assertTrue(engine.add_tag(item,self.sometags()))
-        tags = self.engine.alltags()
-        self.assertTrue(tags)
         
         
 class TestCoverage(TestCase):
     
-    def setUp(self):
+    def make_engine(self):
         eg = SearchEngine(metaphone = False)
         eg.add_word_middleware(processors.metaphone_processor)
-        self.register()
-        self.engine = eg
-        self.engine.register(Item,('related',))
+        return eg
         
     def testAdd(self):
         item, wi = self.simpleadd('pink',

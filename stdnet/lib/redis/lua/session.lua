@@ -105,12 +105,7 @@ function update_composite_id(original_values, data)
         newid = newid .. joiner .. name .. ':' .. fields[name]
         joiner = ','
     end
-    local flat_data = {}
-    for name,value in pairs(data) do
-        table.insert(flat_data,name)
-        table.insert(flat_data,value)
-    end
-    return {newid, flat_data}
+    return newid
 end
 
 -- LOOP OVER INSTANCES TO ADD/CHANGE
@@ -160,10 +155,10 @@ while j < num_instances do
 	    end
 	    -- Composite ID. Calculate new ID and data
 	    if composite_id then
-	        id, data = unpack(update_composite_id(original_values, data))
+	        id = update_composite_id(original_values, data)
 	    end
-	    if id ~= oldid then
-	        idkey = bk .. ':obj:' .. id
+	    idkey = bk .. ':obj:' .. id
+	    if id ~= oldid and oldid ~= '' then
             if s == 's' then
                 redis.call('srem', idset, oldid)
             else

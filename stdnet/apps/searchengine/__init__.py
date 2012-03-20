@@ -117,13 +117,12 @@ driver.
                           object_id = item.id)
             session.add(wi)
     
-    def remove_item(self, item_or_model, ids = None, session = None):
+    def remove_item(self, item_or_model, session, ids = None):
         '''
 Remove indexes for *item_or_model*.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
 '''
-        session = session or item_or_model.session
         query = session.query(WordItem)
         if isclass(item_or_model):
             wi = query.filter(model_type = item_or_model)
@@ -163,17 +162,6 @@ the input :class:`Query` and the *text* to search.'''
 
     # INTERNALS
 
-    def words_for_item(self, item, tag = None):
-        wis = WordItem.objects.filter(model_type = item.__class__,\
-                                      object_id = item.id)
-        if tag is not None:
-            for wi in wis:
-                if wi.word.tag == tag:
-                    yield wi.word
-        else:
-            for wi in wis:
-                yield wi.word
-    
     def item_field_iterator(self, item):
         for processor in self.ITEM_PROCESSORS:
             result = processor(item)

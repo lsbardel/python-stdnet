@@ -82,8 +82,19 @@ class CompositeId(test.TestCase):
     def testCreate(self):
         m = self.model(word='hello',book='world').save()
         self.assertEqual(m.id,'word:hello,book:world')
+        all = self.model.objects.query().all()
+        self.assertEqual(len(all),1)
+        m = all[0]
+        self.assertEqual(m.word,'hello')
+        self.assertEqual(m.book,'world')
+        #
         m.word = 'beautiful'
         m.save()
         self.assertEqual(m.id,'word:beautiful,book:world')
         self.assertEqual(self.model.objects.query().count(),1)
+        all = self.model.objects.query().all()
+        self.assertEqual(len(all),1)
+        m = all[0]
+        self.assertEqual(m.word,'beautiful')
+        self.assertEqual(m.book,'world')
         

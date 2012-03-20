@@ -5,7 +5,6 @@ one for linking other objects to Words.
 from inspect import isclass
 
 from stdnet import orm
-from stdnet.utils import range, to_string
 
 
 class WordItemManager(orm.Manager):

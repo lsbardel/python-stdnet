@@ -49,7 +49,7 @@ The main methods to be implemented are :meth:`add_item`,
         self.word_middleware = []
         self.add_processor(stdnet_processor())
         
-    def register(self, model, related = None, tag_field = 'tags'):
+    def register(self, model, related = None):
         '''Register a :class:`StdModel` to the search engine.
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.
@@ -58,13 +58,6 @@ indexed by the search engine.
 :parameter related: a list of related fields to include in the index.
 '''
         model._meta.searchengine = self
-        if self.last_indexed not in model._meta.dfields:
-            field = DateTimeField(required = False, as_cache = True)
-            field.register_with_model('last_indexed',model)
-        if tag_field:
-            field = CharField()
-            field.register_with_model(tag_field,model)
-        model._tag_field = tag_field
         model._index_related = related or ()
         update_model = UpdateSE(self)
         self.REGISTERED_MODELS[model] = update_model
@@ -123,17 +116,16 @@ for preprocessing words to be indexed.
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
     
-    def index_item(self, item, session = None):
+    def index_item(self, item, session):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
 :parameter item: an instance of a :class:`stdnet.orm.StdModel`.
 """
-        self.remove_item(item, session = session)
+        self.remove_item(item, session)
         wft = self.words_from_text
         words = chain(*[wft(value) for value in\
-                            self.item_field_iterator(item)])                
-        session = session or item.session
+                            self.item_field_iterator(item)])
         self.add_item(item, words, session)
         return session
     
@@ -156,7 +148,7 @@ with the search engine.'''
     # ABSTRACT FUNCTIONS
     ################################################################
     
-    def remove_item(self, item_or_model, ids = None, session = None):
+    def remove_item(self, item_or_model, session, ids = None):
         '''Remove an item from the search indices'''
         raise NotImplementedError
     
@@ -202,24 +194,16 @@ engine index models.'''
             self.index(instances, session, sender)
             
     def index(self, instances, session, sender):
-        add = self.se.index_item
-        with session.begin(name = 'Update search indexes',
-                           signal_commit = False):
+        index_item = self.se.index_item
+        with session.begin(name = 'Update search indexes'):
             for instance in instances:
-                # Index only if the last_index field was loaded
-                # or it is available
-                # TODO
-                # important for circular update. Need to improve
-                if not getattr(instance,'last_indexed',True):
-                    session.add(instance)
-                    instance.last_indexed = datetime.now()
-                    add(instance, session)
+                index_item(instance, session)
                     
     def remove(self, instances, session, sender):
         if sender:
-            with session.begin(name = 'Remove search indexes',
-                               signal_commit = False):
-                self.se.remove_item(sender, instances, session)
+            remove_item = self.se.remove_item
+            with session.begin(name = 'Remove search indexes'):
+                remove_item(sender, session, instances)
                 
         
         

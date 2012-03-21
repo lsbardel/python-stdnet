@@ -63,16 +63,20 @@ class Default(Encoder):
                 return x
     
 
+def safe_number(v): 
+    try: 
+        v = float(v)
+        vi = int(v)
+        return vi if vi == v else v 
+    except: 
+        return v 
+
+
 class NumericDefault(Default):
     
     def loads(self, x, logger = None):
         x = super(NumericDefault,self).loads(x,logger)
-        try:
-            x = float(x)
-            ix = int(x)
-            return ix if x == ix else x
-        except (TypeError, ValueError):
-            return x
+        return safe_number(x)
         
     
 class Double(Encoder):

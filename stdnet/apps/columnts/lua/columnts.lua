@@ -136,6 +136,10 @@ columnts = {
             end
         end
     end,
+    -- times
+    times = function(self, command, start, stop)
+    	return redis.call(command, self.key, start, stop, 'novalues')
+    end,
     --
     -- return an array containg a range of the timeseries. The array
     -- contains two elements, an array of times and a dictionary of fields.

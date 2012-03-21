@@ -128,7 +128,7 @@ lua scripts to redis via the ``evalsha`` command.
             return self.callback(request, response, args, **options)
         
     def load_callback(self, request, result, args, **options):
-        if isinstance(result[0],Exception):
+        if isinstance(result[0], Exception):
             raise result[0]
         return result[1]
     

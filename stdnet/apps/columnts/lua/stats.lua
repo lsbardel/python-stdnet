@@ -15,7 +15,8 @@ function stats(self, command, start, stop, fields)
     if N == 0 then
         return sts
     end
-    local result = {start = times[1], stop = times[N], len = N, stats = sts} 
+    local result = {start = times[1], stop = times[N], len = N, stats = sts}
+    -- Loop over field-value pairs 
     for field, values in pairs(field_values) do
         local N = 0
         local min_val = 1.e10
@@ -24,7 +25,8 @@ function stats(self, command, start, stop, fields)
         local sum2_val = 0
         local dsum, dsum2, dsum3, dsum4 = 0, 0, 0, 0
         local p, dv = nan
-        for i,v in ipairs(values) do
+        -- loop over values
+        for _, v in ipairs(values) do
             if v == v then
                 min_val = math.min(min_val, v)
                 max_val = math.max(max_val, v)

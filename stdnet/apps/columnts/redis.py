@@ -2,6 +2,7 @@ import os
 
 from stdnet import orm
 from stdnet.backends import redisb
+from stdnet.utils.encoders import safe_number
 from stdnet.lib import redis
 
 
@@ -43,22 +44,23 @@ class RedisColumnTS(redisb.TS):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
     
-    def irange(self, start = 0, end = -1, fields = None, delete = False):
+    def irange(self, start = 0, end = -1, fields = None, novalues = False,
+               delete = False):
+        noval = 1 if novalues else 0
         fields = fields or ()
         delete = 1 if delete else 0
-        return self.client.script_call('timeseries_query', self.id,
-                                       'tsrange',
-                                       start, end, delete, len(fields), *fields)
+        return self.client.script_call(
+                        'timeseries_query', self.id, 'tsrange',
+                        start, end, noval, delete, len(fields),
+                        *fields, fields = fields, novalues = novalues)
         
-    def range(self, start, end, fields = None):
+    def range(self, start, end, fields = None, novalues = False):
+        noval = 1 if novalues else 0
         fields = fields or ()
-        return self.client.script_call('timeseries_query', self.id,
-                                      'tsrangebytime',
-                                       start, end, 0, len(fields), *fields)
-    
-    def add(self, dt, field, value):
-        timestamp = self.pickler.dumps(dt)
-        self.cache.add(timestamp, field, self.value_pickler.dumps(value))
+        return self.client.script_call(
+                        'timeseries_query', self.id,'tsrangebytime',
+                        start, end, noval, 0, len(fields), *fields,
+                        fields = fields, novalues = novalues)
         
     def flat(self):
         cache = self.instance.cache
@@ -125,29 +127,29 @@ class timeseries_merge(redis.RedisScript):
         
     
 class timeseries_query(redis.RedisScript):
+    '''Lua Script for retrieving data from the remote timeseries'''
     script = (redis.read_lua_file('utils/table.lua'),
               redis.read_lua_file('columnts.lua',script_path),
               redis.read_lua_file('query.lua',script_path))
     
-    def callback(self, request, response, args, **options):
-        if isinstance(response,Exception):
-            raise response
+    def callback(self, request, response, args, fields = None, novalues = False,
+                 **options):
+        if novalues:
+            return response
         encoding = request.client.encoding
-        fields = (f.decode(encoding) for f in response[1::2])
-        return response[0], tuple(zip(fields,response[2::2]))
+        rfields = (f.decode(encoding) for f in response[1::2])
+        data = dict(zip(rfields, response[2::2]))
+        newdata = []
+        if fields:
+            for field in fields:
+                value = data.pop(field,None)
+                if value is not None:
+                    newdata.append((field,value))
+        for field in sorted(data):
+            newdata.append((field,data[field]))
+        return response[0], newdata
         
 
-def safe2number(v):
-    try:
-        v = float(v)
-    except:
-        return v
-    try:
-        vi = int(v)
-    except:
-        return v
-    return vi if vi == v else v
-    
 class timeseries_stats(redis.RedisScript):
     script = (redis.read_lua_file('utils/table.lua'),
               redis.read_lua_file('columnts.lua',script_path),
@@ -155,7 +157,7 @@ class timeseries_stats(redis.RedisScript):
     
     def callback(self, request, response, args, **options):
         encoding = request.client.encoding
-        result = dict(redis.pairs_to_dict(response,encoding,safe2number))
+        result = dict(redis.pairs_to_dict(response,encoding,safe_number))
         if result:
             result['stats'] = dict(self.stats_dict(result['stats'],encoding))
         return result
@@ -163,5 +165,5 @@ class timeseries_stats(redis.RedisScript):
     def stats_dict(self, stats, encoding):
         pd = redis.pairs_to_dict
         for k,v in pd(stats,encoding):
-            yield k,dict(pd(v,encoding,safe2number))
+            yield k,dict(pd(v,encoding,safe_number))
             

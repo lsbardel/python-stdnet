@@ -133,39 +133,35 @@ Remove indexes for *item_or_model*.
                               object_id = item_or_model.id)
         session.delete(wi)
     
-    def search(self, text, include = None, exclude = None):
+    def search(self, text, include = None, exclude = None, lookup = None):
         '''Full text search'''
-        return list(self.items_from_text(text,include,exclude))
+        lookup = lookup or 'contains'
+        words = self.words_from_text(text, for_search=True)
+        query = WordItem.objects.query()
+        if include:
+            query = query.filter(model_type__in = include)
+        if exclude:
+            query = query.exclude(model_type__in = include)
+        if not words:
+            return query
+        qs = []
+        for word in words:
+            qs.append(query.filter(word = word))
+        if len(qs) > 1:
+            if lookup == 'contains':
+                qs = orm.intersect(qs)
+            elif lookup == 'in':
+                qs = orm.union(qs)
+            else:
+                raise ValueError('Unknown lookup "{0}"'.format(lookup))
+        else:
+            qs = qs[0]
+        return qs
     
-    def search_model(self, q, text, lookup = 'in'):
+    def search_model(self, q, text, lookup = None):
         '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
 It return a new :class:`stdnet.orm.QueryElem` instance from
 the input :class:`Query` and the *text* to search.'''
-        words = self.words_from_text(text, for_search=True)
-        if not words:
-            return q        
-        query = WordItem.objects.filter(model_type = q.model)
-        qs =  []
-        for word in words:
-            qs.append(query.filter(word = word).get_field('object_id'))
-            
-        if len(qs) > 1:
-            if lookup == 'in':
-                qs = orm.intersect(qs)
-            elif lookup == 'contains':
-                qs = orm.union(qs)
-            else:
-                raise valueError('Unknown lookup "{0}"'.format(lookup))
-        else:
-            qs = qs[0]
-        return orm.intersect((q,qs))
-
-    # INTERNALS
-
-    def item_field_iterator(self, item):
-        for processor in self.ITEM_PROCESSORS:
-            result = processor(item)
-            if result:
-                return result
-        raise ValueError(
-                'Cound not iterate through item {0} fields'.format(item))
+        qs = self.search(text, include = (q.model,), lookup = lookup)
+        return orm.intersect((q,qs.get_field('object_id')))
+    

@@ -227,6 +227,16 @@ class TestSearchEngine(TestCase):
         sw = ' '.join(populate('choice', 1, choice_from = words))
         qs = Item.objects.query().search(sw)
         self.assertTrue(qs)
+        items = qs.all()
+        
+    def testEmptySearch(self):
+        words = self.make_items(num = 30, content = True)
+        qs = set(self.engine.search('').all())
+        qs2 = set(WordItem.objects.query().all())
+        self.assertTrue(qs)
+        self.assertEqual(qs,qs2)
+        self.assertRaises(ValueError, self.engine.search,
+                          'first second ', lookup = 'foo')
         
     def testFlush(self):
         self.make_items()
@@ -239,6 +249,12 @@ class TestSearchEngine(TestCase):
         item.delete()
         wis = WordItem.objects.filter(model_type = item.__class__)
         self.assertFalse(wis.count(),0)
+        
+    def testSearch(self):
+        words = self.make_items(num = 30, content = True)
+        text = ' '.join(populate('choice', 1, choice_from = words))
+        result = self.engine.search(text)
+        self.assertTrue(result)
         
         
 class TestCoverage(TestCase):

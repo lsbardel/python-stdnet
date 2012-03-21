@@ -144,6 +144,17 @@ with the search engine.'''
                 n += 1
                 self.index_item(obj)
         return n
+    
+    # INTERNALS
+    #################################################################
+
+    def item_field_iterator(self, item):
+        for processor in self.ITEM_PROCESSORS:
+            result = processor(item)
+            if result:
+                return result
+        raise ValueError(
+                'Cound not iterate through item {0} fields'.format(item))
 
     # ABSTRACT FUNCTIONS
     ################################################################
@@ -162,15 +173,18 @@ with the search engine.'''
 '''
         raise NotImplementedError
     
-    def search_model(self, model, text):
+    def search(self, text, include = None, exclude = None, lookup = None):
+        raise NotImplementedError()
+    
+    def search_model(self, query, text, lookup = None):
         '''Search *text* in *model* instances. This is the functions
 needing implementation by custom serach engines.
 
-:parameter model: a :class:`stdnet.orm.StdModel` class.
+:parameter query: a :class:`Query` on a :class:`StdModel`.
 :parameter text: text to search
-:rtype: A :class:`stdnet.orm.query.QuerySet` of model instances containing the
-    text to search.'''
-        raise NotImplementedError
+:parameter lookup: Optional lookup, one of ``contains`` or ``in``.
+:rtype: An updated :class:`Query`.'''
+        raise NotImplementedError()
     
     def flush(self, full = False):
         '''Clean the search engine'''
@@ -205,7 +219,6 @@ engine index models.'''
             with session.begin(name = 'Remove search indexes'):
                 remove_item(sender, session, instances)
                 
-        
         
 class stdnet_processor(object):
     '''A search engine processor for stdnet models.

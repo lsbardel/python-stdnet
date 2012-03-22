@@ -1,10 +1,18 @@
 import os
 
+from stdnet import orm
+from stdnet.apps.columnts import DoubleEncoder
 try:
     from stdnet.apps.columnts import npts
     from dynts import tsname
+    
+    class ColumnTimeSeriesNumpy(orm.StdModel):
+        ticker = orm.SymbolField(unique = True)
+        data = npts.ColumnTSField()
+    
 except ImportError:
     npts = None
+    ColumnTimeSeriesNumpy = None
     
 from . import main
 
@@ -49,3 +57,20 @@ class TestDynTsIntegration(main.TestColumnTSBase):
         n = N//2
         dte = dates[n]
         v = ts1[dte]
+        
+
+skipUnless(os.environ['stdnet_backend_status'] == 'stdnet' and\
+           npts is not None, 'Requires stdnet-redis and dynts')        
+class TestColumnTSField(main.TestCase):
+    model = ColumnTimeSeriesNumpy
+    
+    def setUp(self):
+        self.register()
+        
+    def testMeta(self):
+        meta = self.model._meta
+        self.assertTrue(len(meta.multifields),1)
+        m = meta.multifields[0]
+        self.assertEqual(m.name,'data')
+        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
+        

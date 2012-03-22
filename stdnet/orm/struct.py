@@ -278,7 +278,7 @@ class PairMixin(object):
         return self.value_pickler.loads(result)
     
     def __setitem__(self, key, value):
-        self.add(key,value)
+        self.add(key, value)
 
     def get(self, key, default = None):
         '''Retrieve a single element from the structure.

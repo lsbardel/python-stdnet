@@ -1,4 +1,5 @@
-local ts = columnts:new(KEYS[1])	--	timeseries
+-- Commit a session for one columnts
+local ts = columnts:new(KEYS[1])
 
 -- First remove timestamps
 local index = 1
@@ -29,7 +30,7 @@ while index < # ARGV do
 	    table.insert(values, ARGV[index+2])
 	    index = index + 2
 	end
-	ts:set(times, field_values)
+	ts:add(times, field_values)
 end
 		
 return ts:length()

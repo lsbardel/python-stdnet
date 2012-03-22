@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from stdnet import orm, test, SessionNotAvailable, CommitException
 from stdnet.utils import encoders, populate
-from stdnet.apps.columnts import ColumnTS, ValueEncoder, DoubleEncoder, nil
+from stdnet.apps.columnts import ColumnTS, DoubleEncoder, nil
 from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 
@@ -61,12 +61,19 @@ class TestTimeSeries(struct.StructMixin, TestCase):
     
     def createOne(self, session):
         ts = session.add(ColumnTS(id = 'goog'))
-        ts.add(date(2012,1,23),{'open':586, 'high':588.66,
-                                'low':583.16, 'close':585.52})
-        ts.update(((date(2012,1,20),{'open':590.53, 'high':591,
-                                    'low':581.7, 'close':585.99}),
-                   (date(2012,1,19),{'open':640.99, 'high':640.99,
-                                    'low':631.46, 'close':639.57})))
+        d1 = date(2012,1,23)
+        data = {d1: {'open':586, 'high':588.66,
+                     'low':583.16, 'close':585.52},
+                date(2012,1,20): {'open':590.53, 'high':591,
+                                  'low':581.7, 'close':585.99},
+                date(2012,1,19): {'open':640.99, 'high':640.99,
+                                  'low':631.46, 'close':639.57}}
+        ts.add(d1,data[d1])
+        self.data = data
+        data = self.data.copy()
+        data.pop(d1)
+        data = tuple(data.items())
+        ts.update(data)
         # test bad add
         self.assertRaises(TypeError, ts.add, date(2012,1,20), 1, 2, 3)
         return ts
@@ -78,9 +85,19 @@ class TestTimeSeries(struct.StructMixin, TestCase):
             self.assertTrue(len(ts.cache.fields['open']),2)
             self.assertTrue(len(ts.cache.fields),4)
         self.assertEqual(ts.size(), 3)
+        dates, fields = ts.irange()
+        self.assertEqual(len(fields),4)
+        self.assertEqual(len(dates),3)
+        for field in fields:
+            values = fields[field]
+            self.assertEqual(len(values),3)
+            for dt, v in zip(dates, values):
+                v2 = self.data[dt.date()][field]
+                self.assertAlmostEqual(v,v2)
         return ts
             
     def testEmpty2(self):
+        '''Check an empty timeseries'''
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))
         self.assertEqual(ts.size(),0)
@@ -192,13 +209,23 @@ class TestTimeSeries(struct.StructMixin, TestCase):
     def testUpdateDict(self):
         '''Test updating via a dictionary.'''
         ts = self.makeGoogle()
-        ts.update({date(2012,1,23):{'open':586.00, 'high':588.66,
-                                    'low':583.16, 'close':585.52},
-                   date(2012,1,25):{'open':586.32, 'high':687.68,
-                                    'low':578, 'close':580.93},
-                   date(2012,1,24):{'open':586.32, 'high':687.68,
-                                    'low':578, 'close':580.93}})
+        data = {date(2012,1,23):{'open':586.00, 'high':588.66,
+                                 'low':583.16, 'close':585.52},
+                date(2012,1,25):{'open':586.32, 'high':687.68,
+                                 'low':578, 'close':580.93},
+                date(2012,1,24):{'open':586.32, 'high':687.68,
+                                 'low':578, 'close':580.93}}
+        ts.update(data)
         self.assertEqual(ts.size(), 5)
+        dates, fields = ts.range(date(2012,1,23), date(2012,1,25))
+        self.assertEqual(len(dates),3)
+        self.assertEqual(dates[0].date(),date(2012,1,23))
+        self.assertEqual(dates[1].date(),date(2012,1,24))
+        self.assertEqual(dates[2].date(),date(2012,1,25))
+        for field in fields:
+            for d, v1 in zip(dates, fields[field]):
+                v2 = data[d.date()][field]
+                self.assertAlmostEqual(v1, v2)
         
     def testBadQuery(self):
         ts = self.makeGoogle()
@@ -230,11 +257,11 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testSet(self):
         ts = self.makeGoogle()
-        ts[date(2012,1,27)] = {'open':600}
-        self.assertEqual(len(ts),4)
+        ts[date(2012,1,27)] = {'open': 600}
+        self.assertEqual(len(ts), 4)
         res = ts[date(2012,1,27)]
         self.assertEqual(len(res),4)
-        self.assertEqual(res['open'],600)
+        self.assertEqual(res['open'], 600)
         self.assertNotEqual(res['close'],res['close'])
         self.assertNotEqual(res['high'],res['high'])
         self.assertNotEqual(res['low'],res['low'])
@@ -552,8 +579,6 @@ class TestMissingValues(TestCase):
             self.check_stats(stats[stat],self.fields[stat])
     
     
-skipUnless(os.environ['stdnet_backend_status']=='stdnet',
-           'Requires stdnet-redis')
 class TestColumnTSField(TestCase):
     model = ColumnTimeSeries
     
@@ -565,22 +590,5 @@ class TestColumnTSField(TestCase):
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
         self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, ValueEncoder))
-        
-        
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
-           'Requires stdnet-redis')
-class TestDoubleEncoder(TestCase):
-    
-    def ts(self):
-        return ColumnTS(value_pickler = DoubleEncoder())
-    
-    def testMeta(self):
-        ts = self.ts()
-        self.assertTrue(isinstance(ts.value_pickler,DoubleEncoder))
-        self.assertEqual(ts.value_pickler.dumps('ciao'),nil)
-        self.assertEqual(ts.value_pickler.dumps(None),nil)
-        v = ts.value_pickler.loads(nil)
-        self.assertNotEqual(v,v)
-        
+        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
         

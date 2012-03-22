@@ -1,20 +1,23 @@
+.. _vers07:
+
 Ver. 0.7.0 - Development
 ===============================
-* Backward incompatible changes in the API.
+* Minor backward incompatible changes in the API and database schema.
 * It requires redis_ 2.6 or higher.
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions, lua_ scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
 * Redesign of :class:`stdnet.orm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.
-* Added :class:`stdnet.orm.CompositeIdField`.
+  *This is the only backward incompatible change both in terms of API and database scema*.
+* Added :class:`stdnet.orm.CompositeIdField` to handle situations where each
+  combination of given set of :stdnet.orm.Field` must be unique.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added ability to filter and search on :class:`stdnet.orm.ForeignKey` fields.
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
-* Removed structures from :mod'`backends` module and included in the :mod:`orm`
-  module.
+* Moved structures from :mod:`stdnet.backends` to the :mod:`stdnet.orm` module.
 * Added :meth:`stdnet.orm.Query.load_only` method for loading a subset
   of a model fields. This can improve performance by reducing the amount of
   data transferred from the server to the client.
@@ -36,11 +39,11 @@ Ver. 0.7.0 - Development
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <structures-backend>` and
   :ref:`structured fields <model-field-structure>`.
-* pulsar_ is required to run the test suite and unittest2_ is required if
+* pulsar_ or nose_ are required to run the test suite and unittest2_ is required if
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **518 regression tests** with **86%** coverage.
+* **544 regression tests** with **88%** coverage.
 
 .. _vers06:
 
@@ -108,6 +111,8 @@ Ver. 0.6.0 - 2011 Aug 9
 * Reorganized and expanded documentation.
 * Bug fix in :class:`stdnet.orm.PickleObjectField` field.
 * **289 regression tests** with **78%** coverage.
+
+.. _vers05:
 
 Ver. 0.5.5 - 2011 June 6
 ============================
@@ -186,6 +191,8 @@ Ver. 0.5.0 - 2011 Feb 24
 * Added :mod:`stdnet.contrib.sessions` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.orm.JSONField` with tests.
 * **167 regression tests** with **61%** coverage.
+
+.. _vers04:
 
 Ver. 0.4.2 - 2010 Nov 17
 ============================
@@ -276,5 +283,6 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _django: http://www.djangoproject.com/
 .. _hiredis: https://github.com/pietern/hiredis-py
 .. _pulsar: http://packages.python.org/pulsar/
+.. _nose: http://readthedocs.org/docs/nose/en/latest/
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _lua: http://www.lua.org/

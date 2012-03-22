@@ -5,7 +5,7 @@ from stdnet import orm, SessionNotAvailable
 from stdnet.lib import skiplist
 from stdnet.utils import encoders, iteritems, zip
 
-from .encoders import ValueEncoder
+from .encoders import DoubleEncoder
 
 __all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
 
@@ -32,7 +32,7 @@ class TimeseriesCache(object):
 class ColumnTS(orm.TS):
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
-    value_pickler = ValueEncoder()
+    value_pickler = DoubleEncoder()
     
     def front(self, *fields):
         '''Return the front pair of the structure'''
@@ -57,14 +57,16 @@ class ColumnTS(orm.TS):
     @orm.commit_when_no_transaction
     def add(self, dt, *args):
         self._add(dt, *args)
+        return self
         
     @orm.commit_when_no_transaction
     def update(self, mapping):
-        if isinstance(mapping,dict):
+        if isinstance(mapping, dict):
             mapping = iteritems(mapping)
         add = self._add
-        for dt,v in mapping:
-            add(dt,v)
+        for dt, v in mapping:
+            add(dt, v)
+        return self
     
     def irange(self, start = 0, end = -1, fields = None, novalues = False,
                callback = None):
@@ -176,9 +178,9 @@ The result will be calculated using the formula::
         dump = self.value_pickler.dumps
         if len(args) == 1:
             mapping = args[0]
-            if isinstance(mapping,dict):
+            if isinstance(mapping, dict):
                 mapping = iteritems(mapping)
-            for field,value in mapping:
+            for field, value in mapping:
                 add(timestamp, field, dump(value))
         elif len(args) == 2:
             add(timestamp, args[0], dump(args[1]))

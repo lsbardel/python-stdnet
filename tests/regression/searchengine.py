@@ -4,6 +4,7 @@ from datetime import date
 
 from stdnet import orm, test, QuerySetError
 from stdnet.utils import to_string, range, populate
+from stdnet.orm.search import UpdateSE
 from stdnet.apps.searchengine import SearchEngine, processors
 from stdnet.apps.searchengine.models import WordItem
 
@@ -278,6 +279,13 @@ class TestSearchEngine(TestCase):
         all = set(Item.objects.query())
         self.assertEqual(q,all)
         
+    def testReindex(self):
+        self.make_items(num = 30, content = True)
+        wis1 = set(WordItem.objects.query())
+        self.engine.reindex()
+        wis2 = set(WordItem.objects.query())
+        self.assertEqual(wis1,wis2)
+        
 
 class TestCoverage(TestCase):
     
@@ -309,5 +317,12 @@ class TestCoverageBaseClass(TestCase):
         self.assertRaises(NotImplementedError, e.flush)
         self.assertRaises(NotImplementedError, e.add_item, None, None, None)
         self.assertRaises(NotImplementedError, e.remove_item, None, None, None)
-        self.assertEqual(e.split_text('ciao luca'),['ciao','luca'])
+        self.assertEqual(e.session(), None)
+        self.assertEqual(e.split_text('ciao luca'), ['ciao','luca'])
     
+    def testItemFieldIterator(self):
+        e = orm.SearchEngine()
+        self.assertRaises(ValueError, e.item_field_iterator, None)
+        u = UpdateSE(e)
+        self.assertEqual(u.se, e)
+        self.assertRaises(ValueError, u, None)

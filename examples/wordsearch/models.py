@@ -10,3 +10,4 @@ class Item(orm.StdModel):
     content = orm.CharField()
     counter = orm.IntegerField()
     related = orm.ForeignKey(RelatedItem,required=False)
+    secret = orm.CharField(hidden = True)

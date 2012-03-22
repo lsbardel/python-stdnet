@@ -140,9 +140,11 @@ with the search engine.'''
         for model in self.REGISTERED_MODELS:
             fields = tuple((f.name for f in model._meta.scalarfields\
                             if f.type == 'text'))
-            for obj in model.objects.query().load_only(*fields):
-                n += 1
-                self.index_item(obj)
+            session = self.session()
+            with session.begin():
+                for obj in model.objects.query().load_only(*fields):
+                    n += 1
+                    self.index_item(obj, session)
         return n
     
     # INTERNALS
@@ -158,6 +160,10 @@ with the search engine.'''
 
     # ABSTRACT FUNCTIONS
     ################################################################
+    
+    def session(self):
+        '''Create a session for the search engine'''
+        return None
     
     def remove_item(self, item_or_model, session, ids = None):
         '''Remove an item from the search indices'''

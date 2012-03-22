@@ -107,6 +107,9 @@ driver.
                 word = word.lower()
                 yield word
     
+    def session(self):
+        return WordItem.objects.session()
+    
     def flush(self):
         WordItem.objects.flush()
         

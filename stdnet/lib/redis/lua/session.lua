@@ -132,7 +132,9 @@ while j < num_instances do
             created_id = true
             id = redis.call('incr', bk .. ':ids')
         else
-            if redis.call('get', bk .. ':ids') + 0 < id + 0 then
+        	id = id + 0	 --	must be numeric
+        	local counter = redis.call('get', bk .. ':ids')
+        	if not counter or counter + 0 < id then
                 redis.call('set', bk .. ':ids', id)
             end
         end

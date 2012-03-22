@@ -1094,7 +1094,7 @@ time ``start`` and time ``end`` sorted in ascending order.
     def eval(self, body, keys, *args, **options):
         return self._eval('EVAL', body, keys, *args, **options)
     
-    def evlsha(self, body, keys, *args, **options):
+    def evalsha(self, body, keys, *args, **options):
         return self._eval('EVALSHA', body, keys, *args, **options)
     
     def script_call(self, name, keys, *args, **options):

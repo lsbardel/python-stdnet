@@ -732,8 +732,8 @@ if their managers have the same backend database.'''
     def exclude(self, **kwargs):
         return self.query().exclude(**kwargs)
     
-    def search(self, text):
-        return self.query().search(text)
+    def search(self, text, lookup = None):
+        return self.query().search(text, lookup = lookup)
     
     def get(self, **kwargs):
         return self.query().get(**kwargs)

@@ -19,14 +19,11 @@ class WordItemManager(orm.Manager):
 
 
 class WordItem(orm.StdModel):
-    '''A model for associating :class:`Word` instances with general
-:class:`stdnet.orm.StdModel` instances.'''
+    '''A model for associating a word with general
+:class:`stdnet.orm.StdModel` instance.'''
     id = orm.CompositeIdField('word','model_type','object_id')
-    #
     word = orm.SymbolField()
-    '''tag instance'''
     model_type = orm.ModelField()
-    '''Model type'''
     object_id = orm.SymbolField()
     
     def __unicode__(self):

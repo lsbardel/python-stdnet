@@ -2,13 +2,14 @@
 from random import randint
 from datetime import date
 
-from stdnet import test
+from stdnet import orm, test, QuerySetError
 from stdnet.utils import to_string, range, populate
 from stdnet.apps.searchengine import SearchEngine, processors
 from stdnet.apps.searchengine.models import WordItem
 
 from examples.wordsearch.basicwords import basic_english_words
 from examples.wordsearch.models import Item, RelatedItem
+from examples.models import SimpleModel
 
 
 python_content = 'Python is a programming language that lets you work more\
@@ -70,6 +71,7 @@ below will derive from this class.'''
         self.register()
         self.engine = self.make_engine()
         self.engine.register(Item,('related',))
+        self.engine.register(RelatedItem,('related',))
         self.load_scripts()
     
     def make_engine(self):
@@ -159,6 +161,12 @@ class TestMeta(TestCase):
     
     def testRegistered(self):
         self.assertTrue(Item in self.engine.REGISTERED_MODELS)
+        self.assertFalse(SimpleModel in self.engine.REGISTERED_MODELS)
+        
+    def testNoSearchEngine(self):
+        session = self.session()
+        query = session.query(SimpleModel)
+        self.assertRaises(QuerySetError, query.search, 'bla')
         
     def testAddWithNumbers(self):
         item, wi = self.simpleadd(name = '20y', content = '')
@@ -191,21 +199,21 @@ class TestSearchEngine(TestCase):
     def testSearchModelSimple(self):
         item,_ = self.simpleadd()
         qs = Item.objects.search('python gains')
-        self.assertEqual(qs.text,'python gains')
+        self.assertEqual(qs.text,('python gains',None))
         q = qs.construct()
         self.assertEqual(q.keyword,'intersect')
-        self.assertEqual(len(q),2)
+        self.assertEqual(len(q),4)
         self.assertEqual(qs.count(),1)
         self.assertEqual(item,qs[0])
         
     def testSearchModel(self):
-        item1,wi1 = self.simpleadd()
-        item2,wi2 = self.simpleadd('pink',content='the dark side of the moon')
-        item3,wi3 = self.simpleadd('queen',content='we will rock you')
-        item4,wi4 = self.simpleadd('python',content='nothing here')
+        item1, wi1 = self.simpleadd()
+        item2, wi2 = self.simpleadd('pink',content='the dark side of the moon')
+        item3, wi3 = self.simpleadd('queen',content='we will rock you')
+        item4, wi4 = self.simpleadd('python',content='nothing here')
         qs = Item.objects.search('python')
         qc = qs.construct()
-        self.assertEqual(len(qc),2)
+        self.assertEqual(len(qc),3)
         self.assertEqual(qc.keyword,'intersect')
         self.assertEqual(qs.count(),2)
         qs = Item.objects.search('python learn')
@@ -229,9 +237,17 @@ class TestSearchEngine(TestCase):
         self.assertTrue(qs)
         items = qs.all()
         
+    def testInSearch(self):
+        words = self.make_items(num = 30, content = True)
+        sw = ' '.join(populate('choice', 5, choice_from = words))
+        res1 = Item.objects.search(sw)
+        res2 = Item.objects.search(sw, lookup = 'in')
+        self.assertTrue(res2)
+        self.assertTrue(res1.count() < res2.count())
+        
     def testEmptySearch(self):
         words = self.make_items(num = 30, content = True)
-        qs = set(self.engine.search('').all())
+        qs = set(self.engine.search('')[0].all())
         qs2 = set(WordItem.objects.query().all())
         self.assertTrue(qs)
         self.assertEqual(qs,qs2)
@@ -256,7 +272,13 @@ class TestSearchEngine(TestCase):
         result = self.engine.search(text)
         self.assertTrue(result)
         
+    def testNoWords(self):
+        self.make_items(num = 30, content = True)
+        q = set(Item.objects.search(''))
+        all = set(Item.objects.query())
+        self.assertEqual(q,all)
         
+
 class TestCoverage(TestCase):
     
     def make_engine(self):
@@ -277,4 +299,15 @@ class TestCoverage(TestCase):
         for w in wi:
             self.assertEqual(str(w),str(w.word))
             
+
+class TestCoverageBaseClass(TestCase):
+    
+    def testAbstracts(self):
+        e = orm.SearchEngine()
+        self.assertRaises(NotImplementedError, e.search, 'bla')
+        self.assertRaises(NotImplementedError, e.search_model, None, 'bla')
+        self.assertRaises(NotImplementedError, e.flush)
+        self.assertRaises(NotImplementedError, e.add_item, None, None, None)
+        self.assertRaises(NotImplementedError, e.remove_item, None, None, None)
+        self.assertEqual(e.split_text('ciao luca'),['ciao','luca'])
     

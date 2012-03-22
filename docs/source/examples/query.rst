@@ -8,29 +8,20 @@ Query your data
 ============================
 
 The most powerful feature of stdnet is a comprehensive query API for your
-data.
-
-To retrieve objects from your data server, you construct a
+data. To retrieve objects from your data server, you construct a
 :class:`Query` via a :class:`Manager` on your model class
 or via a :class:`Session`.
 
-A :class:`stdnet.orm.Query` represents a collection of objects from your
-database.
+A :class:`Query` represents a collection of objects from your database.
 It can have zero, one or many filters criteria that narrow down the collection
 based on given parameters.
 
-You get a :class:`Query` by using your model's Manager. Each model has at least one Manager,
-and it's called objects by default. Access it directly via the model class::
-
-    >>> Fund.objects
-    <stdnet.orm.query.Manager object at ...>
-    >>>
 
 Retrieving all objects
 ==========================
 
-The simplest way to retrieve objects from a table is to get all of them. To do this, use the :meth:`stdnet.orm.query.Manager.all`
-method on a Manager:
+The simplest way to retrieve objects from a table is to get all of them. To do this,
+use the :meth:`stdnet.orm.Manager.query` method on a Manager:
 
     >>> funds = Fund.objects.query()
     >>> funds
@@ -38,8 +29,8 @@ method on a Manager:
     >>> list(funds)
     [Fund: Markowitz]
 
-:class:`stdnet.orm.Query` are lazy, they are evaluated only when you iterate over them.
-The results are then stored in the ``_seq`` attribute.
+:class:`Query` are lazy, they are evaluated only when you iterate over them
+or explicitly call the :class:`Query.items` method.
 
 Filtering
 ===============================
@@ -70,7 +61,6 @@ You can perform further section by concatenating queries::
     Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))
 
 
-
 Excluding
 ===============================    
 You can also exclude fields from lookups::
@@ -78,5 +68,21 @@ You can also exclude fields from lookups::
     Instrument.objects.exclude(type = 'future')
     
 and so forth.
+
+
+Combining Queries
+=======================
+
+So far we have covered the basics of a :class:`Query` by refining search using the
+:meth:`Query.filter` and :meth:`Query.exclude` methods.
+
+Lets say we have the following example, form the :mod:`stdnet.apps.searchengine`
+module::
+
+    class WordItem(orm.StdModel):
+        id = orm.CompositeIdField('word','model_type','object_id')
+        word = orm.SymbolField()
+        model_type = orm.ModelField()
+        object_id = orm.SymbolField()
 
 

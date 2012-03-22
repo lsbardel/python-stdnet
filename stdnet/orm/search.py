@@ -129,13 +129,13 @@ It extracts content from the given *item* and add it to the index.
         self.add_item(item, words, session)
         return session
     
-    def reindex(self, full = True):
-        '''Reindex models by removing items in
+    def reindex(self):
+        '''Re-index models by removing items in
 :class:`stdnet.contrib.searchengine.WordItem` and rebuilding them by iterating
 through all the instances of model provided.
 If models are not provided, it reindex all models registered
 with the search engine.'''
-        self.flush(full)
+        self.flush()
         n = 0
         for model in self.REGISTERED_MODELS:
             fields = tuple((f.name for f in model._meta.scalarfields\
@@ -161,7 +161,7 @@ with the search engine.'''
     
     def remove_item(self, item_or_model, session, ids = None):
         '''Remove an item from the search indices'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def add_item(self, item, words, session):
         '''Create indices for *item* and each word in *words*.
@@ -171,7 +171,7 @@ with the search engine.'''
 :parameter words: iterable over words. This iterable has been obtained from the
     text in *item* via the :attr:`word_middleware`.
 '''
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def search(self, text, include = None, exclude = None, lookup = None):
         raise NotImplementedError()
@@ -188,7 +188,7 @@ needing implementation by custom serach engines.
     
     def flush(self, full = False):
         '''Clean the search engine'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
     
 class UpdateSE(object):

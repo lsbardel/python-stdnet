@@ -1,4 +1,4 @@
-'''ID with AutoField and custom.'''
+'''AutoId, CompositeId and custom Id tests.'''
 from uuid import uuid4
 import time
 

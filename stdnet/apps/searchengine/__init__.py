@@ -134,34 +134,39 @@ Remove indexes for *item_or_model*.
         session.delete(wi)
     
     def search(self, text, include = None, exclude = None, lookup = None):
-        '''Full text search'''
-        lookup = lookup or 'contains'
+        '''Full text search. Return a list of queries to intersect.'''
         words = self.words_from_text(text, for_search=True)
+        return self._search(words, include, exclude, lookup)
+    
+    def search_model(self, q, text, lookup = None):
+        '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
+It return a new :class:`stdnet.orm.QueryElem` instance from
+the input :class:`Query` and the *text* to search.'''
+        words = self.words_from_text(text, for_search=True)
+        if not words:
+            return q
+        qs = self._search(words, include = (q.model,), lookup = lookup)
+        qs = tuple((q.get_field('object_id') for q in qs))
+        return orm.intersect((q,)+qs)
+    
+    def _search(self, words, include = None, exclude = None, lookup = None):
+        '''Full text search. Return a list of queries to intersect.'''
+        lookup = lookup or 'contains'
         query = WordItem.objects.query()
         if include:
             query = query.filter(model_type__in = include)
         if exclude:
             query = query.exclude(model_type__in = include)
         if not words:
-            return query
+            return [query]
         qs = []
-        for word in words:
-            qs.append(query.filter(word = word))
-        if len(qs) > 1:
-            if lookup == 'contains':
-                qs = orm.intersect(qs)
-            elif lookup == 'in':
-                qs = orm.union(qs)
-            else:
-                raise ValueError('Unknown lookup "{0}"'.format(lookup))
+        if lookup == 'in':
+            # we are looking for items with at least one word in it
+            qs.append(query.filter(word__in = words))
+        elif lookup == 'contains':
+            #we want to match every single words
+            for word in words:
+                qs.append(query.filter(word = word))
         else:
-            qs = qs[0]
-        return qs
-    
-    def search_model(self, q, text, lookup = None):
-        '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
-It return a new :class:`stdnet.orm.QueryElem` instance from
-the input :class:`Query` and the *text* to search.'''
-        qs = self.search(text, include = (q.model,), lookup = lookup)
-        return orm.intersect((q,qs.get_field('object_id')))
-    
+            raise ValueError('Unknown lookup "{0}"'.format(lookup))
+        return qs    

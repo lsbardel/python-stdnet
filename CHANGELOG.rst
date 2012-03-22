@@ -2,8 +2,8 @@
 
 Ver. 0.7.0 - Development
 ===============================
-* Minor backward incompatible changes in the API and database schema.
-* It requires redis_ 2.6 or higher.
+* **It requires redis_ 2.6 or higher**.
+* Some backward incompatible changes in the API and database schema.
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions, lua_ scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
@@ -11,7 +11,7 @@ Ver. 0.7.0 - Development
   for building many to many relationships.
   *This is the only backward incompatible change both in terms of API and database scema*.
 * Added :class:`stdnet.orm.CompositeIdField` to handle situations where each
-  combination of given set of :stdnet.orm.Field` must be unique.
+  combination of given set of :class:`stdnet.orm.Field` must be unique.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added ability to filter and search on :class:`stdnet.orm.ForeignKey` fields.
@@ -43,7 +43,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **544 regression tests** with **88%** coverage.
+* **548 regression tests** with **88%** coverage.
 
 .. _vers06:
 

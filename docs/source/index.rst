@@ -30,8 +30,9 @@ First steps
 :ref:`Overview and Installation <intro-overview>`
 
 **Tutorials:**
-:ref:`Tutorial 1 <tutorial>` |
-:ref:`Tutorial 2 <tutorial2>`
+:ref:`Using Models <tutorial>` |
+:ref:`Query your data <tutorial-query>` |
+:ref:`Sorting <sorting>` |
 
 **API:**
 :ref:`Structures API <model-structures>` |

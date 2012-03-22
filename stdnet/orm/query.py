@@ -266,6 +266,8 @@ relational database. It has a  a generative interface whereby successive calls
 return a new :class:`Query` object, a copy of the former with additional
 criteria and options associated with it.
 
+**ATTRIBUTES**
+
 .. attribute:: _meta
 
     The :attr:`StdModel._meta` attribute.
@@ -322,16 +324,20 @@ criteria and options associated with it.
     optional text to filter result on.
     
     Default: ``""``.
+    
+**METHODS**
 '''
     start = None
     stop = None
     lookups = ('in','contains')
     
     def __init__(self, *args, **kwargs):
-        '''A :class:`Query` is not initialized directly.'''
+        '''A :class:`Query` is not initialized directly but via the
+:meth:`Session.query` or :meth:`Manager.query` methods.'''
         self.fargs  = kwargs.pop('fargs',None)
         self.eargs  = kwargs.pop('eargs',None)
         self.unions = kwargs.pop('unions',())
+        self.intersections = kwargs.pop('intersections',())
         self.text  = kwargs.pop('text',None)
         super(Query,self).__init__(*args,**kwargs)
         self.clear()
@@ -361,16 +367,16 @@ criteria and options associated with it.
             return self.items(slic)
         return self.items()[slic]
     
-    def all(self):
-        '''Return a ``list`` of all matched elements.'''
-        return self.items()
-    
     def __iter__(self):
         return iter(self.items())
     
     def __len__(self):
         return self.count()
         
+    def all(self):
+        '''Return a ``list`` of all matched elements in this :class:`Query`.'''
+        return self.items()
+    
     def filter(self, **kwargs):
         '''Create a new :class:`Query` with additional clauses corresponding to
 ``where`` or ``limit`` in a ``SQL SELECT`` statement.
@@ -400,6 +406,13 @@ to ``EXCEPT`` in a ``SQL SELECT`` statement.
 
 :parameter kwargs: dictionary of limiting clauses.
 :rtype: a new :class:`Query` instance.
+
+Using an equivalent example to the :meth:`filter` method::
+
+    qs = session.query(MyModel)
+    result1 = qs.exclude(group = 'planet')
+    result2 = qs.exclude(group__in = ('planet','stars'))
+    
 '''
         if kwargs:
             q = self._clone()
@@ -414,7 +427,8 @@ to ``EXCEPT`` in a ``SQL SELECT`` statement.
     
     def union(self, *queries):
         '''Return a new :class:`Query` obtained form the union of this
-:class:`Query` and *queries*. For example, lets say we want to have the union
+:class:`Query` with one or more *queries*.
+For example, lets say we want to have the union
 of two queries obtained from the :meth:`filter` method::
 
     query = session.query(MyModel)
@@ -422,6 +436,14 @@ of two queries obtained from the :meth:`filter` method::
 '''
         q = self._clone()
         q.unions += queries
+        return q
+    
+    def intersect(self, *queries):
+        '''Return a new :class:`Query` obtained form the intersection of this
+:class:`Query` with one or more *queries*. Workds the same way as
+the :meth:`union` method.'''
+        q = self._clone()
+        q.intersections += queries
         return q
         
     def sort_by(self, ordering):
@@ -438,7 +460,7 @@ of two queries obtained from the :meth:`filter` method::
         q.data['ordering'] = ordering
         return q
     
-    def search(self, text):
+    def search(self, text, lookup = None):
         '''Search *text* in model. A search engine needs to be installed
 for this function to be available.
 
@@ -447,9 +469,8 @@ for this function to be available.
 '''
         if self._meta.searchengine:
             q = self._clone()
-            q.text = text
+            q.text = (text,lookup)
             return q
-            #return se.search_model(self.model,text)
         else:
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
@@ -457,7 +478,7 @@ for this function to be available.
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            return self._meta.searchengine.search_model(q, self.text)
+            return self._meta.searchengine.search_model(q, *self.text)
         else:
             return q
                 
@@ -656,6 +677,9 @@ an exception is raised.
         if eargs:
             q = difference([q]+eargs)
         
+        if self.intersections:
+            q = intersect((q,)+self.intersections)
+            
         if self.unions:
             q = union((q,)+self.unions)
             
@@ -706,7 +730,8 @@ an exception is raised.
             yield queryset(self, **data)
         
     def items(self, slic = None):
-        '''Generator of instances in queryset.'''
+        '''Fetch data matching theis :class:`Query` and return a list
+of instances of models.'''
         cache = self.cache()
         key = None
         seq = cache.get(None)

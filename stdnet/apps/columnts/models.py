@@ -10,7 +10,7 @@ from .encoders import ValueEncoder
 __all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
 
 class TimeseriesCache(object):
-    
+    cache = None
     def __init__(self):
         self.merged_series = None
         self.fields = {}
@@ -54,44 +54,42 @@ class ColumnTS(orm.TS):
         '''Number of fields'''
         return self.backend_structure().numfields()
     
+    @orm.commit_when_no_transaction
     def add(self, dt, *args):
-        timestamp = self.pickler.dumps(dt)
-        add = self.cache.add
-        dump = self.value_pickler.dumps
-        if len(args) == 1:
-            mapping = args[0]
-            if isinstance(mapping,dict):
-                mapping = iteritems(mapping)
-            for field,value in mapping:
-                add(timestamp, field, dump(value))
-        elif len(args) == 2:
-            add(timestamp, args[0], dump(args[1]))
-        else:
-            raise TypeError('Expected a mapping or a field value pair')
+        self._add(dt, *args)
         
+    @orm.commit_when_no_transaction
     def update(self, mapping):
         if isinstance(mapping,dict):
-            mapping = itervalues(mapping)
-        add = self.add
+            mapping = iteritems(mapping)
+        add = self._add
         for dt,v in mapping:
             add(dt,v)
     
-    def irange(self, start = 0, end = -1, fields = None, callback = None):
-        res = self.backend_structure().irange(start, end, fields)
+    def irange(self, start = 0, end = -1, fields = None, novalues = False,
+               callback = None):
+        res = self.backend_structure().irange(start, end, fields, novalues)
         return self.async_handle(res, callback or self.load_data)
     
     def irange_and_delete(self):
         res = self.backend_structure().irange(0, -1, delete = True)
         return self.async_handle(res, self.load_data)
     
-    def range(self, start, end, fields=None, callback=None):
+    def range(self, start, end, fields=None, novalues = False, callback=None):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
-        res = self.backend_structure().range(start, end, fields)
+        res = self.backend_structure().range(start, end, fields, novalues)
         return self.async_handle(res, callback or self.load_data)
     
     def get(self, dt, *fields):
-        return self.range(dt, dt, fields, self._get)
+        return self.range(dt, dt, fields, callback = self._get)
+    
+    def __getitem__(self, dt):
+        v = self.get(dt)
+        if v is None:
+            raise KeyError(str(dt))
+        else:
+            return v
         
     def istats(self, start=0, end=-1, fields=None):
         res = self.backend_structure().istats(start, end, fields)
@@ -104,6 +102,16 @@ class ColumnTS(orm.TS):
         return self.async_handle(res, self._stats)
     
     def merge(self, *series, **kwargs):
+        '''Merge this :class:`ColumnTS` with several other.
+        
+:parameter series: a tuple of two or three elements tuple.
+    For example::
+    
+        (5, ts1),(-2, ts2)
+        
+:parameter kwargs: key-valued parameters for the merge.
+:rtype: a new :class:`ColumnTS`
+'''
         session = self.session
         for serie in series:
             if len(serie) < 2:
@@ -161,6 +169,21 @@ The result will be calculated using the formula::
             result['start'] = self.pickler.loads(result['start'])
             result['stop'] = self.pickler.loads(result['stop'])
         return result
+    
+    def _add(self, dt, *args):
+        timestamp = self.pickler.dumps(dt)
+        add = self.cache.add
+        dump = self.value_pickler.dumps
+        if len(args) == 1:
+            mapping = args[0]
+            if isinstance(mapping,dict):
+                mapping = iteritems(mapping)
+            for field,value in mapping:
+                add(timestamp, field, dump(value))
+        elif len(args) == 2:
+            add(timestamp, args[0], dump(args[1]))
+        else:
+            raise TypeError('Expected a mapping or a field value pair')
         
     
 class ColumnTSField(orm.StructureField):

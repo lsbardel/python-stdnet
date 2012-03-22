@@ -53,46 +53,7 @@ class ColumnTS(columnts.ColumnTS):
     
     def _get(self, result):
         ts = self.load_data(result)
-        return ts.front()
-    
-
-class TS(orm.TS):
-    
-    def front(self):
-        '''Return the front pair of the structure'''
-        ts = self.irange(0, 0)
-        if ts:
-            return ts.start(),ts[0]
-    
-    def back(self):
-        '''Return the back pair of the structure'''
-        ts = self.irange(-1, -1)
-        if ts:
-            return ts.end(),ts[0]
-    
-    def irange(self, start = 0, end = -1, **kwargs):
-        kwargs['raw'] = True
-        return super(TS,self).irange(start, end, **kwargs)
-    
-    def range(self, start, stop, **kwargs):
-        kwargs['raw'] = True
-        return super(TS,self).range(start, stop, **kwargs)
-    
-    def load_data(self, response):
-        loads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        times = [loads(float(t)) for t in response[::2]]
-        values = [vloads(v) for v in response[1::2]]
-        return timeseries(date = times,
-                          data = values,
-                          name = self.id,
-                          dtype = object)
-        
-
-class TimeSeriesField(orm.TimeSeriesField):
-    
-    def structure_class(self):
-        return TS
+        return ts[0]
     
     
 class ColumnTSField(columnts.ColumnTSField):

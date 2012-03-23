@@ -167,3 +167,20 @@ class TestFilter(FinanceTest):
         for inst in insts:
             self.assertEqual(inst.type,'bond option')
 
+    def testChainedExclude(self):
+        session = self.session()
+        query = session.query(self.model)
+        qt = query.exclude(id__in = (1,2,3)).exclude(id__in = (4,5,6))
+        self.assertEqual(qt.eargs, {'id__in': set((1,2,3,4,5,6))})
+        res = set((q.id for q in qt))
+        self.assertTrue(res)
+        self.assertFalse(res.intersection(set((1,2,3,4,5,6))))
+        qt = query.exclude(id = 3).exclude(id = 4)
+        self.assertEqual(qt.eargs, {'id__in': set((3,4))})
+        res = set((q.id for q in qt))
+        self.assertTrue(res)
+        self.assertFalse(res.intersection(set((3,4))))
+        qt = query.exclude(id = 3).exclude(id__in = (2,4))
+        res = set((q.id for q in qt))
+        self.assertTrue(res)
+        self.assertFalse(res.intersection(set((2,3,4))))

@@ -18,6 +18,20 @@ def iterable(value):
         return False
     
     
+def update_dictionary(result, extra):
+    for k in extra:
+        v = extra[k]
+        if k in result:
+            v2 = result[k]
+            v = set(v) if iterable(v) else set((v,))
+            v.update(v2) if iterable(v2) else v.add(v2) 
+            if len(k.split(JSPLITTER)) == 1:
+                result.pop(k)
+                k = k + JSPLITTER + 'in'
+        result[k] = v
+    return result
+    
+    
 class SessionModelBase(object):
 
     def __init__(self, meta, session):
@@ -392,9 +406,7 @@ For example::
         if kwargs:
             q = self._clone()
             if self.fargs:
-                c = self.fargs.copy()
-                c.update(kwargs)
-                kwargs = c
+                kwargs = update_dictionary(self.fargs.copy(), kwargs)
             q.fargs = kwargs
             return q
         else:
@@ -417,9 +429,7 @@ Using an equivalent example to the :meth:`filter` method::
         if kwargs:
             q = self._clone()
             if self.eargs:
-                c = self.eargs.copy()
-                c.update(kwargs)
-                kwargs = c
+                kwargs = update_dictionary(self.eargs.copy(), kwargs)
             q.eargs = kwargs
             return q
         else:

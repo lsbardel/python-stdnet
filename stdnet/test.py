@@ -10,7 +10,7 @@ import sys
 
 if sys.version_info >= (2,7):
     import unittest
-else:
+else:   # pragma nocover
     try:
         import unittest2 as unittest
     except ImportError:

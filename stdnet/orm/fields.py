@@ -232,9 +232,6 @@ function users should never call.'''
     def get_cache_name(self):
         return '_%s_cache' % self.name
     
-    def add(self, *args, **kwargs):
-        raise NotImplementedError("Cannot add to field")
-    
     def id(self, obj):
         '''Field id for object *obj*, if applicable. Default is ``None``.'''
         return None

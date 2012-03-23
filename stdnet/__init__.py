@@ -12,6 +12,7 @@ __homepage__ = "https://github.com/lsbardel/python-stdnet"
 CLASSIFIERS = [
                'Development Status :: 4 - Beta',
                'Environment :: Plugins',
+               'Environment :: Console',
                'Environment :: Web Environment',
                'Intended Audience :: Developers',
                'License :: OSI Approved :: BSD License',
@@ -23,7 +24,8 @@ CLASSIFIERS = [
                'Programming Language :: Python :: 3.2',
                'Programming Language :: Python :: 3.3',
                'Topic :: Utilities',
-               'Topic :: Database'
+               'Topic :: Database',
+               'Topic :: Internet'
                ]
 
 

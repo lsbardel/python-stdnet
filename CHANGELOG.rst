@@ -18,8 +18,9 @@ Ver. 0.7.0 - Development
 * Added :class:`stdnet.orm.Session` for managing transactions in the object
   relational mapper.
 * Moved structures from :mod:`stdnet.backends` to the :mod:`stdnet.orm` module.
-* Added :meth:`stdnet.orm.Query.load_only` method for loading a subset
-  of a model fields. This can improve performance by reducing the amount of
+* Added :meth:`stdnet.orm.Query.load_only` and :meth:`stdnet.orm.Query.dont_load`
+  methods for loading a subset of a model fields.
+  This can improve performance by reducing the amount of
   data transferred from the server to the client.
   Check the :ref:`performance tips <performance-loadonly>` regarding the
   new feature.
@@ -43,7 +44,7 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **556 regression tests** with **88%** coverage.
+* **568 regression tests** with **90%** coverage.
 
 .. _vers06:
 

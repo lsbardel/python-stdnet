@@ -4,9 +4,9 @@ import string
 
 from stdnet.utils import ispy3k
 
-if ispy3k:
+if ispy3k:  # pragma nocover
     characters = string.ascii_letters + string.digits
-else:
+else:   # pragma nocover
     characters = string.letters + string.digits
     
 def_converter = lambda x : x

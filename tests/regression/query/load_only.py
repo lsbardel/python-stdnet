@@ -1,3 +1,4 @@
+'''test load_only and dont_load methods'''
 from stdnet import test
 from stdnet.utils import zip
 
@@ -122,7 +123,17 @@ loaded. The correct behavior should be to updated the field and indexes.'''
         self.assertEqual(qs.count(),5)
         for m in qs:
             self.assertEqual(m.group,'group4')
-        
+
+    def test_exclude_fields(self):
+        session = self.session()
+        query = session.query(self.model).dont_load('description')
+        self.assertEqual(query.exclude_fields, ('description',))
+        for m in query.all():
+            self.assertFalse(hasattr(m,'description'))
+        query = session.query(self.model).load_only('group')\
+                                         .dont_load('description')
+        for m in query.all():
+            self.assertEqual(m._loadedfields,('group',))
         
 class LoadOnlyRelated(test.TestCase):
     models = (Person, Group)

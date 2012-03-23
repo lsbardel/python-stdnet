@@ -22,11 +22,11 @@ for serializing and loading data to and from the data server.
     
     def dumps(self, x, logger = None):
         '''Serialize data for database'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def loads(self, x, logger = None):
         '''Unserialize data from database'''
-        raise NotImplementedError
+        raise NotImplementedError()
     
         
 class Default(Encoder):
@@ -49,7 +49,7 @@ class Default(Encoder):
                 return x.decode(self.charset,self.encoding_errors)
             else:
                 return str(x)
-    else:
+    else:  # pragma nocover
         def dumps(self, x, logger = None):
             if not isinstance(x,unicode):
                 x = str(x)

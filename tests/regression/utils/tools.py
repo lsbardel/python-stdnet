@@ -3,9 +3,10 @@ from datetime import date, datetime
 
 import stdnet
 from stdnet import test, orm
+from stdnet.utils import encoders
 from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper,\
-                            _format_int
+                            _format_int, populate
 
 from examples.models import Statistics3
 
@@ -83,3 +84,14 @@ class testFunctions(test.TestCase):
         self.assertEqual(_format_int(500),'500')
         self.assertEqual(_format_int(-780),'-780')
         self.assertEqual(_format_int(-4500780),'-4,500,780')
+        
+    def testPopulateIntegers(self):
+        data = populate('integer', size = 33)
+        self.assertEqual(len(data),33)
+        for d in data:
+            self.assertTrue(isinstance(d,int))
+            
+    def testAbstarctEncoder(self):
+        e = encoders.Encoder()
+        self.assertRaises(NotImplementedError , e.dumps, 'bla')
+        self.assertRaises(NotImplementedError , e.loads, 'bla')

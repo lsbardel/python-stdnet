@@ -48,11 +48,12 @@ class SessionModelBase(object):
         
     
 class Q(object):
+    '''Base class for :class:`Query` and :class:`QueryElem`'''
     keyword = ''
     name = ''
     def __init__(self, meta, session, select_related = None,
-                 ordering = None, fields = None, get_field = None,
-                 name = None, keyword = None):
+                 ordering = None, fields = None,
+                 get_field = None, name = None, keyword = None):
         self._meta = meta
         self.session = session
         self.data = {'select_related': select_related,
@@ -143,28 +144,6 @@ fields.
         return q
     
     
-class EmptyQuery(Q):
-    keyword = 'empty'
-    def items(self, slic):
-        return []
-    
-    def __len__(self):
-        return 0
-    
-    def __iter__(self):
-        return iter(())
-    
-    def count(self):
-        return 0
-    
-    def construct(self):
-        return self
-    
-    @property
-    def executed(self):
-        return True
-    
-    
 class QueryElement(Q):
     '''An element of a :class:`Query`.
     
@@ -225,14 +204,6 @@ class QueryElement(Q):
             return self.keyword == 'set'
         else:
             return len(self.underlying) > 0
-    
-    def flat(self):
-        yield self.keyword
-        yield self.backend(self.meta)
-        yield self.get
-        for b in self.body:
-            yield b
-        yield self.get
         
     
 class QuerySet(QueryElement):
@@ -269,7 +240,43 @@ def queryset(qs, **kwargs):
     return QuerySet(qs._meta,qs.session,**kwargs)
     
 
-class Query(Q):
+class QueryBase(Q):
+    
+    def __iter__(self):
+        return iter(self.items())
+    
+    def __len__(self):
+        return self.count()
+    
+    def all(self):
+        '''Return a ``list`` of all matched elements in this :class:`Query`.'''
+        return self.items()
+
+
+class EmptyQuery(QueryBase):
+    '''Degenerate :class:`QueryBase` simulating and empty set.'''
+    keyword = 'empty'
+    def items(self, slic = None):
+        return []
+    
+    def count(self):
+        return 0
+    
+    def construct(self):
+        return self
+    
+    @property
+    def executed(self):
+        return True
+    
+    def union(self, query, *queries):
+        return query.union(*queries)
+    
+    def intersect(self, *queries):
+        return self
+    
+    
+class Query(QueryBase):
     '''A :class:`Query` is produced in terms of a given :class:`Session`,
 using the :meth:`Session.query` method::
 
@@ -353,6 +360,7 @@ criteria and options associated with it.
         self.unions = kwargs.pop('unions',())
         self.intersections = kwargs.pop('intersections',())
         self.text  = kwargs.pop('text',None)
+        self.exclude_fields = kwargs.pop('exclude_fields',None)
         super(Query,self).__init__(*args,**kwargs)
         self.clear()
      
@@ -380,16 +388,6 @@ criteria and options associated with it.
         if isinstance(slic,slice):
             return self.items(slic)
         return self.items()[slic]
-    
-    def __iter__(self):
-        return iter(self.items())
-    
-    def __len__(self):
-        return self.count()
-        
-    def all(self):
-        '''Return a ``list`` of all matched elements in this :class:`Query`.'''
-        return self.items()
     
     def filter(self, **kwargs):
         '''Create a new :class:`Query` with additional clauses corresponding to
@@ -550,16 +548,17 @@ data intensive fields you don't need.
         q.data['fields'] = tuple(fs) if fs else None
         return q
     
-    def _load_only(self, fields):
-        dfields = self._meta.dfields
-        for name in fields:
-            if name in dfields:
-                yield name
-            else:
-                # It may be a JSONFiled
-                na = name.split(JSPLITTER)[0]
-                if na in dfields and dfields[na].type == 'json object':
-                    yield name
+    def dont_load(self, *fields):
+        '''Works like :meth:`load_only` to provides a
+:ref:`performance boost <increase-performance>` in cases when you need
+to load all fields except a subset specified by *fields*.
+'''
+        q = self._clone()
+        fs = set(q.exclude_fields) if q.exclude_fields else set()
+        if fields:
+            fs.update(fields)
+        q.exclude_fields = tuple(fs) if fs else None
+        return q
             
     def get(self, **kwargs):
         '''Return an instance of a model matching the query. A special case is
@@ -611,12 +610,7 @@ list of ids deleted.'''
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         q = self.construct()
-        if q is None:
-            return EmptyQuery(self._meta, self.session)
-        elif isinstance(q, EmptyQuery):
-            return q
-        else:
-            return q.backend_query(**kwargs)
+        return q if isinstance(q, EmptyQuery) else q.backend_query(**kwargs)
     
     def test_unique(self, fieldname, value, instance = None, exception = None):
         '''Test if a given field *fieldname* has a unique *value*
@@ -694,7 +688,16 @@ an exception is raised.
             q = union((q,)+self.unions)
             
         q = self.search_queries(q)
-        q.data = self.data.copy()
+        data = self.data.copy()
+        if self.exclude_fields:
+            fields = data['fields']
+            if not fields:
+                fields = set((f.name for f in self._meta.scalarfields))
+            else:
+                fields = set(fields)
+            fields.difference_update(self.exclude_fields)
+            data['fields'] = fields
+        q.data = data
         return q
 
     def aggregate(self, kwargs):
@@ -767,9 +770,4 @@ of instances of models.'''
             cache[key] = seq
             return seq
 
-
-class QueryGroup(object):
-    
-    def __init__(self):
-        self.queries = []
         

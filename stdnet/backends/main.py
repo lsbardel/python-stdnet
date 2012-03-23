@@ -8,7 +8,7 @@ from stdnet.exceptions import *
 from .base import BackendDataServer
 
 
-__all__ = ['getdb', 'getcache', 'CacheClass']
+__all__ = ['getdb', 'getcache']
 
 
 BACKENDS = {
@@ -82,17 +82,4 @@ def getcache(backend_uri=None, encoder = encoders.PythonPickle, **kwargs):
     db = getdb(backend_uri = backend_uri, pickler = encoder, **kwargs)
     return db.as_cache() 
 
-
-class CacheClass(object):
-    '''Class which can be used as django cache backend'''
-    
-    def __init__(self, host, params):
-        scheme = params.pop('type','redis')
-        self.db = _getdb(scheme, host, params)
-        self.timeout = self.db.default_timeout
-        self.get = self.db.get
-        self.set = self.db.set
-        self.delete = self.db.delete
-        self.has_key = self.db.has_key
-        self.clear = self.db.clear
         

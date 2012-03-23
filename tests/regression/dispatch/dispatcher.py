@@ -120,4 +120,7 @@ class DispatcherTests(test.TestCase):
         a_signal.disconnect(receiver_3)
         self._testIsClean(a_signal)
 
-
+    def testCoverage(self):
+        s = Signal()
+        self.assertEqual(s.providing_args, set())
+        self.assertEqual(s.send_robust(self),[])

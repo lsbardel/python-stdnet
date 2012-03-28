@@ -19,6 +19,7 @@ else:   # pragma nocover
         exit(0)
 
 from stdnet import orm, getdb, BackendRequest
+from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
 
@@ -88,6 +89,59 @@ to perform cleanup, registration and unregistration.
         super(TestCase, self).__call__(result)
         self._post_teardown()
     
-        
 
- 
+################################################################################
+##    NOSE AND PULSAR PLUGINS
+################################################################################
+try:
+    import pulsar    
+    from pulsar.apps.test import TestSuite, TestOptionPlugin
+    from pulsar.apps.test.plugins import bench
+
+    
+    class TestServer(TestOptionPlugin):
+        name = "server"
+        flags = ["-s", "--server"]
+        desc = 'Backend server where to run tests.'
+        default = settings.DEFAULT_BACKEND
+        
+        def configure(self, cfg):
+            settings.DEFAULT_BACKEND = cfg.server
+            settings.REDIS_PY_PARSER = cfg.http_py_parser
+            settings.redis_status()
+            
+    
+    class TestDataSize(TestOptionPlugin):
+        name = "size"
+        flags = ["--size"]
+        desc = 'Size of the dataset to test. Choose one between "tiny", "small",\
+     "normal", "big", "huge".'
+        default = 'small'
+
+except ImportError:
+    pulsar = None
+    TestServer = None
+    TestDataSize = None
+   
+    
+try:
+    import nose
+    from nose import plugins
+    
+    class StdnetServer(plugins.Plugin):
+    
+        def options(self, parser, env=os.environ):
+            parser.add_option('--server',
+                          dest='server',
+                          default='',
+                          help="Backend server where to run tests [{0}]"\
+                                    .format(settings.DEFAULT_BACKEND))
+    
+        def configure(self, options, conf):
+            self.enabled = True
+            if options.server:
+                settings.DEFAULT_BACKEND = options.server
+                
+except ImportError:
+    nose = None
+    StdnetServer = None

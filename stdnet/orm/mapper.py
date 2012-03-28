@@ -95,8 +95,6 @@ For Redis the syntax is the following::
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
-    global _GLOBAL_REGISTRY
-    from stdnet.conf import settings
     if model in _GLOBAL_REGISTRY:
         if not ignore_duplicates:  
             raise AlreadyRegistered(
@@ -190,34 +188,35 @@ through all :class:`stdnet.orm.StdModel` models available in ``applications``
 and register them using the :func:`stdnet.orm.register` low
 level function.
 
-It return a generator.
+:parameter applications: A String or a list of strings which represent
+    python dotted paths to modules containing
+    a ``models`` module where models are implemented.
+:parameter models: Optional list of models to include. If not provided
+    all models found in *applications* will be included.
+:parameter app_defaults: optional dictionary which specify a model and/or
+    application backend connection string.
+:parameter default: The default connection string. 
+:rtype: a generator over registered models
 
-:parameter application: A String or a list of strings which represent
-                        python dotted paths to modules containing
-                        a ``models`` module where models are implemented.
-:parameter models: list of models to include or ``None`` (all models).
-                   Default ``None``.
-                   
 For example::
 
     register_application_models('mylib.myapp')
 
 '''
     app_defaults = app_defaults or {}
-    for obj in model_iterator(applications):
-        meta = obj._meta
-        name = meta.name
+    for model in model_iterator(applications):
+        meta = model._meta
+        name = str(model._meta)
         if models and name not in models:
             continue
-        name = str(obj._meta)
-        if not name in app_defaults:
-            name = obj._meta.app_label
+        if name not in app_defaults:
+            name = model._meta.app_label
         if name in app_defaults:
             args = app_defaults[name]
         else:
             args = default
-        if register(obj,args,ignore_duplicates=True):
-            yield obj
+        if register(model, args, ignore_duplicates=True):
+            yield model
 
 
 def register_applications(applications, **kwargs):
@@ -225,7 +224,7 @@ def register_applications(applications, **kwargs):
 :func:`stdnet.orm.register_application_models` generator.
 
 It return s a list of registered models.'''
-    return list(register_application_models(applications,**kwargs))
+    return list(register_application_models(applications, **kwargs))
 
 
 _GLOBAL_REGISTRY = set()

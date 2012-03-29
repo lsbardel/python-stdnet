@@ -30,9 +30,12 @@ class SerializerMixin(object):
         
     def testLoad(self):
         s = self.testDump()
+        qs = self.model.objects.query().sort_by('id').all()
         data = s.write().getvalue()
         self.model.objects.flush()
-        s.load(data)
+        s.load(data, self.model)
+        qs2 = self.model.objects.query().sort_by('id').all()
+        self.assertEqual(qs,qs2)
 
 
 class DummySerializer(orm.Serializer):

@@ -1,6 +1,6 @@
 import json
 import sys
-from csv import DictWriter
+from csv import DictWriter, DictReader
 from inspect import isclass
 
 from stdnet.utils import StringIO
@@ -83,7 +83,8 @@ class Serializer(object):
     def write(self, stream = None):
         raise NotImplementedError()
     
-    def load(self, stream):
+    def load(self, stream, model = None):
+        '''Load a stream of data into the database.'''
         raise NotImplementedError()
     
     
@@ -108,7 +109,7 @@ class JsonSerializer(Serializer):
         stream.write(line)
         return stream
 
-    def load(self, stream):
+    def load(self, stream, model = None):
         data = json.loads(stream, **self.options)
         for model_data in data:
             model = get_model_from_hash(model_data['hash'])
@@ -152,6 +153,14 @@ class CsvSerializer(Serializer):
                 for row in data:
                     w.writerow(row)
         return stream
+    
+    def load(self, stream, model = None):
+        if not model:
+            raise ValueError('Model is required when loading from csv file')
+        r = DictReader(stream, **self.options)
+        with model.objects.transaction() as t:
+            for item_data in r:
+                t.add(model.from_base64_data(**item_data))
             
 
 register_serializer('json', JsonSerializer)

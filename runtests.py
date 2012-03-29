@@ -31,6 +31,9 @@ def start():
         sys.argv.pop(1)
     
     if pulsar:
+        from pulsar.apps.test import TestSuite
+        from pulsar.apps.test.plugins import bench
+        
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',

@@ -95,7 +95,7 @@ to perform cleanup, registration and unregistration.
 ################################################################################
 try:
     import pulsar    
-    from pulsar.apps.test import TestSuite, TestOptionPlugin
+    from pulsar.apps.test import TestOptionPlugin
     from pulsar.apps.test.plugins import bench
 
     

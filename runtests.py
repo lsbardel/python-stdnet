@@ -12,7 +12,7 @@ from stdnet import getdb
 ## If not available, some tests won't run
 p = Path(__file__)
 p.add2python('pulsar', up=1, down=('pulsar',), must_exist=False)
-p.add2python('synts', up=1, down=('dynts',), must_exist=False)
+p.add2python('dynts', up=1, down=('dynts',), must_exist=False)
 
 from stdnet.test import nose, pulsar
 

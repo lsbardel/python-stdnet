@@ -1,5 +1,4 @@
-'''Slice Query to obtain subqueries
-'''
+'''Slice Query to obtain subqueries.'''
 from stdnet import test
 
 from examples.models import Instrument

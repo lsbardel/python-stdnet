@@ -3,7 +3,7 @@ from stdnet.utils import populate, zip, iteritems, to_string
 
 from examples.models import Dictionary
 
-from .struct import TestMultiFieldMixin
+from .struct import MultiFieldMixin
         
 
 class TestMultiField(test.TestCase):

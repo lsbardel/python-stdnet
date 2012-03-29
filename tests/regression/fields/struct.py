@@ -8,7 +8,7 @@ from examples.models import SimpleList, Dictionary, SimpleString
 elems = populate('string', 100)
 
 
-class TestMultiFieldMixin(object):
+class MultiFieldMixin(object):
     '''Test class which add a couple of tests for multi fields.
 You need to implement the get_object_and_field and adddata methods'''
     attrname = 'data'
@@ -66,7 +66,7 @@ related keys (keys which are related to the instance rather than the model).'''
         self.assertEqual(SimpleList.objects.all().count(),0)
 
 
-class TestStringField(TestMultiFieldMixin, test.TestCase):
+class TestStringField(MultiFieldMixin, test.TestCase):
     model = SimpleString
     
     def adddata(self, li):
@@ -83,7 +83,7 @@ class TestStringField(TestMultiFieldMixin, test.TestCase):
         self.assertEqual(m.data.incr(-7),-2)
         
         
-class TestListField(TestMultiFieldMixin, test.TestCase):
+class TestListField(MultiFieldMixin, test.TestCase):
     model = SimpleList
     attrname = 'names'
     
@@ -150,7 +150,7 @@ is not saved on databse.'''
 keys = populate('string', 200)
 values = populate('string', 200, min_len = 20, max_len = 300)
 
-class TestHashField(TestMultiFieldMixin, test.TestCase):
+class TestHashField(MultiFieldMixin, test.TestCase):
     model = Dictionary
     defaults = {'name': 'test'}
     

@@ -4,7 +4,7 @@ from decimal import Decimal
 import json
 try:
     from numpy import ndarray
-except ImportError:
+except ImportError:     # pragma nocover
     ndarray = None
     
 from stdnet.utils import iteritems

@@ -2,7 +2,7 @@ from copy import copy
 from inspect import isgenerator
 
 from stdnet.exceptions import *
-from stdnet.utils import zip, to_bytestring, JSPLITTER
+from stdnet.utils import zip, JSPLITTER
 
 from .signals import *
 

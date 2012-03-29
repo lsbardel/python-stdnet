@@ -5,7 +5,7 @@ import hashlib
 import weakref
 
 from stdnet import BackendRequest, AsyncObject
-from stdnet.utils import zip, to_bytestring, to_string
+from stdnet.utils import zip, to_string
 from stdnet.exceptions import *
 
 from . import signals

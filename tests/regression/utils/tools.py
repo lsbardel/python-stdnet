@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 import stdnet
 from stdnet import test, orm
-from stdnet.utils import encoders
+from stdnet.utils import encoders, to_bytes, to_string
 from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper,\
                             _format_int, populate
@@ -95,3 +95,12 @@ class testFunctions(test.TestCase):
         e = encoders.Encoder()
         self.assertRaises(NotImplementedError , e.dumps, 'bla')
         self.assertRaises(NotImplementedError , e.loads, 'bla')
+        
+    def test_to_bytes(self):
+        self.assertEqual(to_bytes(b'ciao'),b'ciao')
+        b = b'perch\xc3\xa9'
+        u = b.decode('utf-8')
+        l = u.encode('latin')
+        self.assertEqual(to_bytes(b,'latin'),l)
+        self.assertEqual(to_string(l,'latin'),u)
+        

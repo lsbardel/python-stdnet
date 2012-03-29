@@ -537,25 +537,6 @@ does not exist.'''
         return self._addnx(self.cursor(transaction),
                            self.pickler.dumps(key),
                            self.pickler_value.dumps(value))
-           
-    def range(self, start, end, desc = False):
-        '''Return a generator of ordered items between start and end.'''
-        items = sorted(self.items(),key = lambda t : t[0])
-        if not desc:
-            items = reversed(items)
-        return items
-            
-    def sortedkeys(self, desc = True):
-        keys = sorted(self)
-        if not desc:
-            keys = reversed(keys)
-        return keys
-            
-    def sorteditems(self, desc = True):
-        items = sorted(self.items(),key = lambda t : t[0])
-        if not desc:
-            items = reversed(items)
-        return items   
 
     
 class TS(OrderedMixin, KeyValueMixin, Structure):

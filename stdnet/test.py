@@ -90,16 +90,26 @@ to perform cleanup, registration and unregistration.
         self._post_teardown()
     
 
+class DataSizePlugin(object):   # pragma nocover
+    
+    def configure(self, cfg, *args):
+        self.enabled = True
+        self.size = cfg.size
+        
+    def loadTestsFromTestCase(self, cls):
+        cls.size = self.size
+        
+        
 ################################################################################
-##    NOSE AND PULSAR PLUGINS
+##    PULSAR PLUGINS
 ################################################################################
-try:
+try:    # pragma nocover
     import pulsar    
     from pulsar.apps.test import TestOptionPlugin
     from pulsar.apps.test.plugins import bench
 
     
-    class TestServer(TestOptionPlugin):
+    class PulsarStdnetServer(TestOptionPlugin):
         name = "server"
         flags = ["-s", "--server"]
         desc = 'Backend server where to run tests.'
@@ -111,24 +121,27 @@ try:
             settings.redis_status()
             
     
-    class TestDataSize(TestOptionPlugin):
+    class PulsarDataSizePlugin(DataSizePlugin, TestOptionPlugin):
         name = "size"
         flags = ["--size"]
-        desc = 'Size of the dataset to test. Choose one between "tiny", "small",\
-     "normal", "big", "huge".'
+        desc = 'Size of the dataset to test. Choose one between "tiny", '\
+               '"small", "normal", "big", "huge".'
         default = 'small'
 
-except ImportError:
+except ImportError: # pragma nocover
     pulsar = None
-    TestServer = None
-    TestDataSize = None
+    PulsarStdnetServer = None
+    PulsarDataSizePlugin = None
    
-    
-try:
+
+################################################################################
+##    NOSE PLUGINS
+################################################################################    
+try:    # pragma nocover
     import nose
     from nose import plugins
     
-    class StdnetServer(plugins.Plugin):
+    class NoseStdnetServer(plugins.Plugin):
     
         def options(self, parser, env=os.environ):
             parser.add_option('--server',
@@ -141,7 +154,18 @@ try:
             self.enabled = True
             if options.server:
                 settings.DEFAULT_BACKEND = options.server
-                
-except ImportError:
+    
+    class NoseDataSizePlugin(DataSizePlugin, plugins.Plugin):
+        
+        def options(self, parser, env=os.environ):
+            parser.add_option(
+                          '--size',
+                          dest='size',
+                          default='small',
+                          help='Size of the dataset to test. Choose one between\
+ "tiny", "small", "normal", "big", "huge".')
+        
+except ImportError: # pragma nocover
     nose = None
-    StdnetServer = None
+    NoseStdnetServer = None
+    NoseDataSizePlugin = None

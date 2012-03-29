@@ -279,7 +279,7 @@ class TestColumnTSBase(TestCase):
     
     @classmethod
     def setUpClass(cls):
-        size = cls.worker.cfg.size
+        size = cls.size
         cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
         cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))

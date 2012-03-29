@@ -168,8 +168,7 @@ with different sizes by passing the'''
     
     @classmethod
     def setUpClass(cls):
-        size = cls.worker.cfg.size
-        cls.data = finance_data(size = size)
+        cls.data = finance_data(size = cls.size)
         
         
     

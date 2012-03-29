@@ -1,4 +1,42 @@
+import os
+import tempfile
+
 from stdnet import orm, test
+from stdnet.utils import BytesIO, to_bytes
+
+class Tempfile(object):
+    
+    def __init__(self, data, text = True):
+        fd, path = tempfile.mkstemp(text = text)
+        self.handler = None
+        self.path = path
+        os.write(fd, to_bytes(data))
+        os.close(fd)
+        
+    def __enter__(self):
+        return self
+    
+    def write(self, data):
+        if self.fd:
+            os.write(self.fd,data)
+            os.close(self.fd)
+            self.fd = None
+        
+    def close(self):
+        if self.handler:
+            self.handler.close()
+            self.handler = None
+        
+    def open(self):
+        if self.handler:
+            raise RuntimeError('File is already opened')
+        self.handler = open(self.path, 'r')
+        return self.handler
+        
+    def __exit__(self, type, value, trace):
+        self.close()
+        os.remove(self.path)
+        
 
 
 class SerializerMixin(object):
@@ -32,8 +70,9 @@ class SerializerMixin(object):
         s = self.testDump()
         qs = self.model.objects.query().sort_by('id').all()
         data = s.write().getvalue()
-        self.model.objects.flush()
-        s.load(data, self.model)
+        with Tempfile(data) as tmp:
+            self.model.objects.flush()
+            s.load(tmp.open(), self.model)
         qs2 = self.model.objects.query().sort_by('id').all()
         self.assertEqual(qs,qs2)
 

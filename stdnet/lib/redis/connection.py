@@ -54,8 +54,7 @@ from itertools import chain, starmap
 
 from stdnet import BackendRequest
 from stdnet.conf import settings
-from stdnet.utils import to_bytestring, iteritems, map, ispy3k, range,\
-                         to_string
+from stdnet.utils import iteritems, map, ispy3k, range, to_string
 from stdnet.lib import RedisReader, fallback
 from stdnet.utils.dispatch import Signal
 

@@ -76,23 +76,33 @@ To know which version you have installed::
 
 Running Tests
 ======================
-At the moment, only redis back-end is available and therefore to run tests you need to install Redis_.
-If you are using linux, it can be achieved simply by downloading, uncompressing and running ``make``, if you are using
-windows and want to save yourself a headache you can download precompiled binaries at servicestack__.
+At the moment, only redis back-end is available and therefore to run tests you
+need to install Redis_. If you are using linux, it can be achieved simply
+by downloading, uncompressing and running ``make``, if you are using
+windows and want to save yourself a headache you can download precompiled
+binaries at servicestack__.
 
 __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
-If you are running python 2.6, 3 and 3.1 you need to install the argparse_ package,
-which is a standard in python 2.7 and python >= 3.2.
-Once done that, open a shell and launch Redis. On another shell, from the package directory,
-type::
+Requirements for running tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* unittest2_ for python 2.6 only.
+* argparse_ for python 2.6, 3 and 3.1 only.
+* nose_
+
+Note, these requirements are only needed if you are planning to run tests.
+
+Testing
+~~~~~~~~~~
+To run tests open a shell and launch Redis. On another shell,
+from the package directory, type::
 
 	python runtests.py
 	
 Tests are run against a local redis server on port 6379 and database 7 by default.
-To change the server and database where to run tests pass the ``-s`` option as follow::
+To change the server and database where to run tests pass the ``--server`` option as follow::
 
-    python runtests.py -s redis://myserver.com:6450/?db=12
+    python runtests.py --server redis://myserver.com:6450/?db=12
 
 For more information type::
 
@@ -104,7 +114,7 @@ To access coverage of tests you need to install the coverage_ package and run th
 	
 and to check out the coverage report::
 
-	coverage report -m
+	coverage html
 
 
 Backends
@@ -225,3 +235,5 @@ file in the top distribution directory for the full license text.
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _coverage: http://nedbatchelder.com/code/coverage/
 .. _argparse: http://pypi.python.org/pypi/argparse
+.. _unittest2: http://pypi.python.org/pypi/unittest2
+.. _nose: http://readthedocs.org/docs/nose/en/latest

@@ -10,7 +10,7 @@ from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, to_string, is_string,\
-                         to_bytestring, is_bytes_or_string, iteritems,\
+                         is_bytes_or_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator,\
                          string_type
 

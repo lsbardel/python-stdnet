@@ -1,6 +1,6 @@
 import json
 import sys
-from csv import DictWriter, DictReader
+import csv
 from inspect import isclass
 
 from stdnet.utils import StringIO
@@ -21,7 +21,7 @@ if sys.version_info < (2,7):    # pragma: no cover
     def writeheader(dw):
         # hack to handle writeheader in python 2.6
         dw.writerow(dict(((k,k) for k in dw.fieldnames)))
-else:   # pragma: no cover
+else:
     def writeheader(dw):
         dw.writeheader()
     
@@ -110,6 +110,8 @@ class JsonSerializer(Serializer):
         return stream
 
     def load(self, stream, model = None):
+        if hasattr(stream, 'read'):
+            stream = stream.read()
         data = json.loads(stream, **self.options)
         for model_data in data:
             model = get_model_from_hash(model_data['hash'])
@@ -119,6 +121,8 @@ class JsonSerializer(Serializer):
             
         
 class CsvSerializer(Serializer):
+    '''A csv serializer for single model. It serialize a model query into
+a csv file.'''
     default_options = {'lineterminator': '\n'}
     
     def serialize(self, qs):
@@ -148,7 +152,7 @@ class CsvSerializer(Serializer):
             fieldnames = self.data[0]['fieldnames']
             data = self.data[0]['data']
             if data:
-                w = DictWriter(stream, fieldnames, **self.options)
+                w = csv.DictWriter(stream, fieldnames, **self.options)
                 writeheader(w)
                 for row in data:
                     w.writerow(row)
@@ -157,7 +161,7 @@ class CsvSerializer(Serializer):
     def load(self, stream, model = None):
         if not model:
             raise ValueError('Model is required when loading from csv file')
-        r = DictReader(stream, **self.options)
+        r = csv.DictReader(stream, **self.options)
         with model.objects.transaction() as t:
             for item_data in r:
                 t.add(model.from_base64_data(**item_data))

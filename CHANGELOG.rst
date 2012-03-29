@@ -2,7 +2,7 @@
 
 Ver. 0.7.0 - Development
 ===============================
-* **It requires redis_ 2.6 or higher**.
+* **It requires redis 2.6 or higher**.
 * Some backward incompatible changes in the API and database schema.
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions, lua_ scripting for redis_ and
@@ -44,7 +44,8 @@ Ver. 0.7.0 - Development
   using python 2.6.
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
-* **568 regression tests** with **90%** coverage.
+* Added :mod:`stdnet.utils.path`.
+* **570 regression tests** with **91%** coverage.
 
 .. _vers06:
 

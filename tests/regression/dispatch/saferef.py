@@ -3,14 +3,14 @@ from stdnet import test
 from stdnet.utils import range
 
 
-class Test1(object):
+class oTest1(object):
     def __call__(self):
         pass
 
-def test2(obj):
+def ftest2(obj):
     pass
 
-class Test2(object):
+class oTest2(object):
     def __call__(self, obj):
         pass
 
@@ -22,14 +22,14 @@ class Tester(test.TestCase):
         ss = []
         self.closureCount = 0
         for x in range(5000):
-            t = Test1()
+            t = oTest1()
             ts.append(t)
             s = safeRef(t, self._closure)
             ss.append(s)
-        ts.append(test2)
-        ss.append(safeRef(test2, self._closure))
+        ts.append(ftest2)
+        ss.append(safeRef(ftest2, self._closure))
         for x in range(30):
-            t = Test2()
+            t = oTest2()
             ts.append(t)
             s = safeRef(t, self._closure)
             ss.append(s)

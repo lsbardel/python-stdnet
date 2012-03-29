@@ -16,16 +16,16 @@ except ImportError:
     
 from . import main
 
+runtests = os.environ['stdnet_backend_status'] == 'stdnet' and npts is not None
 skipUnless = main.skipUnless
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet' and\
-           npts is not None, 'Requires stdnet-redis and dynts') 
+skipUnless(runtests, 'Requires stdnet-redis and dynts') 
 class TestDynTsIntegration(main.TestColumnTSBase):
     
     @classmethod
     def setUpClass(cls):
         super(TestDynTsIntegration, cls).setUpClass()
-        cls.ColumnTS = npts.ColumnTS
+        cls.ColumnTS = npts.ColumnTS if npts else None
             
     def testGetFields(self):
         ts1 = self.create()
@@ -59,8 +59,7 @@ class TestDynTsIntegration(main.TestColumnTSBase):
         v = ts1[dte]
         
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet' and\
-           npts is not None, 'Requires stdnet-redis and dynts')        
+skipUnless(runtests, 'Requires stdnet-redis and dynts')        
 class TestColumnTSField(main.TestCase):
     model = ColumnTimeSeriesNumpy
     

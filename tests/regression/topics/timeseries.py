@@ -7,7 +7,7 @@ from stdnet.utils import populate, todate, zip, dategenerator,\
                              default_parse_interval
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
-from tests.regression.fields.struct import TestMultiFieldMixin
+from tests.regression.fields.struct import MultiFieldMixin
 
 skipUnless = test.unittest.skipUnless
 
@@ -25,7 +25,7 @@ testdata2 = dict(alldata2)
 
 skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
            'Requires stdnet-redis')
-class TestDateTimeSeries(TestMultiFieldMixin, test.TestCase):
+class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
     defaults = {'ticker': 'GOOG'}

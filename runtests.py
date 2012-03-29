@@ -5,12 +5,16 @@ import sys
 import os
 
 from stdnet.conf import settings
-from stdnet.utils import PPath
+from stdnet.utils import Path
 from stdnet import getdb
 
-PPath(__file__).add(module = 'pulsar', up = 1, down = ('pulsar',))
+## This is for dev environment with pulsar and dynts.
+## If not available, some tests won't run
+p = Path(__file__)
+p.add2python('pulsar', up=1, down=('pulsar',), must_exist=False)
+p.add2python('synts', up=1, down=('dynts',), must_exist=False)
 
-from stdnet.test import nose, pulsar, TestServer, StdnetServer
+from stdnet.test import nose, pulsar
 
 
 def noseoption(argv,*vals,**kwargs):
@@ -33,21 +37,25 @@ def start():
     if pulsar:
         from pulsar.apps.test import TestSuite
         from pulsar.apps.test.plugins import bench
+        from stdnet.test import PulsarStdnetServer, PulsarDataSizePlugin
         
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',
                     modules = ('tests',),
-                    plugins = (TestServer(),
+                    plugins = (PulsarStdnetServer(),
+                               PulsarDataSizePlugin(),
                                bench.BenchMark(),)
                   )
         suite.start()
     elif nose:
+        from stdnet.test import NoseDataSizePlugin, NoseStdnetServer
         os.environ['stdnet_test_suite'] = 'nose'
         argv = list(sys.argv)
         noseoption(argv, '-w', value = 'tests/regression')
         noseoption(argv, '--all-modules')
-        nose.main(argv=argv, addplugins=[StdnetServer()])
+        nose.main(argv=argv, addplugins=[NoseStdnetServer(),
+                                         NoseDataSizePlugin()])
     else:
         print('To run tests you need either pulsar or nose.')
         exit(0)

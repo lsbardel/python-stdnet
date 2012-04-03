@@ -77,9 +77,10 @@ is_bytes_or_string = lambda x : isinstance(x,string_type) or isinstance(x,bytes)
 
 
 
-def to_bytes(s, encoding='utf-8', errors='strict'):
+def to_bytes(s, encoding=None, errors='strict'):
     """Returns a bytestring version of 's',
 encoded as specified in 'encoding'."""
+    encoding = encoding or 'utf-8'
     if isinstance(s, bytes):
         if encoding != 'utf-8':
             return s.decode('utf-8', errors).encode(encoding, errors)
@@ -92,13 +93,12 @@ encoded as specified in 'encoding'."""
     return s.encode(encoding, errors)
 
 
-def to_string(s, encoding='utf-8', errors='strict'):
-    """Inverse of to_bytestring"""
-    if isinstance(s,bytes):
+def to_string(s, encoding=None, errors='strict'):
+    """Inverse of to_bytes"""
+    encoding = encoding or 'utf-8'
+    if isinstance(s, bytes):
         return s.decode(encoding, errors)
-    
     if not is_string(s):
         s = string_type(s)
-        
     return s
 

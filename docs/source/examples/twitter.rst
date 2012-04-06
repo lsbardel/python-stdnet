@@ -1,9 +1,10 @@
 .. _twitter-example:
 
 ==============================
-Twitter Clone Example
+A twitter clone
 ==============================
 
+This is the stdnet equivalent of the `redis twitter clone`_ example
 A very simple twitter clone implemented using ``stdnet`` library.
 Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
 implicit sorting::
@@ -75,3 +76,5 @@ Ok we have a user. Lets add few updates::
 	2010-11-10 18:05:24 :  my name is Luka and I live on second floor
 	>>>
 	
+
+.. _redis twitter clone: http://redis.io/topics/twitter-clone

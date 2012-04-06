@@ -33,16 +33,14 @@ First steps
 :ref:`Using Models <tutorial>` |
 :ref:`Query your data <tutorial-query>` |
 :ref:`Sorting <sorting>` |
+:ref:`Searching <tutorial-search>` |
+:ref:`Twitter Clone<twitter-example>`
 
 **API:**
 :ref:`Structures API <model-structures>` |
 :ref:`Model API <model-model>` |
 :ref:`Fields API <model-field>` |
 :ref:`Redis Client <redis-server>`
-
-**Examples:**
-:ref:`Timeseries <timeseries-example>` |
-:ref:`Twitter Clone<twitter-example>`
 
 **Miscellaneous:**
 :ref:`Contributing <contributing>` |

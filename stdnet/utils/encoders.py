@@ -11,7 +11,7 @@ from stdnet.utils import JSONDateDecimalEncoder, pickle, \
 
 class Encoder(object):
     '''Virtaul class for encoding data in
-:ref:`remote strcutures <structures-backend>`. It exposes two methods
+:ref:`remote strcutures <model-structures>`. It exposes two methods
 for serializing and loading data to and from the data server.
 
 .. attribute:: type

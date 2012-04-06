@@ -38,7 +38,7 @@ Ver. 0.7.0 - Development
   keys obtained from the field ``attrname`` rather than ``name``.
 * Added :meth:`stdnet.orm.StdModel.clone` method for cloning model instances.
 * Refactored :ref:`transactions <model-transactions>` to be used with
-  :ref:`remote data structures <structures-backend>` and
+  :ref:`remote data structures <model-structures>` and
   :ref:`structured fields <model-field-structure>`.
 * pulsar_ or nose_ are required to run the test suite and unittest2_ is required if
   using python 2.6.

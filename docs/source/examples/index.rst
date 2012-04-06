@@ -26,7 +26,7 @@ available in :mod:`stdnet`.
    tutorial
    query
    sorting
-   tutorial2
+   search
    performance
-   timeseries
    twitter
+   timeseries

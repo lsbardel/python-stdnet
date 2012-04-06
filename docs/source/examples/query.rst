@@ -4,11 +4,12 @@
 
 
 ============================
-Query your data
+Query your Models
 ============================
 
-The most powerful feature of stdnet is a comprehensive query API for your
-data. To retrieve objects from your data server, you construct a
+The most powerful feature of stdnet is a comprehensive API for querying your
+data in an efficient and elegant way.
+To retrieve objects from your data server, you construct a
 :class:`Query` via a :class:`Manager` on your model class
 or via a :class:`Session`.
 

@@ -13,6 +13,7 @@ from examples.tsmodels import ColumnTimeSeries
 from tests.regression import struct
 
 skipUnless = test.unittest.skipUnless
+do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
@@ -23,8 +24,7 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1.lua',this_path))
     
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
-           'Requires stdnet-redis')
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMeta(test.TestCase):
     
     def testLuaClass(self):
@@ -35,6 +35,7 @@ class TestMeta(test.TestCase):
         self.assertEqual(r,b'OK')
 
 
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestCase(test.TestCase):
     
     def check_stats(self, stat_field, data):
@@ -53,8 +54,7 @@ class TestCase(test.TestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
-           'Requires stdnet-redis')    
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTimeSeries(struct.StructMixin, TestCase):
     structure = ColumnTS
     name = 'columnts'
@@ -275,6 +275,7 @@ class TestTimeSeries(struct.StructMixin, TestCase):
             self.assertTrue(isinstance(dt,datetime))
         
 
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestColumnTSBase(TestCase):
     
     @classmethod
@@ -295,8 +296,7 @@ class TestColumnTSBase(TestCase):
         return ts1
             
             
-skipUnless(os.environ['stdnet_backend_status']=='stdnet',
-           'Requires stdnet-redis')
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestOperations(TestColumnTSBase):
     
     def testSimpleStats(self):
@@ -548,8 +548,7 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
 
 
-skipUnless(os.environ['stdnet_backend_status']=='stdnet',
-           'Requires stdnet-redis')
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMissingValues(TestCase):
     
     @classmethod

@@ -10,6 +10,7 @@ from examples.tsmodels import TimeSeries, DateTimeSeries
 from tests.regression.fields.struct import MultiFieldMixin
 
 skipUnless = test.unittest.skipUnless
+do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
 
 NUM_DATES = 300
 
@@ -23,8 +24,7 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
-           'Requires stdnet-redis')
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
@@ -306,8 +306,7 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
         self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)
 
 
-skipUnless(os.environ['stdnet_backend_status'] == 'stdnet',
-           'Requires stdnet-redis')
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestDateSeries(TestDateTimeSeries):
     model = DateTimeSeries
     mkdate = date

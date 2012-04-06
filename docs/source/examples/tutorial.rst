@@ -159,3 +159,7 @@ Here's an example::
 	'EUR'
 	>>> b.description
 	''
+
+
+.. _django: https://www.djangoproject.com/
+.. _descriptors: http://users.rcn.com/python/download/Descriptor.htm

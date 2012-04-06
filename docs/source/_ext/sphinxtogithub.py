@@ -1,5 +1,4 @@
-#! /usr/bin/env python
- 
+#! /usr/bin/env python 
 from optparse import OptionParser
 import os
 import sys
@@ -9,29 +8,29 @@ import shutil
 class NoDirectoriesError(Exception):
     "Error thrown when no directories starting with an underscore are found"
 
+
 class DirHelper(object):
 
     def __init__(self, is_dir, list_dir, walk, rmtree):
-
         self.is_dir = is_dir
         self.list_dir = list_dir
         self.walk = walk
         self.rmtree = rmtree
 
+
 class FileSystemHelper(object):
 
     def __init__(self, open_, path_join, move, exists):
-
         self.open_ = open_
         self.path_join = path_join
         self.move = move
         self.exists = exists
 
+
 class Replacer(object):
     "Encapsulates a simple text replace"
 
     def __init__(self, from_, to):
-
         self.from_ = from_
         self.to = to
 
@@ -39,23 +38,22 @@ class Replacer(object):
 
         return text.replace( self.from_, self.to )
 
+
 class FileHandler(object):
     "Applies a series of replacements the contents of a file inplace"
 
     def __init__(self, name, replacers, opener):
-
         self.name = name
         self.replacers = replacers
         self.opener = opener
 
     def process(self):
-
         text = self.opener(self.name).read()
-
         for replacer in self.replacers:
             text = replacer.process( text )
 
         self.opener(self.name, "w").write(text)
+
 
 class Remover(object):
 
@@ -64,31 +62,28 @@ class Remover(object):
         self.remove = remove
 
     def __call__(self, name):
-
         if self.exists(name):
             self.remove(name)
+
 
 class ForceRename(object):
 
     def __init__(self, renamer, remove):
-
         self.renamer = renamer
         self.remove = remove
 
     def __call__(self, from_, to):
-
         self.remove(to)
         self.renamer(from_, to)
-
+        
+        
 class VerboseRename(object):
 
     def __init__(self, renamer, stream):
-
         self.renamer = renamer
         self.stream = stream
 
     def __call__(self, from_, to):
-
         self.stream.write(
                 "Renaming directory '%s' -> '%s'\n"
                     % (os.path.basename(from_), os.path.basename(to))
@@ -101,28 +96,23 @@ class DirectoryHandler(object):
     "Encapsulates renaming a directory by removing its first character"
 
     def __init__(self, name, root, renamer):
-
         self.name = name
         self.new_name = name[1:]
         self.root = root + os.sep
         self.renamer = renamer
 
     def path(self):
-        
         return os.path.join(self.root, self.name)
 
     def relative_path(self, directory, filename):
-
         path = directory.replace(self.root, "", 1)
         return os.path.join(path, filename)
 
     def new_relative_path(self, directory, filename):
-
         path = self.relative_path(directory, filename)
         return path.replace(self.name, self.new_name, 1)
 
     def process(self):
-
         from_ = os.path.join(self.root, self.name)
         to = os.path.join(self.root, self.new_name)
         self.renamer(from_, to)
@@ -131,18 +121,15 @@ class DirectoryHandler(object):
 class HandlerFactory(object):
 
     def create_file_handler(self, name, replacers, opener):
-
         return FileHandler(name, replacers, opener)
 
     def create_dir_handler(self, name, root, renamer):
-
         return DirectoryHandler(name, root, renamer)
 
 
 class OperationsFactory(object):
 
     def create_force_rename(self, renamer, remover):
-
         return ForceRename(renamer, remover)
 
     def create_verbose_rename(self, renamer, stream):
@@ -165,12 +152,10 @@ class Layout(object):
     """
 
     def __init__(self, directory_handlers, file_handlers):
-
         self.directory_handlers = directory_handlers
         self.file_handlers = file_handlers
 
     def process(self):
-
         for handler in self.file_handlers:
             handler.process()
 
@@ -181,20 +166,17 @@ class Layout(object):
 class LayoutFactory(object):
     "Creates a layout object"
 
-    def __init__(self, operations_factory, handler_factory, file_helper, dir_helper, verbose, stream, force):
-
+    def __init__(self, operations_factory, handler_factory, file_helper,
+                 dir_helper, verbose, stream, force):
         self.operations_factory = operations_factory
         self.handler_factory = handler_factory
-
         self.file_helper = file_helper
         self.dir_helper = dir_helper
-
         self.verbose = verbose
         self.output_stream = stream
         self.force = force
 
     def create_layout(self, path):
-
         contents = self.dir_helper.list_dir(path)
 
         renamer = self.file_helper.move
@@ -259,18 +241,17 @@ class LayoutFactory(object):
 
 def sphinx_extension(app, exception):
     "Wrapped up as a Sphinx Extension"
-
     if not app.builder.name in ("html", "dirhtml"):
         return
 
     if not app.config.sphinx_to_github:
         if app.config.sphinx_to_github_verbose:
-            print "Sphinx-to-github: Disabled, doing nothing."
+            print("Sphinx-to-github: Disabled, doing nothing.")
         return
 
     if exception:
         if app.config.sphinx_to_github_verbose:
-            print "Sphinx-to-github: Exception raised in main build, doing nothing."
+            print("Sphinx-to-github: Exception raised in main build, doing nothing.")
         return
 
     dir_helper = DirHelper(
@@ -306,72 +287,8 @@ def sphinx_extension(app, exception):
 
 def setup(app):
     "Setup function for Sphinx Extension"
-
     app.add_config_value("sphinx_to_github", True, '')
     app.add_config_value("sphinx_to_github_verbose", True, '')
-
     app.connect("build-finished", sphinx_extension)
-
-
-def main(args):
-
-    usage = "usage: %prog [options] <html directory>"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v","--verbose", action="store_true",
-            dest="verbose", default=False, help="Provides verbose output")
-    opts, args = parser.parse_args(args)
-
-    try:
-        path = args[0]
-    except IndexError:
-        sys.stderr.write(
-                "Error - Expecting path to html directory:"
-                "sphinx-to-github <path>\n"
-                )
-        return
-
-    dir_helper = DirHelper(
-            os.path.isdir,
-            os.listdir,
-            os.walk,
-            shutil.rmtree
-            )
-
-    file_helper = FileSystemHelper(
-            open,
-            os.path.join,
-            shutil.move,
-            os.path.exists
-            )
-    
-    operations_factory = OperationsFactory()
-    handler_factory = HandlerFactory()
-
-    layout_factory = LayoutFactory(
-            operations_factory,
-            handler_factory,
-            file_helper,
-            dir_helper,
-            opts.verbose,
-            sys.stdout,
-            force=False
-            )
-
-    try:
-        layout = layout_factory.create_layout(path)
-    except NoDirectoriesError:
-        sys.stderr.write(
-                "Error - No top level directories starting with an underscore "
-                "were found in '%s'\n" % path
-                )
-        return
-
-    layout.process()
-    
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
 
 

@@ -476,11 +476,7 @@ instance is promoted to a master instead.
         return self.execute_command('KEYS', pattern)
 
     def mget(self, keys, *args):
-        """
-        Returns a list of values ordered identically to ``keys``
-
-        * Passing *args to this method has been deprecated *
-        """
+        """Returns a list of values ordered identically to ``keys``"""
         keys = list_or_args(keys, args)
         return self.execute_command('MGET', *keys)
 

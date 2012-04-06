@@ -1,5 +1,11 @@
+import os
+
+from stdnet import test
+
 from .base import TestCase
 
+skipUnless = test.unittest.skipUnless
+do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
 
 class TestStdnetBranchCommand(TestCase):
     
@@ -37,12 +43,14 @@ class TestStdnetBranchCommand(TestCase):
     def test_zdiffstore_withscores(self):
         self._zdiffstore_withscores(using='vanilla')
         
+    @skipUnless(do_tests, 'Requires stdnet-redis')
     def test_tsadd(self):
         self.assertEqual(self.client.tslen('a'),0)
         self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')
         ts = list(self.client.tsrange('a', 0, -1, withtimes = True))
         self.assertEqual(ts, [(1, b'b'),(3, b'a'),(7, b'a')])
         
+    @skipUnless(do_tests, 'Requires stdnet-redis')
     def test_tsrank(self):
         self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')
         self.assertEqual(self.client.tsrank('a',1),0)
@@ -54,6 +62,7 @@ class TestStdnetBranchCommand(TestCase):
         self.assertEqual(self.client.tsrank('b',5),None)
         self.assertEqual(self.client.zrank('b',5),None)
         
+    @skipUnless(do_tests, 'Requires stdnet-redis')
     def test_tsrange_novalues(self):
         self.client.tsadd('a', 3, 'a', 1, 'b', 7, 'a')
         times = tuple(self.client.tsrange('a',novalues=True))

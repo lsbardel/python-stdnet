@@ -14,8 +14,8 @@ else:   # pragma nocover
     try:
         import unittest2 as unittest
     except ImportError:
-        print('To run tests in python 2.6 you need to install\
- the unitest2 package')
+        print('To run tests in python 2.6 you need to install '\
+              'the unitest2 package')
         exit(0)
 
 from stdnet import orm, getdb, BackendRequest

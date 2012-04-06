@@ -1,5 +1,7 @@
 .. _tutorial2:
 
+.. module:: stdnet.orm
+
 ===========================================
 Tutorial 2
 ===========================================
@@ -19,7 +21,7 @@ Under the hood, stdnet performs server updates and queries
 via a :class:`stdnet.orm.Session`. You can write your application without
 using a session directly, and in several cases this is good enough.
 However, when dealing with lots of operations, you may be better off
-using :ref:`transactions <transactions>`. A transaction is started
+using :class:`Transaction`. A transaction is started
 with the :meth:`stdnet.orm.Session.begin` method and concluded with
 the :meth:`stdnet.orm.Session.commit` method. A session for
 :ref:`registered models <register-model>` can be obtained from the model
@@ -63,6 +65,3 @@ Or for more than one model::
 As soon as the ``with`` statement finishes, the transaction commit changes
 to the server via the :meth:`stdnet.orm.Session.commit` method.
 
-
-
-.. _descriptors: http://users.rcn.com/python/download/Descriptor.htm

@@ -1,9 +1,12 @@
+import os
 from datetime import date
 
 from stdnet import test, orm, InvalidTransaction
 from stdnet.utils import encoders, zip
 from stdnet.utils.populate import populate
 
+skipUnless = test.unittest.skipUnless
+do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
 
 dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
@@ -282,7 +285,7 @@ class TestHash(StructMixin, test.TestCase):
         self.assertEqual(h.get('ggg',1),1)
         self.assertRaises(KeyError, lambda : h['gggggg'])
         
-
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTS(StructMixin, test.TestCase):
     structure = orm.TS
     name = 'ts'

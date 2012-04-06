@@ -2,10 +2,6 @@ import time
 from datetime import date, datetime
 from decimal import Decimal
 import json
-try:
-    from numpy import ndarray
-except ImportError:     # pragma nocover
-    ndarray = None
     
 from stdnet.utils import iteritems
 
@@ -39,12 +35,9 @@ class JSONDateDecimalEncoder(json.JSONEncoder):
     """The default JSON encoder used by stdnet. It provides
 JSON serialization for four additional classes:
 
- * `datetime.date`,
- * `datetime.datetime`
- * `decimal.Decimal`
- * `numpy.ndarray` if numpy_ is installed.
-  
-The ``ndarray`` is serialized into nested lists using the ``aslist`` function.
+* `datetime.date` as a ``{'__date__': timestamp}`` dictionary
+* `datetime.datetime` as a ``{'__datetime__': timestamp}`` dictionary
+* `decimal.Decimal` as a ``{'__decimal__': number}`` dictionary
 
 .. seealso:: It is the default encoder for :class:`stdnet.orm.JSONField`
 """

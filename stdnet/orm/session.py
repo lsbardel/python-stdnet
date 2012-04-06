@@ -250,7 +250,9 @@ within this :class:`Session`.'''
         return len(self._delete_query) + len(dirty)
             
     def post_commit(self, results):
-        '''Process results after a commit.
+        '''\
+Process results after a commit.
+
 :parameter results: iterator over :class:`stdnet.instance_session_result`
     items.
 :rtype: a two elements tuple containing a list of instances saved and

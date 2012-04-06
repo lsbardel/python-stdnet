@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" />
-    <link rel="next" title="Object Relational Mapper" href="model/index.html" />
+    <link rel="next" title="Tutorials &amp; Examples" href="examples/index.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="model/index.html" title="Object Relational Mapper"
+          <a href="examples/index.html" title="Tutorials &amp; Examples"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
@@ -54,7 +54,8 @@
 <span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
 <p><strong>A stand-alone Python 3 compatible data manager for Redis remote data structures.</strong></p>
 <p>The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) with similar API to <a class="reference external" href="http://www.djangoproject.com/">Django</a>.
+light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) with API inspired by <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>
+and <a class="reference external" href="http://www.djangoproject.com/">Django</a>.
 The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
 <p>&#8211;</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -78,10 +79,23 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Python 2.6 or above, including Python 3 series.</li>
+<li>Python 2.6 to Python 3.3. Single codebase.</li>
 <li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for faster redis protocol parser.</li>
 <li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server.</li>
 </ul>
+</div>
+<div class="section" id="philosophy">
+<h2>Philosophy<a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h2>
+<p>Key-valued pairs databases have many differences from traditional relational databases,
+most important being they do not use <tt class="docutils literal"><span class="pre">SQL</span></tt> as their query language,
+storage does not require a fixed table schemas and usually they do not support
+complex queries.</p>
+<p>StdNet aims to accommodate a flexible schema and join type operations via
+a lightweight object relational mapper.
+Importantly, it is designed with large data sets in mind. You pull data
+you need, nothing more, nothing less.
+Bandwidth and server round-trips can be reduced to the bare minimum
+so that your application is fast and memory efficient.</p>
 </div>
 <div class="section" id="installing">
 <h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
@@ -107,24 +121,35 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <p>To know which version you have installed:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
-<span class="go">&#39;0.6.1&#39;</span>
+<span class="go">&#39;0.7.0&#39;</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="running-tests">
 <span id="runningtests"></span><h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
-<p>At the moment, only redis back-end is available and therefore to run tests you need to install <a class="reference external" href="http://redis.io/">Redis</a>.
-If you are using linux, it can be achieved simply by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
-windows and want to save yourself a headache you can download precompiled binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
-<p>If you are running python 2.6, 3 and 3.1 you need to install the <a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> package,
-which is a standard in python 2.7 and python &gt;= 3.2.
-Once done that, open a shell and launch Redis. On another shell, from the package directory,
-type:</p>
+<p>At the moment, only redis back-end is available and therefore to run tests you
+need to install <a class="reference external" href="http://redis.io/">Redis</a>. If you are using linux, it can be achieved simply
+by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
+windows and want to save yourself a headache you can download precompiled
+binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
+<div class="section" id="requirements-for-running-tests">
+<h3>Requirements for running tests<a class="headerlink" href="#requirements-for-running-tests" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference external" href="http://pypi.python.org/pypi/unittest2">unittest2</a> for python 2.6 only.</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> for python 2.6, 3 and 3.1 only.</li>
+<li><a class="reference external" href="http://readthedocs.org/docs/nose/en/latest">nose</a></li>
+</ul>
+<p>Note, these requirements are only needed if you are planning to run tests.</p>
+</div>
+<div class="section" id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h3>
+<p>To run tests open a shell and launch Redis. On another shell,
+from the package directory, type:</p>
 <div class="highlight-python"><pre>python runtests.py</pre>
 </div>
 <p>Tests are run against a local redis server on port 6379 and database 7 by default.
-To change the server and database where to run tests pass the <tt class="docutils literal"><span class="pre">-s</span></tt> option as follow:</p>
-<div class="highlight-python"><pre>python runtests.py -s redis://myserver.com:6450/?db=12</pre>
+To change the server and database where to run tests pass the <tt class="docutils literal"><span class="pre">--server</span></tt> option as follow:</p>
+<div class="highlight-python"><pre>python runtests.py --server redis://myserver.com:6450/?db=12</pre>
 </div>
 <p>For more information type:</p>
 <div class="highlight-python"><pre>python runtests.py -h</pre>
@@ -133,7 +158,8 @@ To change the server and database where to run tests pass the <tt class="docutil
 <div class="highlight-python"><pre>coverage run runtests.py</pre>
 </div>
 <p>and to check out the coverage report:</p>
-<div class="highlight-python"><pre>coverage report -m</pre>
+<div class="highlight-python"><pre>coverage html</pre>
+</div>
 </div>
 </div>
 <div class="section" id="backends">
@@ -195,10 +221,10 @@ safe to use:</p>
 </pre></div>
 </div>
 <p>Register models with backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=1&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=1&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=2&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost/?db=2&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And play with the API:</p>
@@ -213,7 +239,7 @@ safe to use:</p>
 <li><a class="reference external" href="http://redis.io/">Redis</a> simply because this library uses its awesome features.</li>
 <li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> for the Redis Python client initial implementation which has been subsequently modified.</li>
 <li><a class="reference external" href="https://github.com/pietern/hiredis-py">hiredis-py</a> for some parts of the C parser.</li>
-<li><a class="reference external" href="http://www.djangoproject.com/">Django</a> for some ideas and the <tt class="docutils literal"><span class="pre">dispatch</span></tt> module.</li>
+<li><a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://www.djangoproject.com/">Django</a> for ideas and API design.</li>
 <li>Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.</li>
 </ul>
 </div>
@@ -249,10 +275,15 @@ file in the top distribution directory for the full license text.</p>
   <ul>
 <li><a class="reference internal" href="#">Overview</a><ul>
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#philosophy">Philosophy</a></li>
 <li><a class="reference internal" href="#installing">Installing</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 <li><a class="reference internal" href="#version-check">Version Check</a></li>
-<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a><ul>
+<li><a class="reference internal" href="#requirements-for-running-tests">Requirements for running tests</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#backends">Backends</a></li>
 <li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
 <li><a class="reference internal" href="#kudos">Kudos</a></li>
@@ -266,8 +297,8 @@ file in the top distribution directory for the full license text.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Python Stdnet</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="model/index.html"
-                        title="next chapter">Object Relational Mapper</a></p>
+  <p class="topless"><a href="examples/index.html"
+                        title="next chapter">Tutorials &amp; Examples</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/overview.txt"
@@ -300,7 +331,7 @@ file in the top distribution directory for the full license text.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="model/index.html" title="Object Relational Mapper"
+          <a href="examples/index.html" title="Tutorials &amp; Examples"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"

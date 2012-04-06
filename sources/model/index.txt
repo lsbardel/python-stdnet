@@ -1,5 +1,7 @@
 .. _model-index:
 
+.. module:: stdnet.orm
+
 ============================
 Object Relational Mapper
 ============================
@@ -25,6 +27,7 @@ they are known. It is also a lightweight module, which deal only with ORM and no
    
    models
    fields
+   session
    search
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/   

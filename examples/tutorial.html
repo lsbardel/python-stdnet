@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial 1 &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Using Models &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
-    <link rel="next" title="Tutorial 2" href="tutorial2.html" />
+    <link rel="next" title="Query your Models" href="query.html" />
     <link rel="prev" title="Tutorials &amp; Examples" href="index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tutorial2.html" title="Tutorial 2"
+          <a href="query.html" title="Query your Models"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
@@ -52,15 +52,12 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="tutorial-1">
-<span id="tutorial"></span><h1>Tutorial 1<a class="headerlink" href="#tutorial-1" title="Permalink to this headline">¶</a></h1>
-<p>In this section we will walk you though all the main aspects of the library,
-following a simple application as example.
-We will refer back to the <a class="reference internal" href="../model/index.html#model-index"><em>library API</em></a>
-as much as possible so that
-advanced configuration parameters and functionalities can be investigated.</p>
-<div class="section" id="creating-models">
-<span id="id1"></span><h2>Creating Models<a class="headerlink" href="#creating-models" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="using-models">
+<span id="tutorial"></span><h1>Using Models<a class="headerlink" href="#using-models" title="Permalink to this headline">¶</a></h1>
+<p>Here we deal with model implementation and creating instances persistent
+in a backend database.</p>
+<div class="section" id="writing-models">
+<span id="creating-models"></span><h2>Writing Models<a class="headerlink" href="#writing-models" title="Permalink to this headline">¶</a></h2>
 <p>Defining stdnet <em>models</em> is achieved by subclassing the
 <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. The following
 snipped implements two models, <tt class="docutils literal"><span class="pre">Author</span></tt> and <tt class="docutils literal"><span class="pre">Book</span></tt>:</p>
@@ -74,19 +71,25 @@ snipped implements two models, <tt class="docutils literal"><span class="pre">Au
     <span class="n">author</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Author</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;books&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The API should look familiar if you have come across <a class="reference external" href="http://www.djangoproject.com/">django</a>
+<p>The API should look familiar if you have come across <a class="reference external" href="https://www.djangoproject.com/">django</a>
 web framework. <a class="reference internal" href="../model/fields.html#model-field"><em>Fields</em></a> (name in the Author model,
 title and author in the Book model) are specified as attribute of models.
 But while fields in django are the python representation of the columns in the
-backend database table, fields in stdnet are the fields of a redis hash table
-which represents an instance of a model.</p>
-<p>Information is available regarding how models instances are mapped into
-<a class="reference internal" href="../backends/backends.html#redis-backend"><em>the redis backend</em></a>.</p>
+backend database table, fields in stdnet are stored in different ways, depending
+on the <a class="reference internal" href="../backends/index.html#db-index"><em>backend</em></a> used.
+For example, in <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a>, fields are equivalent to the
+fields of a redis hash table which represents an instance of a model.</p>
+</div>
 <div class="section" id="an-application">
-<span id="tutorial-application"></span><h3>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h3>
+<span id="tutorial-application"></span><h2>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s start with tutorial application: a small hedge fund.
 You never know it may become useful in the future!</p>
-<p>The application uses the following three models:</p>
+<p>The application uses the following three models,</p>
+<ul class="simple">
+<li>A <tt class="docutils literal"><span class="pre">Fund</span></tt> which stores information about several <tt class="docutils literal"><span class="pre">Position</span></tt></li>
+<li>A <tt class="docutils literal"><span class="pre">Position</span></tt> is an investment on a particular funancial <tt class="docutils literal"><span class="pre">Instrument</span></tt>.</li>
+</ul>
+<p>A minimal <tt class="docutils literal"><span class="pre">stdnet</span></tt> implementation can look like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 
 <span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
@@ -121,14 +124,24 @@ You never know it may become useful in the future!</p>
         <span class="n">ordering</span> <span class="o">=</span> <span class="s">&#39;-dt&#39;</span>
 </pre></div>
 </div>
-<p>If you are familiar with <a class="reference external" href="http://www.djangoproject.com/">django</a> you will see several similarities and you should be able to understand,
+<p>If you are familiar with <a class="reference external" href="https://www.djangoproject.com/">django</a> you will see several similarities and you should be able to understand,
 with a certain degree of confidence, what it is going on.
 The only difference is the <tt class="docutils literal"><span class="pre">prices</span></tt> <a class="reference internal" href="../model/fields.html#stdnet.orm.ListField" title="stdnet.orm.ListField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ListField</span></tt></a>
 in the <tt class="docutils literal"><span class="pre">Instrument</span></tt> model which is
 not available in a traditional relational database.</p>
+<div class="section" id="the-metaclass">
+<h3>The metaclass<a class="headerlink" href="#the-metaclass" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">Position</span></tt> models specifies a <tt class="docutils literal"><span class="pre">Meta</span></tt> class with an <tt class="docutils literal"><span class="pre">ordering</span></tt> attribute.
+When provided, as in this case, the Meta class fields are used by the <tt class="docutils literal"><span class="pre">orm</span></tt>
+to customize the build of the <a class="reference internal" href="../model/models.html#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Metaclass</span></tt></a> for the model.
+In this case we instruct the mapper to manage the <tt class="docutils literal"><span class="pre">Position</span></tt> model
+as ordered with respect to the <a class="reference internal" href="../model/fields.html#stdnet.orm.DateField" title="stdnet.orm.DateField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.DateField</span></tt></a> <tt class="docutils literal"><span class="pre">dt</span></tt>
+in descending order. Check the  <a class="reference internal" href="sorting.html#sorting"><em>sorting</em></a>
+documentation for more details or ordering and sorting.</p>
+</div>
 </div>
 <div class="section" id="registering-models">
-<h3>Registering Models<a class="headerlink" href="#registering-models" title="Permalink to this headline">¶</a></h3>
+<h2>Registering Models<a class="headerlink" href="#registering-models" title="Permalink to this headline">¶</a></h2>
 <p>Before playing with the API you need to <a class="reference internal" href="../model/models.html#register-model"><em>register the models</em></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">orm</span>
 
@@ -138,18 +151,28 @@ not available in a traditional relational database.</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="one-to-many-relationships">
+<span id="one-to-many"></span><h2>One-to-many relationships<a class="headerlink" href="#one-to-many-relationships" title="Permalink to this headline">¶</a></h2>
+<p>The <em>Position</em> model contains two <a class="reference internal" href="../model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> fields.
+In the context of relational databases a
+<a class="reference external" href="http://en.wikipedia.org/wiki/Foreign_key">foreign key</a> is
+a referential constraint between two tables.</p>
+<p>For stdnet is exactly the same thing. The field store the <tt class="docutils literal"><span class="pre">id</span></tt> of a
+related <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance.
+Behind the scenes, this functionality is implemented by Python <a class="reference external" href="http://users.rcn.com/python/download/Descriptor.htm">descriptors</a>.
+This shouldn&#8217;t really matter to you, but we point it out here for the curious.</p>
 </div>
-<div class="section" id="using-models">
-<h2>Using Models<a class="headerlink" href="#using-models" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h2>Using Models<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p>Using models is equivalent to executing queries to the backend database.
-Once again, the API is very similar to executing queries in <a class="reference external" href="http://www.djangoproject.com/">django</a>.
+Once again, the API is very similar to executing queries in <a class="reference external" href="https://www.djangoproject.com/">django</a>.
 Once you&#8217;ve created your models, <tt class="docutils literal"><span class="pre">stdnet</span></tt> automatically gives you
 a data-server abstraction API that lets you create, retrieve,
 update and delete objects.</p>
 <div class="section" id="creating-objects">
 <h3>Creating objects<a class="headerlink" href="#creating-objects" title="Permalink to this headline">¶</a></h3>
 <p>An instance of a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>, an object for clarity,
-is mapped to a hash table in the <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> backend.
+is mapped to a hash table in the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> backend.
 To create an object, instantiate it using keyword arguments to the
 model class, then call <tt class="docutils literal"><span class="pre">save()</span></tt> to save it to the data-server.
 Here&#8217;s an example:</p>
@@ -167,122 +190,6 @@ Here&#8217;s an example:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="retrieving-objects">
-<h3>Retrieving objects<a class="headerlink" href="#retrieving-objects" title="Permalink to this headline">¶</a></h3>
-<p>To retrieve objects from your data server, you construct a <a class="reference internal" href="../model/models.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
-via a <a class="reference internal" href="../model/models.html#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a> on your model class.</p>
-<p>A QuerySet represents a collection of objects from your database.
-It can have zero, one or many filters criteria that narrow down the collection
-based on given parameters.</p>
-<p>You get a QuerySet by using your model&#8217;s Manager. Each model has at least one Manager,
-and it&#8217;s called objects by default. Access it directly via the model class:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span>
-<span class="go">&lt;stdnet.orm.query.Manager object at ...&gt;</span>
-<span class="go">&gt;&gt;&gt;</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="retrieving-all-objects">
-<h3>Retrieving all objects<a class="headerlink" href="#retrieving-all-objects" title="Permalink to this headline">¶</a></h3>
-<p>The simplest way to retrieve objects from a table is to get all of them. To do this, use the <a class="reference internal" href="../model/models.html#stdnet.orm.query.Manager.all" title="stdnet.orm.query.Manager.all"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.query.Manager.all()</span></tt></a>
-method on a Manager:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span>
-<span class="go">QuerySet</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span><span class="o">.</span><span class="n">_seq</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">funds</span><span class="p">)</span>
-<span class="go">[Fund: Markowitz]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span><span class="o">.</span><span class="n">_seq</span>
-<span class="go">[Fund: Markowitz]</span>
-</pre></div>
-</div>
-<p>QuerySet are lazy, they are evaluated only when you iterate over them.
-The results are then stored in the <tt class="docutils literal"><span class="pre">_seq</span></tt> attribute.</p>
-</div>
-<div class="section" id="retrieving-filtered-objects">
-<h3>Retrieving filtered objects<a class="headerlink" href="#retrieving-filtered-objects" title="Permalink to this headline">¶</a></h3>
-<p>Usually, you&#8217;ll need to select only a subset of the complete set of objects.
-To create such a subset, you refine the initial QuerySet, adding filter conditions.
-Lets create few other objects in the same line as above and try:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span>
-<span class="go">QuerySet.filter({&#39;ccy&#39;: &#39;EUR&#39;})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
-<span class="go">1</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">eur_funds</span><span class="p">)</span>
-<span class="go">[Fund: Markowitz]</span>
-</pre></div>
-</div>
-<p>The <tt class="docutils literal"><span class="pre">count</span></tt> method counts the object in the query without physically retrieving them.</p>
-<p>Retrieving from a list (equivalent to a select where in SQL):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Concatenating queries:</p>
-<div class="highlight-python"><pre>Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))</pre>
-</div>
-<p>You can also exclude fields from lookups:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;future&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>and so forth. The API is very similar to <a class="reference external" href="http://www.djangoproject.com/">django</a>, but it is for an unstructured-in memory database.</p>
-</div>
-</div>
-<div class="section" id="sorting">
-<span id="id2"></span><h2>Sorting<a class="headerlink" href="#sorting" title="Permalink to this headline">¶</a></h2>
-<p>Since version 0.6.0, stdnet provides sorting using two different ways:</p>
-<ul class="simple">
-<li>Explicit sorting using the <a class="reference internal" href="../model/models.html#stdnet.orm.query.QuerySet.sort_by" title="stdnet.orm.query.QuerySet.sort_by"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.query.QuerySet.sort_by</span></tt></a> attribute
-of a queryset.</li>
-<li>Implicit sorting via the <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.Meta.ordering</span></tt> attribute of
-the model metaclass.</li>
-</ul>
-<div class="section" id="explicit-sorting">
-<h3>Explicit Sorting<a class="headerlink" href="#explicit-sorting" title="Permalink to this headline">¶</a></h3>
-<p>Sorting is usually achieved by using the <a class="reference internal" href="../model/models.html#stdnet.orm.query.QuerySet.sort_by" title="stdnet.orm.query.QuerySet.sort_by"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.query.QuerySet.sort_by()</span></tt></a>
-method with a field name as parameter. Lets consider the following model:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SportActivity</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdNet</span><span class="p">):</span>
-    <span class="n">person</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">activity</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">dt</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>To obtained a sorted query on dates for a given person:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">SportActivity</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">person</span><span class="o">=</span><span class="s">&#39;pippo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;-dt&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The negative sign in front of <tt class="docutils literal"><span class="pre">dt</span></tt> indicates descending order.</p>
-</div>
-<div class="section" id="implicit-sorting">
-<span id="id3"></span><h3>Implicit Sorting<a class="headerlink" href="#implicit-sorting" title="Permalink to this headline">¶</a></h3>
-<p>Implicit sorting is achieved by setting the <tt class="docutils literal"><span class="pre">ordering</span></tt> attribute in the model Meta class.
-Let&#8217;s consider the following Log model example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Log</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;A database log entry&#39;&#39;&#39;</span>
-    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
-    <span class="n">level</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">msg</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">source</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">host</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">ordering</span> <span class="o">=</span> <span class="s">&#39;-timestamp&#39;</span>
-</pre></div>
-</div>
-<p>It makes lots of sense to have the log entries always sorted in a descending
-order with respect to the <tt class="docutils literal"><span class="pre">timestamp</span></tt> field.
-This solution always returns querysets in this order, without the need to
-call <tt class="docutils literal"><span class="pre">sort_by</span></tt> method.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Implicit sorting is a much faster solution than explicit sorting,
-since there is no sorting step involved (which is a <tt class="docutils literal"><span class="pre">N</span> <span class="pre">log(N)</span></tt>
-time complexity algorithm). Instead, the order is maintained by using
-sorted sets as indices rather than sets.</p>
-</div>
-</div>
 </div>
 </div>
 
@@ -298,22 +205,16 @@ sorted sets as indices rather than sets.</p>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Tutorial 1</a><ul>
-<li><a class="reference internal" href="#creating-models">Creating Models</a><ul>
-<li><a class="reference internal" href="#an-application">An application</a></li>
+<li><a class="reference internal" href="#">Using Models</a><ul>
+<li><a class="reference internal" href="#writing-models">Writing Models</a></li>
+<li><a class="reference internal" href="#an-application">An application</a><ul>
+<li><a class="reference internal" href="#the-metaclass">The metaclass</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#registering-models">Registering Models</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#using-models">Using Models</a><ul>
+<li><a class="reference internal" href="#one-to-many-relationships">One-to-many relationships</a></li>
+<li><a class="reference internal" href="#id1">Using Models</a><ul>
 <li><a class="reference internal" href="#creating-objects">Creating objects</a></li>
-<li><a class="reference internal" href="#retrieving-objects">Retrieving objects</a></li>
-<li><a class="reference internal" href="#retrieving-all-objects">Retrieving all objects</a></li>
-<li><a class="reference internal" href="#retrieving-filtered-objects">Retrieving filtered objects</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#sorting">Sorting</a><ul>
-<li><a class="reference internal" href="#explicit-sorting">Explicit Sorting</a></li>
-<li><a class="reference internal" href="#implicit-sorting">Implicit Sorting</a></li>
 </ul>
 </li>
 </ul>
@@ -324,8 +225,8 @@ sorted sets as indices rather than sets.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Tutorials &amp; Examples</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="tutorial2.html"
-                        title="next chapter">Tutorial 2</a></p>
+  <p class="topless"><a href="query.html"
+                        title="next chapter">Query your Models</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/examples/tutorial.txt"
@@ -358,7 +259,7 @@ sorted sets as indices rather than sets.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tutorial2.html" title="Tutorial 2"
+          <a href="query.html" title="Query your Models"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"

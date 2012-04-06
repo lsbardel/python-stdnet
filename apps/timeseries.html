@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Timeseries Models &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Column Time Series &mdash; python stdnet v0.7.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
     <link rel="up" title="Applications" href="index.html" />
-    <link rel="next" title="Grid Computing" href="grid.html" />
+    <link rel="next" title="Internals and Utilities" href="../utility.html" />
     <link rel="prev" title="A Search Engine for Stdnet Models" href="searchengine.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="grid.html" title="Grid Computing"
+          <a href="../utility.html" title="Internals and Utilities"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
@@ -52,52 +52,105 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.apps.timeseries"><span id="apps-timeserie"></span></span><div class="section" id="timeseries-models">
-<h1>Timeseries Models<a class="headerlink" href="#timeseries-models" title="Permalink to this headline">¶</a></h1>
-<p>This is an experimental module which requires <a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>stdnet redis branch</em></a>.
-To run the <tt class="docutils literal"><span class="pre">timeseries</span></tt> tests:</p>
-<div class="highlight-python"><pre>python runtests.py timeseries -i ts</pre>
+  <div class="section" id="module-stdnet.apps.columnts">
+<span id="column-time-series"></span><span id="apps-timeserie"></span><h1>Column Time Series<a class="headerlink" href="#module-stdnet.apps.columnts" title="Permalink to this headline">¶</a></h1>
+<p>A timeseries application where each field is stored in a redis string.
+This data-structure is composed by several redis structure:</p>
+<ul class="simple">
+<li>A Timeseries for holding times in an ordered fashion.</li>
+<li>A redis <em>set</em> for holding <em>fields</em> names.</li>
+<li>A redis string for each <em>field</em> in the timeseries.</li>
+</ul>
+<p>The data for a given <em>field string</em> is stored in a sequence of 9-bytes strings
+with the initial byte (<tt class="docutils literal"><span class="pre">byte0</span></tt>) indicating the type of data:</p>
+<div class="highlight-python"><pre>&lt;byte0&gt;&lt;byte1,...,byte8&gt;</pre>
 </div>
-<div class="section" id="timeseries-base-model">
-<h2>Timeseries base model<a class="headerlink" href="#timeseries-base-model" title="Permalink to this headline">¶</a></h2>
+<p>The API is straightforward:</p>
+<div class="highlight-python"><pre>from datetime date
+from stdnet.apps.columnts ColumnTS
+
+ts = ColumnTS(id = 'test')
+
+ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})</pre>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="stdnet.apps.timeseries.models.TimeSeriesBase">
-<em class="property">class </em><tt class="descclassname">stdnet.apps.timeseries.models.</tt><tt class="descname">TimeSeriesBase</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.timeseries.models.TimeSeriesBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Timeseries base model class</p>
+<dt id="stdnet.apps.columnts.ColumnTS">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTS</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.front">
+<tt class="descname">front</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.front" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the front pair of the structure</p>
+</dd></dl>
+
 <dl class="method">
-<dt id="stdnet.apps.timeseries.models.TimeSeriesBase.size">
-<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.timeseries.models.TimeSeriesBase.size" title="Permalink to this definition">¶</a></dt>
-<dd><p>number of dates in timeseries</p>
+<dt id="stdnet.apps.columnts.ColumnTS.back">
+<tt class="descname">back</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.back" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the back pair of the structure</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.apps.timeseries.models.TimeSeriesBase.intervals">
-<tt class="descname">intervals</tt><big>(</big><em>startdate</em>, <em>enddate</em>, <em>parseinterval=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.timeseries.models.TimeSeriesBase.intervals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a <tt class="docutils literal"><span class="pre">startdate</span></tt> and an <tt class="docutils literal"><span class="pre">enddate</span></tt> dates, evaluate the date intervals
-from which data is not available. It return a list of two-dimensional tuples
-containing start and end date for the interval. The list could countain 0,1 or 2
-tuples.</p>
+<dt id="stdnet.apps.columnts.ColumnTS.fields">
+<tt class="descname">fields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a tuple of ordered fields for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.numfields">
+<tt class="descname">numfields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.numfields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of fields</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.merge">
+<tt class="descname">merge</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> with several other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>series</strong> &#8211; <p>a tuple of two or three elements tuple.
+For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">ts1</span><span class="p">),(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">ts2</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="timeseries-model">
-<h2>Timeseries model<a class="headerlink" href="#timeseries-model" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="stdnet.apps.timeseries.models.TimeSeries">
-<em class="property">class </em><tt class="descclassname">stdnet.apps.timeseries.models.</tt><tt class="descname">TimeSeries</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.timeseries.models.TimeSeries" title="Permalink to this definition">¶</a></dt>
-<dd><p>Timeseries model</p>
+</li>
+<li><strong>kwargs</strong> &#8211; key-valued parameters for the merge.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a new <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a></p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
+<dl class="classmethod">
+<dt id="stdnet.apps.columnts.ColumnTS.merged_series">
+<em class="property">classmethod </em><tt class="descname">merged_series</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merged_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge series into one timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters series:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">a list of tuples where the nth element is a tuple
+of the form:</p>
+<div class="last highlight-python"><pre>(wight_n,ts_n1,ts_n2,..,ts_nMn)</pre>
 </div>
-<div class="section" id="timeseries-model-field">
-<h2>Timeseries Model Field<a class="headerlink" href="#timeseries-model-field" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="stdnet.apps.timeseries.models.TimeSeriesField">
-<em class="property">class </em><tt class="descclassname">stdnet.apps.timeseries.models.</tt><tt class="descname">TimeSeriesField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>required=False</em>, <em>related_name=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.timeseries.models.TimeSeriesField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A timeseries field based on TS data structure in Redis.
-To be used with subclasses of <tt class="xref py py-class docutils literal"><span class="pre">TimeSeriesBase</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The result will be calculated using the formula:</p>
+<div class="highlight-python"><pre>ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
+     ...</pre>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -115,10 +168,8 @@ To be used with subclasses of <tt class="xref py py-class docutils literal"><spa
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Timeseries Models</a><ul>
-<li><a class="reference internal" href="#timeseries-base-model">Timeseries base model</a></li>
-<li><a class="reference internal" href="#timeseries-model">Timeseries model</a></li>
-<li><a class="reference internal" href="#timeseries-model-field">Timeseries Model Field</a></li>
+<li><a class="reference internal" href="#">Column Time Series</a><ul>
+<li><a class="reference internal" href="#api">API</a></li>
 </ul>
 </li>
 </ul>
@@ -127,8 +178,8 @@ To be used with subclasses of <tt class="xref py py-class docutils literal"><spa
   <p class="topless"><a href="searchengine.html"
                         title="previous chapter">A Search Engine for Stdnet Models</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="grid.html"
-                        title="next chapter">Grid Computing</a></p>
+  <p class="topless"><a href="../utility.html"
+                        title="next chapter">Internals and Utilities</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/apps/timeseries.txt"
@@ -161,7 +212,7 @@ To be used with subclasses of <tt class="xref py py-class docutils literal"><spa
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="grid.html" title="Grid Computing"
+          <a href="../utility.html" title="Internals and Utilities"
              >next</a> |</li>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"

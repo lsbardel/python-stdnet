@@ -48,32 +48,33 @@
             
   <div class="section" id="python-stdnet">
 <span id="stdnet-doc"></span><h1>Python Stdnet<a class="headerlink" href="#python-stdnet" title="Permalink to this headline">¶</a></h1>
-<p class="rubric">A networked data structures manager design to to work with <a class="reference external" href="http://redis.io/">Redis</a>
+<p class="rubric">A networked data structures manager design to work with <a class="reference external" href="http://redis.io/">Redis</a>
 data-store, but implemented so that other storage systems can be supported
 in the future.</p>
 <p>It is shipped with an object relational mapper which greatly facilitates the
 management and retrieval of large data-sets.
-It includes a modified version of <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> compatible with <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt>.
-There are no dependencies
-and the library requires <tt class="docutils literal"><span class="pre">python</span> <span class="pre">2.6</span></tt> or above, including <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt>.
-There are over 300 tests with a coverage of about 80%.</p>
+It includes a stand-alone, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt> compatible,
+<a class="reference internal" href="backends/redis.html#redis-client"><em>redis client</em></a> which was originally forked from <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>.
+There are no dependencies, it requires <tt class="docutils literal"><span class="pre">python</span> <span class="pre">2.6</span></tt> up to <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3.3</span></tt> and
+there are over 500 tests with a coverage of about 90%.</p>
 <p><strong>The library is stable, used in production and continuously maintained</strong>.</p>
 <p><strong>Dependencies</strong>: None</p>
-<p><strong>Optional Dependencies</strong>: <a class="reference external" href="http://cython.org/">cython</a> for the <a class="reference internal" href="backends/backends.html#redis-parser"><em>Redis C parser</em></a>.</p>
+<p><strong>Optional Dependencies</strong>: <a class="reference external" href="http://cython.org/">cython</a> for the <a class="reference internal" href="backends/redis.html#redis-parser"><em>Redis C parser</em></a>.</p>
 <div class="section" id="first-steps">
 <h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
 <p><strong>From scratch:</strong>
 <a class="reference internal" href="overview.html#intro-overview"><em>Overview and Installation</em></a></p>
 <p><strong>Tutorials:</strong>
-<a class="reference internal" href="examples/tutorial.html#tutorial"><em>Tutorial 1</em></a> |
-<a class="reference internal" href="examples/tutorial2.html#tutorial2"><em>Tutorial 2</em></a></p>
-<p><strong>API:</strong>
-<a class="reference internal" href="backends/structures.html#structures-backend"><em>Structures</em></a> |
-<a class="reference internal" href="model/models.html#model-model"><em>Model API</em></a> |
-<a class="reference internal" href="model/fields.html#model-field"><em>Fields API</em></a></p>
-<p><strong>Examples:</strong>
-<a class="reference internal" href="examples/timeseries.html#timeseries-example"><em>Timeseries</em></a> |
+<a class="reference internal" href="examples/tutorial.html#tutorial"><em>Using Models</em></a> |
+<a class="reference internal" href="examples/query.html#tutorial-query"><em>Query your data</em></a> |
+<a class="reference internal" href="examples/sorting.html#sorting"><em>Sorting</em></a> |
+<a class="reference internal" href="examples/search.html#tutorial-search"><em>Searching</em></a> |
 <a class="reference internal" href="examples/twitter.html#twitter-example"><em>Twitter Clone</em></a></p>
+<p><strong>API:</strong>
+<a class="reference internal" href="model/models.html#model-structures"><em>Structures API</em></a> |
+<a class="reference internal" href="model/models.html#model-model"><em>Model API</em></a> |
+<a class="reference internal" href="model/fields.html#model-field"><em>Fields API</em></a> |
+<a class="reference internal" href="backends/redis.html#redis-server"><em>Redis Client</em></a></p>
 <p><strong>Miscellaneous:</strong>
 <a class="reference internal" href="overview.html#contributing"><em>Contributing</em></a> |
 <a class="reference internal" href="overview.html#runningtests"><em>Tests</em></a> |
@@ -85,10 +86,10 @@ There are over 300 tests with a coverage of about 80%.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="model/index.html">Object Relational Mapper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="backends/index.html">Backend Server and Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apps/index.html">Applications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/index.html">Tutorials &amp; Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/index.html">Object Relational Mapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends/index.html">Backend Data Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps/index.html">Applications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Internals and Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stdnetredis.html">Stdnet Redis branch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -100,7 +101,6 @@ There are over 300 tests with a coverage of about 80%.</p>
 <ul class="simple">
 <li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
 <li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
-<li><a class="reference internal" href="model/search.html#search"><em>Search</em></a></li>
 </ul>
 </div>
 </div>
@@ -116,9 +116,9 @@ There are over 300 tests with a coverage of about 80%.</p>
 </a>
 </p><h3>Python Stdnet</h3>
 <p>
-  Stdnet is a Python 3 compatible object relational mapper for the 
-  Redis datastructure server.
-  It is designed to be fast with an API similar to django.
+  Stdnet is a Python 3 compatible data manager for the 
+  Redis data-structure server.
+  It is designed to be fast, memory efficient and highly customizable.
 </p>
 <h3>Useful Links</h3>
 <ul>

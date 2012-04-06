@@ -97,14 +97,11 @@ model instance.</p>
 <p>Stdnet is shipped with a redis parser written in python and a faster version
 written in C. In order to use the C parser you need to have installed
 <a class="reference external" href="http://cython.org/">cython</a>.
-The C parser wraps the protocol parsing code in <a class="reference external" href="https://github.com/antirez/hiredis">hiredis</a> and it is available
+The C parser wraps the priotocol parsing code in <a class="reference external" href="https://github.com/antirez/hiredis">hiredis</a> and it is available
 for both windows and linux. To compile the exenstions:</p>
 <div class="highlight-python"><pre>python setup.py build_ext</pre>
 </div>
-<p>For windows you need to install <a class="reference external" href="http://www.mingw.org/">mingw</a> and type:</p>
-<div class="highlight-python"><pre>python setup.py build_ext -c mingw32</pre>
-</div>
-<p>If extensions are installed, the C parser will be the default parser
+<p>If extensions are is installed the C parser will be the default parser
 unless you override the <a class="reference internal" href="../utility.html#settings"><em>settings.REDIS_PARSER</em></a> value
 and set it to <tt class="docutils literal"><span class="pre">python</span></tt> (you would want to do that mainly
 for benchmarking reasons).</p>
@@ -123,7 +120,7 @@ for benchmarking reasons).</p>
 <h3>Backend data server<a class="headerlink" href="#backend-data-server" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.BackendDataServer">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>pickler=None</em>, <em>charset='utf-8'</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>address</em>, <em>pickler=None</em>, <em>charset='utf-8'</em>, <em>connection_string=''</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generic interface for a backend database:</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -164,25 +161,6 @@ for benchmarking reasons).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.save_object">
-<tt class="descname">save_object</tt><big>(</big><em>obj</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.save_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save or updated an instance of a model to the back-end database:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obj</strong> &#8211; instance of <a class="reference internal" href="../model/models.html#model-model"><em>StdModel</em></a>
-to add/update to the database</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Parameer transaction:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">optional transaction instance.</td>
-</tr>
-</tbody>
-</table>
-<p>Raises <a class="reference internal" href="../utility.html#stdnet.FieldValueError" title="stdnet.FieldValueError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldValueError</span></tt></a> if the instance is not valid.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="stdnet.BackendDataServer.delete_object">
 <tt class="descname">delete_object</tt><big>(</big><em>obj</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.delete_object" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete an object from the data server and clean up indices.
@@ -197,6 +175,25 @@ Called to clear a model instance.</p>
 will be appended to it.</li>
 <li><strong>multi_field</strong> &#8211; if <tt class="xref docutils literal"><span class="pre">True</span></tt> the multifield ids (if any)
 will be removed. Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.BackendDataServer.make_objects">
+<tt class="descname">make_objects</tt><big>(</big><em>meta</em>, <em>ids</em>, <em>data=None</em>, <em>loadedfields=None</em>, <em>loadedfields_attributes=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.make_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instances with data
+from database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>meta</strong> &#8211; instance of model <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.base.Metaclass</span></tt>.</li>
+<li><strong>ids</strong> &#8211; Iterator over ids.</li>
 </ul>
 </td>
 </tr>

@@ -15,8 +15,7 @@ the equivalent of columns in a traditional relational databases.
     in a traditional relational database. Stdnet fields can be added, removed or
     changed without requiring any time consuming database migration!
     
-    This is an added bonus which can be of high importance when prototyping but
-    it can lead to loss of data if a user abuses it.
+    This is an added bonus which can be of high importance when prototyping.
  
 
 .. _fieldbaseclasses:
@@ -33,7 +32,7 @@ of methods.
 Field
 ~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.Field
+.. autoclass:: Field
    :members:
    :member-order: bysource
 
@@ -42,15 +41,15 @@ Field
 AtomField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.AtomField
+.. autoclass:: AtomField
    :members:
    :member-order: bysource
 
 
-MultiField
+StructureField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.MultiField
+.. autoclass:: StructureField
    :members:
    :member-order: bysource
    
@@ -60,14 +59,14 @@ MultiField
 Atom Fields
 ===========================
 
-Atom Fields derived from :class:`stdnet.orm.AtomField` and, as the name says,
+Atom Fields derived from :class:`AtomField` and, as the name says,
 they represent the simplest data in a model. Their representation in python,
 is one of ``bytes``, ``strings``, ``numbers`` or ``dates``.
 
 IntegerField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.IntegerField
+.. autoclass:: IntegerField
    :members:
    :member-order: bysource
 
@@ -75,7 +74,7 @@ IntegerField
 BooleanField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.BooleanField
+.. autoclass:: BooleanField
    :members:
    :member-order: bysource
 
@@ -83,7 +82,7 @@ BooleanField
 AutoField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.AutoField
+.. autoclass:: AutoField
    :members:
    :member-order: bysource
 
@@ -91,7 +90,7 @@ AutoField
 FloatField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.FloatField
+.. autoclass:: FloatField
    :members:
    :member-order: bysource   
 
@@ -99,7 +98,7 @@ FloatField
 SymbolField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.SymbolField
+.. autoclass:: SymbolField
    :members:
    :member-order: bysource
    
@@ -107,7 +106,7 @@ SymbolField
 CharField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.CharField
+.. autoclass:: CharField
    :members:
    :member-order: bysource
  
@@ -115,7 +114,7 @@ CharField
 ByteField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ByteField
+.. autoclass:: ByteField
    :members:
    :member-order: bysource
  
@@ -125,7 +124,7 @@ ByteField
 DateField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.DateField
+.. autoclass:: DateField
    :members:
    :member-order: bysource
    
@@ -135,30 +134,27 @@ DateField
 DateTimeField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.DateTimeField
+.. autoclass:: DateTimeField
    :members:
    :member-order: bysource
    
+   
+CompositeIdField
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: CompositeIdField
+   :members:
+   :member-order: bysource
 
 .. _objectfields:
    
 Object Type Fields
-==========================
-
-.. _foreignkey:
-   
-ForeignKey
-~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: stdnet.orm.ForeignKey
-   :members:
-   :member-order: bysource
-   
+==========================   
 
 JSONField
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.JSONField
+.. autoclass:: JSONField
    :members:
    :member-order: bysource
    
@@ -166,7 +162,7 @@ JSONField
 PickleObjectField
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.PickleObjectField
+.. autoclass:: PickleObjectField
    :members:
    :member-order: bysource
    
@@ -174,10 +170,35 @@ PickleObjectField
 ModelField
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ModelField
+.. autoclass:: ModelField
    :members:
    :member-order: bysource
    
+
+.. _relatedfields:
+   
+Related Fields
+==========================
+
+.. _foreignkey:
+   
+ForeignKey
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ForeignKey
+   :members:
+   :member-order: bysource
+   
+   
+.. _manytomany:
+   
+ManyToManyField
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ManyToManyField
+   :members:
+   :member-order: bysource
+
    
 .. _model-field-structure:
 
@@ -187,13 +208,13 @@ Data-structure Fields
 These fields are remote data-structures such as list, sets and hash tables.
 They can be bound to models so that
 many-to-many objects relationship can be established. All the data-structure
-fields derives from :class:`stdnet.orm.MultiField`.
+fields derives from :class:`StructureField`.
 
 
 ListField
 ~~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.ListField
+.. autoclass:: ListField
    :members:
    :member-order: bysource
    
@@ -201,7 +222,7 @@ ListField
 SetField
 ~~~~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.SetField
+.. autoclass:: SetField
    :members:
    :member-order: bysource
    
@@ -209,16 +230,21 @@ SetField
 HashField
 ~~~~~~~~~~
 
-.. autoclass:: stdnet.orm.HashField
+.. autoclass:: HashField
    :members:
    :member-order: bysource
 
 
-ManyToManyField
-~~~~~~~~~~~~~~~~~~~~~
+.. _model-field-descriptors:
 
-.. autoclass:: stdnet.orm.ManyToManyField
+Descriptors
+===================
+
+.. autoclass:: LazyForeignKey
    :members:
-   :member-order: bysource
-
+   :member-order: bysource   
    
+   
+.. autoclass:: StructureFieldProxy
+   :members:
+   :member-order: bysource

@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" />
     <link rel="next" title="Stdnet Redis branch" href="stdnetredis.html" />
-    <link rel="prev" title="Twitter Clone Example" href="examples/twitter.html" /> 
+    <link rel="prev" title="Column Time Series" href="apps/timeseries.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +39,7 @@
           <a href="stdnetredis.html" title="Stdnet Redis branch"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="examples/twitter.html" title="Twitter Clone Example"
+          <a href="apps/timeseries.html" title="Column Time Series"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
@@ -64,7 +64,7 @@ overriding them.</p>
 <dl class="attribute">
 <dt id="stdnet.conf.settings.DEFAULT_BACKEND">
 <tt class="descclassname">settings.</tt><tt class="descname">DEFAULT_BACKEND</tt><a class="headerlink" href="#stdnet.conf.settings.DEFAULT_BACKEND" title="Permalink to this definition">¶</a></dt>
-<dd><p>the default <a class="reference internal" href="backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> connection string. Check
+<dd><p>the default <a class="reference internal" href="backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> connection string. Check
 the <a class="reference internal" href="model/models.html#register-model"><em>registering models</em></a> documentation.</p>
 <p>Default <tt class="docutils literal"><span class="pre">&quot;redis://127.0.0.1:6379/?db=7&quot;</span></tt>.</p>
 </dd></dl>
@@ -77,12 +77,13 @@ the <a class="reference internal" href="model/models.html#register-model"><em>re
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.conf.settings.REDIS_PARSER">
-<tt class="descclassname">settings.</tt><tt class="descname">REDIS_PARSER</tt><a class="headerlink" href="#stdnet.conf.settings.REDIS_PARSER" title="Permalink to this definition">¶</a></dt>
-<dd><p>The redis parser to choose. By default it is set to <tt class="xref docutils literal"><span class="pre">None</span></tt> which causes
+<dt id="stdnet.conf.settings.REDIS_PY_PARSER">
+<tt class="descclassname">settings.</tt><tt class="descname">REDIS_PY_PARSER</tt><a class="headerlink" href="#stdnet.conf.settings.REDIS_PY_PARSER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set stdnet to use the internal python parser for redis.
+By default it is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> which causes
 the library to choose the best possible available. More information
-is contained in the <a class="reference internal" href="backends/backends.html#redis-parser"><em>redis parser</em></a> documentation.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+is contained in the <a class="reference internal" href="backends/redis.html#redis-parser"><em>redis parser</em></a> documentation.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -90,6 +91,14 @@ is contained in the <a class="reference internal" href="backends/backends.html#r
 <tt class="descclassname">settings.</tt><tt class="descname">MAX_CONNECTIONS</tt><a class="headerlink" href="#stdnet.conf.settings.MAX_CONNECTIONS" title="Permalink to this definition">¶</a></dt>
 <dd><p>The maximim number of connections to have opened at the same time.</p>
 <p>Default <tt class="docutils literal"><span class="pre">unlimited</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.conf.settings.RedisConnectionClass">
+<tt class="descclassname">settings.</tt><tt class="descname">RedisConnectionClass</tt><a class="headerlink" href="#stdnet.conf.settings.RedisConnectionClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Redis Connection class. If not set the
+<tt class="xref py py-class docutils literal"><span class="pre">stdnet.lib.connection.Connection</span></tt> will be used.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt></p>
 </dd></dl>
 
 <p>To change settings:</p>
@@ -105,10 +114,9 @@ is contained in the <a class="reference internal" href="backends/backends.html#r
 <h3>Instance form UUID<a class="headerlink" href="#instance-form-uuid" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="stdnet.orm.from_uuid">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">from_uuid</tt><big>(</big><em>uuid</em><big>)</big><a class="headerlink" href="#stdnet.orm.from_uuid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieve an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
-from an universal unique identifier <em>uuid</em>. If the <em>uuid</em> does not match any
-instance an exception will raise.</p>
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">from_uuid</tt><big>(</big><em>uuid</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.from_uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a <a class="reference internal" href="model/models.html#stdnet.orm.Model" title="stdnet.orm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> from its universally unique identifier
+<em>uuid</em>. If the <em>uuid</em> does not match any instance an exception will raise.</p>
 </dd></dl>
 
 </div>
@@ -150,7 +158,7 @@ where models are defined.</td>
 It removes all keys associated with models.</p>
 </dd></dl>
 
-<span class="target" id="module-stdnet.utils"></span></div>
+</div>
 </div>
 <div class="section" id="serialization">
 <span id="serialize-models"></span><h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
@@ -160,10 +168,10 @@ different formats.</p>
 <h3>Get serializer<a class="headerlink" href="#get-serializer" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="stdnet.orm.get_serializer">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">get_serializer</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.orm.get_serializer" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">get_serializer</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.get_serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a serializer register as <em>name</em>. If the serializer is not
 available an exception will raise. A common use usage pattern:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&#39;json&#39;</span><span class="p">)</span>
 <span class="n">s</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
 </pre></div>
@@ -197,21 +205,35 @@ class or a callable.</li>
 <h3>Serializer<a class="headerlink" href="#serializer" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.orm.Serializer">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Serializer</tt><a class="headerlink" href="#stdnet.orm.Serializer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Serializer</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The stdnet serializer base class.</p>
+<dl class="method">
+<dt id="stdnet.orm.Serializer.serialize">
+<tt class="descname">serialize</tt><big>(</big><em>qs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize a <a class="reference internal" href="model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> <em>qs</em>.</p>
 </dd></dl>
 
-</div>
+<dl class="method">
+<dt id="stdnet.orm.Serializer.load">
+<tt class="descname">load</tt><big>(</big><em>stream</em>, <em>model=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a stream of data into the database.</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-stdnet.utils"></span></div>
 <div class="section" id="json-utilities">
 <h3>JSON utilities<a class="headerlink" href="#json-utilities" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.utils.jsontools.JSONDateDecimalEncoder">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.utils.JSONDateDecimalEncoder">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON encoder used by stdnet. It provides
-JSON serialization for three additional object, <cite>datetime.date</cite>,
-<cite>datetime.datetime</cite> and <cite>decimal.Decimal</cite> from the standard library.
-In addition if <a class="reference external" href="http://numpy.scipy.org/">numpy</a> is installed, it also provides serialization
-of the <tt class="docutils literal"><span class="pre">ndarray</span></tt> into nested lists using the <tt class="docutils literal"><span class="pre">aslist</span></tt> function.</p>
+JSON serialization for four additional classes:</p>
+<ul class="simple">
+<li><cite>datetime.date</cite> as a <tt class="docutils literal"><span class="pre">{'__date__':</span> <span class="pre">timestamp}</span></tt> dictionary</li>
+<li><cite>datetime.datetime</cite> as a <tt class="docutils literal"><span class="pre">{'__datetime__':</span> <span class="pre">timestamp}</span></tt> dictionary</li>
+<li><cite>decimal.Decimal</cite> as a <tt class="docutils literal"><span class="pre">{'__decimal__':</span> <span class="pre">number}</span></tt> dictionary</li>
+</ul>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">It is the default encoder for <a class="reference internal" href="model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a></p>
@@ -219,10 +241,10 @@ of the <tt class="docutils literal"><span class="pre">ndarray</span></tt> into n
 </dd></dl>
 
 <dl class="class">
-<dt id="stdnet.utils.jsontools.date_decimal_hook">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">date_decimal_hook</tt><a class="headerlink" href="#stdnet.utils.jsontools.date_decimal_hook" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.utils.date_decimal_hook">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">date_decimal_hook</tt><a class="headerlink" href="#stdnet.utils.date_decimal_hook" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON decoder hook. It is the inverse of
-<a class="reference internal" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="stdnet.utils.jsontools.JSONDateDecimalEncoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt></a>.</p>
+<tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt>.</p>
 </dd></dl>
 
 <span class="target" id="module-stdnet.utils.encoders"><span id="encoders"></span></span></div>
@@ -233,8 +255,14 @@ of the <tt class="docutils literal"><span class="pre">ndarray</span></tt> into n
 <dt id="stdnet.utils.encoders.Encoder">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Encoder</tt><a class="headerlink" href="#stdnet.utils.encoders.Encoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Virtaul class for encoding data in
-<a class="reference internal" href="backends/structures.html#structures-backend"><em>remote strcutures</em></a>. It exposes two methods
+<a class="reference internal" href="model/models.html#model-structures"><em>remote strcutures</em></a>. It exposes two methods
 for serializing and loading data to and from the data server.</p>
+<dl class="attribute">
+<dt id="stdnet.utils.encoders.Encoder.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.Encoder.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of data once loaded into python</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="stdnet.utils.encoders.Encoder.dumps">
 <tt class="descname">dumps</tt><big>(</big><em>x</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Encoder.dumps" title="Permalink to this definition">¶</a></dt>
@@ -264,6 +292,12 @@ for serializing and loading data to and from the data server.</p>
 <dt id="stdnet.utils.encoders.Default">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Default</tt><big>(</big><em>charset='utf-8'</em>, <em>encoding_errors='strict'</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Default" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default unicode encoder</p>
+<dl class="attribute">
+<dt id="stdnet.utils.encoders.Default.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.Default.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">unicode</span></tt></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -273,6 +307,12 @@ for serializing and loading data to and from the data server.</p>
 <dt id="stdnet.utils.encoders.Bytes">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">Bytes</tt><big>(</big><em>charset='utf-8'</em>, <em>encoding_errors='strict'</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Bytes" title="Permalink to this definition">¶</a></dt>
 <dd><p>The binary unicode encoder</p>
+<dl class="attribute">
+<dt id="stdnet.utils.encoders.Bytes.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.Bytes.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -290,8 +330,15 @@ remote data structures.</p>
 <h3>Python Pickle<a class="headerlink" href="#python-pickle" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.utils.encoders.PythonPickle">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">PythonPickle</tt><a class="headerlink" href="#stdnet.utils.encoders.PythonPickle" title="Permalink to this definition">¶</a></dt>
-<dd><p>A safe pickle serializer.</p>
+<em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">PythonPickle</tt><big>(</big><em>protocol=2</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.PythonPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>A safe pickle serializer. By default we use protocol 2 for compatibility
+between python 2 and python 3.</p>
+<dl class="attribute">
+<dt id="stdnet.utils.encoders.PythonPickle.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.PythonPickle.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -301,6 +348,12 @@ remote data structures.</p>
 <dt id="stdnet.utils.encoders.DateTimeConverter">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">DateTimeConverter</tt><a class="headerlink" href="#stdnet.utils.encoders.DateTimeConverter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert to and from datetime.datetime and unix timestamps</p>
+<dl class="attribute">
+<dt id="stdnet.utils.encoders.DateTimeConverter.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.DateTimeConverter.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -309,10 +362,58 @@ remote data structures.</p>
 <dl class="class">
 <dt id="stdnet.utils.encoders.DateConverter">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.encoders.</tt><tt class="descname">DateConverter</tt><a class="headerlink" href="#stdnet.utils.encoders.DateConverter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="stdnet.utils.encoders.DateConverter.type">
+<tt class="descname">type</tt><a class="headerlink" href="#stdnet.utils.encoders.DateConverter.type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert to and from datetime.date and unix timestamps</p>
 </dd></dl>
 
+</dd></dl>
+
+<span class="target" id="module-stdnet"></span></div>
 </div>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stdnet.StdNetException">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">StdNetException</tt><a class="headerlink" href="#stdnet.StdNetException" title="Permalink to this definition">¶</a></dt>
+<dd><p>A general StdNet exception</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.ImproperlyConfigured">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised when stdnet is somehow improperly configured</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.ModelNotRegistered">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
+registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> for details.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.QuerySetError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.QuerySetError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised during a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt>
+evaluation.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.FieldError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldError</tt><a class="headerlink" href="#stdnet.FieldError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic Field error</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="stdnet.FieldValueError">
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.FieldValueError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.FieldError" title="stdnet.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldError</span></tt></a> raised when passing a wrong
+value to a field. This exception is cought during the model instance
+validation algorithm in <tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.base.Metaclass.is_valid()</span></tt>.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="miscellaneous">
 <h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h2>
@@ -324,8 +425,7 @@ remote data structures.</p>
 <dd><p>Utility function for populating lists with random data.
 Useful for populating database with data for fuzzy testing.
 Supported data-types</p>
-<blockquote>
-<div><ul>
+<ul>
 <li><dl class="first docutils">
 <dt><em>string</em></dt>
 <dd><p class="first">For example:</p>
@@ -375,58 +475,53 @@ between <em>start</em> and <em>end</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">populate</span><span class="p">(</span><span class="s">&#39;choice&#39;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">choice_from</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;pippo&#39;</span><span class="p">,</span><span class="s">&#39;pluto&#39;</span><span class="p">,</span><span class="s">&#39;blob&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p class="last">create a 200 elements list with random elements from <em>choice_from</em></p>
+<p class="last">create a 200 elements list with random elements from <em>choice_from</em>.</p>
 </dd>
 </dl>
 </li>
 </ul>
-</div></blockquote>
+</dd></dl>
+
+<span class="target" id="module-stdnet.test"></span></div>
+<div class="section" id="testcase">
+<h3>TestCase<a class="headerlink" href="#testcase" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.test.TestCase">
+<em class="property">class </em><tt class="descclassname">stdnet.test.</tt><tt class="descname">TestCase</tt><big>(</big><em>methodName='runTest'</em><big>)</big><a class="headerlink" href="#stdnet.test.TestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">unittest.TestCase</span></tt> subclass for testing stdnet. It contains
+some utility functions for tesing in a parallel test suite.</p>
+<dl class="attribute">
+<dt id="stdnet.test.TestCase.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.test.TestCase.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> for the <a class="reference internal" href="#stdnet.test.TestCase" title="stdnet.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a>.
+It is different for each instance and it is created just before
+<tt class="xref py py-meth docutils literal"><span class="pre">setUp()</span></tt> method is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.test.TestCase.backend_params">
+<tt class="descname">backend_params</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.test.TestCase.backend_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional backend parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.test.TestCase.session">
+<tt class="descname">session</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.test.TestCase.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <a class="reference internal" href="model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Session</span></tt></a> bind to the
+<a class="reference internal" href="#stdnet.test.TestCase.backend" title="stdnet.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">TestCase.backend</span></tt></a> attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.test.TestCase.register">
+<tt class="descname">register</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.test.TestCase.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility for registering the managers to the current backend.
+This should be used with care in parallel testing. All registered models
+will be unregistered after the <tt class="xref py py-meth docutils literal"><span class="pre">tearDown()</span></tt> method.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
-</div>
-<div class="section" id="exceptions">
-<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="stdnet.StdNetException">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">StdNetException</tt><a class="headerlink" href="#stdnet.StdNetException" title="Permalink to this definition">¶</a></dt>
-<dd><p>A general StdNet exception</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="stdnet.ImproperlyConfigured">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised when stdnet is somehow improperly configured</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="stdnet.ModelNotRegistered">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
-registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> for details.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="stdnet.QuerySetError">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.QuerySetError" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised during a <a class="reference internal" href="model/models.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a>
-evaluation.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="stdnet.FieldError">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldError</tt><a class="headerlink" href="#stdnet.FieldError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic Field error</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="stdnet.FieldValueError">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.FieldValueError" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.FieldError" title="stdnet.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldError</span></tt></a> raised when passing a wrong
-value to a field. This exception is cought during the model instance
-validation algorithm in <a class="reference internal" href="model/models.html#stdnet.orm.base.Metaclass.is_valid" title="stdnet.orm.base.Metaclass.is_valid"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.base.Metaclass.is_valid()</span></tt></a>.</p>
-</dd></dl>
-
 </div>
 </div>
 
@@ -467,18 +562,19 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
 <li><a class="reference internal" href="#dateconverter">DateConverter</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
 <li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
 <li><a class="reference internal" href="#populate">Populate</a></li>
+<li><a class="reference internal" href="#testcase">TestCase</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="examples/twitter.html"
-                        title="previous chapter">Twitter Clone Example</a></p>
+  <p class="topless"><a href="apps/timeseries.html"
+                        title="previous chapter">Column Time Series</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="stdnetredis.html"
                         title="next chapter">Stdnet Redis branch</a></p>
@@ -517,7 +613,7 @@ validation algorithm in <a class="reference internal" href="model/models.html#st
           <a href="stdnetredis.html" title="Stdnet Redis branch"
              >next</a> |</li>
         <li class="right" >
-          <a href="examples/twitter.html" title="Twitter Clone Example"
+          <a href="apps/timeseries.html" title="Column Time Series"
              >previous</a> |</li>
         <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>

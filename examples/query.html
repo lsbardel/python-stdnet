@@ -1,0 +1,216 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Query your Models &mdash; python stdnet v0.7.0 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Sorting and Ordering" href="sorting.html" />
+    <link rel="prev" title="Using Models" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sorting.html" title="Sorting and Ordering"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Using Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.orm"><span id="tutorial-query"></span></span><div class="section" id="query-your-models">
+<h1>Query your Models<a class="headerlink" href="#query-your-models" title="Permalink to this headline">¶</a></h1>
+<p>The most powerful feature of stdnet is a comprehensive API for querying your
+data in an efficient and elegant way.
+To retrieve objects from your data server, you construct a
+<a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via a <a class="reference internal" href="../model/session.html#stdnet.orm.Manager" title="stdnet.orm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> on your model class
+or via a <a class="reference internal" href="../model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+<p>A <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> represents a collection of objects from your database.
+It can have zero, one or many filters criteria that narrow down the collection
+based on given parameters.</p>
+<div class="section" id="retrieving-all-objects">
+<h2>Retrieving all objects<a class="headerlink" href="#retrieving-all-objects" title="Permalink to this headline">¶</a></h2>
+<p>The simplest way to retrieve objects from a table is to get all of them. To do this,
+use the <a class="reference internal" href="../model/session.html#stdnet.orm.Manager.query" title="stdnet.orm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Manager.query()</span></tt></a> method on a Manager:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span>
+<span class="go">Query</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">funds</span><span class="p">)</span>
+<span class="go">[Fund: Markowitz]</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> are lazy, they are evaluated only when you iterate over them
+or explicitly call the <a class="reference internal" href="../model/models.html#stdnet.orm.Query.items" title="stdnet.orm.Query.items"><tt class="xref py py-class docutils literal"><span class="pre">Query.items</span></tt></a> method.</p>
+</div>
+<div class="section" id="filtering">
+<h2>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline">¶</a></h2>
+<p>This operation is somehow equivalent to a <tt class="docutils literal"><span class="pre">SELECT</span> <span class="pre">WHERE</span></tt> statement in
+a traditional SQL database.
+To perform such operation, you refine the initial <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> by adding
+filter conditions.
+Lets create few other objects in the same line as above and try:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span>
+<span class="go">Query.filter({&#39;ccy&#39;: &#39;EUR&#39;})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">eur_funds</span><span class="p">)</span>
+<span class="go">[Fund: Markowitz]</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">count</span></tt> method counts the object in the query without physically retrieving them.</p>
+<p>Retrieving from a list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>You can perform further section by concatenating queries:</p>
+<div class="highlight-python"><pre>Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))</pre>
+</div>
+</div>
+<div class="section" id="excluding">
+<h2>Excluding<a class="headerlink" href="#excluding" title="Permalink to this headline">¶</a></h2>
+<p>You can also exclude fields from lookups:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;future&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and so forth.</p>
+</div>
+<div class="section" id="combining-queries">
+<h2>Combining Queries<a class="headerlink" href="#combining-queries" title="Permalink to this headline">¶</a></h2>
+<p>So far we have covered the basics of a <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> by refining search using the
+<a class="reference internal" href="../model/models.html#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">Query.filter()</span></tt></a> and <a class="reference internal" href="../model/models.html#stdnet.orm.Query.exclude" title="stdnet.orm.Query.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">Query.exclude()</span></tt></a> methods.</p>
+<p>Lets say we have the following example, form the <a class="reference internal" href="../apps/searchengine.html#module-stdnet.apps.searchengine" title="stdnet.apps.searchengine"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps.searchengine</span></tt></a>
+module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WordItem</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CompositeIdField</span><span class="p">(</span><span class="s">&#39;word&#39;</span><span class="p">,</span><span class="s">&#39;model_type&#39;</span><span class="p">,</span><span class="s">&#39;object_id&#39;</span><span class="p">)</span>
+    <span class="n">word</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">model_type</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ModelField</span><span class="p">()</span>
+    <span class="n">object_id</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Query your Models</a><ul>
+<li><a class="reference internal" href="#retrieving-all-objects">Retrieving all objects</a></li>
+<li><a class="reference internal" href="#filtering">Filtering</a></li>
+<li><a class="reference internal" href="#excluding">Excluding</a></li>
+<li><a class="reference internal" href="#combining-queries">Combining Queries</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Using Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sorting.html"
+                        title="next chapter">Sorting and Ordering</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/query.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sorting.html" title="Sorting and Ordering"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Using Models"
+             >previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2011, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

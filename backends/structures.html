@@ -90,7 +90,7 @@ object in the following way:</p>
 <h3>Structure Base Class<a class="headerlink" href="#structure-base-class" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.Structure">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Structure</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Structure" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Structure</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Structure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for remote data-structures. Remote structures are the
 backend of <a class="reference internal" href="../model/fields.html#model-field-structure"><em>structured fields</em></a> but they
 can also be used as stand alone objects. For example:</p>
@@ -104,7 +104,8 @@ can also be used as stand alone objects. For example:</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>server</strong> &#8211; instance of the remote server where the structure is stored.</li>
+<li><strong>backend</strong> &#8211; instance of the remote <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">BackendDataServer</span></tt></a> where
+the structure is stored.</li>
 <li><strong>id</strong> &#8211; structure id</li>
 <li><strong>pipetype</strong> &#8211; check the <a class="reference internal" href="#stdnet.Structure.pipetype" title="stdnet.Structure.pipetype"><tt class="xref py py-attr docutils literal"><span class="pre">pipetype</span></tt></a>. Specified by the server.</li>
 <li><strong>instance</strong> &#8211; Optional <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance to which
@@ -156,7 +157,7 @@ after which the structure is deleted from the data server.</p>
 <dt id="stdnet.Structure.pickler">
 <tt class="descname">pickler</tt><a class="headerlink" href="#stdnet.Structure.pickler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class used for serialize and unserialize values.
-If <tt class="xref docutils literal"><span class="pre">None</span></tt> the <a class="reference internal" href="#stdnet.Structure.server" title="stdnet.Structure.server"><tt class="xref py py-attr docutils literal"><span class="pre">server</span></tt></a> pickler will be used.</p>
+If <tt class="xref docutils literal"><span class="pre">None</span></tt> the <tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt> pickler will be used.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
@@ -195,7 +196,7 @@ the backend database.</td>
 <dl class="method">
 <dt id="stdnet.Structure.reload">
 <tt class="descname">reload</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.Structure.reload" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fill data from the server</p>
+<dd><p>Fill data from the backend</p>
 </dd></dl>
 
 <dl class="method">
@@ -208,7 +209,7 @@ specified, the data is pipelined and executed when the transaction completes.</p
 <dl class="method">
 <dt id="stdnet.Structure.delete">
 <tt class="descname">delete</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.Structure.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete the structure from the remote server. If a transaction is
+<dd><p>Delete the structure from the remote backend. If a transaction is
 specified, the data is pipelined and executed when the transaction completes.</p>
 </dd></dl>
 
@@ -216,7 +217,7 @@ specified, the data is pipelined and executed when the transaction completes.</p
 <dt id="stdnet.Structure.size">
 <tt class="descname">size</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.Structure.size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of elements in structure. If no transaction is
-supplied, use the server default cursor.</p>
+supplied, use the backend default cursor.</p>
 </dd></dl>
 
 <dl class="method">
@@ -240,7 +241,7 @@ This needs to implemented.</p>
 <h3>List<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.List">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">List</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.List" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">List</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.List" title="Permalink to this definition">¶</a></dt>
 <dd><p>A linked-list <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.</p>
 <dl class="method">
 <dt id="stdnet.List.push_back">
@@ -261,7 +262,7 @@ This needs to implemented.</p>
 <h3>Set<a class="headerlink" href="#set" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.Set">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Set</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Set" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">Set</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.Set" title="Permalink to this definition">¶</a></dt>
 <dd><p>An unordered set <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. Equivalent to python <tt class="docutils literal"><span class="pre">set</span></tt>.</p>
 <p>This structure is used for in two different parts of the library.</p>
 <ul class="simple">
@@ -301,7 +302,7 @@ Set structure in the data server backend.</li>
 <span id="orderedset-structure"></span><h3>OrderedSet<a class="headerlink" href="#orderedset" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.OrderedSet">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">OrderedSet</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">OrderedSet</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.OrderedSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>An ordered version of <a class="reference internal" href="#stdnet.Set" title="stdnet.Set"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt></a>.</p>
 <dl class="method">
 <dt id="stdnet.OrderedSet.add">
@@ -322,7 +323,7 @@ Set structure in the data server backend.</li>
 <span id="hash-structure"></span><h3>HashTable<a class="headerlink" href="#hashtable" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.HashTable">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">HashTable</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.HashTable" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">HashTable</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.HashTable" title="Permalink to this definition">¶</a></dt>
 <dd><p>A hash-table <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>.
 The networked equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
 <dl class="method">
@@ -416,7 +417,7 @@ No transaction involved in this function.</p>
 <h3>TS<a class="headerlink" href="#ts" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.TS">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">TS</tt><big>(</big><em>server</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.TS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">TS</tt><big>(</big><em>backend</em>, <em>id</em>, <em>pipetype</em>, <em>instance=None</em>, <em>timeout=0</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>scorefun=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.TS" title="Permalink to this definition">¶</a></dt>
 <dd><p>A timeseries <a class="reference internal" href="#stdnet.Structure" title="stdnet.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt></a>. This is an experimental structure
 not available with vanilla redis. Check the
 <a class="reference internal" href="../apps/timeseries.html#apps-timeserie"><em>timeseries documentation</em></a> for further information.</p>

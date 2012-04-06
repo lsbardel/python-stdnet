@@ -54,20 +54,14 @@
 <span id="stdnetredis"></span><h1>Stdnet Redis branch<a class="headerlink" href="#stdnet-redis-branch" title="Permalink to this headline">¶</a></h1>
 <p>During the development of <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">stdnet</a> we came across several design decisions, some
 more critical than others, and most of them were resolved coding the client
-only. However, more exotic features such as an efficient full text search and
-time series required hacking on the server side.</p>
+only. However, more exotic features, such as the time series structure,
+required hacking on the server side.</p>
 <p>For this reason we have the <a class="reference external" href="https://github.com/lsbardel/redis">stdnet-redis</a> branch.</p>
-<p>Will <a class="reference external" href="https://github.com/lsbardel/redis">stdnet-redis</a> branch merged into <a class="reference external" href="http://redis.io/">redis</a> master? This is a question for redis
-core developers.</p>
 <div class="section" id="sorted-sets">
 <h2>Sorted sets<a class="headerlink" href="#sorted-sets" title="Permalink to this headline">¶</a></h2>
-<p>For some bizzare reasons redis does not have a <tt class="docutils literal"><span class="pre">zdiffstore</span></tt> command.
+<p>For some reasons redis does not have a <tt class="docutils literal"><span class="pre">zdiffstore</span></tt> command.
 For 99% of applications this is not an issue, but when using <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">stdnet</a> with
-models which have an <a class="reference internal" href="examples/tutorial.html#implicit-sorting"><em>implicit sorting</em></a> it becomes one.
-Sorted sets are like sets, a collection of elements with no repetion, but
-unlike sets they are ordered with respect a score.</p>
-<p>Sorted sets allow stdnet to implement models with an implicit sorting
-with respect to a model field.</p>
+models which have an <a class="reference internal" href="examples/sorting.html#implicit-sorting"><em>implicit sorting</em></a> it becomes one.</p>
 <div class="section" id="zdiffstore">
 <h3>ZDIFFSTORE<a class="headerlink" href="#zdiffstore" title="Permalink to this headline">¶</a></h3>
 <p>Computes the difference between the first sorted set and all the successive sorted sets
@@ -80,16 +74,18 @@ before passing the input keys and the other (optional) arguments:</p>
 removed from the first sorted sets only if the score is matched.</p>
 </div>
 </div>
-<div class="section" id="timeseries">
-<span id="redis-timeseries"></span><h2>Timeseries<a class="headerlink" href="#timeseries" title="Permalink to this headline">¶</a></h2>
-<p>Timeseries is an important data-structure not yet supported in redis,
-it is represented by a unique sorted associative container,
-that is to say it associates ordered unique times to values.</p>
-<p>Values, which can be anything you like, are ordered with respect to double values (times),
-and can be accessed by times or rank (the order of times in the timeseries).
+<div class="section" id="time-series">
+<span id="redis-timeseries"></span><h2>Time-series<a class="headerlink" href="#time-series" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">Time-series</a> is an important
+data-structure not yet supported in redis, it is represented by a unique sorted
+associative container, that is to say it associates ordered unique times to values.</p>
+<p>Values, which can be anything you like, are ordered with respect to times
+(you could use unix timestamp, but any double value would do),
+and can be accessed by times or rank (the order of times in the time-series).
 Times are unique so that there will be only one value associated with a given time.</p>
-<p>Internally, values are added to a skip list which maintain
-sorting with respect to times.</p>
+<p>Internally, a time-series is implemented using the same skiplist implementation
+as ordered sets.
+Values are added to a skip list which maintain sorting with respect to times.</p>
 <p>Performance:</p>
 <div class="highlight-python"><pre>O(log(N)) on INSERT REMOVE and RETRIEVAL via times</pre>
 </div>
@@ -112,6 +108,12 @@ but there is scope to add more.</p>
 <h3>TSEXISTS<a class="headerlink" href="#tsexists" title="Permalink to this headline">¶</a></h3>
 <p>Check if <tt class="docutils literal"><span class="pre">time</span></tt> is in timeseries at <tt class="docutils literal"><span class="pre">key</span></tt>:</p>
 <div class="highlight-python"><pre>tsexists key time</pre>
+</div>
+</div>
+<div class="section" id="tsrank">
+<h3>TSRANK<a class="headerlink" href="#tsrank" title="Permalink to this headline">¶</a></h3>
+<p>Returns the rank (index position) of <tt class="docutils literal"><span class="pre">time</span></tt> in timeseries at <tt class="docutils literal"><span class="pre">key</span></tt>:</p>
+<div class="highlight-python"><pre>tsrank key time</pre>
 </div>
 </div>
 <div class="section" id="tsget">
@@ -146,27 +148,8 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 <p>Count element in range by <tt class="docutils literal"><span class="pre">time</span></tt>:</p>
 <div class="highlight-python"><pre>tscount key time_start,time_end</pre>
 </div>
+<p>This command is similar to <a class="reference external" href="http://redis.io/commands/zcount">ZCOUNT</a> for sorted sets.</p>
 </div>
-</div>
-<div class="section" id="sorting">
-<h2>Sorting<a class="headerlink" href="#sorting" title="Permalink to this headline">¶</a></h2>
-<p>The stdnet branch includes a slightly modified <a class="reference external" href="http://redis.io/commands/sort">sort</a> command which can accept
-an extra parameter called <tt class="docutils literal"><span class="pre">storeset</span></tt>.</p>
-<p>This is similar to the <tt class="docutils literal"><span class="pre">store</span></tt> parameter with the only
-difference that the result of the sorting algorithm will be stored
-in a set rather than in a list.</p>
-<p>At this point, the interested reader may spot a conundrum here. Why would you want
-to store the result of a sort algorithm into a data structure which
-does not maintain ordering?</p>
-<p>The usage of this parameter in conjunction with the <tt class="docutils literal"><span class="pre">BY</span> <span class="pre">nosort</span></tt> inputs
-in the following patter:</p>
-<div class="highlight-python"><pre>SORT mydata BY nosort GET object_* STORESET resultkey</pre>
-</div>
-<p>or:</p>
-<div class="highlight-python"><pre>SORT mydata BY nosort GET *_field STORESET resultkey</pre>
-</div>
-<p>Essentially not performing any sorting whatsoever, instead the command
-aggregated fields of hashtable/s into a set.</p>
 </div>
 <div class="section" id="source-code-changes">
 <h2>Source code changes<a class="headerlink" href="#source-code-changes" title="Permalink to this headline">¶</a></h2>
@@ -183,12 +166,6 @@ aggregated fields of hashtable/s into a set.</p>
 <ul class="simple">
 <li>Modified so that <tt class="docutils literal"><span class="pre">t_ts.c</span></tt> can use its internals.</li>
 <li>Modified <tt class="docutils literal"><span class="pre">zunionInterGenericCommand</span></tt> function to accommodate the ZDIFFSTORE command.</li>
-</ul>
-</div>
-<div class="section" id="sort-c">
-<h3>sort.c<a class="headerlink" href="#sort-c" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li>Modified the <tt class="docutils literal"><span class="pre">sortCommand</span></tt> to accomodate for the <tt class="docutils literal"><span class="pre">storeset</span></tt> parameter.</li>
 </ul>
 </div>
 <div class="section" id="tests">
@@ -218,20 +195,19 @@ aggregated fields of hashtable/s into a set.</p>
 <li><a class="reference internal" href="#zdiffstore">ZDIFFSTORE</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#timeseries">Timeseries</a><ul>
+<li><a class="reference internal" href="#time-series">Time-series</a><ul>
 <li><a class="reference internal" href="#tslen">TSLEN</a></li>
 <li><a class="reference internal" href="#tsadd">TSADD</a></li>
 <li><a class="reference internal" href="#tsexists">TSEXISTS</a></li>
+<li><a class="reference internal" href="#tsrank">TSRANK</a></li>
 <li><a class="reference internal" href="#tsget">TSGET</a></li>
 <li><a class="reference internal" href="#tsrange">TSRANGE</a></li>
 <li><a class="reference internal" href="#tsrangebytime">TSRANGEBYTIME</a></li>
 <li><a class="reference internal" href="#tscount">TSCOUNT</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#sorting">Sorting</a></li>
 <li><a class="reference internal" href="#source-code-changes">Source code changes</a><ul>
 <li><a class="reference internal" href="#t-zset-c">t_zset.c</a></li>
-<li><a class="reference internal" href="#sort-c">sort.c</a></li>
 <li><a class="reference internal" href="#tests">Tests</a></li>
 </ul>
 </li>

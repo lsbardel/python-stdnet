@@ -52,13 +52,13 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="model-and-query-api">
-<span id="model-model"></span><h1>Model and Query API<a class="headerlink" href="#model-and-query-api" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="model">
-<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+  <span class="target" id="module-stdnet.orm"><span id="model-model"></span></span><div class="section" id="model-and-query-api">
+<h1>Model and Query API<a class="headerlink" href="#model-and-query-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="model-and-query">
+<h2>Model and Query<a class="headerlink" href="#model-and-query" title="Permalink to this headline">¶</a></h2>
 <p>The StdNet Object Relational Mapper presents a method of
 associating user-defined Python classes, referred as <strong>models</strong>,
-with data in a <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
+with data in a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
 These python classes are subclasses of
 <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</p>
 <div class="section" id="stdmodel-class">
@@ -66,39 +66,49 @@ These python classes are subclasses of
 <dl class="class">
 <dt id="stdnet.orm.StdModel">
 <em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">StdModel</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>A model is the single, definitive source of data
-about your data. It contains the essential fields and behaviors
-of the data you&#8217;re storing. Each model class
-maps instances to <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> structures via
-the <a class="reference internal" href="#StdModel._meta" title="StdModel._meta"><tt class="xref py py-attr docutils literal"><span class="pre">StdModel._meta</span></tt></a> attribute.</p>
+<dd><p>A <a class="reference internal" href="#stdnet.orm.Model" title="stdnet.orm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> which contains data in <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a>.</p>
 <dl class="attribute">
-<dt id="StdModel._meta">
-<tt class="descname">_meta</tt><a class="headerlink" href="#StdModel._meta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instance of <a class="reference internal" href="#stdnet.orm.base.Metaclass" title="stdnet.orm.base.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.base.Metaclass</span></tt></a></p>
+<dt id="stdnet.orm.StdModel._meta">
+<tt class="descname">_meta</tt><a class="headerlink" href="#stdnet.orm.StdModel._meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instance of <a class="reference internal" href="#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a>, it containes all the information needed
+by a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backendServer</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="StdModel.id">
-<tt class="descname">id</tt><a class="headerlink" href="#StdModel.id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Model instance id. The instance primary key.</p>
+<dt id="stdnet.orm.StdModel.id">
+<tt class="descname">id</tt><a class="headerlink" href="#stdnet.orm.StdModel.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The instance primary key.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="StdModel.uuid">
-<tt class="descname">uuid</tt><a class="headerlink" href="#StdModel.uuid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Universally unique identifier for a model instance.</p>
+<dt id="stdnet.orm.StdModel.uuid">
+<tt class="descname">uuid</tt><a class="headerlink" href="#stdnet.orm.StdModel.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Universally unique identifier for an instance.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.StdModel.loadedfields">
-<tt class="descname">loadedfields</tt><a class="headerlink" href="#stdnet.orm.StdModel.loadedfields" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tuple of fields loaded when the instance was obtained from the
-database. If <tt class="xref docutils literal"><span class="pre">None</span></tt> all fields are available.</p>
+<dt id="stdnet.orm.StdModel.session">
+<tt class="descname">session</tt><a class="headerlink" href="#stdnet.orm.StdModel.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> instance which loaded the instance (available
+when the instance is loaded from the data server).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.StdModel.has_all_data">
+<tt class="descname">has_all_data</tt><a class="headerlink" href="#stdnet.orm.StdModel.has_all_data" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref docutils literal"><span class="pre">True</span></tt> if this <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> instance has all backend data
+loaded. This only apply to persistent instances.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.StdModel.loadedfieldsvalues">
-<tt class="descname">loadedfieldsvalues</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.loadedfieldsvalues" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.StdModel.loadedfields">
+<tt class="descname">loadedfields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.loadedfields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of fields loaded from database</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.StdModel.fieldvalue_pairs">
+<tt class="descname">fieldvalue_pairs</tt><big>(</big><em>exclude_cache=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.fieldvalue_pairs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generator of fields,values pairs. Fields correspond to
 the ones which have been loaded (usually all of them) or
 not loaded but modified.
@@ -107,43 +117,40 @@ details.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.StdModel.save">
-<tt class="descname">save</tt><big>(</big><em>transaction=None</em>, <em>skip_signal=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save the instance.
-The model must be registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>
-otherwise a <a class="reference internal" href="../utility.html#stdnet.ModelNotRegistered" title="stdnet.ModelNotRegistered"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.ModelNotRegistered</span></tt></a> exception will raise.</p>
+<dt id="stdnet.orm.StdModel.clear_cache_fields">
+<tt class="descname">clear_cache_fields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.clear_cache_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set cache fields to <tt class="xref docutils literal"><span class="pre">None</span></tt>. Check <a class="reference internal" href="fields.html#stdnet.orm.Field.as_cache" title="stdnet.orm.Field.as_cache"><tt class="xref py py-attr docutils literal"><span class="pre">Field.as_cache</span></tt></a>
+for information regarding fields which are considered cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.StdModel.get_attr_value">
+<tt class="descname">get_attr_value</tt><big>(</big><em>attr</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.get_attr_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrive the <em>value</em> for a <em>attr</em> name. The attr can be nested,
+for example <tt class="docutils literal"><span class="pre">group__name</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.StdModel.clone">
+<tt class="descname">clone</tt><big>(</big><em>**data</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility method for cloning the instance as a new object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>transaction</strong> &#8211; <p>Optional transaction instance.
-It can be useful when saving
-several object together (it guarantees atomicity
-and it is much faster).
-Check the <a class="reference internal" href="../examples/tutorial2.html#model-transactions"><em>transaction</em></a>
-documentation for more information.</p>
-<p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
-</li>
-<li><strong>skip_signal</strong> &#8211; <p>When saving an instance, <a class="reference internal" href="#signal-api"><em>signals</em></a>
-are sent just before and just after saving. If
-this flag is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>, those signals
-are not used in the function call.</p>
-<p>Default: <tt class="xref docutils literal"><span class="pre">False</span></tt></p>
-</li>
-</ul>
-</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; additional which override field data.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new instance of this class.</td>
 </tr>
 </tbody>
 </table>
-<p>The method return <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="stdnet.orm.StdModel.is_valid">
 <tt class="descname">is_valid</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.is_valid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Kick off the validation algorithm by checking oll
-<tt class="xref py py-attr docutils literal"><span class="pre">StdModel.loadedfields</span></tt> agains their respective validation algorithm.</p>
+<dd><p>Kick off the validation algorithm by checking all
+<a class="reference internal" href="#stdnet.orm.StdModel.loadedfields" title="stdnet.orm.StdModel.loadedfields"><tt class="xref py py-attr docutils literal"><span class="pre">StdModel.loadedfields</span></tt></a> against their respective validation algorithm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -155,32 +162,11 @@ are not used in the function call.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.StdModel.delete">
-<tt class="descname">delete</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete an instance from database.
-If the instance is not available (it does not have an id) and
-<tt class="docutils literal"><span class="pre">StdNetException</span></tt> exception will raise.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>transaction</strong> &#8211; Optional transaction instance as in
-<a class="reference internal" href="#stdnet.orm.StdModel.save" title="stdnet.orm.StdModel.save"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.StdModel.save()</span></tt></a>.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.StdModel.related_objects">
-<tt class="descname">related_objects</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.related_objects" title="Permalink to this definition">¶</a></dt>
-<dd><p>A generator of related objects</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="stdnet.orm.StdModel.todict">
-<tt class="descname">todict</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.todict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a dictionary of serialized scalar field for pickling</p>
+<tt class="descname">todict</tt><big>(</big><em>exclude_cache=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.todict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary of serialised scalar field for pickling.
+If the <em>exclude_cache</em> flag is <tt class="xref docutils literal"><span class="pre">True</span></tt>, fields with <a class="reference internal" href="fields.html#stdnet.orm.Field.as_cache" title="stdnet.orm.Field.as_cache"><tt class="xref py py-attr docutils literal"><span class="pre">Field.as_cache</span></tt></a>
+attribute set to <tt class="xref docutils literal"><span class="pre">True</span></tt> will be excluded.</p>
 </dd></dl>
 
 <dl class="method">
@@ -190,32 +176,9 @@ If the instance is not available (it does not have an id) and
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.StdModel.local_transaction">
-<tt class="descname">local_transaction</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.local_transaction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a transaction for this instance.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.StdModel.instance_keys">
-<tt class="descname">instance_keys</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.instance_keys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Utility method for returning keys associated with
-this instance only. The instance id
-is however available in other keys (indices and other backend containers).</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="stdnet.orm.StdModel.flush">
-<em class="property">classmethod </em><tt class="descname">flush</tt><big>(</big><em>count=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flush the model table and all related tables including all indexes.
-Calling flush will erase everything about the model
-instances in the remote server. If count is a dictionary, the method
-will enumerate the number of object to delete. without deleting them.</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="stdnet.orm.StdModel.transaction">
-<em class="property">classmethod </em><tt class="descname">transaction</tt><big>(</big><em>*models</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.transaction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a transaction instance.</p>
+<dt id="stdnet.orm.StdModel.load_fields">
+<tt class="descname">load_fields</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.StdModel.load_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load extra fields to this <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -224,14 +187,14 @@ will enumerate the number of object to delete. without deleting them.</p>
 <div class="section" id="data-server-metaclass">
 <span id="database-metaclass"></span><h3>Data Server Metaclass<a class="headerlink" href="#data-server-metaclass" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.base.Metaclass">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.base.</tt><tt class="descname">Metaclass</tt><big>(</big><em>model</em>, <em>fields</em>, <em>abstract=False</em>, <em>keyprefix=None</em>, <em>app_label=''</em>, <em>verbose_name=None</em>, <em>ordering=None</em>, <em>modelkey=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Utility class used for storing all information
-which maps a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> model into an object in the
-in the remote <a class="reference internal" href="../backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
-An instance is initiated when <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class is created.</p>
+<dt id="stdnet.orm.Metaclass">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Metaclass</tt><big>(</big><em>model</em>, <em>fields</em>, <em>abstract=False</em>, <em>app_label=''</em>, <em>verbose_name=None</em>, <em>ordering=None</em>, <em>modelkey=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Metaclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of <a class="reference internal" href="#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a> stores all information
+which maps a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> into an object in the in a remote
+<a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
+An instance is initiated by the orm when a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class is created.</p>
 <p>To override default behaviour you can specify the <tt class="docutils literal"><span class="pre">Meta</span></tt> class as an inner
-class of <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> in the following way:</p>
+class of <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> in the following way:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 
@@ -249,11 +212,10 @@ class of <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>abstract</strong> &#8211; Check the <a class="reference internal" href="#Metaclass.abstract" title="Metaclass.abstract"><tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt></a> attribute.</li>
-<li><strong>ordering</strong> &#8211; Check the <a class="reference internal" href="#Metaclass.ordering" title="Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">ordering</span></tt></a> attribute.</li>
-<li><strong>app_label</strong> &#8211; Check the <a class="reference internal" href="#Metaclass.app_label" title="Metaclass.app_label"><tt class="xref py py-attr docutils literal"><span class="pre">app_label</span></tt></a> attribute.</li>
-<li><strong>keyprefix</strong> &#8211; Check the <a class="reference internal" href="#Metaclass.keyprefix" title="Metaclass.keyprefix"><tt class="xref py py-attr docutils literal"><span class="pre">keyprefix</span></tt></a> attribute.</li>
-<li><strong>modelkey</strong> &#8211; Check the <a class="reference internal" href="#Metaclass.modelkey" title="Metaclass.modelkey"><tt class="xref py py-attr docutils literal"><span class="pre">modelkey</span></tt></a> attribute.</li>
+<li><strong>abstract</strong> &#8211; Check the <a class="reference internal" href="#stdnet.orm.Metaclass.abstract" title="stdnet.orm.Metaclass.abstract"><tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt></a> attribute.</li>
+<li><strong>ordering</strong> &#8211; Check the <a class="reference internal" href="#stdnet.orm.Metaclass.ordering" title="stdnet.orm.Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">ordering</span></tt></a> attribute.</li>
+<li><strong>app_label</strong> &#8211; Check the <a class="reference internal" href="#stdnet.orm.Metaclass.app_label" title="stdnet.orm.Metaclass.app_label"><tt class="xref py py-attr docutils literal"><span class="pre">app_label</span></tt></a> attribute.</li>
+<li><strong>modelkey</strong> &#8211; Check the <a class="reference internal" href="#stdnet.orm.Metaclass.modelkey" title="stdnet.orm.Metaclass.modelkey"><tt class="xref py py-attr docutils literal"><span class="pre">modelkey</span></tt></a> attribute.</li>
 </ul>
 </td>
 </tr>
@@ -264,110 +226,727 @@ class of <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet
 but the ones mantioned above, are initialized by the object relational
 mapper.</p>
 <dl class="attribute">
-<dt id="Metaclass.abstract">
-<tt class="descname">abstract</tt><a class="headerlink" href="#Metaclass.abstract" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.Metaclass.abstract">
+<tt class="descname">abstract</tt><a class="headerlink" href="#stdnet.orm.Metaclass.abstract" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, it represents an abstract model and no database elements
 are created.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.app_label">
-<tt class="descname">app_label</tt><a class="headerlink" href="#Metaclass.app_label" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.Metaclass.app_label">
+<tt class="descname">app_label</tt><a class="headerlink" href="#stdnet.orm.Metaclass.app_label" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unless specified it is the name of the directory or file
-(if at top level) containing the
-<a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> definition.</p>
+(if at top level) containing the <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> definition.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.model">
-<tt class="descname">model</tt><a class="headerlink" href="#Metaclass.model" title="Permalink to this definition">¶</a></dt>
-<dd><p>a subclass of <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>. Set by the <tt class="docutils literal"><span class="pre">orm</span></tt>.</p>
+<dt id="stdnet.orm.Metaclass.model">
+<tt class="descname">model</tt><a class="headerlink" href="#stdnet.orm.Metaclass.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> represented by the <a class="reference internal" href="#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a>.
+This attribute is set by the <tt class="docutils literal"><span class="pre">orm</span></tt> during class initialization.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.ordering">
-<tt class="descname">ordering</tt><a class="headerlink" href="#Metaclass.ordering" title="Permalink to this definition">¶</a></dt>
-<dd><p>Optional name of a <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> in the <a class="reference internal" href="#Metaclass.model" title="Metaclass.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a>.
-If provided, indeces will be sorted with respect the value of the
-field specidied.
-Check the <a class="reference internal" href="../examples/tutorial.html#sorting"><em>sorting</em></a> documentation for more details.</p>
+<dt id="stdnet.orm.Metaclass.ordering">
+<tt class="descname">ordering</tt><a class="headerlink" href="#stdnet.orm.Metaclass.ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional name of a <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> in the <a class="reference internal" href="#stdnet.orm.Metaclass.model" title="stdnet.orm.Metaclass.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a>.
+If provided, model indices will be sorted with respect to the value of the
+specified field. It can also be a <a class="reference internal" href="#stdnet.orm.autoincrement" title="stdnet.orm.autoincrement"><tt class="xref py py-class docutils literal"><span class="pre">autoincrement</span></tt></a> instance.
+Check the <a class="reference internal" href="../examples/sorting.html#sorting"><em>sorting</em></a> documentation for more details.</p>
 <p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.dfields">
-<tt class="descname">dfields</tt><a class="headerlink" href="#Metaclass.dfields" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.Metaclass.dfields">
+<tt class="descname">dfields</tt><a class="headerlink" href="#stdnet.orm.Metaclass.dfields" title="Permalink to this definition">¶</a></dt>
 <dd><p>dictionary of <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> instances.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.fields">
-<tt class="descname">fields</tt><a class="headerlink" href="#Metaclass.fields" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> instances.</p>
+<dt id="stdnet.orm.Metaclass.fields">
+<tt class="descname">fields</tt><a class="headerlink" href="#stdnet.orm.Metaclass.fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of all <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> instances.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.keyprefix">
-<tt class="descname">keyprefix</tt><a class="headerlink" href="#Metaclass.keyprefix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Override the <a class="reference internal" href="../utility.html#settings"><em>settings.DEFAULT_KEYPREFIX</em></a> value.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<dt id="stdnet.orm.Metaclass.indices">
+<tt class="descname">indices</tt><a class="headerlink" href="#stdnet.orm.Metaclass.indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> which are indices (<a class="reference internal" href="fields.html#stdnet.orm.Field.index" title="stdnet.orm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> attribute
+set to <tt class="xref docutils literal"><span class="pre">True</span></tt>).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.modelkey">
-<tt class="descname">modelkey</tt><a class="headerlink" href="#Metaclass.modelkey" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.Metaclass.modelkey">
+<tt class="descname">modelkey</tt><a class="headerlink" href="#stdnet.orm.Metaclass.modelkey" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override the modelkey which is by default given by <tt class="docutils literal"><span class="pre">app_label.name</span></tt></p>
 <p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Metaclass.pk">
-<tt class="descname">pk</tt><a class="headerlink" href="#Metaclass.pk" title="Permalink to this definition">¶</a></dt>
-<dd><p>The primary key <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a></p>
+<dt id="stdnet.orm.Metaclass.pk">
+<tt class="descname">pk</tt><a class="headerlink" href="#stdnet.orm.Metaclass.pk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> representing the primary key.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.base.Metaclass.basekey">
-<tt class="descname">basekey</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.basekey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the key to access model data in the backend server.
-For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">examples.models</span> <span class="kn">import</span> <span class="n">User</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">orm</span> <span class="kn">import</span> <span class="n">register</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">register</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
-<span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">basekey</span><span class="p">()</span>
-<span class="go">&#39;stdnet.examples.user&#39;</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.base.Metaclass.autoid">
-<tt class="descname">autoid</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.autoid" title="Permalink to this definition">¶</a></dt>
-<dd><p>The id for autoincrements ids</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.base.Metaclass.is_valid">
-<tt class="descname">is_valid</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.is_valid" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.orm.Metaclass.is_valid">
+<tt class="descname">is_valid</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.orm.Metaclass.is_valid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform validation for <em>instance</em> and stores serialized data,
 indexes and errors into local cache.
 Return <tt class="xref docutils literal"><span class="pre">True</span></tt> if the instance is ready to be saved to database.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.base.Metaclass.table">
-<tt class="descname">table</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return an instance of <a class="reference internal" href="../backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a> holding
-the model table</p>
+<dt id="stdnet.orm.Metaclass.backend_fields">
+<tt class="descname">backend_fields</tt><big>(</big><em>fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.Metaclass.backend_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a two elements tuple containing a list
+of fields names and a list of field attribute names.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="model">
+<h3>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Model">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Model</tt><a class="headerlink" href="#stdnet.orm.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin class for <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>. It implements the <a class="reference internal" href="#stdnet.orm.Model.uuid" title="stdnet.orm.Model.uuid"><tt class="xref py py-attr docutils literal"><span class="pre">uuid</span></tt></a>
+attribute which provides the univarsal unique identifier for an instance of a
+model.</p>
+<dl class="attribute">
+<dt id="stdnet.orm.Model.DoesNotExist">
+<tt class="descname">DoesNotExist</tt><a class="headerlink" href="#stdnet.orm.Model.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception raised when an instance of a model does not exist.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Model.DoesNotValidate">
+<tt class="descname">DoesNotValidate</tt><a class="headerlink" href="#stdnet.orm.Model.DoesNotValidate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception raised when an instance of a model does not validate. Usually
+raised when trying to save an invalid instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Model.uuid">
+<tt class="descname">uuid</tt><a class="headerlink" href="#stdnet.orm.Model.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Universally unique identifier for an instance.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.base.Metaclass.flush">
-<tt class="descname">flush</tt><big>(</big><em>count=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.base.Metaclass.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fast method for clearing the whole table including related tables</p>
+<dt id="stdnet.orm.Model.save">
+<tt class="descname">save</tt><big>(</big><em>use_current_session=True</em><big>)</big><a class="headerlink" href="#stdnet.orm.Model.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>A direct method for saving an object.
+Do not use this method when using <a class="reference internal" href="session.html#stdnet.orm.Transaction" title="stdnet.orm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>.
+This method always commit changes immediately and if the session
+is a transaction an eror will occur.
+If a session is not available, it tries to create one
+from its <a class="reference internal" href="session.html#stdnet.orm.Manager" title="stdnet.orm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.orm.Model.force_save">
+<tt class="descname">force_save</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Model.force_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as the <a class="reference internal" href="#stdnet.orm.Model.save" title="stdnet.orm.Model.save"><tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt></a> method, however this method never
+uses the current session. Instead it creates a new one for immediate commit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Model.force_delete">
+<tt class="descname">force_delete</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Model.force_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as the <tt class="xref py py-meth docutils literal"><span class="pre">delete()</span></tt> method, however this method never
+uses the current session. Instead it creates a new one for immediate commit.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="query">
+<span id="model-query"></span><h3>Query<a class="headerlink" href="#query" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Query">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Query</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> is produced in terms of a given <a class="reference internal" href="session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>,
+using the <a class="reference internal" href="session.html#stdnet.orm.Session.query" title="stdnet.orm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A query is equivalent to a collection of SELECT statements for a standard
+relational database. It has a  a generative interface whereby successive calls
+return a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> object, a copy of the former with additional
+criteria and options associated with it.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<dl class="attribute">
+<dt id="stdnet.orm.Query._meta">
+<tt class="descname">_meta</tt><a class="headerlink" href="#stdnet.orm.Query._meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#stdnet.orm.StdModel._meta" title="stdnet.orm.StdModel._meta"><tt class="xref py py-attr docutils literal"><span class="pre">StdModel._meta</span></tt></a> attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.model">
+<tt class="descname">model</tt><a class="headerlink" href="#stdnet.orm.Query.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class for this query.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.session">
+<tt class="descname">session</tt><a class="headerlink" href="#stdnet.orm.Query.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> which created the <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via the
+<a class="reference internal" href="session.html#stdnet.orm.Session.query" title="stdnet.orm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.orm.Query.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> holding the data to query.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query._get_field">
+<tt class="descname">_get_field</tt><a class="headerlink" href="#stdnet.orm.Query._get_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>When iterating over a <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>, you get back instances of
+the <a class="reference internal" href="#stdnet.orm.Query.model" title="stdnet.orm.Query.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a> class. However, if <tt class="docutils literal"><span class="pre">_get_field</span></tt> is specified
+you get back values of the field specified.
+This can be changed via the <tt class="xref py py-meth docutils literal"><span class="pre">get_field()</span></tt> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">get_field</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>the results is a list of name values (provided the model has a
+<tt class="docutils literal"><span class="pre">name</span></tt> field of course).</p>
+<p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.fargs">
+<tt class="descname">fargs</tt><a class="headerlink" href="#stdnet.orm.Query.fargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary containing the <tt class="docutils literal"><span class="pre">filter</span></tt> lookup parameters each one of
+them corresponding to a <tt class="docutils literal"><span class="pre">where</span></tt> clause of a select. This value is
+manipulated via the <a class="reference internal" href="#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> method.</p>
+<p>Default: <tt class="docutils literal"><span class="pre">{}</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.eargs">
+<tt class="descname">eargs</tt><a class="headerlink" href="#stdnet.orm.Query.eargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary containing the <tt class="docutils literal"><span class="pre">exclude</span></tt> lookup parameters each one
+of them corresponding to a <tt class="docutils literal"><span class="pre">where</span></tt> clause of a select. This value is
+manipulated via the <a class="reference internal" href="#stdnet.orm.Query.exclude" title="stdnet.orm.Query.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">exclude()</span></tt></a> method.</p>
+<p>Default: <tt class="docutils literal"><span class="pre">{}</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.ordering">
+<tt class="descname">ordering</tt><a class="headerlink" href="#stdnet.orm.Query.ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>optional ordering field.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Query.text">
+<tt class="descname">text</tt><a class="headerlink" href="#stdnet.orm.Query.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>optional text to filter result on.</p>
+<p>Default: <tt class="docutils literal"><span class="pre">&quot;&quot;</span></tt>.</p>
+</dd></dl>
+
+<p><strong>METHODS</strong></p>
+<dl class="method">
+<dt id="stdnet.orm.Query.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> is not initialized directly but via the
+<a class="reference internal" href="session.html#stdnet.orm.Session.query" title="stdnet.orm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> or <a class="reference internal" href="session.html#stdnet.orm.Manager.query" title="stdnet.orm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> methods.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.filter">
+<tt class="descname">filter</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> with additional clauses corresponding to
+<tt class="docutils literal"><span class="pre">where</span></tt> or <tt class="docutils literal"><span class="pre">limit</span></tt> in a <tt class="docutils literal"><span class="pre">SQL</span> <span class="pre">SELECT</span></tt> statement.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>kwargs</strong> &#8211; dictionary of limiting clauses.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;planet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.exclude">
+<tt class="descname">exclude</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> with additional clauses corresponding
+to <tt class="docutils literal"><span class="pre">EXCEPT</span></tt> in a <tt class="docutils literal"><span class="pre">SQL</span> <span class="pre">SELECT</span></tt> statement.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>kwargs</strong> &#8211; dictionary of limiting clauses.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Using an equivalent example to the <a class="reference internal" href="#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="n">result1</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;planet&#39;</span><span class="p">)</span>
+<span class="n">result2</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">group__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;planet&#39;</span><span class="p">,</span><span class="s">&#39;stars&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.union">
+<tt class="descname">union</tt><big>(</big><em>*queries</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.union" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> obtained form the union of this
+<a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> with one or more <em>queries</em>.
+For example, lets say we want to have the union
+of two queries obtained from the <a class="reference internal" href="#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="n">qs</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">field1</span> <span class="o">=</span> <span class="s">&#39;bla&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">field2</span> <span class="o">=</span> <span class="s">&#39;foo&#39;</span><span class="p">))</span> 
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.intersect">
+<tt class="descname">intersect</tt><big>(</big><em>*queries</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.intersect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> obtained form the intersection of this
+<a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> with one or more <em>queries</em>. Workds the same way as
+the <a class="reference internal" href="#stdnet.orm.Query.union" title="stdnet.orm.Query.union"><tt class="xref py py-meth docutils literal"><span class="pre">union()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.sort_by">
+<tt class="descname">sort_by</tt><big>(</big><em>ordering</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.sort_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort the query by the given field</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ordering</strong> &#8211; a string indicating the class:<cite>Field</cite> name to sort by.
+If prefixed with <tt class="docutils literal"><span class="pre">-</span></tt>, the sorting will be in descending order, otherwise
+in ascending order.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.search">
+<tt class="descname">search</tt><big>(</big><em>text</em>, <em>lookup=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search <em>text</em> in model. A search engine needs to be installed
+for this function to be available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>text</strong> &#8211; a string to search.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.search_queries">
+<tt class="descname">search_queries</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.search_queries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new <tt class="xref py py-class docutils literal"><span class="pre">QueryElem</span></tt> for <em>q</em> applying a text search.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.load_related">
+<tt class="descname">load_related</tt><big>(</big><em>related</em>, <em>*related_fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.load_related" title="Permalink to this definition">¶</a></dt>
+<dd><p>It returns a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> that automatically
+follows the foreign-key relationship <em>related</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>related</strong> &#8211; A field name corresponding to a <a class="reference internal" href="fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>
+in <a class="reference internal" href="#stdnet.orm.Query.model" title="stdnet.orm.Query.model"><tt class="xref py py-attr docutils literal"><span class="pre">Query.model</span></tt></a>.</li>
+<li><strong>fields</strong> &#8211; optional <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> names for the <em>related</em>
+model to load. If not provided, all fields will be loaded.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This function is <a class="reference internal" href="../examples/performance.html#increase-performance"><em>performance boost</em></a> when
+accessing the related fields of all (most) objects in your query.</p>
+<p>If Your model contains more than one foreign key, you can use this function
+in a generative way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">myquery</span><span class="o">.</span><span class="n">load_related</span><span class="p">(</span><span class="s">&#39;rel1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">load_related</span><span class="p">(</span><span class="s">&#39;rel2&#39;</span><span class="p">,</span><span class="s">&#39;field1&#39;</span><span class="p">,</span><span class="s">&#39;field2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a new <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.load_only">
+<tt class="descname">load_only</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.load_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is provides a <a class="reference internal" href="../examples/performance.html#increase-performance"><em>performance boost</em></a>
+in cases when you need to load a subset of fields of your model. The boost
+achieved is less than the one obtained when using
+<a class="reference internal" href="#stdnet.orm.Query.load_related" title="stdnet.orm.Query.load_related"><tt class="xref py py-meth docutils literal"><span class="pre">Query.load_related()</span></tt></a>, since it does not reduce the number of requests
+to the database. However, it can save you lots of bandwidth when excluding
+data intensive fields you don&#8217;t need.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.dont_load">
+<tt class="descname">dont_load</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.dont_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Works like <a class="reference internal" href="#stdnet.orm.Query.load_only" title="stdnet.orm.Query.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">load_only()</span></tt></a> to provides a
+<a class="reference internal" href="../examples/performance.html#increase-performance"><em>performance boost</em></a> in cases when you need
+to load all fields except a subset specified by <em>fields</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.get">
+<tt class="descname">get</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an instance of a model matching the query. A special case is
+the query on <tt class="docutils literal"><span class="pre">id</span></tt> which provides a direct access to the <a class="reference internal" href="#stdnet.orm.Query.session" title="stdnet.orm.Query.session"><tt class="xref py py-attr docutils literal"><span class="pre">session</span></tt></a>
+instances. If the given primary key is present in the session, the object
+is returned directly without performing any query.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.count">
+<tt class="descname">count</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Query.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of objects in <tt class="docutils literal"><span class="pre">self</span></tt>.
+This method is efficient since the <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> does not
+receive any data from the server apart from the number of matched elements.
+It construct the queries and count the
+objects on the server side.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.delete">
+<tt class="descname">delete</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Query.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete all matched elements of the <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>. It returns the
+list of ids deleted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.construct">
+<tt class="descname">construct</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Query.construct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the <tt class="xref py py-class docutils literal"><span class="pre">QueryElement</span></tt> representing this query.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.backend_query">
+<tt class="descname">backend_query</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.backend_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build and return the <a class="reference internal" href="../backends/index.html#stdnet.BackendQuery" title="stdnet.BackendQuery"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendQuery</span></tt></a>.
+This is a lazy method in the sense that it is evaluated once only and its
+result stored for future retrieval.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.test_unique">
+<tt class="descname">test_unique</tt><big>(</big><em>fieldname</em>, <em>value</em>, <em>instance=None</em>, <em>exception=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.test_unique" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if a given field <em>fieldname</em> has a unique <em>value</em>
+in <a class="reference internal" href="#stdnet.orm.Query.model" title="stdnet.orm.Query.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a>. The field must be an index of the model.
+If the field value is not unique and the <em>instance</em> is not the same
+an exception is raised.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fieldname</strong> &#8211; <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> name to test</li>
+<li><strong>vale</strong> &#8211; <a class="reference internal" href="fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> value</li>
+<li><strong>instance</strong> &#8211; optional instance of <a class="reference internal" href="#stdnet.orm.Query.model" title="stdnet.orm.Query.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a></li>
+<li><strong>exception</strong> &#8211; optional exception class to raise if the test fails.
+Default: <tt class="xref py py-attr docutils literal"><span class="pre">ModelMixin.DoesNotValidate</span></tt>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><em>value</em></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Query.items">
+<tt class="descname">items</tt><big>(</big><em>slic=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.Query.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch data matching theis <a class="reference internal" href="#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> and return a list
+of instances of models.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="autoincrement">
+<h3>autoincrement<a class="headerlink" href="#autoincrement" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.autoincrement">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">autoincrement</tt><big>(</big><em>incrby=1</em>, <em>desc=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.autoincrement" title="Permalink to this definition">¶</a></dt>
+<dd><p>An <a class="reference internal" href="#stdnet.orm.autoincrement" title="stdnet.orm.autoincrement"><tt class="xref py py-class docutils literal"><span class="pre">autoincrement</span></tt></a> is used in a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> Meta
+class to specify a model with <a class="reference internal" href="../examples/sorting.html#incremental-sorting"><em>incremental sorting</em></a>.</p>
+<dl class="attribute">
+<dt id="stdnet.orm.autoincrement.incrby">
+<tt class="descname">incrby</tt><a class="headerlink" href="#stdnet.orm.autoincrement.incrby" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ammount to increment the score by when a duplicate element is saved.</p>
+<p>Default: 1.</p>
+</dd></dl>
+
+<p>For example, the <tt class="xref py py-class docutils literal"><span class="pre">stdnet.apps.searchengine.Word</span></tt> model is defined as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Word</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">primary_key</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="o">-</span><span class="n">autoincrement</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This means every time we save a new instance of Word, and that instance has
+an id already available, the score of that word is incremented by the
+<a class="reference internal" href="#stdnet.orm.autoincrement.incrby" title="stdnet.orm.autoincrement.incrby"><tt class="xref py py-attr docutils literal"><span class="pre">incrby</span></tt></a> attribute.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="data-structures">
+<span id="model-structures"></span><h2>Data Structures<a class="headerlink" href="#data-structures" title="Permalink to this headline">¶</a></h2>
+<p>Data structures are fundamental constructs around which you build your application.
+They are used in almost all computer programs, therefore becoming fluent in what the standard
+data-structures can do for you is essential to get full value out of them.
+The <a class="reference external" href="http://www.sgi.com/tech/stl/">standard template library</a> in C++ implements a wide array of structures,
+python has several of them too. <tt class="docutils literal"><span class="pre">stdnet</span></tt> implements <strong>five</strong> remote structures:
+list, set, ordered set, hash and timeseries.</p>
+<p>The structures are bind to a remote dataserver and they derive from
+from <tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt> base class.</p>
+<div class="section" id="creating-structures">
+<h3>Creating Structures<a class="headerlink" href="#creating-structures" title="Permalink to this headline">¶</a></h3>
+<p>Creating the five structures available in stdnet is accomplished
+in the following way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">l</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">List</span><span class="p">())</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">Set</span><span class="p">())</span>
+<span class="n">o</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">Zset</span><span class="p">())</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">HashTable</span><span class="p">())</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">TS</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>If no <tt class="docutils literal"><span class="pre">id</span></tt> is specified, stdnet will create one for you:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="o">.</span><span class="n">id</span>
+<span class="go">&#39;2d0cbac9&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>To add data you have two options: immediate commit or transactions. For example,
+lets add elements to a set:</p>
+<div class="highlight-python"><pre>   &gt;&gt;&gt; s.update((4,6,'bla',foo',4))
+   &gt;&gt;&gt; s.size()
+   4
+
+or we could use transactions to combine several updates together.
+To use a transaction we do::
+
+   with session.begin():
+       s.update((4,6,'bla',foo',4))
+       h['foo'] = 56
+       o.add(3,'a zset element with score 3')</pre>
+</div>
+</div>
+<div class="section" id="structure-base-class">
+<h3>Structure Base Class<a class="headerlink" href="#structure-base-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Structure">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Structure</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for remote data-structures. Remote structures are the
+backend of <a class="reference internal" href="fields.html#model-field-structure"><em>structured fields</em></a> but they
+can also be used as stand alone objects. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">stdnet</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">stdnet</span><span class="o">.</span><span class="n">getdb</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">mylist</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;bla&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>backend</strong> &#8211; instance of the remote <tt class="xref py py-class docutils literal"><span class="pre">BackendDataServer</span></tt> where
+the structure is stored.</li>
+<li><strong>id</strong> &#8211; structure id</li>
+<li><strong>pipetype</strong> &#8211; check the <tt class="xref py py-attr docutils literal"><span class="pre">pipetype</span></tt>. Specified by the server.</li>
+<li><strong>instance</strong> &#8211; Optional <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance to which
+the structure belongs to via a
+<a class="reference internal" href="fields.html#model-field-structure"><em>structured field</em></a>.
+This field is specified when accessing remote structures via the object
+relational mapper.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="stdnet.orm.Structure.instance">
+<tt class="descname">instance</tt><a class="headerlink" href="#stdnet.orm.Structure.instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance to which
+the structure belongs to via a
+<a class="reference internal" href="fields.html#model-field-structure"><em>structured field</em></a>.</p>
+<p>Defaulr <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Structure.timeout">
+<tt class="descname">timeout</tt><a class="headerlink" href="#stdnet.orm.Structure.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expiry timeout. If different from zero it represents the number of seconds
+after which the structure is deleted from the data server.</p>
+<p>Default <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.orm.Structure.pickler">
+<tt class="descname">pickler</tt><a class="headerlink" href="#stdnet.orm.Structure.pickler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class used for serialize and unserialize values.
+If <tt class="xref docutils literal"><span class="pre">None</span></tt> the <tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt> pickler will be used.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Structure.size">
+<tt class="descname">size</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Structure.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements in structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Structure.set_cache">
+<tt class="descname">set_cache</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#stdnet.orm.Structure.set_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the cache for the <a class="reference internal" href="#stdnet.orm.Structure" title="stdnet.orm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a>.
+Do not override this function. Use <a class="reference internal" href="#stdnet.orm.Structure.load_data" title="stdnet.orm.Structure.load_data"><tt class="xref py py-meth docutils literal"><span class="pre">load_data()</span></tt></a> method instead.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Structure.load_data">
+<tt class="descname">load_data</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#stdnet.orm.Structure.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load data from the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="list">
+<h3>List<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.List">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">List</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.List" title="Permalink to this definition">¶</a></dt>
+<dd><p>A linked-list <tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt>.</p>
+<dl class="method">
+<dt id="stdnet.orm.List.push_front">
+<tt class="descname">push_front</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.List.push_front" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends a copy of <em>value</em> to the beginning of the list.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="set">
+<h3>Set<a class="headerlink" href="#set" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Set">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Set</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set" title="Permalink to this definition">¶</a></dt>
+<dd><p>An unordered set <a class="reference internal" href="#stdnet.orm.Structure" title="stdnet.orm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a>. Equivalent to a python <tt class="docutils literal"><span class="pre">set</span></tt>.</p>
+<dl class="method">
+<dt id="stdnet.orm.Set.add">
+<tt class="descname">add</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>value</em> to the set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Set.update">
+<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add iterable <em>values</em> to the set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Set.discard">
+<tt class="descname">discard</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set.discard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an element <em>value</em> from a set if it is a member.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Set.remove">
+<tt class="descname">remove</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an element <em>value</em> from a set if it is a member.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Set.difference_update">
+<tt class="descname">difference_update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Set.difference_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an iterable of <em>values</em> from the set.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="orderedset">
+<span id="orderedset-structure"></span><h3>OrderedSet<a class="headerlink" href="#orderedset" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.Zset">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Zset</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Zset" title="Permalink to this definition">¶</a></dt>
+<dd><p>An ordered version of <a class="reference internal" href="#stdnet.orm.Set" title="stdnet.orm.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a>.</p>
+<dl class="method">
+<dt id="stdnet.orm.Zset.ipop">
+<tt class="descname">ipop</tt><big>(</big><em>start</em>, <em>stop=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.Zset.ipop" title="Permalink to this definition">¶</a></dt>
+<dd><p>pop a range from the set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.orm.Zset.pop">
+<tt class="descname">pop</tt><big>(</big><em>start</em>, <em>stop=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.Zset.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>pop a score range from the set</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="hashtable">
+<span id="hash-structure"></span><h3>HashTable<a class="headerlink" href="#hashtable" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.HashTable">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">HashTable</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>A hash-table <tt class="xref py py-class docutils literal"><span class="pre">stdnet.Structure</span></tt>.
+The networked equivalent to a Python <tt class="docutils literal"><span class="pre">dict</span></tt>.</p>
+<dl class="method">
+<dt id="stdnet.orm.HashTable.addnx">
+<tt class="descname">addnx</tt><big>(</big><em>field</em>, <em>value</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashTable.addnx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value of a hash field only if the field
+does not exist.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="ts">
+<h3>TS<a class="headerlink" href="#ts" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.orm.TS">
+<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">TS</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.TS" title="Permalink to this definition">¶</a></dt>
+<dd><p>A timeseries <a class="reference internal" href="#stdnet.orm.Structure" title="stdnet.orm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a>. This is an experimental structure
+not available with vanilla redis. Check the
+<a class="reference internal" href="../apps/timeseries.html#apps-timeserie"><em>timeseries documentation</em></a> for further information.</p>
 </dd></dl>
 
 </div>
@@ -377,14 +956,14 @@ the model table</p>
 <p>Once a model is defined, in order to use it in an application it needs to be
 registered with a back-end database. Unregistered models cannot be used to save
 data and they will raise exceptions.</p>
-<p>Stdnet comes with two fucntions for
+<p>Stdnet comes with two functions for
 registration, a low level and a higher level one which can be used to register
 several models at once.</p>
 <div class="section" id="register">
 <h3>Register<a class="headerlink" href="#register" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="stdnet.orm.register">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>keyprefix=None</em>, <em>timeout=None</em>, <em>ignore_duplicates=True</em><big>)</big><a class="headerlink" href="#stdnet.orm.register" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>ignore_duplicates=True</em>, <em>local_thread=False</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.orm.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>The low level function for registering a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
 classes with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt> data server.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -393,14 +972,14 @@ classes with a <tt class="xref py py-class docutils literal"><span class="pre">s
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. Must be provided.</li>
-<li><strong>backend</strong> &#8211; <p>a backend connection string.</p>
+<li><strong>backend</strong> &#8211; <p>a backend connection string.
+For example:</p>
+<div class="highlight-python"><pre>redis://localhost:8080?db=6&amp;prefix=bla.</pre>
+</div>
 <p>Default <tt class="docutils literal"><span class="pre">settings.DEFAULT_BACKEND</span></tt>.</p>
 </li>
-<li><strong>keyprefix</strong> &#8211; <p>a string used to prefix all database keys related
-to the model. If not provided it is calculated
-from the connection string.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
-</li>
+<li><strong>params</strong> &#8211; optional parameters which can be used to override the
+connection string parameters.</li>
 <li><strong>timeout</strong> &#8211; <p>timeout in seconds for keys persistence.
 If not provided it is calculated from the
 connection string.</p>
@@ -438,18 +1017,23 @@ on application modules.</p>
 through all <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
 and register them using the <a class="reference internal" href="#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> low
 level function.</p>
-<p>It return a generator.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>application</strong> &#8211; A String or a list of strings which represent
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>applications</strong> &#8211; A String or a list of strings which represent
 python dotted paths to modules containing
 a <tt class="docutils literal"><span class="pre">models</span></tt> module where models are implemented.</li>
-<li><strong>models</strong> &#8211; list of models to include or <tt class="xref docutils literal"><span class="pre">None</span></tt> (all models).
-Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</li>
+<li><strong>models</strong> &#8211; Optional list of models to include. If not provided
+all models found in <em>applications</em> will be included.</li>
+<li><strong>app_defaults</strong> &#8211; optional dictionary which specify a model and/or
+application backend connection string.</li>
+<li><strong>default</strong> &#8211; The default connection string.</li>
 </ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a generator over registered models</p>
 </td>
 </tr>
 </tbody>
@@ -471,246 +1055,23 @@ Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</l
 <p>It return s a list of registered models.</p>
 </dd></dl>
 
-<span class="target" id="module-stdnet.orm.query"></span></div>
 </div>
-<div class="section" id="queries">
-<h2>Queries<a class="headerlink" href="#queries" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="manager">
-<h3>Manager<a class="headerlink" href="#manager" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.orm.query.Manager">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">Manager</tt><a class="headerlink" href="#stdnet.orm.query.Manager" title="Permalink to this definition">¶</a></dt>
-<dd><p>A manager class for stdnet models. Each <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
-class contains at least one manager which can be accessed by the <tt class="docutils literal"><span class="pre">objects</span></tt>
-class attribute:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">group</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">flag</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
-    
-<span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span>
-</pre></div>
-</div>
-<p>Managers are used to construct queries for object retrieval.
-Queries can be constructed by selecting instances with specific fields
-using a where or limit clause, or a combination of them:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;bla&#39;</span><span class="p">)</span>
-
-<span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">group__in</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;bla&#39;</span><span class="p">,</span><span class="s">&#39;foo&#39;</span><span class="p">])</span>
-
-<span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">group__in</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;bla&#39;</span><span class="p">,</span><span class="s">&#39;foo&#39;</span><span class="p">],</span> <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>They can also exclude instances from the query:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;bla&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="stdnet.orm.query.Manager.get_or_create">
-<tt class="descname">get_or_create</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.get_or_create" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get an object. If it does not exists, it creates one</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.Manager.filter">
-<tt class="descname">filter</tt><big>(</big><em>filter_sets=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">QuerySet</span></tt></a> with limiting clauses corresponding to
-where or limit in a SQL select statement.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>filter_sets</strong> &#8211; optional list of set ids to filter.
-Used by the <a class="reference internal" href="#stdnet.orm.query.M2MRelatedManager" title="stdnet.orm.query.M2MRelatedManager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.M2MRelatedManager</span></tt></a>.</li>
-<li><strong>kwargs</strong> &#8211; dictionaris of limiting clauses.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a> instance.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.Manager.from_queries">
-<tt class="descname">from_queries</tt><big>(</big><em>queries</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.from_queries" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build a new query from a list of <tt class="xref py py-class docutils literal"><span class="pre">field_query</span></tt>
-independent queries.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.Manager.exclude">
-<tt class="descname">exclude</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.exclude" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">QuerySet</span></tt></a> containing objects that do not
-match the given lookup parameters <em>kwargs</em>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>kwargs</strong> &#8211; dictionaris of lookup parameters to exclude from the query.</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a> instance.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.Manager.all">
-<tt class="descname">all</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.Manager.all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">QuerySet</span></tt></a> which retrieve all instances of the model. This is a proxy of the <a class="reference internal" href="#stdnet.orm.query.Manager.filter" title="stdnet.orm.query.Manager.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> method
-used without parameters.</p>
-</dd></dl>
-
+<div class="section" id="registered-models">
+<h3>Registered models<a class="headerlink" href="#registered-models" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.registered_models">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">registered_models</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.registered_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterator over registered models</p>
 </dd></dl>
 
 </div>
-<div class="section" id="queryset">
-<h3>QuerySet<a class="headerlink" href="#queryset" title="Permalink to this headline">¶</a></h3>
-<p>Though you usually won&#8217;t create one manually, you&#8217;ll go through a <a class="reference internal" href="#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a>,
-here&#8217;s the formal declaration of a QuerySet.</p>
-<dl class="class">
-<dt id="stdnet.orm.query.QuerySet">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">QuerySet</tt><big>(</big><em>meta</em>, <em>fargs=None</em>, <em>eargs=None</em>, <em>filter_sets=None</em>, <em>ordering=None</em>, <em>queries=None</em>, <em>empty=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet" title="Permalink to this definition">¶</a></dt>
-<dd><p>A QuerySet is not created using its constructor but instead using
-the model manager via <a class="reference internal" href="#stdnet.orm.query.Manager.filter" title="stdnet.orm.query.Manager.filter"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.filter()</span></tt></a> or,
-<a class="reference internal" href="#stdnet.orm.query.Manager.exclude" title="stdnet.orm.query.Manager.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.exclude()</span></tt></a> or <a class="reference internal" href="#stdnet.orm.query.Manager.all" title="stdnet.orm.query.Manager.all"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.all()</span></tt></a>. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">field</span> <span class="o">=</span> <span class="s">&#39;bla&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><tt class="docutils literal"><span class="pre">qs</span></tt> is a <a class="reference internal" href="#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">QuerySet</span></tt></a> instance for model <tt class="docutils literal"><span class="pre">MyModel</span></tt> and in this case
-it refers to all instances which have <em>field</em> set to <tt class="docutils literal"><span class="pre">bla</span></tt>.</p>
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.filter">
-<tt class="descname">filter</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a new <tt class="docutils literal"><span class="pre">QuerySet</span></tt> containing objects that match the given lookup parameters.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.exclude">
-<tt class="descname">exclude</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.exclude" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a new <tt class="docutils literal"><span class="pre">QuerySet</span></tt> containing objects that do not match the given lookup parameters.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.sort_by">
-<tt class="descname">sort_by</tt><big>(</big><em>ordering</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.sort_by" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort the query by the given field</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.search">
-<tt class="descname">search</tt><big>(</big><em>text</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.search" title="Permalink to this definition">¶</a></dt>
-<dd><p>Search text in model. A search engine needs to be installed
-for this function to be available.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.load_related">
-<tt class="descname">load_related</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.load_related" title="Permalink to this definition">¶</a></dt>
-<dd><p>It returns a new <tt class="docutils literal"><span class="pre">QuerySet</span></tt> that automatically follows foreign-key
-relationships, selecting that additional related-object data when it executes
-its query. This is <a class="reference internal" href="../examples/performance.html#increase-performance"><em>performance boost</em></a> when
-accessing the related fields of all (most) objects in your queryset.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fields</strong> &#8211; fields to include in the loading. If not provided all
-foreign keys and <a class="reference internal" href="fields.html#model-field-structure"><em>structured fields</em></a>
-in the model will be loaded.</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">an instance of a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Queryset</span></tt>.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.load_only">
-<tt class="descname">load_only</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.load_only" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is provides a <a class="reference internal" href="../examples/performance.html#increase-performance"><em>performance boost</em></a>
-in cases when you need to load a subset of fields of your model. The boost
-achieved is less than the one obtained when using
-<a class="reference internal" href="#stdnet.orm.query.QuerySet.load_related" title="stdnet.orm.query.QuerySet.load_related"><tt class="xref py py-meth docutils literal"><span class="pre">QuerySet.load_related()</span></tt></a>, since it does not reduce the number of requests
-to the database. However, it can save you lots of bandwidth when excluding
-data intensive fields you don&#8217;t need.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.count">
-<tt class="descname">count</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.count" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of objects in <tt class="docutils literal"><span class="pre">self</span></tt>.
-This method is efficient since the queryset does not
-receive any data from the server. It construct the queries and count the
-objects on the server side.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.items">
-<tt class="descname">items</tt><big>(</big><em>slic=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.items" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generator of instances in queryset.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.aslist">
-<tt class="descname">aslist</tt><big>(</big><em>slic=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.aslist" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return python <tt class="docutils literal"><span class="pre">list</span></tt> of elements in queryset</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.QuerySet.delete">
-<tt class="descname">delete</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.QuerySet.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete all the element in the queryset</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="relatedmanager">
-<h3>RelatedManager<a class="headerlink" href="#relatedmanager" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.orm.query.RelatedManager">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">RelatedManager</tt><big>(</big><em>model</em>, <em>related_fieldname</em>, <em>instance=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.RelatedManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialized <a class="reference internal" href="#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a> for handling
-one-to-many relationships under the hood.
-If a model has a <a class="reference internal" href="fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> field, instances of
-that model will have access to the related (foreign) objects
-via a simple attribute of the model.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="m2mrelatedmanager">
-<h3>M2MRelatedManager<a class="headerlink" href="#m2mrelatedmanager" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.orm.query.M2MRelatedManager">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.query.</tt><tt class="descname">M2MRelatedManager</tt><big>(</big><em>model</em>, <em>st</em>, <em>to_name</em>, <em>instance</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.M2MRelatedManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialized <a class="reference internal" href="#stdnet.orm.query.Manager" title="stdnet.orm.query.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.Manager</span></tt></a> for handling
-many-tomany relationships under the hood.
-When a model has a <a class="reference internal" href="fields.html#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ManyToManyField</span></tt></a>, instances
-of that model will have access to the related objects 
-via a simple attribute of the model.</p>
-<dl class="method">
-<dt id="stdnet.orm.query.M2MRelatedManager.add">
-<tt class="descname">add</tt><big>(</big><em>value</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.M2MRelatedManager.add" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add <em>value</em>, an instance of <tt class="docutils literal"><span class="pre">self.model</span></tt>, to the set.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.M2MRelatedManager.remove">
-<tt class="descname">remove</tt><big>(</big><em>value</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.M2MRelatedManager.remove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove <em>value</em>, an instance of <tt class="docutils literal"><span class="pre">self.model</span></tt> from the set of
-elements contained by the field.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.orm.query.M2MRelatedManager.filter">
-<tt class="descname">filter</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.query.M2MRelatedManager.filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Filter instances of related model.</p>
-</dd></dl>
-
+<div class="section" id="unregister-model">
+<h3>Unregister model<a class="headerlink" href="#unregister-model" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.orm.unregister">
+<tt class="descclassname">stdnet.orm.</tt><tt class="descname">unregister</tt><big>(</big><em>model=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.unregister" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unregister a <em>model</em> if provided, otherwise it unregister all
+registered models.</p>
 </dd></dl>
 
 </div>
@@ -739,22 +1100,30 @@ the same events.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Model and Query API</a><ul>
-<li><a class="reference internal" href="#model">Model</a><ul>
+<li><a class="reference internal" href="#model-and-query">Model and Query</a><ul>
 <li><a class="reference internal" href="#stdmodel-class">StdModel Class</a></li>
 <li><a class="reference internal" href="#data-server-metaclass">Data Server Metaclass</a></li>
+<li><a class="reference internal" href="#model">Model</a></li>
+<li><a class="reference internal" href="#query">Query</a></li>
+<li><a class="reference internal" href="#autoincrement">autoincrement</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-structures">Data Structures</a><ul>
+<li><a class="reference internal" href="#creating-structures">Creating Structures</a></li>
+<li><a class="reference internal" href="#structure-base-class">Structure Base Class</a></li>
+<li><a class="reference internal" href="#list">List</a></li>
+<li><a class="reference internal" href="#set">Set</a></li>
+<li><a class="reference internal" href="#orderedset">OrderedSet</a></li>
+<li><a class="reference internal" href="#hashtable">HashTable</a></li>
+<li><a class="reference internal" href="#ts">TS</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#registration">Registration</a><ul>
 <li><a class="reference internal" href="#register">Register</a></li>
 <li><a class="reference internal" href="#register-application-models">Register application models</a></li>
 <li><a class="reference internal" href="#register-applications">Register applications</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#queries">Queries</a><ul>
-<li><a class="reference internal" href="#manager">Manager</a></li>
-<li><a class="reference internal" href="#queryset">QuerySet</a></li>
-<li><a class="reference internal" href="#relatedmanager">RelatedManager</a></li>
-<li><a class="reference internal" href="#m2mrelatedmanager">M2MRelatedManager</a></li>
+<li><a class="reference internal" href="#registered-models">Registered models</a></li>
+<li><a class="reference internal" href="#unregister-model">Unregister model</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#signals">Signals</a></li>

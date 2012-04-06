@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
     <link rel="next" title="A Search Engine for Stdnet Models" href="searchengine.html" />
-    <link rel="prev" title="Remote Data Structures" href="../backends/structures.html" /> 
+    <link rel="prev" title="Redis Backend" href="../backends/redis.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +39,7 @@
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../backends/structures.html" title="Remote Data Structures"
+          <a href="../backends/redis.html" title="Redis Backend"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>
@@ -53,11 +53,11 @@
   <span class="target" id="module-stdnet.apps"><span id="contrib-index"></span></span><div class="section" id="applications">
 <h1>Applications<a class="headerlink" href="#applications" title="Permalink to this headline">¶</a></h1>
 <p>The <a class="reference internal" href="#module-stdnet.apps" title="stdnet.apps"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps</span></tt></a> module contains applications
-which are based on <a class="reference internal" href="../backends/structures.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> but are not part of the
-core library.
-They don&#8217;t have external dependencies but some of the requires
-a <a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>non vanilla redis</em></a> implementation and are here
-mainly as use cases. In the future they may be removed
+which are based on <a class="reference internal" href="../utility.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> but are not part of the
+core library.</p>
+<p>They don&#8217;t have external dependencies but some require
+a <a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>non vanilla redis</em></a> implementation. They are here
+mainly as use cases and in the future they may be removed
 and placed into their own installable packages.</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -66,13 +66,10 @@ and placed into their own installable packages.</p>
 <li class="toctree-l2"><a class="reference internal" href="searchengine.html#api">API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Timeseries Models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-base-model">Timeseries base model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model">Timeseries model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#timeseries-model-field">Timeseries Model Field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Column Time Series</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="timeseries.html#api">API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="grid.html">Grid Computing</a></li>
 </ul>
 </div>
 </div>
@@ -88,8 +85,8 @@ and placed into their own installable packages.</p>
 </a>
 </p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../backends/structures.html"
-                        title="previous chapter">Remote Data Structures</a></p>
+  <p class="topless"><a href="../backends/redis.html"
+                        title="previous chapter">Redis Backend</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="searchengine.html"
                         title="next chapter">A Search Engine for Stdnet Models</a></p>
@@ -128,7 +125,7 @@ and placed into their own installable packages.</p>
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >next</a> |</li>
         <li class="right" >
-          <a href="../backends/structures.html" title="Remote Data Structures"
+          <a href="../backends/redis.html" title="Redis Backend"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
       </ul>

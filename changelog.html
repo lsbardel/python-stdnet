@@ -49,38 +49,61 @@
   <div class="section" id="changelog">
 <span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="ver-0-7-0-development">
-<h2>Ver. 0.7.0 - Development<a class="headerlink" href="#ver-0-7-0-development" title="Permalink to this headline">¶</a></h2>
+<span id="vers07"></span><h2>Ver. 0.7.0 - Development<a class="headerlink" href="#ver-0-7-0-development" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>It requires <a class="reference external" href="http://redis.io/">redis</a> 2.4 or higher.</li>
-<li>A superset of the <a class="reference internal" href="#vers06"><em>0.6 series</em></a> with tons of new features manly geared
-towards improved performance via custom query options, transactions and
-a new <tt class="docutils literal"><span class="pre">C</span></tt> parser shipped with the library.</li>
+<li><strong>It requires redis 2.6 or higher</strong>.</li>
+<li>Some backward incompatible changes in the API and database schema.</li>
+<li>Tons of new features including a richer query API, improved performance via custom
+query options, more flexible transactions, <a class="reference external" href="http://www.lua.org/">lua</a> scripting for <a class="reference external" href="http://redis.io/">redis</a> and
+a new <tt class="docutils literal"><span class="pre">C</span></tt> <a class="reference external" href="http://redis.io/">redis</a> parser shipped with the library.</li>
+<li>Redesign of <a class="reference internal" href="model/fields.html#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ManyToManyField</span></tt></a> which now uses a <tt class="docutils literal"><span class="pre">through</span></tt> model
+for building many to many relationships.
+<em>This is the only backward incompatible change both in terms of API and database scema</em>.</li>
+<li>Added <a class="reference internal" href="model/fields.html#stdnet.orm.CompositeIdField" title="stdnet.orm.CompositeIdField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.CompositeIdField</span></tt></a> to handle situations where each
+combination of given set of <a class="reference internal" href="model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> must be unique.</li>
 <li>If you have <a class="reference external" href="http://cython.org/">cython</a> installed in your python path, the setup.py script will
-build <tt class="docutils literal"><span class="pre">C</span></tt> extension for a new <a class="reference internal" href="backends/backends.html#redis-parser"><em>redis parser</em></a>.</li>
-<li>Added <a class="reference internal" href="model/models.html#stdnet.orm.query.QuerySet.load_only" title="stdnet.orm.query.QuerySet.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.query.QuerySet.load_only()</span></tt></a> method for loading a subset
-of a model fields. This can improve performance by reducing the amount of
+build <tt class="docutils literal"><span class="pre">C</span></tt> extension for a new <a class="reference internal" href="backends/redis.html#redis-parser"><em>redis parser</em></a>.</li>
+<li>Added ability to filter and search on <a class="reference internal" href="model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> fields.</li>
+<li>Added <a class="reference internal" href="model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Session</span></tt></a> for managing transactions in the object
+relational mapper.</li>
+<li>Moved structures from <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> to the <a class="reference internal" href="utility.html#module-stdnet.orm" title="stdnet.orm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.orm</span></tt></a> module.</li>
+<li>Added <a class="reference internal" href="model/models.html#stdnet.orm.Query.load_only" title="stdnet.orm.Query.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Query.load_only()</span></tt></a> and <a class="reference internal" href="model/models.html#stdnet.orm.Query.dont_load" title="stdnet.orm.Query.dont_load"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Query.dont_load()</span></tt></a>
+methods for loading a subset of a model fields.
+This can improve performance by reducing the amount of
 data transferred from the server to the client.
 Check the <a class="reference internal" href="examples/performance.html#performance-loadonly"><em>performance tips</em></a> regarding the
 new feature.</li>
-<li>Added <a class="reference internal" href="model/models.html#stdnet.orm.query.QuerySet.load_related" title="stdnet.orm.query.QuerySet.load_related"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.query.QuerySet.load_related()</span></tt></a> for loading related
+<li>Added <a class="reference internal" href="model/models.html#stdnet.orm.Query.load_related" title="stdnet.orm.Query.load_related"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Query.load_related()</span></tt></a> for loading related
 fields of a queryset with a single database query. This can have huge
 <a class="reference internal" href="examples/performance.html#performance-loadrelated"><em>performance benefits</em></a> when you know you are
 going to access the related field in your model.</li>
 <li>Fixed bug in related managers. The <tt class="docutils literal"><span class="pre">exclude</span></tt> method was not implemented.</li>
 <li><a class="reference internal" href="model/fields.html#stdnet.orm.PickleObjectField" title="stdnet.orm.PickleObjectField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.PickleObjectField</span></tt></a> uses the pickle protocol 2 for compatibility
 between python 2 and python 3.</li>
-<li>Refactored the save and delete method of model instances.</li>
-<li>Remote <a class="reference internal" href="backends/structures.html#structures-backend"><em>remote data structures</em></a> can be accessed
-via the <a class="reference internal" href="backends/structures.html#stdnet.struct" title="stdnet.struct"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.struct</span></tt></a> singleton.</li>
+<li>Refactored the <tt class="docutils literal"><span class="pre">save</span></tt> and <tt class="docutils literal"><span class="pre">delete</span></tt> method of model instances.</li>
 <li>Added <a class="reference internal" href="model/models.html#stdnet.orm.StdModel.tojson" title="stdnet.orm.StdModel.tojson"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.StdModel.tojson()</span></tt></a> method for obtaining JSON representation
 of model instances.</li>
-<li>Refactored <a class="reference internal" href="examples/tutorial2.html#model-transactions"><em>transactions</em></a> to be used with
-<a class="reference internal" href="backends/structures.html#structures-backend"><em>remote data structures</em></a> and
+<li>Indexes for <a class="reference internal" href="model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> fields are stored at sets with
+keys obtained from the field <tt class="docutils literal"><span class="pre">attrname</span></tt> rather than <tt class="docutils literal"><span class="pre">name</span></tt>.</li>
+<li>Added <a class="reference internal" href="model/models.html#stdnet.orm.StdModel.clone" title="stdnet.orm.StdModel.clone"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.StdModel.clone()</span></tt></a> method for cloning model instances.</li>
+<li>Refactored <a class="reference internal" href="examples/performance.html#model-transactions"><em>transactions</em></a> to be used with
+<a class="reference internal" href="model/models.html#model-structures"><em>remote data structures</em></a> and
 <a class="reference internal" href="model/fields.html#model-field-structure"><em>structured fields</em></a>.</li>
-<li>Moved the contrib module to <a class="reference internal" href="apps/index.html#module-stdnet.apps" title="stdnet.apps"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps</span></tt></a> renamed the tasks application
-to <tt class="docutils literal"><span class="pre">grid</span></tt>.</li>
+<li><a class="reference external" href="http://packages.python.org/pulsar/">pulsar</a> or <a class="reference external" href="http://readthedocs.org/docs/nose/en/latest/">nose</a> are required to run the test suite and <a class="reference external" href="http://pypi.python.org/pypi/unittest2">unittest2</a> is required if
+using python 2.6.</li>
+<li>Moved the contrib module to <a class="reference internal" href="apps/index.html#module-stdnet.apps" title="stdnet.apps"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps</span></tt></a>.</li>
 <li>Added <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.utils.dates</span></tt>.</li>
-<li><strong>345 regression tests</strong> with <strong>80%</strong> coverage.</li>
+<li>Added <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.utils.path</span></tt>.</li>
+<li><strong>570 regression tests</strong> with <strong>91%</strong> coverage.</li>
+</ul>
+</div>
+<div class="section" id="ver-0-6-2-2011-nov-14">
+<span id="vers06"></span><h2>Ver. 0.6.2 - 2011 Nov 14<a class="headerlink" href="#ver-0-6-2-2011-nov-14" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Critical bug fix in <tt class="docutils literal"><span class="pre">delete</span></tt> method when a model has no indices.</li>
+<li>Critical bug fix in <a class="reference internal" href="model/fields.html#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ManyToManyField</span></tt></a> which was causing the
+model <tt class="docutils literal"><span class="pre">delete</span></tt> method to crash.</li>
+<li><strong>297 regression tests</strong>.</li>
 </ul>
 </div>
 <div class="section" id="ver-0-6-1-2011-sep-10">
@@ -103,70 +126,50 @@ are regenerated if missing during the saving algorithm.</li>
 </ul>
 </div>
 <div class="section" id="ver-0-6-0-2011-aug-9">
-<span id="vers06"></span><h2>Ver. 0.6.0 - 2011 Aug 9<a class="headerlink" href="#ver-0-6-0-2011-aug-9" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first"><strong>New database schema incompatible with previous versions</strong>.</p>
-</li>
-<li><p class="first">This is a major release which brings into production a vast array
-of important new features including an improved database schema.</p>
-</li>
-<li><p class="first"><a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instances are mapped into separate redis hash
+<h2>Ver. 0.6.0 - 2011 Aug 9<a class="headerlink" href="#ver-0-6-0-2011-aug-9" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>New database schema incompatible with previous versions</strong>.</li>
+<li>This is a major release which brings into production a vast array
+of important new features including an improved database schema.</li>
+<li><a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instances are mapped into separate redis hash
 tables with fields given by the model field names and values given by the
-instance field values.</p>
-</li>
-<li><dl class="first docutils">
-<dt>Implemented two types of sorting:</dt>
-<dd><ul class="first last simple">
-<li><em>Implicit</em> by the <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Metaclass</span></tt> attribute <tt class="docutils literal"><span class="pre">ordering</span></tt>.
+instance field values.</li>
+<li>Implemented two types of sorting:
+<em>Implicit</em> by the <a class="reference internal" href="model/models.html#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Metaclass</span></tt></a> attribute <tt class="docutils literal"><span class="pre">ordering</span></tt>.
 When using this route, items are stored in the database in a sorted
-fashion, therefore no overhead is required for the sorting step.</li>
-<li><em>Explicit</em> by using the <tt class="docutils literal"><span class="pre">sort_by</span></tt> method in
-a <a class="reference internal" href="model/models.html#stdnet.orm.query.QuerySet" title="stdnet.orm.query.QuerySet"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt></a> object.</li>
-</ul>
-</dd>
-</dl>
-<p>Check the <a class="reference internal" href="examples/tutorial.html#sorting"><em>sorting</em></a> documentation for more information.</p>
-</li>
-<li><p class="first">Unique fields (fields with <a class="reference internal" href="model/fields.html#stdnet.orm.Field.unique" title="stdnet.orm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.Field.unique</span></tt></a> set to <tt class="xref docutils literal"><span class="pre">True</span></tt>)
+fashion, therefore no overhead is required for the sorting step.
+<em>Explicit</em> by using the <tt class="docutils literal"><span class="pre">sort_by</span></tt> method in
+a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt> object.
+Check the <a class="reference internal" href="examples/sorting.html#sorting"><em>sorting</em></a> documentation for more information.</li>
+<li>Unique fields (fields with <a class="reference internal" href="model/fields.html#stdnet.orm.Field.unique" title="stdnet.orm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.Field.unique</span></tt></a> set to <tt class="xref docutils literal"><span class="pre">True</span></tt>)
 are now indexed via <a class="reference external" href="http://redis.io/">redis</a> hash tables which maps the field value to the
 object id. Previously they were stored in keys. This solution
-reduces the memory footprint and the number of keys used.</p>
-</li>
-<li><p class="first">Added <a class="reference internal" href="examples/tutorial2.html#model-transactions"><em>transaction support</em></a>.
+reduces the memory footprint and the number of keys used.</li>
+<li>Added <a class="reference internal" href="examples/performance.html#model-transactions"><em>transaction support</em></a>.
 This way model instances are always consistent even when redis
 shuts down during an update. Transactions are also useful when updating several
-instances at once.</p>
-</li>
-<li><p class="first">Added support for <a class="reference external" href="https://github.com/pietern/hiredis-py">hiredis</a>. If installed it will be used as default redis parser.</p>
-</li>
-<li><p class="first">Added <a class="reference internal" href="utility.html#serialize-models"><em>serialization utilities</em></a> for saving model
+instances at once.</li>
+<li>Added support for <a class="reference external" href="https://github.com/pietern/hiredis-py">hiredis</a>. If installed it will be used as default redis parser.</li>
+<li>Added <a class="reference internal" href="utility.html#serialize-models"><em>serialization utilities</em></a> for saving model
 data in JSON or CSV format. Custom serialization algorithms
-can be added to the library.</p>
-</li>
-<li><p class="first">Data encoders have been moved to the <a class="reference internal" href="utility.html#module-stdnet.utils.encoders" title="stdnet.utils.encoders"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.utils.encoders</span></tt></a> module.
+can be added to the library.</li>
+<li>Data encoders have been moved to the <a class="reference internal" href="utility.html#module-stdnet.utils.encoders" title="stdnet.utils.encoders"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.utils.encoders</span></tt></a> module.
 There are four available, a dummy one (no encoding), <cite>Default</cite> to and
 from <cite>unicode</cite> and <cite>bytes</cite>, <cite>Bytes</cite> to and from bytes, <cite>PythonPickle</cite>
 to and from object and their pickle (bytes) representation and
-<cite>Json</cite> to and from structures and bytes.</p>
-</li>
-<li><p class="first">Added <tt class="docutils literal"><span class="pre">as_string</span></tt> parameter to <a class="reference internal" href="model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a> for
-specifying the storage method.</p>
-</li>
-<li><p class="first">Moved testing functions into the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.test</span></tt> module.</p>
-</li>
-<li><p class="first">Added <tt class="docutils literal"><span class="pre">hidden</span></tt> attribute to <a class="reference internal" href="model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a>.
-Used in the search algorithm.</p>
-</li>
-<li><p class="first">Reorganized and expanded documentation.</p>
-</li>
-<li><p class="first">Bug fix in <a class="reference internal" href="model/fields.html#stdnet.orm.PickleObjectField" title="stdnet.orm.PickleObjectField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.PickleObjectField</span></tt></a> field.</p>
-</li>
-<li><p class="first"><strong>289 regression tests</strong> with <strong>78%</strong> coverage.</p>
-</li>
+<cite>Json</cite> to and from structures and bytes.</li>
+<li>Added <tt class="docutils literal"><span class="pre">as_string</span></tt> parameter to <a class="reference internal" href="model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a> for
+specifying the storage method.</li>
+<li>Moved testing functions into the <a class="reference internal" href="utility.html#module-stdnet.test" title="stdnet.test"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.test</span></tt></a> module.</li>
+<li>Added <tt class="docutils literal"><span class="pre">hidden</span></tt> attribute to <a class="reference internal" href="model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a>.
+Used in the search algorithm.</li>
+<li>Reorganized and expanded documentation.</li>
+<li>Bug fix in <a class="reference internal" href="model/fields.html#stdnet.orm.PickleObjectField" title="stdnet.orm.PickleObjectField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.PickleObjectField</span></tt></a> field.</li>
+<li><strong>289 regression tests</strong> with <strong>78%</strong> coverage.</li>
 </ul>
 </div>
 <div class="section" id="ver-0-5-5-2011-june-6">
-<h2>Ver. 0.5.5 - 2011 June 6<a class="headerlink" href="#ver-0-5-5-2011-june-6" title="Permalink to this headline">¶</a></h2>
+<span id="vers05"></span><h2>Ver. 0.5.5 - 2011 June 6<a class="headerlink" href="#ver-0-5-5-2011-june-6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Several new features, some important bug fixes and more tests.</li>
 <li>Added <a class="reference internal" href="utility.html#stdnet.orm.from_uuid" title="stdnet.orm.from_uuid"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.from_uuid()</span></tt></a> function which can be used to retrieve a model
@@ -229,12 +232,12 @@ based on <tt class="docutils literal"><span class="pre">hiredis</span></tt>.</li
 <h2>Ver. 0.5.1 - 2011 Feb 27<a class="headerlink" href="#ver-0-5-1-2011-feb-27" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Mainly bug fixes, documentations and more tests (improved coverage).</li>
-<li>Modified the <tt class="docutils literal"><span class="pre">parse_info</span></tt> method in <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.lib.redis</span></tt>. Its now compatible with redis 2.2.</li>
+<li>Modified the <tt class="docutils literal"><span class="pre">parse_info</span></tt> method in <a class="reference internal" href="backends/redis.html#module-stdnet.lib.redis" title="stdnet.lib.redis"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.lib.redis</span></tt></a>. Its now compatible with redis 2.2.</li>
 <li>Added documentation for <a class="reference internal" href="stdnetredis.html#redis-timeseries"><em>Redis timeseries</em></a>.</li>
 <li>Added a command to <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.contrib.monitor</span></tt>, a stdnet application for <a class="reference external" href="http://djpcms.com">djpcms</a>.</li>
 <li>Critical Bug fix in redis backend <tt class="docutils literal"><span class="pre">save_object</span></tt> attribute. This bug was causing the deletion of related objects when
 updating the value of existing objects.</li>
-<li>Added licences to the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.dispatch</span></tt> and <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.lib.redis</span></tt> module.</li>
+<li>Added licences to the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.dispatch</span></tt> and <a class="reference internal" href="backends/redis.html#module-stdnet.lib.redis" title="stdnet.lib.redis"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.lib.redis</span></tt></a> module.</li>
 <li><strong>177 regression tests, 189 with timeseries</strong> with <strong>67%</strong> coverage.</li>
 </ul>
 </div>
@@ -264,7 +267,7 @@ python runtests.py -t profile</pre>
 </ul>
 </div>
 <div class="section" id="ver-0-4-2-2010-nov-17">
-<h2>Ver. 0.4.2 - 2010 Nov 17<a class="headerlink" href="#ver-0-4-2-2010-nov-17" title="Permalink to this headline">¶</a></h2>
+<span id="vers04"></span><h2>Ver. 0.4.2 - 2010 Nov 17<a class="headerlink" href="#ver-0-4-2-2010-nov-17" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Added <tt class="docutils literal"><span class="pre">tags</span></tt> in tests. You can now run specific tags:</p>
 <div class="highlight-python"><pre>python runtests.py hash</pre>
@@ -298,12 +301,13 @@ python runtests.py -t profile</pre>
 <li><p class="first">Added new <tt class="docutils literal"><span class="pre">contrib</span></tt> module <tt class="docutils literal"><span class="pre">djstdnet</span></tt> which uses <a class="reference external" href="http://djpcms.com">djpcms</a> content management system to display an admin
 interface for a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>. Experimental for now.</p>
 </li>
-<li><p class="first">Added <tt class="xref py py-class docutils literal"><span class="pre">stdnet.CacheClass</span></tt> which can be used as <a class="reference external" href="http://www.djangoproject.com/">django</a> cache backend. For example, using redis database 11 as cache is obtained by:</p>
+<li><p class="first">Added <tt class="xref py py-class docutils literal"><span class="pre">stdnet.CacheClass</span></tt> which can be used as <a class="reference external" href="http://www.djangoproject.com/">django</a> cache backend.
+For example, using redis database 11 as cache is obtained by:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;stdnet://127.0.0.1:6379/?type=redis&amp;db=11&amp;timeout=300&#39;</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Overall refactoring of <a class="reference internal" href="utility.html#module-stdnet.orm" title="stdnet.orm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.orm</span></tt></a> and <a class="reference internal" href="backends/index.html#module-stdnet.backends" title="stdnet.backends"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt></a> modules.</p>
+<li><p class="first">Overall refactoring of <a class="reference internal" href="utility.html#module-stdnet.orm" title="stdnet.orm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.orm</span></tt></a> and <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> modules.</p>
 </li>
 <li><p class="first">Lazy loading of models via the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.dispatch</span></tt> module.</p>
 </li>
@@ -311,10 +315,10 @@ interface for a <a class="reference internal" href="model/models.html#stdnet.orm
 </li>
 <li><p class="first">Added <a class="reference internal" href="model/fields.html#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.AtomField</span></tt></a> subclasses.</p>
 </li>
-<li><p class="first">Before adding elements to a <a class="reference internal" href="model/fields.html#stdnet.orm.MultiField" title="stdnet.orm.MultiField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.MultiField</span></tt></a> the object needs to be saved, i.e. it needs to have a valid id.</p>
+<li><p class="first">Before adding elements to a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.MultiField</span></tt> the object needs to be saved, i.e. it needs to have a valid id.</p>
 </li>
-<li><p class="first">Made clear that <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> classes are mapped to <a class="reference internal" href="backends/structures.html#stdnet.HashTable" title="stdnet.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt></a>
-structures in a <a class="reference internal" href="backends/backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
+<li><p class="first">Made clear that <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> classes are mapped to <tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt>
+structures in a <a class="reference internal" href="backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
 </li>
 <li><p class="first">Moved <tt class="docutils literal"><span class="pre">structures</span></tt> module into <tt class="docutils literal"><span class="pre">backends</span></tt> directory. Internal reorganisation of several modules.</p>
 </li>
@@ -352,10 +356,12 @@ structures in a <a class="reference internal" href="backends/backends.html#stdne
 <div class="section" id="ver-0-3-0-2010-jul-15">
 <h2>Ver. 0.3.0 - 2010 Jul 15<a class="headerlink" href="#ver-0-3-0-2010-jul-15" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Overall code refactoring</li>
+<li>Overall code refactoring.</li>
 <li>Added ListField and OrderedSetField with Redis implementation</li>
-<li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">AttributError</span></tt> when method/attribute not available. Previously it returned <tt class="xref docutils literal"><span class="pre">None</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">ModelNotRegistered</span></tt> when trying to save an instance of a non-registered model</li>
+<li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">AttributError</span></tt> when method/attribute not available.
+Previously it returned <tt class="xref docutils literal"><span class="pre">None</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">ModelNotRegistered</span></tt> when trying to save an instance
+of a non-registered model</li>
 <li><strong>24 tests</strong></li>
 </ul>
 </div>
@@ -391,6 +397,7 @@ structures in a <a class="reference internal" href="backends/backends.html#stdne
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
 <li><a class="reference internal" href="#ver-0-7-0-development">Ver. 0.7.0 - Development</a></li>
+<li><a class="reference internal" href="#ver-0-6-2-2011-nov-14">Ver. 0.6.2 - 2011 Nov 14</a></li>
 <li><a class="reference internal" href="#ver-0-6-1-2011-sep-10">Ver. 0.6.1 - 2011 Sep 10</a></li>
 <li><a class="reference internal" href="#ver-0-6-0-2011-aug-9">Ver. 0.6.0 - 2011 Aug 9</a></li>
 <li><a class="reference internal" href="#ver-0-5-5-2011-june-6">Ver. 0.5.5 - 2011 June 6</a></li>

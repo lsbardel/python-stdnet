@@ -1,5 +1,7 @@
 .. _increase-performance:
 
+.. module:: stdnet.orm
+
 ======================
 Performance
 ======================
@@ -14,12 +16,12 @@ Transactions
 ========================
 
 Under the hood, stdnet performs server updates and queries
-via a :class:`stdnet.orm.Session`. You can write your application without
+via a :class:`Session`. You can write your application without
 using a session directly, and in several cases this is good enough.
 However, when dealing with lots of operations, you may be better off
 using :class:`Transaction`. A transaction is started
-with the :meth:`stdnet.orm.Session.begin` method and concluded with
-the :meth:`stdnet.orm.Session.commit` method. A session for
+with the :meth:`Session.begin` method and concluded with
+the :meth:`Session.commit` method. A session for
 :ref:`registered models <register-model>` can be obtained from the model
 manager. For example, using the ``Fund`` model in 
 :ref:`tutorial 1 <tutorial-application>`::
@@ -40,8 +42,8 @@ Transactions are pivotal for two reasons:
 For certain type of operations, the use of transactions becomes almost compulsory
 as the speed up achived can be of 2 to 3 order of magnitude.
 
-This is snippet demonstrates how to speed up the creation of several instances of
-a model ``Fund`` using a ``with`` statement::
+This snippet demonstrates how to speed up the creation of several instances of
+model ``Fund`` using a ``with`` statement::
 
     with Fund.objects.transaction() as t:
         for kwargs in data:
@@ -59,17 +61,7 @@ Or for more than one model::
         
         
 As soon as the ``with`` statement finishes, the transaction commit changes
-to the server via the :meth:`stdnet.orm.Session.commit` method.
-
-
-
-
-.. _performance-loadrelated:
-
-Use load_related
-====================
-
-
+to the server via the :meth:`commit` method.
 
 
 .. _performance-loadonly:
@@ -79,22 +71,31 @@ Use load_only
 
 One of the main advantages of using key-values databases as opposed to 
 traditional relational databases, is the ability to add or remove
-:class:`stdnet.orm.Field` without requiring database migration.
-In addition, the :class:`stdnet.orm.JSONField` can be a factory
-of fields for a given model (when used with the :attr:`stdnet.orm.JSONField.as_string`
+:class:`Field` without requiring database migration.
+In addition, the :class:`JSONField` can be a factory
+of fields for a given model (when used with the :attr:`JSONField.as_string`
 set to ``False``).
-For complex models, :class:`stdnet.orm.Field` can also be used as cache.
+For complex models, :class:`Field` can also be used as cache.
 
 In these situations, your model may contain a lot of fields, some of which
 could contain a lot of data (for example, text fields), or require
 expensive processing to convert them to Python objects.
-If you are using the results of a :class:`stdnet.orm.Query` in some situation
+If you are using the results of a :class:`Query` in some situation
 where you know you don't need those particular fields, you can tell stdnet
-to load a subset from the database.
+to load a subset from the database by using the :meth:`Query.load_only`
+or :meth:`Query.dont_load` methods.
 
 For example I need to load all my `EUR` Funds but I don't need to
 see the description and documentation::
 
     qs = Fund.objects.filter(ccy = "EUR").load_only('name')
+
+    
+
+.. _performance-loadrelated:
+
+Use load_related
+====================
+
 
     

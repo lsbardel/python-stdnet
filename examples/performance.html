@@ -24,7 +24,7 @@
     <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="A twitter clone" href="twitter.html" />
-    <link rel="prev" title="Search your models" href="search.html" /> 
+    <link rel="prev" title="Search for text in your models" href="search.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,7 +40,7 @@
           <a href="twitter.html" title="A twitter clone"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="search.html" title="Search your models"
+          <a href="search.html" title="Search for text in your models"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
@@ -52,19 +52,19 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="performance">
-<span id="increase-performance"></span><h1>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-stdnet.orm"><span id="increase-performance"></span></span><div class="section" id="performance">
+<h1>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h1>
 <p>We dig deeper into our example by exploring additional features of
 the API, including the manipulation of related models and transactions.</p>
 <div class="section" id="transactions">
 <span id="model-transactions"></span><h2>Transactions<a class="headerlink" href="#transactions" title="Permalink to this headline">¶</a></h2>
 <p>Under the hood, stdnet performs server updates and queries
-via a <a class="reference internal" href="../model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Session</span></tt></a>. You can write your application without
+via a <a class="reference internal" href="../model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>. You can write your application without
 using a session directly, and in several cases this is good enough.
 However, when dealing with lots of operations, you may be better off
-using <tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt>. A transaction is started
-with the <a class="reference internal" href="../model/session.html#stdnet.orm.Session.begin" title="stdnet.orm.Session.begin"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Session.begin()</span></tt></a> method and concluded with
-the <a class="reference internal" href="../model/session.html#stdnet.orm.Session.commit" title="stdnet.orm.Session.commit"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Session.commit()</span></tt></a> method. A session for
+using <a class="reference internal" href="../model/session.html#stdnet.orm.Transaction" title="stdnet.orm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>. A transaction is started
+with the <a class="reference internal" href="../model/session.html#stdnet.orm.Session.begin" title="stdnet.orm.Session.begin"><tt class="xref py py-meth docutils literal"><span class="pre">Session.begin()</span></tt></a> method and concluded with
+the <a class="reference internal" href="../model/session.html#stdnet.orm.Session.commit" title="stdnet.orm.Session.commit"><tt class="xref py py-meth docutils literal"><span class="pre">Session.commit()</span></tt></a> method. A session for
 <a class="reference internal" href="../model/models.html#register-model"><em>registered models</em></a> can be obtained from the model
 manager. For example, using the <tt class="docutils literal"><span class="pre">Fund</span></tt> model in
 <a class="reference internal" href="tutorial.html#tutorial-application"><em>tutorial 1</em></a>:</p>
@@ -83,8 +83,8 @@ of data at once.</li>
 </ul>
 <p>For certain type of operations, the use of transactions becomes almost compulsory
 as the speed up achived can be of 2 to 3 order of magnitude.</p>
-<p>This is snippet demonstrates how to speed up the creation of several instances of
-a model <tt class="docutils literal"><span class="pre">Fund</span></tt> using a <tt class="docutils literal"><span class="pre">with</span></tt> statement:</p>
+<p>This snippet demonstrates how to speed up the creation of several instances of
+model <tt class="docutils literal"><span class="pre">Fund</span></tt> using a <tt class="docutils literal"><span class="pre">with</span></tt> statement:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
         <span class="n">t</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Fund</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
@@ -100,31 +100,32 @@ a model <tt class="docutils literal"><span class="pre">Fund</span></tt> using a 
 </pre></div>
 </div>
 <p>As soon as the <tt class="docutils literal"><span class="pre">with</span></tt> statement finishes, the transaction commit changes
-to the server via the <a class="reference internal" href="../model/session.html#stdnet.orm.Session.commit" title="stdnet.orm.Session.commit"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Session.commit()</span></tt></a> method.</p>
-</div>
-<div class="section" id="use-load-related">
-<span id="performance-loadrelated"></span><h2>Use load_related<a class="headerlink" href="#use-load-related" title="Permalink to this headline">¶</a></h2>
+to the server via the <tt class="xref py py-meth docutils literal"><span class="pre">commit()</span></tt> method.</p>
 </div>
 <div class="section" id="use-load-only">
 <span id="performance-loadonly"></span><h2>Use load_only<a class="headerlink" href="#use-load-only" title="Permalink to this headline">¶</a></h2>
 <p>One of the main advantages of using key-values databases as opposed to
 traditional relational databases, is the ability to add or remove
-<a class="reference internal" href="../model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> without requiring database migration.
-In addition, the <a class="reference internal" href="../model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a> can be a factory
-of fields for a given model (when used with the <a class="reference internal" href="../model/fields.html#stdnet.orm.JSONField.as_string" title="stdnet.orm.JSONField.as_string"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.JSONField.as_string</span></tt></a>
+<a class="reference internal" href="../model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> without requiring database migration.
+In addition, the <a class="reference internal" href="../model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> can be a factory
+of fields for a given model (when used with the <a class="reference internal" href="../model/fields.html#stdnet.orm.JSONField.as_string" title="stdnet.orm.JSONField.as_string"><tt class="xref py py-attr docutils literal"><span class="pre">JSONField.as_string</span></tt></a>
 set to <tt class="xref docutils literal"><span class="pre">False</span></tt>).
-For complex models, <a class="reference internal" href="../model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Field</span></tt></a> can also be used as cache.</p>
+For complex models, <a class="reference internal" href="../model/fields.html#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> can also be used as cache.</p>
 <p>In these situations, your model may contain a lot of fields, some of which
 could contain a lot of data (for example, text fields), or require
 expensive processing to convert them to Python objects.
-If you are using the results of a <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Query</span></tt></a> in some situation
+If you are using the results of a <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> in some situation
 where you know you don&#8217;t need those particular fields, you can tell stdnet
-to load a subset from the database.</p>
+to load a subset from the database by using the <a class="reference internal" href="../model/models.html#stdnet.orm.Query.load_only" title="stdnet.orm.Query.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">Query.load_only()</span></tt></a>
+or <a class="reference internal" href="../model/models.html#stdnet.orm.Query.dont_load" title="stdnet.orm.Query.dont_load"><tt class="xref py py-meth docutils literal"><span class="pre">Query.dont_load()</span></tt></a> methods.</p>
 <p>For example I need to load all my <cite>EUR</cite> Funds but I don&#8217;t need to
 see the description and documentation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&quot;EUR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">load_only</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="use-load-related">
+<span id="performance-loadrelated"></span><h2>Use load_related<a class="headerlink" href="#use-load-related" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -142,15 +143,15 @@ see the description and documentation:</p>
   <ul>
 <li><a class="reference internal" href="#">Performance</a><ul>
 <li><a class="reference internal" href="#transactions">Transactions</a></li>
-<li><a class="reference internal" href="#use-load-related">Use load_related</a></li>
 <li><a class="reference internal" href="#use-load-only">Use load_only</a></li>
+<li><a class="reference internal" href="#use-load-related">Use load_related</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="search.html"
-                        title="previous chapter">Search your models</a></p>
+                        title="previous chapter">Search for text in your models</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="twitter.html"
                         title="next chapter">A twitter clone</a></p>
@@ -189,7 +190,7 @@ see the description and documentation:</p>
           <a href="twitter.html" title="A twitter clone"
              >next</a> |</li>
         <li class="right" >
-          <a href="search.html" title="Search your models"
+          <a href="search.html" title="Search for text in your models"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 

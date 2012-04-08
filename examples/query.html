@@ -59,13 +59,13 @@ data in an efficient and elegant way.
 To retrieve objects from your data server, you construct a
 <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via a <a class="reference internal" href="../model/session.html#stdnet.orm.Manager" title="stdnet.orm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> on your model class
 or via a <a class="reference internal" href="../model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
-<p>A <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> represents a collection of objects from your database.
+<p>A <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> represents a collection of objects from your model.
 It can have zero, one or many filters criteria that narrow down the collection
 based on given parameters.</p>
 <div class="section" id="retrieving-all-objects">
 <h2>Retrieving all objects<a class="headerlink" href="#retrieving-all-objects" title="Permalink to this headline">¶</a></h2>
-<p>The simplest way to retrieve objects from a table is to get all of them. To do this,
-use the <a class="reference internal" href="../model/session.html#stdnet.orm.Manager.query" title="stdnet.orm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.Manager.query()</span></tt></a> method on a Manager:</p>
+<p>The simplest way to retrieve objects for a model is to get all of them.
+To do this, use the <a class="reference internal" href="../model/session.html#stdnet.orm.Manager.query" title="stdnet.orm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> method on a Manager:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span>
 <span class="go">Query</span>
@@ -92,9 +92,14 @@ Lets create few other objects in the same line as above and try:</p>
 <span class="go">[Fund: Markowitz]</span>
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">count</span></tt> method counts the object in the query without physically retrieving them.</p>
-<p>Retrieving from a list:</p>
+<p>The <a class="reference internal" href="../model/models.html#stdnet.orm.Query.count" title="stdnet.orm.Query.count"><tt class="xref py py-meth docutils literal"><span class="pre">Query.count()</span></tt></a> method counts the object in the query without
+actually retrieving them.</p>
+<p>It is possible to filter from a list/tuple of values:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This filter statement iS equivalent to an union of two filters statements:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;USD&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>You can perform further section by concatenating queries:</p>
@@ -107,19 +112,25 @@ Lets create few other objects in the same line as above and try:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;future&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>and so forth.</p>
+<p>You can exclude a list of fields:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">type__in</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;future&#39;</span><span class="p">,</span><span class="s">&#39;equity&#39;</span><span class="p">))</span>
+</pre></div>
 </div>
-<div class="section" id="combining-queries">
-<h2>Combining Queries<a class="headerlink" href="#combining-queries" title="Permalink to this headline">¶</a></h2>
-<p>So far we have covered the basics of a <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> by refining search using the
-<a class="reference internal" href="../model/models.html#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">Query.filter()</span></tt></a> and <a class="reference internal" href="../model/models.html#stdnet.orm.Query.exclude" title="stdnet.orm.Query.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">Query.exclude()</span></tt></a> methods.</p>
-<p>Lets say we have the following example, form the <a class="reference internal" href="../apps/searchengine.html#module-stdnet.apps.searchengine" title="stdnet.apps.searchengine"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps.searchengine</span></tt></a>
-module:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WordItem</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CompositeIdField</span><span class="p">(</span><span class="s">&#39;word&#39;</span><span class="p">,</span><span class="s">&#39;model_type&#39;</span><span class="p">,</span><span class="s">&#39;object_id&#39;</span><span class="p">)</span>
-    <span class="n">word</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">model_type</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ModelField</span><span class="p">()</span>
-    <span class="n">object_id</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+</div>
+<div class="section" id="union">
+<h2>Union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="../model/models.html#stdnet.orm.Query.filter" title="stdnet.orm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">Query.filter()</span></tt></a> and <a class="reference internal" href="../model/models.html#stdnet.orm.Query.exclude" title="stdnet.orm.Query.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">Query.exclude()</span></tt></a> methods cover most common
+situations. There is another method which can be used to combine together
+two or more <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> into a different query. The <a class="reference internal" href="../model/models.html#stdnet.orm.Query.union" title="stdnet.orm.Query.union"><tt class="xref py py-class docutils literal"><span class="pre">Query.union</span></tt></a>
+method performs just that, an union of queries. Consider the following example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;equity&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>this retrieve all instruments with <em>ccy</em> &#8216;EUR&#8217; AND <em>type</em> &#8216;equity&#8217;. What about
+if we need all instruments with <em>ccy</em> &#8216;EUR&#8217; OR <em>type</em> &#8216;equity&#8217;? We use the
+<a class="reference internal" href="../model/models.html#stdnet.orm.Query.union" title="stdnet.orm.Query.union"><tt class="xref py py-meth docutils literal"><span class="pre">Query.union()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">Instruments</span><span class="o">.</span><span class="n">objecyts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;equity&#39;</span><span class="p">)</span>
+<span class="n">qs</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">q1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -141,7 +152,7 @@ module:</p>
 <li><a class="reference internal" href="#retrieving-all-objects">Retrieving all objects</a></li>
 <li><a class="reference internal" href="#filtering">Filtering</a></li>
 <li><a class="reference internal" href="#excluding">Excluding</a></li>
-<li><a class="reference internal" href="#combining-queries">Combining Queries</a></li>
+<li><a class="reference internal" href="#union">Union</a></li>
 </ul>
 </li>
 </ul>

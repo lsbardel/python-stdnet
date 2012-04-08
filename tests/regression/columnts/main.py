@@ -13,7 +13,7 @@ from examples.tsmodels import ColumnTimeSeries
 from tests.regression import struct
 
 skipUnless = test.unittest.skipUnless
-do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
+do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 

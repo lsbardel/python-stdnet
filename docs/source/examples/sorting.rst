@@ -1,5 +1,6 @@
-
 .. _sorting:
+
+.. module:: stdnet.orm
 
 =======================
 Sorting and Ordering
@@ -7,9 +8,9 @@ Sorting and Ordering
 Stdnet can sort instances of a model in three different ways:
 
 * :ref:`Explicit sorting <explicit-sorting>` using the
-  :attr:`stdnet.orm.Query.sort_by` method.
+  :attr:`Query.sort_by` method.
 * :ref:`Implicit sorting <implicit-sorting>` via the
-  :attr:`stdnet.orm.Metaclass.ordering` attribute of the model metaclass.
+  :attr:`Metaclass.ordering` attribute of the model metaclass.
 * :ref:`Incremental sorting <incremental-sorting>`, a variant of the
   implicit sorting for models which require to keep track how many
   times instances with the same id are created.
@@ -20,7 +21,7 @@ Stdnet can sort instances of a model in three different ways:
 Explicit Sorting
 =======================
 
-Sorting is usually achieved by using the :meth:`stdnet.orm.query.QuerySet.sort_by`
+Sorting is usually achieved by using the :meth:`Query.sort_by`
 method with a field name as parameter. Lets consider the following model::
 
     class SportActivity(orm.StdNet):
@@ -41,7 +42,8 @@ The negative sign in front of ``dt`` indicates descending order.
 Implicit Sorting
 ===================
 
-Implicit sorting is achieved by setting the ``ordering`` attribute in the model Meta class.
+Implicit sorting is achieved by setting the :attr:`Metaclass.ordering`
+attribute in the model ``Meta`` class.
 Let's consider the following Log model example::
 
     class Log(orm.StdModel):

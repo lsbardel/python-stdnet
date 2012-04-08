@@ -2,7 +2,6 @@
 
 .. module:: stdnet.orm
 
-
 ============================
 Query your Models
 ============================
@@ -13,7 +12,7 @@ To retrieve objects from your data server, you construct a
 :class:`Query` via a :class:`Manager` on your model class
 or via a :class:`Session`.
 
-A :class:`Query` represents a collection of objects from your database.
+A :class:`Query` represents a collection of objects from your model.
 It can have zero, one or many filters criteria that narrow down the collection
 based on given parameters.
 
@@ -21,8 +20,8 @@ based on given parameters.
 Retrieving all objects
 ==========================
 
-The simplest way to retrieve objects from a table is to get all of them. To do this,
-use the :meth:`stdnet.orm.Manager.query` method on a Manager:
+The simplest way to retrieve objects for a model is to get all of them.
+To do this, use the :meth:`Manager.query` method on a Manager:
 
     >>> funds = Fund.objects.query()
     >>> funds
@@ -49,13 +48,17 @@ Lets create few other objects in the same line as above and try::
     >>> list(eur_funds)
     [Fund: Markowitz]
 
-The ``count`` method counts the object in the query without physically retrieving them.
+The :meth:`Query.count` method counts the object in the query without
+actually retrieving them.
 
-
-Retrieving from a list::
+It is possible to filter from a list/tuple of values::
 
     Fund.objects.filter(ccy__in = ('EUR','USD'))
     
+This filter statement iS equivalent to an union of two filters statements::
+
+    Fund.objects.filter(ccy = 'EUR').union(Fund.objects.filter(ccy = 'USD'))
+   
    
 You can perform further section by concatenating queries::
 
@@ -67,23 +70,27 @@ Excluding
 You can also exclude fields from lookups::
 
     Instrument.objects.exclude(type = 'future')
-    
-and so forth.
+
+You can exclude a list of fields::
+
+    Instrument.objects.exclude(type__in = ('future','equity'))
 
 
-Combining Queries
+Union
 =======================
 
-So far we have covered the basics of a :class:`Query` by refining search using the
-:meth:`Query.filter` and :meth:`Query.exclude` methods.
+:meth:`Query.filter` and :meth:`Query.exclude` methods cover most common
+situations. There is another method which can be used to combine together
+two or more :class:`Query` into a different query. The :class:`Query.union`
+method performs just that, an union of queries. Consider the following example::
 
-Lets say we have the following example, form the :mod:`stdnet.apps.searchengine`
-module::
+    qs = Instrument.objects.filter(ccy = 'EUR', type = 'equity')
+    
+this retrieve all instruments with *ccy* 'EUR' AND *type* 'equity'. What about
+if we need all instruments with *ccy* 'EUR' OR *type* 'equity'? We use the
+:meth:`Query.union` method::
 
-    class WordItem(orm.StdModel):
-        id = orm.CompositeIdField('word','model_type','object_id')
-        word = orm.SymbolField()
-        model_type = orm.ModelField()
-        object_id = orm.SymbolField()
-
+    q1 = Instruments.objecyts.filter(type = 'equity')
+    qs = Instrument.objects.filter(ccy = 'EUR').union(q1)
+    
 

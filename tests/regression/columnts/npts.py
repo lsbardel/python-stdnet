@@ -16,10 +16,11 @@ except ImportError:
     
 from . import main
 
-runtests = os.environ['stdnet_backend_status'] == 'stdnet' and npts is not None
+do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'\
+    and npts is not None
 skipUnless = main.skipUnless
 
-skipUnless(runtests, 'Requires stdnet-redis and dynts') 
+@skipUnless(do_tests, 'Requires stdnet-redis and dynts') 
 class TestDynTsIntegration(main.TestColumnTSBase):
     
     @classmethod
@@ -59,7 +60,7 @@ class TestDynTsIntegration(main.TestColumnTSBase):
         v = ts1[dte]
         
 
-skipUnless(runtests, 'Requires stdnet-redis and dynts')        
+@skipUnless(do_tests, 'Requires stdnet-redis and dynts')        
 class TestColumnTSField(main.TestCase):
     model = ColumnTimeSeriesNumpy
     

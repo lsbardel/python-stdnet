@@ -5,7 +5,7 @@ from stdnet import test
 from .base import TestCase
 
 skipUnless = test.unittest.skipUnless
-do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
+do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
 
 class TestStdnetBranchCommand(TestCase):
     

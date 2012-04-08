@@ -6,7 +6,7 @@ from stdnet.utils import encoders, zip
 from stdnet.utils.populate import populate
 
 skipUnless = test.unittest.skipUnless
-do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
+do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
 
 dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)

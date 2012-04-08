@@ -10,7 +10,7 @@ from examples.tsmodels import TimeSeries, DateTimeSeries
 from tests.regression.fields.struct import MultiFieldMixin
 
 skipUnless = test.unittest.skipUnless
-do_tests = os.environ['stdnet_backend_status'] == 'stdnet'
+do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
 
 NUM_DATES = 300
 

@@ -173,13 +173,13 @@ TS
 Registration
 ======================
 
-Once a model is defined, in order to use it in an application it needs to be
-registered with a back-end database. Unregistered models cannot be used to save
-data and they will raise exceptions.
+Models can be registered with a :class:`stdnet.BackendDataServer` so that
+the model :class:`Manager` can be used to create instance and query the database.
+If a model is not registered, the only way to operate on it is via the
+:class:`Session` API. 
 
-Stdnet comes with two functions for
-registration, a low level and a higher level one which can be used to register
-several models at once.
+Stdnet provides two registration functions, a low level and a higher level one
+which can be used to register several models at once.
 
 Register
 ~~~~~~~~~~~~~~~~

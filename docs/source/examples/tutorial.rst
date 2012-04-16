@@ -1,5 +1,6 @@
 .. _tutorial:
 
+.. module:: stdnet.orm
 
 ============================
 Using Models
@@ -15,7 +16,7 @@ Writing Models
 ==========================
 
 Defining stdnet *models* is achieved by subclassing the
-:class:`stdnet.orm.StdModel` class. The following
+:class:`StdModel` class. The following
 snipped implements two models, ``Author`` and ``Book``::
 
     from stdnet import orm
@@ -44,11 +45,11 @@ An application
 
 Let's start with tutorial application: a small hedge fund.
 You never know it may become useful in the future!
-
 The application uses the following three models,
 
-* A ``Fund`` which stores information about several ``Position``
-* A ``Position`` is an investment on a particular funancial ``Instrument``.
+* ``Fund`` for storing information about several ``Position``.
+* ``Instrument`` holds information about tradable financial intruments.
+* ``Position`` is an investment on a particular ``Instrument`` in a ``Fund``.
 
 A minimal ``stdnet`` implementation can look like this::
 
@@ -87,17 +88,20 @@ A minimal ``stdnet`` implementation can look like this::
             
 If you are familiar with django_ you will see several similarities and you should be able to understand,
 with a certain degree of confidence, what it is going on.
-The only difference is the ``prices`` :class:`stdnet.orm.ListField`
+The only difference is the ``prices`` :class:`ListField`
 in the ``Instrument`` model which is
 not available in a traditional relational database.
 
 The metaclass
 ~~~~~~~~~~~~~~~~~~~~~~~
-The ``Position`` models specifies a ``Meta`` class with an ``ordering`` attribute.
+The ``Position`` models specifies a ``Meta`` class with an ``ordering``
+attribute.
 When provided, as in this case, the Meta class fields are used by the ``orm``
-to customize the build of the :class:`stdnet.orm.Metaclass` for the model.
-In this case we instruct the mapper to manage the ``Position`` model
-as ordered with respect to the :class:`stdnet.orm.DateField` ``dt``
+to customise the build of the :class:`Metaclass` for the model. The metaclas
+is stored in the :attr:`StdModel._meta` attribute.
+
+In this case we instruct the orm to manage the ``Position`` model
+as ordered with respect to the :class:`DateField` ``dt``
 in descending order. Check the  :ref:`sorting <sorting>`
 documentation for more details or ordering and sorting.
 
@@ -105,13 +109,15 @@ documentation for more details or ordering and sorting.
 Registering Models
 ================================
 
-Before playing with the API you need to :ref:`register the models <register-model>`::
+Before playing with the API let's to :ref:`register the models <register-model>`
+to a backend server. Registration is not compulsory, but it is required when using
+model's :class:`Manager`::
 
     import orm
 
     orm.register(Fund, 'redis://my.host.name:6379/?db=1')
     orm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-    orm.register(Position, 'redis://my.host.name:6379/?db=2')
+    orm.register(Position, 'redis://my.host.name:6379/?db=1')
     
 
 .. _one-to-many:
@@ -119,13 +125,13 @@ Before playing with the API you need to :ref:`register the models <register-mode
 One-to-many relationships
 ================================
 
-The *Position* model contains two :class:`stdnet.orm.ForeignKey` fields.
+The *Position* model contains two :class:`ForeignKey` fields.
 In the context of relational databases a
 `foreign key <http://en.wikipedia.org/wiki/Foreign_key>`_ is
 a referential constraint between two tables.
 
 For stdnet is exactly the same thing. The field store the ``id`` of a
-related :class:`stdnet.orm.StdModel` instance.
+related :class:`StdModel` instance.
 Behind the scenes, this functionality is implemented by Python descriptors_.
 This shouldn't really matter to you, but we point it out here for the curious.
 
@@ -142,7 +148,7 @@ update and delete objects.
 Creating objects
 ~~~~~~~~~~~~~~~~~~~~~
 
-An instance of a :class:`stdnet.orm.StdModel`, an object for clarity,
+An instance of a :class:`StdModel`, an object for clarity,
 is mapped to a hash table in the :class:`stdnet.BackendDataServer` backend.
 To create an object, instantiate it using keyword arguments to the
 model class, then call ``save()`` to save it to the data-server.

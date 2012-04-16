@@ -60,10 +60,10 @@ It removes all keys associated with models.'''
 
 def register(model, backend = None, ignore_duplicates = True,
              local_thread = False, **params):
-    '''The low level function for registering a :class:`stdnet.orm.StdModel`
-classes with a :class:`stdnet.backends.BackendDataServer` data server.
+    '''The low level function for registering a :class:`StdModel`
+classes with a :class:`stdnet.BackendDataServer` data server.
     
-:parameter model: a :class:`stdnet.orm.StdModel` class. Must be provided.
+:parameter model: a :class:`StdModel`. Must be provided.
 
 :parameter backend: a backend connection string.
     For example::
@@ -71,15 +71,9 @@ classes with a :class:`stdnet.backends.BackendDataServer` data server.
         redis://localhost:8080?db=6&prefix=bla.
     
     Default ``settings.DEFAULT_BACKEND``.
-                    
+    
 :parameter params: optional parameters which can be used to override the
     connection string parameters.
-                      
-:parameter timeout: timeout in seconds for keys persistence.
-                    If not provided it is calculated from the
-                    connection string.
-                    
-                    Default ``None``.
     
 **Usage**
     
@@ -90,7 +84,7 @@ For Redis the syntax is the following::
     orm.register(Author, 'redis://my.host.name:6379/?db=1')
     orm.register(Book, 'redis://my.host.name:6379/?db=2')
     orm.register(MyOtherModel, 
-                'redis://my.host.name:6379/?db=2&keyprefix=differentprefix')
+                'redis://my.host.name:6379/?db=2&keyprefix=differentprefix.')
     
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
@@ -130,17 +124,17 @@ registered models.'''
         
 
 def registered_models():
-    '''Iterator over registered models'''
+    '''An iterator over registered models'''
     return (m for m in _GLOBAL_REGISTRY)
     
     
 def model_iterator(application):
-    '''\
-Returns a generatotr of :class:`stdnet.orm.StdModel` classes found
-in the ``models`` module of an ``application`` dotted path.
+    '''A generator of :class:`StdModel` classes found in *application*.
 
-:parameter application: An iterable over python dotted-paths
-                        where models are defined.
+:parameter application: A python dotted path or an iterable over python
+    dotted-paths where models are defined.
+    
+Only models defined in these paths are considered.
 
 For example::
 
@@ -164,13 +158,12 @@ For example::
         try:
             mod_models = import_module('.models',application)
         except ImportError:
-            raise StopIteration
-        
-        label = getattr(mod_models,'app_label',label)
+            mod_models = mod
+        label = getattr(mod_models, 'app_label', label)
         for name in dir(mod_models):
-            model = getattr(mod_models,name)
-            meta = getattr(model,'_meta',None)
-            if isinstance(model,StdNetType) and meta:
+            model = getattr(mod_models, name)
+            meta = getattr(model, '_meta', None)
+            if isinstance(model, StdNetType) and meta:
                 if not meta.abstract and meta.app_label == label:
                     yield model
 
@@ -182,21 +175,18 @@ def register_application_models(applications,
     '''\
 A higher level registration functions for group of models located
 on application modules.
-
-It uses the :func:`stdnet.orm.model_iterator` function to iterate
-through all :class:`stdnet.orm.StdModel` models available in ``applications``
-and register them using the :func:`stdnet.orm.register` low
-level function.
+It uses the :func:`model_iterator` function to iterate
+through all :class:`StdModel` models available in ``applications``
+and register them using the :func:`register` low level function.
 
 :parameter applications: A String or a list of strings which represent
-    python dotted paths to modules containing
-    a ``models`` module where models are implemented.
+    python dotted paths where models are implemented.
 :parameter models: Optional list of models to include. If not provided
     all models found in *applications* will be included.
 :parameter app_defaults: optional dictionary which specify a model and/or
     application backend connection string.
 :parameter default: The default connection string. 
-:rtype: a generator over registered models
+:rtype: A generator over registered :class:`StdModel`.
 
 For example::
 

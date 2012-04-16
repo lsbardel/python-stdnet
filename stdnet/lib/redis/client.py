@@ -1109,9 +1109,13 @@ time ``start`` and time ``end`` sorted in ascending order.
     ############################################################################
     ##    Script commands
     ############################################################################
+    def countpattern(self, pattern):
+        "delete all keys matching *pattern*."
+        return self.script_call('countpattern', (), pattern)
+    
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
-        return self.script_call('delpattern', pattern)
+        return self.script_call('delpattern', (), pattern)
 
 
 class RedisProxy(Redis):

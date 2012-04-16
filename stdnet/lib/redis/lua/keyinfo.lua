@@ -1,10 +1,20 @@
 -- Retrieve information about keys
-local key
-if # ARGV > 0 then
-    keys = redis.call('KEYS',ARGV[1])
-elseif # KEYS > 0 then
+-- A list of keys, sorted in alphabetical order, is returned
+local start, stop, keys
+if # ARGV > 0 then -- If argv is provided, it is the pattern to search
+    keys = redis.call('KEYS', ARGV[1])
+    if # ARGV > 1 then
+    	start = ARGV[2] + 0
+    	num = ARGV[3] + 0
+    else
+    	start = 1
+    	num = # keys
+    end
+elseif # KEYS > 0 then -- If keys are provided, use them
     keys = KEYS
-else
+    start = 1
+    num = # keys
+else -- Nothing to do
     return {}
 end
 local type_table = {}
@@ -15,8 +25,12 @@ type_table['hash'] = 'hlen'
 type_table['ts'] = 'tslen'  -- stdnet branch
 type_table['string'] = 'strlen'
 local stats = {}
-local typ, command, len
-for i,key in ipairs(keys) do
+local typ, command, len, j, num_keys
+num_keys = # keys
+j = 0
+while j < num and start+j <= num_keys do
+    key = keys[start+j]
+    j = j + 1
     idletime = redis.call('object','idletime',key)
     typ = redis.call('type',key)['ok']
     command = type_table[typ]
@@ -24,7 +38,7 @@ for i,key in ipairs(keys) do
     if command then
         len = len + redis.call(command, key)
     end
-    stats[i] = {key,typ,len,redis.call('ttl',key),
+    stats[j] = {key,typ,len,redis.call('ttl',key),
                 redis.call('object','encoding',key),
                 idletime}
 end

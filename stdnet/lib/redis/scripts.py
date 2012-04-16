@@ -219,7 +219,7 @@ def _load_missing_scripts(results, positions, res):
         
 class countpattern(RedisScript):
     script = '''\
-return table.getn(redis.call('keys',KEYS[1]))
+return # redis.call('keys', ARGV[1])
 '''
     
 # Delete all keys from a pattern and return the total number of keys deleted
@@ -236,8 +236,8 @@ end
 class delpattern(RedisScript):
     script = '''\
 n = 0
-for i,key in ipairs(redis.call('keys',KEYS[1])) do
-  n = n + redis.call('del',key)
+for i,key in ipairs(redis.call('keys', ARGV[1])) do
+  n = n + redis.call('del', key)
 end
 return n
 '''
@@ -253,7 +253,6 @@ class zpop(RedisScript):
 
 class zdiffstore(RedisScript):
     script = read_lua_file('zdiffstore.lua')
-    
     
     
 class keyinfo(RedisScript):

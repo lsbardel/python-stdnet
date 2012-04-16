@@ -3,6 +3,7 @@ Modulule containing utility classes for retrieving and displaying
 Redis status and statistics.
 '''
 from datetime import datetime
+from copy import copy
 
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils import iteritems, format_int
@@ -15,7 +16,6 @@ init_data = {'set':{'count':0,'size':0},
              'ts':{'count':0,'size':0},
              'string':{'count':0,'size':0},
              'unknown':{'count':0,'size':0}}
-
 
 
 __all__ = ['RedisDb',
@@ -135,24 +135,61 @@ class RedisDb(orm.ModelBase):
     def __unicode__(self):
         return '{0}'.format(self.id)
     
+    
+class KeyQuery(object):
+    '''A lazy query for keys'''
+    def __init__(self, db):
+        self.db = db
+        self.pattern = '*'
+        self.slice = None
+        
+    def search(self, pattern):
+        o = copy(self)
+        o.pattern = pattern
+        return o
+    
+    def count(self):
+        return self.db.client.countpattern(self.pattern)
+    
+    def __len__(self):
+        return self.count()
+    
+    def __getitem__(self, slice):
+        o = copy(self)
+        o.slice = slice
+        return o
+    
+    def __iter__(self):
+        keys = []
+        db = self.db
+        c = db.client
+        if self.slice:
+            start, num = self.get_start_num(self.slice)
+            qs = c.script_call('keyinfo', (), self.pattern, start, num)
+        else:
+            qs = c.script_call('keyinfo', (), self.pattern)
+        for q in qs:
+            q.database = db
+            yield q
+    
+    def get_start_num(self, slic):
+        start, step, stop = slic.start, slic.step, slic.stop
+        N = None
+        if stop is None or stop < 0:
+            N = self.count()
+            stop = stop or 0
+            stop += N
+        if start < 0:
+            if N is None:
+                N = self.count()
+            start += N
+        return start+1, stop-start
+
 
 class RedisKeyManager(object):
     
-    def all(self, db):
-        keys = []
-        stats = init_data.copy()
-        append = keys.append
-        for info in self.keys(db, None, '*'):
-            append(info)
-            d = stats[info.type]
-            d['count'] += 1
-            d['size'] += info.length
-        return keys,stats
-    
-    def keys(self, db, keys, *patterns):
-        for info in db.client.script_call('keyinfo', keys, *patterns):
-            info.database = db
-            yield info
+    def query(self, db):
+        return KeyQuery(db)
             
     def delete(self, instances):
         if instances:

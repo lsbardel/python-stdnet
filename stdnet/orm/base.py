@@ -41,13 +41,9 @@ def make_app_label(new_class, app_label = None):
         model_module = sys.modules[new_class.__module__]
         try:
             bits = model_module.__name__.split('.')
-            if bits[0] == 'stdnet' and bits[1] == 'orm':
-                bits = bits[-1:]
-            else:
-                bits = bits[-2:]
-                if bits[-1] == 'models':
-                    bits.pop()
-            app_label = '.'.join(bits)
+            app_label = bits.pop()
+            if app_label == 'models':
+                app_label = bits.pop()
         except:
             app_label = ''
     return app_label

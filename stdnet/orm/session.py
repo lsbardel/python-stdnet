@@ -456,7 +456,7 @@ Results can contain errors.
             if failures > 1:
                 error = 'There were {0} exceptions during commit.\n\n'\
                             .format(failures)
-                error += '\n\n'.join((str(e) for e in e))
+                error += '\n\n'.join((str(e) for e in exceptions))
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures = failures)

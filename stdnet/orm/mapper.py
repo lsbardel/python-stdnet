@@ -95,7 +95,7 @@ on the same redis instance).'''
                     'Model {0} is already registered'.format(model._meta))
         else:
             return
-    backend = getdb(backend_uri = backend, **params)
+    backend = getdb(backend_uri=backend, **params)
     for manager in model._managers:
         manager.backend = backend
     _GLOBAL_REGISTRY.add(model)
@@ -111,13 +111,8 @@ registered models.'''
             _GLOBAL_REGISTRY.remove(model)
         except KeyError:
             return
-        for attr in dir(model):
-            try:
-                elem = getattr(model,attr)
-            except ModelNotRegistered:
-                continue
-            if isinstance(elem,Manager):
-                elem.backend = None
+        for manager in model._managers:
+            manager.backend = None
     else:
         for model in list(_GLOBAL_REGISTRY):
             unregister(model)

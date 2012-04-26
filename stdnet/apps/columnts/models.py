@@ -30,6 +30,8 @@ class TimeseriesCache(object):
 
 
 class ColumnTS(orm.TS):
+    default_multi_stats = ['covariance']
+    
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
     value_pickler = DoubleEncoder()
@@ -101,6 +103,31 @@ class ColumnTS(orm.TS):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
         res = self.backend_structure().stats(start, end, fields)
+        return self.async_handle(res, self._stats)
+    
+    def imulti_stats(self, start=0, end=-1, field, series, stats=None):
+        stats = stats or self.default_multi_stats
+        res = self.backend_structure().imulti_stats(start, end, field, series,
+                                                    stats)
+        return self.async_handle(res, self._stats)
+        
+    def multi_stats(self, start, end, field, series, stats=None):
+        '''Perform cross multivariate statistics calculation of
+this :clsss:`ColumnTS` and other *series*.
+
+:parameter start: the start date.
+:parameter start: the end date
+:parameter field: name of field to perform multivariate statistics.
+:parameter series: a list of two elements tuple containing the id of the
+    a :class:`columnTS` and a field name.
+:parameter stats: list of statistics to evaluate.
+    Default: ['covariance']
+'''
+        stats = stats or self.default_multi_stats
+        start = self.pickler.dumps(start)
+        end = self.pickler.dumps(end)
+        res = self.backend_structure().multi_stats(
+                        start, end, field, series, stats)
         return self.async_handle(res, self._stats)
     
     def merge(self, *series, **kwargs):

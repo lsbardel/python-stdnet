@@ -104,6 +104,24 @@ class RedisColumnTS(redisb.TS):
         return self.client.script_call('timeseries_stats', self.id,
                 'tsrangebytime', start, end, len(fields), *fields)
         
+    def imulti_stats(self, start, end, field, series, stats):
+        return self._multi_stats('tsrange', start, end, field, series, stats)
+    
+    def multi_stats(self, start, end, field, series, stats):
+        return self._multi_stats('tsrangebytime', start, end, field, series,
+                                 stats)
+    
+    def _multi_stats(self, command, start, end, field, series, stats):
+        n = len(series)
+        argv = []
+        for s in series:
+            if not len(s) == 2:
+                raise ValueError('Series must be a list of two elements tuple')
+            argv.extend(s)
+        argv.extend(stats)
+        return self.client.script_call('timeseries_stats', self.id,
+                command, start, end, 'multi', field, n, *argv)
+        
 
 # Add the redis structure to the struct map in the backend class
 redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS

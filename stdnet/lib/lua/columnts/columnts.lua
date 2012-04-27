@@ -251,7 +251,7 @@ columnts = {
 	            value = values[index]
 	            -- set the field value
 	            if weights then
-	                if isnumber(weights) then
+	                if type(weights) == 'number' then
 	                    weight = weights
 	                else
 	                    weight = weights[field]
@@ -365,7 +365,7 @@ function columnts:new(key)
             result[i] = columnts:new(k)
         end
         return result
-    elseif isnumber(key) then
+    elseif type(key) == 'number' then
         return key + 0
     else
         for k,v in pairs(columnts) do

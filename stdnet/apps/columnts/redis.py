@@ -104,47 +104,55 @@ class RedisColumnTS(redisb.TS):
         return self.client.script_call('timeseries_stats', self.id,
                 'tsrangebytime', start, end, len(fields), *fields)
         
-    def imulti_stats(self, start, end, field, series, stats):
-        return self._multi_stats('tsrange', start, end, field, series, stats)
+    def imulti_stats(self, start, end, fields, series, stats):
+        return self._multi_stats('tsrange', start, end, fields, series, stats)
     
-    def multi_stats(self, start, end, field, series, stats):
-        return self._multi_stats('tsrangebytime', start, end, field, series,
+    def multi_stats(self, start, end, fields, series, stats):
+        return self._multi_stats('tsrangebytime', start, end, fields, series,
                                  stats)
     
-    def _multi_stats(self, command, start, end, field, series, stats):
-        n = len(series)
-        argv = []
+    def _multi_stats(self, command, start, end, fields, series, stats):
+        if not series:
+            raise ValueError('series must be provided when performing'\
+                             ' multivariate statistics')
+        fields = fields or ()
+        ids = [self.id]
+        argv = [len(fields)]
+        argv.extend(fields)
         for s in series:
             if not len(s) == 2:
                 raise ValueError('Series must be a list of two elements tuple')
-            argv.extend(s)
-        argv.extend(stats)
-        return self.client.script_call('timeseries_stats', self.id,
-                command, start, end, 'multi', field, n, *argv)
+            id, fields = s
+            ids.append(id)
+            argv.append(len(fields))
+            argv.extend(fields)
+        if stats:
+            argv.extend(stats)
+        return self.client.script_call('timeseries_stats', ids,
+                command, start, end, *argv)
         
 
 # Add the redis structure to the struct map in the backend class
 redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS
 
-script_path = os.path.join(os.path.split(os.path.abspath(__file__))[0],'lua')
 
 class timeseries_session(redis.RedisScript):
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('columnts.lua',script_path),
-              redis.read_lua_file('session.lua',script_path))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('columnts.session'))
     
 
 class timeseries_merge(redis.RedisScript):
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('columnts.lua',script_path),
-              redis.read_lua_file('merge.lua',script_path))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('columnts.merge'))
         
     
 class timeseries_query(redis.RedisScript):
     '''Lua Script for retrieving data from the remote timeseries'''
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('columnts.lua',script_path),
-              redis.read_lua_file('query.lua',script_path))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('columnts.query'))
     
     def callback(self, request, response, args, fields = None, novalues = False,
                  **options):
@@ -165,9 +173,9 @@ class timeseries_query(redis.RedisScript):
         
 
 class timeseries_stats(redis.RedisScript):
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('columnts.lua',script_path),
-              redis.read_lua_file('stats.lua',script_path))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('columnts.stats'))
     
     def callback(self, request, response, args, **options):
         encoding = request.client.encoding

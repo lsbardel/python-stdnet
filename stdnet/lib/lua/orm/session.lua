@@ -1,26 +1,4 @@
 -- Script for committing a stdnet.orm.Session to redis
-function table_slice (values,i1,i2)
-    local res = {}
-    local n = #values
-    -- default values for range
-    i1 = i1 or 1
-    i2 = i2 or n
-    if i2 < 0 then
-        i2 = n + i2 + 1
-    elseif i2 > n then
-        i2 = n
-    end
-    if i1 < 1 or i1 > n then
-        return {}
-    end
-    local k = 1
-    for i = i1,i2 do
-        res[k] = values[i]
-        k = k + 1
-    end
-    return res
-end
-
 results = {}
 local i = 0
 local bk = KEYS[1]
@@ -35,12 +13,12 @@ if id_info == 'auto' then
     auto_id = true
 elseif id_info ~= '' then
     id_info = id_info + 0
-    composite_id = table_slice(ARGV,idx1+1,idx1+id_info)
+    composite_id = tabletools.slice(ARGV,idx1+1,idx1+id_info)
     idx1 = idx1 + id_info
 end 
 i = idx1 + 2*length_indices
-local indices = table_slice(ARGV,idx1+1,idx1+length_indices)
-local uniques = table_slice(ARGV,idx1+length_indices+1,i)
+local indices = tabletools.slice(ARGV,idx1+1,idx1+length_indices)
+local uniques = tabletools.slice(ARGV,idx1+length_indices+1,i)
 local idset = bk .. ':id'
 local j = 0
 local result = {}
@@ -115,7 +93,7 @@ while j < num_instances do
     local score = ARGV[i+3]
     local idx0 = i+4
     local length_data = ARGV[idx0] + 0
-    local data = table_slice(ARGV,idx0+1,idx0+length_data)
+    local data = tabletools.slice(ARGV,idx0+1,idx0+length_data)
     local created_id = false
     local autoincr = false
     local errors = {}

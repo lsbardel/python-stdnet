@@ -32,4 +32,4 @@ if N > 0 then
 	end
 end
 
-return {N,moved}
+return {N, moved}

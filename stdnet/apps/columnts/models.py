@@ -105,13 +105,13 @@ class ColumnTS(orm.TS):
         res = self.backend_structure().stats(start, end, fields)
         return self.async_handle(res, self._stats)
     
-    def imulti_stats(self, start=0, end=-1, field, series, stats=None):
+    def imulti_stats(self, series, start=0, end=-1, fields=None, stats=None):
         stats = stats or self.default_multi_stats
-        res = self.backend_structure().imulti_stats(start, end, field, series,
+        res = self.backend_structure().imulti_stats(start, end, fields, series,
                                                     stats)
         return self.async_handle(res, self._stats)
         
-    def multi_stats(self, start, end, field, series, stats=None):
+    def multi_stats(self, series, start, end, fields=None, stats=None):
         '''Perform cross multivariate statistics calculation of
 this :clsss:`ColumnTS` and other *series*.
 
@@ -127,7 +127,7 @@ this :clsss:`ColumnTS` and other *series*.
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
         res = self.backend_structure().multi_stats(
-                        start, end, field, series, stats)
+                        start, end, fields, series, stats)
         return self.async_handle(res, self._stats)
     
     def merge(self, *series, **kwargs):

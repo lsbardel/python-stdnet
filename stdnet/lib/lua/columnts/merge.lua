@@ -23,7 +23,7 @@ while j < num_series do
         return {err = 'No timeseries given to merge ' .. nseries}
     end
 end
-local fields = table_slice(ARGV, idx+1, -1)
+local fields = tabletools.slice(ARGV, idx+1, -1)
 
 local ts = columnts:merge(tsdest, elements, fields)
 return ts:length()

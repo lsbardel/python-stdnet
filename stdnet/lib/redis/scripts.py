@@ -15,6 +15,9 @@ __all__ = ['RedisScript',
            'read_lua_file']
 
 
+p = os.path
+DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
+
 def pairs_to_dict(response, encoding, value_encoder = 0):
     "Create a dict given a list of key/value pairs"
     if response:
@@ -38,12 +41,12 @@ def get_script(script):
     return _scripts.get(script)
 
 
-def read_lua_file(filename, path = None):
+def read_lua_file(dotted_module, path = None):
     '''Load lua script from the stdnet/lib/lua directory'''
-    if not path:
-        path = os.path.split(os.path.abspath(__file__))[0]
-        path = os.path.join(path,'lua')
-    name = os.path.join(path,filename)
+    path = path or DEFAULT_LUA_PATH
+    bits = dotted_module.split('.')
+    bits[-1] += '.lua'
+    name = os.path.join(path, *bits)
     with open(name) as f:
         return f.read()
     
@@ -216,6 +219,9 @@ def _load_missing_scripts(results, positions, res):
         results[i] = r
     return results
     
+################################################################################
+##    BATTERY INCLUDED REDIS SCRIPTS
+################################################################################
         
 class countpattern(RedisScript):
     script = '''\
@@ -243,7 +249,7 @@ return n
 '''
 
 class zpop(RedisScript):
-    script = read_lua_file('zpop.lua')
+    script = read_lua_file('commands.zpop')
     
     def callback(self, request, response, args, **options):
         if not response or not options['withscores']:
@@ -252,11 +258,11 @@ class zpop(RedisScript):
     
 
 class zdiffstore(RedisScript):
-    script = read_lua_file('zdiffstore.lua')
+    script = read_lua_file('commands.zdiffstore')
     
     
 class keyinfo(RedisScript):
-    script = read_lua_file('keyinfo.lua')
+    script = read_lua_file('commands.keyinfo')
     
     def callback(self, request, response, args, **options):
         client = request.client
@@ -269,3 +275,8 @@ class keyinfo(RedisScript):
                            ttl = ttl if ttl != -1 else False,\
                            encoding = enc.decode(encoding),\
                            idle = idle)
+
+
+class move2set(RedisScript):
+    script = (read_lua_file('commands.utils'),
+              read_lua_file('commands.move2set'))

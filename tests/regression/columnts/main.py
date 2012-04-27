@@ -4,7 +4,6 @@ from datetime import date, datetime, timedelta
 from stdnet import orm, test, SessionNotAvailable, CommitException
 from stdnet.utils import encoders, populate
 from stdnet.apps.columnts import ColumnTS, DoubleEncoder, nil
-from stdnet.apps.columnts.redis import script_path
 from stdnet.lib import redis
 
 from examples.data import tsdata
@@ -19,9 +18,9 @@ this_path = os.path.split(os.path.abspath(__file__))[0]
 
 
 class timeseries_test1(redis.RedisScript):
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('columnts.lua',script_path),
-              redis.read_lua_file('test1.lua',this_path))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('test1',this_path))
     
 
 @skipUnless(do_tests, 'Requires stdnet-redis')

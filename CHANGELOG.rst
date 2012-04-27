@@ -45,6 +45,7 @@ Ver. 0.7.0 - Development
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
 * Added :mod:`stdnet.utils.path`.
+* Lua test suite based. Requires lunatest_.
 * **570 regression tests** with **91%** coverage.
 
 .. _vers06:
@@ -288,3 +289,4 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _nose: http://readthedocs.org/docs/nose/en/latest/
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _lua: http://www.lua.org/
+.. _lunatest: https://github.com/silentbicycle/lunatest

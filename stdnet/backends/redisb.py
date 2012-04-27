@@ -41,22 +41,22 @@ redis.redis_before_send.connect(redis_before_send)
 
 
 class build_query(redis.RedisScript):
-    script = (redis.read_lua_file('utils/redis.lua'),
-              redis.read_lua_file('build_query.lua'))
+    script = (redis.read_lua_file('commands.utils'),
+              redis.read_lua_file('orm.build_query'))
     
 
 class add_recursive(redis.RedisScript):
-    script = (redis.read_lua_file('utils/redis.lua'),
-              redis.read_lua_file('add_recursive.lua'))
+    script = (redis.read_lua_file('commands.utils'),
+              redis.read_lua_file('orm.add_recursive'))
     
     
 class load_query(redis.RedisScript):
     '''Rich script for loading a query result into stdnet. It handles
 loading of different fields, loading of related fields, sorting and
 limiting.'''
-    script = (redis.read_lua_file('utils/table.lua'),
-              redis.read_lua_file('utils/redis.lua'),
-              redis.read_lua_file('load_query.lua'))
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('commands.utils'),
+              redis.read_lua_file('orm.load_query'))
     
     def build(self, response, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
@@ -109,7 +109,8 @@ limiting.'''
 class delete_query(redis.RedisScript):
     '''Lua script for bulk delete of an orm query, including cascade items.
 The first parameter is the model'''
-    script = redis.read_lua_file('delete_query.lua')
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('orm.delete_query'))
     
     def callback(self, request, response, args, meta = None, client = None,
                  **kwargs):
@@ -118,7 +119,8 @@ The first parameter is the model'''
     
 
 class commit_session(redis.RedisScript):
-    script = redis.read_lua_file('session.lua')
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('orm.session'))
     
     def callback(self, request, response, args, sm = None, iids = None,
                  **kwargs):
@@ -149,12 +151,6 @@ def structure_session_callback(sm, processed, response):
             return session_result(sm.meta, results)
     else:
         return response
-    
-
-class move2set(redis.RedisScript):
-    script = (redis.read_lua_file('utils/redis.lua'),
-              redis.read_lua_file('move2set.lua'))
-
         
 
 def results_and_erros(results, result_type):
@@ -682,15 +678,15 @@ class NumberArray(RedisStructure):
     
 
 class numberarray_resize(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray.lua'),
+    script = (redis.read_lua_file('orm.numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
     
 class numberarray_all_raw(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray.lua'),
+    script = (redis.read_lua_file('orm.numberarray'),
               '''return array:new(KEYS[1]):all_raw()''')
     
 class numberarray_getset(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray.lua'),
+    script = (redis.read_lua_file('orm.numberarray'),
               '''local a = array:new(KEYS[1])
 if ARGV[1] == 'get' then
     return a:get(ARGV[2],true)
@@ -699,7 +695,7 @@ else
 end''')
     
 class numberarray_pushback(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray.lua'),
+    script = (redis.read_lua_file('orm.numberarray'),
               '''local a = array:new(KEYS[1])
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)

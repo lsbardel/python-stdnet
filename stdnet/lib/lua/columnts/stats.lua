@@ -1,27 +1,35 @@
--- Initailize a vector with a value
-function init_vector(size, value)
-    local vector = {}
-    for i = 1, size do
-        vector[i] = value
-    end
-    return vector
+-- Univariate and multivariate statistics on redis
+local stats = {}
+
+if not (KEYS and ARGV) then
+    tabletools = require('tabletools')
 end
 
-function equal_vectors(v1, v2)
-    if # v1 == # v2 then
-        for i, v in ipairs(v1) do
-            if v ~= v2[i] then
-                return false
-            end
-        end
-        return true
-    else
-        return false
+local function add_field_names(key, field_values, serie_names)
+    local fields = {}
+    for field, values in pairs(field_values) do
+        name = key .. ' @ ' .. field
+        table.insert(fields, field)
+        table.insert(serie_names, name)
     end
+    return fields
+end
+
+local function add_cross_section(section, index, field_values, fields)
+    local v, field
+    for _, field in ipairs(fields) do
+        v = field_values[field][index]
+        if v == v then
+            table.insert(section, v)
+        else
+            return nil
+        end
+    end
+    return section
 end
 
 -- vector1 += vector2
-function vector_sadd(vector1, vector2)
+stats.vector_sadd = function (vector1, vector2)
     for i, v in ipairs(vector1) do
         vector1[i] = v + vector2[i]
     end
@@ -29,7 +37,7 @@ function vector_sadd(vector1, vector2)
 end
 
 -- vector1 - vector2
-function vector_diff(vector1, vector2)
+stats.vector_diff = function (vector1, vector2)
     local result = {}
     for i, v in ipairs(vector1) do
         result[i] = v - vector2[i]
@@ -38,7 +46,7 @@ function vector_diff(vector1, vector2)
 end
 
 -- Squared of a vector
-function vector_square(vector)
+stats.vector_square = function (vector)
     local vector2 = {}
     local n = 0
     for i, v in ipairs(vector) do
@@ -52,7 +60,7 @@ end
 
 --
 -- Calculate aggregate statistcs for a timeseries slice
-function uni_stats(serie)
+stats.univariate = function (serie)
     local times = serie.times
     local sts = {}
     local N = # times
@@ -101,33 +109,8 @@ function uni_stats(serie)
     return result
 end
 
-
-function add_field_names(key, field_values, serie_names)
-    local fields = {}
-    for field, values in pairs(field_values) do
-        name = key .. ' @ ' .. field
-        table.insert(fields, field)
-        table.insert(serie_names, name)
-    end
-    return fields
-end
-
-function add_cross_section(section, index, field_values, fields)
-    local v
-    for index, field in ipairs(fields) do
-        v = field_values[field][index]
-        if v == v then
-            table.insert(section, v)
-        else
-            return nil
-        end
-    end
-    return section
-end
-
-function fields_and_times(series)
-    local times
-    local section
+stats.fields_and_times = function (series)
+    local times, serie, time, i, j, section
     local serie_names = {}
     local time_dict = {}
     -- Fill fields
@@ -135,14 +118,15 @@ function fields_and_times(series)
         local fields = add_field_names(serie.key, serie.field_values, serie_names)
         if i == 1 then
             times = serie.times
-            for i, time in ipairs(times) do
-                time_dict[time] = add_cross_section({}, i, serie.field_values, fields)
+            for j, time in ipairs(times) do
+                time_dict[time .. ''] = add_cross_section({}, j, serie.field_values, fields)
             end
         else
-            for i, time in ipairs(serie.times) do
+            for j, time in ipairs(serie.times) do
+                time = time .. ''
                 local section = time_dict[time] 
                 if section then
-                    time_dict[time] = add_cross_section(section, i, serie.field_values, fields)
+                    time_dict[time] = add_cross_section(section, j, serie.field_values, fields)
                 end
             end
         end
@@ -152,34 +136,34 @@ end
 
 --
 -- Calculate aggregate statistcs for a timeseries slice
-function multi_stats(series)
+stats.multivariate = function (series)
     local prev_section, section, section2, dsection
-    local a = fields_and_times(series)
+    local a = stats.fields_and_times(series)
     local time_dict = a.time_dict
     local S = # a.names
     local T = S*(S+1)/2
     local N = 0
-    local sum   = init_vector(S, 0)
-    local sum2  = init_vector(T, 0)
-    local dsum  = init_vector(S, 0)
-    local dsum2 = init_vector(T, 0)
+    local sum   = tabletools.init(S, 0)
+    local sum2  = tabletools.init(T, 0)
+    local dsum  = tabletools.init(S, 0)
+    local dsum2 = tabletools.init(T, 0)
     for i, time in ipairs(a.times) do
-        section = time_dict[time]
-        if section then
+        section = time_dict[time .. '']
+        if section and # section == S then
             N = N + 1
-            vector_sadd(sum, section)
-            vector_sadd(sum2, vector_square(section))
+            stats.vector_sadd(sum, section)
+            stats.vector_sadd(sum2, stats.vector_square(section))
             if prev_section then
-                dsection = vector_diff(section, prev_section)
-                prev_section = section
-                vector_sadd(dsum, dsection)
-                vector_sadd(dsum2, vector_square(dsection))
+                dsection = stats.vector_diff(section, prev_section)
+                stats.vector_sadd(dsum, dsection)
+                stats.vector_sadd(dsum2, stats.vector_square(dsection))
             end
+            prev_section = section
         end
     end
     if N > 1 then
-        return {fields = serie_names,
-                npoints = N,
+        return {fields = a.names,
+                N = N,
                 sum = sum,
                 sum2 = sum2,
                 dsum = dsum,
@@ -187,7 +171,7 @@ function multi_stats(series)
     end
 end
 
-function get_series()
+stats.get_series = function ()
     local command = ARGV[1]
     local start = ARGV[2]
     local stop = ARGV[3]
@@ -197,7 +181,7 @@ function get_series()
         local num_fields = ARGV[pos]
         local serie = columnts:new(id)
         local num_fields = ARGV[pos]
-        local fields = table_slice(ARGV, pos+1, pos+num_fields)
+        local fields = tabletools.slice(ARGV, pos+1, pos+num_fields)
         pos = pos + num_fields + 1
         local time_values = serie:range(command, start, stop, fields, true)
         local t,v = unpack(time_values)
@@ -209,17 +193,19 @@ function get_series()
     return series
 end
 
-if KEYS then
-    local series = get_series()
+if KEYS and ARGV then
+    local series = stats.get_series()
+    local result
     if # series > 1 then
-        stats = multi_stats(series)
-        if stats then
-            stats = cjson.encode(stats)
+        result = stats.multivariate(series)
+        if result then
+            result = cjson.encode(result)
         end
     else
-        stats = flat_table(uni_stats(series[1]))
-        stats[4] = flat_table(stats[4])
+        result = tabletools.flat(stats.univariate(series[1]))
+        result[4] = tabletools.flat(result[4])
     end
-        
+    return result
+else
     return stats
 end

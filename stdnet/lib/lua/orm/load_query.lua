@@ -6,7 +6,7 @@ function related_fields (args, i, num)
 		local related = {bk = args[i+1], name = args[i+2], field = args[i+3], type = args[i+4]}
 		i = i + 5
 		local nf = args[i] + 0
-		related['fields'] = table_slice(args, i+1, i+nf)
+		related['fields'] = tabletools.slice(args, i+1, i+nf)
 		i = i + nf
 		count = count + 1
 		all[count] = related
@@ -20,7 +20,7 @@ local bk = KEYS[2] -- Base key for model
 local get_field = ARGV[1]
 local io = 2
 local num_fields = ARGV[io] + 0
-local fields = table_slice(ARGV, io + 1, io + num_fields)
+local fields = tabletools.slice(ARGV, io + 1, io + num_fields)
 local related
 io = io + num_fields + 1
 related, io = unpack(related_fields(ARGV, io, ARGV[io] + 0))

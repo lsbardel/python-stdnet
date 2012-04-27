@@ -3,7 +3,7 @@ local start = ARGV[2] + 0
 local stop = ARGV[3] + 0
 local novalues = ARGV[4] + 0
 local delete = ARGV[5] + 0
-local fields = table_slice(ARGV, 7, 6+ARGV[6])
+local fields = tabletools.slice(ARGV, 7, 6+ARGV[6])
 local ts = columnts:new(KEYS[1])
 if novalues == 1 then
     return ts:times(command, start, stop)

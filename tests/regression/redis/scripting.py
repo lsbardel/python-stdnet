@@ -14,7 +14,7 @@ binary_set = lambda x : set(to_charlist(x))
 
 
 class test_script(redis.RedisScript):
-    script = (redis.read_lua_file('utils/redis.lua'),
+    script = (redis.read_lua_file('commands.utils'),
               '''\
 js = cjson.decode(ARGV[1])
 return cjson.encode(js)''')

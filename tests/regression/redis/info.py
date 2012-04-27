@@ -68,7 +68,7 @@ class TestInfo(TestCase):
         info = self.info
         dbs = RedisDb.objects.all(info)
         for db in dbs:
-            keys = RedisKey.objects.all(db)
+            keys = RedisKey.objects.query(db)
             self.assertTrue(keys)
     
     def test_tails(self):

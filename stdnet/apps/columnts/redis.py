@@ -1,4 +1,5 @@
 import os
+import json
 
 from stdnet import orm
 from stdnet.backends import redisb
@@ -97,12 +98,12 @@ class RedisColumnTS(redisb.TS):
     def istats(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_stats', self.id,
-                'tsrange', start, end, len(fields), *fields)
+                'tsrange', start, end, 'uni', len(fields), *fields)
 
     def stats(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_stats', self.id,
-                'tsrangebytime', start, end, len(fields), *fields)
+                'tsrangebytime', start, end, 'uni', len(fields), *fields)
         
     def imulti_stats(self, start, end, fields, series, stats):
         return self._multi_stats('tsrange', start, end, fields, series, stats)
@@ -112,24 +113,23 @@ class RedisColumnTS(redisb.TS):
                                  stats)
     
     def _multi_stats(self, command, start, end, fields, series, stats):
-        if not series:
-            raise ValueError('series must be provided when performing'\
-                             ' multivariate statistics')
-        fields = fields or ()
-        ids = [self.id]
-        argv = [len(fields)]
-        argv.extend(fields)
-        for s in series:
+        all = [(self.id,fields)]
+        if series:
+            all.extend(series)
+        keys = []
+        argv = []
+        for s in all:
             if not len(s) == 2:
                 raise ValueError('Series must be a list of two elements tuple')
             id, fields = s
-            ids.append(id)
+            keys.append(id)
+            fields = fields if fields is not None else ()
             argv.append(len(fields))
             argv.extend(fields)
         if stats:
             argv.extend(stats)
-        return self.client.script_call('timeseries_stats', ids,
-                command, start, end, *argv)
+        return self.client.script_call('timeseries_stats', keys,
+                command, start, end, 'multi', *argv)
         
 
 # Add the redis structure to the struct map in the backend class
@@ -179,12 +179,6 @@ class timeseries_stats(redis.RedisScript):
     
     def callback(self, request, response, args, **options):
         encoding = request.client.encoding
-        result = dict(redis.pairs_to_dict(response,encoding,safe_number))
-        if result:
-            result['stats'] = dict(self.stats_dict(result['stats'],encoding))
-        return result
-        
-    def stats_dict(self, stats, encoding):
-        pd = redis.pairs_to_dict
-        for k,v in pd(stats,encoding):
-            yield k,dict(pd(v,encoding,safe_number))
+        if response:
+            return json.loads(response.decode(encoding))
+    

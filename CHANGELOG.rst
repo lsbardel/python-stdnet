@@ -46,7 +46,7 @@ Ver. 0.7.0 - Development
 * Added :mod:`stdnet.utils.dates`.
 * Added :mod:`stdnet.utils.path`.
 * Lua test suite based. Requires lunatest_.
-* **570 regression tests** with **91%** coverage.
+* **571 regression tests** with **91%** coverage.
 
 .. _vers06:
 

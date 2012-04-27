@@ -548,6 +548,20 @@ class TestOperations(TestColumnTSBase):
 
 
 @skipUnless(do_tests, 'Requires stdnet-redis')
+class TestMultivariate(TestColumnTSBase):
+    
+    def testSimpleMultiStats(self):
+        ts1 = self.create()
+        dt,fields = ts1.irange()
+        result = ts1.imulti_stats()
+        self.assertTrue(result)
+        self.assertEqual(result['type'],'multi')
+        self.assertEqual(result['start'],dt[0])
+        self.assertEqual(result['stop'],dt[-1])
+        self.assertEqual(result['N'],len(dt))
+    
+    
+@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMissingValues(TestCase):
     
     @classmethod

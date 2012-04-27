@@ -67,7 +67,7 @@ stats.univariate = function (serie)
     if N == 0 then
         return sts
     end
-    local result = {start = times[1], stop = times[N], len = N, stats = sts} 
+    local result = {start=times[1], stop=times[N], len=N, stats=sts} 
     for field, values in pairs(serie.field_values) do
         local N = 0
         local min_val = 1.e10
@@ -95,15 +95,15 @@ stats.univariate = function (serie)
             end
         end
         if N > 1 then
-            sts[field] = {'N',N,
-                          'min',min_val .. '',
-                          'max',max_val .. '',
-                          'sum',sum_val/N .. '',
-                          'sum2',sum2_val/N .. '',
-                          'dsum',dsum/(N-1) .. '',
-                          'dsum2',dsum2/(N-1) .. '',
-                          'dsum3',dsum3/(N-1) .. '',
-                          'dsum4',dsum4/(N-1) .. ''}
+            sts[field] = {N=N,
+                          min=min_val,
+                          max=max_val,
+                          sum=sum_val/N,
+                          sum2=sum2_val/N,
+                          dsum=dsum/(N-1),
+                          dsum2=dsum2/(N-1),
+                          dsum3=dsum3/(N-1),
+                          dsum4=dsum4/(N-1)}
         end
     end
     return result
@@ -137,7 +137,7 @@ end
 --
 -- Calculate aggregate statistcs for a timeseries slice
 stats.multivariate = function (series)
-    local prev_section, section, section2, dsection
+    local prev_section, section, section2, dsection, start, stop
     local a = stats.fields_and_times(series)
     local time_dict = a.time_dict
     local S = # a.names
@@ -151,23 +151,22 @@ stats.multivariate = function (series)
         section = time_dict[time .. '']
         if section and # section == S then
             N = N + 1
+            stop = time
             stats.vector_sadd(sum, section)
             stats.vector_sadd(sum2, stats.vector_square(section))
             if prev_section then
                 dsection = stats.vector_diff(section, prev_section)
                 stats.vector_sadd(dsum, dsection)
                 stats.vector_sadd(dsum2, stats.vector_square(dsection))
+            else
+                start = time
             end
             prev_section = section
         end
     end
     if N > 1 then
-        return {fields = a.names,
-                N = N,
-                sum = sum,
-                sum2 = sum2,
-                dsum = dsum,
-                dsum2 = dsum2}
+        return {fields=a.names, start=start, stop=stop, type='multi',
+                N=N, sum=sum, sum2=sum2, dsum=dsum, dsum2=dsum2}
     end
 end
 
@@ -175,35 +174,35 @@ stats.get_series = function ()
     local command = ARGV[1]
     local start = ARGV[2]
     local stop = ARGV[3]
-    local pos = 4
+    local calc_type = ARGV[4]
+    local pos = 5
     local series = {}
+    -- loop over keys
     for i, id in ipairs(KEYS) do
-        local num_fields = ARGV[pos]
         local serie = columnts:new(id)
         local num_fields = ARGV[pos]
         local fields = tabletools.slice(ARGV, pos+1, pos+num_fields)
         pos = pos + num_fields + 1
         local time_values = serie:range(command, start, stop, fields, true)
         local t,v = unpack(time_values)
-        table.insert({key=id, times=t, field_values=v})
+        table.insert(series, {key=id, times=t, field_values=v})
     end
     if # series == 0 then
         error('No timeseries available')
     end
-    return series
+    return {calc_type=calc_type, series=series}
 end
 
 if KEYS and ARGV then
-    local series = stats.get_series()
+    local r = stats.get_series()
     local result
-    if # series > 1 then
-        result = stats.multivariate(series)
-        if result then
-            result = cjson.encode(result)
-        end
+    if r.calc_type == 'multi' then
+        result = stats.multivariate(r.series)
     else
-        result = tabletools.flat(stats.univariate(series[1]))
-        result[4] = tabletools.flat(result[4])
+        result = stats.univariate(r.series[1])
+    end
+    if result then
+        result = cjson.encode(result)
     end
     return result
 else

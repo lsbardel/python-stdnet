@@ -115,7 +115,8 @@ class RedisColumnTS(redisb.TS):
     def _multi_stats(self, command, start, end, fields, series, stats):
         all = [(self.id,fields)]
         if series:
-            all.extend(series)
+            all.extend(((ts.backend_structure().id, fields)\
+                            for ts,fields in series))
         keys = []
         argv = []
         for s in all:

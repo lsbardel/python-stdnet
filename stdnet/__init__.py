@@ -1,10 +1,13 @@
 '''An object relational mapper library for Redis remote data structures.'''
-VERSION = (0, 7, 0)
+VERSION = (0, 7, 0, 'alpha', 0)
+
+sphinxtogithub = False
+
+from .exceptions import *
+from .backends import *
+from .utils.version import get_version 
  
-def get_version():
-    return '.'.join(map(str,VERSION))
- 
-__version__ = get_version()
+__version__ = get_version(VERSION)
 __license__ = "BSD"
 __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"
@@ -29,7 +32,3 @@ CLASSIFIERS = [
                ]
 
 
-sphinxtogithub = False
-
-from .exceptions import *
-from .backends import *

@@ -7,10 +7,10 @@ import stdnet as me
 class TestInitFile(test.TestCase):
 
     def test_version(self):
-        self.assertTrue(me.VERSION)
-        self.assertTrue(me.__version__)
-        self.assertEqual(me.__version__,me.get_version())
-        self.assertTrue(len(me.VERSION) >= 2)
+        self.assertTrue(len(me.VERSION), 5)
+        version = me.__version__
+        self.assertTrue(version)
+        self.assertEqual(me.__version__,me.get_version(me.VERSION))
 
     def test_meta(self):
         for m in ("__author__", "__contact__", "__homepage__", "__doc__"):

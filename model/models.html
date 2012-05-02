@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Model and Query API &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Model and Query API &mdash; python stdnet v0.7c1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7.0',
+        VERSION:     '0.7c1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
     <link rel="up" title="Object Relational Mapper" href="index.html" />
     <link rel="next" title="Fields API" href="fields.html" />
     <link rel="prev" title="Object Relational Mapper" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>  
@@ -953,25 +953,25 @@ not available with vanilla redis. Check the
 </div>
 <div class="section" id="registration">
 <span id="register-model"></span><h2>Registration<a class="headerlink" href="#registration" title="Permalink to this headline">¶</a></h2>
-<p>Once a model is defined, in order to use it in an application it needs to be
-registered with a back-end database. Unregistered models cannot be used to save
-data and they will raise exceptions.</p>
-<p>Stdnet comes with two functions for
-registration, a low level and a higher level one which can be used to register
-several models at once.</p>
+<p>Models can be registered with a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> so that
+the model <a class="reference internal" href="session.html#stdnet.orm.Manager" title="stdnet.orm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> can be used to create instance and query the database.
+If a model is not registered, the only way to operate on it is via the
+<a class="reference internal" href="session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> API.</p>
+<p>Stdnet provides two registration functions, a low level and a higher level one
+which can be used to register several models at once.</p>
 <div class="section" id="register">
 <h3>Register<a class="headerlink" href="#register" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="stdnet.orm.register">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>ignore_duplicates=True</em>, <em>local_thread=False</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.orm.register" title="Permalink to this definition">¶</a></dt>
-<dd><p>The low level function for registering a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
-classes with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt> data server.</p>
+<dd><p>The low level function for registering a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>
+classes with a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> data server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. Must be provided.</li>
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>. Must be provided.</li>
 <li><strong>backend</strong> &#8211; <p>a backend connection string.
 For example:</p>
 <div class="highlight-python"><pre>redis://localhost:8080?db=6&amp;prefix=bla.</pre>
@@ -980,11 +980,6 @@ For example:</p>
 </li>
 <li><strong>params</strong> &#8211; optional parameters which can be used to override the
 connection string parameters.</li>
-<li><strong>timeout</strong> &#8211; <p>timeout in seconds for keys persistence.
-If not provided it is calculated from the
-connection string.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
-</li>
 </ul>
 </td>
 </tr>
@@ -997,7 +992,7 @@ connection string.</p>
 <span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Author</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
 <span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Book</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=2&#39;</span><span class="p">)</span>
 <span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyOtherModel</span><span class="p">,</span> 
-            <span class="s">&#39;redis://my.host.name:6379/?db=2&amp;keyprefix=differentprefix&#39;</span><span class="p">)</span>
+            <span class="s">&#39;redis://my.host.name:6379/?db=2&amp;keyprefix=differentprefix.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><tt class="docutils literal"><span class="pre">my.host.name</span></tt> can be <tt class="docutils literal"><span class="pre">localhost</span></tt> or an ip address or a domain name,
@@ -1012,19 +1007,17 @@ on the same redis instance).</p>
 <dt id="stdnet.orm.register_application_models">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_application_models</tt><big>(</big><em>applications</em>, <em>models=None</em>, <em>app_defaults=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_application_models" title="Permalink to this definition">¶</a></dt>
 <dd><p>A higher level registration functions for group of models located
-on application modules.</p>
-<p>It uses the <a class="reference internal" href="../utility.html#stdnet.orm.model_iterator" title="stdnet.orm.model_iterator"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.model_iterator()</span></tt></a> function to iterate
-through all <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
-and register them using the <a class="reference internal" href="#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> low
-level function.</p>
+on application modules.
+It uses the <a class="reference internal" href="../utility.html#stdnet.orm.model_iterator" title="stdnet.orm.model_iterator"><tt class="xref py py-func docutils literal"><span class="pre">model_iterator()</span></tt></a> function to iterate
+through all <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
+and register them using the <a class="reference internal" href="#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">register()</span></tt></a> low level function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>applications</strong> &#8211; A String or a list of strings which represent
-python dotted paths to modules containing
-a <tt class="docutils literal"><span class="pre">models</span></tt> module where models are implemented.</li>
+python dotted paths where models are implemented.</li>
 <li><strong>models</strong> &#8211; Optional list of models to include. If not provided
 all models found in <em>applications</em> will be included.</li>
 <li><strong>app_defaults</strong> &#8211; optional dictionary which specify a model and/or
@@ -1033,7 +1026,7 @@ application backend connection string.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a generator over registered models</p>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A generator over registered <a class="reference internal" href="#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</p>
 </td>
 </tr>
 </tbody>
@@ -1061,7 +1054,7 @@ application backend connection string.</li>
 <dl class="function">
 <dt id="stdnet.orm.registered_models">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">registered_models</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.registered_models" title="Permalink to this definition">¶</a></dt>
-<dd><p>Iterator over registered models</p>
+<dd><p>An iterator over registered models</p>
 </dd></dl>
 
 </div>
@@ -1174,7 +1167,7 @@ the same events.</p>
         <li class="right" >
           <a href="index.html" title="Object Relational Mapper"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
       </ul>
     </div>

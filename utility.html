@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet v0.7c1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7.0',
+        VERSION:     '0.7c1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c1 documentation" href="index.html" />
     <link rel="next" title="Stdnet Redis branch" href="stdnetredis.html" />
     <link rel="prev" title="Column Time Series" href="apps/timeseries.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="apps/timeseries.html" title="Column Time Series"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -125,17 +125,17 @@ is contained in the <a class="reference internal" href="backends/redis.html#redi
 <dl class="function">
 <dt id="stdnet.orm.model_iterator">
 <tt class="descclassname">stdnet.orm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em><big>)</big><a class="headerlink" href="#stdnet.orm.model_iterator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a generatotr of <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> classes found
-in the <tt class="docutils literal"><span class="pre">models</span></tt> module of an <tt class="docutils literal"><span class="pre">application</span></tt> dotted path.</p>
+<dd><p>A generator of <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes found in <em>application</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; An iterable over python dotted-paths
-where models are defined.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; A python dotted path or an iterable over python
+dotted-paths where models are defined.</td>
 </tr>
 </tbody>
 </table>
+<p>Only models defined in these paths are considered.</p>
 <p>For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.orm</span> <span class="kn">import</span> <span class="n">model_iterator</span>
 
@@ -615,7 +615,7 @@ will be unregistered after the <tt class="xref py py-meth docutils literal"><spa
         <li class="right" >
           <a href="apps/timeseries.html" title="Column Time Series"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

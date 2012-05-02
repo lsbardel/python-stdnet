@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Models &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Using Models &mdash; python stdnet v0.7c1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7.0',
+        VERSION:     '0.7c1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Query your Models" href="query.html" />
     <link rel="prev" title="Tutorials &amp; Examples" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,14 +52,14 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="using-models">
-<span id="tutorial"></span><h1>Using Models<a class="headerlink" href="#using-models" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-stdnet.orm"><span id="tutorial"></span></span><div class="section" id="using-models">
+<h1>Using Models<a class="headerlink" href="#using-models" title="Permalink to this headline">¶</a></h1>
 <p>Here we deal with model implementation and creating instances persistent
 in a backend database.</p>
 <div class="section" id="writing-models">
 <span id="creating-models"></span><h2>Writing Models<a class="headerlink" href="#writing-models" title="Permalink to this headline">¶</a></h2>
 <p>Defining stdnet <em>models</em> is achieved by subclassing the
-<a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. The following
+<a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class. The following
 snipped implements two models, <tt class="docutils literal"><span class="pre">Author</span></tt> and <tt class="docutils literal"><span class="pre">Book</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 
@@ -83,11 +83,12 @@ fields of a redis hash table which represents an instance of a model.</p>
 <div class="section" id="an-application">
 <span id="tutorial-application"></span><h2>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s start with tutorial application: a small hedge fund.
-You never know it may become useful in the future!</p>
-<p>The application uses the following three models,</p>
+You never know it may become useful in the future!
+The application uses the following three models,</p>
 <ul class="simple">
-<li>A <tt class="docutils literal"><span class="pre">Fund</span></tt> which stores information about several <tt class="docutils literal"><span class="pre">Position</span></tt></li>
-<li>A <tt class="docutils literal"><span class="pre">Position</span></tt> is an investment on a particular funancial <tt class="docutils literal"><span class="pre">Instrument</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">Fund</span></tt> for storing information about several <tt class="docutils literal"><span class="pre">Position</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">Instrument</span></tt> holds information about tradable financial intruments.</li>
+<li><tt class="docutils literal"><span class="pre">Position</span></tt> is an investment on a particular <tt class="docutils literal"><span class="pre">Instrument</span></tt> in a <tt class="docutils literal"><span class="pre">Fund</span></tt>.</li>
 </ul>
 <p>A minimal <tt class="docutils literal"><span class="pre">stdnet</span></tt> implementation can look like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
@@ -126,39 +127,43 @@ You never know it may become useful in the future!</p>
 </div>
 <p>If you are familiar with <a class="reference external" href="https://www.djangoproject.com/">django</a> you will see several similarities and you should be able to understand,
 with a certain degree of confidence, what it is going on.
-The only difference is the <tt class="docutils literal"><span class="pre">prices</span></tt> <a class="reference internal" href="../model/fields.html#stdnet.orm.ListField" title="stdnet.orm.ListField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ListField</span></tt></a>
+The only difference is the <tt class="docutils literal"><span class="pre">prices</span></tt> <a class="reference internal" href="../model/fields.html#stdnet.orm.ListField" title="stdnet.orm.ListField"><tt class="xref py py-class docutils literal"><span class="pre">ListField</span></tt></a>
 in the <tt class="docutils literal"><span class="pre">Instrument</span></tt> model which is
 not available in a traditional relational database.</p>
 <div class="section" id="the-metaclass">
 <h3>The metaclass<a class="headerlink" href="#the-metaclass" title="Permalink to this headline">¶</a></h3>
-<p>The <tt class="docutils literal"><span class="pre">Position</span></tt> models specifies a <tt class="docutils literal"><span class="pre">Meta</span></tt> class with an <tt class="docutils literal"><span class="pre">ordering</span></tt> attribute.
+<p>The <tt class="docutils literal"><span class="pre">Position</span></tt> models specifies a <tt class="docutils literal"><span class="pre">Meta</span></tt> class with an <tt class="docutils literal"><span class="pre">ordering</span></tt>
+attribute.
 When provided, as in this case, the Meta class fields are used by the <tt class="docutils literal"><span class="pre">orm</span></tt>
-to customize the build of the <a class="reference internal" href="../model/models.html#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Metaclass</span></tt></a> for the model.
-In this case we instruct the mapper to manage the <tt class="docutils literal"><span class="pre">Position</span></tt> model
-as ordered with respect to the <a class="reference internal" href="../model/fields.html#stdnet.orm.DateField" title="stdnet.orm.DateField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.DateField</span></tt></a> <tt class="docutils literal"><span class="pre">dt</span></tt>
+to customise the build of the <a class="reference internal" href="../model/models.html#stdnet.orm.Metaclass" title="stdnet.orm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a> for the model. The metaclas
+is stored in the <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel._meta" title="stdnet.orm.StdModel._meta"><tt class="xref py py-attr docutils literal"><span class="pre">StdModel._meta</span></tt></a> attribute.</p>
+<p>In this case we instruct the orm to manage the <tt class="docutils literal"><span class="pre">Position</span></tt> model
+as ordered with respect to the <a class="reference internal" href="../model/fields.html#stdnet.orm.DateField" title="stdnet.orm.DateField"><tt class="xref py py-class docutils literal"><span class="pre">DateField</span></tt></a> <tt class="docutils literal"><span class="pre">dt</span></tt>
 in descending order. Check the  <a class="reference internal" href="sorting.html#sorting"><em>sorting</em></a>
 documentation for more details or ordering and sorting.</p>
 </div>
 </div>
 <div class="section" id="registering-models">
 <h2>Registering Models<a class="headerlink" href="#registering-models" title="Permalink to this headline">¶</a></h2>
-<p>Before playing with the API you need to <a class="reference internal" href="../model/models.html#register-model"><em>register the models</em></a>:</p>
+<p>Before playing with the API let&#8217;s to <a class="reference internal" href="../model/models.html#register-model"><em>register the models</em></a>
+to a backend server. Registration is not compulsory, but it is required when using
+model&#8217;s <a class="reference internal" href="../model/session.html#stdnet.orm.Manager" title="stdnet.orm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">orm</span>
 
 <span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
 <span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=2&#39;</span><span class="p">)</span>
+<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://my.host.name:6379/?db=1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="one-to-many-relationships">
 <span id="one-to-many"></span><h2>One-to-many relationships<a class="headerlink" href="#one-to-many-relationships" title="Permalink to this headline">¶</a></h2>
-<p>The <em>Position</em> model contains two <a class="reference internal" href="../model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ForeignKey</span></tt></a> fields.
+<p>The <em>Position</em> model contains two <a class="reference internal" href="../model/fields.html#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> fields.
 In the context of relational databases a
 <a class="reference external" href="http://en.wikipedia.org/wiki/Foreign_key">foreign key</a> is
 a referential constraint between two tables.</p>
 <p>For stdnet is exactly the same thing. The field store the <tt class="docutils literal"><span class="pre">id</span></tt> of a
-related <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance.
+related <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> instance.
 Behind the scenes, this functionality is implemented by Python <a class="reference external" href="http://users.rcn.com/python/download/Descriptor.htm">descriptors</a>.
 This shouldn&#8217;t really matter to you, but we point it out here for the curious.</p>
 </div>
@@ -171,7 +176,7 @@ a data-server abstraction API that lets you create, retrieve,
 update and delete objects.</p>
 <div class="section" id="creating-objects">
 <h3>Creating objects<a class="headerlink" href="#creating-objects" title="Permalink to this headline">¶</a></h3>
-<p>An instance of a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>, an object for clarity,
+<p>An instance of a <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>, an object for clarity,
 is mapped to a hash table in the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> backend.
 To create an object, instantiate it using keyword arguments to the
 model class, then call <tt class="docutils literal"><span class="pre">save()</span></tt> to save it to the data-server.
@@ -264,7 +269,7 @@ Here&#8217;s an example:</p>
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

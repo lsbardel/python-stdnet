@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Index &mdash; python stdnet v0.7c1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7.0',
+        VERSION:     '0.7c1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7.0 documentation" href="index.html" /> 
+    <link rel="top" title="python stdnet v0.7c1 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +33,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -148,6 +148,7 @@
     <dt><a href="backends/redis.html#stdnet.lib.redis.ConnectionPool">ConnectionPool (class in stdnet.lib.redis)</a></dt>
     <dt><a href="model/models.html#stdnet.orm.Query.construct">construct() (stdnet.orm.Query method)</a></dt>
     <dt><a href="model/models.html#stdnet.orm.Query.count">count() (stdnet.orm.Query method)</a></dt>
+    <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.countpattern">countpattern() (stdnet.lib.redis.Redis method)</a></dt>
 </dl></td>
 </tr></table>
 
@@ -298,6 +299,7 @@
     <dt><a href="model/models.html#stdnet.orm.StdModel.id">id (stdnet.orm.StdModel attribute)</a></dt>
     <dt><a href="model/fields.html#stdnet.orm.Field.id">id() (stdnet.orm.Field method)</a></dt>
     <dt><a href="utility.html#stdnet.ImproperlyConfigured">ImproperlyConfigured (class in stdnet)</a></dt>
+    <dt><a href="apps/timeseries.html#stdnet.apps.columnts.ColumnTS.imulti_stats">imulti_stats() (stdnet.apps.columnts.ColumnTS method)</a></dt>
     <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.incr">incr() (stdnet.lib.redis.Redis method)</a></dt>
     <dt><a href="model/models.html#stdnet.orm.autoincrement.incrby">incrby (stdnet.orm.autoincrement attribute)</a></dt>
     <dt><a href="model/fields.html#stdnet.orm.Field.index">index (stdnet.orm.Field attribute)</a></dt>
@@ -385,14 +387,14 @@
     <dt><a href="model/models.html#stdnet.orm.Metaclass">Metaclass (class in stdnet.orm)</a></dt>
     <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.mget">mget() (stdnet.lib.redis.Redis method)</a></dt>
     <dt><a href="model/models.html#stdnet.orm.Model">Model (class in stdnet.orm)</a></dt>
-</dl></td>
-  <td style="width: 33%" valign="top"><dl>
     <dt><a href="model/fields.html#stdnet.orm.Field.model">model (stdnet.orm.Field attribute)</a></dt>
     <dd><dl>
       <dt><a href="model/session.html#stdnet.orm.Manager.model">(stdnet.orm.Manager attribute)</a></dt>
       <dt><a href="model/models.html#stdnet.orm.Metaclass.model">(stdnet.orm.Metaclass attribute)</a></dt>
       <dt><a href="model/models.html#stdnet.orm.Query.model">(stdnet.orm.Query attribute)</a></dt>
   </dl></dd>
+</dl></td>
+  <td style="width: 33%" valign="top"><dl>
     <dt><a href="utility.html#stdnet.orm.model_iterator">model_iterator() (in module stdnet.orm)</a></dt>
     <dt><a href="backends/index.html#stdnet.BackendDataServer.model_keys">model_keys() (stdnet.BackendDataServer method)</a></dt>
     <dt><a href="model/fields.html#stdnet.orm.ModelField">ModelField (class in stdnet.orm)</a></dt>
@@ -402,6 +404,7 @@
     <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.move">move() (stdnet.lib.redis.Redis method)</a></dt>
     <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.mset">mset() (stdnet.lib.redis.Redis method)</a></dt>
     <dt><a href="backends/redis.html#stdnet.lib.redis.Redis.msetnx">msetnx() (stdnet.lib.redis.Redis method)</a></dt>
+    <dt><a href="apps/timeseries.html#stdnet.apps.columnts.ColumnTS.multi_stats">multi_stats() (stdnet.apps.columnts.ColumnTS method)</a></dt>
 </dl></td>
 </tr></table>
 
@@ -605,7 +608,7 @@
     <dt><a href="examples/search.html#module-stdnet.apps.searchengine">stdnet.apps.searchengine (module)</a>, <a href="apps/searchengine.html#module-stdnet.apps.searchengine">[1]</a></dt>
     <dt><a href="utility.html#module-stdnet.conf">stdnet.conf (module)</a></dt>
     <dt><a href="backends/redis.html#module-stdnet.lib.redis">stdnet.lib.redis (module)</a></dt>
-    <dt><a href="examples/sorting.html#module-stdnet.orm">stdnet.orm (module)</a>, <a href="examples/performance.html#module-stdnet.orm">[1]</a>, <a href="utility.html#module-stdnet.orm">[2]</a>, <a href="examples/search.html#module-stdnet.orm">[3]</a>, <a href="examples/query.html#module-stdnet.orm">[4]</a>, <a href="model/fields.html#module-stdnet.orm">[5]</a>, <a href="model/index.html#module-stdnet.orm">[6]</a>, <a href="model/models.html#module-stdnet.orm">[7]</a>, <a href="model/session.html#module-stdnet.orm">[8]</a>, <a href="model/search.html#module-stdnet.orm">[9]</a></dt>
+    <dt><a href="examples/sorting.html#module-stdnet.orm">stdnet.orm (module)</a>, <a href="utility.html#module-stdnet.orm">[1]</a>, <a href="examples/search.html#module-stdnet.orm">[2]</a>, <a href="examples/performance.html#module-stdnet.orm">[3]</a>, <a href="examples/query.html#module-stdnet.orm">[4]</a>, <a href="model/fields.html#module-stdnet.orm">[5]</a>, <a href="model/index.html#module-stdnet.orm">[6]</a>, <a href="model/models.html#module-stdnet.orm">[7]</a>, <a href="model/session.html#module-stdnet.orm">[8]</a>, <a href="model/search.html#module-stdnet.orm">[9]</a>, <a href="examples/tutorial.html#module-stdnet.orm">[10]</a></dt>
     <dt><a href="model/session.html#module-stdnet.orm.related">stdnet.orm.related (module)</a></dt>
     <dt><a href="utility.html#module-stdnet.test">stdnet.test (module)</a></dt>
     <dt><a href="utility.html#module-stdnet.utils">stdnet.utils (module)</a></dt>
@@ -757,7 +760,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">python stdnet v0.7.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

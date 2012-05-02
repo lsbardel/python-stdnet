@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Column Time Series &mdash; python stdnet v0.7.0 documentation</title>
+    <title>Column Time Series &mdash; python stdnet v0.7c1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7.0',
+        VERSION:     '0.7c1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7.0 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
     <link rel="up" title="Applications" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="../utility.html" />
     <link rel="prev" title="A Search Engine for Stdnet Models" href="searchengine.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Applications</a> &raquo;</li> 
       </ul>
     </div>  
@@ -100,6 +100,37 @@ ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})</pre>
 <dt id="stdnet.apps.columnts.ColumnTS.numfields">
 <tt class="descname">numfields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.numfields" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of fields</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.imulti_stats">
+<tt class="descname">imulti_stats</tt><big>(</big><em>start=0</em>, <em>end=-1</em>, <em>series=None</em>, <em>fields=None</em>, <em>stats=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.imulti_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform cross multivariate statistics calculation of
+this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other optional <em>series</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.multi_stats">
+<tt class="descname">multi_stats</tt><big>(</big><em>start</em>, <em>end</em>, <em>series=None</em>, <em>fields=None</em>, <em>stats=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.multi_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform cross multivariate statistics calculation of
+this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other <em>series</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; the start date.</li>
+<li><strong>start</strong> &#8211; the end date</li>
+<li><strong>field</strong> &#8211; name of field to perform multivariate statistics.</li>
+<li><strong>series</strong> &#8211; a list of two elements tuple containing the id of the
+a <tt class="xref py py-class docutils literal"><span class="pre">columnTS</span></tt> and a field name.</li>
+<li><strong>stats</strong> &#8211; list of statistics to evaluate.
+Default: [&#8216;covariance&#8217;]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -217,7 +248,7 @@ of the form:</p>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Applications</a> &raquo;</li> 
       </ul>
     </div>

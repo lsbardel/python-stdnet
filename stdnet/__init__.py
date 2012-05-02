@@ -1,5 +1,5 @@
 '''An object relational mapper library for Redis remote data structures.'''
-VERSION = (0, 7, 0, 'alpha', 0)
+VERSION = (0, 7, 0, 'rc', 1)
 
 sphinxtogithub = False
 

@@ -36,7 +36,7 @@ def start():
     
     if pulsar:
         from pulsar.apps.test import TestSuite
-        from pulsar.apps.test.plugins import bench
+        from pulsar.apps.test.plugins import bench, profile
         from stdnet.test import PulsarStdnetServer, PulsarDataSizePlugin
         
         os.environ['stdnet_test_suite'] = 'pulsar'
@@ -45,7 +45,8 @@ def start():
                     modules = ('tests',),
                     plugins = (PulsarStdnetServer(),
                                PulsarDataSizePlugin(),
-                               bench.BenchMark(),)
+                               bench.BenchMark(),
+                               profile.Profile())
                   )
         suite.start()
     elif nose:

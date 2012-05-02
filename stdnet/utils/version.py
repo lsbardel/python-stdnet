@@ -3,6 +3,7 @@ import os
 import subprocess
 
 def get_version(version):
+    "Returns a PEP 386-compliant version number from *version*."
     assert len(version) == 5
     assert version[3] in ('alpha', 'beta', 'rc', 'final')
     parts = 2 if version[2] == 0 else 3

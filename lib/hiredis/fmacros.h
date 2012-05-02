@@ -13,4 +13,10 @@
 #define _XOPEN_SOURCE
 #endif
 
+#if defined(WIN32)
+inline void strerror_r(int errnum, char *buf, unsigned int buflen) {
+	return;
+}
+#endif
+
 #endif

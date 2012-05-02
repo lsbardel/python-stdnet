@@ -1,6 +1,7 @@
 from distutils.core import setup
 from distutils.command.install_data import install_data
 from distutils.command.install import INSTALL_SCHEMES
+
 import os
 import sys
 
@@ -8,6 +9,9 @@ package_name = 'stdnet'
 package_fullname = 'python-%s' % package_name
 root_dir = os.path.split(os.path.abspath(__file__))[0]
 package_dir = os.path.join(root_dir, package_name)
+
+if sys.version_info < (2, 6):
+    raise Exception("stdnet requires Python 2.6 or higher.")
 
 def get_module():
     if root_dir not in sys.path:
@@ -17,13 +21,7 @@ def get_module():
 mod = get_module()
 
 # Try to import lib build
-try:
-    from lib.setup import libparams
-except ImportError:
-    libparams = {'cmdclass': {}}
-# Switch this of for now    
-#libparams = {'cmdclass': {}}
-
+from lib.setup import libparams, BuildFailed
 
 class osx_install_data(install_data):
 
@@ -31,12 +29,9 @@ class osx_install_data(install_data):
         self.set_undefined_options('install', ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
 
-libparams['cmdclass']['install_data'] = osx_install_data if sys.platform == "darwin" else install_data
-
 
 # Tell distutils to put the data_files in platform-specific installation
 # locations. See here for an explanation:
-# http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
@@ -91,18 +86,50 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
 
-libparams.update({
-        'name': package_fullname,
-        'version': mod.__version__,
-        'author': mod.__author__,
-        'author_email': mod.__contact__,
-        'url': mod.__homepage__,
-        'license': mod.__license__,
-        'description': mod.__doc__,
-        'long_description': read('README.rst'),
-        'packages': packages,
-        'data_files': data_files,
-        'classifiers':  mod.CLASSIFIERS
-        })
+def run_setup(with_cext):
+    if with_cext:
+        params = libparams
+    else:
+        params = {'cmdclass': {}}
+    if sys.platform == "darwin":
+        params['cmdclass']['install_data'] = osx_install_data
+    else:
+        params['cmdclass']['install_data'] = install_data
+    
+    params.update({'name': package_fullname,
+                   'version': mod.__version__,
+                   'author': mod.__author__,
+                   'author_email': mod.__contact__,
+                   'url': mod.__homepage__,
+                   'license': mod.__license__,
+                   'description': mod.__doc__,
+                   'long_description': read('README.rst'),
+                   'packages': packages,
+                   'data_files': data_files,
+                   'classifiers':  mod.CLASSIFIERS})
+    setup(**params)
+    
+def status_msgs(*msgs):
+    print('*' * 75)
+    for msg in msgs:
+        print(msg)
+    print('*' * 75)
+    
+try:
+    run_setup(True)
+except BuildFailed as exc:
+    status_msgs(
+            exc.msg,
+            "WARNING: The C extension could not be compiled, " +
+                "speedups are not enabled.",
+            "Failure information, if any, is above.",
+            "Retrying the build without the C extension now."
+        )
 
-setup(**libparams)
+    run_setup(False)
+
+    status_msgs(
+        "WARNING: The C extension could not be compiled, " +
+            "speedups are not enabled.",
+        "Plain-Python build succeeded."
+    )

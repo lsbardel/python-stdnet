@@ -10,14 +10,14 @@ from distutils.errors import (CCompilerError, DistutilsExecError,
 try:
     from Cython.Distutils import build_ext
     cython_message = None
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
     cython_message = 'Cannot build C extensions, Cython is not installed.'
     
 try:
     import numpy
     include_dirs = [numpy.get_include()]
-except Importerror:
+except ImportError:
     include_dirs = []
     
 ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError) 

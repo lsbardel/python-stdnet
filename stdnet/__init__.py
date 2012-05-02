@@ -1,7 +1,7 @@
 '''An object relational mapper library for Redis remote data structures.'''
 VERSION = (0, 7, 0, 'rc', 1)
 
-sphinxtogithub = False
+sphinxtogithub = True
 
 from .exceptions import *
 from .backends import *

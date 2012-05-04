@@ -4,8 +4,6 @@ The data is owned by different, configurable back-end databases and it is access
 light-weight Object Data Mapper (ODM). 
 The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
---
-
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
@@ -18,6 +16,9 @@ __ http://github.com/lsbardel/python-stdnet
 __ http://lsbardel.github.com/python-stdnet/
 __ http://pypi.python.org/pypi/python-stdnet/
 
+
+Contents
+~~~~~~~~~~~~~~~
 
 .. contents::
     :local:
@@ -32,12 +33,13 @@ Requirements
 
 Philosophy
 ===============
-Key-valued pairs databases have many differences from traditional relational databases,
+Key-valued pairs databases, also know as key-value stores, have many differences
+from traditional relational databases,
 most important being they do not use ``SQL`` as their query language,
 storage does not require a fixed table schemas and usually they do not support
 complex queries.
 
-StdNet aims to accommodate a flexible schema and join type operations via
+Stdnet aims to accommodate a flexible schema and join type operations via
 a lightweight object data mapper.
 Importantly, it is designed with large data sets in mind. You pull data
 you need, nothing more, nothing less.
@@ -76,51 +78,6 @@ To know which version you have installed::
 	'0.7c2'
 	>>> stdnet.VERSION
 	stdnet_version(major=0, minor=7, micro=0, releaselevel='rc', serial=2)
-
-
-.. _runningtests:
-
-Running Tests
-======================
-At the moment, only redis back-end is available and therefore to run tests you
-need to install Redis_. If you are using linux, it can be achieved simply
-by downloading, uncompressing and running ``make``, if you are using
-windows and want to save yourself a headache you can download precompiled
-binaries at servicestack__.
-
-__ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
-
-Requirements for running tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* unittest2_ for python 2.6 only.
-* argparse_ for python 2.6, 3 and 3.1 only.
-* nose_
-
-Note, these requirements are only needed if you are planning to run tests.
-
-Testing
-~~~~~~~~~~
-To run tests open a shell and launch Redis. On another shell,
-from the package directory, type::
-
-	python runtests.py
-	
-Tests are run against a local redis server on port 6379 and database 7 by default.
-To change the server and database where to run tests pass the ``--server`` option as follow::
-
-    python runtests.py --server redis://myserver.com:6450/?db=12
-
-For more information type::
-
-    python runtests.py -h 
-
-To access coverage of tests you need to install the coverage_ package and run the tests using::
-
-	coverage run runtests.py
-	
-and to check out the coverage report::
-
-	coverage html
 
 
 Backends
@@ -199,6 +156,51 @@ And play with the API::
 	Fund: pluto
 
 
+.. _runningtests:
+
+Running Tests
+======================
+At the moment, only redis back-end is available and therefore to run tests you
+need to install Redis_. If you are using linux, it can be achieved simply
+by downloading, uncompressing and running ``make``, if you are using
+windows and want to save yourself a headache you can download precompiled
+binaries at servicestack__.
+
+__ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
+
+Requirements for running tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* unittest2_ for python 2.6 only.
+* argparse_ for python 2.6, 3 and 3.1 only.
+* nose_
+
+Note, these requirements are only needed if you are planning to run tests.
+
+Testing
+~~~~~~~~~~
+To run tests open a shell and launch Redis. On another shell,
+from the package directory, type::
+
+    python runtests.py
+    
+Tests are run against a local redis server on port 6379 and database 7 by default.
+To change the server and database where to run tests pass the ``--server`` option as follow::
+
+    python runtests.py --server redis://myserver.com:6450/?db=12
+
+For more information type::
+
+    python runtests.py -h 
+
+To access coverage of tests you need to install the coverage_ package and run the tests using::
+
+    coverage run runtests.py
+    
+and to check out the coverage report::
+
+    coverage html
+    
+    
 .. _kudos:
 
 Kudos

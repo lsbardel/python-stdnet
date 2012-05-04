@@ -19,6 +19,10 @@ __ http://lsbardel.github.com/python-stdnet/
 __ http://pypi.python.org/pypi/python-stdnet/
 
 
+.. contents::
+    :local:
+    
+
 Requirements
 =================
 * Python 2.6 to Python 3.3. Single codebase.
@@ -69,7 +73,9 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.7.0'
+	'0.7c2'
+	>>> stdnet.VERSION
+	stdnet_version(major=0, minor=7, micro=0, releaselevel='rc', serial=2)
 
 
 .. _runningtests:
@@ -125,12 +131,10 @@ Currently the list of back-ends is limited to
 
 * Redis_.
 
-But there are pluns to extend it to
+There are plans to extend it to
 
 * Local memory (planned). For testing purposes.
-* Amazon Dynamo.
-
-**Only** Redis_ **is operational.**
+* Amazon DynamoDB_.
  
  
 Object Data Mapper
@@ -241,3 +245,4 @@ file in the top distribution directory for the full license text.
 .. _argparse: http://pypi.python.org/pypi/argparse
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _nose: http://readthedocs.org/docs/nose/en/latest
+.. _DynamoDB: http://aws.amazon.com/dynamodb/

@@ -1,13 +1,13 @@
-'''An object relational mapper library for Redis remote data structures.'''
-VERSION = (0, 7, 0, 'rc', 1)
+'''Data manager and advanced queries for Redis.'''
+VERSION = (0, 7, 0, 'rc', 2)
 
-sphinxtogithub = False
+sphinxtogithub = True
 
 from .exceptions import *
 from .backends import *
 from .utils.version import get_version 
  
-__version__ = get_version(VERSION)
+__version__ = version = get_version(VERSION)
 __license__ = "BSD"
 __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"

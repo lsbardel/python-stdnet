@@ -1,7 +1,12 @@
+'''Stand alone compact module for managing python paths.'''
 import os
 import sys
 
-from .py2py3 import string_type, range
+if sys.version > (3,0):
+    string_type = str
+else:
+    string_type = unicode
+    range = xrange
 
 __all__ = ['Path']
 

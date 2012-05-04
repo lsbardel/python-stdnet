@@ -1,6 +1,6 @@
 .. _vers07:
 
-Ver. 0.7.0 - Development
+Ver. 0.7c1 - 2012 May 02
 ===============================
 * **It requires redis 2.6 or higher**.
 * Some backward incompatible changes in the API and database schema.

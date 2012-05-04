@@ -108,7 +108,7 @@ class ColumnTS(orm.TS):
     def imulti_stats(self, start=0, end=-1, series=None, fields=None,
                      stats=None):
         '''Perform cross multivariate statistics calculation of
-this :clsss:`ColumnTS` and other optional *series*.'''
+this :class:`ColumnTS` and other optional *series*.'''
         stats = stats or self.default_multi_stats
         res = self.backend_structure().imulti_stats(start, end, fields, series,
                                                     stats)
@@ -116,7 +116,7 @@ this :clsss:`ColumnTS` and other optional *series*.'''
         
     def multi_stats(self, start, end,  series=None, fields=None, stats=None):
         '''Perform cross multivariate statistics calculation of
-this :clsss:`ColumnTS` and other *series*.
+this :class:`ColumnTS` and other *series*.
 
 :parameter start: the start date.
 :parameter start: the end date

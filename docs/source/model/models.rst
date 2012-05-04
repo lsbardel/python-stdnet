@@ -10,7 +10,7 @@ Model and Query API
 Model and Query
 ==================
 
-The StdNet Object Relational Mapper presents a method of
+The object data mapper presents a method of
 associating user-defined Python classes, referred as **models**,
 with data in a :class:`stdnet.BackendDataServer`.
 These python classes are subclasses of

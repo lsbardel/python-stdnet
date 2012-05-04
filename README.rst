@@ -1,8 +1,7 @@
 **A stand-alone Python 3 compatible data manager for Redis remote data structures.**
 
 The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (ORM_) with API inspired by SQLAlchemy_
-and Django_. 
+light-weight Object Data Mapper (ODM). 
 The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
 
 --
@@ -12,7 +11,7 @@ The `source code`__ and documentation__ are hosted at github while Downloads__ a
 :Source: https://github.com/lsbardel/python-stdnet
 :Issues: https://github.com/lsbardel/python-stdnet/issues
 :Mailing List: https://groups.google.com/group/python-stdnet
-:Keywords: server, database, cache, redis, orm
+:Keywords: server, database, cache, redis, odm
 
 
 __ http://github.com/lsbardel/python-stdnet
@@ -26,6 +25,7 @@ Requirements
 * Optional Cython_ for faster redis protocol parser.
 * You need access to a Redis_ server.
 
+
 Philosophy
 ===============
 Key-valued pairs databases have many differences from traditional relational databases,
@@ -34,7 +34,7 @@ storage does not require a fixed table schemas and usually they do not support
 complex queries.
 
 StdNet aims to accommodate a flexible schema and join type operations via
-a lightweight object relational mapper.
+a lightweight object data mapper.
 Importantly, it is designed with large data sets in mind. You pull data
 you need, nothing more, nothing less.
 Bandwidth and server round-trips can be reduced to the bare minimum
@@ -120,28 +120,32 @@ and to check out the coverage report::
 Backends
 ====================
 Backend data-stores provide the backbone of the library,
-while the Object Relational Mapper the syntactic sugar.
+while the Object Data Mapper the syntactic sugar.
 Currently the list of back-ends is limited to
 
 * Redis_.
+
+But there are pluns to extend it to
+
 * Local memory (planned). For testing purposes.
+* Amazon Dynamo.
 
 **Only** Redis_ **is operational.**
  
  
-Object Relational Mapper
+Object Data Mapper
 ================================
-The module ``stdnet.orm`` is the ORM, it maps python object into database data. It is design to be fast and
-safe to use::
+The ``stdnet.odm`` module is the ODM, it maps python object into database data.
+It is design to be fast and safe to use::
  
-	from stdnet import orm
+	from stdnet import odm
  		
-	class Base(orm.StdModel):
+	class Base(odm.StdModel):
 	    '''An abstract model. This won't have any data in the database.'''
 	    # A unique symbol field, a symbol is an immutable string
-	    name = orm.SymbolField(unique = True)
+	    name = odm.SymbolField(unique = True)
 	    # Another symbol, symbol fields are by default indexes
-	    ccy  = orm.SymbolField()
+	    ccy  = odm.SymbolField()
 	    
 	    def __str__(self):
 	        return str(self.name)
@@ -151,27 +155,27 @@ safe to use::
 	
 	
 	class Instrument(Base):
-	    itype = orm.SymbolField()
+	    itype = odm.SymbolField()
 	
 	    
 	class Fund(Base):
 		# A char field is a string and it is never an index
-	    description = orm.CharField()
+	    description = odm.CharField()
 	
 	
-	class PositionDescriptor(orm.StdModel):
-	    dt    = orm.DateField()
+	class PositionDescriptor(odm.StdModel):
+	    dt    = odm.DateField()
 	    # A float field is not an index by default
-	    size  = orm.FloatField()
-	    price = orm.FloatField()
+	    size  = odm.FloatField()
+	    price = odm.FloatField()
 	    # A FK field which we explicitly set as non-index
-	    position = orm.ForeignKey("Position", index = False)
+	    position = odm.ForeignKey("Position", index = False)
 	
 	
-	class Position(orm.StdModel):
-	    instrument = orm.ForeignKey(Instrument, related_name = 'positions')
-	    fund       = orm.ForeignKey(Fund)
-	    history    = orm.ListField(model = PositionDescriptor)
+	class Position(odm.StdModel):
+	    instrument = odm.ForeignKey(Instrument, related_name = 'positions')
+	    fund       = odm.ForeignKey(Fund)
+	    history    = odm.ListField(model = PositionDescriptor)
 	    
 	    def __str__(self):
 	        return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
@@ -180,10 +184,10 @@ safe to use::
 	    
 Register models with backend::
 
-	orm.register(Instrument,'redis://localhost?db=1')
-	orm.register(Fund,'redis://localhost?db=1')
-	orm.register(PositionDescriptor,'redis://localhost?db=2')
-	orm.register(Position,'redis://localhost?db=2')
+	odm.register(Instrument,'redis://localhost?db=1')
+	odm.register(Fund,'redis://localhost?db=1')
+	odm.register(PositionDescriptor,'redis://localhost?db=2')
+	odm.register(Position,'redis://localhost?db=2')
 
 And play with the API::
 

@@ -1,8 +1,6 @@
 '''Data manager and advanced queries for Redis.'''
 VERSION = (0, 7, 0, 'rc', 2)
 
-sphinxtogithub = True
-
 from .exceptions import *
 from .backends import *
 from .utils.version import get_version 
@@ -31,4 +29,4 @@ CLASSIFIERS = [
                'Topic :: Internet'
                ]
 
-
+sphinxtogithub = True

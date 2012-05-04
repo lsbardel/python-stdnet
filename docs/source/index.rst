@@ -9,7 +9,7 @@ Python Stdnet
   in the future.
   
   
-It is shipped with an object relational mapper which greatly facilitates the
+It is shipped with an object-data mapper which greatly facilitates the
 management and retrieval of large data-sets.
 It includes a stand-alone, ``python 3`` compatible,
 :ref:`redis client <redis-client>` which was originally forked from redis-py_.

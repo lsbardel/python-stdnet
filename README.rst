@@ -168,16 +168,13 @@ binaries at servicestack__.
 
 __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
-Requirements for running tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Requirements for running tests:
+
 * unittest2_ for python 2.6 only.
 * argparse_ for python 2.6, 3 and 3.1 only.
 * nose_
 
 Note, these requirements are only needed if you are planning to run tests.
-
-Testing
-~~~~~~~~~~
 To run tests open a shell and launch Redis. On another shell,
 from the package directory, type::
 
@@ -226,7 +223,9 @@ We very much welcome your contribution of course. To do so, simply follow these 
 4. Create an issue at https://github.com/lsbardel/python-stdnet/issues with a link to your patch
 
 
-Licence
+.. _license:
+
+License
 =============
 This software is licensed under the New BSD_ License. See the LICENSE
 file in the top distribution directory for the full license text.

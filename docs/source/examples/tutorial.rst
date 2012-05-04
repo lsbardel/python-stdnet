@@ -19,7 +19,7 @@ Defining stdnet *models* is achieved by subclassing the
 :class:`StdModel` class. The following
 snipped implements two models, ``Author`` and ``Book``::
 
-    from stdnet import orm
+    from stdnet import odm
     
     class Author(odm.StModel):
         name = odm.SymbolField()
@@ -53,7 +53,7 @@ The application uses the following three models,
 
 A minimal ``stdnet`` implementation can look like this::
 
-    from stdnet import orm
+    from stdnet import odm
     
     class Fund(odm.StdModel):
         name = odm.SymbolField(unique = True)
@@ -96,11 +96,11 @@ The metaclass
 ~~~~~~~~~~~~~~~~~~~~~~~
 The ``Position`` models specifies a ``Meta`` class with an ``ordering``
 attribute.
-When provided, as in this case, the Meta class fields are used by the ``orm``
+When provided, as in this case, the Meta class fields are used by the ``odm``
 to customise the build of the :class:`Metaclass` for the model. The metaclas
 is stored in the :attr:`StdModel._meta` attribute.
 
-In this case we instruct the orm to manage the ``Position`` model
+In this case we instruct the ``odm`` to manage the ``Position`` model
 as ordered with respect to the :class:`DateField` ``dt``
 in descending order. Check the  :ref:`sorting <sorting>`
 documentation for more details or ordering and sorting.
@@ -113,7 +113,7 @@ Before playing with the API let's to :ref:`register the models <register-model>`
 to a backend server. Registration is not compulsory, but it is required when using
 model's :class:`Manager`::
 
-    import orm
+    import odm
 
     odm.register(Fund, 'redis://my.host.name:6379/?db=1')
     odm.register(Instrument, 'redis://my.host.name:6379/?db=1')

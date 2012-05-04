@@ -3,7 +3,7 @@
 .. module:: stdnet.odm
 
 ============================
-Query your Models
+Query your Data
 ============================
 
 The most powerful feature of stdnet is a comprehensive API for querying your
@@ -53,23 +53,34 @@ actually retrieving them.
 
 It is possible to filter from a list/tuple of values::
 
-    Fund.objects.filter(ccy__in = ('EUR','USD'))
+    qs = Fund.objects.filter(ccy__in=('EUR','USD'))
     
-This filter statement iS equivalent to an union of two filters statements::
+This filter statement is equivalent to an union of two filters statements::
 
-    Fund.objects.filter(ccy = 'EUR').union(Fund.objects.filter(ccy = 'USD'))
+    q1 = Fund.objects.filter(ccy='EUR')
+    q2 = Fund.objects.filter(ccy='USD')
+    qs = q1.union(q2)
    
-   
-You can perform further section by concatenating queries::
 
-    Instrument.objects.filter(ccy__in = ('EUR','USD')).filter(types__in = ('equity',bond'))
+Concatenating
+=================
 
+You can perform further selection by concatenating queries::
+
+    qs = Instrument.objects.filter(ccy__in=('EUR','USD')).filter(types__in=('equity',bond'))
+
+Which is equivalent to an intersection of two filter statement:
+
+    q1 = Fund.objects.filter(ccy__in=('EUR', 'USD'))
+    q2 = Fund.objects.filter(types__in=('equity',bond'))
+    qs = q1.intersect(q2)
+    
 
 Excluding
 ===============================    
 You can also exclude fields from lookups::
 
-    Instrument.objects.exclude(type = 'future')
+    Instrument.objects.exclude(type='future')
 
 You can exclude a list of fields::
 
@@ -84,7 +95,7 @@ situations. There is another method which can be used to combine together
 two or more :class:`Query` into a different query. The :class:`Query.union`
 method performs just that, an union of queries. Consider the following example::
 
-    qs = Instrument.objects.filter(ccy = 'EUR', type = 'equity')
+    qs = Instrument.objects.filter(ccy='EUR', type='equity')
     
 this retrieve all instruments with *ccy* 'EUR' AND *type* 'equity'. What about
 if we need all instruments with *ccy* 'EUR' OR *type* 'equity'? We use the
@@ -93,4 +104,25 @@ if we need all instruments with *ccy* 'EUR' OR *type* 'equity'? We use the
     q1 = Instruments.objecyts.filter(type = 'equity')
     qs = Instrument.objects.filter(ccy = 'EUR').union(q1)
     
+
+.. _query_related:
+
+Related Fields
+====================
+
+The query API goes even further by allowing to operate on
+:class:`Fields` of :class:`ForeignKey` models. For example, lets consider
+the :class:`Position` model in our `example application <tutorial-application>'_.
+The model has a :class:`ForeignKey` to the :class:`Instrument` model.
+using the related field query API one can construct a query to fetch positions
+an subset of instruments in this way::
+
+    qs = Position.objects.filter(instrument__ccy='EUR')
+    
+that is the name of the :class:`ForeignKey` field, followed by a double underscore (__),
+followed by the name of the field in the model.
+
+This is merely a syntactic sugar in place of this equivalent expression::
+
+    qs = Position.objects.filter(instrument=Instrument.objects.filter(ccy='EUR'))
 

@@ -22,7 +22,7 @@ Getting a session
 by passing the backend connection string or an instance of
 a class:`stdnet.BackendDataServer`.::
 
-    from stdnet import orm
+    from stdnet import odm
     
     session = odm.Session('redis://localhost:8060?db=3')
     

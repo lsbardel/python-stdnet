@@ -84,7 +84,7 @@ Creating Structures
 Creating the five structures available in stdnet is accomplished 
 in the following way::
     
-    from stdnet import orm
+    from stdnet import odm
 
     session = odm.Session(...)
     l = session.add(odm.List())

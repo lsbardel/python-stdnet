@@ -12,20 +12,23 @@ it is in traditional relational databases.
 One may argue that no-sql databases don't need to provide such feature since
 search engines such as Solr_, ElasticSearch_ or Sphinx_ can be used to
 provide a full text search solution.
-Stdnet provides an interface for searching. 
+
+Stdnet provides an :ref:`interface for searching <search>` so that such
+engines can be used by third party applications.
+ 
 
 .. module:: stdnet.apps.searchengine
 
 Redis based solution
 ========================
 
-Stdnet provides with a redis-based solution so that you can have your models
+Stdnet also provides a redis-based implementation so that you can have your models
 stored and indexed in the same redis instance.
 This is a great solution during development and for medium sized applications.
 Installing the search engine is explained in
 :ref:`redis search <apps-searchengine>` documention. It is as easy as
 
-* :ref:`Register <register-model>` the :class:`WordItem` model which stores
+* :ref:`Registering <register-model>` the :class:`WordItem` model which stores
   the indices for your models
 * Create the search engine singletone::
 

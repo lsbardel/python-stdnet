@@ -4,13 +4,12 @@
 A twitter clone
 ==============================
 
-This is the stdnet equivalent of the `redis twitter clone`_ example
-A very simple twitter clone implemented using ``stdnet`` library.
-Illustrates the use of :class:`stdnet.odm.ManyToManyField` and
-implicit sorting::
+This is the stdnet equivalent of the `redis twitter clone`_ example.
+It illustrates the use of :class:`stdnet.odm.ManyToManyField` and
+:ref:`implicit sorting <implicit-sorting>`::
 
 	from datetime import datetime
-	from stdnet import orm
+	from stdnet import odm
 	
 	class Post(odm.StdModel):
 	    timestamp = odm.DateTimeField(default = datetime.now)
@@ -47,7 +46,7 @@ Before using the models, we need to register them to a back-end.
 If your redis server is running locally
 just type::
 
-	>>> from stdnet import orm
+	>>> from stdnet import odm
 	>>> odm.register(User)
 	'redis db 7 on 127.0.0.1:6379'
 	>>> odm.register(Post)

@@ -48,7 +48,7 @@ Ver. 0.7c3 - 2012 May 02
 * Moved the contrib module to :mod:`stdnet.apps`.
 * Added :mod:`stdnet.utils.dates`.
 * Added :mod:`stdnet.utils.path`.
-* Lua test suite based. Requires lunatest_.
+* Added a Lua test suite for testing stand alone scripts. Requires lunatest_.
 * PEP 386-compliant version number.
 * **572 regression tests** with **90%** coverage.
 

@@ -15,7 +15,7 @@ A simple model derived from :class:`stdnet.contrib.timeseries.models.TimeSeries`
 
     from datetime import date
     
-    from stdnet import orm
+    from stdnet import odm
     from stdnet.contrib.timeseries.models import TimeSeries
         
     
@@ -30,7 +30,7 @@ Register the model
 =====================
 Register ``FinanceTimeSeries`` to the standard backend::
 
-    >>> from stdnet import orm
+    >>> from stdnet import odm
     >>> odm.register(FinanceTimeSeries)
     'redis db 7 on 127.0.0.1:6379'
     

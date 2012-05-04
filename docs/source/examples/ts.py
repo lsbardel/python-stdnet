@@ -1,6 +1,6 @@
 from datetime import date
 
-from stdnet import orm
+from stdnet import odm
 from stdnet.contrib.timeseries.models import TimeSeries
     
 

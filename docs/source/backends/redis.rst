@@ -28,7 +28,7 @@ data can be loaded back in memory. If you need speed, Redis is great solution.
 
 Model data
 ==================
-Each :class:`stdnet.orm.StdModel` class has an associated ``base key`` which
+Each :class:`stdnet.odm.StdModel` class has an associated ``base key`` which
 specify the namespace for all keys associated with it::
 
     >>> from stdnet import getdb
@@ -40,7 +40,7 @@ specify the namespace for all keys associated with it::
 Instances
 ~~~~~~~~~~~~~~~
 
-Each :class:`stdnet.orm.StdModel` instance is mapped into a redis **Hash table**.
+Each :class:`stdnet.odm.StdModel` instance is mapped into a redis **Hash table**.
 The hash table key is uniquely evaluated by the model hash and
 the *id* of the model instance and it is stored at::
 
@@ -60,7 +60,7 @@ following form::
     <<basekey>>:idx:<<field name>>:<<field value>>
 
 If the model specify an :ref:`implicit ordering <implicit-sorting>` via the
-:attr:`stdnet.orm.base.Metaclass.ordering` attribute, indexes are stored
+:attr:`stdnet.odm.base.Metaclass.ordering` attribute, indexes are stored
 in sorted sets rather than sets.
 
 
@@ -74,10 +74,10 @@ Unique Constratins
 For some models you may need to specify certain field to be unique across
 the Model. For example the following ``User`` model::
 
-    class User(orm.StdModel):
-        username = orm.SymbolField(unique = True)
-        emauil = orm.SymbolField(unique = True)
-        password = orm.CharField(required = True)
+    class User(odm.StdModel):
+        username = odm.SymbolField(unique = True)
+        emauil = odm.SymbolField(unique = True)
+        password = odm.CharField(required = True)
 
 specifies two constrains.
 In redis these constraints are stored into two separate hash tables with
@@ -164,13 +164,13 @@ Connection
 Redis Session
 ===============================
 
-Redis :class:`stdnet.orm.Session` and :class:`Query` are handled by lua scripts which
+Redis :class:`stdnet.odm.Session` and :class:`Query` are handled by lua scripts which
 perform them in a single atomic operation.
 
 Redis Query
 =====================
 
-A :class:`stdnet.orm.Query` is handled by two different lua scripts, the first is script
+A :class:`stdnet.odm.Query` is handled by two different lua scripts, the first is script
 perform the aggregation of which results in a temporary redis ``key``
 holding the ``ids`` which result from the query operations.
 The second script is used to load the data from redis to the client.

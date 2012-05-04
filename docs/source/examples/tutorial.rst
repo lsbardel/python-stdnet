@@ -1,6 +1,6 @@
 .. _tutorial:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Using Models
@@ -21,12 +21,12 @@ snipped implements two models, ``Author`` and ``Book``::
 
     from stdnet import orm
     
-    class Author(orm.StModel):
-        name = orm.SymbolField()
+    class Author(odm.StModel):
+        name = odm.SymbolField()
     
-    class Book(orm.StdModel):
-        title  = orm.CharField()
-        author = orm.ForeignKey(Author, related_name = 'books')
+    class Book(odm.StdModel):
+        title  = odm.CharField()
+        author = odm.ForeignKey(Author, related_name = 'books')
 
 The API should look familiar if you have come across django_
 web framework. :ref:`Fields <model-field>` (name in the Author model,
@@ -55,30 +55,30 @@ A minimal ``stdnet`` implementation can look like this::
 
     from stdnet import orm
     
-    class Fund(orm.StdModel):
-        name = orm.SymbolField(unique = True)
-        ccy = orm.SymbolField()
-        description = orm.CharField()
+    class Fund(odm.StdModel):
+        name = odm.SymbolField(unique = True)
+        ccy = odm.SymbolField()
+        description = odm.CharField()
         
         def __unicode__(self):
             return self.name
         
         
-    class Instrument(orm.StdModel):
-        name = orm.SymbolField(unique = True)
-        ccy = orm.SymbolField()
-        type = orm.SymbolField()
-        prices = orm.ListField()
+    class Instrument(odm.StdModel):
+        name = odm.SymbolField(unique = True)
+        ccy = odm.SymbolField()
+        type = odm.SymbolField()
+        prices = odm.ListField()
         
         def __unicode__(self):
             return self.name
         
         
-    class Position(orm.StdModel):
-        instrument = orm.ForeignKey(Instrument)
-        fund = orm.ForeignKey(Fund)
-        size = orm.FloatField()
-        dt = orm.DateField()
+    class Position(odm.StdModel):
+        instrument = odm.ForeignKey(Instrument)
+        fund = odm.ForeignKey(Fund)
+        size = odm.FloatField()
+        dt = odm.DateField()
         
         def __unicode__(self):
             return self.instrument
@@ -115,9 +115,9 @@ model's :class:`Manager`::
 
     import orm
 
-    orm.register(Fund, 'redis://my.host.name:6379/?db=1')
-    orm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-    orm.register(Position, 'redis://my.host.name:6379/?db=1')
+    odm.register(Fund, 'redis://my.host.name:6379/?db=1')
+    odm.register(Instrument, 'redis://my.host.name:6379/?db=1')
+    odm.register(Position, 'redis://my.host.name:6379/?db=1')
     
 
 .. _one-to-many:

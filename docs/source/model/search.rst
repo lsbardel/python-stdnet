@@ -1,6 +1,6 @@
 .. _search:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 =============
 Search

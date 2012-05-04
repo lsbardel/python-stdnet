@@ -1,9 +1,9 @@
-from stdnet import orm
+from stdnet import odm
 
 
-class Base(orm.StdModel):
-    name = orm.SymbolField(primary_key = True)
-    ccy  = orm.SymbolField()
+class Base(odm.StdModel):
+    name = odm.SymbolField(primary_key = True)
+    ccy  = odm.SymbolField()
     
     def __unicode__(self):
         return self.name
@@ -13,5 +13,5 @@ class Base(orm.StdModel):
     
 
 class Instrument(Base):
-    type = orm.SymbolField()
-    description = orm.CharField()
+    type = odm.SymbolField()
+    description = odm.CharField()

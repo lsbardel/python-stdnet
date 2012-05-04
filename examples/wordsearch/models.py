@@ -1,13 +1,13 @@
-from stdnet import orm
+from stdnet import odm
 
 
-class RelatedItem(orm.StdModel):
-    name = orm.SymbolField()
+class RelatedItem(odm.StdModel):
+    name = odm.SymbolField()
     
     
-class Item(orm.StdModel):
-    name = orm.SymbolField()
-    content = orm.CharField()
-    counter = orm.IntegerField()
-    related = orm.ForeignKey(RelatedItem,required=False)
-    secret = orm.CharField(hidden = True)
+class Item(odm.StdModel):
+    name = odm.SymbolField()
+    content = odm.CharField()
+    counter = odm.IntegerField()
+    related = odm.ForeignKey(RelatedItem,required=False)
+    secret = odm.CharField(hidden = True)

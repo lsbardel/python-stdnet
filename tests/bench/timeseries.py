@@ -1,8 +1,7 @@
 __benchmark__ = True
 from datetime import datetime, date
 
-from stdnet import test
-from stdnet import orm
+from stdnet import odm, test
 from stdnet.utils import convert_bytes
 
 from examples.data import hash_data
@@ -33,7 +32,7 @@ class CreateTest(TestCase):
         session = self.session()
         # start the transaction
         self.transaction = session.begin()
-        self.ts = ts = session.add(orm.TS())
+        self.ts = ts = session.add(odm.TS())
         self.ts.update(self.data.items())
         self.assertTrue(self.ts.cache.toadd)
         

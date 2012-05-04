@@ -39,7 +39,7 @@ JSON serialization for four additional classes:
 * `datetime.datetime` as a ``{'__datetime__': timestamp}`` dictionary
 * `decimal.Decimal` as a ``{'__decimal__': number}`` dictionary
 
-.. seealso:: It is the default encoder for :class:`stdnet.orm.JSONField`
+.. seealso:: It is the default encoder for :class:`stdnet.odm.JSONField`
 """
     def default(self, obj):
         if isinstance(obj,datetime):

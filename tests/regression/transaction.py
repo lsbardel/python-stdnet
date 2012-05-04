@@ -1,6 +1,6 @@
 import random
 
-from stdnet import test, orm, InvalidTransaction
+from stdnet import odm, test, InvalidTransaction
 from examples.models import SimpleModel, Dictionary
 from stdnet.utils import populate
 
@@ -25,8 +25,8 @@ class TestTransactions(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         receiver = TransactionReceiver()
-        orm.post_commit.connect(receiver, orm.Session)
-        orm.post_commit.connect(receiver, self.model)
+        odm.post_commit.connect(receiver, odm.Session)
+        odm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
             self.assertEqual(t.backend,session.backend)
             s = session.add(self.model(code = 'test',
@@ -39,7 +39,7 @@ class TestTransactions(test.TestCase):
         self.assertEqual(len(all),2)
         self.assertTrue(len(receiver.transactions),2)
         sender,instances,t,s = receiver.transactions[0]
-        self.assertEqual(sender, orm.Session)
+        self.assertEqual(sender, odm.Session)
         self.assertEqual(s, session)
         sender,instances,t,s = receiver.transactions[1]
         self.assertTrue(instances)
@@ -72,12 +72,12 @@ class TestTransactions(test.TestCase):
         
     def testNoTransaction(self):
         session = self.session()
-        s = session.add(orm.Set())
-        l = session.add(orm.List())
-        h = session.add(orm.HashTable())
+        s = session.add(odm.Set())
+        l = session.add(odm.List())
+        h = session.add(odm.HashTable())
         self.assertEqual(l.size(),0)
         r = TransactionReceiver()
-        orm.post_commit.connect(r, orm.Session)
+        odm.post_commit.connect(r, odm.Session)
         m = session.add(self.model(code = 'test', description = 'just a test'))
         # add an entry to the hashtable
         h.add('test','bla')

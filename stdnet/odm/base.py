@@ -91,16 +91,16 @@ class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
 which maps a :class:`StdModel` into an object in the in a remote
 :class:`stdnet.BackendDataServer`.
-An instance is initiated by the orm when a :class:`StdModel` class is created.
+An instance is initiated by the odm when a :class:`StdModel` class is created.
 
 To override default behaviour you can specify the ``Meta`` class as an inner
 class of :class:`StdModel` in the following way::
 
     from datetime import datetime
-    from stdnet import orm
+    from stdnet import odm
     
-    class MyModel(orm.StdModel):
-        timestamp = orm.DateTimeField(default = datetime.now)
+    class MyModel(odm.StdModel):
+        timestamp = odm.DateTimeField(default = datetime.now)
         ...
         
         class Meta:
@@ -132,11 +132,11 @@ mapper.
 .. attribute:: model
 
     The :class:`StdModel` represented by the :class:`Metaclass`.
-    This attribute is set by the ``orm`` during class initialization.
+    This attribute is set by the ``odm`` during class initialization.
     
 .. attribute:: ordering
 
-    Optional name of a :class:`stdnet.orm.Field` in the :attr:`model`.
+    Optional name of a :class:`stdnet.odm.Field` in the :attr:`model`.
     If provided, model indices will be sorted with respect to the value of the
     specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
@@ -145,7 +145,7 @@ mapper.
     
 .. attribute:: dfields
 
-    dictionary of :class:`stdnet.orm.Field` instances.
+    dictionary of :class:`stdnet.odm.Field` instances.
     
 .. attribute:: fields
 
@@ -312,8 +312,8 @@ class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
     
 For example, the :class:`stdnet.apps.searchengine.Word` model is defined as::
 
-    class Word(orm.StdModel):
-        id = orm.SymbolField(primary_key = True)
+    class Word(odm.StdModel):
+        id = odm.SymbolField(primary_key = True)
         
         class Meta:
             ordering = -autoincrement()

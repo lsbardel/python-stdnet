@@ -1,5 +1,4 @@
-'''Redis backend implementation
-'''
+'''Redis backend implementation'''
 from copy import copy
 import json
 from hashlib import sha1
@@ -42,12 +41,12 @@ redis.redis_before_send.connect(redis_before_send)
 
 class build_query(redis.RedisScript):
     script = (redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('orm.build_query'))
+              redis.read_lua_file('odm.build_query'))
     
 
 class add_recursive(redis.RedisScript):
     script = (redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('orm.add_recursive'))
+              redis.read_lua_file('odm.add_recursive'))
     
     
 class load_query(redis.RedisScript):
@@ -56,7 +55,7 @@ loading of different fields, loading of related fields, sorting and
 limiting.'''
     script = (redis.read_lua_file('tabletools'),
               redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('orm.load_query'))
+              redis.read_lua_file('odm.load_query'))
     
     def build(self, response, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
@@ -107,10 +106,10 @@ limiting.'''
         
 
 class delete_query(redis.RedisScript):
-    '''Lua script for bulk delete of an orm query, including cascade items.
+    '''Lua script for bulk delete of an odm query, including cascade items.
 The first parameter is the model'''
     script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('orm.delete_query'))
+              redis.read_lua_file('odm.delete_query'))
     
     def callback(self, request, response, args, meta = None, client = None,
                  **kwargs):
@@ -120,7 +119,7 @@ The first parameter is the model'''
 
 class commit_session(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('orm.session'))
+              redis.read_lua_file('odm.session'))
     
     def callback(self, request, response, args, sm = None, iids = None,
                  **kwargs):
@@ -678,15 +677,15 @@ class NumberArray(RedisStructure):
     
 
 class numberarray_resize(redis.RedisScript):
-    script = (redis.read_lua_file('orm.numberarray'),
+    script = (redis.read_lua_file('odm.numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
     
 class numberarray_all_raw(redis.RedisScript):
-    script = (redis.read_lua_file('orm.numberarray'),
+    script = (redis.read_lua_file('odm.numberarray'),
               '''return array:new(KEYS[1]):all_raw()''')
     
 class numberarray_getset(redis.RedisScript):
-    script = (redis.read_lua_file('orm.numberarray'),
+    script = (redis.read_lua_file('odm.numberarray'),
               '''local a = array:new(KEYS[1])
 if ARGV[1] == 'get' then
     return a:get(ARGV[2],true)
@@ -695,7 +694,7 @@ else
 end''')
     
 class numberarray_pushback(redis.RedisScript):
-    script = (redis.read_lua_file('orm.numberarray'),
+    script = (redis.read_lua_file('odm.numberarray'),
               '''local a = array:new(KEYS[1])
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)

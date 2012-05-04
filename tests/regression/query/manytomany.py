@@ -1,5 +1,4 @@
-from stdnet import test, orm
-from stdnet.orm import related
+from stdnet import test, odm
 
 from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement
@@ -130,7 +129,7 @@ class TestManyToManyThrough(test.TestCase):
         for field in meta.fields:
             if field.name == 'elements':
                 m2m = field
-        self.assertTrue(isinstance(m2m,orm.ManyToManyField))
+        self.assertTrue(isinstance(m2m, odm.ManyToManyField))
         self.assertFalse('elements' in meta.dfields)
         self.assertEqual(m2m.through,CompositeElement)
         self.assertTrue('elements' in meta.related)

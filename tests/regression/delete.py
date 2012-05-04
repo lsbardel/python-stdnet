@@ -2,7 +2,7 @@
 import datetime
 from random import randint
 
-from stdnet import test, orm
+from stdnet import odm, test
 from stdnet.utils import populate, zip
 from stdnet.exceptions import QuerySetError
 
@@ -75,10 +75,10 @@ class TestPostDeleteSignal(test.TestCase):
             
     def setUp(self):
         self.update_model = update_model(self)
-        orm.post_delete.connect(self.update_model, sender = self.model)
+        odm.post_delete.connect(self.update_model, sender = self.model)
         
     def tearDown(self):
-        orm.post_delete.disconnect(self.update_model, sender = self.model)
+        odm.post_delete.disconnect(self.update_model, sender = self.model)
         
     def testSignal(self):
         session = self.session()

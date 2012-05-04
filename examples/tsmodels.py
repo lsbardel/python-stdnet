@@ -1,11 +1,11 @@
-from stdnet import orm
+from stdnet import odm
 from stdnet.utils import encoders, todatetime, todate, missing_intervals
 from stdnet.apps.columnts import ColumnTSField 
 
         
-class TimeSeries(orm.StdModel):
-    ticker = orm.SymbolField(unique = True)
-    data  = orm.TimeSeriesField()
+class TimeSeries(odm.StdModel):
+    ticker = odm.SymbolField(unique = True)
+    data  = odm.TimeSeriesField()
     
     def todate(self, v):
         return todatetime(v)
@@ -43,18 +43,18 @@ tuples.'''
     
 
 class DateTimeSeries(TimeSeries):
-    data  = orm.TimeSeriesField(pickler = encoders.DateConverter())
+    data  = odm.TimeSeriesField(pickler = encoders.DateConverter())
     
     def todate(self, v):
         return todate(v)
     
     
 class BigTimeSeries(DateTimeSeries):
-    data  = orm.TimeSeriesField(
+    data  = odm.TimeSeriesField(
                     pickler = encoders.DateConverter(),
                     value_pickler = encoders.PythonPickle())
 
 
-class ColumnTimeSeries(orm.StdModel):
-    ticker = orm.SymbolField(unique = True)
+class ColumnTimeSeries(odm.StdModel):
+    ticker = odm.SymbolField(unique = True)
     data = ColumnTSField()

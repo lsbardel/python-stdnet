@@ -1,6 +1,17 @@
 import datetime
 import os
 import subprocess
+from collections import namedtuple
+
+class stdnet_version(namedtuple('stdnet_version',
+                                'major minor micro releaselevel serial')):
+    __impl = None
+    def __new__(cls,*args,**kwargs):
+        if cls.__impl is None:
+            cls.__impl = super(stdnet_version,cls).__new__(cls, *args, **kwargs)
+            return cls.__impl
+        else:
+            raise TypeError('cannot create stdnet_version instances')
 
 def get_version(version):
     "Returns a PEP 386-compliant version number from *version*."

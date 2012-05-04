@@ -1,4 +1,4 @@
-from stdnet import test, orm, ModelNotRegistered, AlreadyRegistered
+from stdnet import test, odm, ModelNotRegistered, AlreadyRegistered
 
 from examples.models import SimpleModel
 
@@ -6,7 +6,7 @@ from examples.models import SimpleModel
 class TestRegistration(test.TestCase):
 
     def register(self):
-        apps = orm.register_applications('examples', default = self.backend)
+        apps = odm.register_applications('examples', default = self.backend)
         self.assertTrue(apps)
         return apps
         
@@ -22,9 +22,9 @@ class TestRegistration(test.TestCase):
         
     def testUnregisterAll(self):
         apps = self.register()
-        self.assertEqual(orm.unregister(self), None)
-        self.assertEqual(set(apps),set(orm.registered_models()))
-        orm.unregister()
+        self.assertEqual(odm.unregister(self), None)
+        self.assertEqual(set(apps),set(odm.registered_models()))
+        odm.unregister()
         for model in apps:
             manager = model.objects
             self.assertFalse(manager.backend)
@@ -33,15 +33,15 @@ class TestRegistration(test.TestCase):
         
     def testFlushModel(self):
         self.register()
-        orm.flush_models()
+        odm.flush_models()
         
     def testFlushExclude(self):
         self.register()
         SimpleModel(code = 'test').save()
-        orm.flush_models(excludes = ('examples.simplemodel',))
+        odm.flush_models(excludes = ('examples.simplemodel',))
         qs = SimpleModel.objects.query()
         self.assertTrue(qs)
-        orm.flush_models()
+        odm.flush_models()
         qs = SimpleModel.objects.query()
         self.assertFalse(qs)
         
@@ -49,20 +49,20 @@ class TestRegistration(test.TestCase):
         self.register()
         s = SimpleModel(code = 'test').save()
         uuid = s.uuid
-        s2  = orm.from_uuid(s.uuid)
+        s2  = odm.from_uuid(s.uuid)
         self.assertEqual(s,s2)
-        self.assertRaises(SimpleModel.DoesNotExist,orm.from_uuid,'cdcdscscds')
-        self.assertRaises(SimpleModel.DoesNotExist,orm.from_uuid,'cdcdscscds.1')
+        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid,'cdcdscscds')
+        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid,'cdcdscscds.1')
         a,b = tuple(uuid.split('.'))
         self.assertRaises(SimpleModel.DoesNotExist,
-                          orm.from_uuid,'{0}.5'.format(a))
+                          odm.from_uuid,'{0}.5'.format(a))
         
     def testFailedHashModel(self):
-        self.assertRaises(KeyError, orm.hashmodel, SimpleModel)
+        self.assertRaises(KeyError, odm.hashmodel, SimpleModel)
         
     def testAlreadyRegistered(self):
         self.register()
-        self.assertEqual(orm.register(SimpleModel),None)
-        self.assertRaises(AlreadyRegistered, orm.register, SimpleModel,
+        self.assertEqual(odm.register(SimpleModel),None)
+        self.assertRaises(AlreadyRegistered, odm.register, SimpleModel,
                           ignore_duplicates = False)
         

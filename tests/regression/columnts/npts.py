@@ -1,13 +1,13 @@
 import os
 
-from stdnet import orm
+from stdnet import odm
 from stdnet.apps.columnts import DoubleEncoder
 try:
     from stdnet.apps.columnts import npts
     from dynts import tsname
     
-    class ColumnTimeSeriesNumpy(orm.StdModel):
-        ticker = orm.SymbolField(unique = True)
+    class ColumnTimeSeriesNumpy(odm.StdModel):
+        ticker = odm.SymbolField(unique = True)
         data = npts.ColumnTSField()
     
 except ImportError:

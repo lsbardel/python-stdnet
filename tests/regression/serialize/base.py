@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from stdnet import orm, test
+from stdnet import odm, test
 from stdnet.utils import BytesIO, to_bytes
 
 class Tempfile(object):
@@ -43,7 +43,7 @@ class SerializerMixin(object):
     serializer = 'json'
     
     def get(self, **options):
-        s = orm.get_serializer(self.serializer)
+        s = odm.get_serializer(self.serializer)
         if not s.default_options:
             self.assertEqual(s.options, options)
         self.assertFalse(s.data)
@@ -77,23 +77,23 @@ class SerializerMixin(object):
         self.assertEqual(qs,qs2)
 
 
-class DummySerializer(orm.Serializer):
+class DummySerializer(odm.Serializer):
     pass
 
 
 class TestMeta(test.TestCase):
     
     def testBadSerializer(self):
-        self.assertRaises(ValueError, orm.get_serializer, 'djsbvjchvsdjcvsdj')
+        self.assertRaises(ValueError, odm.get_serializer, 'djsbvjchvsdjcvsdj')
         
     def testRegisterUnregister(self):
-        orm.register_serializer('dummy',DummySerializer())
-        s = orm.get_serializer('dummy')
-        self.assertTrue('dummy' in orm.all_serializers())
+        odm.register_serializer('dummy',DummySerializer())
+        s = odm.get_serializer('dummy')
+        self.assertTrue('dummy' in odm.all_serializers())
         self.assertTrue(isinstance(s,DummySerializer))
         self.assertRaises(NotImplementedError, s.serialize, None)
         self.assertRaises(NotImplementedError, s.write)
         self.assertRaises(NotImplementedError, s.load, None)
-        self.assertTrue(orm.unregister_serializer('dummy'))
-        self.assertRaises(ValueError, orm.get_serializer, 'dummy')
+        self.assertTrue(odm.unregister_serializer('dummy'))
+        self.assertRaises(ValueError, odm.get_serializer, 'dummy')
         

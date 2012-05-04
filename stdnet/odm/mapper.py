@@ -79,11 +79,11 @@ classes with a :class:`stdnet.BackendDataServer` data server.
     
 For Redis the syntax is the following::
 
-    import orm
+    import odm
     
-    orm.register(Author, 'redis://my.host.name:6379/?db=1')
-    orm.register(Book, 'redis://my.host.name:6379/?db=2')
-    orm.register(MyOtherModel, 
+    odm.register(Author, 'redis://my.host.name:6379/?db=1')
+    odm.register(Book, 'redis://my.host.name:6379/?db=2')
+    odm.register(MyOtherModel, 
                 'redis://my.host.name:6379/?db=2&keyprefix=differentprefix.')
     
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
@@ -133,7 +133,7 @@ Only models defined in these paths are considered.
 
 For example::
 
-    from stdnet.orm import model_iterator
+    from stdnet.odm import model_iterator
     
     APPS = ('stdnet.contrib.searchengine',
             'stdnet.contrib.timeseries')
@@ -206,7 +206,7 @@ For example::
 
 def register_applications(applications, **kwargs):
     '''A simple convenience wrapper around the
-:func:`stdnet.orm.register_application_models` generator.
+:func:`stdnet.odm.register_application_models` generator.
 
 It return s a list of registered models.'''
     return list(register_application_models(applications, **kwargs))

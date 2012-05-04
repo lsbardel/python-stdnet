@@ -18,7 +18,7 @@ else:   # pragma nocover
               'the unitest2 package')
         exit(0)
 
-from stdnet import orm, getdb, BackendRequest
+from stdnet import odm, getdb, BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
@@ -41,9 +41,9 @@ some utility functions for tesing in a parallel test suite.
         return {}
     
     def session(self, **kwargs):
-        '''Create a new :class:`stdnet.orm.Session` bind to the
+        '''Create a new :class:`stdnet.odm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
-        session = orm.Session(self.backend, **kwargs)
+        session = odm.Session(self.backend, **kwargs)
         self.assertEqual(session.backend, self.backend)
         return session
     
@@ -52,7 +52,7 @@ some utility functions for tesing in a parallel test suite.
 This should be used with care in parallel testing. All registered models
 will be unregistered after the :meth:`tearDown` method.'''
         for model in self.models:
-            orm.register(model, self.backend)
+            odm.register(model, self.backend)
     
     def clear_all(self):
         return self.backend.flush(pattern = self.prefix + '*')
@@ -77,9 +77,9 @@ will be unregistered after the :meth:`tearDown` method.'''
             self.backend.load_scripts()
             
     def _post_teardown(self):
-        session = orm.Session(self.backend)
+        session = odm.Session(self.backend)
         self.clear_all()
-        orm.unregister()
+        odm.unregister()
     
     def __call__(self, result=None):
         """Wrapper around default __call__ method

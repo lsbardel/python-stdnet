@@ -12,7 +12,7 @@ Default Settings
 .. automodule:: stdnet.conf
 
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 Model Utilities
 ============================
@@ -32,7 +32,7 @@ Model Iterator
 Flush Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: stdnet.orm.flush_models
+.. autofunction:: stdnet.odm.flush_models
 
 
 .. _serialize-models:

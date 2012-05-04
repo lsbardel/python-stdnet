@@ -64,7 +64,7 @@ signals.class_prepared.connect(do_pending_lookups)
 
 def Many2ManyThroughModel(field):
     '''Create a Many2Many through model with two foreign key fields'''
-    from stdnet.orm import StdNetType, StdModel, ForeignKey
+    from stdnet.odm import StdNetType, StdModel, ForeignKey
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
     # The two models are the same.

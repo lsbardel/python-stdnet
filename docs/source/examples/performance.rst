@@ -1,6 +1,6 @@
 .. _increase-performance:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ======================
 Performance

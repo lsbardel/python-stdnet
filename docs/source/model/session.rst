@@ -1,6 +1,6 @@
 .. _model-session:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Sessions
@@ -24,7 +24,7 @@ a class:`stdnet.BackendDataServer`.::
 
     from stdnet import orm
     
-    session = orm.Session('redis://localhost:8060?db=3')
+    session = odm.Session('redis://localhost:8060?db=3')
     
 
 
@@ -63,7 +63,7 @@ Manager
    :member-order: bysource
    
    
-.. module:: stdnet.orm.related
+.. module:: stdnet.odm.related
 
 RelatedManager
 ~~~~~~~~~~~~~~~~~~

@@ -1,7 +1,7 @@
 import os
 from datetime import date, datetime, timedelta
 
-from stdnet import orm, test, SessionNotAvailable, CommitException
+from stdnet import test, SessionNotAvailable, CommitException
 from stdnet.utils import encoders, populate
 from stdnet.apps.columnts import ColumnTS, DoubleEncoder, nil
 from stdnet.lib import redis

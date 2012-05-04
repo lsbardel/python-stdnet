@@ -1,16 +1,16 @@
-from stdnet import orm
+from stdnet import odm
 
 
-class Element(orm.StdModel):
-    name = orm.SymbolField()
+class Element(odm.StdModel):
+    name = odm.SymbolField()
 
 
-class CompositeElement(orm.StdModel):
-    weight = orm.FloatField()
+class CompositeElement(odm.StdModel):
+    weight = odm.FloatField()
     
 
-class Composite(orm.StdModel):
-    name = orm.SymbolField()
-    elements = orm.ManyToManyField(Element,
+class Composite(odm.StdModel):
+    name = odm.SymbolField()
+    elements = odm.ManyToManyField(Element,
                                    through = CompositeElement,
                                    related_name = 'composites')

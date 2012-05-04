@@ -17,7 +17,7 @@ class FuzzyTest(test.TestCase):
              'huge': 10000}
     
     def register(self):
-        self.orm.register(SimpleModel)
+        self.odm.register(SimpleModel)
         self.rpy = getdb().redispy
         
     def fuzzydata(self, size, min_len, max_len):

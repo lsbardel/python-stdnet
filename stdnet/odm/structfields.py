@@ -79,9 +79,9 @@ that contains a list of messages an instance receive::
 
     from stdnet import orm
     
-    class MyModel(orm.StdModel):
+    class MyModel(odm.StdModel):
         ...
-        messages = orm.ListField()
+        messages = odm.ListField()
 
 By defining structured fields in a model, an instance of that model can access
 a stand alone structure in the back-end server with very little effort::
@@ -91,7 +91,7 @@ a stand alone structure in the back-end server with very little effort::
 
 Behind the scenes, this functionality is implemented by Python descriptors_.
 
-:parameter model: an optional :class:`stdnet.orm.StdModel` class. If
+:parameter model: an optional :class:`stdnet.odm.StdModel` class. If
     specified, the structured will contains ids of instances of the model.
     It is saved in the :attr:`relmodel` attribute.
     
@@ -121,9 +121,9 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
     If ``True`` this :class:`StructureField` is a class field (it belongs to
     the model class rather than model instances). For example::
     
-        class MyModel(orm.StdModel):
+        class MyModel(odm.StdModel):
             ...
-            updates = orm.List(class_field = True)
+            updates = odm.List(class_field = True)
             
         MyModel.updates.push_back(1)
     
@@ -205,10 +205,10 @@ without any argument other than an optional model class.
 When accessed from the model instance, it returns an instance of
 :class:`stdnet.Set` structure. For example::
 
-    class User(orm.StdModel):
-        username  = orm.AtomField(unique = True)
-        password  = orm.AtomField()
-        following = orm.SetField(model = 'self')
+    class User(odm.StdModel):
+        username  = odm.AtomField(unique = True)
+        password  = odm.AtomField()
+        following = odm.SetField(model = 'self')
     
 It can be used in the following way::
     
@@ -228,13 +228,13 @@ class ListField(StructureField):
 When accessed from the model instance,
 it returns an instance of :class:`stdnet.List` structure. For example::
 
-    class UserMessage(orm.StdModel):
-        user = orm.SymbolField()
-        messages = orm.ListField()
+    class UserMessage(odm.StdModel):
+        user = odm.SymbolField()
+        messages = odm.ListField()
     
 Lets register it with redis::
 
-    >>> orm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
+    >>> odm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
     'redis db 7 on 127.0.0.1:6379'
     
 Can be used as::

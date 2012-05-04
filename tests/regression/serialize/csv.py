@@ -1,5 +1,5 @@
 '''Test the CSV serializer'''
-from stdnet import test, orm
+from stdnet import test, odm
 
 from examples.data import FinanceTest, Instrument, Fund, Position
 

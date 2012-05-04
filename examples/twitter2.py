@@ -1,7 +1,7 @@
 from datetime import datetime
 from stdnet import orm
 
-class Post(orm.StdModel):
+class Post(odm.StdModel):
     
     def __init__(self, data = ''):
         self.dt   = datetime.now()
@@ -9,11 +9,11 @@ class Post(orm.StdModel):
         super(Post,self).__init__()
     
     
-class User(orm.StdModel):
+class User(odm.StdModel):
     '''A model for holding information about users'''
-    username  = orm.AtomField(unique = True)
-    password  = orm.AtomField()
-    updates   = orm.ListField()
+    username  = odm.AtomField(unique = True)
+    password  = odm.AtomField()
+    updates   = odm.ListField()
     
     def __unicode__(self):
         return self.username
@@ -35,7 +35,7 @@ class User(orm.StdModel):
         return set(f.user for f in self.followers_set.all())
         
         
-class UserFollower(orm.StdModel):
-    user = orm.ForeignKey(User, related_name = 'followers_set')
-    follower = orm.ForeignKey(User, related_name = 'following_set')
+class UserFollower(odm.StdModel):
+    user = odm.ForeignKey(User, related_name = 'followers_set')
+    follower = odm.ForeignKey(User, related_name = 'following_set')
     

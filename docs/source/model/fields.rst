@@ -1,6 +1,6 @@
 .. _model-field:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Fields API

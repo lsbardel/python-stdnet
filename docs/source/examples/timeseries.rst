@@ -20,7 +20,7 @@ A simple model derived from :class:`stdnet.contrib.timeseries.models.TimeSeries`
         
     
     class FinanceTimeSeries(TimeSeries):
-        ticker = orm.SymbolField(unique = True)
+        ticker = odm.SymbolField(unique = True)
         
         def __unicode__(self):
             return '%s - %s' % (self.ticker,self.data.size())
@@ -31,7 +31,7 @@ Register the model
 Register ``FinanceTimeSeries`` to the standard backend::
 
     >>> from stdnet import orm
-    >>> orm.register(FinanceTimeSeries)
+    >>> odm.register(FinanceTimeSeries)
     'redis db 7 on 127.0.0.1:6379'
     
     

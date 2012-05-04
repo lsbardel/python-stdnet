@@ -2,9 +2,9 @@
 from random import randint
 from datetime import date
 
-from stdnet import orm, test, QuerySetError
+from stdnet import odm, test, QuerySetError
 from stdnet.utils import to_string, range, populate
-from stdnet.orm.search import UpdateSE
+from stdnet.odm.search import UpdateSE
 from stdnet.apps.searchengine import SearchEngine, processors
 from stdnet.apps.searchengine.models import WordItem
 
@@ -311,7 +311,7 @@ class TestCoverage(TestCase):
 class TestCoverageBaseClass(TestCase):
     
     def testAbstracts(self):
-        e = orm.SearchEngine()
+        e = odm.SearchEngine()
         self.assertRaises(NotImplementedError, e.search, 'bla')
         self.assertRaises(NotImplementedError, e.search_model, None, 'bla')
         self.assertRaises(NotImplementedError, e.flush)
@@ -321,7 +321,7 @@ class TestCoverageBaseClass(TestCase):
         self.assertEqual(e.split_text('ciao luca'), ['ciao','luca'])
     
     def testItemFieldIterator(self):
-        e = orm.SearchEngine()
+        e = odm.SearchEngine()
         self.assertRaises(ValueError, e.item_field_iterator, None)
         u = UpdateSE(e)
         self.assertEqual(u.se, e)

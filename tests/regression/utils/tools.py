@@ -2,7 +2,7 @@ import time
 from datetime import date, datetime
 
 import stdnet
-from stdnet import test, orm
+from stdnet import test, odm
 from stdnet.utils import encoders, to_bytes, to_string
 from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper,\
@@ -24,11 +24,11 @@ class TestUtils(test.TestCase):
             session.add(self.model(name='foo',data=data))
         obj = session.query(self.model).get(id = 1)
         self.assertEqual(\
-            nested_json_value(obj,'data__folder1__folder11',orm.JSPLITTER),1)
+            nested_json_value(obj,'data__folder1__folder11',odm.JSPLITTER),1)
         self.assertEqual(\
-            nested_json_value(obj,'data__folder1__folder12',orm.JSPLITTER),2)
+            nested_json_value(obj,'data__folder1__folder12',odm.JSPLITTER),2)
         self.assertEqual(\
-            nested_json_value(obj,'data__folder1',orm.JSPLITTER),'home')
+            nested_json_value(obj,'data__folder1',odm.JSPLITTER),'home')
         
     def test_date2timestamp(self):
         t1 = datetime.now()

@@ -1,7 +1,7 @@
 import os
 from datetime import date
 
-from stdnet import test, orm, InvalidTransaction
+from stdnet import test, odm, InvalidTransaction
 from stdnet.utils import encoders, zip
 from stdnet.utils.populate import populate
 
@@ -92,18 +92,18 @@ itself.'''
 
 
 class TestSet(StructMixin,test.TestCase):
-    structure = orm.Set
+    structure = odm.Set
     name = 'set'
     
     def createOne(self, session):
-        s = session.add(orm.Set())
+        s = session.add(odm.Set())
         s.update((1,2,3,4,5,5))
         return s
             
     def testSimpleUpdate(self):
         # Typical usage. Add a set to a session
         session = self.session()
-        s = session.add(orm.Set())
+        s = session.add(odm.Set())
         # if not id provided, an id is created
         self.assertTrue(s.id)
         self.assertEqual(s.session, session)
@@ -119,7 +119,7 @@ class TestSet(StructMixin,test.TestCase):
     def testUpdateDelete(self):
         session = self.session()
         with session.begin():
-            s = session.add(orm.Set())
+            s = session.add(odm.Set())
             s.update((1,2,3,4,5,5))
             s.discard(2)
             s.discard(67)
@@ -133,7 +133,7 @@ class TestSet(StructMixin,test.TestCase):
         
 
 class TestZset(StructMixin,test.TestCase):
-    structure = orm.Zset
+    structure = odm.Zset
     name = 'zset'
     result =  [(0.0022,'pluto'),
                (0.06,'mercury'),
@@ -146,7 +146,7 @@ class TestZset(StructMixin,test.TestCase):
                (317.8,'juppiter')]
     
     def createOne(self, session):
-        l = session.add(orm.Zset())
+        l = session.add(odm.Zset())
         l.add(1,'earth')
         l.add(0.06,'mercury')
         l.add(317.8,'juppiter')
@@ -178,7 +178,7 @@ class TestZset(StructMixin,test.TestCase):
     def testZsetState(self):
         '''test a very simple zset with integer'''
         session = self.session()
-        z = session.add(orm.Zset())
+        z = session.add(odm.Zset())
         self.assertTrue(z.state().persistent)
         self.assertTrue(z in session)
         self.assertEqual(z.session, session)
@@ -212,11 +212,11 @@ class TestZset(StructMixin,test.TestCase):
 
 
 class TestList(StructMixin, test.TestCase):
-    structure = orm.List
+    structure = odm.List
     name = 'list'
     
     def createOne(self, session):
-        l = session.add(orm.List())
+        l = session.add(odm.List())
         l.push_back(3)
         l.push_back(5.6)
         return l
@@ -232,7 +232,7 @@ class TestList(StructMixin, test.TestCase):
         
     def testJsonList(self):
         with self.session().begin() as t:
-            l = t.add(orm.List(value_pickler = encoders.Json()))
+            l = t.add(odm.List(value_pickler = encoders.Json()))
             l.push_back(3)
             l.push_back(5.6)
             l.push_back('save')
@@ -243,18 +243,18 @@ class TestList(StructMixin, test.TestCase):
     
 
 class TestHash(StructMixin, test.TestCase):
-    structure = orm.HashTable
+    structure = odm.HashTable
     name = 'hashtable'
     
     def createOne(self, session):
-        h = session.add(orm.HashTable())
+        h = session.add(odm.HashTable())
         h['bla'] = 'foo'
         h['pluto'] = 3
         return h
         
     def testNoTransaction(self):
         session = self.session()
-        d = session.add(orm.HashTable())
+        d = session.add(odm.HashTable())
         d['bla'] = 5676
         self.assertEqual(d.size(),1)
         self.assertEqual(d['bla'],5676)
@@ -262,7 +262,7 @@ class TestHash(StructMixin, test.TestCase):
     def testPop(self):
         session = self.session()
         with session.begin():
-            d = session.add(orm.HashTable())
+            d = session.add(odm.HashTable())
             d['foo'] = 'ciao'
         self.assertEqual(d.size(),1)
         self.assertEqual(d['foo'],'ciao')
@@ -275,7 +275,7 @@ class TestHash(StructMixin, test.TestCase):
     def testGet(self):
         session = self.session()
         with session.begin():
-            h = session.add(orm.HashTable())
+            h = session.add(odm.HashTable())
             h['bla'] = 'foo'
             h['bee'] = 3
         
@@ -287,11 +287,11 @@ class TestHash(StructMixin, test.TestCase):
         
 @skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTS(StructMixin, test.TestCase):
-    structure = orm.TS
+    structure = odm.TS
     name = 'ts'
     
     def createOne(self, session):
-        ts = session.add(orm.TS())
+        ts = session.add(odm.TS())
         ts.update(zip(dates,values))
         return ts
         
@@ -303,7 +303,7 @@ class TestTS(StructMixin, test.TestCase):
         
     def testEmpty2(self):
         session = self.session()
-        ts = session.add(orm.TS())
+        ts = session.add(odm.TS())
         self.assertTrue(ts.id)
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(),None)
@@ -329,7 +329,7 @@ class TestTS(StructMixin, test.TestCase):
     def testGet(self):
         session = self.session()
         with session.begin():
-            ts = session.add(orm.TS())
+            ts = session.add(odm.TS())
             ts.update(zip(dates,values))
         dt1 = dates[0]
         val1 = ts[dt1]
@@ -341,7 +341,7 @@ class TestTS(StructMixin, test.TestCase):
     
 
 class TestString(StructMixin, test.TestCase):
-    structure = orm.String
+    structure = odm.String
     name = 'string'
     
     def createOne(self, session):
@@ -360,7 +360,7 @@ class TestString(StructMixin, test.TestCase):
     
     
 class TestNumberArray(StructMixin, test.TestCase):
-    structure = orm.NumberArray
+    structure = odm.NumberArray
     name = 'numberarray'
     
     def createOne(self, session):

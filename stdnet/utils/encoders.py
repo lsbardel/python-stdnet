@@ -1,4 +1,4 @@
-'''Classes used for encoding and decoding :class:`stdnet.orm.Field` values.'''
+'''Classes used for encoding and decoding :class:`stdnet.odm.Field` values.'''
 import json
 from datetime import datetime, date
 from struct import pack, unpack

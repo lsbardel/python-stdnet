@@ -1,23 +1,23 @@
 import time
 from datetime import datetime, date
 
-from stdnet import orm
+from stdnet import odm
 
 
-class CustomManager(orm.Manager):
+class CustomManager(odm.Manager):
     
     def something(self):
         return "I'm a custom manager"
 
 
-class SimpleModel(orm.StdModel):
-    code = orm.SymbolField(unique = True)
-    group = orm.SymbolField(required = False)
-    description = orm.CharField()
-    somebytes = orm.ByteField()
-    object = orm.PickleObjectField(required = False)
-    cached_data = orm.ByteField(as_cache = True)
-    timestamp = orm.DateTimeField(as_cache = True)
+class SimpleModel(odm.StdModel):
+    code = odm.SymbolField(unique = True)
+    group = odm.SymbolField(required = False)
+    description = odm.CharField()
+    somebytes = odm.ByteField()
+    object = odm.PickleObjectField(required = False)
+    cached_data = odm.ByteField(as_cache = True)
+    timestamp = odm.DateTimeField(as_cache = True)
     
     objects = CustomManager()
     
@@ -27,9 +27,9 @@ class SimpleModel(orm.StdModel):
     
 #####################################################################
 #    FINANCE APPLICATION
-class Base(orm.StdModel):
-    name = orm.SymbolField(unique = True)
-    ccy  = orm.SymbolField()
+class Base(odm.StdModel):
+    name = odm.SymbolField(unique = True)
+    ccy  = odm.SymbolField()
     
     def __unicode__(self):
         return self.name
@@ -39,87 +39,87 @@ class Base(orm.StdModel):
     
 
 class Instrument(Base):
-    type = orm.SymbolField()
-    description = orm.CharField()
+    type = odm.SymbolField()
+    description = odm.CharField()
 
 
 class Instrument2(Base):
-    type = orm.SymbolField()
+    type = odm.SymbolField()
 
     class Meta:
         ordering = 'id'
         
     
 class Fund(Base):
-    description = orm.CharField()
+    description = odm.CharField()
 
 
-class Position(orm.StdModel):
-    instrument = orm.ForeignKey(Instrument, related_name = 'positions')
-    fund       = orm.ForeignKey(Fund, related_name = 'positions')
-    dt         = orm.DateField()
-    size       = orm.FloatField(default = 1)
+class Position(odm.StdModel):
+    instrument = odm.ForeignKey(Instrument, related_name = 'positions')
+    fund       = odm.ForeignKey(Fund, related_name = 'positions')
+    dt         = odm.DateField()
+    size       = odm.FloatField(default = 1)
     
     def __unicode__(self):
         return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
     
     
-class PortfolioView(orm.StdModel):
-    name      = orm.SymbolField()
-    portfolio = orm.ForeignKey(Fund)
+class PortfolioView(odm.StdModel):
+    name      = odm.SymbolField()
+    portfolio = odm.ForeignKey(Fund)
     
     
-class Folder(orm.StdModel):
-    name      = orm.SymbolField()
-    view      = orm.ForeignKey(PortfolioView, related_name = 'folders')
-    positions = orm.ManyToManyField(Position, related_name = 'folders')
-    parent    = orm.ForeignKey('self',related_name = 'children',required=False)
+class Folder(odm.StdModel):
+    name      = odm.SymbolField()
+    view      = odm.ForeignKey(PortfolioView, related_name = 'folders')
+    positions = odm.ManyToManyField(Position, related_name = 'folders')
+    parent    = odm.ForeignKey('self',related_name = 'children',required=False)
 
     def __unicode__(self):
         return self.name
 
 
-class UserDefaultView(orm.StdModel):
-    user = orm.SymbolField()
-    view = orm.ForeignKey(PortfolioView)
+class UserDefaultView(odm.StdModel):
+    user = odm.SymbolField()
+    view = odm.ForeignKey(PortfolioView)
     
     
-class DateValue(orm.StdModel):
+class DateValue(odm.StdModel):
     "An helper class for adding calendar events"
-    dt = orm.DateField(index = False)
-    value = orm.CharField()
+    dt = odm.DateField(index = False)
+    value = odm.CharField()
     
     def score(self):
         "implement the score function for sorting in the ordered set"
         return int(1000*time.mktime(self.dt.timetuple()))
     
 
-class Calendar(orm.StdModel):
-    name   = orm.SymbolField(unique = True)
-    data   = orm.SetField(DateValue, ordered = True)
+class Calendar(odm.StdModel):
+    name   = odm.SymbolField(unique = True)
+    data   = odm.SetField(DateValue, ordered = True)
     
     def add(self, dt, value):
         event = DateValue(dt = dt,value = value).save()
         self.data.add(event)
 
     
-class Dictionary(orm.StdModel):
-    name = orm.SymbolField(unique = True)
-    data = orm.HashField()
+class Dictionary(odm.StdModel):
+    name = odm.SymbolField(unique = True)
+    data = odm.HashField()
     
     
-class SimpleList(orm.StdModel):
-    names = orm.ListField()
+class SimpleList(odm.StdModel):
+    names = odm.ListField()
     
     
-class SimpleString(orm.StdModel):
-    data = orm.StringField() 
+class SimpleString(odm.StdModel):
+    data = odm.StringField() 
     
     
-class TestDateModel(orm.StdModel):
-    person = orm.SymbolField()
-    name = orm.SymbolField()
-    dt = orm.DateField()
+class TestDateModel(odm.StdModel):
+    person = odm.SymbolField()
+    name = odm.SymbolField()
+    dt = odm.DateField()
 
 
 class SportAtDate(TestDateModel):
@@ -134,52 +134,52 @@ class SportAtDate2(TestDateModel):
         ordering = '-dt'
     
 
-class Group(orm.StdModel):
-    name = orm.SymbolField()
+class Group(odm.StdModel):
+    name = odm.SymbolField()
     
     
-class Person(orm.StdModel):
-    name = orm.SymbolField()
-    group = orm.ForeignKey(Group)
+class Person(odm.StdModel):
+    name = odm.SymbolField()
+    group = odm.ForeignKey(Group)
 
     
 # A model for testing a recursive foreign key
-class Node(orm.StdModel):
-    parent = orm.ForeignKey('self', required = False, related_name = 'children')
-    weight = orm.FloatField()
+class Node(odm.StdModel):
+    parent = odm.ForeignKey('self', required = False, related_name = 'children')
+    weight = odm.FloatField()
     
     def __unicode__(self):
         return '%s' % self.weight
     
     
-class Page(orm.StdModel):
-    in_navigation = orm.IntegerField(default = 1)
+class Page(odm.StdModel):
+    in_navigation = odm.IntegerField(default = 1)
     
 
-class Collection(orm.StdModel):
-    numbers = orm.SetField()
-    groups = orm.SetField(model = Group)
+class Collection(odm.StdModel):
+    numbers = odm.SetField()
+    groups = odm.SetField(model = Group)
     
         
 
 #############################################################
 ## TWITTER CLONE MODELS
 
-class Post(orm.StdModel):
-    dt   = orm.DateTimeField(index = False)
-    data = orm.CharField(required = True)
-    user = orm.ForeignKey("User", index = False)
+class Post(odm.StdModel):
+    dt   = odm.DateTimeField(index = False)
+    data = odm.CharField(required = True)
+    user = odm.ForeignKey("User", index = False)
     
     def __unicode__(self):
         return self.data
     
     
-class User(orm.StdModel):
+class User(odm.StdModel):
     '''A model for holding information about users'''
-    username  = orm.SymbolField(unique = True)
-    password  = orm.SymbolField(index = False)
-    updates   = orm.ListField(model = Post)
-    following = orm.ManyToManyField(model = 'self', related_name = 'followers')
+    username  = odm.SymbolField(unique = True)
+    password  = odm.SymbolField(index = False)
+    updates   = odm.ListField(model = Post)
+    following = odm.ManyToManyField(model = 'self', related_name = 'followers')
     
     def __unicode__(self):
         return self.username
@@ -192,66 +192,66 @@ class User(orm.StdModel):
 
 
 ##############################################
-class Role(orm.StdModel):
-    name = orm.SymbolField()
+class Role(odm.StdModel):
+    name = odm.SymbolField()
     
     def __unicode__(self):
         return self.name
 
 
-class Profile(orm.StdModel):
-    roles = orm.ManyToManyField(model=Role, related_name="profiles")
+class Profile(odm.StdModel):
+    roles = odm.ManyToManyField(model=Role, related_name="profiles")
 
 
 ##############################################
 # JSON FIELD
 
-class Statistics(orm.StdModel):
-    dt = orm.DateField()
-    data = orm.JSONField()
+class Statistics(odm.StdModel):
+    dt = odm.DateField()
+    data = odm.JSONField()
     
     
-class Statistics3(orm.StdModel):
-    name = orm.SymbolField()
-    data = orm.JSONField(as_string = False)
+class Statistics3(odm.StdModel):
+    name = odm.SymbolField()
+    data = odm.JSONField(as_string = False)
     
     
-class ComplexModel(orm.StdModel):
-    name = orm.SymbolField()
-    timestamp = orm.DateTimeField(as_cache = True)
-    data = orm.JSONField(as_string = False, as_cache = True)
+class ComplexModel(odm.StdModel):
+    name = odm.SymbolField()
+    timestamp = odm.DateTimeField(as_cache = True)
+    data = odm.JSONField(as_string = False, as_cache = True)
     
     
     
 ##############################################
 # PickleObjectField FIELD
 
-class Environment(orm.StdModel):
-    data = orm.PickleObjectField()
+class Environment(odm.StdModel):
+    data = odm.PickleObjectField()
     
 
 ##############################################
 # Numeric Data
 
-class NumericData(orm.StdModel):
-    pv = orm.FloatField()
-    vega = orm.FloatField(default = 0.0)
-    delta = orm.FloatField(default = 1.0)
-    gamma = orm.FloatField(required = False)
-    ok = orm.BooleanField()
+class NumericData(odm.StdModel):
+    pv = odm.FloatField()
+    vega = odm.FloatField(default = 0.0)
+    delta = odm.FloatField(default = 1.0)
+    gamma = odm.FloatField(required = False)
+    ok = odm.BooleanField()
 
 
-class DateData(orm.StdModel):
-    dt1 = orm.DateField(required = False)
-    dt2 = orm.DateTimeField(default = datetime.now)
+class DateData(odm.StdModel):
+    dt1 = odm.DateField(required = False)
+    dt2 = odm.DateTimeField(default = datetime.now)
     
     
 ####################################################
 # Custom ID
-class Task(orm.StdModel):
-    id = orm.SymbolField(primary_key = True)
-    name = orm.CharField()
-    timestamp = orm.DateTimeField(default = datetime.now)
+class Task(odm.StdModel):
+    id = odm.SymbolField(primary_key = True)
+    name = odm.CharField()
+    timestamp = odm.DateTimeField(default = datetime.now)
     
     class Meta:
         ordering = '-timestamp'
@@ -263,10 +263,10 @@ class Task(orm.StdModel):
 
 ####################################################
 # Composite ID
-class WordBook(orm.StdModel):
-    id = orm.CompositeIdField('word','book')
-    word = orm.SymbolField()
-    book = orm.SymbolField()
+class WordBook(odm.StdModel):
+    id = odm.CompositeIdField('word','book')
+    word = odm.SymbolField()
+    book = odm.SymbolField()
     
     def __unicode__(self):
         return self.id
@@ -274,9 +274,9 @@ class WordBook(orm.StdModel):
 
 ################################################################################
 #   Object Analytics
-class ObjectAnalytics(orm.StdModel):
-    model_type = orm.ModelField()
-    object_id = orm.SymbolField()
+class ObjectAnalytics(odm.StdModel):
+    model_type = odm.ModelField()
+    object_id = odm.SymbolField()
     
     @property
     def object(self):

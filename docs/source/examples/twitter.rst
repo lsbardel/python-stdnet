@@ -6,16 +6,16 @@ A twitter clone
 
 This is the stdnet equivalent of the `redis twitter clone`_ example
 A very simple twitter clone implemented using ``stdnet`` library.
-Illustrates the use of :class:`stdnet.orm.ManyToManyField` and
+Illustrates the use of :class:`stdnet.odm.ManyToManyField` and
 implicit sorting::
 
 	from datetime import datetime
 	from stdnet import orm
 	
-	class Post(orm.StdModel):
-	    timestamp = orm.DateTimeField(default = datetime.now)
-	    data = orm.CharField()
-	    user = orm.ForeignKey("User")
+	class Post(odm.StdModel):
+	    timestamp = odm.DateTimeField(default = datetime.now)
+	    data = odm.CharField()
+	    user = odm.ForeignKey("User")
 	    
 	    def __unicode__(self):
 	        return self.data
@@ -24,11 +24,11 @@ implicit sorting::
 	       ordering = '-timestamp'
     
     
-	class User(orm.StdModel):
+	class User(odm.StdModel):
 	    '''A model for holding information about users'''
-	    username  = orm.SymbolField(unique = True)
-	    password  = orm.CharField(required = True)
-	    following = orm.ManyToManyField(model = 'self',
+	    username  = odm.SymbolField(unique = True)
+	    password  = odm.CharField(required = True)
+	    following = odm.ManyToManyField(model = 'self',
 	                                    related_name = 'followers')
 	    
 	    def __unicode__(self):
@@ -48,9 +48,9 @@ If your redis server is running locally
 just type::
 
 	>>> from stdnet import orm
-	>>> orm.register(User)
+	>>> odm.register(User)
 	'redis db 7 on 127.0.0.1:6379'
-	>>> orm.register(Post)
+	>>> odm.register(Post)
 	'redis db 7 on 127.0.0.1:6379'
 	
 Now lets try it out::

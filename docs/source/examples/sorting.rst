@@ -1,6 +1,6 @@
 .. _sorting:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 =======================
 Sorting and Ordering
@@ -24,10 +24,10 @@ Explicit Sorting
 Sorting is usually achieved by using the :meth:`Query.sort_by`
 method with a field name as parameter. Lets consider the following model::
 
-    class SportActivity(orm.StdNet):
-        person = orm.SymbolField()
-        activity = orm.SymbolField()
-        dt = orm.DateTimeField()
+    class SportActivity(odm.StdNet):
+        person = odm.SymbolField()
+        activity = odm.SymbolField()
+        dt = odm.DateTimeField()
         
 
 To obtained a sorted query on dates for a given person::
@@ -46,15 +46,15 @@ Implicit sorting is achieved by setting the :attr:`Metaclass.ordering`
 attribute in the model ``Meta`` class.
 Let's consider the following Log model example::
 
-    class Log(orm.StdModel):
+    class Log(odm.StdModel):
         '''A database log entry'''
-        timestamp = orm.DateTimeField(default=datetime.now)
-        level = orm.SymbolField()
-        msg = orm.CharField()
-        source = orm.CharField()
-        host = orm.CharField()
-        user = orm.SymbolField(required=False)
-        client = orm.CharField()
+        timestamp = odm.DateTimeField(default=datetime.now)
+        level = odm.SymbolField()
+        msg = odm.CharField()
+        source = odm.CharField()
+        host = odm.CharField()
+        user = odm.SymbolField(required=False)
+        client = odm.CharField()
     
         class Meta:
             ordering = '-timestamp'

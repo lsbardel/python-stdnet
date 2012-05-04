@@ -1,7 +1,7 @@
 import random
 
 import stdnet
-from stdnet import orm, test
+from stdnet import test
 from stdnet.utils import populate
 
 from examples.models import SimpleModel

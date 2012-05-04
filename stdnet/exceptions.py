@@ -10,8 +10,8 @@ class ModelNotAvailable(StdNetException):
     pass
 
 class ModelNotRegistered(SessionNotAvailable):
-    '''A :class:`StdNetException` raised when trying to save an instance of a :class:`stdnet.orm.StdModel` not yet
-registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.orm.register` for details.'''
+    '''A :class:`StdNetException` raised when trying to save an instance of a :class:`stdnet.odm.StdModel` not yet
+registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.odm.register` for details.'''
     pass
 
 class InvalidTransaction(StdNetException):
@@ -30,8 +30,8 @@ class AlreadyRegistered(StdNetException):
     pass
 
 class ObjectNotValidated(StdNetException):
-    '''A :class:`StdNetException` raised when an instance of a :class:`stdnet.orm.StdModel` fails to validate
-(probably required :class:`stdnet.orm.Field` are missing from the instance).'''
+    '''A :class:`StdNetException` raised when an instance of a :class:`stdnet.odm.StdModel` fails to validate
+(probably required :class:`stdnet.odm.Field` are missing from the instance).'''
     pass
 
 class ImproperlyConfigured(StdNetException):
@@ -46,17 +46,17 @@ class FieldError(StdNetException):
     pass
 
 class StructureFieldError(StdNetException):
-    '''A :class:`stdnet.FieldError` for :class:stdnet.orm.StructureField`.'''
+    '''A :class:`stdnet.FieldError` for :class:stdnet.odm.StructureField`.'''
     pass
 
 class FieldValueError(FieldError):
     '''A :class:`stdnet.FieldError` raised when passing a wrong
 value to a field. This exception is cought during the model instance
-validation algorithm in :meth:`stdnet.orm.base.Metaclass.is_valid`.'''
+validation algorithm in :meth:`stdnet.odm.base.Metaclass.is_valid`.'''
     pass
 
 class QuerySetError(StdNetException):
-    '''A :class:`stdnet.StdNetException` raised during a :class:`stdnet.orm.query.QuerySet`
+    '''A :class:`stdnet.StdNetException` raised during a :class:`stdnet.odm.query.QuerySet`
 evaluation.'''
     pass
 

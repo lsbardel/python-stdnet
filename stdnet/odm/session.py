@@ -653,9 +653,9 @@ class Manager(object):
 contains at least one manager which can be accessed via the ``objects``
 class attribute::
 
-    class MyModel(orm.StdModel):
-        group = orm.SymbolField()
-        flag = orm.BooleanField()
+    class MyModel(odm.StdModel):
+        group = odm.SymbolField()
+        flag = odm.BooleanField()
         
     MyModel.objects
     

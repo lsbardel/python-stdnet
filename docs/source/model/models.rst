@@ -1,6 +1,6 @@
 .. _model-model:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Model and Query API
@@ -14,7 +14,7 @@ The object data mapper presents a method of
 associating user-defined Python classes, referred as **models**,
 with data in a :class:`stdnet.BackendDataServer`.
 These python classes are subclasses of
-:class:`stdnet.orm.StdModel`.
+:class:`stdnet.odm.StdModel`.
 
 
 StdModel Class
@@ -86,12 +86,12 @@ in the following way::
     
     from stdnet import orm
 
-    session = orm.Session(...)
-    l = session.add(orm.List())
-    s = session.add(orm.Set())
-    o = session.add(orm.Zset())
-    h = session.add(orm.HashTable())
-    t = session.add(orm.TS())
+    session = odm.Session(...)
+    l = session.add(odm.List())
+    s = session.add(odm.Set())
+    o = session.add(odm.Zset())
+    h = session.add(odm.HashTable())
+    t = session.add(odm.TS())
     
 If no ``id`` is specified, stdnet will create one for you::
 

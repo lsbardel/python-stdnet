@@ -1,4 +1,4 @@
-from stdnet import test, orm, getdb
+from stdnet import test, odm, getdb
 
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
@@ -13,7 +13,7 @@ class TestSession(test.TestCase):
         session = self.session()
         self.assertEqual(len(session._models),0)
         qs = session.query(SimpleModel)
-        self.assertTrue(isinstance(qs,orm.Query))
+        self.assertTrue(isinstance(qs,odm.Query))
     
     def testSimpleCreate(self):
         session = self.session()

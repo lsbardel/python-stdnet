@@ -7,7 +7,7 @@ from copy import copy
 
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils import iteritems, format_int
-from stdnet import orm
+from stdnet import odm
 
 init_data = {'set':{'count':0,'size':0},
              'zset':{'count':0,'size':0},
@@ -110,7 +110,7 @@ class RedisDbManager(object):
                                keys = data['keys'], expires = data['expires'])
                             
     
-class RedisDb(orm.ModelBase):
+class RedisDb(odm.ModelBase):
     
     def __init__(self, client = None, db = None, keys = None,
                  expires = None):
@@ -197,7 +197,7 @@ class RedisKeyManager(object):
             return instances[0].client.delete(*keys)
     
     
-class RedisKey(orm.ModelBase):
+class RedisKey(odm.ModelBase):
     database = None
     def __init__(self, client = None, type = None, length = 0, ttl = None,
                  encoding = None, idle = None, **kwargs):

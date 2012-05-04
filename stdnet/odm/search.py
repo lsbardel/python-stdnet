@@ -120,7 +120,7 @@ for preprocessing words to be indexed.
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
-:parameter item: an instance of a :class:`stdnet.orm.StdModel`.
+:parameter item: an instance of a :class:`stdnet.odm.StdModel`.
 """
         self.remove_item(item, session)
         wft = self.words_from_text
@@ -173,7 +173,7 @@ with the search engine.'''
         '''Create indices for *item* and each word in *words*.
 
 :parameter item: a *model* instance to be indexed. It does not need to be
-    a class;`stdnet.orm.StdModel`.
+    a :class:`stdnet.odm.StdModel`.
 :parameter words: iterable over words. This iterable has been obtained from the
     text in *item* via the :attr:`word_middleware`.
 '''

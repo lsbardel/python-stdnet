@@ -144,7 +144,7 @@ can also be used as stand alone objects. For example::
     the structure is stored.
 :parameter id: structure id
 :parameter pipetype: check the :attr:`pipetype`. Specified by the server.
-:parameter instance: Optional :class:`stdnet.orm.StdModel` instance to which
+:parameter instance: Optional :class:`stdnet.odm.StdModel` instance to which
     the structure belongs to via a
     :ref:`structured field <model-field-structure>`.
     This field is specified when accessing remote structures via the object
@@ -152,7 +152,7 @@ can also be used as stand alone objects. For example::
 
 .. attribute:: instance
 
-    An optional :class:`stdnet.orm.StdModel` instance to which
+    An optional :class:`StdModel` instance to which
     the structure belongs to via a
     :ref:`structured field <model-field-structure>`.
     

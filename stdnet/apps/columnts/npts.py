@@ -2,8 +2,6 @@
 This is an experimental module for converting ColumnTS into
 dynts.timeseries.
 '''
-from stdnet import orm
-
 from . import models as columnts 
 
 import numpy as ny

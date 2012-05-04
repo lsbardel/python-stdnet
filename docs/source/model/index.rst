@@ -1,6 +1,6 @@
 .. _model-index:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Object Data Mapper

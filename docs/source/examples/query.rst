@@ -1,6 +1,6 @@
 .. _tutorial-query:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 ============================
 Query your Models

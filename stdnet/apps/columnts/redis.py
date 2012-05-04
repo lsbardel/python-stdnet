@@ -1,7 +1,6 @@
 import os
 import json
 
-from stdnet import orm
 from stdnet.backends import redisb
 from stdnet.utils.encoders import safe_number
 from stdnet.lib import redis

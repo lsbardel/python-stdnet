@@ -1,7 +1,7 @@
 '''A Redis timeseries module base on redis time-series and
 redis strings.
 '''
-from stdnet import orm, SessionNotAvailable
+from stdnet import odm, SessionNotAvailable
 from stdnet.lib import skiplist
 from stdnet.utils import encoders, iteritems, zip
 
@@ -29,7 +29,7 @@ class TimeseriesCache(object):
         self.deleted_timestamps.clear()
 
 
-class ColumnTS(orm.TS):
+class ColumnTS(odm.TS):
     default_multi_stats = ['covariance']
     
     cache_class = TimeseriesCache
@@ -56,12 +56,12 @@ class ColumnTS(orm.TS):
         '''Number of fields'''
         return self.backend_structure().numfields()
     
-    @orm.commit_when_no_transaction
+    @odm.commit_when_no_transaction
     def add(self, dt, *args):
         self._add(dt, *args)
         return self
         
-    @orm.commit_when_no_transaction
+    @odm.commit_when_no_transaction
     def update(self, mapping):
         if isinstance(mapping, dict):
             mapping = iteritems(mapping)
@@ -218,7 +218,7 @@ The result will be calculated using the formula::
             raise TypeError('Expected a mapping or a field value pair')
         
     
-class ColumnTSField(orm.StructureField):
+class ColumnTSField(odm.StructureField):
     '''An experimenta timeseries field.'''
     
     def structure_class(self):

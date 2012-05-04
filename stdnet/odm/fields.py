@@ -20,7 +20,7 @@ from .globals import get_model_from_hash, JSPLITTER
 
 orderinginfo = namedtuple('orderinginfo','name field desc model nested, auto')
 
-logger = logging.getLogger('stdnet.orm')
+logger = logging.getLogger('stdnet.odm')
 
 __all__ = ['Field',
            'AutoField',
@@ -62,7 +62,7 @@ def field_value_error(f):
 
 class Field(UnicodeMixin):
     '''This is the base class of all StdNet Fields.
-Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
+Each field is specified as a :class:`stdnet.odm.StdModel` class attribute.
     
 .. attribute:: index
 
@@ -113,7 +113,7 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: name
 
-    Field name, created by the ``orm`` at runtime.
+    Field name, created by the ``odm`` at runtime.
     
 .. attribute:: attname
 
@@ -123,8 +123,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
     
 .. attribute:: model
 
-    The :class:`stdnet.orm.StdModel` holding the field.
-    Created by the ``orm`` at runtime.
+    The :class:`StdModel` holding the field.
+    Created by the ``odm`` at runtime.
     
 .. attribute:: charset
 
@@ -202,8 +202,8 @@ Each field is specified as a :class:`stdnet.orm.StdModel` class attribute.
         return data.pop(self.attname,None)
     
     def register_with_model(self, name, model):
-        '''Called during the creation of a the :class:`stdnet.orm.StdModel`
-class when :class:`stdnet.orm.base.Metaclass` is initialised. It fills
+        '''Called during the creation of a the :class:`StdModel`
+class when :class:`Metaclass` is initialised. It fills
 :attr:`Field.name` and :attr:`Field.model`. This is an internal
 function users should never call.'''
         if self.name:
@@ -513,16 +513,16 @@ class ForeignKey(Field):
 Requires a positional argument: the class to which the model is related.
 For example::
 
-    class Folder(orm.StdModel):
-        name = orm.SymobolField()
+    class Folder(odm.StdModel):
+        name = odm.SymobolField()
     
-    class File(orm.StdModel):
-        folder = orm.ForeignKey(Folder, related_name = 'files')
+    class File(odm.StdModel):
+        folder = odm.ForeignKey(Folder, related_name = 'files')
                 
 To create a recursive relationship, an object that has a many-to-one
 relationship with itself use::
 
-    orm.ForeignKey('self')
+    odm.ForeignKey('self')
 
 Behind the scenes, stdnet appends "_id" to the field name to create
 its field name in the back-end data-server. In the above example,
@@ -639,9 +639,9 @@ behaviour and how the field is stored in the back-end server.
     ``False`` is a multifield, in the sense that it generates several
     field-value pairs. For example, lets consider the following::
     
-        class MyModel(orm.StdModel):
-            name = orm.SymbolField()
-            data = orm.JSONField(as_string = False)
+        class MyModel(odm.StdModel):
+            name = odm.SymbolField()
+            data = odm.JSONField(as_string = False)
         
     And::
     
@@ -724,7 +724,7 @@ behaviour and how the field is stored in the back-end server.
 
 class ModelField(SymbolField):
     '''A filed which can be used to store the model classes (not only
-:class:`stdnet.orm.StdModel` models). If a class has a attribute ``_meta``
+:class:`StdModel` models). If a class has a attribute ``_meta``
 with a unique hash attribute ``hash`` and it is
 registered in the model hash table, it can be used.'''
     type = 'model'
@@ -772,12 +772,12 @@ class ManyToManyField(Field):
     
 For example::
     
-    class Group(orm.StdModel):
-        name = orm.SymbolField(unique = True)
+    class Group(odm.StdModel):
+        name = odm.SymbolField(unique = True)
         
-    class User(orm.StdModel):
-        name = orm.SymbolField(unique = True)
-        groups = orm.ManyToManyField(Group, related_name = 'users')
+    class User(odm.StdModel):
+        name = odm.SymbolField(unique = True)
+        groups = odm.ManyToManyField(Group, related_name = 'users')
     
 To use it::
  

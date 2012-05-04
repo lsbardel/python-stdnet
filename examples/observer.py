@@ -3,8 +3,8 @@ when Observers receives multiple updates from several instances they are
 observing.
 '''
 from time import time
-from stdnet import orm
-from stdnet.orm import struct
+from stdnet import odm
+from stdnet.odm import struct
 from stdnet.lib import redis
 from stdnet.backends import redisb
 
@@ -52,7 +52,7 @@ class RedisUpdateZset(redisb.Zset):
             yield el[1]
 
 
-class UpdateZset(orm.Zset):
+class UpdateZset(odm.Zset):
     penalty = 0 # penalty in seconds
     
     def __init__(self, *args, **kwargs):
@@ -69,18 +69,18 @@ class UpdateZset(orm.Zset):
 # Register the new structure with redis backend
 redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
 
-class UpdatesField(orm.StructureField):
+class UpdatesField(odm.StructureField):
     
     def structure_class(self):
         return UpdateZset
     
     
-class Observable(orm.StdModel):
+class Observable(odm.StdModel):
     pass
 
 
-class Observer(orm.StdModel):
-    underlyings = orm.ManyToManyField(Observable, related_name = 'observers')
+class Observer(odm.StdModel):
+    underlyings = odm.ManyToManyField(Observable, related_name = 'observers')
     
     # field with a 5 seconds penalty
     updates = UpdatesField(class_field = True,
@@ -92,7 +92,7 @@ def update_observers(sender, instances, **kwargs):
         Observer.updates.update(observable.observers.query())
 
 # Register event
-orm.post_commit.connect(update_observers, sender = Observable)
+odm.post_commit.connect(update_observers, sender = Observable)
             
     
     

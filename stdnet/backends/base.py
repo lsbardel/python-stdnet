@@ -108,11 +108,11 @@ class BackendStructure(AsyncObject):
     
 class BackendQuery(ServerOperation):
     '''Backend queryset class which implements the database
-queries specified by :class:`stdnet.orm.Query`.
+queries specified by :class:`stdnet.odm.Query`.
 
 .. attribute:: queryelem
 
-    The :class:`stdnet.orm.QueryElement` to process.
+    The :class:`stdnet.odm.QueryElement` to process.
     
 .. attribute:: executed
 
@@ -247,10 +247,10 @@ It must implement the *loads* and *dumps* methods.'''
         return len(keys)
     
     def make_objects(self, meta, data, related_fields = None):
-        '''Generator of :class:`stdnet.orm.StdModel` instances with data
+        '''Generator of :class:`stdnet.odm.StdModel` instances with data
 from database.
 
-:parameter meta: instance of model :class:`stdnet.orm.Metaclass`.
+:parameter meta: instance of model :class:`stdnet.odm.Metaclass`.
 :parameter data: iterator over instances data.
 '''
         make_object = meta.maker
@@ -283,7 +283,7 @@ from database.
             yield obj
             
     def structure(self, instance, client = None):
-        '''Create a backend :class:`stdnet.orm.Structure` handler.'''
+        '''Create a backend :class:`stdnet.odm.Structure` handler.'''
         struct = self.struct_map.get(instance._meta.name)
         if struct is None:
             raise ModelNotAvailable('structure "{0}" is not available for\
@@ -298,7 +298,7 @@ from database.
     def basekey(self, meta, *args):
         """Calculate the key to access model data.
         
-:parameter meta: a :class:`stdnet.orm.Metaclass`.
+:parameter meta: a :class:`stdnet.odm.Metaclass`.
 :parameter args: optional list of strings which are attached to the basekey.
 :rtype: a native string
 """
@@ -315,7 +315,7 @@ must return a instance of the backend handler.'''
         raise NotImplementedError()
     
     def execute_session(self, session, callback):   # pragma: no cover
-        '''Execute a :class:`stdnet.orm.Session` in the backend server.'''
+        '''Execute a :class:`stdnet.odm.Session` in the backend server.'''
         raise NotImplementedError()
     
     def model_keys(self, meta):     # pragma: no cover

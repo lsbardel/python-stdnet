@@ -31,7 +31,7 @@ def get_serializer(name, **options):
 available an exception will raise. A common use usage pattern::
 
     qs = MyModel.objects.query().sort_by('id')
-    s = orm.get_serializer('json')
+    s = odm.get_serializer('json')
     s.serialize(qs)
 
 '''
@@ -46,8 +46,8 @@ def register_serializer(name, serializer):
 Register a new serializer to the library.
 
 :parameter name: serializer name (it can override existing serializers).
-:parameter serializer: an instance or a derived class of a :class:`stdnet.orm.Serializer`
-                       class or a callable.
+:parameter serializer: an instance or a derived class of a
+    :class:`stdnet.odm.Serializer` class or a callable.
 '''
     if not isclass(serializer):
         serializer = serializer.__class__

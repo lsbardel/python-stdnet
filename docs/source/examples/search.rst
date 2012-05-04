@@ -1,6 +1,6 @@
 .. _tutorial-search:
 
-.. module:: stdnet.orm
+.. module:: stdnet.odm
 
 =========================================
 Search for text in your models

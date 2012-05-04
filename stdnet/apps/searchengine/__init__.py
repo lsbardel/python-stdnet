@@ -1,5 +1,5 @@
 '''\
-This is a pure python implementation of the :class:`stdnet.orm.SearchEngine`
+This is a pure python implementation of the :class:`stdnet.odm.SearchEngine`
 interface.
 
 This is not intended to be the most full-featured text search available, but
@@ -15,7 +15,7 @@ Somewhere in your application create the search engine singletone::
     engine = SearchEngine(...)
  
 The engine works by registering models to it via the
-:meth:`stdnet.orm.SearchEngine.register` method.
+:meth:`stdnet.odm.SearchEngine.register` method.
 For example::
 
     engine.register(MyModel)
@@ -23,7 +23,7 @@ For example::
 From now on, every time and instance of ``MyModel`` is created,
 the search engine will updated its indexes.
 
-To search, you use the :class:`stdnet.orm.Query` API::
+To search, you use the :class:`stdnet.odm.Query` API::
 
     query = self.session().query(MyModel)
     search_result = query.search(sometext)
@@ -38,15 +38,15 @@ If you would like to limit the search to some specified models::
 import re
 from inspect import isclass
 
-from stdnet import orm
+from stdnet import odm
 from stdnet.utils import to_string, iteritems
 
 from .models import WordItem
 from . import processors
 
     
-class SearchEngine(orm.SearchEngine):
-    """A python implementation for the :class:`stdnet.orm.SearchEngine`
+class SearchEngine(odm.SearchEngine):
+    """A python implementation for the :class:`stdnet.odm.SearchEngine`
 driver.
     
 :parameter min_word_length: minimum number of words required by the engine
@@ -124,7 +124,7 @@ driver.
         '''
 Remove indexes for *item_or_model*.
 
-:parameter item: an instance of a :class:`stdnet.orm.StdModel`.        
+:parameter item: an instance of a :class:`stdnet.odm.StdModel`.        
 '''
         query = session.query(WordItem)
         if isclass(item_or_model):
@@ -142,15 +142,15 @@ Remove indexes for *item_or_model*.
         return self._search(words, include, exclude, lookup)
     
     def search_model(self, q, text, lookup = None):
-        '''Implements :meth:`stdnet.orm.SearchEngine.search_model`.
-It return a new :class:`stdnet.orm.QueryElem` instance from
+        '''Implements :meth:`stdnet.odm.SearchEngine.search_model`.
+It return a new :class:`stdnet.odm.QueryElem` instance from
 the input :class:`Query` and the *text* to search.'''
         words = self.words_from_text(text, for_search=True)
         if not words:
             return q
         qs = self._search(words, include = (q.model,), lookup = lookup)
         qs = tuple((q.get_field('object_id') for q in qs))
-        return orm.intersect((q,)+qs)
+        return odm.intersect((q,)+qs)
     
     def _search(self, words, include = None, exclude = None, lookup = None):
         '''Full text search. Return a list of queries to intersect.'''

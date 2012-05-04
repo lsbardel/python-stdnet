@@ -1,4 +1,4 @@
-from stdnet import test, orm
+from stdnet import test, odm
 from stdnet.apps.searchengine.models import WordItem
 
 from examples.models import SimpleModel
@@ -11,11 +11,11 @@ class TestCase(test.TestCase):
         self.register()
         
     def testAutoIncrement(self):
-        a = orm.autoincrement()
+        a = odm.autoincrement()
         self.assertEqual(a.incrby,1)
         self.assertEqual(a.desc,False)
         self.assertEqual(str(a),'autoincrement(1)')
-        a = orm.autoincrement(3)
+        a = odm.autoincrement(3)
         self.assertEqual(a.incrby,3)
         self.assertEqual(a.desc,False)
         self.assertEqual(str(a),'autoincrement(3)')

@@ -1,5 +1,5 @@
 import stdnet
-from stdnet import orm, test, FieldError
+from stdnet import odm, test, FieldError
 
 from examples.models import Person, Group 
 
@@ -33,5 +33,5 @@ class fkmeta(test.TestCase):
         self.assertRaises(stdnet.FieldValueError,p.save)
         
     def testCoverage(self):
-        self.assertRaises(FieldError, orm.ForeignKey, None)
+        self.assertRaises(FieldError, odm.ForeignKey, None)
         

@@ -1,42 +1,45 @@
 .. _vers07:
 
-Ver. 0.7c1 - 2012 May 02
+Ver. 0.7c3 - 2012 May 02
 ===============================
 * **It requires redis 2.6 or higher**.
 * Some backward incompatible changes in the API and database schema.
+* The `orm` module has been renamed `odm` for *object data mapper*. This was a painful change
+  with the vast majority of files affected. But it is better to get terminology
+  right at this stage rather than later.
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions, lua_ scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
-* Redesign of :class:`stdnet.orm.ManyToManyField` which now uses a ``through`` model
+* Redesign of :class:`stdnet.odm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.
   *This is the only backward incompatible change both in terms of API and database scema*.
-* Added :class:`stdnet.orm.CompositeIdField` to handle situations where each
-  combination of given set of :class:`stdnet.orm.Field` must be unique.
+* Added :class:`stdnet.odm.CompositeIdField` to handle situations where each
+  combination of given set of :class:`stdnet.odm.Field` must be unique.
 * If you have cython_ installed in your python path, the setup.py script will
   build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
-* Added ability to filter and search on :class:`stdnet.orm.ForeignKey` fields.
-* Added :class:`stdnet.orm.Session` for managing transactions in the object
-  relational mapper.
-* Moved structures from :mod:`stdnet.backends` to the :mod:`stdnet.orm` module.
-* Added :meth:`stdnet.orm.Query.load_only` and :meth:`stdnet.orm.Query.dont_load`
+* Added ability to filter and search on :class:`stdnet.odm.ForeignKey` fields.
+* Added :class:`stdnet.odm.Session` for managing transactions in the object
+  data mapper.
+* Moved structures from :mod:`stdnet.backends` to the :mod:`stdnet.odm` module.
+* Added :meth:`stdnet.odm.Query.load_only` and :meth:`stdnet.odm.Query.dont_load`
   methods for loading a subset of a model fields.
   This can improve performance by reducing the amount of
   data transferred from the server to the client.
   Check the :ref:`performance tips <performance-loadonly>` regarding the
   new feature.
-* Added :meth:`stdnet.orm.Query.load_related` for loading related
+* Added :meth:`stdnet.odm.Query.load_related` for loading related
   fields of a queryset with a single database query. This can have huge
   :ref:`performance benefits <performance-loadrelated>` when you know you are
   going to access the related field in your model.
 * Fixed bug in related managers. The ``exclude`` method was not implemented.
-* :class:`stdnet.orm.PickleObjectField` uses the pickle protocol 2 for compatibility
+* :class:`stdnet.odm.PickleObjectField` uses the pickle protocol 2 for compatibility
   between python 2 and python 3.
 * Refactored the ``save`` and ``delete`` method of model instances.
-* Added :meth:`stdnet.orm.StdModel.tojson` method for obtaining JSON representation
+* Added :meth:`stdnet.odm.StdModel.tojson` method for obtaining JSON representation
   of model instances.
-* Indexes for :class:`stdnet.orm.ForeignKey` fields are stored at sets with
+* Indexes for :class:`stdnet.odm.ForeignKey` fields are stored at sets with
   keys obtained from the field ``attrname`` rather than ``name``.
-* Added :meth:`stdnet.orm.StdModel.clone` method for cloning model instances.
+* Added :meth:`stdnet.odm.StdModel.clone` method for cloning model instances.
 * Refactored :ref:`transactions <model-transactions>` to be used with
   :ref:`remote data structures <model-structures>` and
   :ref:`structured fields <model-field-structure>`.
@@ -47,21 +50,21 @@ Ver. 0.7c1 - 2012 May 02
 * Added :mod:`stdnet.utils.path`.
 * Lua test suite based. Requires lunatest_.
 * PEP 386-compliant version number.
-* **571 regression tests** with **90%** coverage.
+* **572 regression tests** with **90%** coverage.
 
 .. _vers06:
 
 Ver. 0.6.2 - 2011 Nov 14
 ============================
 * Critical bug fix in ``delete`` method when a model has no indices.
-* Critical bug fix in :class:`stdnet.orm.ManyToManyField` which was causing the
+* Critical bug fix in :class:`stdnet.odm.ManyToManyField` which was causing the
   model ``delete`` method to crash.
 * **297 regression tests**.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================
 * This is a minor release which brings an improved documentation,
-  better support for the :class:`stdnet.orm.JSONField` and some minor
+  better support for the :class:`stdnet.odm.JSONField` and some minor
   bug fixes.
 * Test suite parsing is done using the new python ``argparse`` module since the
   ``optparse`` is now deprecated. Check :ref:`running tests <runningtests>`
@@ -70,7 +73,7 @@ Ver. 0.6.1 - 2011 Sep 10
 * Added ``google analytics`` to the documentation web site.
 * The instance validation algorithm catches :class:`stdnet.FieldValueError`
   exceptions and stores them into the errors dictionary.
-* Fixed bug in :class:`stdnet.orm.Field` when using default values. Default values
+* Fixed bug in :class:`stdnet.odm.Field` when using default values. Default values
   are regenerated if missing during the saving algorithm.
 * Refactored redisinfo for a better redis monitor.
 * **297 regression tests** with **78%** coverage.
@@ -80,17 +83,17 @@ Ver. 0.6.0 - 2011 Aug 9
 * **New database schema incompatible with previous versions**.
 * This is a major release which brings into production a vast array
   of important new features including an improved database schema.
-* :class:`stdnet.orm.StdModel` instances are mapped into separate redis hash
+* :class:`stdnet.odm.StdModel` instances are mapped into separate redis hash
   tables with fields given by the model field names and values given by the
   instance field values.
 * Implemented two types of sorting:
-  *Implicit* by the :class:`stdnet.orm.Metaclass` attribute ``ordering``.
+  *Implicit* by the :class:`stdnet.odm.Metaclass` attribute ``ordering``.
   When using this route, items are stored in the database in a sorted
   fashion, therefore no overhead is required for the sorting step.
   *Explicit* by using the ``sort_by`` method in
-  a :class:`stdnet.orm.query.QuerySet` object.
+  a :class:`stdnet.odm.query.QuerySet` object.
   Check the :ref:`sorting <sorting>` documentation for more information.
-* Unique fields (fields with :attr:`stdnet.orm.Field.unique` set to ``True``)
+* Unique fields (fields with :attr:`stdnet.odm.Field.unique` set to ``True``)
   are now indexed via redis_ hash tables which maps the field value to the
   object id. Previously they were stored in keys. This solution
   reduces the memory footprint and the number of keys used.
@@ -107,13 +110,13 @@ Ver. 0.6.0 - 2011 Aug 9
   from `unicode` and `bytes`, `Bytes` to and from bytes, `PythonPickle`
   to and from object and their pickle (bytes) representation and
   `Json` to and from structures and bytes.
-* Added ``as_string`` parameter to :class:`stdnet.orm.JSONField` for
+* Added ``as_string`` parameter to :class:`stdnet.odm.JSONField` for
   specifying the storage method.
 * Moved testing functions into the :mod:`stdnet.test` module.
-* Added ``hidden`` attribute to :class:`stdnet.orm.Field`.
+* Added ``hidden`` attribute to :class:`stdnet.odm.Field`.
   Used in the search algorithm.
 * Reorganized and expanded documentation.
-* Bug fix in :class:`stdnet.orm.PickleObjectField` field.
+* Bug fix in :class:`stdnet.odm.PickleObjectField` field.
 * **289 regression tests** with **78%** coverage.
 
 .. _vers05:
@@ -121,17 +124,17 @@ Ver. 0.6.0 - 2011 Aug 9
 Ver. 0.5.5 - 2011 June 6
 ============================
 * Several new features, some important bug fixes and more tests.
-* Added :func:`stdnet.orm.from_uuid` function which can be used to retrieve a model
+* Added :func:`stdnet.odm.from_uuid` function which can be used to retrieve a model
   instance from its universally unique identifier.
 * Added pickle support to models. The `__getstate__` method return a tuple containg ``id``
   and a dictionary representation of scalar fields (obtained from the ``todict`` method).
-* Bug Fix in :class:`stdnet.orm.JSONField`.
+* Bug Fix in :class:`stdnet.odm.JSONField`.
 * Added tests for timeseries with date as keys (rather than datetimes).
 * Bug fix in Backend and test suite, Redis port was not read.
 * Bug fix in :class:`stdnet.contrib.timeseries`. The models were overridding
   the :meth:`__str__` rather than :meth:`__unicode__`. 
-* Added :func:`stdnet.orm.flush_models`, a utility functions for flushing model data.
-* Added a new :class:`stdnet.orm.ByteField` which saves bytes rather than strings.
+* Added :func:`stdnet.odm.flush_models`, a utility functions for flushing model data.
+* Added a new :class:`stdnet.odm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres to ``data_start`` and ``data_end``.
 * **245 regression tests** with **76%** coverage.
 
@@ -140,7 +143,7 @@ Ver. 0.5.4 - 2011 May 18
 * Another bug fixing release with a couple of new functionalities and a new ``contrib`` application.
 * Fixed a filtering problem when performing exclude on unique fields.
 * Refactored registration utilities.
-* Added :func:`stdnet.orm.test_unique` for testing uniqueness.
+* Added :func:`stdnet.odm.test_unique` for testing uniqueness.
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.
   The search engine application has been refactored so that it can perform 
   a fast, fuzzy, full text index using Redis.
@@ -153,7 +156,7 @@ Ver. 0.5.4 - 2011 May 18
 Ver. 0.5.3 - 2011 Apr 30
 =============================
 * Fixed problem in setup.py.
-* Added ``remove`` method to :class:`stdnet.orm.ManyToManyField` and
+* Added ``remove`` method to :class:`stdnet.odm.ManyToManyField` and
   fixed a bug on the same field.
 * **203 regression tests** with **71%** coverage.
 
@@ -161,9 +164,9 @@ Ver. 0.5.2 - 2011 Mar 31
 ==========================
 * This version brings some important bug fixes with tests and preliminary work on C extensions
   based on ``hiredis``.
-* Bug fix in :meth:`stdnet.orm.IntegerField.to_python`.
-* Added registration utilities in :mod:`stdnet.orm`.
-* Bug fix in :class:`stdnet.orm.StdModel` class caused by the lack of a ``__ne__`` operator.
+* Bug fix in :meth:`stdnet.odm.IntegerField.to_python`.
+* Added registration utilities in :mod:`stdnet.odm`.
+* Bug fix in :class:`stdnet.odm.StdModel` class caused by the lack of a ``__ne__`` operator.
 * Added ``__hash__`` operator, unique across different models, not just instances.
 * Added experimental :mod:`stdnet.contrib.searchengine` application. Very much alpha.
 * Added ``scorefun`` callable in structures to be used in OrderedSet.
@@ -185,7 +188,7 @@ Ver. 0.5.0 - 2011 Feb 24
 ===========================
 * **Ported to python 3 and dropped support for python 2.5**.
 * Removed dependency from ``redis-py`` for python 3 compatibility.
-* Refactored the object relational mapper, including several bug fixes.
+* Refactored the object data mapper, including several bug fixes.
 * Added benchmark and profile to tests. To run benchmarks or profile::
 
     python runtests.py -t bench
@@ -193,7 +196,7 @@ Ver. 0.5.0 - 2011 Feb 24
     python runtests.py -t profile
 * Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
 * Added :mod:`stdnet.contrib.sessions` module for handling web sessions. Experimental and pre-alpha.
-* Added :class:`stdnet.orm.JSONField` with tests.
+* Added :class:`stdnet.odm.JSONField` with tests.
 * **167 regression tests** with **61%** coverage.
 
 .. _vers04:
@@ -222,21 +225,21 @@ Ver. 0.4.0 - 2010 Nov 11
 * **This version is incompatible with previous versions**.
 * Documentation hosted at github.
 * Added new ``contrib`` module ``djstdnet`` which uses `djpcms`_ content management system to display an admin
-  interface for a :class:`stdnet.orm.StdModel`. Experimental for now.
+  interface for a :class:`stdnet.odm.StdModel`. Experimental for now.
 * Added :class:`stdnet.CacheClass` which can be used as django_ cache backend.
   For example, using redis database 11 as cache is obtained by::
 
 	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
 	
-* Overall refactoring of :mod:`stdnet.orm` and :mod:`stdnet.backends` modules.
+* Overall refactoring of :mod:`stdnet.odm` and :mod:`stdnet.backends` modules.
 * Lazy loading of models via the :mod:`stdnet.dispatch` module.
 * Added :mod:`stdnet.dispatch` module from django_.
-* Added :class:`stdnet.orm.AtomField` subclasses. 
-* Before adding elements to a :class:`stdnet.orm.MultiField` the object needs to be saved, i.e. it needs to have a valid id.
-* Made clear that :class:`stdnet.orm.StdModel` classes are mapped to :class:`stdnet.HashTable`
+* Added :class:`stdnet.odm.AtomField` subclasses. 
+* Before adding elements to a :class:`stdnet.odm.MultiField` the object needs to be saved, i.e. it needs to have a valid id.
+* Made clear that :class:`stdnet.odm.StdModel` classes are mapped to :class:`stdnet.HashTable`
   structures in a :class:`stdnet.BackendDataServer`.
 * Moved ``structures`` module into ``backends`` directory. Internal reorganisation of several modules.
-* Added ``app_label`` attribute to :class:`stdnet.orm.DataMetaClass`.
+* Added ``app_label`` attribute to :class:`stdnet.odm.DataMetaClass`.
 * **47 tests**
 
 Ver. 0.3.3 - 2010 Sep 13
@@ -249,7 +252,7 @@ Ver. 0.3.3 - 2010 Sep 13
 Ver. 0.3.2 - 2010 Aug 24
 ========================================
 * Bug fixes
-* Fixed a bug on ``orm.DateField`` when ``required`` is set to ``False``
+* Fixed a bug on ``odm.DateField`` when ``required`` is set to ``False``
 * ``Changelog`` included in documentation
 * **27 tests**
 

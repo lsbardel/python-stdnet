@@ -2,11 +2,11 @@
 import inspect
 from datetime import datetime
 
-from stdnet import test, orm
+from stdnet import odm, test
 from stdnet.utils import populate, pickle
 from stdnet.exceptions import QuerySetError
-from stdnet.orm import model_to_dict, model_iterator
-from stdnet.orm.base import StdNetType
+from stdnet.odm import model_to_dict, model_iterator
+from stdnet.odm.base import StdNetType
 
 from examples.models import SimpleModel, ComplexModel
 from examples.data import FinanceTest, Instrument, Fund, Position
@@ -55,7 +55,7 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertNotEqual(h,h0)
         
     def testmodelFromHash(self):
-        m = orm.get_model_from_hash(Instrument._meta.hash)
+        m = odm.get_model_from_hash(Instrument._meta.hash)
         self.assertEqual(m, Instrument)
         
     def testUniqueId(self):

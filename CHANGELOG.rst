@@ -8,7 +8,7 @@ Ver. 0.7c3 - 2012 May 02
   with the vast majority of files affected. But it is better to get terminology
   right at this stage rather than later.
 * Tons of new features including a richer query API, improved performance via custom
-  query options, more flexible transactions, lua_ scripting for redis_ and
+  query options, more flexible transactions and lua_ scripting for redis_ and
   a new ``C`` redis_ parser shipped with the library.
 * Redesign of :class:`stdnet.odm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.

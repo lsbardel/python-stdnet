@@ -1,6 +1,6 @@
-from .base import TestCase
+from . import base
 
-class SlowLogTestCase(TestCase):
+class SlowLogTestCase(base.TestCase):
     
     def setUp(self):
         super(SlowLogTestCase,self).setUp()
@@ -31,3 +31,10 @@ class SlowLogTestCase(TestCase):
         self.assertEqual(len(res),1)
         self.assertEqual(res[0]['command'],'SLOWLOG')
         self.assertEqual(res[0]['args'],(b'RESET',))
+        
+        
+class TestNestedLua(base.TestCase):
+    
+    def testNested(self):
+        s = 'return {{name="luca",bla="foo"},{1,2,3,{{{}}}}}'
+        r = self.client.eval(s,())

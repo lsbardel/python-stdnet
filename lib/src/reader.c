@@ -44,7 +44,7 @@ static PyObject *createDecodedString(pythonReader *self, const char *str, size_t
 }
 
 static void *createStringObject(const redisReadTask *task, char *str, size_t len) {
-	pythonReader *self = (pythonReader*)task->privdata;
+    pythonReader *self = (pythonReader*)task->privdata;
     PyObject *obj;
 
     if (task->type == REDIS_REPLY_ERROR) {
@@ -101,7 +101,7 @@ void pythonReaderFree(pythonReader *self) {
 }
 
 void pythonReaderFeed(pythonReader *self, const char *buf, size_t len) {
-	redisReaderFeed(self->reader,buf,len);
+	redisReaderFeed(self->reader, buf, len);
 }
 
 

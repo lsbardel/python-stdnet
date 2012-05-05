@@ -6,7 +6,7 @@ import os
 
 from stdnet.conf import settings
 from stdnet.utils import Path
-from stdnet import getdb
+from stdnet import test, getdb
 
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run
@@ -37,14 +37,14 @@ def start():
     if pulsar:
         from pulsar.apps.test import TestSuite
         from pulsar.apps.test.plugins import bench, profile
-        from stdnet.test import PulsarStdnetServer, PulsarDataSizePlugin
         
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',
                     modules = ('tests',),
-                    plugins = (PulsarStdnetServer(),
-                               PulsarDataSizePlugin(),
+                    plugins = (test.PulsarStdnetServer(),
+                               test.PulsarDataSizePlugin(),
+                               test.PulsarRedisParser(),
                                bench.BenchMark(),
                                profile.Profile())
                   )

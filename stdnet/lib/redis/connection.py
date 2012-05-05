@@ -55,7 +55,7 @@ from itertools import chain, starmap
 from stdnet import BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import iteritems, map, ispy3k, range, to_string
-from stdnet.lib import RedisReader, fallback
+from stdnet.lib import hr, fallback
 from stdnet.utils.dispatch import Signal
 
 from .exceptions import *
@@ -64,6 +64,8 @@ from .exceptions import *
 __all__ = ['RedisRequest',
            'ConnectionPool',
            'Connection',
+           'RedisReader',
+           'PyRedisReader',
            'redis_before_send',
            'redis_after_receive']
 
@@ -71,6 +73,14 @@ __all__ = ['RedisRequest',
 # SIGNALS
 redis_before_send = Signal(providing_args=["request", "commands"])
 redis_after_receive = Signal(providing_args=["request"])
+
+
+PyRedisReader = lambda : fallback.RedisReader(InvalidResponse, ResponseError)
+if hr:
+    RedisReader = lambda : hr.RedisReader(InvalidResponse, ResponseError)
+else:
+    RedisReader = PyRedisReader
+    
 
 
 class RedisRequest(BackendRequest):
@@ -174,7 +184,6 @@ handling of a single command from start to the response from the server.'''
         self._raw_response.append(data)
         parser = self.connection.parser
         parser.feed(data)
-        self._raw_response.append(data)
         if self.is_pipeline:
             while 1:
                 response = parser.gets()
@@ -262,11 +271,10 @@ This class should not be directly initialized. Instead use the
         self.__sock = None
         if reader_class is None:
             if settings.REDIS_PY_PARSER:
-                reader_class = fallback.RedisReader
+                reader_class = PyRedisReader
             else:
                 reader_class = RedisReader
-        self.parser = reader_class(InvalidResponse,
-                                   ResponseError)
+        self.parser = reader_class()
 
     @property
     def address(self):

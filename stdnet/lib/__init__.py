@@ -1,18 +1,19 @@
 #First try local
 try:
-    from .hr import *
+    from . import hr
     hasextensions = True    # pragma nocover
 except ImportError:
     # Try Global
     try:
-        from hr import *
+        import hr
         hasextensions = True    # pragma nocover
     except ImportError:
         hasextensions = False
+        hr = None
         from .fallback import *
 
 from . import fallback
-
+    
 #TODO
 #For now we use the pure python implementation.
 skiplist = fallback.skiplist

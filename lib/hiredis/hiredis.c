@@ -446,10 +446,10 @@ static int processMultiBulkItem(redisReader *r) {
     long elements;
     int root = 0;
 
-    /* Set error for nested multi bulks with depth > REDIS_MULTIBULKSTACK_SIZE */
-    if (r->ridx == REDIS_MULTIBULKSTACK_SIZE+1) {
+    /* Set error for nested multi bulks with depth > 2 */
+    if (r->ridx == 3) {
         __redisReaderSetError(r,REDIS_ERR_PROTOCOL,
-            "No support for nested multi bulk replies with depth > 7");
+            "No support for nested multi bulk replies with depth > 2");
         return REDIS_ERR;
     }
 
@@ -985,6 +985,7 @@ void __redisSetError(redisContext *c, int type, const char *str) {
     }
 }
 
+/*
 static redisContext *redisContextInit(void) {
     redisContext *c;
 
@@ -998,6 +999,7 @@ static redisContext *redisContextInit(void) {
     c->reader = redisReaderCreate();
     return c;
 }
+*/
 
 void redisFree(redisContext *c) {
     if (c->fd > 0)
@@ -1055,7 +1057,6 @@ redisContext *redisConnectUnixNonBlock(const char *path) {
     return c;
 }
 */
-
 /* Set read/write timeout on a blocking socket. */
 /*
 int redisSetTimeout(redisContext *c, struct timeval tv) {
@@ -1064,7 +1065,6 @@ int redisSetTimeout(redisContext *c, struct timeval tv) {
     return REDIS_ERR;
 }
 */
-
 /* Use this function to handle a read event on the descriptor. It will try
  * and read some bytes from the socket and feed them to the reply parser.
  *

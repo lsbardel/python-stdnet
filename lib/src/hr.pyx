@@ -1,7 +1,7 @@
 cimport common
 
 
-cdef class Reader:
+cdef class RedisReader:
     '''Cython wrapper for Hiredis protocol parser.'''
     
     cdef common.pythonReader *_c_reader

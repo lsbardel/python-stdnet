@@ -1,6 +1,4 @@
-'''\
-A specialized test case class for stdnet
-'''
+'''Test case classes and plugins for stdnet'''
 import os
 import sys
 import logging
@@ -112,7 +110,7 @@ try:    # pragma nocover
     class PulsarStdnetServer(TestOptionPlugin):
         name = "server"
         flags = ["-s", "--server"]
-        desc = 'Backend server where to run tests.'
+        desc = 'Back-end data  server where to run tests.'
         default = settings.DEFAULT_BACKEND
         
         def configure(self, cfg):
@@ -121,6 +119,18 @@ try:    # pragma nocover
             settings.redis_status()
             
     
+    class PulsarRedisParser(TestOptionPlugin):
+        name = "py_redis_parser"
+        flags = ["--py-redis-parser"]
+        desc = 'Set the redis parser to be the pure Python implementation.'
+        action = "store_true"
+        default = False
+        
+        def configure(self, cfg):
+            if cfg.py_redis_parser:
+                self.REDIS_PY_PARSER = True
+        
+        
     class PulsarDataSizePlugin(DataSizePlugin, TestOptionPlugin):
         name = "size"
         flags = ["--size"]
@@ -130,8 +140,6 @@ try:    # pragma nocover
 
 except ImportError: # pragma nocover
     pulsar = None
-    PulsarStdnetServer = None
-    PulsarDataSizePlugin = None
    
 
 ################################################################################

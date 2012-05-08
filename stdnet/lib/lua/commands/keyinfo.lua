@@ -1,6 +1,6 @@
 -- Retrieve information about keys
 -- A list of keys, sorted in alphabetical order, is returned
-local start, stop, keys
+local start, stop, keys, num
 if # ARGV > 0 then -- If argv is provided, it is the pattern to search
     keys = redis.call('KEYS', ARGV[1])
     if # ARGV > 1 then
@@ -24,10 +24,10 @@ type_table['list'] = 'llen'
 type_table['hash'] = 'hlen'
 type_table['ts'] = 'tslen'  -- stdnet branch
 type_table['string'] = 'strlen'
+local typ, command, len, key, idletime
 local stats = {}
-local typ, command, len, j, num_keys
-num_keys = # keys
-j = 0
+local num_keys = # keys
+local j = 0
 while j < num and start+j <= num_keys do
     key = keys[start+j]
     j = j + 1

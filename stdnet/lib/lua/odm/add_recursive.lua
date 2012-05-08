@@ -6,18 +6,18 @@ local field = ARGV[2]
 local idset = bk .. ':id'
 
 -- add a value to a set (or sorted set)
-function add (val)
+local function add (val)
     if s == 's' then
         redis.call('sadd', rkey, val)
     else
-        score = redis.call('zscore', idset, val)
+        local score = redis.call('zscore', idset, val)
         if score ~= false then
             redis.call('zadd', rkey, score, val)
         end
     end
 end
 
-function remove(ids, toadd)
+local function remove(ids, toadd)
 	for _,id in ipairs(ids) do
 	    if toadd then
 	       add(id)
@@ -27,4 +27,4 @@ function remove(ids, toadd)
 end
 
 
-remove(redis_members(rkey),false)
+remove(redis_members(rkey), false)

@@ -406,7 +406,7 @@ or using the ``with`` context manager::
         else:
             return self.post_commit()
         
-    def post_commit(self, response = None, commands = None):
+    def post_commit(self, response=None, commands=None):
         '''Callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` commit has finished and results are available.
 Results can contain errors.
@@ -428,7 +428,7 @@ Results can contain errors.
         signals = []
         exceptions = []
         for result in self.result:
-            if isinstance(result,Exception):
+            if isinstance(result, Exception):
                 exceptions.append(result)
                 continue
             meta, response = result

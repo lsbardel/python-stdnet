@@ -70,8 +70,8 @@ limiting.'''
             for id,fdata in response:
                 yield id,None,dict(pairs_to_dict(fdata, encoding))
     
-    def callback(self, request, response, args, query = None, get = None,
-                 fields = None, fields_attributes = None, **kwargs):
+    def callback(self, request, response, args, query=None, get=None,
+                 fields=None, fields_attributes=None, **kwargs):
         meta = query.meta
         if get:
             tpy = meta.dfields[get].to_python
@@ -119,15 +119,14 @@ The first parameter is the model'''
 
 class commit_session(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('odm.session'))
+              redis.read_lua_file('odm.commit_session'))
     
-    def callback(self, request, response, args, sm = None, iids = None,
-                 **kwargs):
+    def callback(self, request, response, args, sm=None, iids=None, **kwargs):
         response = self._wrap(request, response, iids)
         return session_result(sm.meta, response)
     
     def _wrap(self, request, response, iids):
-        for id, iid in zip(response,iids):
+        for id, iid in zip(response, iids):
             id, flag, info = id
             if int(flag):
                 yield instance_session_result(iid, True, id, False, float(info))
@@ -161,7 +160,7 @@ def results_and_erros(results, result_type):
                 
 def redis_execution(pipe, result_type):
     pipe.request_info = {}
-    results = pipe.execute(load_script = True)
+    results = pipe.execute(load_script=True)
     info = pipe.__dict__.pop('request_info',None)
     return info, results_and_erros(results, result_type)
     
@@ -477,7 +476,7 @@ class Zset(RedisStructure):
         return result
     
     def get(self, score):
-        r = self.range(score,score,withscores=False)
+        r = self.range(score, score, withscores=False)
         if r:
             if len(r) > 1:
                 return r
@@ -485,7 +484,7 @@ class Zset(RedisStructure):
                 return r[0]
     
     def _iter(self):
-        return iter(self.irange(withscores = False))
+        return iter(self.irange(withscores=False))
     
     def size(self):
         return self.client.zcard(self.id)
@@ -941,7 +940,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             binstance.commit()
             script_dependency = []
             for c in pipe.command_stack[n:]:
-                script_name = c[1].get('script_name')
+                script_name = c.options.get('script_name')
                 if script_name:
                     script_dependency.append(script_name)
             pipe.exists(binstance.id, script_dependency = script_dependency)

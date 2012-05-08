@@ -9,6 +9,7 @@ from .encoders import DoubleEncoder
 
 __all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
 
+
 class TimeseriesCache(object):
     cache = None
     def __init__(self):
@@ -30,6 +31,8 @@ class TimeseriesCache(object):
 
 
 class ColumnTS(odm.TS):
+    '''A specialised timeseries structure for handling several fields and
+statistical calculations.'''
     default_multi_stats = ['covariance']
     
     cache_class = TimeseriesCache

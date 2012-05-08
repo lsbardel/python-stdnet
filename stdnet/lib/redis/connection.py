@@ -75,9 +75,11 @@ redis_before_send = Signal(providing_args=["request", "commands"])
 redis_after_receive = Signal(providing_args=["request"])
 
 
-PyRedisReader = lambda : fallback.RedisReader(InvalidResponse, ResponseError)
+PyRedisReader = lambda : fallback.RedisReader(RedisProtocolError,
+                                              RedisInvalidResponse)
 if hr:
-    RedisReader = lambda : hr.RedisReader(InvalidResponse, ResponseError)
+    RedisReader = lambda : hr.RedisReader(RedisProtocolError,
+                                          RedisInvalidResponse)
 else:
     RedisReader = PyRedisReader
     
@@ -160,19 +162,21 @@ handling of a single command from start to the response from the server.'''
                 _errno, errmsg = 'UNKNOWN', e.args[0]
             else:
                 _errno, errmsg = e.args
-            raise ConnectionError("Error %s while writing to socket. %s." % \
+            raise RedisConnectionError("Error %s while writing to socket. %s." % \
                 (_errno, errmsg))
         
     def close(self):
-        redis_after_receive.send(self.client.__class__, request = self)
+        redis_after_receive.send(self.client.__class__, request=self)
         c = self.connection
         try:
-            if isinstance(self.response,ResponseError):
-                if str(self.response) == NoScriptError.msg:
-                    self.response = NoScriptError()
-                else:
-                    raise self.response
+            #if isinstance(self.response, ResponseError):
+            #    if str(self.response) == NoScriptError.msg:
+            #        self.response = NoScriptError()
+            #    else:
+            #        raise self.response
             self._response = self.client.parse_response(self)
+            if isinstance(self._response, Exception):
+                raise self._response
         except:
             c.disconnect()
             raise
@@ -208,7 +212,7 @@ class SyncRedisRequest(RedisRequest):
         while self.tried < self.retry:
             try:
                 return self._sendrecv()
-            except ConnectionError as e:
+            except RedisConnectionError as e:
                 if e.retry:
                     self.connection.disconnect(release_connection = False)
                     self.tried += 1
@@ -226,10 +230,10 @@ class SyncRedisRequest(RedisRequest):
             try:
                 stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             except (socket.error, socket.timeout) as e:
-                raise ConnectionError("Error while reading from socket: %s" % \
+                raise RedisConnectionError("Error while reading from socket: %s" % \
                         (e.args,))
             if not stream:
-                raise ConnectionError("Socket closed on remote end", True)
+                raise RedisConnectionError("Socket closed on remote end", True)
             self.parse(stream)
         return self._response
     
@@ -332,7 +336,7 @@ This class should not be directly initialized. Instead use the
         try:
             return self._connect(request, counter)
         except socket.error as e:
-            raise ConnectionError(self._error_message(e))
+            raise RedisConnectionError(self._error_message(e))
 
     def _connect(self, request, counter):
         self.sock.settimeout(self.socket_timeout)
@@ -357,14 +361,14 @@ This class should not be directly initialized. Instead use the
             r = self.execute_command(client, 'AUTH', self.password,
                                      release_connection = False)
             if not r:
-                raise ConnectionError('Invalid Password ({0})'.format(counter))
+                raise RedisConnectionError('Invalid Password ({0})'.format(counter))
 
         # if a database is specified, switch to it
         if self.db:
             r = self.execute_command(client, 'SELECT', self.db,
                                      release_connection = False)
             if not r:
-                raise ConnectionError('Invalid Database "{0}". ({1})'\
+                raise RedisConnectionError('Invalid Database "{0}". ({1})'\
                                       .format(self.db, counter))
             
         return request
@@ -416,7 +420,7 @@ This class should not be directly initialized. Instead use the
         '''Internal function for packing pipeline commands into a
 command byte to be send to redis.'''
         pack = self.pack_command
-        return b''.join(starmap(pack, (args[0] for args in commands)))
+        return b''.join(starmap(pack, ((c.command,)+c.args for c in commands)))
         
     def execute_command(self, client, command_name, *args, **options):
         return self.request_class(client, self, command_name, args, **options)\
@@ -492,7 +496,7 @@ class ConnectionPool(object):
     def make_connection(self):
         "Create a new connection"
         if self._created_connections >= self.max_connections:
-            raise ConnectionError("Too many connections")
+            raise RedisConnectionError("Too many connections")
         self._created_connections += 1
         return self.connection_class(self, **self.connection_kwargs)
 

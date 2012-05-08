@@ -1,6 +1,8 @@
 '''Experimental!
 This is an experimental module for converting ColumnTS into
-dynts.timeseries.
+dynts.timeseries. It requires dynts_.
+
+.. _dynts: https://github.com/quantmind/dynts
 '''
 from . import models as columnts 
 

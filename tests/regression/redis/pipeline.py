@@ -1,4 +1,4 @@
-from .base import TestCase, ResponseError
+from .base import TestCase, redis
 
 
 class PipelineTestCase(TestCase):
@@ -34,8 +34,8 @@ class PipelineTestCase(TestCase):
         self.assertEquals(result[1], True)
         self.assertEquals(self.client['b'], b'2')
         # we can't lpush to a key that's a string value, so this should
-        # be a ResponseError exception
-        self.assert_(isinstance(result[2], ResponseError))
+        # be a redis.RedisInvalidResponse exception
+        self.assert_(isinstance(result[2], redis.RedisInvalidResponse))
         self.assertEquals(self.client['c'], b'a')
         self.assertEquals(result[3], True)
         self.assertEquals(self.client['d'], b'4')

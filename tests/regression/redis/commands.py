@@ -8,9 +8,9 @@ from stdnet.utils import to_string, ispy3k, iteritems, range, flatzset
 if not ispy3k:
     chr = unichr
     
-from .base import TestCase, ResponseError, RedisError, get_version
+from .base import TestCase, redis, get_version
 
-
+ResponseError = redis.RedisInvalidResponse
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
 binary_set = lambda x : set(to_charlist(x))
 

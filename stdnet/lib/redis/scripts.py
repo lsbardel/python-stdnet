@@ -4,7 +4,7 @@ from functools import partial
 
 from stdnet.utils import zip
 from .connection import RedisRequest
-from .exceptions import NoScriptError
+from .exceptions import NoScriptError, ScriptError
 from .redisinfo import RedisKey
 
 
@@ -12,11 +12,36 @@ __all__ = ['RedisScript',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
+           'script_command_callback',
            'read_lua_file']
 
 
 p = os.path
 DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
+
+
+def script_command_callback(request, response, args, command=None,
+                            script_name=None, **options):
+    if isinstance(response, Exception):
+        if script_name:
+            command = ' ' + command if command else ''
+            response = ScriptError('SCRIPT'+command, script_name, response)
+        return response
+    elif command in ('FLUSH', 'KILL'):
+        return response == b'OK'
+    elif command == 'LOAD':
+        return response.decode(request.client.encoding)
+    else:
+        return [int(r) for r in response]
+    
+
+def eval_command_callback(request, response, args, script_name=None, **options):
+    s = _scripts.get(script_name)
+    if not s:
+        return response
+    else:
+        return s.start_callback(request, response, args, **options)
+    
 
 def pairs_to_dict(response, encoding, value_encoder = 0):
     "Create a dict given a list of key/value pairs"
@@ -108,11 +133,14 @@ lua scripts to redis via the ``evalsha`` command.
         return self.call(client, 'EVALSHA', self.sha1, keys, *args, **options)
     
     def load(self, client, keys, *args, **options):
-        client.script_load(self.script)
+        '''Load this :class:`RedisScript` to redis and runs it using evalsha.
+It returns the result of the `evalsha` command.'''
+        client.script_load(self.script, script_name=self.name)
         return self.evalsha(client, keys, *args, **options)
         
     def start_callback(self, request, response, args, **options):
-        if isinstance(response,NoScriptError):
+        if str(response) == NoScriptError.msg:
+            response = NoScriptError()
             client = request.client
             if not client.pipelined:
                 num_keys = args[1]
@@ -127,12 +155,16 @@ lua scripts to redis via the ``evalsha`` command.
                     return self.load_callback(request, result, args, **options)
             else:
                 return response
+        elif isinstance(response, Exception):
+            raise ScriptError('EVALSHA', self, response)
         else:
             return self.callback(request, response, args, **options)
         
     def load_callback(self, request, result, args, **options):
-        if isinstance(result[0],Exception):
+        if isinstance(result[0], Exception):
             raise result[0]
+            #raise ScriptError('Lua redis script "{0}" error. {1}'\
+            #                          .format(self,result[1]))
         return result[1]
     
     def callback(self, request, response, args, **options):
@@ -146,24 +178,16 @@ lua scripts to redis via the ``evalsha`` command.
 '''
         return response
     
-    
-def script_call_back(request, response, args, script_name = None, **options):
-    s = _scripts.get(script_name)
-    if not s:
-        return response
-    else:
-        return s.start_callback(request, response, args, **options)
-    
 
 def load_missing_scripts(pipe, commands, results):
-    '''Load missing scripts in a pipeline. This function loops thorugh the
+    '''Load missing scripts in a pipeline. This function loops through the
 *results* list and if one or more values are instances of
-:class:`NoScriptError`, it loads the scripts and perfrom a new evaluation.
+:class:`NoScriptError`, it loads the scripts and perform a new evaluation.
 Commands which have *option* ``script_dependency`` set to the name
 of a missing script, are also re-executed.'''
     toload = False
     for r in results:
-        if isinstance(r,NoScriptError):
+        if isinstance(r, NoScriptError):
             toload = True
             break
     if not toload:
@@ -171,27 +195,28 @@ of a missing script, are also re-executed.'''
     
     loaded = set()
     positions = []
-    for i,result in enumerate(zip(commands,results)):
-        args, options, callbacks = result[0]    
-        if isinstance(result[1],NoScriptError):
-            name = options.get('script_name')
+    for i, result in enumerate(zip(commands,results)):
+        command, result = result    
+        if isinstance(result, NoScriptError):
+            name = command.options.get('script_name')
             if name:
                 script = get_script(name)
                 if script:
-                    s = 3 # Starts from 3 as the first argument is the command
+                    args = command.args
+                    s = 2 # Starts from 2 as the first argument is the command
                     num_keys = args[s-1]
-                    keys, args = args[s:s+num_keys],args[s+num_keys:]
+                    keys, args = args[s:s+num_keys], args[s+num_keys:]
                     if script.name not in loaded:
                         positions.append(-1)
                         loaded.add(script.name)
-                        script.load(pipe, keys, *args, **options)
+                        script.load(pipe, keys, *args, **command.options)
                     else:
-                        script.evalsha(pipe, keys, *args, **options)
+                        script.evalsha(pipe, keys, *args, **command.options)
                     positions.append(i)
-                    for c in callbacks:
+                    for c in command.callbacks:
                         pipe.add_callback(c)
         else:
-            sc = options.get('script_dependency')
+            sc = command.options.get('script_dependency')
             if sc:
                 if not isinstance(sc,(list,tuple)):
                     sc = (sc,)
@@ -231,7 +256,7 @@ return # redis.call('keys', ARGV[1])
 # Delete all keys from a pattern and return the total number of keys deleted
 # This fails when there are too many keys
 _delpattern = '''\
-keys = redis.call('keys',KEYS[1])
+local keys = redis.call('keys', KEYS[1])
 if keys then
   return redis.call('del',unpack(keys))
 else
@@ -241,7 +266,7 @@ end
 # This just works
 class delpattern(RedisScript):
     script = '''\
-n = 0
+local n = 0
 for i,key in ipairs(redis.call('keys', ARGV[1])) do
   n = n + redis.call('del', key)
 end

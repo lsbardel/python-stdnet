@@ -61,7 +61,7 @@ class TestSession(test.TestCase):
     def testModifyIndexField(self):
         session = self.session()
         with session.begin():
-            session.add(SimpleModel(code='pluto',group='planet'))
+            session.add(SimpleModel(code='pluto', group='planet'))
         query = session.query(SimpleModel)
         qs = query.filter(group = 'planet')
         self.assertEqual(qs.count(),1)

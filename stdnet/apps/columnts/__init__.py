@@ -1,8 +1,11 @@
 '''\
-A timeseries application where each field is stored in a redis string.
-This data-structure is composed by several redis structure:
+An application for managing multivariate timeseries_. It provides
+tools for performing aggregation and statistics via lua scripts.
 
-* A Timeseries for holding times in an ordered fashion.
+The redis implementation uses several redis structures for a given
+class:`ColumnTS` instance:
+
+* A zset for holding times in an ordered fashion.
 * A redis *set* for holding *fields* names.
 * A redis string for each *field* in the timeseries.
 
@@ -17,8 +20,7 @@ The API is straightforward::
     from datetime date
     from stdnet.apps.columnts ColumnTS
     
-    ts = ColumnTS(id = 'test')
-    
+    ts = ColumnTS(id='test')
     ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})
     
 API
@@ -28,6 +30,7 @@ API
    :members:
    :member-order: bysource
    
+.. _timeseries: http://en.wikipedia.org/wiki/Time_series
 '''
 from . import redis
 from .encoders import *

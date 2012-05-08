@@ -1,15 +1,15 @@
 -- Script to aggregate a stdnet query
-bk = KEYS[1] -- base key for model
-rkey = KEYS[2] -- the key where to store the structure containing the resuls
-s = ARGV[1] -- 's' for set or 'z' for sorted sets
-name = ARGV[2] -- Field name
-unique = ARGV[3] -- 'u' if field is unique '' otherwise
-lookup = ARGV[4] -- Not yet used
+local bk = KEYS[1] -- base key for model
+local rkey = KEYS[2] -- the key where to store the structure containing the resuls
+local s = ARGV[1] -- 's' for set or 'z' for sorted sets
+local name = ARGV[2] -- Field name
+local unique = ARGV[3] -- 'u' if field is unique '' otherwise
+local lookup = ARGV[4] -- Not yet used
 
 
 -- Perform the union of the index for value val and the result key *rkey*
 -- The result is stored in *rkey*
-function union (val)
+local function union (val)
 	local setkey = bk .. ':idx:' .. name .. ':' .. val
 	if s == 's' then
 	    redis.call('sunionstore', rkey, rkey, setkey)
@@ -19,15 +19,15 @@ function union (val)
 end
 
 -- add a value to a 'rkey' set if the value is in the 'idset'
-function add (val)
+local function add (val)
 	if val ~= false then
-	    idset = bk .. ':id'
+	    local idset = bk .. ':id'
 		if s == 's' then
 		    if redis.call('sismember',idset,val) + 0 == 1 then 
 			    redis.call('sadd', rkey, val)
 			end
 		else
-			score = redis.call('zscore', idset, val)
+			local score = redis.call('zscore', idset, val)
 			if score ~= false then
 				redis.call('zadd', rkey, score, val)
 			end
@@ -37,7 +37,7 @@ end
 
 -- Add values stored at key to the 'rkey' set. `oper` is the operation
 -- to perform for the values in container at `key` (either add or union)
-function addkey(key, oper)
+local function addkey(key, oper)
     local processed = {}
     for _,v in ipairs(redis_members(key)) do
         if not processed[v] then
@@ -47,7 +47,7 @@ function addkey(key, oper)
     end
 end
 
-i = 4
+local i = 4
 local what
 local val
 while i < # ARGV do
@@ -62,7 +62,7 @@ while i < # ARGV do
 		end
 	elseif unique == 'u' then
 		-- Unique field but not an id. These fields maps to ids in an hash table
-		mapkey = bk .. ':uni:' .. name
+		local mapkey = bk .. ':uni:' .. name
 		if what == 'key' then
 			-- This lookup is quite rare
 			if s == 's' then

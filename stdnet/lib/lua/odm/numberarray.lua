@@ -5,7 +5,7 @@ local nan = 0/0
 -- 8 bytes string for nil data
 local nildata = string.char(0,0,0,0,0,0,0,0)
 
-array = {
+local array = {
     --
     -- Initialize with key and optional initial size and value
     init = function (self, key, size, value)
@@ -65,8 +65,9 @@ array = {
     end,
     --
     all_raw = function(self)
-        data = {}
-        local i=0,start
+    	local start
+        local data = {}
+        local i=0
         while i < self:length() do
             start = 8*i
             i = i + 1
@@ -85,7 +86,7 @@ array = {
 }
 
 
-columnts_meta = {
+local columnts_meta = {
     __index = function(self,index)
         return self:get(index)
     end,

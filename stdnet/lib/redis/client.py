@@ -15,6 +15,7 @@ from copy import copy
 from datetime import datetime
 from uuid import uuid4
 from functools import partial
+from collections import namedtuple
 
 from stdnet.utils import zip, is_int, iteritems, is_string, flat_mapping
 from stdnet.utils.dispatch import Signal
@@ -22,9 +23,10 @@ from stdnet.utils.dispatch import Signal
 from .connection import *
 from .exceptions import *
 
-from .scripts import script_call_back, get_script, pairs_to_dict,\
-                        load_missing_scripts
+from .scripts import eval_command_callback, get_script, pairs_to_dict,\
+                        load_missing_scripts, script_command_callback
 
+redis_command = namedtuple('redis_command','command args options callbacks')
 
 __all__ = ['Redis',
            'RedisProxy',
@@ -146,16 +148,6 @@ def bytes_to_string(request, response, args, **options):
         return response.decode(request.client.encoding)
     else:
         return response
-    
-
-def script_command(request, response, args, command = None, **options):
-    if command in ('FLUSH','KILL'):
-        return response == b'OK'
-    elif command == 'LOAD':
-        return response.decode(request.client.encoding)
-    else:
-        return [int(r) for r in response]
-    
 
 def config_callback(request, response, args, **options):
     if args[0] == 'GET':
@@ -245,13 +237,18 @@ class Redis(object):
             'TTL': lambda request, response, args, **options: \
                 response != -1 and response or None,
             'ZRANK': int_or_none,
-            'EVALSHA': script_call_back,
-            'EVAL': script_call_back,
-            'SCRIPT': script_command,
+            'EVALSHA': eval_command_callback,
+            'EVAL': eval_command_callback,
+            'SCRIPT': script_command_callback,
             'CONFIG': config_callback,
             'SLOWLOG': slowlog_callback
         }
         )
+    
+    RESPONSE_ERRBACKS = {
+        'EVALSHA': eval_command_callback,
+        'EVAL': eval_command_callback
+    }
 
     _STATUS = ''
 
@@ -274,6 +271,7 @@ class Redis(object):
         self.connection_pool = connection_pool
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
+        self.response_errbacks = self.RESPONSE_ERRBACKS.copy()
         if check_status:
             rstatus = Redis(address=connection_pool.address,
                             password=password,
@@ -315,8 +313,10 @@ between the client and server.
         return connection.execute_command(self, *args, **options)
 
     def _parse_response(self, request, response, command_name, args, options):
-        if command_name in self.response_callbacks:
-            cbk = self.response_callbacks[command_name]
+        callbacks = self.response_errbacks if isinstance(response, Exception)\
+                        else self.response_callbacks
+        if command_name in callbacks:
+            cbk = callbacks[command_name]
             return cbk(request, response, args, **options)
         return response
     
@@ -393,8 +393,8 @@ between the client and server.
         "Shutdown the server"
         try:
             self.execute_command('SHUTDOWN')
-        except ConnectionError:
-            # a ConnectionError here is expected
+        except RedisConnectionError:
+            # a RedisConnectionError here is expected
             return
         raise RedisError("SHUTDOWN seems to have failed.")
 
@@ -913,8 +913,6 @@ The first element is the score and the second is the value.'''
                                 'score',
                                 start, stop, int(desc), int(withscores),
                                 **options)
-        
-        
 
     def _zaggregate(self, command, dest, keys,
                     aggregate=None, withscores = None, **options):
@@ -947,9 +945,9 @@ is no connection.'''
         try:
             self.execute_command('TSLEN', str(uuid4()))
             return 'stdnet'
-        except ConnectionError:
+        except RedisConnectionError:
             return ''
-        except ResponseError:
+        except RedisInvalidResponse:
             return 'vanilla'
         
     def tslen(self, name, **options):
@@ -1076,7 +1074,7 @@ time ``start`` and time ``end`` sorted in ascending order.
     ############################################################################
     def _eval(self, command, body, keys, *args, **options):
         if keys:
-            if not isinstance(keys,collection_list):
+            if not isinstance(keys, collection_list):
                 params = (keys,)
             else:
                 params = tuple(keys)
@@ -1103,8 +1101,9 @@ time ``start`` and time ``end`` sorted in ascending order.
     def script_flush(self):
         return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
     
-    def script_load(self, script):
-        return self.execute_command('SCRIPT', 'LOAD', script, command = 'LOAD')
+    def script_load(self, script, script_name=None):
+        return self.execute_command('SCRIPT', 'LOAD', script, command='LOAD',
+                                    script_name=script_name)
     
     ############################################################################
     ##    Script commands
@@ -1134,6 +1133,10 @@ class RedisProxy(Redis):
     @property
     def response_callbacks(self):
         return self.client.response_callbacks
+    
+    @property
+    def response_errbacks(self):
+        return self.client.response_errbacks
     
     @property
     def encoding(self):
@@ -1174,7 +1177,7 @@ on a key of a different datatype.
     def empty(self):
         return len(self.command_stack) <= 1
 
-    def execute_command(self, *args, **options):
+    def execute_command(self, cmnd, *args, **options):
         """
 Stage a command to be executed when execute() is next called
 
@@ -1186,7 +1189,12 @@ pipe = pipe.set('foo', 'bar').incr('baz').decr('bang')
 At some other point, you can then run: pipe.execute(),
 which will execute all commands queued in the pipe.
 """
-        self.command_stack.append((args, options, []))
+        callbacks = []
+        #callback = self.client.response_callbacks.get(cmnd)
+        #if callback:
+        #    callbacks.append(callback)
+        self.command_stack.append(
+                        redis_command(cmnd, args, options, callbacks))
         return self
     
     def add_callback(self, callback):
@@ -1210,7 +1218,7 @@ Several callbacks can be added for a given command::
 '''
         if self.empty:
             raise ValueError('Cannot add callback. No command in the stack')
-        self.command_stack[-1][2].append(callback)
+        self.command_stack[-1].callbacks.append(callback)
         return self
                 
     def parse_response(self, request):
@@ -1224,25 +1232,21 @@ Several callbacks can be added for a given command::
                 "pipeline execution")
         parse_response = self._parse_response
         for r, cmd in zip(response, commands):
-            args, options, callbacks = cmd
-            command, args = args[0], args[1:]
-            if not isinstance(r, Exception):
-                r = parse_response(request, r, command, args, options)
-            elif str(r) == NoScriptError.msg:
-                r = NoScriptError()
+            command, args, options, callbacks = cmd
+            r = parse_response(request, r, command, args, options)
             for callback in callbacks:
                 r = callback(processed, r)
             processed.append(r)
         return processed
 
-    def execute(self, load_script = False):
+    def execute(self, load_script=False):
         '''Execute all commands in the current pipeline.'''
         self.execute_command('EXEC')
         commands = self.command_stack
         self.reset()
         conn = self.connection_pool.get_connection()
         res = conn.execute_pipeline(self, commands)
-        if isinstance(res,RedisRequest):
+        if isinstance(res, RedisRequest):
             return res.add_callback(partial(self.finalise,commands,load_script))
         else:
             return self.finalise(commands, load_script, res)

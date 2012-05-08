@@ -20,6 +20,9 @@ def get_module():
 
 mod = get_module()
 
+# Try to import lib build
+from lib.setup import libparams, BuildFailed
+
 class osx_install_data(install_data):
 
     def finalize_options(self):
@@ -108,4 +111,21 @@ def status_msgs(*msgs):
         print(msg)
     print('*' * 75)
     
-run_setup(False)
+try:
+    run_setup(True)
+except BuildFailed as exc:
+    status_msgs(
+            exc.msg,
+            "WARNING: The C extension could not be compiled, " +
+                "speedups are not enabled.",
+            "Failure information, if any, is above.",
+            "Retrying the build without the C extension now."
+        )
+
+    run_setup(False)
+
+    status_msgs(
+        "WARNING: The C extension could not be compiled, " +
+            "speedups are not enabled.",
+        "Plain-Python build succeeded."
+    )

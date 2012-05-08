@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="index.html" />
     <link rel="next" title="Stdnet Redis branch" href="stdnetredis.html" />
     <link rel="prev" title="Column Time Series" href="apps/timeseries.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="apps/timeseries.html" title="Column Time Series"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -107,15 +107,15 @@ is contained in the <a class="reference internal" href="backends/redis.html#redi
 <span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_BACKEND</span> <span class="o">=</span> <span class="s">&#39;redis://127.0.0.1:6379/?db=5&#39;</span>
 </pre></div>
 </div>
-<span class="target" id="module-stdnet.orm"></span></div>
+<span class="target" id="module-stdnet.odm"></span></div>
 <div class="section" id="model-utilities">
 <h2>Model Utilities<a class="headerlink" href="#model-utilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="instance-form-uuid">
 <h3>Instance form UUID<a class="headerlink" href="#instance-form-uuid" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="stdnet.orm.from_uuid">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">from_uuid</tt><big>(</big><em>uuid</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.from_uuid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieve a <a class="reference internal" href="model/models.html#stdnet.orm.Model" title="stdnet.orm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> from its universally unique identifier
+<dt id="stdnet.odm.from_uuid">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">from_uuid</tt><big>(</big><em>uuid</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.from_uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a <a class="reference internal" href="model/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> from its universally unique identifier
 <em>uuid</em>. If the <em>uuid</em> does not match any instance an exception will raise.</p>
 </dd></dl>
 
@@ -123,9 +123,9 @@ is contained in the <a class="reference internal" href="backends/redis.html#redi
 <div class="section" id="model-iterator">
 <h3>Model Iterator<a class="headerlink" href="#model-iterator" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="stdnet.orm.model_iterator">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em><big>)</big><a class="headerlink" href="#stdnet.orm.model_iterator" title="Permalink to this definition">¶</a></dt>
-<dd><p>A generator of <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes found in <em>application</em>.</p>
+<dt id="stdnet.odm.model_iterator">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em><big>)</big><a class="headerlink" href="#stdnet.odm.model_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator of <a class="reference internal" href="model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes found in <em>application</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -137,7 +137,7 @@ dotted-paths where models are defined.</td>
 </table>
 <p>Only models defined in these paths are considered.</p>
 <p>For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.orm</span> <span class="kn">import</span> <span class="n">model_iterator</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.odm</span> <span class="kn">import</span> <span class="n">model_iterator</span>
 
 <span class="n">APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;stdnet.contrib.searchengine&#39;</span><span class="p">,</span>
         <span class="s">&#39;stdnet.contrib.timeseries&#39;</span><span class="p">)</span>
@@ -152,8 +152,8 @@ dotted-paths where models are defined.</td>
 <div class="section" id="flush-models">
 <h3>Flush Models<a class="headerlink" href="#flush-models" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="stdnet.orm.flush_models">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">flush_models</tt><big>(</big><em>includes=None</em>, <em>excludes=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.flush_models" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.flush_models">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">flush_models</tt><big>(</big><em>includes=None</em>, <em>excludes=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.flush_models" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility for flushing models data.
 It removes all keys associated with models.</p>
 </dd></dl>
@@ -167,12 +167,12 @@ different formats.</p>
 <div class="section" id="get-serializer">
 <h3>Get serializer<a class="headerlink" href="#get-serializer" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="stdnet.orm.get_serializer">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">get_serializer</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.get_serializer" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.get_serializer">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">get_serializer</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.odm.get_serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a serializer register as <em>name</em>. If the serializer is not
 available an exception will raise. A common use usage pattern:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">sort_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&#39;json&#39;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&#39;json&#39;</span><span class="p">)</span>
 <span class="n">s</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -182,8 +182,8 @@ available an exception will raise. A common use usage pattern:</p>
 <div class="section" id="register-serializer">
 <h3>Register serializer<a class="headerlink" href="#register-serializer" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="stdnet.orm.register_serializer">
-<tt class="descclassname">stdnet.orm.</tt><tt class="descname">register_serializer</tt><big>(</big><em>name</em>, <em>serializer</em><big>)</big><a class="headerlink" href="#stdnet.orm.register_serializer" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.register_serializer">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">register_serializer</tt><big>(</big><em>name</em>, <em>serializer</em><big>)</big><a class="headerlink" href="#stdnet.odm.register_serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register a new serializer to the library.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -191,8 +191,8 @@ available an exception will raise. A common use usage pattern:</p>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; serializer name (it can override existing serializers).</li>
-<li><strong>serializer</strong> &#8211; an instance or a derived class of a <a class="reference internal" href="#stdnet.orm.Serializer" title="stdnet.orm.Serializer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Serializer</span></tt></a>
-class or a callable.</li>
+<li><strong>serializer</strong> &#8211; an instance or a derived class of a
+<a class="reference internal" href="#stdnet.odm.Serializer" title="stdnet.odm.Serializer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Serializer</span></tt></a> class or a callable.</li>
 </ul>
 </td>
 </tr>
@@ -204,18 +204,18 @@ class or a callable.</li>
 <div class="section" id="serializer">
 <h3>Serializer<a class="headerlink" href="#serializer" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.Serializer">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Serializer</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Serializer">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Serializer</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#stdnet.odm.Serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The stdnet serializer base class.</p>
 <dl class="method">
-<dt id="stdnet.orm.Serializer.serialize">
-<tt class="descname">serialize</tt><big>(</big><em>qs</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer.serialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Serialize a <a class="reference internal" href="model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> <em>qs</em>.</p>
+<dt id="stdnet.odm.Serializer.serialize">
+<tt class="descname">serialize</tt><big>(</big><em>qs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Serializer.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize a <a class="reference internal" href="model/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> <em>qs</em>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Serializer.load">
-<tt class="descname">load</tt><big>(</big><em>stream</em>, <em>model=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.Serializer.load" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Serializer.load">
+<tt class="descname">load</tt><big>(</big><em>stream</em>, <em>model=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Serializer.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a stream of data into the database.</p>
 </dd></dl>
 
@@ -236,7 +236,7 @@ JSON serialization for four additional classes:</p>
 </ul>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last">It is the default encoder for <a class="reference internal" href="model/fields.html#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.JSONField</span></tt></a></p>
+<p class="last">It is the default encoder for <a class="reference internal" href="model/fields.html#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.JSONField</span></tt></a></p>
 </div>
 </dd></dl>
 
@@ -389,14 +389,14 @@ between python 2 and python 3.</p>
 <dl class="class">
 <dt id="stdnet.ModelNotRegistered">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ModelNotRegistered</tt><a class="headerlink" href="#stdnet.ModelNotRegistered" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> not yet
-registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.orm.register" title="stdnet.orm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.orm.register()</span></tt></a> for details.</p>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">StdNetException</span></tt></a> raised when trying to save an instance of a <a class="reference internal" href="model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> not yet
+registered with a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.backends.BackendDataServer</span></tt>. Check <a class="reference internal" href="model/models.html#stdnet.odm.register" title="stdnet.odm.register"><tt class="xref py py-func docutils literal"><span class="pre">stdnet.odm.register()</span></tt></a> for details.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="stdnet.QuerySetError">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">QuerySetError</tt><a class="headerlink" href="#stdnet.QuerySetError" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised during a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.query.QuerySet</span></tt>
+<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised during a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.query.QuerySet</span></tt>
 evaluation.</p>
 </dd></dl>
 
@@ -411,7 +411,7 @@ evaluation.</p>
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">FieldValueError</tt><a class="headerlink" href="#stdnet.FieldValueError" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <a class="reference internal" href="#stdnet.FieldError" title="stdnet.FieldError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldError</span></tt></a> raised when passing a wrong
 value to a field. This exception is cought during the model instance
-validation algorithm in <tt class="xref py py-meth docutils literal"><span class="pre">stdnet.orm.base.Metaclass.is_valid()</span></tt>.</p>
+validation algorithm in <tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.base.Metaclass.is_valid()</span></tt>.</p>
 </dd></dl>
 
 </div>
@@ -507,7 +507,7 @@ It is different for each instance and it is created just before
 <dl class="method">
 <dt id="stdnet.test.TestCase.session">
 <tt class="descname">session</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.test.TestCase.session" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new <a class="reference internal" href="model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Session</span></tt></a> bind to the
+<dd><p>Create a new <a class="reference internal" href="model/session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> bind to the
 <a class="reference internal" href="#stdnet.test.TestCase.backend" title="stdnet.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">TestCase.backend</span></tt></a> attribute.</p>
 </dd></dl>
 
@@ -615,7 +615,7 @@ will be unregistered after the <tt class="xref py py-meth docutils literal"><spa
         <li class="right" >
           <a href="apps/timeseries.html" title="Column Time Series"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

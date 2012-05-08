@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Column Time Series &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Column Time Series &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="up" title="Applications" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="../utility.html" />
     <link rel="prev" title="A Search Engine for Stdnet Models" href="searchengine.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Applications</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,10 +54,12 @@
             
   <div class="section" id="module-stdnet.apps.columnts">
 <span id="column-time-series"></span><span id="apps-timeserie"></span><h1>Column Time Series<a class="headerlink" href="#module-stdnet.apps.columnts" title="Permalink to this headline">¶</a></h1>
-<p>A timeseries application where each field is stored in a redis string.
-This data-structure is composed by several redis structure:</p>
+<p>An application for managing multivariate <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a>. It provides
+tools for performing aggregation and statistics via lua scripts.</p>
+<p>The redis implementation uses several redis structures for a given
+class:<cite>ColumnTS</cite> instance:</p>
 <ul class="simple">
-<li>A Timeseries for holding times in an ordered fashion.</li>
+<li>A zset for holding times in an ordered fashion.</li>
 <li>A redis <em>set</em> for holding <em>fields</em> names.</li>
 <li>A redis string for each <em>field</em> in the timeseries.</li>
 </ul>
@@ -69,8 +71,7 @@ with the initial byte (<tt class="docutils literal"><span class="pre">byte0</spa
 <div class="highlight-python"><pre>from datetime date
 from stdnet.apps.columnts ColumnTS
 
-ts = ColumnTS(id = 'test')
-
+ts = ColumnTS(id='test')
 ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})</pre>
 </div>
 <div class="section" id="api">
@@ -78,7 +79,9 @@ ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})</pre>
 <dl class="class">
 <dt id="stdnet.apps.columnts.ColumnTS">
 <em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTS</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>A specialised timeseries structure for handling several fields and
+statistical calculations.</p>
+<dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.front">
 <tt class="descname">front</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.front" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the front pair of the structure</p>
@@ -248,7 +251,7 @@ of the form:</p>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Applications</a> &raquo;</li> 
       </ul>
     </div>

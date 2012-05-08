@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Redis Backend &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Redis Backend &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="up" title="Backend Data Server" href="index.html" />
     <link rel="next" title="Applications" href="../apps/index.html" />
     <link rel="prev" title="Backend Data Server" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Backend Data Server"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Data Server</a> &raquo;</li> 
       </ul>
     </div>  
@@ -76,7 +76,7 @@ since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.</p>
 <div class="section" id="model-data">
 <h2>Model data<a class="headerlink" href="#model-data" title="Permalink to this headline">¶</a></h2>
-<p>Each <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class has an associated <tt class="docutils literal"><span class="pre">base</span> <span class="pre">key</span></tt> which
+<p>Each <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class has an associated <tt class="docutils literal"><span class="pre">base</span> <span class="pre">key</span></tt> which
 specify the namespace for all keys associated with it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">getdb</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">Word</span>
@@ -87,7 +87,7 @@ specify the namespace for all keys associated with it:</p>
 </div>
 <div class="section" id="instances">
 <h3>Instances<a class="headerlink" href="#instances" title="Permalink to this headline">¶</a></h3>
-<p>Each <a class="reference internal" href="../model/models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> instance is mapped into a redis <strong>Hash table</strong>.
+<p>Each <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instance is mapped into a redis <strong>Hash table</strong>.
 The hash table key is uniquely evaluated by the model hash and
 the <em>id</em> of the model instance and it is stored at:</p>
 <div class="highlight-python"><pre>&lt;&lt;basekey&gt;&gt;:obj:&lt;&lt;id&gt;&gt;</pre>
@@ -102,7 +102,7 @@ following form:</p>
 <div class="highlight-python"><pre>&lt;&lt;basekey&gt;&gt;:idx:&lt;&lt;field name&gt;&gt;:&lt;&lt;field value&gt;&gt;</pre>
 </div>
 <p>If the model specify an <a class="reference internal" href="../examples/sorting.html#implicit-sorting"><em>implicit ordering</em></a> via the
-<tt class="xref py py-attr docutils literal"><span class="pre">stdnet.orm.base.Metaclass.ordering</span></tt> attribute, indexes are stored
+<tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.base.Metaclass.ordering</span></tt> attribute, indexes are stored
 in sorted sets rather than sets.</p>
 <p>Indices are updated and removed via the <tt class="docutils literal"><span class="pre">update_indices</span></tt> function in the
 <tt class="docutils literal"><span class="pre">section.lua</span></tt> script.</p>
@@ -111,10 +111,10 @@ in sorted sets rather than sets.</p>
 <h3>Unique Constratins<a class="headerlink" href="#unique-constratins" title="Permalink to this headline">¶</a></h3>
 <p>For some models you may need to specify certain field to be unique across
 the Model. For example the following <tt class="docutils literal"><span class="pre">User</span></tt> model:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">username</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">emauil</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">password</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">emauil</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>specifies two constrains.
@@ -844,7 +844,7 @@ ResponseError exceptions, such as those raised when issuing a command
 on a key of a different datatype.</p>
 <dl class="method">
 <dt id="stdnet.lib.redis.Pipeline.execute_command">
-<tt class="descname">execute_command</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline.execute_command" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">execute_command</tt><big>(</big><em>cmnd</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline.execute_command" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stage a command to be executed when execute() is next called</p>
 <p>Returns the current Pipeline object back so commands can be
 chained together, such as:</p>
@@ -952,6 +952,12 @@ c = pool.get_connection()</pre>
 <dl class="attribute">
 <dt id="stdnet.lib.redis.Connection.request_class">
 <tt class="descname">request_class</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.request_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">SyncRedisRequest</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.lib.redis.Connection.socket_class">
+<tt class="descname">socket_class</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.socket_class" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manages TCP communication to and from a Redis server</p>
 </dd></dl>
 
@@ -1011,6 +1017,12 @@ command byte to be send to redis.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="stdnet.lib.redis.Connection.execute_command">
+<tt class="descname">execute_command</tt><big>(</big><em>client</em>, <em>command_name</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.execute_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a command</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="stdnet.lib.redis.Connection.execute_pipeline">
 <tt class="descname">execute_pipeline</tt><big>(</big><em>client</em>, <em>commands</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute a <a class="reference internal" href="#stdnet.lib.redis.Pipeline" title="stdnet.lib.redis.Pipeline"><tt class="xref py py-class docutils literal"><span class="pre">Pipeline</span></tt></a> in the server.</p>
@@ -1038,12 +1050,12 @@ command byte to be send to redis.</p>
 </div>
 <div class="section" id="redis-session">
 <h2>Redis Session<a class="headerlink" href="#redis-session" title="Permalink to this headline">¶</a></h2>
-<p>Redis <a class="reference internal" href="../model/session.html#stdnet.orm.Session" title="stdnet.orm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Session</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt> are handled by lua scripts which
+<p>Redis <a class="reference internal" href="../model/session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt> are handled by lua scripts which
 perform them in a single atomic operation.</p>
 </div>
 <div class="section" id="redis-query">
 <h2>Redis Query<a class="headerlink" href="#redis-query" title="Permalink to this headline">¶</a></h2>
-<p>A <a class="reference internal" href="../model/models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.Query</span></tt></a> is handled by two different lua scripts, the first is script
+<p>A <a class="reference internal" href="../model/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a> is handled by two different lua scripts, the first is script
 perform the aggregation of which results in a temporary redis <tt class="docutils literal"><span class="pre">key</span></tt>
 holding the <tt class="docutils literal"><span class="pre">ids</span></tt> which result from the query operations.
 The second script is used to load the data from redis to the client.</p>
@@ -1145,7 +1157,7 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
         <li class="right" >
           <a href="index.html" title="Backend Data Server"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Backend Data Server</a> &raquo;</li> 
       </ul>
     </div>

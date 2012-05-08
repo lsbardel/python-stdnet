@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Time Series &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Time Series &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
-    <link rel="next" title="Object Relational Mapper" href="../model/index.html" />
+    <link rel="next" title="Object Data Mapper" href="../model/index.html" />
     <link rel="prev" title="A twitter clone" href="twitter.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../model/index.html" title="Object Relational Mapper"
+          <a href="../model/index.html" title="Object Data Mapper"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="twitter.html" title="A twitter clone"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,12 +62,12 @@ add <a class="reference internal" href="../stdnetredis.html#redis-timeseries"><e
 <p>A simple model derived from <tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.timeseries.models.TimeSeries</span></tt></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
-<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 <span class="kn">from</span> <span class="nn">stdnet.contrib.timeseries.models</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
 
 
 <span class="k">class</span> <span class="nc">FinanceTimeSeries</span><span class="p">(</span><span class="n">TimeSeries</span><span class="p">):</span>
-    <span class="n">ticker</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">ticker</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> - </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ticker</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
@@ -77,8 +77,8 @@ add <a class="reference internal" href="../stdnetredis.html#redis-timeseries"><e
 <div class="section" id="register-the-model">
 <h2>Register the model<a class="headerlink" href="#register-the-model" title="Permalink to this headline">¶</a></h2>
 <p>Register <tt class="docutils literal"><span class="pre">FinanceTimeSeries</span></tt> to the standard backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FinanceTimeSeries</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FinanceTimeSeries</span><span class="p">)</span>
 <span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
 </pre></div>
 </div>
@@ -129,7 +129,7 @@ add <a class="reference internal" href="../stdnetredis.html#redis-timeseries"><e
                         title="previous chapter">A twitter clone</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../model/index.html"
-                        title="next chapter">Object Relational Mapper</a></p>
+                        title="next chapter">Object Data Mapper</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/examples/timeseries.txt"
@@ -162,12 +162,12 @@ add <a class="reference internal" href="../stdnetredis.html#redis-timeseries"><e
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../model/index.html" title="Object Relational Mapper"
+          <a href="../model/index.html" title="Object Data Mapper"
              >next</a> |</li>
         <li class="right" >
           <a href="twitter.html" title="A twitter clone"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

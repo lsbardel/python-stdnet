@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Overview &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="index.html" />
     <link rel="next" title="Tutorials &amp; Examples" href="examples/index.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,10 +54,8 @@
 <span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
 <p><strong>A stand-alone Python 3 compatible data manager for Redis remote data structures.</strong></p>
 <p>The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Relational Mapper (<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a>) with API inspired by <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>
-and <a class="reference external" href="http://www.djangoproject.com/">Django</a>.
+light-weight Object Data Mapper (ODM).
 The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
-<p>&#8211;</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -72,12 +70,29 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 </tr>
 <tr class="field"><th class="field-name">Mailing List:</th><td class="field-body"><a class="reference external" href="https://groups.google.com/group/python-stdnet">https://groups.google.com/group/python-stdnet</a></td>
 </tr>
-<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, orm</td>
+<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, odm</td>
 </tr>
 </tbody>
 </table>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="contents local topic" id="id4">
+<ul class="simple">
+<li><a class="reference internal" href="#requirements" id="id9">Requirements</a></li>
+<li><a class="reference internal" href="#philosophy" id="id10">Philosophy</a></li>
+<li><a class="reference internal" href="#installing" id="id11">Installing</a></li>
+<li><a class="reference internal" href="#documentation" id="id12">Documentation</a></li>
+<li><a class="reference internal" href="#version-check" id="id13">Version Check</a></li>
+<li><a class="reference internal" href="#backends" id="id14">Backends</a></li>
+<li><a class="reference internal" href="#object-data-mapper" id="id15">Object Data Mapper</a></li>
+<li><a class="reference internal" href="#running-tests" id="id16">Running Tests</a></li>
+<li><a class="reference internal" href="#kudos" id="id17">Kudos</a></li>
+<li><a class="reference internal" href="#contributing" id="id18">Contributing</a></li>
+<li><a class="reference internal" href="#license" id="id19">License</a></li>
+</ul>
+</div>
 <div class="section" id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<h3><a class="toc-backref" href="#id9">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Python 2.6 to Python 3.3. Single codebase.</li>
 <li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for faster redis protocol parser.</li>
@@ -85,20 +100,21 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 </ul>
 </div>
 <div class="section" id="philosophy">
-<h2>Philosophy<a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h2>
-<p>Key-valued pairs databases have many differences from traditional relational databases,
+<h3><a class="toc-backref" href="#id10">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h3>
+<p>Key-valued pairs databases, also know as key-value stores, have many differences
+from traditional relational databases,
 most important being they do not use <tt class="docutils literal"><span class="pre">SQL</span></tt> as their query language,
 storage does not require a fixed table schemas and usually they do not support
 complex queries.</p>
-<p>StdNet aims to accommodate a flexible schema and join type operations via
-a lightweight object relational mapper.
+<p>Stdnet aims to accommodate a flexible schema and join type operations via
+a lightweight object data mapper.
 Importantly, it is designed with large data sets in mind. You pull data
 you need, nothing more, nothing less.
 Bandwidth and server round-trips can be reduced to the bare minimum
 so that your application is fast and memory efficient.</p>
 </div>
 <div class="section" id="installing">
-<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
+<h3><a class="toc-backref" href="#id11">Installing</a><a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h3>
 <p>To install, download, uncompress and type:</p>
 <div class="highlight-python"><pre>python setup.py install</pre>
 </div>
@@ -110,40 +126,112 @@ so that your application is fast and memory efficient.</p>
 </div>
 </div>
 <div class="section" id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<h3><a class="toc-backref" href="#id12">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
 <p>StdNet uses <a class="reference external" href="http://sphinx.pocoo.org/">Sphinx</a> for its documentation, and the latest is available at GitHub:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://lsbardel.github.com/python-stdnet/">http://lsbardel.github.com/python-stdnet/</a></li>
 </ul>
 </div>
 <div class="section" id="version-check">
-<h2>Version Check<a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h2>
+<h3><a class="toc-backref" href="#id13">Version Check</a><a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h3>
 <p>To know which version you have installed:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
-<span class="go">&#39;0.7.0&#39;</span>
+<span class="go">&#39;0.7c2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">VERSION</span>
+<span class="go">stdnet_version(major=0, minor=7, micro=0, releaselevel=&#39;rc&#39;, serial=2)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="backends">
+<h3><a class="toc-backref" href="#id14">Backends</a><a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h3>
+<p>Backend data-stores provide the backbone of the library,
+while the Object Data Mapper the syntactic sugar.
+Currently the list of back-ends is limited to</p>
+<ul class="simple">
+<li><a class="reference external" href="http://redis.io/">Redis</a>.</li>
+</ul>
+<p>There are plans to extend it to</p>
+<ul class="simple">
+<li>Local memory (planned). For testing purposes.</li>
+<li>Amazon <a class="reference external" href="http://aws.amazon.com/dynamodb/">DynamoDB</a>.</li>
+</ul>
+</div>
+<div class="section" id="object-data-mapper">
+<h3><a class="toc-backref" href="#id15">Object Data Mapper</a><a class="headerlink" href="#object-data-mapper" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">stdnet.odm</span></tt> module is the ODM, it maps python object into database data.
+It is design to be fast and safe to use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+
+<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An abstract model. This won&#39;t have any data in the database.&#39;&#39;&#39;</span>
+    <span class="c"># A unique symbol field, a symbol is an immutable string</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="c"># Another symbol, symbol fields are by default indexes</span>
+    <span class="n">ccy</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+
+
+<span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">itype</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+        <span class="c"># A char field is a string and it is never an index</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">PositionDescriptor</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">dt</span>    <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">DateField</span><span class="p">()</span>
+    <span class="c"># A float field is not an index by default</span>
+    <span class="n">size</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="c"># A FK field which we explicitly set as non-index</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Position&quot;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Position</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;positions&#39;</span><span class="p">)</span>
+    <span class="n">fund</span>       <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
+    <span class="n">history</span>    <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">PositionDescriptor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> @ </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fund</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Register models with backend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
+<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
+<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
+<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And play with the API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;pluto,description=&quot;</span><span class="n">The</span> <span class="nb">super</span> <span class="n">pluto</span> <span class="n">fund</span><span class="s">&quot;,ccy=&quot;</span><span class="n">EUR</span><span class="s">&quot;).save()</span>
+<span class="go">Fund: pluto</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="running-tests">
-<span id="runningtests"></span><h2>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
+<span id="runningtests"></span><h3><a class="toc-backref" href="#id16">Running Tests</a><a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h3>
 <p>At the moment, only redis back-end is available and therefore to run tests you
 need to install <a class="reference external" href="http://redis.io/">Redis</a>. If you are using linux, it can be achieved simply
 by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
 windows and want to save yourself a headache you can download precompiled
 binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
-<div class="section" id="requirements-for-running-tests">
-<h3>Requirements for running tests<a class="headerlink" href="#requirements-for-running-tests" title="Permalink to this headline">¶</a></h3>
+<p>Requirements for running tests:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://pypi.python.org/pypi/unittest2">unittest2</a> for python 2.6 only.</li>
 <li><a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> for python 2.6, 3 and 3.1 only.</li>
 <li><a class="reference external" href="http://readthedocs.org/docs/nose/en/latest">nose</a></li>
 </ul>
-<p>Note, these requirements are only needed if you are planning to run tests.</p>
-</div>
-<div class="section" id="testing">
-<h3>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h3>
-<p>To run tests open a shell and launch Redis. On another shell,
+<p>Note, these requirements are only needed if you are planning to run tests.
+To run tests open a shell and launch Redis. On another shell,
 from the package directory, type:</p>
 <div class="highlight-python"><pre>python runtests.py</pre>
 </div>
@@ -161,80 +249,8 @@ To change the server and database where to run tests pass the <tt class="docutil
 <div class="highlight-python"><pre>coverage html</pre>
 </div>
 </div>
-</div>
-<div class="section" id="backends">
-<h2>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h2>
-<p>Backend data-stores provide the backbone of the library,
-while the Object Relational Mapper the syntactic sugar.
-Currently the list of back-ends is limited to</p>
-<ul class="simple">
-<li><a class="reference external" href="http://redis.io/">Redis</a>.</li>
-<li>Local memory (planned). For testing purposes.</li>
-</ul>
-<p><strong>Only</strong> <a class="reference external" href="http://redis.io/">Redis</a> <strong>is operational.</strong></p>
-</div>
-<div class="section" id="object-relational-mapper">
-<h2>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h2>
-<p>The module <tt class="docutils literal"><span class="pre">stdnet.orm</span></tt> is the ORM, it maps python object into database data. It is design to be fast and
-safe to use:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
-
-<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;An abstract model. This won&#39;t have any data in the database.&#39;&#39;&#39;</span>
-    <span class="c"># A unique symbol field, a symbol is an immutable string</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="c"># Another symbol, symbol fields are by default indexes</span>
-    <span class="n">ccy</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
-
-
-<span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">itype</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-
-
-<span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-        <span class="c"># A char field is a string and it is never an index</span>
-    <span class="n">description</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-
-
-<span class="k">class</span> <span class="nc">PositionDescriptor</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">dt</span>    <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateField</span><span class="p">()</span>
-    <span class="c"># A float field is not an index by default</span>
-    <span class="n">size</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
-    <span class="n">price</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
-    <span class="c"># A FK field which we explicitly set as non-index</span>
-    <span class="n">position</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;Position&quot;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Position</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">instrument</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;positions&#39;</span><span class="p">)</span>
-    <span class="n">fund</span>       <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
-    <span class="n">history</span>    <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">PositionDescriptor</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> @ </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fund</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Register models with backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
-<span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>And play with the API:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;pluto,description=&quot;</span><span class="n">The</span> <span class="nb">super</span> <span class="n">pluto</span> <span class="n">fund</span><span class="s">&quot;,ccy=&quot;</span><span class="n">EUR</span><span class="s">&quot;).save()</span>
-<span class="go">Fund: pluto</span>
-</pre></div>
-</div>
-</div>
 <div class="section" id="kudos">
-<span id="id5"></span><h2>Kudos<a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h2>
+<span id="id6"></span><h3><a class="toc-backref" href="#id17">Kudos</a><a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference external" href="http://redis.io/">Redis</a> simply because this library uses its awesome features.</li>
 <li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> for the Redis Python client initial implementation which has been subsequently modified.</li>
@@ -244,7 +260,7 @@ safe to use:</p>
 </ul>
 </div>
 <div class="section" id="contributing">
-<span id="id6"></span><h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<span id="id7"></span><h3><a class="toc-backref" href="#id18">Contributing</a><a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h3>
 <p>Development of stdnet happens at Github: <a class="reference external" href="http://github.com/lsbardel/python-stdnet">http://github.com/lsbardel/python-stdnet</a></p>
 <p>We very much welcome your contribution of course. To do so, simply follow these guidelines:</p>
 <ol class="arabic simple">
@@ -254,10 +270,11 @@ safe to use:</p>
 <li>Create an issue at <a class="reference external" href="https://github.com/lsbardel/python-stdnet/issues">https://github.com/lsbardel/python-stdnet/issues</a> with a link to your patch</li>
 </ol>
 </div>
-<div class="section" id="licence">
-<h2>Licence<a class="headerlink" href="#licence" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="license">
+<span id="id8"></span><h3><a class="toc-backref" href="#id19">License</a><a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
 <p>This software is licensed under the New <a class="reference external" href="http://www.opensource.org/licenses/bsd-license.php">BSD</a> License. See the LICENSE
 file in the top distribution directory for the full license text.</p>
+</div>
 </div>
 </div>
 
@@ -274,21 +291,20 @@ file in the top distribution directory for the full license text.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a><ul>
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
 <li><a class="reference internal" href="#philosophy">Philosophy</a></li>
 <li><a class="reference internal" href="#installing">Installing</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 <li><a class="reference internal" href="#version-check">Version Check</a></li>
-<li><a class="reference internal" href="#running-tests">Running Tests</a><ul>
-<li><a class="reference internal" href="#requirements-for-running-tests">Requirements for running tests</a></li>
-<li><a class="reference internal" href="#testing">Testing</a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#backends">Backends</a></li>
-<li><a class="reference internal" href="#object-relational-mapper">Object Relational Mapper</a></li>
+<li><a class="reference internal" href="#object-data-mapper">Object Data Mapper</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
 <li><a class="reference internal" href="#kudos">Kudos</a></li>
 <li><a class="reference internal" href="#contributing">Contributing</a></li>
-<li><a class="reference internal" href="#licence">Licence</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -336,7 +352,7 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

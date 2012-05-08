@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>A twitter clone &mdash; python stdnet v0.7c1 documentation</title>
+    <title>A twitter clone &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Time Series" href="timeseries.html" />
     <link rel="prev" title="Performance" href="performance.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="performance.html" title="Performance"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,17 +54,16 @@
             
   <div class="section" id="a-twitter-clone">
 <span id="twitter-example"></span><h1>A twitter clone<a class="headerlink" href="#a-twitter-clone" title="Permalink to this headline">¶</a></h1>
-<p>This is the stdnet equivalent of the <a class="reference external" href="http://redis.io/topics/twitter-clone">redis twitter clone</a> example
-A very simple twitter clone implemented using <tt class="docutils literal"><span class="pre">stdnet</span></tt> library.
-Illustrates the use of <a class="reference internal" href="../model/fields.html#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.ManyToManyField</span></tt></a> and
-implicit sorting:</p>
+<p>This is the stdnet equivalent of the <a class="reference external" href="http://redis.io/topics/twitter-clone">redis twitter clone</a> example.
+It illustrates the use of <a class="reference internal" href="../model/fields.html#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ManyToManyField</span></tt></a> and
+<a class="reference internal" href="sorting.html#implicit-sorting"><em>implicit sorting</em></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
+<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
-<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">default</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;User&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">default</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;User&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
@@ -73,11 +72,11 @@ implicit sorting:</p>
        <span class="n">ordering</span> <span class="o">=</span> <span class="s">&#39;-timestamp&#39;</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;A model for holding information about users&#39;&#39;&#39;</span>
-    <span class="n">username</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">password</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span>
+    <span class="n">username</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">following</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">,</span>
                                     <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;followers&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -95,10 +94,10 @@ We can import them by using:</p>
 <p>Before using the models, we need to register them to a back-end.
 If your redis server is running locally
 just type:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
 <span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Post</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Post</span><span class="p">)</span>
 <span class="go">&#39;redis db 7 on 127.0.0.1:6379&#39;</span>
 </pre></div>
 </div>
@@ -180,7 +179,7 @@ just type:</p>
         <li class="right" >
           <a href="performance.html" title="Performance"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Object Relational Mapper &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Object Data Mapper &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="next" title="Model and Query API" href="models.html" />
     <link rel="prev" title="Time Series" href="../examples/timeseries.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="../examples/timeseries.html" title="Time Series"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,18 +50,21 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.orm"><span id="model-index"></span></span><div class="section" id="object-relational-mapper">
-<h1>Object Relational Mapper<a class="headerlink" href="#object-relational-mapper" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> (ORM) in
-computer software is a programming technique for converting data between incompatible
-type systems in databases and object-oriented programming languages.</p>
+  <span class="target" id="module-stdnet.odm"><span id="model-index"></span></span><div class="section" id="object-data-mapper">
+<h1>Object Data Mapper<a class="headerlink" href="#object-data-mapper" title="Permalink to this headline">¶</a></h1>
+<p>The <em>object-data mapper</em> is the core of the library. It defines an API for mapping
+data in the backend key-value store to objects in Python.
+It&#8217;is name is closely related to
+<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">object relational Mapping</a> (ORM),
+a programming technique for converting data between incompatible
+type systems in traditional <a class="reference external" href="http://en.wikipedia.org/wiki/Relational_database">relational databases</a>
+and object-oriented programming languages.</p>
 <p>There are two well known ORMs for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
 Both of them are fully feature open-source libraries with an incredible community
-of users and developers.
-At the moment, they are best suited for traditional
-<a class="reference external" href="http://en.wikipedia.org/wiki/Relational_database">relational databases</a> back-ends.</p>
-<p>On the other hand, <tt class="docutils literal"><span class="pre">stdnet</span></tt> is geared towards non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
-they are known. It is also a lightweight module, which deal only with ORM and nothing else.</p>
+of users and developers.</p>
+<p>Stdnet is aN <tt class="docutils literal"><span class="pre">ODM</span></tt>, an object data mapper for non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
+they are known. It is also a lightweight module, which deal only with data mapping,
+advanced queries and nothing else.</p>
 <p><strong>Contents</strong></p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -148,7 +151,7 @@ they are known. It is also a lightweight module, which deal only with ORM and no
         <li class="right" >
           <a href="../examples/timeseries.html" title="Time Series"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

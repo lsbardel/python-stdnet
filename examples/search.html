@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search for text in your models &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Search for text in your models &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Performance" href="performance.html" />
     <link rel="prev" title="Sorting and Ordering" href="sorting.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="sorting.html" title="Sorting and Ordering"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,23 +52,24 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.orm"><span id="tutorial-search"></span></span><div class="section" id="search-for-text-in-your-models">
+  <span class="target" id="module-stdnet.odm"><span id="tutorial-search"></span></span><div class="section" id="search-for-text-in-your-models">
 <h1>Search for text in your models<a class="headerlink" href="#search-for-text-in-your-models" title="Permalink to this headline">¶</a></h1>
 <p>Full text search in most key-value stores is not provided out of the box as
 it is in traditional relational databases.</p>
 <p>One may argue that no-sql databases don&#8217;t need to provide such feature since
 search engines such as <a class="reference external" href="http://lucene.apache.org/solr/">Solr</a>, <a class="reference external" href="http://www.elasticsearch.org/">ElasticSearch</a> or <a class="reference external" href="http://sphinxsearch.com/">Sphinx</a> can be used to
-provide a full text search solution.
-Stdnet provides an interface for searching.</p>
+provide a full text search solution.</p>
+<p>Stdnet provides an <a class="reference internal" href="../model/search.html#search"><em>interface for searching</em></a> so that such
+engines can be used by third party applications.</p>
 <span class="target" id="module-stdnet.apps.searchengine"></span><div class="section" id="redis-based-solution">
 <h2>Redis based solution<a class="headerlink" href="#redis-based-solution" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet provides with a redis-based solution so that you can have your models
+<p>Stdnet also provides a redis-based implementation so that you can have your models
 stored and indexed in the same redis instance.
 This is a great solution during development and for medium sized applications.
 Installing the search engine is explained in
 <a class="reference internal" href="../apps/searchengine.html#apps-searchengine"><em>redis search</em></a> documention. It is as easy as</p>
 <ul>
-<li><p class="first"><a class="reference internal" href="../model/models.html#register-model"><em>Register</em></a> the <a class="reference internal" href="../apps/searchengine.html#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a> model which stores
+<li><p class="first"><a class="reference internal" href="../model/models.html#register-model"><em>Registering</em></a> the <a class="reference internal" href="../apps/searchengine.html#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a> model which stores
 the indices for your models</p>
 </li>
 <li><p class="first">Create the search engine singletone:</p>
@@ -153,7 +154,7 @@ the indices for your models</p>
         <li class="right" >
           <a href="sorting.html" title="Sorting and Ordering"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

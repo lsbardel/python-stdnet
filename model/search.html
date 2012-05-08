@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Search &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +21,8 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
-    <link rel="up" title="Object Relational Mapper" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="up" title="Object Data Mapper" href="index.html" />
     <link rel="next" title="Backend Data Server" href="../backends/index.html" />
     <link rel="prev" title="Sessions" href="session.html" /> 
   </head>
@@ -42,8 +42,8 @@
         <li class="right" >
           <a href="session.html" title="Sessions"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Object Data Mapper</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,7 +52,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.orm"><span id="search"></span></span><div class="section" id="id1">
+  <span class="target" id="module-stdnet.odm"><span id="search"></span></span><div class="section" id="id1">
 <h1>Search<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>We have a way to save instances of models, queries and manipulate them, but
 what about search instances containing some text? Stdnet comes with
@@ -60,23 +60,23 @@ an interface for implementing a full text search on model instances.</p>
 <div class="section" id="search-engine-interface">
 <h2>Search Engine Interface<a class="headerlink" href="#search-engine-interface" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="stdnet.orm.SearchEngine">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SearchEngine</tt><a class="headerlink" href="#stdnet.orm.SearchEngine" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">SearchEngine</tt><a class="headerlink" href="#stdnet.odm.SearchEngine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stdnet search engine driver. This is an abstract class which
 expose the base functionalities for full text-search on model instances.
 Stdnet also provides a <a class="reference internal" href="../apps/searchengine.html#apps-searchengine"><em>python implementation</em></a>
 of this interface.</p>
-<p>The main methods to be implemented are <a class="reference internal" href="#stdnet.orm.SearchEngine.add_item" title="stdnet.orm.SearchEngine.add_item"><tt class="xref py py-meth docutils literal"><span class="pre">add_item()</span></tt></a>,
-<tt class="xref py py-meth docutils literal"><span class="pre">remove_index()</span></tt> and <a class="reference internal" href="#stdnet.orm.SearchEngine.search_model" title="stdnet.orm.SearchEngine.search_model"><tt class="xref py py-meth docutils literal"><span class="pre">search_model()</span></tt></a>.</p>
+<p>The main methods to be implemented are <a class="reference internal" href="#stdnet.odm.SearchEngine.add_item" title="stdnet.odm.SearchEngine.add_item"><tt class="xref py py-meth docutils literal"><span class="pre">add_item()</span></tt></a>,
+<tt class="xref py py-meth docutils literal"><span class="pre">remove_index()</span></tt> and <a class="reference internal" href="#stdnet.odm.SearchEngine.search_model" title="stdnet.odm.SearchEngine.search_model"><tt class="xref py py-meth docutils literal"><span class="pre">search_model()</span></tt></a>.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.SearchEngine.word_middleware">
-<tt class="descname">word_middleware</tt><a class="headerlink" href="#stdnet.orm.SearchEngine.word_middleware" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.word_middleware">
+<tt class="descname">word_middleware</tt><a class="headerlink" href="#stdnet.odm.SearchEngine.word_middleware" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list of middleware functions for preprocessing text
 to be indexed. A middleware function has arity 1 by
 accepting an iterable of words and
 returning an iterable of words. Word middleware functions
 are added to the search engine via the
-<a class="reference internal" href="#stdnet.orm.SearchEngine.add_word_middleware" title="stdnet.orm.SearchEngine.add_word_middleware"><tt class="xref py py-meth docutils literal"><span class="pre">add_word_middleware()</span></tt></a> method.</p>
+<a class="reference internal" href="#stdnet.odm.SearchEngine.add_word_middleware" title="stdnet.odm.SearchEngine.add_word_middleware"><tt class="xref py py-meth docutils literal"><span class="pre">add_word_middleware()</span></tt></a> method.</p>
 <p>For example this function remove a group of words from the index:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">se</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
 
@@ -96,9 +96,9 @@ are added to the search engine via the
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.register">
-<tt class="descname">register</tt><big>(</big><em>model</em>, <em>related=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
-<dd><p>Register a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to the search engine.
+<dt id="stdnet.odm.SearchEngine.register">
+<tt class="descname">register</tt><big>(</big><em>model</em>, <em>related=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to the search engine.
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -106,7 +106,7 @@ indexed by the search engine.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class.</li>
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class.</li>
 <li><strong>related</strong> &#8211; a list of related fields to include in the index.</li>
 </ul>
 </td>
@@ -116,10 +116,10 @@ indexed by the search engine.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.words_from_text">
-<tt class="descname">words_from_text</tt><big>(</big><em>text</em>, <em>for_search=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.words_from_text" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.words_from_text">
+<tt class="descname">words_from_text</tt><big>(</big><em>text</em>, <em>for_search=False</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.words_from_text" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generator of indexable words in <em>text</em>.
-This functions loop through the <a class="reference internal" href="#stdnet.orm.SearchEngine.word_middleware" title="stdnet.orm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> attribute
+This functions loop through the <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> attribute
 to process the text.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -131,7 +131,7 @@ to process the text.</p>
 or to index the database. This flug is used in conjunction with the
 middleware flag <em>for_search</em>. If this flag is <tt class="xref docutils literal"><span class="pre">True</span></tt> (i.e. we need to
 search the database for the words in <em>text</em>), only the
-middleware functions in <a class="reference internal" href="#stdnet.orm.SearchEngine.word_middleware" title="stdnet.orm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> enabled for searching are
+middleware functions in <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> enabled for searching are
 used.</p>
 <p>Default: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </li>
@@ -144,16 +144,16 @@ used.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.split_text">
-<tt class="descname">split_text</tt><big>(</big><em>text</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.split_text" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.split_text">
+<tt class="descname">split_text</tt><big>(</big><em>text</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.split_text" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split text into words and return an iterable over them.
 Can and should be reimplemented by subclasses.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.add_word_middleware">
-<tt class="descname">add_word_middleware</tt><big>(</big><em>middleware</em>, <em>for_search=True</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.add_word_middleware" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a <em>middleware</em> function to the list of <a class="reference internal" href="#stdnet.orm.SearchEngine.word_middleware" title="stdnet.orm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>,
+<dt id="stdnet.odm.SearchEngine.add_word_middleware">
+<tt class="descname">add_word_middleware</tt><big>(</big><em>middleware</em>, <em>for_search=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.add_word_middleware" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a <em>middleware</em> function to the list of <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>,
 for preprocessing words to be indexed.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -171,23 +171,23 @@ text to search. Default: <tt class="xref docutils literal"><span class="pre">Tru
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.index_item">
-<tt class="descname">index_item</tt><big>(</big><em>item</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.index_item">
+<tt class="descname">index_item</tt><big>(</big><em>item</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main function for indexing items.
 It extracts content from the given <em>item</em> and add it to the index.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.reindex">
-<tt class="descname">reindex</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.reindex" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.reindex">
+<tt class="descname">reindex</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.reindex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Re-index models by removing items in
 <tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.searchengine.WordItem</span></tt> and rebuilding them by iterating
 through all the instances of model provided.
@@ -196,20 +196,20 @@ with the search engine.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.session">
-<tt class="descname">session</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.session" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.session">
+<tt class="descname">session</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a session for the search engine</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.remove_item">
-<tt class="descname">remove_item</tt><big>(</big><em>item_or_model</em>, <em>session</em>, <em>ids=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.remove_item">
+<tt class="descname">remove_item</tt><big>(</big><em>item_or_model</em>, <em>session</em>, <em>ids=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove an item from the search indices</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.add_item">
-<tt class="descname">add_item</tt><big>(</big><em>item</em>, <em>words</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.add_item" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.add_item">
+<tt class="descname">add_item</tt><big>(</big><em>item</em>, <em>words</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.add_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create indices for <em>item</em> and each word in <em>words</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -217,9 +217,9 @@ with the search engine.</p>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>item</strong> &#8211; a <em>model</em> instance to be indexed. It does not need to be
-a class;`stdnet.orm.StdModel`.</li>
+a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</li>
 <li><strong>words</strong> &#8211; iterable over words. This iterable has been obtained from the
-text in <em>item</em> via the <a class="reference internal" href="#stdnet.orm.SearchEngine.word_middleware" title="stdnet.orm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>.</li>
+text in <em>item</em> via the <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -228,8 +228,8 @@ text in <em>item</em> via the <a class="reference internal" href="#stdnet.orm.Se
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.search_model">
-<tt class="descname">search_model</tt><big>(</big><em>query</em>, <em>text</em>, <em>lookup=None</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.search_model">
+<tt class="descname">search_model</tt><big>(</big><em>query</em>, <em>text</em>, <em>lookup=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Search <em>text</em> in <em>model</em> instances. This is the functions
 needing implementation by custom serach engines.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -237,13 +237,13 @@ needing implementation by custom serach engines.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>query</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> on a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</li>
+<li><strong>query</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> on a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</li>
 <li><strong>text</strong> &#8211; text to search</li>
 <li><strong>lookup</strong> &#8211; Optional lookup, one of <tt class="docutils literal"><span class="pre">contains</span></tt> or <tt class="docutils literal"><span class="pre">in</span></tt>.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">An updated <a class="reference internal" href="models.html#stdnet.orm.Query" title="stdnet.orm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>.</p>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">An updated <a class="reference internal" href="models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>.</p>
 </td>
 </tr>
 </tbody>
@@ -251,8 +251,8 @@ needing implementation by custom serach engines.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.SearchEngine.flush">
-<tt class="descname">flush</tt><big>(</big><em>full=False</em><big>)</big><a class="headerlink" href="#stdnet.orm.SearchEngine.flush" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SearchEngine.flush">
+<tt class="descname">flush</tt><big>(</big><em>full=False</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.flush" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clean the search engine</p>
 </dd></dl>
 
@@ -322,8 +322,8 @@ needing implementation by custom serach engines.</p>
         <li class="right" >
           <a href="session.html" title="Sessions"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Object Data Mapper</a> &raquo;</li> 
       </ul>
     </div>
 

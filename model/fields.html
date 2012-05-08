@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Fields API &mdash; python stdnet v0.7c1 documentation</title>
+    <title>Fields API &mdash; python stdnet v0.7c3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c1',
+        VERSION:     '0.7c3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +21,8 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c1 documentation" href="../index.html" />
-    <link rel="up" title="Object Relational Mapper" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="up" title="Object Data Mapper" href="index.html" />
     <link rel="next" title="Sessions" href="session.html" />
     <link rel="prev" title="Model and Query API" href="models.html" /> 
   </head>
@@ -42,8 +42,8 @@
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Object Relational Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Object Data Mapper</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,7 +52,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.orm"><span id="model-field"></span></span><div class="section" id="fields-api">
+  <span class="target" id="module-stdnet.odm"><span id="model-field"></span></span><div class="section" id="fields-api">
 <h1>Fields API<a class="headerlink" href="#fields-api" title="Permalink to this headline">¶</a></h1>
 <p>The most important part of a model, and the only required part of a model,
 is the list of database fields it defines. Fields are specified by class attributes.
@@ -67,19 +67,19 @@ changed without requiring any time consuming database migration!</p>
 </div>
 <div class="section" id="base-classes">
 <span id="fieldbaseclasses"></span><h2>Base Classes<a class="headerlink" href="#base-classes" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> class is the base class for all fields and contains all
+<p>The <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> class is the base class for all fields and contains all
 the attribute and method definitions. Derived classes only implement a handful
 of methods.</p>
 <div class="section" id="field">
 <span id="fieldbase"></span><h3>Field<a class="headerlink" href="#field" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.Field">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">Field</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Field</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the base class of all StdNet Fields.
-Each field is specified as a <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class attribute.</p>
+Each field is specified as a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class attribute.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.Field.index">
-<tt class="descname">index</tt><a class="headerlink" href="#stdnet.orm.Field.index" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.index">
+<tt class="descname">index</tt><a class="headerlink" href="#stdnet.odm.Field.index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Probably the most important field attribute, it establish if
 the field creates indexes for queries.    
 If you don&#8217;t need to query the field you should set this value to
@@ -96,121 +96,121 @@ as a design decision (explicit better than implicit).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.unique">
-<tt class="descname">unique</tt><a class="headerlink" href="#stdnet.orm.Field.unique" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.unique">
+<tt class="descname">unique</tt><a class="headerlink" href="#stdnet.odm.Field.unique" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
-In this case <a class="reference internal" href="#stdnet.orm.Field.index" title="stdnet.orm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
+In this case <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
 Enforced at <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.primary_key">
-<tt class="descname">primary_key</tt><a class="headerlink" href="#stdnet.orm.Field.primary_key" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.primary_key">
+<tt class="descname">primary_key</tt><a class="headerlink" href="#stdnet.odm.Field.primary_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, this field is the primary key for the model.
 A primary key field has the following properties:</p>
 <ul class="simple">
-<li><a class="reference internal" href="#stdnet.orm.Field.unique" title="stdnet.orm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">Field.unique</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
+<li><a class="reference internal" href="#stdnet.odm.Field.unique" title="stdnet.odm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">Field.unique</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
 <li>There can be only one in a model.</li>
 <li>It&#8217;s attribute name in the model must be <strong>id</strong>.</li>
-<li>If not specified a <a class="reference internal" href="#stdnet.orm.AutoField" title="stdnet.orm.AutoField"><tt class="xref py py-class docutils literal"><span class="pre">AutoField</span></tt></a> will be added.</li>
+<li>If not specified a <a class="reference internal" href="#stdnet.odm.AutoField" title="stdnet.odm.AutoField"><tt class="xref py py-class docutils literal"><span class="pre">AutoField</span></tt></a> will be added.</li>
 </ul>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.required">
-<tt class="descname">required</tt><a class="headerlink" href="#stdnet.orm.Field.required" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.required">
+<tt class="descname">required</tt><a class="headerlink" href="#stdnet.odm.Field.required" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">False</span></tt>, the field is allowed to be null.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.default">
-<tt class="descname">default</tt><a class="headerlink" href="#stdnet.orm.Field.default" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.default">
+<tt class="descname">default</tt><a class="headerlink" href="#stdnet.odm.Field.default" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default value for this field. It can be a callable attribute with arity 0.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.name">
-<tt class="descname">name</tt><a class="headerlink" href="#stdnet.orm.Field.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Field name, created by the <tt class="docutils literal"><span class="pre">orm</span></tt> at runtime.</p>
+<dt id="stdnet.odm.Field.name">
+<tt class="descname">name</tt><a class="headerlink" href="#stdnet.odm.Field.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Field name, created by the <tt class="docutils literal"><span class="pre">odm</span></tt> at runtime.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.attname">
-<tt class="descname">attname</tt><a class="headerlink" href="#stdnet.orm.Field.attname" title="Permalink to this definition">¶</a></dt>
-<dd><p>The attribute name for the field, created by the <a class="reference internal" href="#stdnet.orm.Field.get_attname" title="stdnet.orm.Field.get_attname"><tt class="xref py py-meth docutils literal"><span class="pre">get_attname()</span></tt></a> method
-at runtime. For most field, its value is the same as the <a class="reference internal" href="#stdnet.orm.Field.name" title="stdnet.orm.Field.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>.
+<dt id="stdnet.odm.Field.attname">
+<tt class="descname">attname</tt><a class="headerlink" href="#stdnet.odm.Field.attname" title="Permalink to this definition">¶</a></dt>
+<dd><p>The attribute name for the field, created by the <a class="reference internal" href="#stdnet.odm.Field.get_attname" title="stdnet.odm.Field.get_attname"><tt class="xref py py-meth docutils literal"><span class="pre">get_attname()</span></tt></a> method
+at runtime. For most field, its value is the same as the <a class="reference internal" href="#stdnet.odm.Field.name" title="stdnet.odm.Field.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>.
 It is the field sorted in the backend database.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.model">
-<tt class="descname">model</tt><a class="headerlink" href="#stdnet.orm.Field.model" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> holding the field.
-Created by the <tt class="docutils literal"><span class="pre">orm</span></tt> at runtime.</p>
+<dt id="stdnet.odm.Field.model">
+<tt class="descname">model</tt><a class="headerlink" href="#stdnet.odm.Field.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> holding the field.
+Created by the <tt class="docutils literal"><span class="pre">odm</span></tt> at runtime.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.charset">
-<tt class="descname">charset</tt><a class="headerlink" href="#stdnet.orm.Field.charset" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.charset">
+<tt class="descname">charset</tt><a class="headerlink" href="#stdnet.odm.Field.charset" title="Permalink to this definition">¶</a></dt>
 <dd><p>The charset used for encoding decoding text.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.hidden">
-<tt class="descname">hidden</tt><a class="headerlink" href="#stdnet.orm.Field.hidden" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.hidden">
+<tt class="descname">hidden</tt><a class="headerlink" href="#stdnet.odm.Field.hidden" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the field will be hidden from search algorithms.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.Field.python_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>The python <tt class="docutils literal"><span class="pre">type</span></tt> for the <a class="reference internal" href="#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a>.</p>
+<dt id="stdnet.odm.Field.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.Field.python_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The python <tt class="docutils literal"><span class="pre">type</span></tt> for the <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.Field.as_cache">
-<tt class="descname">as_cache</tt><a class="headerlink" href="#stdnet.orm.Field.as_cache" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.as_cache">
+<tt class="descname">as_cache</tt><a class="headerlink" href="#stdnet.odm.Field.as_cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the field contains data which is considered cache and
-therefore always reproducible. Field marked as cahe, have <a class="reference internal" href="#stdnet.orm.Field.required" title="stdnet.orm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">required</span></tt></a>
+therefore always reproducible. Field marked as cahe, have <a class="reference internal" href="#stdnet.odm.Field.required" title="stdnet.odm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">required</span></tt></a>
 always <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.register_with_model">
-<tt class="descname">register_with_model</tt><big>(</big><em>name</em>, <em>model</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.register_with_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called during the creation of a the <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a>
-class when <tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.base.Metaclass</span></tt> is initialised. It fills
-<a class="reference internal" href="#stdnet.orm.Field.name" title="stdnet.orm.Field.name"><tt class="xref py py-attr docutils literal"><span class="pre">Field.name</span></tt></a> and <a class="reference internal" href="#stdnet.orm.Field.model" title="stdnet.orm.Field.model"><tt class="xref py py-attr docutils literal"><span class="pre">Field.model</span></tt></a>. This is an internal
+<dt id="stdnet.odm.Field.register_with_model">
+<tt class="descname">register_with_model</tt><big>(</big><em>name</em>, <em>model</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.register_with_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called during the creation of a the <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>
+class when <a class="reference internal" href="models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a> is initialised. It fills
+<a class="reference internal" href="#stdnet.odm.Field.name" title="stdnet.odm.Field.name"><tt class="xref py py-attr docutils literal"><span class="pre">Field.name</span></tt></a> and <a class="reference internal" href="#stdnet.odm.Field.model" title="stdnet.odm.Field.model"><tt class="xref py py-attr docutils literal"><span class="pre">Field.model</span></tt></a>. This is an internal
 function users should never call.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.get_attname">
-<tt class="descname">get_attname</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Field.get_attname" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate the <a class="reference internal" href="#stdnet.orm.Field.attname" title="stdnet.orm.Field.attname"><tt class="xref py py-attr docutils literal"><span class="pre">attname</span></tt></a> at runtime</p>
+<dt id="stdnet.odm.Field.get_attname">
+<tt class="descname">get_attname</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Field.get_attname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the <a class="reference internal" href="#stdnet.odm.Field.attname" title="stdnet.odm.Field.attname"><tt class="xref py py-attr docutils literal"><span class="pre">attname</span></tt></a> at runtime</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.id">
-<tt class="descname">id</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.id" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.id">
+<tt class="descname">id</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Field id for object <em>obj</em>, if applicable. Default is <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.get_default">
-<tt class="descname">get_default</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.orm.Field.get_default" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.get_default">
+<tt class="descname">get_default</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Field.get_default" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the default value for this field.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.to_python">
-<tt class="descname">to_python</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.to_python" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.to_python">
+<tt class="descname">to_python</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.to_python" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts the input value into the expected Python
 data type, raising <a class="reference internal" href="../utility.html#stdnet.FieldValueError" title="stdnet.FieldValueError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldValueError</span></tt></a> if the data
 can&#8217;t be converted.
@@ -218,22 +218,22 @@ Returns the converted value. Subclasses should override this.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.serialize">
-<tt class="descname">serialize</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.serialize" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.serialize">
+<tt class="descname">serialize</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.serialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>It returns a representation of <em>value</em> to store in the database.
 If an error occurs it raises <tt class="xref py py-class docutils literal"><span class="pre">stdnet.exceptions.FieldValueError</span></tt></p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.json_serialize">
-<tt class="descname">json_serialize</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.json_serialize" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.json_serialize">
+<tt class="descname">json_serialize</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.json_serialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a representation of this field which is compatible with
 JSON.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.orm.Field.scorefun">
-<tt class="descname">scorefun</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.orm.Field.scorefun" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.Field.scorefun">
+<tt class="descname">scorefun</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.scorefun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function which evaluate a score from the field value. Used by
 the ordering alorithm</p>
 </dd></dl>
@@ -244,8 +244,8 @@ the ordering alorithm</p>
 <div class="section" id="atomfield">
 <span id="id1"></span><h3>AtomField<a class="headerlink" href="#atomfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.AtomField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">AtomField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.AtomField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.AtomField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">AtomField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.AtomField" title="Permalink to this definition">¶</a></dt>
 <dd><p>The base class for fields containing <tt class="docutils literal"><span class="pre">atoms</span></tt>.
 An atom is an irreducible
 value with a specific data type. it can be of four different types:</p>
@@ -263,19 +263,19 @@ value with a specific data type. it can be of four different types:</p>
 <div class="section" id="structurefield">
 <h3>StructureField<a class="headerlink" href="#structurefield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.StructureField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">StructureField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.StructureField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Virtual base class for <a class="reference internal" href="#stdnet.orm.Field" title="stdnet.orm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> which are proxies to
-<a class="reference internal" href="models.html#model-structures"><em>data structures</em></a> such as <a class="reference internal" href="models.html#stdnet.orm.List" title="stdnet.orm.List"><tt class="xref py py-class docutils literal"><span class="pre">List</span></tt></a>,
-<a class="reference internal" href="models.html#stdnet.orm.Set" title="stdnet.orm.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">OrderedSet</span></tt> and <a class="reference internal" href="models.html#stdnet.orm.HashTable" title="stdnet.orm.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">HashTable</span></tt></a>.</p>
+<dt id="stdnet.odm.StructureField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">StructureField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.StructureField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Virtual base class for <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> which are proxies to
+<a class="reference internal" href="models.html#model-structures"><em>data structures</em></a> such as <a class="reference internal" href="models.html#stdnet.odm.List" title="stdnet.odm.List"><tt class="xref py py-class docutils literal"><span class="pre">List</span></tt></a>,
+<a class="reference internal" href="models.html#stdnet.odm.Set" title="stdnet.odm.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">OrderedSet</span></tt> and <a class="reference internal" href="models.html#stdnet.odm.HashTable" title="stdnet.odm.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">HashTable</span></tt></a>.</p>
 <p>Sometimes you want to structure your data model without breaking it up
 into multiple entities. For example, you might want to define model
 that contains a list of messages an instance receive:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">orm</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="o">...</span>
-    <span class="n">messages</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>By defining structured fields in a model, an instance of that model can access
@@ -289,45 +289,45 @@ a stand alone structure in the back-end server with very little effort:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> &#8211; an optional <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> class. If
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> &#8211; an optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class. If
 specified, the structured will contains ids of instances of the model.
-It is saved in the <a class="reference internal" href="#stdnet.orm.StructureField.relmodel" title="stdnet.orm.StructureField.relmodel"><tt class="xref py py-attr docutils literal"><span class="pre">relmodel</span></tt></a> attribute.</td>
+It is saved in the <a class="reference internal" href="#stdnet.odm.StructureField.relmodel" title="stdnet.odm.StructureField.relmodel"><tt class="xref py py-attr docutils literal"><span class="pre">relmodel</span></tt></a> attribute.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="stdnet.orm.StructureField.relmodel">
-<tt class="descname">relmodel</tt><a class="headerlink" href="#stdnet.orm.StructureField.relmodel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Optional <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class contained in the structure.
+<dt id="stdnet.odm.StructureField.relmodel">
+<tt class="descname">relmodel</tt><a class="headerlink" href="#stdnet.odm.StructureField.relmodel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class contained in the structure.
 It can also be specified as a string.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.StructureField.value_pickler">
-<tt class="descname">value_pickler</tt><a class="headerlink" href="#stdnet.orm.StructureField.value_pickler" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.StructureField.value_pickler">
+<tt class="descname">value_pickler</tt><a class="headerlink" href="#stdnet.odm.StructureField.value_pickler" title="Permalink to this definition">¶</a></dt>
 <dd><p>An <a class="reference internal" href="../utility.html#stdnet.utils.encoders.Encoder" title="stdnet.utils.encoders.Encoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Encoder</span></tt></a> used to encode and decode
 values.</p>
 <p>Default: <a class="reference internal" href="../utility.html#stdnet.utils.encoders.Json" title="stdnet.utils.encoders.Json"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Json</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.StructureField.pickler">
-<tt class="descname">pickler</tt><a class="headerlink" href="#stdnet.orm.StructureField.pickler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as the <a class="reference internal" href="#stdnet.orm.StructureField.value_pickler" title="stdnet.orm.StructureField.value_pickler"><tt class="xref py py-attr docutils literal"><span class="pre">value_pickler</span></tt></a> attribute, this serializer is applied
-to keys, rather than values, in <a class="reference internal" href="#stdnet.orm.StructureField" title="stdnet.orm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>
-of <tt class="xref py py-class docutils literal"><span class="pre">PairMixin</span></tt> type (these include <a class="reference internal" href="#stdnet.orm.HashField" title="stdnet.orm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">HashField</span></tt></a>,
-<tt class="xref py py-class docutils literal"><span class="pre">TimeSeriesField</span></tt> and ordered <a class="reference internal" href="#stdnet.orm.SetField" title="stdnet.orm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">SetField</span></tt></a>)</p>
+<dt id="stdnet.odm.StructureField.pickler">
+<tt class="descname">pickler</tt><a class="headerlink" href="#stdnet.odm.StructureField.pickler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as the <a class="reference internal" href="#stdnet.odm.StructureField.value_pickler" title="stdnet.odm.StructureField.value_pickler"><tt class="xref py py-attr docutils literal"><span class="pre">value_pickler</span></tt></a> attribute, this serializer is applied
+to keys, rather than values, in <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>
+of <tt class="xref py py-class docutils literal"><span class="pre">PairMixin</span></tt> type (these include <a class="reference internal" href="#stdnet.odm.HashField" title="stdnet.odm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">HashField</span></tt></a>,
+<tt class="xref py py-class docutils literal"><span class="pre">TimeSeriesField</span></tt> and ordered <a class="reference internal" href="#stdnet.odm.SetField" title="stdnet.odm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">SetField</span></tt></a>)</p>
 <p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.StructureField.class_field">
-<tt class="descname">class_field</tt><a class="headerlink" href="#stdnet.orm.StructureField.class_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> this <a class="reference internal" href="#stdnet.orm.StructureField" title="stdnet.orm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a> is a class field (it belongs to
+<dt id="stdnet.odm.StructureField.class_field">
+<tt class="descname">class_field</tt><a class="headerlink" href="#stdnet.odm.StructureField.class_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> this <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a> is a class field (it belongs to
 the model class rather than model instances). For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="o">...</span>
-    <span class="n">updates</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">List</span><span class="p">(</span><span class="n">class_field</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">updates</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">List</span><span class="p">(</span><span class="n">class_field</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
     
 <span class="n">MyModel</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
@@ -341,18 +341,18 @@ the model class rather than model instances). For example:</p>
 </div>
 <div class="section" id="atom-fields">
 <span id="atomfields"></span><h2>Atom Fields<a class="headerlink" href="#atom-fields" title="Permalink to this headline">¶</a></h2>
-<p>Atom Fields derived from <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> and, as the name says,
+<p>Atom Fields derived from <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> and, as the name says,
 they represent the simplest data in a model. Their representation in python,
 is one of <tt class="docutils literal"><span class="pre">bytes</span></tt>, <tt class="docutils literal"><span class="pre">strings</span></tt>, <tt class="docutils literal"><span class="pre">numbers</span></tt> or <tt class="docutils literal"><span class="pre">dates</span></tt>.</p>
 <div class="section" id="integerfield">
 <h3>IntegerField<a class="headerlink" href="#integerfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.IntegerField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">IntegerField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.IntegerField" title="Permalink to this definition">¶</a></dt>
-<dd><p>An integer <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a>.</p>
+<dt id="stdnet.odm.IntegerField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">IntegerField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.IntegerField" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a>.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.IntegerField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.IntegerField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.IntegerField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.IntegerField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt></p>
 </dd></dl>
 
@@ -362,12 +362,12 @@ is one of <tt class="docutils literal"><span class="pre">bytes</span></tt>, <tt 
 <div class="section" id="booleanfield">
 <h3>BooleanField<a class="headerlink" href="#booleanfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.BooleanField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">BooleanField</tt><big>(</big><em>required=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.BooleanField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A boolean <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a></p>
+<dt id="stdnet.odm.BooleanField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">BooleanField</tt><big>(</big><em>required=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.BooleanField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A boolean <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a></p>
 <dl class="attribute">
-<dt id="stdnet.orm.BooleanField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.BooleanField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.BooleanField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.BooleanField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">bool</span></tt></p>
 </dd></dl>
 
@@ -377,9 +377,9 @@ is one of <tt class="docutils literal"><span class="pre">bytes</span></tt>, <tt 
 <div class="section" id="autofield">
 <h3>AutoField<a class="headerlink" href="#autofield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.AutoField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">AutoField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.AutoField" title="Permalink to this definition">¶</a></dt>
-<dd><p>An <a class="reference internal" href="#stdnet.orm.IntegerField" title="stdnet.orm.IntegerField"><tt class="xref py py-class docutils literal"><span class="pre">IntegerField</span></tt></a> that automatically increments.
+<dt id="stdnet.odm.AutoField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">AutoField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.AutoField" title="Permalink to this definition">¶</a></dt>
+<dd><p>An <a class="reference internal" href="#stdnet.odm.IntegerField" title="stdnet.odm.IntegerField"><tt class="xref py py-class docutils literal"><span class="pre">IntegerField</span></tt></a> that automatically increments.
 You usually won&#8217;t need to use this directly;
 a <tt class="docutils literal"><span class="pre">primary_key</span></tt> field  of this type, named <tt class="docutils literal"><span class="pre">id</span></tt>,
 will automatically be added to your model
@@ -390,13 +390,13 @@ if you don&#8217;t specify otherwise.</p>
 <div class="section" id="floatfield">
 <h3>FloatField<a class="headerlink" href="#floatfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.FloatField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">FloatField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.FloatField" title="Permalink to this definition">¶</a></dt>
-<dd><p>An floating point <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a>. By default 
-its <a class="reference internal" href="#stdnet.orm.Field.index" title="stdnet.orm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<dt id="stdnet.odm.FloatField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">FloatField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.FloatField" title="Permalink to this definition">¶</a></dt>
+<dd><p>An floating point <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a>. By default 
+its <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.FloatField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.FloatField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.FloatField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.FloatField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">float</span></tt></p>
 </dd></dl>
 
@@ -406,15 +406,15 @@ its <a class="reference internal" href="#stdnet.orm.Field.index" title="stdnet.o
 <div class="section" id="symbolfield">
 <h3>SymbolField<a class="headerlink" href="#symbolfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.SymbolField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SymbolField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.SymbolField" title="Permalink to this definition">¶</a></dt>
-<dd><p>An <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> which contains a <tt class="docutils literal"><span class="pre">symbol</span></tt>.
+<dt id="stdnet.odm.SymbolField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">SymbolField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.SymbolField" title="Permalink to this definition">¶</a></dt>
+<dd><p>An <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> which contains a <tt class="docutils literal"><span class="pre">symbol</span></tt>.
 A symbol holds a unicode string as a single unit.
 A symbol is irreducible, and are often used to hold names, codes
 or other entities. They are indexes by default.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.SymbolField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.SymbolField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SymbolField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.SymbolField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">unicode</span></tt></p>
 </dd></dl>
 
@@ -424,10 +424,10 @@ or other entities. They are indexes by default.</p>
 <div class="section" id="charfield">
 <h3>CharField<a class="headerlink" href="#charfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.CharField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">CharField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.CharField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A text <a class="reference internal" href="#stdnet.orm.SymbolField" title="stdnet.orm.SymbolField"><tt class="xref py py-class docutils literal"><span class="pre">SymbolField</span></tt></a> which is never an index.
-It contains unicode and by default and <a class="reference internal" href="#stdnet.orm.Field.required" title="stdnet.orm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">Field.required</span></tt></a>
+<dt id="stdnet.odm.CharField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">CharField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.CharField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A text <a class="reference internal" href="#stdnet.odm.SymbolField" title="stdnet.odm.SymbolField"><tt class="xref py py-class docutils literal"><span class="pre">SymbolField</span></tt></a> which is never an index.
+It contains unicode and by default and <a class="reference internal" href="#stdnet.odm.Field.required" title="stdnet.odm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">Field.required</span></tt></a>
 is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
@@ -435,13 +435,13 @@ is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.
 <div class="section" id="bytefield">
 <h3>ByteField<a class="headerlink" href="#bytefield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.ByteField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ByteField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ByteField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.orm.CharField" title="stdnet.orm.CharField"><tt class="xref py py-class docutils literal"><span class="pre">CharField</span></tt></a> which contains binary data.
+<dt id="stdnet.odm.ByteField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">ByteField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.ByteField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.odm.CharField" title="stdnet.odm.CharField"><tt class="xref py py-class docutils literal"><span class="pre">CharField</span></tt></a> which contains binary data.
 In python this is converted to <cite>bytes</cite>.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.ByteField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.ByteField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ByteField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.ByteField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
 </dd></dl>
 
@@ -451,13 +451,13 @@ In python this is converted to <cite>bytes</cite>.</p>
 <div class="section" id="datefield">
 <span id="id2"></span><h3>DateField<a class="headerlink" href="#datefield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.DateField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">DateField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.DateField" title="Permalink to this definition">¶</a></dt>
-<dd><p>An <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> represented in Python by
+<dt id="stdnet.odm.DateField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">DateField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.DateField" title="Permalink to this definition">¶</a></dt>
+<dd><p>An <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> represented in Python by
 a <tt class="xref py py-class docutils literal"><span class="pre">datetime.date</span></tt> instance.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.DateField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.DateField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.DateField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.DateField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">date</span></tt></p>
 </dd></dl>
 
@@ -467,13 +467,13 @@ a <tt class="xref py py-class docutils literal"><span class="pre">datetime.date<
 <div class="section" id="datetimefield">
 <span id="id3"></span><h3>DateTimeField<a class="headerlink" href="#datetimefield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.DateTimeField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">DateTimeField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.DateTimeField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A date <a class="reference internal" href="#stdnet.orm.AtomField" title="stdnet.orm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> represented in Python by
+<dt id="stdnet.odm.DateTimeField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">DateTimeField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.DateTimeField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A date <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a> represented in Python by
 a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> instance.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.DateTimeField.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.DateTimeField.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.DateTimeField.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.DateTimeField.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></p>
 </dd></dl>
 
@@ -483,8 +483,8 @@ a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datet
 <div class="section" id="compositeidfield">
 <h3>CompositeIdField<a class="headerlink" href="#compositeidfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.CompositeIdField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">CompositeIdField</tt><big>(</big><em>*fields</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.CompositeIdField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.CompositeIdField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">CompositeIdField</tt><big>(</big><em>*fields</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.CompositeIdField" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -494,8 +494,8 @@ a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datet
 <div class="section" id="jsonfield">
 <h3>JSONField<a class="headerlink" href="#jsonfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.JSONField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">JSONField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.JSONField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.JSONField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">JSONField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.JSONField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A JSON field which implements automatic conversion to
 and from an object and a JSON string. It is the responsability of the
 user making sure the object is JSON serializable.</p>
@@ -512,7 +512,7 @@ behaviour and how the field is stored in the back-end server.</p>
 <li><strong>decoder_hook</strong> &#8211; <p>A JSON decoder function.</p>
 <p>Default: <tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.date_decimal_hook</span></tt>.</p>
 </li>
-<li><strong>as_string</strong> &#8211; <p>Set the <a class="reference internal" href="#stdnet.orm.JSONField.as_string" title="stdnet.orm.JSONField.as_string"><tt class="xref py py-attr docutils literal"><span class="pre">as_string</span></tt></a> attribute.</p>
+<li><strong>as_string</strong> &#8211; <p>Set the <a class="reference internal" href="#stdnet.odm.JSONField.as_string" title="stdnet.odm.JSONField.as_string"><tt class="xref py py-attr docutils literal"><span class="pre">as_string</span></tt></a> attribute.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 </ul>
@@ -521,19 +521,19 @@ behaviour and how the field is stored in the back-end server.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="stdnet.orm.JSONField.as_string">
-<tt class="descname">as_string</tt><a class="headerlink" href="#stdnet.orm.JSONField.as_string" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.JSONField.as_string">
+<tt class="descname">as_string</tt><a class="headerlink" href="#stdnet.odm.JSONField.as_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>A boolean indicating if data should be serialized
 into a single JSON string or the should be used to create several
 fields prefixed with the field name
 and double underscore <tt class="docutils literal"><span class="pre">__</span></tt>.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
-<p>In other words, a <a class="reference internal" href="#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> with <tt class="docutils literal"><span class="pre">as_string</span></tt> attribute set to
+<p>In other words, a <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> with <tt class="docutils literal"><span class="pre">as_string</span></tt> attribute set to
 <tt class="xref docutils literal"><span class="pre">False</span></tt> is a multifield, in the sense that it generates several
 field-value pairs. For example, lets consider the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">as_string</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">as_string</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And:</p>
@@ -559,23 +559,23 @@ sorting of instances with respect to its fields:</p>
 <div class="section" id="pickleobjectfield">
 <h3>PickleObjectField<a class="headerlink" href="#pickleobjectfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.PickleObjectField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">PickleObjectField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.PickleObjectField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.PickleObjectField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">PickleObjectField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.PickleObjectField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field which implements automatic conversion to and form a pickable
 python object.
 This field is python specific and therefore not of much use
-if accessed from external programs. Consider the <a class="reference internal" href="#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>
-or <a class="reference internal" href="#stdnet.orm.JSONField" title="stdnet.orm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> fields as more general alternatives.</p>
+if accessed from external programs. Consider the <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>
+or <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> fields as more general alternatives.</p>
 </dd></dl>
 
 </div>
 <div class="section" id="modelfield">
 <h3>ModelField<a class="headerlink" href="#modelfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.ModelField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ModelField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.orm.ModelField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ModelField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">ModelField</tt><big>(</big><em>unique=False</em>, <em>ordered=None</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.ModelField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A filed which can be used to store the model classes (not only
-<a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.orm.StdModel</span></tt></a> models). If a class has a attribute <tt class="docutils literal"><span class="pre">_meta</span></tt>
+<a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> models). If a class has a attribute <tt class="docutils literal"><span class="pre">_meta</span></tt>
 with a unique hash attribute <tt class="docutils literal"><span class="pre">hash</span></tt> and it is
 registered in the model hash table, it can be used.</p>
 </dd></dl>
@@ -587,21 +587,21 @@ registered in the model hash table, it can be used.</p>
 <div class="section" id="foreignkey">
 <span id="id4"></span><h3>ForeignKey<a class="headerlink" href="#foreignkey" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.ForeignKey">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ForeignKey</tt><big>(</big><em>model</em>, <em>related_name=None</em>, <em>related_manager_class=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ForeignKey" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ForeignKey">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">ForeignKey</tt><big>(</big><em>model</em>, <em>related_name=None</em>, <em>related_manager_class=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.ForeignKey" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field defining a <a class="reference internal" href="../examples/tutorial.html#one-to-many"><em>one-to-many</em></a> objects relationship.
 Requires a positional argument: the class to which the model is related.
 For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Folder</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymobolField</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Folder</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymobolField</span><span class="p">()</span>
 
-<span class="k">class</span> <span class="nc">File</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">folder</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Folder</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;files&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">File</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">folder</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Folder</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;files&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To create a recursive relationship, an object that has a many-to-one
 relationship with itself use:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">orm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;self&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;self&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Behind the scenes, stdnet appends &#8220;_id&#8221; to the field name to create
@@ -610,17 +610,17 @@ the database field for the <tt class="docutils literal"><span class="pre">File</
 <p>It accepts <strong>related_name</strong> as extra argument. It is the name to use for
 the relation from the related object back to self.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.ForeignKey.python_type">
-<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.orm.ForeignKey.python_type" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ForeignKey.python_type">
+<tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.ForeignKey.python_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.ForeignKey.related_manager_class">
-<tt class="descname">related_manager_class</tt><a class="headerlink" href="#stdnet.orm.ForeignKey.related_manager_class" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ForeignKey.related_manager_class">
+<tt class="descname">related_manager_class</tt><a class="headerlink" href="#stdnet.odm.ForeignKey.related_manager_class" title="Permalink to this definition">¶</a></dt>
 <dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
 relationships under the hood.
-If a model has a <a class="reference internal" href="#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, instances of
+If a model has a <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, instances of
 that model will have access to the related (foreign) objects
 via a simple attribute of the model.</p>
 </dd></dl>
@@ -631,31 +631,31 @@ via a simple attribute of the model.</p>
 <div class="section" id="manytomanyfield">
 <span id="manytomany"></span><h3>ManyToManyField<a class="headerlink" href="#manytomanyfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.ManyToManyField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ManyToManyField</tt><big>(</big><em>model</em>, <em>through=None</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ManyToManyField" title="Permalink to this definition">¶</a></dt>
-<dd><p>A many-to-many relationship. Like <a class="reference internal" href="#stdnet.orm.ForeignKey" title="stdnet.orm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>, it accepts
+<dt id="stdnet.odm.ManyToManyField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">ManyToManyField</tt><big>(</big><em>model</em>, <em>through=None</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.ManyToManyField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A many-to-many relationship. Like <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>, it accepts
 <strong>related_name</strong> as extra argument.</p>
 <dl class="attribute">
-<dt id="stdnet.orm.ManyToManyField.related_name">
-<tt class="descname">related_name</tt><a class="headerlink" href="#stdnet.orm.ManyToManyField.related_name" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ManyToManyField.related_name">
+<tt class="descname">related_name</tt><a class="headerlink" href="#stdnet.odm.ManyToManyField.related_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optional name to use for the relation from the related object
 back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="stdnet.orm.ManyToManyField.through">
-<tt class="descname">through</tt><a class="headerlink" href="#stdnet.orm.ManyToManyField.through" title="Permalink to this definition">¶</a></dt>
-<dd><p>Optional <a class="reference internal" href="models.html#stdnet.orm.StdModel" title="stdnet.orm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to use for creating the many-to-many
+<dt id="stdnet.odm.ManyToManyField.through">
+<tt class="descname">through</tt><a class="headerlink" href="#stdnet.odm.ManyToManyField.through" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to use for creating the many-to-many
 relationship.</p>
 </dd></dl>
 
 <p>For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Group</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Group</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
     
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">groups</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;users&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;users&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To use it:</p>
@@ -668,12 +668,12 @@ relationship.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">.</span><span class="n">following</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;john))</span>
 </pre></div>
 </div>
-<p>Under the hood, a <a class="reference internal" href="#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">ManyToManyField</span></tt></a> creates a new model <em>model_name</em>.
+<p>Under the hood, a <a class="reference internal" href="#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">ManyToManyField</span></tt></a> creates a new model <em>model_name</em>.
 If not provided, the the name will be constructed from the field name
 and the model holding the field. In the example above it would be
 <em>group_user</em>.
 This model contains two <tt class="xref py py-class docutils literal"><span class="pre">ForeignKeys</span></tt>, one to model holding the
-<a class="reference internal" href="#stdnet.orm.ManyToManyField" title="stdnet.orm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">ManyToManyField</span></tt></a> and the other to the <em>related_model</em>.</p>
+<a class="reference internal" href="#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">ManyToManyField</span></tt></a> and the other to the <em>related_model</em>.</p>
 </dd></dl>
 
 </div>
@@ -683,22 +683,22 @@ This model contains two <tt class="xref py py-class docutils literal"><span clas
 <p>These fields are remote data-structures such as list, sets and hash tables.
 They can be bound to models so that
 many-to-many objects relationship can be established. All the data-structure
-fields derives from <a class="reference internal" href="#stdnet.orm.StructureField" title="stdnet.orm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>.</p>
+fields derives from <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>.</p>
 <div class="section" id="listfield">
 <h3>ListField<a class="headerlink" href="#listfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.ListField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">ListField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.ListField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.ListField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">ListField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.ListField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field maintaining a list of values.
 When accessed from the model instance,
 it returns an instance of <tt class="xref py py-class docutils literal"><span class="pre">stdnet.List</span></tt> structure. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UserMessage</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
-    <span class="n">messages</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UserMessage</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Lets register it with redis:</p>
-<div class="highlight-python"><pre>&gt;&gt;&gt; orm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
+<div class="highlight-python"><pre>&gt;&gt;&gt; odm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
 'redis db 7 on 127.0.0.1:6379'</pre>
 </div>
 <p>Can be used as:</p>
@@ -718,16 +718,16 @@ it returns an instance of <tt class="xref py py-class docutils literal"><span cl
 <div class="section" id="setfield">
 <h3>SetField<a class="headerlink" href="#setfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.SetField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">SetField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.SetField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.SetField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">SetField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.SetField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A field maintaining an unordered collection of values. It is initiated
 without any argument other than an optional model class.
 When accessed from the model instance, it returns an instance of
 <tt class="xref py py-class docutils literal"><span class="pre">stdnet.Set</span></tt> structure. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">orm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">username</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">password</span>  <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
-    <span class="n">following</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">username</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">AtomField</span><span class="p">()</span>
+    <span class="n">following</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s">&#39;self&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>It can be used in the following way:</p>
@@ -745,8 +745,8 @@ When accessed from the model instance, it returns an instance of
 <div class="section" id="hashfield">
 <h3>HashField<a class="headerlink" href="#hashfield" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.orm.HashField">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">HashField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.orm.HashField" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.HashField">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">HashField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.HashField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric.
 it returns an instance of <tt class="xref py py-class docutils literal"><span class="pre">stdnet.HashTable</span></tt> structure.</p>
@@ -757,14 +757,14 @@ it returns an instance of <tt class="xref py py-class docutils literal"><span cl
 <div class="section" id="model-field-descriptors">
 <span id="id5"></span><h2>Descriptors<a class="headerlink" href="#model-field-descriptors" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="stdnet.orm.LazyForeignKey">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">LazyForeignKey</tt><big>(</big><em>field</em><big>)</big><a class="headerlink" href="#stdnet.orm.LazyForeignKey" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.odm.LazyForeignKey">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">LazyForeignKey</tt><big>(</big><em>field</em><big>)</big><a class="headerlink" href="#stdnet.odm.LazyForeignKey" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
-<dt id="stdnet.orm.StructureFieldProxy">
-<em class="property">class </em><tt class="descclassname">stdnet.orm.</tt><tt class="descname">StructureFieldProxy</tt><big>(</big><em>field</em>, <em>factory</em><big>)</big><a class="headerlink" href="#stdnet.orm.StructureFieldProxy" title="Permalink to this definition">¶</a></dt>
-<dd><p>A descriptor for a <a class="reference internal" href="#stdnet.orm.StructureField" title="stdnet.orm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>.</p>
+<dt id="stdnet.odm.StructureFieldProxy">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">StructureFieldProxy</tt><big>(</big><em>field</em>, <em>factory</em><big>)</big><a class="headerlink" href="#stdnet.odm.StructureFieldProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>A descriptor for a <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>.</p>
 </dd></dl>
 
 </div>
@@ -867,8 +867,8 @@ it returns an instance of <tt class="xref py py-class docutils literal"><span cl
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Object Relational Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Object Data Mapper</a> &raquo;</li> 
       </ul>
     </div>
 

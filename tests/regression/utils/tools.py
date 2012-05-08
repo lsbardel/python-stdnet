@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 import stdnet
 from stdnet import test, odm
+from stdnet.utils.version import get_git_changeset
 from stdnet.utils import encoders, to_bytes, to_string
 from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper,\
@@ -104,3 +105,6 @@ class testFunctions(test.TestCase):
         self.assertEqual(to_bytes(b,'latin'),l)
         self.assertEqual(to_string(l,'latin'),u)
         
+    def test_git_version(self):
+        g = get_git_changeset()
+        self.assertTrue(g) 

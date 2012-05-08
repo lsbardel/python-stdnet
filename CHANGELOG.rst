@@ -1,5 +1,9 @@
 .. _vers07:
 
+Development
+===============================
+* A new ``C`` redis_ parser shipped with the library.
+  
 Ver. 0.7c3 - 2012 May 02
 ===============================
 * **It requires redis 2.6 or higher**.

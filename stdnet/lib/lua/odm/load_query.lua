@@ -1,6 +1,6 @@
 -- LOAD INSTANCES DATA FROM AN EXISTING QUERY
-function related_fields (args, i, num)
-	all = {}
+local function get_related_fields (args, i, num)
+	local all = {}
 	local count = 0
 	while count < num do
 		local related = {bk = args[i+1], name = args[i+2], field = args[i+3], type = args[i+4]}
@@ -18,12 +18,14 @@ end
 local rkey = KEYS[1]  -- Key containing the ids of the query
 local bk = KEYS[2] -- Base key for model
 local get_field = ARGV[1]
+local ids
+local result
 local io = 2
 local num_fields = ARGV[io] + 0
 local fields = tabletools.slice(ARGV, io + 1, io + num_fields)
 local related
 io = io + num_fields + 1
-related, io = unpack(related_fields(ARGV, io, ARGV[io] + 0))
+related, io = unpack(get_related_fields(ARGV, io, ARGV[io] + 0))
 local ordering = ARGV[io+1]
 local start = ARGV[io+2] + 0
 local stop = ARGV[io+3] + 0
@@ -40,6 +42,8 @@ if ordering == 'explicit' then
 	local desc = ARGV[io+3]
 	local nested = ARGV[io+4] + 0
 	local tkeys = {}
+	local sortargs = {}
+	local bykey
 	io = io + 4
     -- nested sorting for foreign key fields
 	if nested > 0 then
@@ -70,7 +74,6 @@ if ordering == 'explicit' then
 	else
 		bykey = bk .. ':obj:*->' .. field
 	end
-	local sortargs = {}
 	if bykey then
 	   sortargs = {'BY',bykey}
 	end
@@ -113,8 +116,8 @@ else
 end
 
 -- handle related item loading
-related_items = {}
-related_fields = {}
+local related_items = {}
+local related_fields = {}
 for r,rel in ipairs(related) do
 	local field_items = {}
 	local field = rel['field']

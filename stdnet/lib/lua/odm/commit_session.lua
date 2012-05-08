@@ -1,5 +1,5 @@
 -- Script for committing a stdnet.orm.Session to redis
-results = {}
+local results = {}
 local i = 0
 local bk = KEYS[1]
 local s = ARGV[i+1] -- 's' for sorted sets, 'z' for zsets
@@ -26,10 +26,11 @@ local result = {}
 -- Add or remove indices for an instance.
 -- Return nothing if the update was succesful otherwise it returns the
 -- error message (constaints were violated)
-function update_indices(score, id, idkey, oldid, add)
+local function update_indices(score, id, idkey, oldid, add)
     local errors = {}
+    local idxkey
     for i,name in pairs(indices) do
-        value = redis.call('hget', idkey, name)
+        local value = redis.call('hget', idkey, name)
         if uniques[i] == '1' then
             idxkey = bk .. ':uni:' .. name
             if add then
@@ -65,7 +66,7 @@ end
 
 -- Update a composite ID. Composite IDs are formed by two or more fields
 -- in an unique way.
-function update_composite_id(original_values, data)
+local function update_composite_id(original_values, data)
     local fields = {}
     local j = 0
     while j < # original_values do

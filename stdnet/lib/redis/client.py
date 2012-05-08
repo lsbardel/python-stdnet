@@ -15,6 +15,7 @@ from copy import copy
 from datetime import datetime
 from uuid import uuid4
 from functools import partial
+from collections import namedtuple
 
 from stdnet.utils import zip, is_int, iteritems, is_string, flat_mapping
 from stdnet.utils.dispatch import Signal
@@ -25,6 +26,7 @@ from .exceptions import *
 from .scripts import script_call_back, get_script, pairs_to_dict,\
                         load_missing_scripts
 
+redis_command = namedtuple('redis_command','command args options callbacks')
 
 __all__ = ['Redis',
            'RedisProxy',
@@ -149,7 +151,7 @@ def bytes_to_string(request, response, args, **options):
     
 
 def script_command(request, response, args, command = None, **options):
-    if command in ('FLUSH','KILL'):
+    if command in ('FLUSH', 'KILL'):
         return response == b'OK'
     elif command == 'LOAD':
         return response.decode(request.client.encoding)
@@ -1104,7 +1106,7 @@ time ``start`` and time ``end`` sorted in ascending order.
         return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
     
     def script_load(self, script):
-        return self.execute_command('SCRIPT', 'LOAD', script, command = 'LOAD')
+        return self.execute_command('SCRIPT', 'LOAD', script, command='LOAD')
     
     ############################################################################
     ##    Script commands
@@ -1174,7 +1176,7 @@ on a key of a different datatype.
     def empty(self):
         return len(self.command_stack) <= 1
 
-    def execute_command(self, *args, **options):
+    def execute_command(self, cmnd, *args, **options):
         """
 Stage a command to be executed when execute() is next called
 
@@ -1186,7 +1188,12 @@ pipe = pipe.set('foo', 'bar').incr('baz').decr('bang')
 At some other point, you can then run: pipe.execute(),
 which will execute all commands queued in the pipe.
 """
-        self.command_stack.append((args, options, []))
+        callbacks = []
+        #callback = self.client.response_callbacks.get(cmnd)
+        #if callback:
+        #    callbacks.append(callback)
+        self.command_stack.append(
+                        redis_command(cmnd, args, options, callbacks))
         return self
     
     def add_callback(self, callback):
@@ -1210,7 +1217,7 @@ Several callbacks can be added for a given command::
 '''
         if self.empty:
             raise ValueError('Cannot add callback. No command in the stack')
-        self.command_stack[-1][2].append(callback)
+        self.command_stack[-1].callbacks.append(callback)
         return self
                 
     def parse_response(self, request):
@@ -1224,25 +1231,21 @@ Several callbacks can be added for a given command::
                 "pipeline execution")
         parse_response = self._parse_response
         for r, cmd in zip(response, commands):
-            args, options, callbacks = cmd
-            command, args = args[0], args[1:]
-            if not isinstance(r, Exception):
-                r = parse_response(request, r, command, args, options)
-            elif str(r) == NoScriptError.msg:
-                r = NoScriptError()
+            command, args, options, callbacks = cmd
+            r = parse_response(request, r, command, args, options)
             for callback in callbacks:
                 r = callback(processed, r)
             processed.append(r)
         return processed
 
-    def execute(self, load_script = False):
+    def execute(self, load_script=False):
         '''Execute all commands in the current pipeline.'''
         self.execute_command('EXEC')
         commands = self.command_stack
         self.reset()
         conn = self.connection_pool.get_connection()
         res = conn.execute_pipeline(self, commands)
-        if isinstance(res,RedisRequest):
+        if isinstance(res, RedisRequest):
             return res.add_callback(partial(self.finalise,commands,load_script))
         else:
             return self.finalise(commands, load_script, res)

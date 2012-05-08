@@ -167,7 +167,7 @@ handling of a single command from start to the response from the server.'''
         redis_after_receive.send(self.client.__class__, request = self)
         c = self.connection
         try:
-            if isinstance(self.response,ResponseError):
+            if isinstance(self.response, ResponseError):
                 if str(self.response) == NoScriptError.msg:
                     self.response = NoScriptError()
                 else:
@@ -416,7 +416,7 @@ This class should not be directly initialized. Instead use the
         '''Internal function for packing pipeline commands into a
 command byte to be send to redis.'''
         pack = self.pack_command
-        return b''.join(starmap(pack, (args[0] for args in commands)))
+        return b''.join(starmap(pack, ((c.command,)+c.args for c in commands)))
         
     def execute_command(self, client, command_name, *args, **options):
         return self.request_class(client, self, command_name, args, **options)\

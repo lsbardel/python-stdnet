@@ -1,7 +1,7 @@
 -- Collection of utilities used across scripts.
 -- Included in all scripts
 -- SCRIPT_START_TIME = os.clock()
-type_table = {}
+local type_table = {}
 type_table['set'] = 'scard'
 type_table['zset'] = 'zcard'
 type_table['list'] = 'llen'
@@ -9,17 +9,17 @@ type_table['hash'] = 'hlen'
 type_table['ts'] = 'tslen'
 type_table['string'] = 'strlen'
 
-function redis_result(result)
+local function redis_result(result)
     return {result,os.clock() - SCRIPT_START_TIME}
 end
 
 
-function redis_type(key)
+local function redis_type(key)
     return redis.call('type',key)['ok']
 end
 
 -- The length of any structure in redis
-function redis_len(key)
+local function redis_len(key)
     typ = redis_type(key)
     command = type_table[typ]
     if command then
@@ -28,7 +28,7 @@ function redis_len(key)
 end
 
 -- Create a unique random key
-function redis_randomkey(prefix)
+local function redis_randomkey(prefix)
     local rnd_key = prefix .. ':tmp:' .. math.random(1,100000000)
     if redis.call('exists', rnd_key) + 0 == 1 then
         return randomkey()
@@ -40,8 +40,9 @@ end
 -- table of all members at key.
 -- If the key is a string returns an empty table
 -- If an argumnet is passed with value true all elements of the structure are returned.
-function redis_members(key, ...)
+local function redis_members(key, ...)
 	local typ = redis.call('type',key)['ok']
+	local all
 	if table.getn(arg) > 0 then
 		all = arg[1]
 	else
@@ -75,7 +76,7 @@ function redis_members(key, ...)
 end
 
 -- delete keys from a table
-function redis_delete(keys)
+local function redis_delete(keys)
 	local n = table.getn(keys)
 	if n > 0 then
 		return redis.call('del', unpack(keys)) + 0

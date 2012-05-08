@@ -760,7 +760,7 @@ of instances of models.'''
             seq = []
             session = self.session
             items = self.backend_query().items(slic)
-            if isinstance(items,Exception):
+            if isinstance(items, Exception):
                 raise items
             model = self.model
             for el in items:

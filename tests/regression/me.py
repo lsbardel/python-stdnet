@@ -26,3 +26,5 @@ class TestInitFile(test.TestCase):
             self.assertRaises(redis.RedisConnectionError, settings.redis_status)
         finally:
             settings.DEFAULT_BACKEND = db
+            
+        

@@ -1,15 +1,14 @@
 .. _vers07:
 
-Ver. 0.7c3 - 2012 May 02
+Ver. 0.7c3 - 2012 May 08
 ===============================
 * **It requires redis 2.6 or higher**.
 * Some backward incompatible changes in the API and database schema.
+* Tons of new features including a richer query API, improved performance via custom
+  query options, more flexible transactions and lua_ scripting for redis_.
 * The `orm` module has been renamed `odm` for *object data mapper*. This was a painful change
   with the vast majority of files affected. But it is better to get terminology
   right at this stage rather than later.
-* Tons of new features including a richer query API, improved performance via custom
-  query options, more flexible transactions and lua_ scripting for redis_ and
-  a new ``C`` redis_ parser shipped with the library.
 * Redesign of :class:`stdnet.odm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.
   *This is the only backward incompatible change both in terms of API and database scema*.

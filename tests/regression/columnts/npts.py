@@ -16,8 +16,7 @@ except ImportError:
     
 from . import main
 
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'\
-    and npts is not None
+do_tests = npts is not None
 skipUnless = main.skipUnless
 
 @skipUnless(do_tests, 'Requires stdnet-redis and dynts') 

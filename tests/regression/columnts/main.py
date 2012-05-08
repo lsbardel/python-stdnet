@@ -13,6 +13,7 @@ from tests.regression import struct
 
 skipUnless = test.unittest.skipUnless
 do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
+do_tests = True
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
@@ -235,10 +236,10 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         client.rpush(id, 'bla')
         client.rpush(id, 'foo')
         self.assertEqual(client.llen(id), 2)
-        self.assertRaises(CommitException, ts.add,
+        self.assertRaises(redis.ScriptError, ts.add,
                           date(2012,1,23), {'open':586})
-        self.assertRaises(redis.ResponseError, ts.irange)
-        self.assertRaises(redis.ResponseError, ts.size)
+        self.assertRaises(redis.ScriptError, ts.irange)
+        self.assertRaises(redis.RedisInvalidResponse, ts.size)
         
     def testGet(self):
         ts = self.makeGoogle()

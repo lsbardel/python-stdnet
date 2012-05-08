@@ -18,7 +18,7 @@ if withscores == 'withscores' then    -- REMOVE ONLY IF SUBTRACTING SCORES IS EQ
         i = i + 1
         local j = 0
         while j < # data do
-            value, score = data[j+1], data[j+2]
+            local value, score = data[j+1], data[j+2]
             j = j + 2
             if redis.call('zscore', dest, value) then
                 redis.call('zincrby', dest, -score, value)

@@ -1,6 +1,6 @@
 from stdnet import test
 from stdnet.conf import settings
-from stdnet.lib.redis import ConnectionError
+from stdnet.lib import redis
 import stdnet as me
 
 
@@ -23,6 +23,6 @@ class TestInitFile(test.TestCase):
         db = settings.DEFAULT_BACKEND
         try:
             settings.DEFAULT_BACKEND = 'redis://dksnkdcnskcnskcn:6379?db=7'
-            self.assertRaises(ConnectionError, settings.redis_status)
+            self.assertRaises(redis.RedisConnectionError, settings.redis_status)
         finally:
             settings.DEFAULT_BACKEND = db

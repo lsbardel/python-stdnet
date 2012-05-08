@@ -49,6 +49,7 @@ if ordering == 'explicit' then
 	if nested > 0 then
 		-- generate a temporary key where to store the hash table holding
 		-- the values to sort with
+		local ion, key, name
 		local skey = redis_randomkey(bk)
 		for i,id in pairs(redis_members(rkey)) do
 			local value = redis.call('hget', bk .. ':obj:' .. id, field)

@@ -476,7 +476,7 @@ class Zset(RedisStructure):
         return result
     
     def get(self, score):
-        r = self.range(score,score,withscores=False)
+        r = self.range(score, score, withscores=False)
         if r:
             if len(r) > 1:
                 return r
@@ -484,7 +484,7 @@ class Zset(RedisStructure):
                 return r[0]
     
     def _iter(self):
-        return iter(self.irange(withscores = False))
+        return iter(self.irange(withscores=False))
     
     def size(self):
         return self.client.zcard(self.id)

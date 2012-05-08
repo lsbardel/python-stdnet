@@ -27,7 +27,7 @@ local function add (val)
 			    redis.call('sadd', rkey, val)
 			end
 		else
-			score = redis.call('zscore', idset, val)
+			local score = redis.call('zscore', idset, val)
 			if score ~= false then
 				redis.call('zadd', rkey, score, val)
 			end
@@ -62,7 +62,7 @@ while i < # ARGV do
 		end
 	elseif unique == 'u' then
 		-- Unique field but not an id. These fields maps to ids in an hash table
-		mapkey = bk .. ':uni:' .. name
+		local mapkey = bk .. ':uni:' .. name
 		if what == 'key' then
 			-- This lookup is quite rare
 			if s == 's' then

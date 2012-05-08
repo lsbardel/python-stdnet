@@ -4,7 +4,7 @@ local nan = 0/0
 local nildata = string.char(0,0,0,0,0,0,0,0,0)
 
 -- Column timeseries class
-columnts = {
+local columnts = {
     --
     -- Initialize
     init = function (self, key)
@@ -29,7 +29,7 @@ columnts = {
     --
     -- a set of fields
     fields_set = function(self)
-        f = {}
+        local f = {}
         for _,name in ipairs(self:fields()) do
             f[name] = self:fieldkey(name)
         end
@@ -38,7 +38,7 @@ columnts = {
     --
     -- Length of timeseries
     length = function (self)
-        return redis.call('tslen', self.key) + 0
+        return redis.call('zcard', self.key) + 0
     end,
     --
     -- Delete timeseries
@@ -51,12 +51,12 @@ columnts = {
     --
     -- Return the ordered list of times
     times = function (self)
-        return redis.call('tsrange', self.key, 0, -1, 'novalues')
+        return redis.call('zrange', self.key, 0, -1)
     end,
     --
     -- The rank of timestamp in the timeseries
     rank = function (self, timestamp)
-        return redis.call('tsrank', self.key, timestamp)
+        return redis.call('zrank', self.key, timestamp)
     end,
     --
     -- Return the unpacked value of field at rank
@@ -101,14 +101,14 @@ columnts = {
     --
     -- Add a timeseries, multiplied by the given weight, to self
     addserie = function(self, ts, weight, fields, tsmul)
-        local range = ts:range('tsrange', 0, -1, fields)
+        local range = ts:range('zrange', 0, -1, fields)
         local times, field_values = unpack(range)
         return self:add(times, field_values, weight, tsmul)
     end,
     --
     -- shortcut for returning the whole range of a timeserie
     all = function(self, fields)
-        return self:range('tsrange', 0, -1, fields)
+        return self:range('zrange', 0, -1, fields)
     end,
     --
     -- remove a field and return true or false
@@ -118,7 +118,7 @@ columnts = {
     --
     -- remove a timestamp from timeseries and return it
     poptime = function(self, timestamp)
-        local rank = redis.call('tsrank', self.key, timestamp)
+        local rank = redis.call('zrank', self.key, timestamp)
         if rank then
             rank = rank + 0
             for i,field in pairs(fields) do
@@ -127,7 +127,7 @@ columnts = {
                 if rank > 0 then
                     data = redis.call('getrange', fieldid, (rank-1)*9, rank*9) + data
                 end
-                redis.call('set',fieldid,data)
+                redis.call('set', fieldid, data)
             end
         end
     end,
@@ -135,7 +135,7 @@ columnts = {
     -- return an array containg a range of the timeseries. The array
     -- contains two elements, an array of times and a dictionary of fields.
     range = function(self, command, start, stop, fields, unpack_values)
-        local times = redis.call(command, self.key, start, stop, 'novalues')
+        local times = redis.call(command, self.key, start, stop)
         local field_values = {}
         local data = {times, field_values}
         local len = # times
@@ -143,7 +143,7 @@ columnts = {
             return data
         end
         -- get the start rank (Also when we use tsrange. Important)
-        start = redis.call('tsrank', self.key, times[1])
+        start = redis.call('zrank', self.key, times[1])
         stop = start + len
         if not fields or # fields == 0 then
             fields = self:fields()
@@ -224,8 +224,8 @@ columnts = {
             available = self:rank(timestamp)
             -- This is a new timestamp
             if not available then
-                redis.call('tsadd', self.key, timestamp, 1)
-                rank = redis.call('tsrank', self.key, timestamp) + 0
+                redis.call('zadd', self.key, timestamp, timestamp)
+                rank = redis.call('zrank', self.key, timestamp) + 0
                 rank9 = 9*rank
                 tslen = self:length()
                 -- loop over all fields and append/insert new data to the field strings
@@ -285,10 +285,10 @@ columnts = {
 	        end
 	    end
 	    
-	    if weight and not new_table then
+	    if weight then
 	        for timestamp, avail in pairs(time_set) do
 	            if not avail then
-	               rank9 = redis.call('tsrank', self.key, timestamp)*9
+	               rank9 = redis.call('zrank', self.key, timestamp)*9
 	               for field, fkey in pairs(fields) do 
                         redis.call('setrange', fkey, rank9, nildata)
 	               end
@@ -356,7 +356,7 @@ columnts = {
     end
 }
 
-columnts_meta = {}
+local columnts_meta = {}
 -- Constructor
 function columnts:new(key)
     local result = {}

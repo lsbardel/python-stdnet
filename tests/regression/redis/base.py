@@ -3,12 +3,6 @@ from stdnet.lib import redis
 from stdnet import test, getdb
 from stdnet.utils import flatzset
 
-
-ResponseError = redis.ResponseError
-RedisError = redis.RedisError
-ConnectionError = redis.ConnectionError
-
-
 def get_version(info):
     if 'redis_version' in info:
         return info['redis_version']

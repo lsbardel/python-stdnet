@@ -121,7 +121,7 @@ class TestSortByForeignKeyField(TestSort):
         self.assertEqual(ordering.name,'group_id')
         self.assertEqual(ordering.nested.name,'name')
         self.assertEqual(ordering.model,qs.model)
-        self.checkOrder(qs,'group__name')
+        self.checkOrder(qs, 'group__name')
         
 
 class TestOrderingModel(TestSort):

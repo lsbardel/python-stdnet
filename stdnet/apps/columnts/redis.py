@@ -6,8 +6,8 @@ from stdnet.utils.encoders import safe_number
 from stdnet.lib import redis
 
 
-class RedisColumnTS(redisb.TS):
-    
+class RedisColumnTS(redisb.Zset):
+    '''Redis backend for :class:`ColumnTS`'''
     @property
     def fieldsid(self):
         return self.id + ':fields'
@@ -24,6 +24,9 @@ class RedisColumnTS(redisb.TS):
         elif cache.merged_series:
             keys, args = cache.merged_series
             return self.client.script_call('timeseries_merge', keys, *args)
+    
+    def _iter(self):
+        return iter(self.irange(novalues=True))
     
     def allkeys(self):
         return self.client.keys(self.id + '*')
@@ -44,21 +47,21 @@ class RedisColumnTS(redisb.TS):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
     
-    def irange(self, start = 0, end = -1, fields = None, novalues = False,
-               delete = False):
+    def irange(self, start = 0, end = -1, fields=None, novalues=False,
+               delete=False, **kwargs):
         noval = 1 if novalues else 0
         fields = fields or ()
         delete = 1 if delete else 0
         return self.client.script_call(
-                        'timeseries_query', self.id, 'tsrange',
+                        'timeseries_query', self.id, 'zrange',
                         start, end, noval, delete, len(fields),
-                        *fields, fields = fields, novalues = novalues)
+                        *fields, fields = fields, novalues=novalues)
         
-    def range(self, start, end, fields = None, novalues = False):
+    def range(self, start, end, fields=None, novalues=False, **kwargs):
         noval = 1 if novalues else 0
         fields = fields or ()
         return self.client.script_call(
-                        'timeseries_query', self.id,'tsrangebytime',
+                        'timeseries_query', self.id, 'zrangebyscore',
                         start, end, noval, 0, len(fields), *fields,
                         fields = fields, novalues = novalues)
         
@@ -97,18 +100,18 @@ class RedisColumnTS(redisb.TS):
     def istats(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_stats', self.id,
-                'tsrange', start, end, 'uni', len(fields), *fields)
+                'zrange', start, end, 'uni', len(fields), *fields)
 
     def stats(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_stats', self.id,
-                'tsrangebytime', start, end, 'uni', len(fields), *fields)
+                'zrangebyscore', start, end, 'uni', len(fields), *fields)
         
     def imulti_stats(self, start, end, fields, series, stats):
-        return self._multi_stats('tsrange', start, end, fields, series, stats)
+        return self._multi_stats('zrange', start, end, fields, series, stats)
     
     def multi_stats(self, start, end, fields, series, stats):
-        return self._multi_stats('tsrangebytime', start, end, fields, series,
+        return self._multi_stats('zrangebyscore', start, end, fields, series,
                                  stats)
     
     def _multi_stats(self, command, start, end, fields, series, stats):
@@ -135,6 +138,8 @@ class RedisColumnTS(redisb.TS):
 # Add the redis structure to the struct map in the backend class
 redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS
 
+
+##############################################################    SCRIPTS
 
 class timeseries_session(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),

@@ -1,4 +1,4 @@
-hasextensions = True
+hasextensions = False
 hr = None
 from .fallback import *
 from . import fallback

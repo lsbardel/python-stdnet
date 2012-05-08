@@ -4,16 +4,15 @@
 import sys
 import os
 
-from stdnet.conf import settings
-from stdnet.utils import Path
-from stdnet import test, getdb
-
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run
+from stdnet.utils import Path
 p = Path(__file__)
 p.add2python('pulsar', up=1, down=('pulsar',), must_exist=False)
 p.add2python('dynts', up=1, down=('dynts',), must_exist=False)
 
+from stdnet.conf import settings
+from stdnet import test, getdb
 from stdnet.test import nose, pulsar
 
 

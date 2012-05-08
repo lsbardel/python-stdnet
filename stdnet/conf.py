@@ -66,13 +66,13 @@ class Settings(object):
     
     def redis_status(self):
         from stdnet import getdb
-        from stdnet.lib.redis import ConnectionError
+        from stdnet.lib.redis import RedisConnectionError
         db = getdb(self.DEFAULT_BACKEND)
         status = "ok"
         if db.name == 'redis':
             status = db.client.redis_status()
         if not status:
-            raise ConnectionError('No connection available for server\
+            raise RedisConnectionError('No connection available for server\
  at "{0}"'.format(self.DEFAULT_BACKEND))
         os.environ['stdnet_backend_status'] = status
         return status

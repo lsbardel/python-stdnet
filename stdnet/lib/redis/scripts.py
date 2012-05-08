@@ -12,11 +12,36 @@ __all__ = ['RedisScript',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
+           'script_command_callback',
            'read_lua_file']
 
 
 p = os.path
 DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
+
+
+def script_command_callback(request, response, args, command=None,
+                            script_name=None, **options):
+    if isinstance(response, Exception):
+        if script_name:
+            command = ' ' + command if command else ''
+            response = ScriptError('SCRIPT'+command, script_name, response)
+        return response
+    elif command in ('FLUSH', 'KILL'):
+        return response == b'OK'
+    elif command == 'LOAD':
+        return response.decode(request.client.encoding)
+    else:
+        return [int(r) for r in response]
+    
+
+def eval_command_callback(request, response, args, script_name=None, **options):
+    s = _scripts.get(script_name)
+    if not s:
+        return response
+    else:
+        return s.start_callback(request, response, args, **options)
+    
 
 def pairs_to_dict(response, encoding, value_encoder = 0):
     "Create a dict given a list of key/value pairs"
@@ -110,7 +135,7 @@ lua scripts to redis via the ``evalsha`` command.
     def load(self, client, keys, *args, **options):
         '''Load this :class:`RedisScript` to redis and runs it using evalsha.
 It returns the result of the `evalsha` command.'''
-        client.script_load(self.script)
+        client.script_load(self.script, script_name=self.name)
         return self.evalsha(client, keys, *args, **options)
         
     def start_callback(self, request, response, args, **options):
@@ -131,8 +156,7 @@ It returns the result of the `evalsha` command.'''
             else:
                 return response
         elif isinstance(response, Exception):
-            raise ScriptError('Lua redis script "{0}" error. {1}'\
-                                      .format(self,response))
+            raise ScriptError('EVALSHA', self, response)
         else:
             return self.callback(request, response, args, **options)
         
@@ -153,14 +177,6 @@ It returns the result of the `evalsha` command.'''
 :parameter options: Additional options for the callback.
 '''
         return response
-    
-    
-def script_call_back(request, response, args, script_name=None, **options):
-    s = _scripts.get(script_name)
-    if not s:
-        return response
-    else:
-        return s.start_callback(request, response, args, **options)
     
 
 def load_missing_scripts(pipe, commands, results):

@@ -8,9 +8,8 @@ end
 local function add_field_names(key, field_values, serie_names)
     local fields = {}
     for field, values in pairs(field_values) do
-        name = key .. ' @ ' .. field
         table.insert(fields, field)
-        table.insert(serie_names, name)
+        table.insert(serie_names, key .. ' @ ' .. field)
     end
     return fields
 end
@@ -69,13 +68,14 @@ stats.univariate = function (serie)
     end
     local result = {start=times[1], stop=times[N], len=N, stats=sts} 
     for field, values in pairs(serie.field_values) do
+    	local dv, dv2
         local N = 0
         local min_val = 1.e10
         local max_val =-1.e10
         local sum_val = 0
         local sum2_val = 0
         local dsum, dsum2, dsum3, dsum4 = 0, 0, 0, 0
-        local p, dv = nan
+        local p = nan
         for i,v in ipairs(values) do
             if v == v then
                 min_val = math.min(min_val, v)

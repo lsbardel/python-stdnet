@@ -56,7 +56,7 @@ class AsyncRedisConnection(connection.Connection):
         return self.stream.connect(self.address,
                                 partial(self.on_connect,request,counter))
         
-    def on_connect(self, request, counter, result = None):
+    def on_connect(self, request, counter, result=None):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
         r = self._auth(request) if self.password else None

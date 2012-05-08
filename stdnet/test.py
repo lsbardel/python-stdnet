@@ -61,7 +61,7 @@ will be unregistered after the :meth:`tearDown` method.'''
         if not self.model and self.models:
             self.model = self.models[0]
         self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
-        self.backend = getdb(prefix = self.prefix, **self.backend_params())
+        self.backend = getdb(prefix=self.prefix, **self.backend_params())
         r = None
         if self.backend.name == 'redis':
             r = self.backend.client.script_flush()

@@ -214,7 +214,7 @@ class SyncRedisRequest(RedisRequest):
                 return self._sendrecv()
             except RedisConnectionError as e:
                 if e.retry:
-                    self.connection.disconnect(release_connection = False)
+                    self.connection.disconnect(release_connection=False)
                     self.tried += 1
                 else:
                     raise
@@ -261,6 +261,7 @@ This class should not be directly initialized. Instead use the
     Python socket which handle the sending and receiving of data.
 '''
     request_class = SyncRedisRequest
+    socket_class = socket.socket
     
     "Manages TCP communication to and from a Redis server"
     def __init__(self, pool, password=None,
@@ -293,9 +294,9 @@ This class should not be directly initialized. Instead use the
     @property
     def socket_type(self):
         '''Socket type'''
-        if isinstance(self.address,tuple):
+        if isinstance(self.address, tuple):
             return 'TCP'
-        elif isinstance(self.address,str):
+        elif isinstance(self.address, str):
             if os.name == 'posix':
                 return 'UNIX'
             else:
@@ -314,12 +315,12 @@ This class should not be directly initialized. Instead use the
     def READ_BUFFER_SIZE(self):
         return self.pool.READ_BUFFER_SIZE
     
-    def connect(self, request, counter = 1):
+    def connect(self, request, counter=1):
         "Connects to the Redis server if not already connected."
         if self.__sock:
             return
         if self.socket_type == 'TCP':
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = self.socket_class(socket.AF_INET, socket.SOCK_STREAM)
             #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             # Disables Nagle's algorithm so that we send the data we mean and
             # better speed.
@@ -331,7 +332,7 @@ This class should not be directly initialized. Instead use the
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,
                             self.READ_BUFFER_SIZE)
         elif self.socket_type == 'UNIX':
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock = self.socket_class(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__sock = sock
         try:
             return self._connect(request, counter)
@@ -423,6 +424,7 @@ command byte to be send to redis.'''
         return b''.join(starmap(pack, ((c.command,)+c.args for c in commands)))
         
     def execute_command(self, client, command_name, *args, **options):
+        '''Execute a command'''
         return self.request_class(client, self, command_name, args, **options)\
                    .execute()
     

@@ -386,29 +386,35 @@ This class should not be directly initialized. Instead use the
             self.pool.release(self)
 
     if ispy3k:
-        def encode(self, value):
-            if isinstance(value, bytes):
-                return value
-            else:
-                return ('%s'%value).encode(self.encoding, self.encoding_errors)
-            
-    else:
-        def encode(self, value):
-            if isinstance(value, unicode):
-                return value.encode(self.encoding, self.encoding_errors)
-            else:
-                return '%s'%value
+        def __pack_gen(self, args):
+            encoding = self.encoding
+            encoding_errors = self.encoding_errors
+            crlf = b'\r\n'
+            yield ('*%s\r\n'%len(args)).encode()
+            for value in args:
+                if not isinstance(value, bytes):
+                    value = ('%s'%value).encode(encoding, encoding_errors)
+                yield ('$%s\r\n'%len(value)).encode()
+                yield value
+                yield crlf
+                
+    else:       # pragma : no cover
+        def __pack_gen(self, args):
+            encoding = self.encoding
+            encoding_errors = self.encoding_errors
+            crlf = b'\r\n'
+            yield '*%s\r\n'%len(args)
+            for value in args:
+                if isinstance(value, unicode):
+                    value = value.encode(encoding, encoding_errors)
+                else:
+                    value = '%s'%value
+                yield ('$%s\r\n'%len(value)).encode()
+                yield value
+                yield crlf
     
     def _decode(self, value):
         return value.decode(self.encoding,self.encoding_errors)
-    
-    def __pack_gen(self, args):
-        crlf = b'\r\n'
-        yield ('*%s\r\n'%len(args)).encode()
-        for value in map(self.encode, args):
-            yield ('$%s\r\n'%len(value)).encode()
-            yield value
-            yield crlf
     
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"

@@ -401,14 +401,11 @@ This class should not be directly initialized. Instead use the
         return value.decode(self.encoding,self.encoding_errors)
     
     def __pack_gen(self, args):
+        e = self.encode
         crlf = b'\r\n'
-        yield b'*'
-        yield str(len(args)).encode(self.encoding)
-        yield crlf
-        for value in map(self.encode,args):
-            yield b'$'
-            yield str(len(value)).encode(self.encoding)
-            yield crlf
+        yield e('*%s\r\n'%len(args))
+        for value in map(e, args):
+            yield e('$%s\r\n'%len(value))
             yield value
             yield crlf
     

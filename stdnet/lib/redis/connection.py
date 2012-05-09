@@ -201,7 +201,7 @@ handling of a single command from start to the response from the server.'''
             if self.response is not False:
                 self.close()
         
-    def execute(self):
+    def execute(self):  # pragma : no cover
         raise NotImplementedError()
     
 
@@ -412,9 +412,6 @@ This class should not be directly initialized. Instead use the
                 yield ('$%s\r\n'%len(value)).encode()
                 yield value
                 yield crlf
-    
-    def _decode(self, value):
-        return value.decode(self.encoding,self.encoding_errors)
     
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"

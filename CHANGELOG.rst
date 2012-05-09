@@ -49,7 +49,7 @@ Ver. 0.7c3 - 2012 May 08
 * Added :mod:`stdnet.utils.path`.
 * Added a Lua test suite for testing stand alone scripts. Requires lunatest_.
 * PEP 386-compliant version number.
-* **573 regression tests** with **90%** coverage.
+* **574 regression tests** with **91%** coverage.
 
 .. _vers06:
 

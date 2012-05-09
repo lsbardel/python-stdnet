@@ -8,15 +8,14 @@ from functools import partial
 
 from pulsar import AsyncIOStream, Deferred
 
-from .exceptions import ConnectionError
-from . import connection
+from stdnet.lib.redis import connection
 
 
-class AsyncRedisRequest(connection.RedisRequest, Deferred):
+class RedisRequest(connection.RedisRequest, Deferred):
     
     def __init__(self, *args, **kwargs):
         Deferred.__init__(self)
-        connection.RedisRequest.__init__(self, *args, **kwargs)
+        super(RedisRequest,self).__init__(self, *args, **kwargs)
         
     def send(self):
         c = self.connection.connect(self)
@@ -48,8 +47,8 @@ class AsyncRedisRequest(connection.RedisRequest, Deferred):
         return self
 
 
-class AsyncRedisConnection(connection.Connection):
-    request_class = AsyncRedisRequest
+class Connection(connection.Connection):
+    request_class = RedisRequest
     
     def _connect(self, request, counter):
         self.stream = AsyncIOStream(self.sock)

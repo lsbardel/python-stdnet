@@ -29,4 +29,4 @@ CLASSIFIERS = [
                'Topic :: Internet'
                ]
 
-sphinxtogithub = False
+sphinxtogithub = True

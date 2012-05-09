@@ -199,8 +199,8 @@ It must implement the *loads* and *dumps* methods.'''
     struct_map = {}
     
     def __init__(self, name, address, pickler = None,
-                 charset = 'utf-8', connection_string = '',
-                 prefix = None, **params):
+                 charset='utf-8', connection_string='',
+                 prefix=None, **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
@@ -210,7 +210,7 @@ It must implement the *loads* and *dumps* methods.'''
         self.params = params
         self.namespace = prefix if prefix is not None else\
                          settings.DEFAULT_KEYPREFIX
-        self.client = self.setup_connection(address, **params)
+        self.client = self.setup_connection(address)
 
     @property
     def name(self):
@@ -226,9 +226,9 @@ It must implement the *loads* and *dumps* methods.'''
             return False
         
     def issame(self, other):
-        return False
+        return self.client == other.client
     
-    def cursor(self, pipelined = False):
+    def cursor(self, pipelined=False):
         return self
     
     def disconnect(self):
@@ -308,7 +308,7 @@ from database.
     
     # PURE VIRTUAL METHODS
     
-    def setup_connection(self, address, **params):  # pragma: no cover
+    def setup_connection(self, address):  # pragma: no cover
         '''Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.'''
@@ -333,7 +333,8 @@ must return a instance of the backend handler.'''
         """Remove *all* values from the database at once."""
         raise NotImplementedError()
     
-    def flush(self, meta = None, pattern = None):   # pragma: no cover
+    def flush(self, meta=None, pattern=None):   # pragma: no cover
+        '''Flush all model keys from the database'''
         raise NotImplementedError()
     
     def subscriber(self):   # pragma: no cover

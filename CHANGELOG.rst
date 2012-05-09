@@ -3,6 +3,7 @@
 Development
 ===============================
 * A new ``C`` redis_ parser shipped with the library.
+* **575 regression tests** with **90%** coverage.
   
 Ver. 0.7c3 - 2012 May 02
 ===============================

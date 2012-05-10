@@ -79,12 +79,17 @@ loaded. This only apply to persistent instances.'''
                             processed.add(name)
                             yield field
     
-    def fieldvalue_pairs(self, exclude_cache = False):
+    def fieldvalue_pairs(self, exclude_cache=False):
         '''Generator of fields,values pairs. Fields correspond to
 the ones which have been loaded (usually all of them) or
 not loaded but modified.
 Check the :ref:`load_only <performance-loadonly>` query function for more
-details.'''
+details.
+
+If *exclude_cache* evaluates to ``True``, fields with :attr:`Field.as_cache`
+attribute set to ``True`` won't be included.
+
+:rtype: a generator of two-elements tuples'''
         for field in self._meta.scalarfields:
             if exclude_cache and field.as_cache:
                 continue
@@ -149,12 +154,12 @@ for example ``group__name``.'''
         else:
             return self.__class__.objects.session()
     
-    def todict(self, exclude_cache = False):
+    def todict(self, exclude_cache=False):
         '''Return a dictionary of serialised scalar field for pickling.
 If the *exclude_cache* flag is ``True``, fields with :attr:`Field.as_cache`
 attribute set to ``True`` will be excluded.'''
         odict = {}
-        for field,value in self.fieldvalue_pairs(exclude_cache = exclude_cache):
+        for field,value in self.fieldvalue_pairs(exclude_cache=exclude_cache):
             value = field.serialize(value)
             if value:
                 odict[field.name] = value
@@ -162,18 +167,19 @@ attribute set to ``True`` will be excluded.'''
             odict['__dbdata__'] = {'id': self._dbdata['id']}
         return odict
     
-    def _to_json(self):
+    def _to_json(self, exclude_cache):
         pk = self.pkvalue()
         if pk:
             yield self._meta.pkname(),pk
-            for field,value in self.fieldvalue_pairs():
+            for field,value in self.fieldvalue_pairs(exclude_cache=\
+                                                     exclude_cache):
                 value = field.json_serialize(value)
                 if value not in EMPTYJSON:
                     yield field.name,value
             
-    def tojson(self):
+    def tojson(self, exclude_cache=True):
         '''return a JSON serializable dictionary representation.'''
-        return dict(self._to_json())
+        return dict(self._to_json(exclude_cache))
         
     def load_fields(self, *fields):
         '''Load extra fields to this :class:`StdModel`.'''

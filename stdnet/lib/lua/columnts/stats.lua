@@ -170,6 +170,7 @@ stats.multivariate = function (series)
     end
 end
 
+-- Get timeseries from redis KEYS
 stats.get_series = function ()
     local command = ARGV[1]
     local start = ARGV[2]

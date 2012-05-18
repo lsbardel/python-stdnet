@@ -61,6 +61,9 @@ local columnts = {
     --
     -- Return the unpacked value of field at rank
     rank_value = function (self, rank, field)
+    	if rank < 0 then
+    		rank = self:length() + rank
+    	end
         local r = 9*rank
         local value = redis.call('getrange',self:fieldkey(field),r,r+9)
         return self:unpack_value(value)

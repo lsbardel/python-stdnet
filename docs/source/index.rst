@@ -42,6 +42,9 @@ First steps
 :ref:`Fields API <model-field>` |
 :ref:`Redis Client <redis-server>`
 
+**Special Topic**
+:ref:`Store, manipulate and analyse time-series <apps-timeserie>`
+ 
 **Miscellaneous:**
 :ref:`Contributing <contributing>` |
 :ref:`Tests <runningtests>` |

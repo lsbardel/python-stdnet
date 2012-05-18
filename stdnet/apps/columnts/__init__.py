@@ -3,13 +3,17 @@ An application for managing multivariate timeseries_. It provides
 tools for performing aggregation and statistics via lua scripts.
 
 The redis implementation uses several redis structures for a given
-class:`ColumnTS` instance:
+class:`ColumnTS` instance.
 
 * A zset for holding times in an ordered fashion.
 * A redis *set* for holding *fields* names.
 * A redis string for each *field* in the timeseries.
 
-The data for a given *field string* is stored in a sequence of 9-bytes strings
+This composite data-structure looks and feels like a zset.
+However, the ordered set doesn't actually store the data, it is there to
+maintain order and facilitate retrieval by times (scores) and rank.
+  
+For a given *field*, the data is stored in a sequence of 9-bytes string
 with the initial byte (``byte0``) indicating the type of data::
 
     
@@ -22,6 +26,14 @@ The API is straightforward::
     
     ts = ColumnTS(id='test')
     ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})
+    
+Analysis
+=============
+To perform analysis you write lua scripts::
+
+    self:range()
+    
+    ts.evaluate(script)
     
 API
 ======

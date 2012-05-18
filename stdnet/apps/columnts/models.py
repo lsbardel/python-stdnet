@@ -98,6 +98,11 @@ statistical calculations.'''
         else:
             return v
         
+    def evaluate(self, script, *series, **params):
+        res = self.backend_structure().run_script('evaluate', series,
+                                                  script, **params)
+        return self.async_handle(res, self._evaluate)
+        
     def istats(self, start=0, end=-1, fields=None):
         res = self.backend_structure().istats(start, end, fields)
         return self.async_handle(res, self._stats)
@@ -203,6 +208,9 @@ The result will be calculated using the formula::
         if result:
             result['start'] = self.pickler.loads(result['start'])
             result['stop'] = self.pickler.loads(result['stop'])
+        return result
+    
+    def _evaluate(self, result):
         return result
     
     def _add(self, dt, *args):

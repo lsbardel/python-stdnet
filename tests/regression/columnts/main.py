@@ -11,9 +11,6 @@ from examples.tsmodels import ColumnTimeSeries
 
 from tests.regression import struct
 
-skipUnless = test.unittest.skipUnless
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
-do_tests = True
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
@@ -24,7 +21,6 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1',this_path))
     
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMeta(test.TestCase):
     
     def testLuaClass(self):
@@ -35,7 +31,6 @@ class TestMeta(test.TestCase):
         self.assertEqual(r,b'OK')
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestCase(test.TestCase):
     
     def check_stats(self, stat_field, data):
@@ -54,7 +49,6 @@ class TestCase(test.TestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTimeSeries(struct.StructMixin, TestCase):
     structure = ColumnTS
     name = 'columnts'
@@ -275,7 +269,6 @@ class TestTimeSeries(struct.StructMixin, TestCase):
             self.assertTrue(isinstance(dt,datetime))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestColumnTSBase(TestCase):
     
     @classmethod
@@ -296,7 +289,6 @@ class TestColumnTSBase(TestCase):
         return ts1
             
             
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestOperations(TestColumnTSBase):
     
     def testSimpleStats(self):
@@ -548,7 +540,6 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMultivariate(TestColumnTSBase):
     
     def testSimpleMultiStats(self):
@@ -562,7 +553,6 @@ class TestMultivariate(TestColumnTSBase):
         self.assertEqual(result['N'],len(dt))
     
     
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMissingValues(TestCase):
     
     @classmethod

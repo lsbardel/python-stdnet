@@ -97,6 +97,16 @@ class RedisColumnTS(redisb.Zset):
         argv.extend(fields)
         self.instance.cache.merged_series = (keys,argv)
         
+    def run_script(self, script_name, series, *args, **params):
+        keys = (self.id,)
+        if series:
+            keys += tuple(series)
+        if params:
+            args = list(args)
+            args.append(json.dumps(params))
+        return self.client.script_call('timeseries_run', keys,
+                                       script_name, *args)
+        
     def istats(self, start, end, fields = None):
         fields = fields or ()
         return self.client.script_call('timeseries_stats', self.id,
@@ -141,6 +151,12 @@ redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS
 
 ##############################################################    SCRIPTS
 
+class timeseries_run(redis.RedisScript):
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('columnts.columnts'),
+              redis.read_lua_file('columnts.runts'))
+    
+    
 class timeseries_session(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
               redis.read_lua_file('columnts.columnts'),

@@ -162,18 +162,19 @@ attribute set to ``True`` will be excluded.'''
             odict['__dbdata__'] = {'id': self._dbdata['id']}
         return odict
     
-    def _to_json(self):
+    def _to_json(self, exclude_cache):
         pk = self.pkvalue()
         if pk:
             yield self._meta.pkname(),pk
-            for field,value in self.fieldvalue_pairs():
+            for field,value in self.fieldvalue_pairs(exclude_cache=\
+                                                     exclude_cache):
                 value = field.json_serialize(value)
                 if value not in EMPTYJSON:
                     yield field.name,value
             
-    def tojson(self):
+    def tojson(self, exclude_cache=True):
         '''return a JSON serializable dictionary representation.'''
-        return dict(self._to_json())
+        return dict(self._to_json(exclude_cache))
         
     def load_fields(self, *fields):
         '''Load extra fields to this :class:`StdModel`.'''

@@ -49,12 +49,12 @@ if ordering == 'explicit' then
 		for i,id in pairs(redis_members(rkey)) do
 			local value = redis.call('hget', bk .. ':obj:' .. id, field)
 			local n = 0
-			while n < nested do
-				ion = io + 2*n
-				n = n + 1
-				key = ARGV[ion+1] .. ':obj:' .. value
-				name = ARGV[ion+2]
-				value = redis.call('hget', key, name)
+			while n < nested and value do
+			    ion = io + 2*n
+			    n = n + 1
+			    key = ARGV[ion+1] .. ':obj:' .. value
+			    name = ARGV[ion+2]
+			    value = redis.call('hget', key, name)
 			end
 			-- store value on temporary hash table
 			--redis.call('hset', skey, id, value)

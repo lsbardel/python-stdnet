@@ -375,30 +375,40 @@ This class should not be directly initialized. Instead use the
 
     if ispy3k:
         def encode(self, value):
-            return value if isinstance(value,bytes) else str(value).encode(
-                                        self.encoding,self.encoding_errors)
-            
+            if isinstance(value, bytes):
+                return value
+            else:
+                if not isinstance(value, str):
+                    value = str(value)
+                return value.encode(self.encoding, self.encoding_errors)
+        
     else:
         def encode(self, value):
-            if isinstance(value,unicode):
+            if isinstance(value, unicode):
                 return value.encode(self.encoding,self.encoding_errors)
+            elif isinstance(value, bytes):
+                return value
             else:
-                return str(value)
+                return bytes(value)
+        
+    def __pack_gen(self, args):
+        e = self.encode
+        crlf = b'\r\n'
+        yield e('*%s\r\n'%len(args))
+        for value in map(e, args):
+            yield e('$%s\r\n'%len(value))
+            yield value
+            yield crlf
+    #
+    # This version is slightly slower but still faster than previous
+    #def __pack_gen(self, args):
+    #    e = self.encode
+    #    crlf = b'\r\n'
+    #    bits = ((e('$%s\r\n'%len(value)),value,crlf) for value in map(e, args))
+    #    return chain((e('*%s\r\n'%len(args)),),*tuple(bits))
     
     def _decode(self, value):
         return value.decode(self.encoding,self.encoding_errors)
-    
-    def __pack_gen(self, args):
-        crlf = b'\r\n'
-        yield b'*'
-        yield str(len(args)).encode(self.encoding)
-        yield crlf
-        for value in map(self.encode,args):
-            yield b'$'
-            yield str(len(value)).encode(self.encoding)
-            yield crlf
-            yield value
-            yield crlf
     
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"

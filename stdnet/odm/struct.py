@@ -148,7 +148,7 @@ can also be used as stand alone objects. For example::
 
     An optional :class:`StdModel` instance to which the structure belongs
     to via a :ref:`structured field <model-field-structure>`. This attribute
-    is initialised by the :module:`odm`.
+    is initialised by the :mod:`odm`.
     
     Default ``None``.
     
@@ -384,8 +384,8 @@ class KeyValueMixin(PairMixin):
     
     
 class OrderedMixin(object):
-    '''A mixin for :class:`Structure` wich maintain ordering with respect
-a numeric value we shall call score.'''
+    '''A mixin for a :class:`Structure` which maintains ordering with respect
+a numeric value we call score.'''
     
     def front(self):
         '''Return the front pair of the structure'''
@@ -406,7 +406,8 @@ a numeric value we shall call score.'''
         return self.backend_structure().count(s1, s2)
         
     def rank(self, value):
-        '''The rank of a given *value*'''
+        '''The rank of a given *value*. This is the position of *value*
+in the :class:`OrderedMixin` container.'''
         value = self.pickler.dumps(value)
         return self.backend_structure().rank(value)
     
@@ -422,18 +423,23 @@ a numeric value we shall call score.'''
         res = self.backend_structure().irange(start, end, **kwargs)
         return self.async_handle(res, callback or self.load_data)
         
-    def pop(self, start, stop=None, callback=None, **options):
+    def pop_range(self, start, stop, callback=None, **options):
         '''pop a range by score from the :class:`OrderedMixin`'''
-        res = self.backend_structure().pop(start, stop, **options)
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        res = self.backend_structure().pop_range(s1, s2, **options)
         return self.async_handle(res, callback or self.load_data)
 
-    def ipop(self, start, stop=None, callback=None, **options):
+    def ipop_range(self, start=0, stop=-1, callback=None, **options):
         '''pop a range from the :class:`OrderedMixin`'''
-        res = self.backend_structure().ipop(start, stop, **options)
+        res = self.backend_structure().ipop_range(start, stop, **options)
         return self.async_handle(res, callback or self.load_data)
     
 
 class Sequence(object):
+    '''Mixin for a :class:`Structure` which implements a kind of sequence
+container. The elements in a sequence container are ordered following a linear
+sequence.'''
     cache_class = listcache
     
     @commit_when_no_transaction
@@ -489,9 +495,9 @@ class Set(Structure):
     
     
 class List(Sequence, Structure):
-    '''A linked-list :class:`Structure`. It expands the :class:`Sequence`
-mixin.'''
-    
+    '''A doubly-linked list :class:`Structure`. It expands the
+:class:`Sequence` mixin with functionalities to add and remove from
+the front of the list in an efficient manner.'''
     def pop_front(self):
         '''Remove the first element from of the list.'''
         value = self.session.structure(self).pop_front()

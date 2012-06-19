@@ -270,25 +270,26 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
 
 class TestColumnTSBase(TestCase):
-    
+    '''Class for testing large data'''
     @classmethod
     def setUpClass(cls):
         size = cls.size
-        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data_mul1 = tsdata(size = size, fields = ('eurusd',))
-        cls.data_mul2 = tsdata(size = size, fields = ('gbpusd',))
+        cls.data1 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data2 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data3 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
+        cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
         cls.ColumnTS = ColumnTS
     
     def create(self):
+        '''Create one ColumnTS with six fields and cls.size dates'''
         session = self.session()
         with session.begin():
             ts1 = session.add(self.ColumnTS())
             ts1.update(self.data1.values)
         return ts1
-            
-            
+    
+
 class TestOperations(TestColumnTSBase):
     
     def testSimpleStats(self):

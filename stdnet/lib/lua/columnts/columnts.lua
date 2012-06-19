@@ -144,11 +144,50 @@ local columnts = {
     --
     -- remove a range by rank from the timeseries and return it
     ipop_range = function(self, i1, i2)
-    	if i1 and i2 then
-    		for i,field in pairs(fields) do
-                fieldid = tsid .. ':field:' .. field
+    	local length = self:length()
+    	if i1 and i2 and length > 0 then
+    		i1 = i1 + 0
+    		i2 = i2 + 0
+    		if i1 < 0 then
+    			i1 = length + i1
+    		end
+    		if i2 < 0 then
+    			i2 = length + i2
+    		end
+    		if i1 < 0 or i1 >= length or i2 < i1 then
+    			return {}
+    		end
+    		i2 = math.min(i2, length-1)
+    		local fields = self:fields()
+    		local times = redis.call('zrange', self.key, i1, i2)
+    		local field_values = {}
+    		local data = {times, field_values}
+    		for i, field in ipairs(fields) do
+                local fkey = self:fieldkey(field)
+                local fdata = {}
+                local new_data = ''
+                if i1 > 0 then
+                	i1 = i1*9
+                	new_data = redis.call('getrange', fkey, 0, i1)
+                end
+                if i2 < length-1 then
+                	new_data = new_data .. redis.call('getrange', fkey, i2*9, -1)
+                end
+                local removed_data = redis.call('getrange', fkey, i1, i2*9)
+                local p = 0
+                local len = # removed_data
+                while p+9 <= len do
+                	table.insert(fdata, self:unpack_value(string.sub(removed_data, p+1, p+9)))
+                	p = p + 9
+                end
+                field_values[field] = fdata
+                redis.call('set', fkey, new_data)
             end
-    	end
+            redis.call('zremrangebyrank', self.key, i1, i2)
+            return data
+        else
+        	return {}
+        end
     end,
     --
     -- return an array containg a range of the timeseries. The array

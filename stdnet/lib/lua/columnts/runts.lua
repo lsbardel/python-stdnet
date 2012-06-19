@@ -1,7 +1,7 @@
--- ENTRY FOR ALL COLUMNTS SCRIPTS
+-- MANAGE ALL COLUMNTS SCRIPTS called by stdnet
 local scripts = {
 	-- Run a user script agains the timeserie
-	evaluate = function(series, script, ...)
+	evaluate = function(self, series, script, ...)
 		local context = {
 			self = series[1],
 			series = series,
@@ -11,7 +11,35 @@ local scripts = {
 		return script_function()
 	end,
 	-- Merge timeseries
-	merge = function(series, ...)
+	merge = function(self, series, ...)
+	end,
+	--
+	pop_range = function(self, series, start, stop)
+		local serie = self.on_serie_only(series, 'pop_range')
+		return self.flatten(serie:pop_range(start, stop))
+	end,
+	--
+	ipop_range = function(self, series, start, stop)
+		local serie = self.on_serie_only(series, 'ipop_range')
+		return self.flatten(serie:ipop_range(start, stop))
+	end,
+	--
+	-- INTERNALS
+	--
+	on_serie_only = function(series, name)
+		if # series > 1 then
+			error(name .. ' requires only one time series.')
+		end
+		return series[1]
+	end,
+	--
+	flatten = function(time_values)
+		local result = {time_values[1]}
+    	for k, v in pairs(time_values[2]) do
+        	table.insert(result, k)
+        	table.insert(result, v)	
+    	end
+    	return result
 	end
 }
 
@@ -23,7 +51,7 @@ local script = scripts[ARGV[1]]
 if not script then
 	error('Script ' .. ARGV[1] .. ' not available')
 end
--- KEYS CONTRAIN TIMESERIES IDS
+-- KEYS CONTAIN TIMESERIES IDS
 local series = {}
 for i, id in ipairs(KEYS) do
 	table.insert(series, columnts:new(id))
@@ -32,4 +60,4 @@ if # series == 0 then
     error('No timeseries available')
 end
 -- RUN THE SCRIPT
-return script(series, unpack(tabletools.slice(ARGV, 2, -1)))
+return script(scripts, series, unpack(tabletools.slice(ARGV, 2, -1)))

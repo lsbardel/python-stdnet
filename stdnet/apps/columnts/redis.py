@@ -64,6 +64,16 @@ class RedisColumnTS(redisb.Zset):
                         'timeseries_query', self.id, 'zrangebyscore',
                         start, end, noval, 0, len(fields), *fields,
                         fields = fields, novalues = novalues)
+    
+    def pop_range(self, start, end, **kwargs):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'pop_range', start, end,
+                                       return_type='range')
+        
+    def ipop_range(self, start=0, end=-1, **kwargs):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'ipop_range', start, end,
+                                       return_type='range')
         
     def flat(self):
         cache = self.instance.cache
@@ -155,6 +165,23 @@ class timeseries_run(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
               redis.read_lua_file('columnts.columnts'),
               redis.read_lua_file('columnts.runts'))
+    
+    def callback(self, request, response, args, fields=None, novalues=False,
+                 return_type=None, **options):
+        if novalues or not return_type:
+            return response
+        encoding = request.client.encoding
+        rfields = (f.decode(encoding) for f in response[1::2])
+        data = dict(zip(rfields, response[2::2]))
+        newdata = []
+        if fields:
+            for field in fields:
+                value = data.pop(field,None)
+                if value is not None:
+                    newdata.append((field,value))
+        for field in sorted(data):
+            newdata.append((field,data[field]))
+        return response[0], newdata
     
     
 class timeseries_session(redis.RedisScript):

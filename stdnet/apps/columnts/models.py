@@ -78,10 +78,6 @@ timeseries of numbers.'''
         res = self.backend_structure().irange(start, end, fields, novalues)
         return self.async_handle(res, callback or self.load_data)
     
-    def irange_and_delete(self):
-        res = self.backend_structure().irange(0, -1, delete = True)
-        return self.async_handle(res, self.load_data)
-    
     def range(self, start, end, fields=None, novalues = False, callback=None):
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
@@ -194,7 +190,7 @@ The result will be calculated using the formula::
         vloads = self.value_pickler.loads
         dt = [loads(t) for t in result[0]]
         vals = {}
-        for f,data in result[1]:
+        for f, data in result[1]:
             vals[f] = [vloads(d) for d in data]
         return (dt,vals)
     

@@ -123,7 +123,7 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
     
         class MyModel(odm.StdModel):
             ...
-            updates = odm.List(class_field = True)
+            updates = odm.List(class_field=True)
             
         MyModel.updates.push_back(1)
     
@@ -134,12 +134,8 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
     default_pickler = None
     default_value_pickler = encoders.Json()
     
-    def __init__(self,
-                 model = None,
-                 pickler = None,
-                 value_pickler = None,
-                 class_field = False,
-                 **kwargs):
+    def __init__(self, model=None, pickler=None, value_pickler=None,
+                 class_field=False, **kwargs):
         # Force required to be false
         super(StructureField,self).__init__(**kwargs)
         self.relmodel = model
@@ -203,7 +199,7 @@ class SetField(StructureField):
     '''A field maintaining an unordered collection of values. It is initiated
 without any argument other than an optional model class.
 When accessed from the model instance, it returns an instance of
-:class:`stdnet.Set` structure. For example::
+:class:`Set` structure. For example::
 
     class User(odm.StdModel):
         username  = odm.AtomField(unique = True)
@@ -212,8 +208,8 @@ When accessed from the model instance, it returns an instance of
     
 It can be used in the following way::
     
-    >>> user = User(username = 'lsbardel', password = 'mypassword').save()
-    >>> user2 = User(username = 'pippo', password = 'pippopassword').save()
+    >>> user = User(username='lsbardel', password='mypassword').save()
+    >>> user2 = User(username='pippo', password='pippopassword').save()
     >>> user.following.add(user2)
     >>> user.save()
     >>> user2 in user.following
@@ -226,7 +222,7 @@ It can be used in the following way::
 class ListField(StructureField):
     '''A field maintaining a list of values.
 When accessed from the model instance,
-it returns an instance of :class:`stdnet.List` structure. For example::
+it returns a of :class:`List` structure. For example::
 
     class UserMessage(odm.StdModel):
         user = odm.SymbolField()
@@ -239,12 +235,11 @@ Lets register it with redis::
     
 Can be used as::
 
-    >>> m = UserMessage(user = 'pippo').save()
+    >>> m = UserMessage(user='pippo').save()
     >>> m.messages.push_back("adding my first message to the list")
     >>> m.messages.push_back("ciao")
-    >>> m.save()
     >>> type(u.messages)
-    <class 'stdnet.backends.structures.structredis.List'>
+    <class 'stdnet.odm.struct.List'>
     >>> u.messages.size()
     2
     '''
@@ -256,7 +251,7 @@ Can be used as::
 class HashField(StructureField):
     '''A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric.
-it returns an instance of :class:`stdnet.HashTable` structure.
+it returns an instance of :class:`HashTable` structure.
 '''
     type = 'hash'
     default_pickler = encoders.NoEncoder()

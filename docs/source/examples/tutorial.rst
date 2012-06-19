@@ -17,7 +17,7 @@ Writing Models
 
 Defining stdnet *models* is achieved by subclassing the
 :class:`StdModel` class. The following
-snipped implements two models, ``Author`` and ``Book``::
+snippet implements two models, ``Author`` and ``Book``::
 
     from stdnet import odm
     
@@ -43,7 +43,7 @@ fields of a redis hash table which represents an instance of a model.
 An application
 ======================
 
-Let's start with tutorial application: a small hedge fund.
+Let's start with the tutorial application: a small hedge fund.
 You never know it may become useful in the future!
 The application uses the following three models,
 
@@ -51,7 +51,7 @@ The application uses the following three models,
 * ``Instrument`` holds information about tradable financial intruments.
 * ``Position`` is an investment on a particular ``Instrument`` in a ``Fund``.
 
-A minimal ``stdnet`` implementation can look like this::
+A minimal :mod:`stdnet` implementation can look like this::
 
     from stdnet import odm
     

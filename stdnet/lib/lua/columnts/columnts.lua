@@ -135,6 +135,22 @@ local columnts = {
         end
     end,
     --
+    -- remove a range by time from the timeseries and return it
+    pop_range = function(self, start, stop)
+        local i1 = redis.call('zrank', self.key, start)
+        local i2 = redis.call('zrank', self.key, stop)
+        return self:ipop_range(i1, i2)
+    end,
+    --
+    -- remove a range by rank from the timeseries and return it
+    ipop_range = function(self, i1, i2)
+    	if i1 and i2 then
+    		for i,field in pairs(fields) do
+                fieldid = tsid .. ':field:' .. field
+            end
+    	end
+    end,
+    --
     -- return an array containg a range of the timeseries. The array
     -- contains two elements, an array of times and a dictionary of fields.
     range = function(self, command, start, stop, fields, unpack_values)

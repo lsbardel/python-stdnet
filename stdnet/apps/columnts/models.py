@@ -31,8 +31,8 @@ class TimeseriesCache(object):
 
 
 class ColumnTS(odm.TS):
-    '''A specialised timeseries structure for handling several fields and
-statistical calculations.'''
+    '''A specialised :class:`stdnet.odm.TS` structure for handling multivariate
+timeseries of numbers.'''
     default_multi_stats = ['covariance']
     
     cache_class = TimeseriesCache
@@ -116,7 +116,17 @@ statistical calculations.'''
     def imulti_stats(self, start=0, end=-1, series=None, fields=None,
                      stats=None):
         '''Perform cross multivariate statistics calculation of
-this :class:`ColumnTS` and other optional *series*.'''
+this :class:`ColumnTS` and other optional *series* from *start*
+to *end*.
+
+:parameter start: the start rank.
+:parameter start: the end rank
+:parameter field: name of field to perform multivariate statistics.
+:parameter series: a list of two elements tuple containing the id of the
+    a :class:`columnTS` and a field name.
+:parameter stats: list of statistics to evaluate.
+    Default: ['covariance']
+'''
         stats = stats or self.default_multi_stats
         res = self.backend_structure().imulti_stats(start, end, fields, series,
                                                     stats)
@@ -142,16 +152,8 @@ this :class:`ColumnTS` and other *series*.
         return self.async_handle(res, self._stats)
     
     def merge(self, *series, **kwargs):
-        '''Merge this :class:`ColumnTS` with several other.
-        
-:parameter series: a tuple of two or three elements tuple.
-    For example::
-    
-        (5, ts1),(-2, ts2)
-        
-:parameter kwargs: key-valued parameters for the merge.
-:rtype: a new :class:`ColumnTS`
-'''
+        '''Merge this :class:`ColumnTS` with several other *series*.
+It invokes the :meth:`merged_series` class method.'''
         session = self.session
         for serie in series:
             if len(serie) < 2:
@@ -168,12 +170,12 @@ this :class:`ColumnTS` and other *series*.
         
     @classmethod 
     def merged_series(cls, *series, **kwargs):
-        '''Merge series into one timeseries.
+        '''Merge series into a new :class:`ColumnTS`.
         
 :parameters series: a list of tuples where the nth element is a tuple
     of the form::
 
-    (wight_n,ts_n1,ts_n2,..,ts_nMn)
+    (wight_n, ts_n1, ts_n2, ..., ts_nMn)
 
 The result will be calculated using the formula::
 

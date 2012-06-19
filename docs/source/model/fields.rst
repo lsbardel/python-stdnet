@@ -205,10 +205,11 @@ ManyToManyField
 Data-structure Fields
 ============================
 
-These fields are remote data-structures such as list, sets and hash tables.
-They can be bound to models so that
-many-to-many objects relationship can be established. All the data-structure
+These fields are remote data-structures such as list, sets and hash tables
+which are bound to a :class:`StdModel`. All the data-structure
 fields derives from :class:`StructureField`.
+These fields can be either bound to :class:`StdModel` instance (default)
+or class via the :attr:`StructureField.class_field` flag.
 
 
 ListField

@@ -429,9 +429,9 @@ class ModelState(object):
     
     
 class Model(AsyncObject):
-    '''A mixin class for :class:`StdModel`. It implements the :attr:`uuid`
-attribute which provides the univarsal unique identifier for an instance of a
-model.'''
+    '''This is the base class for both :class:`StdModel` and :class:`Structure`
+classes. It implements the :attr:`uuid` attribute which provides the universal
+unique identifier for an instance of a model.'''
     _model_type = None
     objects = None
     DoesNotExist = ObjectNotFound
@@ -473,7 +473,7 @@ raised when trying to save an invalid instance.'''
         
     @property
     def uuid(self):
-        '''Universally unique identifier for an instance.'''
+        '''Universally unique identifier for an instance of a :class:`Model`.'''
         if not self.id:
             raise self.DoesNotExist(\
                     'Object not saved. Cannot obtain universally unique id')
@@ -499,11 +499,11 @@ raised when trying to save an invalid instance.'''
     def obtain_session(self):
         pass
     
-    def save(self, use_current_session = True):
-        '''A direct method for saving an object.
-Do not use this method when using :class:`Transaction`.
-This method always commit changes immediately and if the session
-is a transaction an eror will occur.
+    def save(self, use_current_session=True):
+        '''A direct method for saving an object. This method is provided for
+convenience and should not be used when using a :class:`Transaction`.
+This method always commit changes immediately and if the :class:`Session`
+has already started a :class:`Transaction` an error will occur.
 If a session is not available, it tries to create one
 from its :class:`Manager`.'''
         session = self.get_session(use_current_session)

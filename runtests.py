@@ -25,7 +25,7 @@ def noseoption(argv,*vals,**kwargs):
         value = kwargs.get('value')
         if value is not None:
             argv.append(value)
-                        
+
 def start():
     global pulsar
     argv = sys.argv

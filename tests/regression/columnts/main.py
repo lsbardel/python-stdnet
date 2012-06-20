@@ -183,7 +183,7 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testRangeField(self):
         ts = self.makeGoogle()
-        data = ts.irange(fields = ('low','high','badone'))
+        data = ts.irange(fields=('low','high','badone'))
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(fields),2)
@@ -242,10 +242,6 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         self.assertEqual(len(v),4)
         v2 = ts[date(2012,1,23)]
         self.assertEqual(v,v2)
-        v3 = ts.get(date(2012,1,23),'open','close')
-        self.assertEqual(len(v3),2)
-        self.assertEqual(v3['open'],v['open'])
-        self.assertEqual(v3['close'],v['close'])
         self.assertEqual(ts.get(date(2014,1,1)),None)
         self.assertRaises(KeyError, lambda: ts[date(2014,1,1)])
         
@@ -447,7 +443,7 @@ class TestOperations(TestColumnTSBase):
         self.assertEqual(mul1.size(),self.data_mul1.length)
         self.assertEqual(mul2.size(),self.data_mul2.length)
         with session.begin():
-            ts = self.ColumnTS(id = 'merged')
+            ts = self.ColumnTS(id='merged')
             ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2))
             self.assertEqual(ts.session,session)
         length = ts.size()

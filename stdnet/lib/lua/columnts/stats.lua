@@ -1,5 +1,5 @@
 -- Univariate and multivariate statistics on redis
-local stats = {}
+local statistics = {}
 
 if not (KEYS and ARGV) then
     tabletools = require('tabletools')
@@ -28,7 +28,7 @@ local function add_cross_section(section, index, field_values, fields)
 end
 
 -- vector1 += vector2
-stats.vector_sadd = function (vector1, vector2)
+statistics.vector_sadd = function (vector1, vector2)
     for i, v in ipairs(vector1) do
         vector1[i] = v + vector2[i]
     end
@@ -36,7 +36,7 @@ stats.vector_sadd = function (vector1, vector2)
 end
 
 -- vector1 - vector2
-stats.vector_diff = function (vector1, vector2)
+statistics.vector_diff = function (vector1, vector2)
     local result = {}
     for i, v in ipairs(vector1) do
         result[i] = v - vector2[i]
@@ -45,7 +45,7 @@ stats.vector_diff = function (vector1, vector2)
 end
 
 -- Squared of a vector
-stats.vector_square = function (vector)
+statistics.vector_square = function (vector)
     local vector2 = {}
     local n = 0
     for i, v in ipairs(vector) do
@@ -59,7 +59,7 @@ end
 
 --
 -- Calculate aggregate statistcs for a timeseries slice
-stats.univariate = function (serie)
+statistics.univariate = function (serie)
     local times = serie.times
     local sts = {}
     local N = # times
@@ -109,7 +109,7 @@ stats.univariate = function (serie)
     return result
 end
 
-stats.fields_and_times = function (series)
+statistics.fields_and_times = function (series)
     local times, serie, time, i, j, section
     local serie_names = {}
     local time_dict = {}
@@ -136,9 +136,9 @@ end
 
 --
 -- Calculate aggregate statistcs for a timeseries slice
-stats.multivariate = function (series)
+statistics.multivariate = function (series)
     local prev_section, section, section2, dsection, start, stop
-    local a = stats.fields_and_times(series)
+    local a = statistics.fields_and_times(series)
     local time_dict = a.time_dict
     local S = # a.names
     local T = S*(S+1)/2
@@ -152,12 +152,12 @@ stats.multivariate = function (series)
         if section and # section == S then
             N = N + 1
             stop = time
-            stats.vector_sadd(sum, section)
-            stats.vector_sadd(sum2, stats.vector_square(section))
+            statistics.vector_sadd(sum, section)
+            statistics.vector_sadd(sum2, statistics.vector_square(section))
             if prev_section then
-                dsection = stats.vector_diff(section, prev_section)
-                stats.vector_sadd(dsum, dsection)
-                stats.vector_sadd(dsum2, stats.vector_square(dsection))
+                dsection = statistics.vector_diff(section, prev_section)
+                statistics.vector_sadd(dsum, dsection)
+                statistics.vector_sadd(dsum2, statistics.vector_square(dsection))
             else
                 start = time
             end
@@ -170,42 +170,3 @@ stats.multivariate = function (series)
     end
 end
 
--- Get timeseries from redis KEYS
-stats.get_series = function ()
-    local command = ARGV[1]
-    local start = ARGV[2]
-    local stop = ARGV[3]
-    local calc_type = ARGV[4]
-    local pos = 5
-    local series = {}
-    -- loop over keys
-    for i, id in ipairs(KEYS) do
-        local serie = columnts:new(id)
-        local num_fields = ARGV[pos]
-        local fields = tabletools.slice(ARGV, pos+1, pos+num_fields)
-        pos = pos + num_fields + 1
-        local time_values = serie:range(command, start, stop, fields, true)
-        local t,v = unpack(time_values)
-        table.insert(series, {key=id, times=t, field_values=v})
-    end
-    if # series == 0 then
-        error('No timeseries available')
-    end
-    return {calc_type=calc_type, series=series}
-end
-
-if KEYS and ARGV then
-    local r = stats.get_series()
-    local result
-    if r.calc_type == 'multi' then
-        result = stats.multivariate(r.series)
-    else
-        result = stats.univariate(r.series[1])
-    end
-    if result then
-        result = cjson.encode(result)
-    end
-    return result
-else
-    return stats
-end

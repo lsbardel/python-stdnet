@@ -263,28 +263,22 @@ class PairMixin(object):
         
     @withsession
     def __getitem__(self, key):
-        key = self.pickler.dumps(key)
-        result = self.session.backend.structure(self).get(key)
-        if result is None:
-            raise KeyError(key)
-        return self.value_pickler.loads(result)
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key)
     
     def __setitem__(self, key, value):
         self.add(key, value)
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         '''Retrieve a single element from the structure.
 If the element is not available return the default value.
 
 :parameter key: lookup field
-:parameter default: default value when the field is not available.
-:parameter transaction: an optional transaction instance.
-:rtype: a value in the hashtable or a pipeline depending if a
-    transaction has been used.'''
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
+:parameter default: default value when the field is not available'''
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key, default)
     
     @withsession
     def _iter(self):
@@ -332,7 +326,10 @@ Equivalent to python dictionary update method.
                 pair = pair,
             k,v = p(pair)
             yield tokey(k),dumps(v)
-
+        
+    def load_get_data(self, value):
+        return self.value_pickler.loads(value)
+    
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
@@ -348,6 +345,13 @@ Equivalent to python dictionary update method.
         vloads = self.value_pickler.loads
         return (vloads(v) for v in iterable)
     
+    def _load_get_data(self, value, key, *args):
+        if value is None:
+            if not args:
+                raise KeyError(key)
+            else:
+                return args[0]
+        return self.load_get_data(value)
     
 
 class KeyValueMixin(PairMixin):
@@ -413,12 +417,6 @@ a numeric value we call score.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         return self.backend_structure().count(s1, s2)
-        
-    def rank(self, value):
-        '''The rank of a given *value*. This is the position of *value*
-in the :class:`OrderedMixin` container.'''
-        value = self.pickler.dumps(value)
-        return self.backend_structure().rank(value)
     
     def range(self, start, stop, callback=None, **kwargs):
         '''Return a range with scores between start and end.'''
@@ -532,6 +530,12 @@ class Zset(OrderedMixin, PairMixin, Set):
     pickler = encoders.Double()
     cache_class = zsetcache
     
+    def rank(self, value):
+        '''The rank of a given *value*. This is the position of *value*
+in the :class:`OrderedMixin` container.'''
+        value = self.pickler.dumps(value)
+        return self.backend_structure().rank(value)
+    
     def _iter(self):
         # Override the KeyValueMixin so that it iterates over values rather
         # scores
@@ -541,8 +545,8 @@ class Zset(OrderedMixin, PairMixin, Set):
                     
     
 class HashTable(KeyValueMixin, Structure):
-    '''A hash-table :class:`stdnet.Structure`.
-The networked equivalent to a Python ``dict``.'''
+    '''A :class:`Structure` which is the networked equivalent to
+a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     cache_class = hashcache
     
     def addnx(self, field, value, transaction = None):

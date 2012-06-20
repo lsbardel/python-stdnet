@@ -43,7 +43,7 @@ First steps
 :ref:`Redis Client <redis-server>`
 
 **Special Topic**
-:ref:`Store, manipulate and analyse time-series <apps-timeserie>`
+:ref:`Multivariate numeric time-series <apps-timeserie>`
  
 **Miscellaneous:**
 :ref:`Contributing <contributing>` |

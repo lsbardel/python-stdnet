@@ -31,7 +31,7 @@ class TimeseriesCache(object):
 
 
 class ColumnTS(odm.TS):
-    '''A specialised :class:`stdnet.odm.TS` structure for handling numeric
+    '''A specialised :class:`stdnet.odm.TS` structure for numeric
 multivariate timeseries.'''
     default_multi_stats = ['covariance']
     
@@ -73,16 +73,6 @@ multivariate timeseries.'''
             add(dt, v)
         return self
     
-    def get(self, dt, *fields):
-        return self.range(dt, dt, fields, callback = self._get)
-    
-    def __getitem__(self, dt):
-        v = self.get(dt)
-        if v is None:
-            raise KeyError(str(dt))
-        else:
-            return v
-        
     def evaluate(self, script, *series, **params):
         res = self.backend_structure().run_script('evaluate', series,
                                                   script, **params)
@@ -184,13 +174,9 @@ The result will be calculated using the formula::
             vals[f] = [vloads(d) for d in data]
         return (dt,vals)
     
-    def _get(self, result):
-        dt,fields = self.load_data(result)
-        if dt:
-            if len(fields) == 1:
-                return tuple(fields.values())[0]
-            else:
-                return dict(((f,fields[f][0]) for f in fields))
+    def load_get_data(self, result):
+        vloads = self.value_pickler.loads
+        return dict(((f,vloads(v)) for f,v in result))
     
     def _stats(self, result):
         if result:

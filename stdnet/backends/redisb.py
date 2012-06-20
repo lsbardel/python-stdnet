@@ -715,14 +715,14 @@ class BackendDataServer(stdnet.BackendDataServer):
                   'numberarray':NumberArray,
                   'string': String}
         
-    def setup_connection(self, address, **params):
+    def setup_connection(self, address):
         addr = address.split(':')
         if len(addr) == 2:
             try:
                 address = (addr[0],int(addr[1]))
             except:
                 pass
-        cp = redis.ConnectionPool(address, **params)
+        cp = redis.ConnectionPool(address, **self.params)
         if cp in self.connection_pools:
             cp = self.connection_pools[cp]
         else:
@@ -750,9 +750,6 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def cursor(self, pipelined = False):
         return self.client.pipeline() if pipelined else self.client
-    
-    def issame(self, other):
-        return self.client == other.client
         
     def disconnect(self):
         self.client.connection_pool.disconnect()
@@ -908,7 +905,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.basekey(meta, TMP, name if name is not None else\
                                         gen_unique_id())
         
-    def flush(self, meta = None, pattern = None):
+    def flush(self, meta=None, pattern=None):
         '''Flush all model keys from the database'''
         if meta is not None:
             pattern = '{0}*'.format(self.basekey(meta))

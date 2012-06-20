@@ -1,6 +1,6 @@
 import os
 
-from stdnet import odm
+from stdnet import odm, test
 from stdnet.apps.columnts import DoubleEncoder
 try:
     from stdnet.apps.columnts import npts
@@ -17,9 +17,9 @@ except ImportError:
 from . import main
 
 do_tests = npts is not None
-skipUnless = main.skipUnless
+skipUnless = test.unittest.skipUnless
 
-@skipUnless(do_tests, 'Requires stdnet-redis and dynts') 
+@skipUnless(do_tests, 'Requires dynts') 
 class TestDynTsIntegration(main.TestColumnTSBase):
     
     @classmethod

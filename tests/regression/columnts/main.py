@@ -11,9 +11,6 @@ from examples.tsmodels import ColumnTimeSeries
 
 from tests.regression import struct
 
-skipUnless = test.unittest.skipUnless
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
-do_tests = True
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
@@ -24,7 +21,6 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1',this_path))
     
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMeta(test.TestCase):
     
     def testLuaClass(self):
@@ -35,7 +31,6 @@ class TestMeta(test.TestCase):
         self.assertEqual(r,b'OK')
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestCase(test.TestCase):
     
     def check_stats(self, stat_field, data):
@@ -54,7 +49,6 @@ class TestCase(test.TestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTimeSeries(struct.StructMixin, TestCase):
     structure = ColumnTS
     name = 'columnts'
@@ -189,7 +183,7 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testRangeField(self):
         ts = self.makeGoogle()
-        data = ts.irange(fields = ('low','high','badone'))
+        data = ts.irange(fields=('low','high','badone'))
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(fields),2)
@@ -248,10 +242,6 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         self.assertEqual(len(v),4)
         v2 = ts[date(2012,1,23)]
         self.assertEqual(v,v2)
-        v3 = ts.get(date(2012,1,23),'open','close')
-        self.assertEqual(len(v3),2)
-        self.assertEqual(v3['open'],v['open'])
-        self.assertEqual(v3['close'],v['close'])
         self.assertEqual(ts.get(date(2014,1,1)),None)
         self.assertRaises(KeyError, lambda: ts[date(2014,1,1)])
         
@@ -275,28 +265,27 @@ class TestTimeSeries(struct.StructMixin, TestCase):
             self.assertTrue(isinstance(dt,datetime))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestColumnTSBase(TestCase):
-    
+    '''Class for testing large data'''
     @classmethod
     def setUpClass(cls):
         size = cls.size
-        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data_mul1 = tsdata(size = size, fields = ('eurusd',))
-        cls.data_mul2 = tsdata(size = size, fields = ('gbpusd',))
+        cls.data1 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data2 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data3 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
+        cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
         cls.ColumnTS = ColumnTS
     
     def create(self):
+        '''Create one ColumnTS with six fields and cls.size dates'''
         session = self.session()
         with session.begin():
             ts1 = session.add(self.ColumnTS())
             ts1.update(self.data1.values)
         return ts1
-            
-            
-@skipUnless(do_tests, 'Requires stdnet-redis')
+    
+
 class TestOperations(TestColumnTSBase):
     
     def testSimpleStats(self):
@@ -454,7 +443,7 @@ class TestOperations(TestColumnTSBase):
         self.assertEqual(mul1.size(),self.data_mul1.length)
         self.assertEqual(mul2.size(),self.data_mul2.length)
         with session.begin():
-            ts = self.ColumnTS(id = 'merged')
+            ts = self.ColumnTS(id='merged')
             ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2))
             self.assertEqual(ts.session,session)
         length = ts.size()
@@ -548,7 +537,6 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMultivariate(TestColumnTSBase):
     
     def testSimpleMultiStats(self):
@@ -562,7 +550,6 @@ class TestMultivariate(TestColumnTSBase):
         self.assertEqual(result['N'],len(dt))
     
     
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMissingValues(TestCase):
     
     @classmethod

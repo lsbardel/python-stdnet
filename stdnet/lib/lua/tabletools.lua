@@ -57,6 +57,16 @@ tabletools.flat = function (tbl)
     return result
 end
 
+tabletools.load_code = function(code, environment)
+    if setfenv and loadstring then
+        local f = assert(loadstring(code))
+        setfenv(f, environment)
+        return f
+    else
+        return assert(load(code, nil,"t",environment))
+    end
+end
+
 -- Return the module only when this module is not in REDIS
 if not (KEYS and ARGV) then
     return tabletools

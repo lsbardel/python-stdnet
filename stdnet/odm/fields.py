@@ -62,7 +62,7 @@ def field_value_error(f):
 
 class Field(UnicodeMixin):
     '''This is the base class of all StdNet Fields.
-Each field is specified as a :class:`stdnet.odm.StdModel` class attribute.
+Each field is specified as a :class:`StdModel` class attribute.
     
 .. attribute:: index
 
@@ -143,8 +143,11 @@ Each field is specified as a :class:`stdnet.odm.StdModel` class attribute.
 .. attribute:: as_cache
 
     If ``True`` the field contains data which is considered cache and
-    therefore always reproducible. Field marked as cahe, have :attr:`required`
+    therefore always reproducible. Field marked as cache, have :attr:`required`
     always ``False``.
+    
+    This attribute is used by the :class:`StdModel.fieldvalue_pairs` method
+    which returns a dictionary of field names and values.
     
     Default ``False``.
 '''
@@ -496,7 +499,11 @@ class PickleObjectField(ByteField):
 python object.
 This field is python specific and therefore not of much use
 if accessed from external programs. Consider the :class:`ForeignKey`
-or :class:`JSONField` fields as more general alternatives.'''
+or :class:`JSONField` fields as more general alternatives.
+
+.. note:: The best way to use this field is when its :class:`Field.as_cache`
+          attribute is ``True``.
+'''
     type = 'object'
     default = None
     
@@ -629,19 +636,18 @@ behaviour and how the field is stored in the back-end server.
 .. attribute:: as_string
 
     A boolean indicating if data should be serialized
-    into a single JSON string or the should be used to create several
-    fields prefixed with the field name
-    and double underscore ``__``.
+    into a single JSON string or it should be used to create several
+    fields prefixed with the field name and the double underscore ``__``.
                     
     Default ``True``.
 
-    In other words, a :class:`JSONField` with ``as_string`` attribute set to
+    Effectively, a :class:`JSONField` with ``as_string`` attribute set to
     ``False`` is a multifield, in the sense that it generates several
     field-value pairs. For example, lets consider the following::
     
         class MyModel(odm.StdModel):
             name = odm.SymbolField()
-            data = odm.JSONField(as_string = False)
+            data = odm.JSONField(as_string=False)
         
     And::
     
@@ -652,11 +658,14 @@ behaviour and how the field is stored in the back-end server.
  'data__pv__std': '3.5', 'data': '""'}
         >>>
         
-    The reason for setting ``as_string`` to ``False`` is to enable
-    sorting of instances with respect to its fields::
+    The reason for setting ``as_string`` to ``False`` is to allow
+    the :class:`JSONField` to define several fields at runtime,
+    without introducing new :class:`Field` in your model class.
+    These fields behave exactly like standard fields and therefore you
+    can, for example, sort queries with respect to them::
     
-        >>> MyModel.objects.all().sort_by('data__pv__std')
-        >>> MyModel.objects.all().sort_by('-data__pv')
+        >>> MyModel.objects.query().sort_by('data__pv__std')
+        >>> MyModel.objects.query().sort_by('-data__pv')
     
     which can be rather useful feature.
 '''

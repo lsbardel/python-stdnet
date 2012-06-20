@@ -11,6 +11,9 @@ from .session import commit_when_no_transaction, withsession
 
 
 __all__ = ['Structure',
+           'Sequence',
+           'OrderedMixin',
+           'KeyValueMixin',
            'String',
            'List',
            'Set',
@@ -132,31 +135,22 @@ class tscache(hashcache):
 ################################################################################
 
 class Structure(ModelBase):
-    '''Base class for remote data-structures. Remote structures are the
+    '''A :class:`Model` which is used a base class for remote data-structures.
+Remote structures are the
 backend of :ref:`structured fields <model-field-structure>` but they
 can also be used as stand alone objects. For example::
 
     import stdnet
     db = stdnet.getdb(...)
     mylist = db.list('bla')
-    
-:parameter backend: instance of the remote :class:`BackendDataServer` where
-    the structure is stored.
-:parameter id: structure id
-:parameter pipetype: check the :attr:`pipetype`. Specified by the server.
-:parameter instance: Optional :class:`stdnet.odm.StdModel` instance to which
-    the structure belongs to via a
-    :ref:`structured field <model-field-structure>`.
-    This field is specified when accessing remote structures via the object
-    relational mapper.
 
 .. attribute:: instance
 
-    An optional :class:`StdModel` instance to which
-    the structure belongs to via a
-    :ref:`structured field <model-field-structure>`.
+    An optional :class:`StdModel` instance to which the structure belongs
+    to via a :ref:`structured field <model-field-structure>`. This attribute
+    is initialised by the :mod:`odm`.
     
-    Defaulr ``None``.
+    Default ``None``.
     
 .. attribute:: timeout
 
@@ -175,8 +169,7 @@ can also be used as stand alone objects. For example::
     _model_type = 'structure'
     pickler = None
     value_pickler = None
-    def __init__(self, instance = None, timeout = 0, value_pickler = None,
-                 **kwargs):
+    def __init__(self, instance=None, timeout=0, value_pickler=None, **kwargs):
         self.instance = instance
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
@@ -261,7 +254,6 @@ Do not override this function. Use :meth:`load_data` method instead.'''
 ################################################################################
 ##    Mixins Structures
 ################################################################################
-
 class PairMixin(object):
     '''A mixin for handling structures with which holds pairs.'''
     pickler = encoders.NoEncoder()
@@ -271,28 +263,22 @@ class PairMixin(object):
         
     @withsession
     def __getitem__(self, key):
-        key = self.pickler.dumps(key)
-        result = self.session.backend.structure(self).get(key)
-        if result is None:
-            raise KeyError(key)
-        return self.value_pickler.loads(result)
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key)
     
     def __setitem__(self, key, value):
         self.add(key, value)
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         '''Retrieve a single element from the structure.
 If the element is not available return the default value.
 
 :parameter key: lookup field
-:parameter default: default value when the field is not available.
-:parameter transaction: an optional transaction instance.
-:rtype: a value in the hashtable or a pipeline depending if a
-    transaction has been used.'''
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
+:parameter default: default value when the field is not available'''
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key, default)
     
     @withsession
     def _iter(self):
@@ -340,13 +326,32 @@ Equivalent to python dictionary update method.
                 pair = pair,
             k,v = p(pair)
             yield tokey(k),dumps(v)
-
+        
+    def load_get_data(self, value):
+        return self.value_pickler.loads(value)
+    
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        if isinstance(mapping,dict):
+        if isinstance(mapping, dict):
             mapping = iteritems(mapping)
         return ((loads(k),vloads(v)) for k,v in mapping)
+    
+    def load_keys(self, iterable):
+        loads = self.pickler.loads
+        return (loads(k) for k in iterable)
+    
+    def load_values(self, iterable):
+        vloads = self.value_pickler.loads
+        return (vloads(v) for v in iterable)
+    
+    def _load_get_data(self, value, key, *args):
+        if value is None:
+            if not args:
+                raise KeyError(key)
+            else:
+                return args[0]
+        return self.load_get_data(value)
     
 
 class KeyValueMixin(PairMixin):
@@ -381,7 +386,6 @@ class KeyValueMixin(PairMixin):
             yield vloads(v)
             
     # PRIVATE
-    
     def _pop(self, key):
         k = self.pickler.dumps(key)
         v = self.session.structure(self).pop(k)
@@ -393,8 +397,8 @@ class KeyValueMixin(PairMixin):
     
     
 class OrderedMixin(object):
-    '''A mixin for :class:`Structure` wich maintain ordering with respect
-a float value.'''
+    '''A mixin for a :class:`Structure` which maintains ordering with respect
+a numeric value we call score.'''
     
     def front(self):
         '''Return the front pair of the structure'''
@@ -413,33 +417,46 @@ a float value.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         return self.backend_structure().count(s1, s2)
-        
-    def rank(self, value):
-        value = self.pickler.dumps(value)
-        return self.backend_structure().rank(value)
     
-    def range(self, start, stop, callback = None, **kwargs):
+    def range(self, start, stop, callback=None, **kwargs):
+        '''Return a range with scores between start and end.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().range(s1, s2, **kwargs)
         return self.async_handle(res, callback or self.load_data)
     
-    def irange(self, start = 0, end = -1, callback = None, **kwargs):
-        '''Return a range between start and end key.'''
+    def irange(self, start=0, end=-1, callback=None, **kwargs):
+        '''Return the range by rank between start and end.'''
         res = self.backend_structure().irange(start, end, **kwargs)
         return self.async_handle(res, callback or self.load_data)
+        
+    def pop_range(self, start, stop, callback=None, **kwargs):
+        '''pop a range by score from the :class:`OrderedMixin`'''
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        res = self.backend_structure().pop_range(s1, s2, **kwargs)
+        return self.async_handle(res, callback or self.load_data)
 
+    def ipop_range(self, start=0, stop=-1, callback=None, **kwargs):
+        '''pop a range from the :class:`OrderedMixin`'''
+        res = self.backend_structure().ipop_range(start, stop, **kwargs)
+        return self.async_handle(res, callback or self.load_data)
+    
 
 class Sequence(object):
+    '''Mixin for a :class:`Structure` which implements a kind of sequence
+container. The elements in a sequence container are ordered following a linear
+sequence.'''
     cache_class = listcache
     
     @commit_when_no_transaction
     def push_back(self, value):
-        '''Appends a copy of *value* to the end of the list.'''
+        '''Appends a copy of *value* at the end of the :class:`Sequence`.'''
         self.cache.push_back(self.value_pickler.dumps(value))
         return self
         
     def pop_back(self):
+        '''Remove the last element from the :class:`Sequence`.'''
         value = self.session.structure(self).pop_back()
         return self.value_pickler.loads(value)
     
@@ -485,9 +502,11 @@ class Set(Structure):
     
     
 class List(Sequence, Structure):
-    '''A linked-list :class:`stdnet.Structure`.'''
-    
+    '''A doubly-linked list :class:`Structure`. It expands the
+:class:`Sequence` mixin with functionalities to add and remove from
+the front of the list in an efficient manner.'''
     def pop_front(self):
+        '''Remove the first element from of the list.'''
         value = self.session.structure(self).pop_front()
         return self.value_pickler.loads(value)
     
@@ -506,9 +525,16 @@ class List(Sequence, Structure):
 
 
 class Zset(OrderedMixin, PairMixin, Set):
-    '''An ordered version of :class:`Set`.'''
+    '''An ordered version of :class:`Set`. It derives from
+:class:`OrderedMixin` and :class:`PairMixin`.'''
     pickler = encoders.Double()
     cache_class = zsetcache
+    
+    def rank(self, value):
+        '''The rank of a given *value*. This is the position of *value*
+in the :class:`OrderedMixin` container.'''
+        value = self.pickler.dumps(value)
+        return self.backend_structure().rank(value)
     
     def _iter(self):
         # Override the KeyValueMixin so that it iterates over values rather
@@ -516,19 +542,11 @@ class Zset(OrderedMixin, PairMixin, Set):
         loads = self.value_pickler.loads
         for v in self.session.structure(self):
             yield loads(v)
-            
-    def ipop(self, start, stop = None, **options):
-        '''pop a range from the set'''
-        return self.backend_structure().ipop(start, stop, **options)
-        
-    def pop(self, start, stop = None, **options):
-        '''pop a score range from the set'''
-        return self.backend_structure().pop(start, stop, **options)
-            
+                    
     
 class HashTable(KeyValueMixin, Structure):
-    '''A hash-table :class:`stdnet.Structure`.
-The networked equivalent to a Python ``dict``.'''
+    '''A :class:`Structure` which is the networked equivalent to
+a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     cache_class = hashcache
     
     def addnx(self, field, value, transaction = None):
@@ -540,12 +558,25 @@ does not exist.'''
 
     
 class TS(OrderedMixin, KeyValueMixin, Structure):
-    '''A timeseries :class:`Structure`. This is an experimental structure
-not available with vanilla redis. Check the
-:ref:`timeseries documentation <apps-timeserie>` for further information.'''
+    '''A timeseries is a :class:`Structure` which derives from 
+:class:`OrderedMixin` and :class:`KeyValueMixin`.
+It represents an ordered associative container where keys are timestamps
+and values are objects.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
-    cache_class = tscache 
+    cache_class = tscache
+    
+    def times(self, start, stop, callback=None, **kwargs):
+        '''The times between times *start* and *stop*.'''
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        res = self.backend_structure().times(s1, s2, **kwargs)
+        return self.async_handle(res, callback or self.load_keys)
+
+    def itimes(self, start=0, stop=-1, callback=None, **kwargs):
+        '''The times between rank *start* and *stop*.'''
+        res = self.backend_structure().itimes(start, stop, **kwargs)
+        return self.async_handle(res, callback or self.load_keys)
     
     
 class String(Sequence, Structure):

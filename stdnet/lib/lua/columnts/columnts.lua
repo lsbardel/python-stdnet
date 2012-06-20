@@ -27,7 +27,7 @@ local columnts = {
         return redis.call('scard', self.fieldskey) + 0
     end,
     --
-    -- a set of fields
+    -- Returns a dictionary of field names/field keys
     fields_set = function(self)
         local f = {}
         for _,name in ipairs(self:fields()) do
@@ -50,27 +50,57 @@ local columnts = {
     end,
     --
     -- Return the ordered list of times
-    times = function (self)
-        return redis.call('zrange', self.key, 0, -1)
+    times = function (self, ...)
+    	if # arg == 2 then
+    		return redis.call('zrangebyscore', self.key, arg[1], arg[2])
+    	elseif # arg == 0 then
+        	return redis.call('zrange', self.key, 0, -1)
+        else
+        	error('times accept 0 or two arguments')
+        end
+    end,
+    --
+    itimes = function (self, start, stop)
+        return redis.call('zrange', self.key, start, stop)
     end,
     --
     -- The rank of timestamp in the timeseries
     rank = function (self, timestamp)
-        return redis.call('zrank', self.key, timestamp)
+        return redis.call('zrank', self.key, timestamp+0)
+    end,
+    --
+    -- Get all field values at timestamp. Return a dictionary of values or nil
+    get = function (self, timestamp, skip_unpack)
+    	local dv = self:range(timestamp, timestamp, nil, skip_unpack)
+    	if # dv[1] == 1 then
+    		local fields = {}
+    		for field, data in pairs(dv[2]) do
+    			fields[field] = data[1]
+    		end
+    		return fields
+    	end
     end,
     --
     -- Return the unpacked value of field at rank
     rank_value = function (self, rank, field)
+    	if rank < 0 then
+    		rank = self:length() + rank
+    	end
         local r = 9*rank
         local value = redis.call('getrange',self:fieldkey(field),r,r+9)
         return self:unpack_value(value)
+    end,
+    --
+    -- shortcut for returning the whole range of a timeserie
+    all = function (self, fields, skip_unpack)
+        return self:irange(0, -1, fields, skip_unpack)
     end,
     --
     -- A representation of the timeseries as a dictionary.
     -- If only one field is available, values will be the field values
     -- otherwise it will be a dictionary of fields.
     -- *Values are unpacked*
-    asdict = function(self, fields)
+    asdict = function (self, fields)
         if self:length() == 0 then
             return nil
         end
@@ -78,20 +108,20 @@ local columnts = {
         local result = {}
         local field_name
         local count = 0
-        for fname,field in pairs(field_values) do
+        for fname, field in pairs(field_values) do
             count = count + 1
             field_name = fname
         end
         if count == 1 then
             field_values = field_values[field_name]
             for i,time in ipairs(times) do
-                result[time] = self:unpack_value(field_values[i])
+                result[time] = field_values[i]
             end
         else
             for i,time in ipairs(times) do
                 fvalues = {}
                 for fname,field in pairs(field_names) do
-                    fvalues[fname] = self:unpack_value(field_values[fname][i])
+                    fvalues[fname] = field_values[fname][i]
                 end
                 result[time] = fvalues
             end
@@ -99,16 +129,11 @@ local columnts = {
         return result
     end,
     --
-    -- Add a timeseries, multiplied by the given weight, to self
-    addserie = function(self, ts, weight, fields, tsmul)
-        local range = ts:range('zrange', 0, -1, fields)
-        local times, field_values = unpack(range)
+    -- Add a timeseries *ts*, multiplied by the given weight, to self
+    addserie = function (self, ts, weight, fields, tsmul)
+    	-- get data without unpacking. IMPORTANT
+        local times, field_values = unpack(ts:all(fields, true))
         return self:add(times, field_values, weight, tsmul)
-    end,
-    --
-    -- shortcut for returning the whole range of a timeserie
-    all = function(self, fields)
-        return self:range('zrange', 0, -1, fields)
     end,
     --
     -- remove a field and return true or false
@@ -117,7 +142,7 @@ local columnts = {
     end,
     --
     -- remove a timestamp from timeseries and return it
-    poptime = function(self, timestamp)
+    pop = function(self, timestamp)
         local rank = redis.call('zrank', self.key, timestamp)
         if rank then
             rank = rank + 0
@@ -132,10 +157,64 @@ local columnts = {
         end
     end,
     --
+    -- remove a range by time from the timeseries and return it
+    pop_range = function(self, start, stop, skip_unpack)
+        local i1 = redis.call('zrank', self.key, start+0)
+        local i2 = redis.call('zrank', self.key, stop+0)
+        return self:ipop_range(i1, i2, skip_unpack)
+    end,
+    --
+    -- remove a range by rank from the timeseries and returns it
+    ipop_range = function(self, i1, i2, skip_unpack)
+    	local length = self:length()
+    	if i1 and i2 and length > 0 then
+    		i1 = i1 + 0
+    		if i1 < 0 then
+    			i1 = math.max(length + i1, 0)
+    		end
+    		local times = self:itimes(i1, i2)
+    		local len = # times
+    		if len == 0 then
+    			return {{}, {}}
+    		end
+    		assert(redis.call('zremrangebyrank', self.key, i1, i2)+0 == len,
+    			 	'Critical error while removing range')
+    		local i2 = i1 + len
+    		local fields = self:fields()
+    		local field_values = {}
+    		local data = {times, field_values}
+    		for i, field in ipairs(fields) do
+                local fkey = self:fieldkey(field)
+                local removed_data = redis.call('getrange', fkey, i1*9, i2*9-1)
+                local new_data = ''
+                if i1 > 0 then
+                	new_data = redis.call('getrange', fkey, 0, i1*9-1)
+                end
+                if i2 < length then
+                	new_data = new_data .. redis.call('getrange', fkey, i2*9, -1)
+                end
+                field_values[field] = self:fill_table(removed_data, len, skip_unpack)
+                redis.call('set', fkey, new_data)
+            end
+            return data
+        else
+        	return {{}, {}}
+        end
+    end,
+    --
+    range = function (self, start, stop, fields, skip_unpack)
+    	local times = self:times(start, stop)
+    	return self:get_range(times, fields, skip_unpack)
+    end,
+    --
+    irange = function (self, start, stop, fields, skip_unpack)
+    	local times = self:itimes(start, stop)
+    	return self:get_range(times, fields, skip_unpack)
+    end,
+    --
     -- return an array containg a range of the timeseries. The array
     -- contains two elements, an array of times and a dictionary of fields.
-    range = function(self, command, start, stop, fields, unpack_values)
-        local times = redis.call(command, self.key, start, stop)
+    get_range = function (self, times, fields, skip_unpack)
         local field_values = {}
         local data = {times, field_values}
         local len = # times
@@ -149,34 +228,20 @@ local columnts = {
             fields = self:fields()
         end
         -- loop over fields
-        for i,field in ipairs(fields) do
+        for i, field in ipairs(fields) do
             local fkey = self:fieldkey(field)
             if redis.call('exists', fkey) + 0 == 1 then
                 -- Get the string between start and stop from redis
                 local sdata = redis.call('getrange', fkey, 9*start, 9*stop)
-                local fdata = {}
-                local p = 0
-                if unpack_values then
-                    local v
-                    while p < 9*len do
-                        v = self:unpack_value(string.sub(sdata, p+1, p+9))
-                        table.insert(fdata,v)
-                        p = p + 9
-                    end
-                else
-                    while p < 9*len do
-                        table.insert(fdata,string.sub(sdata, p+1, p+9))
-                        p = p + 9
-                    end
-                end
-                field_values[field] = fdata
+                field_values[field] = self:fill_table(sdata, len, skip_unpack)
             end
         end
         return data
     end,
     --
+    -- LOW LEVEL FUNCTION. DO NOT USE DIRECTLY
     -- Add/replace field values. If weights are provided, the values in
-    -- field_values are already unpacked and they are added to existing
+    -- field_values MUST NOT BE UNPACKED and they are added to existing
     -- values, otherwise the values are to be replaced. tsmul is an optional
     -- single field timeseries which multiply each field in self.
     --
@@ -353,6 +418,26 @@ local columnts = {
     -- string value for key
     string_value = function (self, key)
         return {key,redis.call('get', self.key .. ':key:' .. key)}
+    end,
+    --
+    -- fill table with values
+    fill_table = function(self, sdata, len, skip_unpack)
+    	local fdata = {}
+        local p = 0
+        if skip_unpack then
+        	while p < 9*len do
+                table.insert(fdata, string.sub(sdata, p+1, p+9))
+                p = p + 9
+            end
+        else
+            local v
+            while p < 9*len do
+                v = self:unpack_value(string.sub(sdata, p+1, p+9))
+                table.insert(fdata,v)
+                p = p + 9
+            end
+        end
+        return fdata
     end
 }
 

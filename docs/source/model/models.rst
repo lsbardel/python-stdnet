@@ -75,7 +75,7 @@ python has several of them too. ``stdnet`` implements **five** remote structures
 list, set, ordered set, hash and timeseries.
 
 The structures are bind to a remote dataserver and they derive from
-from :class:`stdnet.Structure` base class.
+from :class:`Structure` base class.
 
 
 Creating Structures
@@ -102,27 +102,43 @@ If no ``id`` is specified, stdnet will create one for you::
 To add data you have two options: immediate commit or transactions. For example,
 lets add elements to a set::
     
-    >>> s.update((4,6,'bla',foo',4))
+    >>> s.update((4, 6, 'bla', 'foo', 4))
     >>> s.size()
     4
     
- or we could use transactions to combine several updates together.
- To use a transaction we do::
+Alternatively, one could use :ref:`transactions <model-transactions>` to
+combine several updates together::
  
     with session.begin():
-        s.update((4,6,'bla',foo',4))
+        s.update((4, 6, 'bla', 'foo', 4))
         h['foo'] = 56
         o.add(3,'a zset element with score 3')
     
         
-Structure Base Class
+Base Class and Mixins
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Structure
    :members:
    :member-order: bysource
 
+.. autoclass:: Sequence
+   :members:
+   :member-order: bysource
 
+.. autoclass:: PairMixin
+   :members:
+   :member-order: bysource
+   
+.. autoclass:: KeyValueMixin
+   :members:
+   :member-order: bysource
+
+.. autoclass:: OrderedMixin
+   :members:
+   :member-order: bysource
+   
+   
 List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -31,8 +31,8 @@ class TimeseriesCache(object):
 
 
 class ColumnTS(odm.TS):
-    '''A specialised :class:`stdnet.odm.TS` structure for handling multivariate
-timeseries of numbers.'''
+    '''A specialised :class:`stdnet.odm.TS` structure for handling numeric
+multivariate timeseries.'''
     default_multi_stats = ['covariance']
     
     cache_class = TimeseriesCache
@@ -72,17 +72,6 @@ timeseries of numbers.'''
         for dt, v in mapping:
             add(dt, v)
         return self
-    
-    def irange(self, start = 0, end = -1, fields = None, novalues = False,
-               callback = None):
-        res = self.backend_structure().irange(start, end, fields, novalues)
-        return self.async_handle(res, callback or self.load_data)
-    
-    def range(self, start, end, fields=None, novalues = False, callback=None):
-        start = self.pickler.dumps(start)
-        end = self.pickler.dumps(end)
-        res = self.backend_structure().range(start, end, fields, novalues)
-        return self.async_handle(res, callback or self.load_data)
     
     def get(self, dt, *fields):
         return self.range(dt, dt, fields, callback = self._get)
@@ -186,6 +175,7 @@ The result will be calculated using the formula::
     # INTERNALS
     
     def load_data(self, result):
+        '''Overwrite :meth:`stdnet.odm.PairMixin.load_data` method'''
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
         dt = [loads(t) for t in result[0]]

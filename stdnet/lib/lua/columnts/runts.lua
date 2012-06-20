@@ -14,14 +14,24 @@ local scripts = {
 	merge = function(self, series, ...)
 	end,
 	--
+	times = function(self, series, start, stop)
+		local serie = self.on_serie_only(series, 'times')
+		return serie:times(start, stop)
+	end,
+	--
+	itimes = function(self, series, start, stop)
+		local serie = self.on_serie_only(series, 'itimes')
+		return serie:itimes(start, stop)
+	end,
+	--
 	pop_range = function(self, series, start, stop)
 		local serie = self.on_serie_only(series, 'pop_range')
-		return self.flatten(serie:pop_range(start, stop))
+		return self.flatten(serie:pop_range(start, stop, false))
 	end,
 	--
 	ipop_range = function(self, series, start, stop)
 		local serie = self.on_serie_only(series, 'ipop_range')
-		return self.flatten(serie:ipop_range(start, stop))
+		return self.flatten(serie:ipop_range(start, stop, false))
 	end,
 	--
 	-- INTERNALS

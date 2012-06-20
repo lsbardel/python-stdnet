@@ -336,9 +336,18 @@ Equivalent to python dictionary update method.
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        if isinstance(mapping,dict):
+        if isinstance(mapping, dict):
             mapping = iteritems(mapping)
         return ((loads(k),vloads(v)) for k,v in mapping)
+    
+    def load_keys(self, iterable):
+        loads = self.pickler.loads
+        return (loads(k) for k in iterable)
+    
+    def load_values(self, iterable):
+        vloads = self.value_pickler.loads
+        return (vloads(v) for v in iterable)
+    
     
 
 class KeyValueMixin(PairMixin):
@@ -423,16 +432,16 @@ in the :class:`OrderedMixin` container.'''
         res = self.backend_structure().irange(start, end, **kwargs)
         return self.async_handle(res, callback or self.load_data)
         
-    def pop_range(self, start, stop, callback=None, **options):
+    def pop_range(self, start, stop, callback=None, **kwargs):
         '''pop a range by score from the :class:`OrderedMixin`'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().pop_range(s1, s2, **options)
+        res = self.backend_structure().pop_range(s1, s2, **kwargs)
         return self.async_handle(res, callback or self.load_data)
 
-    def ipop_range(self, start=0, stop=-1, callback=None, **options):
+    def ipop_range(self, start=0, stop=-1, callback=None, **kwargs):
         '''pop a range from the :class:`OrderedMixin`'''
-        res = self.backend_structure().ipop_range(start, stop, **options)
+        res = self.backend_structure().ipop_range(start, stop, **kwargs)
         return self.async_handle(res, callback or self.load_data)
     
 
@@ -551,7 +560,19 @@ It represents an ordered associative container where keys are timestamps
 and values are objects.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
-    cache_class = tscache 
+    cache_class = tscache
+    
+    def times(self, start, stop, callback=None, **kwargs):
+        '''The times between times *start* and *stop*.'''
+        s1 = self.pickler.dumps(start)
+        s2 = self.pickler.dumps(stop)
+        res = self.backend_structure().times(s1, s2, **kwargs)
+        return self.async_handle(res, callback or self.load_keys)
+
+    def itimes(self, start=0, stop=-1, callback=None, **kwargs):
+        '''The times between rank *start* and *stop*.'''
+        res = self.backend_structure().itimes(start, stop, **kwargs)
+        return self.async_handle(res, callback or self.load_keys)
     
     
 class String(Sequence, Structure):

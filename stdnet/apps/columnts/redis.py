@@ -47,7 +47,7 @@ class RedisColumnTS(redisb.Zset):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
     
-    def irange(self, start = 0, end = -1, fields=None, novalues=False,
+    def irange(self, start=0, end=-1, fields=None, novalues=False,
                delete=False, **kwargs):
         noval = 1 if novalues else 0
         fields = fields or ()
@@ -55,7 +55,7 @@ class RedisColumnTS(redisb.Zset):
         return self.client.script_call(
                         'timeseries_query', self.id, 'zrange',
                         start, end, noval, delete, len(fields),
-                        *fields, fields = fields, novalues=novalues)
+                        *fields, fields=fields, novalues=novalues)
         
     def range(self, start, end, fields=None, novalues=False, **kwargs):
         noval = 1 if novalues else 0
@@ -63,17 +63,25 @@ class RedisColumnTS(redisb.Zset):
         return self.client.script_call(
                         'timeseries_query', self.id, 'zrangebyscore',
                         start, end, noval, 0, len(fields), *fields,
-                        fields = fields, novalues = novalues)
+                        fields=fields, novalues=novalues)
     
     def pop_range(self, start, end, **kwargs):
         return self.client.script_call('timeseries_run', self.id,
                                        'pop_range', start, end,
-                                       return_type='range')
+                                       return_type='range', **kwargs)
         
     def ipop_range(self, start=0, end=-1, **kwargs):
         return self.client.script_call('timeseries_run', self.id,
                                        'ipop_range', start, end,
-                                       return_type='range')
+                                       return_type='range', **kwargs)
+    
+    def times(self, start, end, **kwargs):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'times', start, end, **kwargs)
+        
+    def itimes(self, start=0, end=-1, **kwargs):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'itimes', start, end, **kwargs)
         
     def flat(self):
         cache = self.instance.cache

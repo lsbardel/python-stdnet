@@ -50,8 +50,17 @@ local columnts = {
     end,
     --
     -- Return the ordered list of times
-    times = function (self)
-        return redis.call('zrange', self.key, 0, -1)
+    times = function (self, ...)
+    	if # arg == 2 then
+    		return redis.call('zrangebyscore', self.key, arg[1], arg[2])
+    	elseif # arg == 0 then
+        	return redis.call('zrange', self.key, 0, -1)
+        else
+        	error('times accept 0 or two arguments')
+        end
+    end,
+    itimes = function (self, start, stop)
+        return redis.call('zrange', self.key, start, stop)
     end,
     --
     -- The rank of timestamp in the timeseries
@@ -136,57 +145,47 @@ local columnts = {
     end,
     --
     -- remove a range by time from the timeseries and return it
-    pop_range = function(self, start, stop)
-        local i1 = redis.call('zrank', self.key, start)
-        local i2 = redis.call('zrank', self.key, stop)
-        return self:ipop_range(i1, i2)
+    pop_range = function(self, start, stop, unpack_values)
+        local i1 = redis.call('zrank', self.key, start+0)
+        local i2 = redis.call('zrank', self.key, stop+0)
+        return self:ipop_range(i1, i2, unpack_values)
     end,
     --
-    -- remove a range by rank from the timeseries and return it
-    ipop_range = function(self, i1, i2)
+    -- remove a range by rank from the timeseries and returns it
+    ipop_range = function(self, i1, i2, unpack_values)
     	local length = self:length()
     	if i1 and i2 and length > 0 then
     		i1 = i1 + 0
-    		i2 = i2 + 0
     		if i1 < 0 then
-    			i1 = length + i1
+    			i1 = math.max(length + i1, 0)
     		end
-    		if i2 < 0 then
-    			i2 = length + i2
+    		local times = self:itimes(i1, i2)
+    		local len = # times
+    		if len == 0 then
+    			return {{}, {}}
     		end
-    		if i1 < 0 or i1 >= length or i2 < i1 then
-    			return {}
-    		end
-    		i2 = math.min(i2, length-1)
+    		assert(redis.call('zremrangebyrank', self.key, i1, i2)+0 == len,
+    			 	'Critical error while removing range')
+    		local i2 = i1 + len
     		local fields = self:fields()
-    		local times = redis.call('zrange', self.key, i1, i2)
     		local field_values = {}
     		local data = {times, field_values}
     		for i, field in ipairs(fields) do
                 local fkey = self:fieldkey(field)
-                local fdata = {}
+                local removed_data = redis.call('getrange', fkey, i1*9, i2*9-1)
                 local new_data = ''
                 if i1 > 0 then
-                	i1 = i1*9
-                	new_data = redis.call('getrange', fkey, 0, i1)
+                	new_data = redis.call('getrange', fkey, 0, i1*9-1)
                 end
-                if i2 < length-1 then
+                if i2 < length then
                 	new_data = new_data .. redis.call('getrange', fkey, i2*9, -1)
                 end
-                local removed_data = redis.call('getrange', fkey, i1, i2*9)
-                local p = 0
-                local len = # removed_data
-                while p+9 <= len do
-                	table.insert(fdata, self:unpack_value(string.sub(removed_data, p+1, p+9)))
-                	p = p + 9
-                end
-                field_values[field] = fdata
+                field_values[field] = self:fill_table(removed_data, len, unpack_values)
                 redis.call('set', fkey, new_data)
             end
-            redis.call('zremrangebyrank', self.key, i1, i2)
             return data
         else
-        	return {}
+        	return {{}, {}}
         end
     end,
     --
@@ -212,22 +211,7 @@ local columnts = {
             if redis.call('exists', fkey) + 0 == 1 then
                 -- Get the string between start and stop from redis
                 local sdata = redis.call('getrange', fkey, 9*start, 9*stop)
-                local fdata = {}
-                local p = 0
-                if unpack_values then
-                    local v
-                    while p < 9*len do
-                        v = self:unpack_value(string.sub(sdata, p+1, p+9))
-                        table.insert(fdata,v)
-                        p = p + 9
-                    end
-                else
-                    while p < 9*len do
-                        table.insert(fdata,string.sub(sdata, p+1, p+9))
-                        p = p + 9
-                    end
-                end
-                field_values[field] = fdata
+                field_values[field] = self:fill_table(sdata, len, unpack_values)
             end
         end
         return data
@@ -411,6 +395,26 @@ local columnts = {
     -- string value for key
     string_value = function (self, key)
         return {key,redis.call('get', self.key .. ':key:' .. key)}
+    end,
+    --
+    -- fill table with values
+    fill_table = function(self, sdata, len, unpack_values)
+    	local fdata = {}
+        local p = 0
+        if unpack_values then
+            local v
+            while p < 9*len do
+                v = self:unpack_value(string.sub(sdata, p+1, p+9))
+                table.insert(fdata,v)
+                p = p + 9
+            end
+        else
+            while p < 9*len do
+                table.insert(fdata, string.sub(sdata, p+1, p+9))
+                p = p + 9
+            end
+        end
+        return fdata
     end
 }
 

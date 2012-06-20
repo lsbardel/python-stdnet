@@ -237,7 +237,7 @@ of a missing script, are also re-executed.'''
 def _load_missing_scripts(results, positions, res):
     for i,r in zip(positions,res):
         if i == -1:
-            if isinstance(r,Exception):
+            if isinstance(r, Exception):
                 raise r
             else:
                 continue

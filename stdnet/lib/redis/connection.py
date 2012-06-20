@@ -293,9 +293,9 @@ This class should not be directly initialized. Instead use the
     @property
     def socket_type(self):
         '''Socket type'''
-        if isinstance(self.address,tuple):
+        if isinstance(self.address, tuple):
             return 'TCP'
-        elif isinstance(self.address,str):
+        elif isinstance(self.address, str):
             if os.name == 'posix':
                 return 'UNIX'
             else:
@@ -314,7 +314,7 @@ This class should not be directly initialized. Instead use the
     def READ_BUFFER_SIZE(self):
         return self.pool.READ_BUFFER_SIZE
     
-    def connect(self, request, counter = 1):
+    def connect(self, request, counter=1):
         "Connects to the Redis server if not already connected."
         if self.__sock:
             return

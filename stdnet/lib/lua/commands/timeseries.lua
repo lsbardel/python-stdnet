@@ -1,9 +1,9 @@
 -- UNIVARIATE TIMESERIES IN REDIS
 --
--- Stand alone Lua script for managing an univariate timeseries in Redis
+-- Stand-alone Lua script for managing an univariate timeseries in Redis
 --
 -- A timeseries is an
--- 	1) ordered (with respect timestamps)
+--  1) ordered (with respect timestamps)
 --  2) unique (each timestamp is unique within the timeseries)
 --  3) associative (it associate a timestamp with a value)
 -- container.
@@ -40,6 +40,7 @@ local timeseries_commands = {
             -- This is the trick. The value is a JSON encoded representation of
             -- a two-elements table given by the timestamp and the value itself
             value = cjson.encode({timestamp, arg[i+2]})
+            -- This make sure of timestamp to be unique
             redis.call('zremrangebyscore', id, timestamp, timestamp)
             redis.call('zadd', id, timestamp, value)
             i = i + 2

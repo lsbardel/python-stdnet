@@ -641,6 +641,12 @@ class TS(RedisStructure):
     
     def get(self, dte):
         return self.client.script_call('ts_commands', self.id, 'get', dte)
+    
+    def pop(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'pop', dte)
+    
+    def ipop(self, index):
+        return self.client.script_call('ts_commands', self.id, 'ipop', index)
             
     def range(self, time_start, time_stop, **kwargs):
         return self.client.script_call('ts_commands', self.id, 'range',

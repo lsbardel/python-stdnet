@@ -183,11 +183,21 @@ class TestZset(StructMixin,test.TestCase):
         self.assertFalse(z in session)
         self.assertTrue(z.session)
         
-    def testiRange(self):
+    def test_irange(self):
         l = self.planets()
         # Get the whole range
         r = list(l.irange())
         self.assertEqual(r,self.result)
+        
+    def test_range(self):
+        l = self.planets()
+        r = list(l.range(0.5,20))
+        self.assertTrue(r)
+        k1 = 0.5
+        for k,v in r:
+            self.assertTrue(k>=k1)
+            self.assertTrue(k<=20)
+            k1 = k
         
     def testIter(self):
         '''test a very simple zset with integer'''
@@ -201,11 +211,6 @@ class TestZset(StructMixin,test.TestCase):
         l = self.planets()
         r = list(l.items())
         self.assertEqual(r,self.result)
-        
-    def testGet(self):
-        l = self.planets()
-        self.assertEqual(l[1],'earth')
-        self.assertEqual(l.get(0.11),'mars')
 
 
 class TestList(StructMixin, test.TestCase):

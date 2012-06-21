@@ -52,7 +52,9 @@ local columnts = {
     -- Return the ordered list of times
     times = function (self, ...)
     	if # arg == 2 then
-    		return redis.call('zrangebyscore', self.key, arg[1], arg[2])
+    		local start = arg[1] + 0
+    		local stop = arg[2] + 0
+    		return redis.call('zrangebyscore', self.key, start, stop)
     	elseif # arg == 0 then
         	return redis.call('zrange', self.key, 0, -1)
         else
@@ -65,6 +67,15 @@ local columnts = {
     end,
     --
     -- The rank of timestamp in the timeseries
+    exists = function (self, timestamp)
+        if redis.call('zrank', self.key, timestamp+0) then
+        	return true
+        else
+        	return false
+        end
+    end,
+    --
+    -- The rank of timestamp in the timeseries
     rank = function (self, timestamp)
         return redis.call('zrank', self.key, timestamp+0)
     end,
@@ -72,13 +83,25 @@ local columnts = {
     -- Get all field values at timestamp. Return a dictionary of values or nil
     get = function (self, timestamp, skip_unpack)
     	local dv = self:range(timestamp, timestamp, nil, skip_unpack)
-    	if # dv[1] == 1 then
-    		local fields = {}
-    		for field, data in pairs(dv[2]) do
-    			fields[field] = data[1]
-    		end
-    		return fields
-    	end
+    	return self:_single_field_dict(dv)
+    end,
+    --
+    -- remove a timestamp from timeseries and return it
+    pop = function(self, timestamp, skip_unpack)
+        local rank = redis.call('zrank', self.key, timestamp+0)
+        return self:ipop(rank, skip_unpack)
+    end,
+    --
+    ipop = function(self, index, skip_unpack)
+    	if index then
+    		local data = self:ipop_range(index, index, skip_unpack)
+    		return self:_single_field_dict(data)
+        end
+    end,
+    --
+    -- remove a field and return true or false
+    popfield = function (field)
+        return redis.call('del', self:fieldkey(field))['ok'] + 0 == 1
     end,
     --
     -- Return the unpacked value of field at rank
@@ -134,27 +157,6 @@ local columnts = {
     	-- get data without unpacking. IMPORTANT
         local times, field_values = unpack(ts:all(fields, true))
         return self:add(times, field_values, weight, tsmul)
-    end,
-    --
-    -- remove a field and return true or false
-    popfield = function (field)
-        return redis.call('del', self:fieldkey(field))['ok'] + 0 == 1
-    end,
-    --
-    -- remove a timestamp from timeseries and return it
-    pop = function(self, timestamp)
-        local rank = redis.call('zrank', self.key, timestamp)
-        if rank then
-            rank = rank + 0
-            for i,field in pairs(fields) do
-                fieldid = tsid .. ':field:' .. field
-                data = redis.call('getrange', fieldid, (rank+1)*9, -1)
-                if rank > 0 then
-                    data = redis.call('getrange', fieldid, (rank-1)*9, rank*9) + data
-                end
-                redis.call('set', fieldid, data)
-            end
-        end
     end,
     --
     -- remove a range by time from the timeseries and return it
@@ -438,6 +440,16 @@ local columnts = {
             end
         end
         return fdata
+    end,
+    --
+    _single_field_dict = function(self, dv)
+    	if # dv[1] == 1 then
+    		local fields = {}
+    		for field, data in pairs(dv[2]) do
+    			fields[field] = data[1]
+    		end
+    		return fields
+    	end
     end
 }
 

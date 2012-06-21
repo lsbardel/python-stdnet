@@ -5,21 +5,36 @@ local scripts = {
 		local serie = self.on_serie_only(series, 'size')
 		return serie:length()
 	end,
-	--
-	-- Run a user script agains the timeserie
-	evaluate = function(self, series, script, ...)
-		local context = {
-			self = series[1],
-			series = series,
-			others = tabletools.slice(series, 2, -1)
-		}
-		local script_function = tabletools.load_code(script, context)
-		return script_function()
+	-- Check if *timestamp* exists in the timeseries
+	exists = function (self, series, timestamp)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:exists(timestamp)
+	end,
+	-- Rank of *timestamp* in timeseries
+	rank = function (self, series, timestamp)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:rank(timestamp)
 	end,
 	--
 	get = function(self, series, dte)
 		local serie = self.on_serie_only(series, 'get')
 		local fields = serie:get(dte, true)
+		if fields then
+			return tabletools.flat(fields)
+		end
+	end,
+	--
+	pop = function(self, series, dte)
+		local serie = self.on_serie_only(series, 'pop')
+		local fields = serie:pop(dte, true)
+		if fields then
+			return tabletools.flat(fields)
+		end
+	end,
+	--
+	ipop = function(self, series, index)
+		local serie = self.on_serie_only(series, 'ipop')
+		local fields = serie:ipop(index, true)
 		if fields then
 			return tabletools.flat(fields)
 		end
@@ -149,6 +164,17 @@ local scripts = {
 			serie:add(times, field_values)
 		end
 		return serie:length()
+	end,
+	--
+	-- Run a user script agains the timeserie
+	evaluate = function(self, series, script, ...)
+		local context = {
+			self = series[1],
+			series = series,
+			others = tabletools.slice(series, 2, -1)
+		}
+		local script_function = tabletools.load_code(script, context)
+		return script_function()
 	end,
 	--
 	----------------------------------------------------------------------------

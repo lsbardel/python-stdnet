@@ -54,6 +54,14 @@ class RedisColumnTS(redisb.RedisStructure):
         return self.client.script_call('timeseries_run', self.id, 'get', dte,
                                        return_type='get')
     
+    def pop(self, dte):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'pop', dte, return_type='get')
+        
+    def ipop(self, index):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'ipop', index, return_type='get')
+        
     def irange(self, start=0, end=-1, fields=None, **kwargs):
         fields = fields or ()
         return self.client.script_call('timeseries_run', self.id, 'irange',

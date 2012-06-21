@@ -6,7 +6,7 @@ Development
 * Several fixes in the documentation.
 * Lua script for univariate timeseries. This means the standard redis distribution 
   works with the :class:`stdnet.odm.TS` structure.
-* **574 regression tests** with **90%** coverage.
+* **577 regression tests** with **90%** coverage.
   
 Ver. 0.7c3 - 2012 May 02
 ===============================

@@ -569,6 +569,17 @@ and values are objects.'''
     def keys(self):
         return self.itimes()
     
+    def rank(self, dte):
+        '''The rank of a given *dte* in the timeseries'''
+        timestamp = self.pickler.dumps(dte)
+        return self.backend_structure().rank(timestamp)
+    
+    def ipop(self, index):
+        '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
+index is not out of bound.'''
+        res = self.session.backend.structure(self).ipop(index)
+        return self.async_handle(res, self._load_get_data, index, None)
+    
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''
         s1 = self.pickler.dumps(start)

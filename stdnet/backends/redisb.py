@@ -642,6 +642,9 @@ class TS(RedisStructure):
     def get(self, dte):
         return self.client.script_call('ts_commands', self.id, 'get', dte)
     
+    def rank(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'rank', dte)
+    
     def pop(self, dte):
         return self.client.script_call('ts_commands', self.id, 'pop', dte)
     
@@ -654,6 +657,14 @@ class TS(RedisStructure):
             
     def irange(self, start=0, stop=-1, **kwargs):
         return self.client.script_call('ts_commands', self.id, 'irange',
+                                       start, stop, **kwargs)
+        
+    def pop_range(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'pop_range',
+                                       time_start, time_stop, **kwargs)
+            
+    def ipop_range(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'ipop_range',
                                        start, stop, **kwargs)
 
 

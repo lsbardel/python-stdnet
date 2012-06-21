@@ -1,5 +1,15 @@
 .. _stdnetredis:
 
+.. note::
+    
+    This branch is not longer active. Both the *ZDIFFSTORE* command and the
+    *timeseries* data-structure have been implemented using lua scripts.
+    If timeseries is what you are looking for, check the
+    :ref:`timeseries data structure <model-structures>` for
+    univariate timeseries and the :ref:`column timeseries <apps-timeserie>` for
+    numeric multivariate timeseries suitable for modelling financial timeseries.
+    Stdnet uses redis >= 2.6 from the standard (antirez) distribution.
+    
 =======================
 Stdnet Redis branch
 =======================

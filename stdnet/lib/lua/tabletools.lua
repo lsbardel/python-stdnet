@@ -49,7 +49,7 @@ end
 -- Convert a dictionary into a flat array. For example {bla = 'foo', planet = 'mars'}
 -- becomes {'bla', 'foo', 'planet', 'mars'}
 tabletools.flat = function (tbl)
-    result = {}
+    local result = {}
     for name,value in pairs(tbl) do
         table.insert(result,name)
         table.insert(result,value)

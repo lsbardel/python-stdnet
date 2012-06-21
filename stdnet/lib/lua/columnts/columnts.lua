@@ -222,8 +222,8 @@ local columnts = {
             return data
         end
         -- get the start rank (Also when we use tsrange. Important)
-        start = redis.call('zrank', self.key, times[1])
-        stop = start + len
+        local start = redis.call('zrank', self.key, times[1])
+        local stop = start + len
         if not fields or # fields == 0 then
             fields = self:fields()
         end

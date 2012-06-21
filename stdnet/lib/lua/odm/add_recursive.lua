@@ -22,7 +22,7 @@ local function remove(ids, toadd)
 	    if toadd then
 	       add(id)
 	    end
-	    remove(redis_members(bk .. ':idx:' .. field .. ':' .. id),true) 
+	    remove(redis_members(bk .. ':idx:' .. field .. ':' .. id), true) 
 	end
 end
 

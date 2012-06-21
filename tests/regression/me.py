@@ -19,10 +19,3 @@ class TestInitFile(test.TestCase):
         for m in ("__author__", "__contact__", "__homepage__", "__doc__"):
             self.assertTrue(getattr(me, m, None))
             
-    def testSettings(self):
-        db = settings.DEFAULT_BACKEND
-        try:
-            settings.DEFAULT_BACKEND = 'redis://dksnkdcnskcnskcn:6379?db=7'
-            self.assertRaises(redis.RedisConnectionError, settings.redis_status)
-        finally:
-            settings.DEFAULT_BACKEND = db

@@ -268,6 +268,7 @@ it returns an instance of :class:`HashTable` structure.
 class TimeSeriesField(HashField):
     '''A timeseries field based on TS data structure in Redis.
 To be used with subclasses of :class:`TimeSeriesBase`'''
+    type = 'ts'
     default_pickler = None
     
     def structure_class(self):

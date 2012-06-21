@@ -195,7 +195,7 @@ class Redis(object):
             lambda request, response, args, **options : bool(response)
             ),
         string_keys_to_dict(
-            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE TSLEN '
+            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             lambda request, response, args, **options : int(response)
             ),
@@ -223,7 +223,6 @@ class Redis(object):
             'ZRANGE ZRANGEBYSCORE ZREVRANGE',
             zset_score_pairs
             ),
-        string_keys_to_dict('TSRANGE TSRANGEBYTIME', ts_pairs),
         {
             'BGREWRITEAOF': lambda request, response, args, **options: \
                 response == b'Background rewriting of AOF file started',
@@ -257,7 +256,7 @@ class Redis(object):
                  socket_timeout=None,
                  connection_pool=None,
                  encoding = 'utf-8',
-                 prefix = '', check_status = True,
+                 prefix = '',
                  **kwargs):
         if not connection_pool:
             kwargs.update({
@@ -272,11 +271,6 @@ class Redis(object):
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.response_errbacks = self.RESPONSE_ERRBACKS.copy()
-        if check_status:
-            rstatus = Redis(address=connection_pool.address,
-                            password=password,
-                            check_status=False)
-            self._STATUS = rstatus.redis_status()
         
     @property
     def client(self):
@@ -879,18 +873,13 @@ The first element is the score and the second is the value.'''
         Compute the difference of multiple sorted sets specified by
         ``keys`` into a new sorted set, ``dest``.
         """
-        keys = list_or_args(keys, args)
-        using = options.pop('using',self._STATUS) or self._STATUS
-        if using == 'stdnet':
-            return self._zaggregate('ZDIFFSTORE', dest, keys, **options)
+        keys = (dest,) + tuple(list_or_args(keys, args))
+        withscores = options.pop('withscores', False)
+        if withscores:
+            withscores = 'withscores'
         else:
-            keys = (dest,) + tuple(keys)
-            withscores = options.pop('withscores',False)
-            if withscores:
-                withscores = 'withscores'
-            else:
-                withscores = ''
-            return self.script_call('zdiffstore', keys, withscores, **options)
+            withscores = ''
+        return self.script_call('zdiffstore', keys, withscores, **options)
     
     # zset script commands
     
@@ -933,79 +922,6 @@ The first element is the score and the second is the value.'''
         if withscores:
             pieces.append('WITHSCORES')
             pieces.append(withscores)
-        return self.execute_command(*pieces, **options)
-    
-    ############################################################################
-    ##    TIMESERIES COMMANDS
-    ############################################################################
-    def redis_status(self):
-        '''Check if redis has timeseries commands. Return one of "vanilla" for
-standard redis, "stdnet" for redis stdnet branch or "" if there
-is no connection.'''
-        try:
-            self.execute_command('TSLEN', str(uuid4()))
-            return 'stdnet'
-        except RedisConnectionError:
-            return ''
-        except RedisInvalidResponse:
-            return 'vanilla'
-        
-    def tslen(self, name, **options):
-        '''timeseries length'''
-        return self.execute_command('TSLEN', name, **options)
-    
-    def tsexists(self, name, score, **options):
-        '''timeseries length'''
-        return self.execute_command('TSEXISTS', name, score, **options)
-    
-    def tsrank(self, name, score, **options):
-        '''Rank of *score*'''
-        return self.execute_command('TSRANK', name, score, **options)
-
-    def tsadd(self, name, *items, **options):
-        '''timeseries length'''
-        return self.execute_command('TSADD', name, *items, **options)
-    
-    def tscount(self, key, start, end, **options):
-        '''Counts the number of elements between *start* and *end* at *key*.'''
-        return self.execute_command('TSCOUNT', key, start, end, **options)
-    
-    def tsrange(self, name, start = 0, end = -1, desc = False,
-                withtimes = False, novalues = False, **options):
-        """Return a range of values from timeseries at ``name`` between
-``start`` and ``end`` sorted in ascending order.
-``start`` and ``end`` can be negative, indicating the end of the range.
-
-``desc`` indicates to sort in descending order.
-
-``withscores`` indicates to return the scores along with the values.
-    The return type is a list of (value, score) pairs"""
-        pieces = ['TSRANGE', name, start, end]
-        if novalues:
-            pieces.append('novalues')
-        elif withtimes:
-            pieces.append('withtimes')
-        options.update({'withtimes': withtimes,
-                        'novalues': novalues})
-        return self.execute_command(*pieces, **options)
-        
-    def tsrangebytime(self, key, start, end, desc = False,
-                      withtimes = False, novalues = False,
-                      **options):
-        """Return a range of values from timeseries at ``key`` between
-time ``start`` and time ``end`` sorted in ascending order.
-
-``desc`` indicates to sort in descending order.
-
-``withscores`` indicates to return the scores along with the values.
-    The return type is a list of (value, score) pairs"""
-        pieces = ['TSRANGEBYTIME', key, start, end]
-        if withtimes:
-            pieces.append('withtimes')
-        elif novalues:
-            pieces.append('novalues')
-        options.update({'withtimes': withtimes,
-                        'novalues': novalues})
         return self.execute_command(*pieces, **options)
         
     ############################################################################

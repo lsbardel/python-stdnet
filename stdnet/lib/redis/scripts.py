@@ -43,7 +43,7 @@ def eval_command_callback(request, response, args, script_name=None, **options):
         return s.start_callback(request, response, args, **options)
     
 
-def pairs_to_dict(response, encoding, value_encoder = 0):
+def pairs_to_dict(response, encoding, value_encoder=0):
     "Create a dict given a list of key/value pairs"
     if response:
         v1 = (r.decode(encoding) for r in response[::2])

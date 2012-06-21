@@ -125,11 +125,11 @@ for r,rel in ipairs(related) do
 	local fields = rel['fields']
 	related_items[r] = {rel['name'], field_items, fields}
 	-- A structure
-	if rel['type'] == 'structure' then
+	if # rel['type'] > 0 then
 		for i,res in ipairs(result) do
 			local id = res[1]
 			local fid = bk .. ':obj:' .. id .. ':' .. field
-			field_items[i] = {id, redis_members(fid,true)}
+			field_items[i] = {id, redis_members(fid, true, rel['type'])}
 		end
 	else
 		local processed = {}

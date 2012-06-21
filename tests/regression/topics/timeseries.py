@@ -9,9 +9,6 @@ from stdnet.utils import populate, todate, zip, dategenerator,\
 from examples.tsmodels import TimeSeries, DateTimeSeries
 from tests.regression.fields.struct import MultiFieldMixin
 
-skipUnless = test.unittest.skipUnless
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
-
 NUM_DATES = 300
 
 dates     = populate('date',NUM_DATES)
@@ -24,7 +21,6 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
     model = TimeSeries
     mkdate = datetime
@@ -39,7 +35,7 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
         return self.model(ticker = ticker).save()
     
     def get(self, ticker = 'GOOG'):
-        return self.model.objects.get(ticker = ticker)
+        return self.model.objects.get(ticker=ticker)
         
     def filldata(self, data = None):
         d = self.make()
@@ -215,7 +211,6 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
             m2.data.update(testdata2)
         self.assertTrue(m1.size())
         self.assertTrue(m2.size())
-        
         for m in session.query(self.model).load_related('data'):
             self.assertTrue(m.data.cache.cache)
         
@@ -306,7 +301,6 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
         self.assertEqual(ts.data.count(r2[0][0],r2[-1][0]),b-a+1)
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestDateSeries(TestDateTimeSeries):
     model = DateTimeSeries
     mkdate = date

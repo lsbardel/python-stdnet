@@ -6,8 +6,15 @@ from stdnet.utils.encoders import safe_number
 from stdnet.lib import redis
 
 
-class RedisColumnTS(redisb.Zset):
+class RedisColumnTS(redisb.RedisStructure):
     '''Redis backend for :class:`ColumnTS`'''
+    def __contains__(self, timestamp):
+        return self.client.script_call('timeseries_run', self.id, 'exists',
+                                       timestamp)
+    
+    def size(self):
+        return self.client.script_call('timeseries_run', self.id, 'size')
+    
     @property
     def fieldsid(self):
         return self.id + ':fields'
@@ -25,9 +32,6 @@ class RedisColumnTS(redisb.Zset):
             return self.client.script_call('timeseries_run', self.id,
                                            'merge', cache.merged_series)
     
-    def _iter(self):
-        return iter(self.irange(novalues=True))
-    
     def allkeys(self):
         return self.client.keys(self.id + '*')
     
@@ -42,7 +46,6 @@ class RedisColumnTS(redisb.Zset):
         '''Fetch an entire row field string from redis'''
         return self.client.get(self.fieldid(field))
         
-    
     def numfields(self):
         '''Number of fields'''
         return self.client.scard(self.fieldsid)
@@ -62,6 +65,11 @@ class RedisColumnTS(redisb.Zset):
         return self.client.script_call('timeseries_run', self.id, 'range',
                                        start, end, *fields, fields=fields,
                                        return_type='range', **kwargs)
+    
+    def irange_and_delete(self):
+        return self.client.script_call('timeseries_run', self.id,
+                                       'irange_and_delete',
+                                       return_type='range')
     
     def pop_range(self, start, end, **kwargs):
         return self.client.script_call('timeseries_run', self.id,

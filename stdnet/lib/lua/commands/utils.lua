@@ -40,13 +40,9 @@ end
 -- table of all members at key.
 -- If the key is a string returns an empty table
 -- If an argumnet is passed with value true all elements of the structure are returned.
-local function redis_members(key, ...)
-	local typ = redis.call('type',key)['ok']
-	local all
-	if table.getn(arg) > 0 then
-		all = arg[1]
-	else
-		all = false
+local function redis_members(key, all, typ)
+	if not typ then
+		typ = redis.call('type',key)['ok']
 	end
 	if typ == 'set' then
 		return redis.call('smembers', key)
@@ -65,11 +61,7 @@ local function redis_members(key, ...)
 			return redis.call('hkeys', key)
 		end
 	elseif typ == 'ts' then
-	    if all then
-            return redis.call('tsrange', key, 0, -1, 'withtimes')
-        else
-            return redis.call('tsrange', key, 0, -1)
-        end
+	    return timeseries.call('irange', key, 0, -1)
 	else
 		return {}
 	end

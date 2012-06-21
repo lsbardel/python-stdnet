@@ -281,12 +281,6 @@ If the element is not available return the default value.
         return self.async_handle(res, self._load_get_data, key, default)
     
     @withsession
-    def _iter(self):
-        loads = self.pickler.loads
-        for k in self.session.structure(self):
-            yield loads(k)
-    
-    @withsession
     def items(self):
         data = self.session.structure(self).items()
         return self.load_data(data)
@@ -355,12 +349,17 @@ Equivalent to python dictionary update method.
     
 
 class KeyValueMixin(PairMixin):
-    '''A mixin for key-valued pair containes.'''
+    '''A mixin for ordered and unordered key-valued pair containers.
+A key-value pair container has the :meth:`values` and :meth:`items`
+methods, while its iterator is over keys.'''
+    def _iter(self):
+        return self.keys()
+            
     def __delitem__(self, key):
         '''Immediately remove an element. To remove with transactions use the
 :meth:`remove` method`.'''
         self._pop(key)
-            
+    
     def pop(self, key, *args):
         if len(args) > 1:
             raise TypeError('pop expected at most 2 arguments, got {0}'\
@@ -379,6 +378,9 @@ class KeyValueMixin(PairMixin):
         dumps = self.pickler.dumps
         self.cache.remove([dumps(v) for v in keys])
         
+    def keys(self):
+        raise NotImplementedError()
+    
     @withsession
     def values(self):
         vloads = self.value_pickler.loads
@@ -549,6 +551,11 @@ class HashTable(KeyValueMixin, Structure):
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     cache_class = hashcache
     
+    def keys(self):
+        loads = self.pickler.loads
+        for k in self.session.structure(self):
+            yield loads(k)
+        
     def addnx(self, field, value, transaction = None):
         '''Set the value of a hash field only if the field
 does not exist.'''
@@ -565,6 +572,12 @@ and values are objects.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
     cache_class = tscache
+    
+    def items(self):
+        return self.irange()
+    
+    def keys(self):
+        return self.itimes()
     
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''

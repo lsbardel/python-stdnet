@@ -1,5 +1,11 @@
 -- MANAGE ALL COLUMNTS SCRIPTS called by stdnet
 local scripts = {
+	--
+	size = function(self, series, dte)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:length()
+	end,
+	--
 	-- Run a user script agains the timeserie
 	evaluate = function(self, series, script, ...)
 		local context = {
@@ -9,9 +15,6 @@ local scripts = {
 		}
 		local script_function = tabletools.load_code(script, context)
 		return script_function()
-	end,
-	-- Merge timeseries
-	merge = function(self, series, ...)
 	end,
 	--
 	get = function(self, series, dte)
@@ -40,6 +43,13 @@ local scripts = {
 	irange = function(self, series, start, stop, ...)
 		local serie = self.on_serie_only(series, 'irange')
 		return self.flatten(serie:irange(start, stop, arg, true))
+	end,
+	--
+	irange_and_delete = function(self, series)
+		local serie = self.on_serie_only(series, 'irange_and_delete')
+		local result = self.flatten(serie:irange(0, -1, nil, true))
+		serie:del()
+		return result
 	end,
 	--
 	pop_range = function(self, series, start, stop)
@@ -161,7 +171,7 @@ local scripts = {
 	end,
 	--
 	stats_data = function(series, start, stop, fields, byrank)
-		sdata = {}
+		local sdata = {}
 		local time_values
 		for i, serie in ipairs(series) do
         	local fields = fields[i]

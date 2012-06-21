@@ -54,6 +54,7 @@ class load_query(redis.RedisScript):
 loading of different fields, loading of related fields, sorting and
 limiting.'''
     script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('commands.timeseries'),
               redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm.load_query'))
     
@@ -82,7 +83,7 @@ limiting.'''
             data = self.build(data, fields, fields_attributes, encoding)
             related_fields = {}
             if related:
-                for fname,rdata,fields in related:
+                for fname, rdata, fields in related:
                     fname = native_str(fname, encoding)
                     fields = tuple(native_str(f, encoding) for f in fields)
                     related_fields[fname] =\
@@ -94,12 +95,12 @@ limiting.'''
         field = meta.dfields[fname]
         if field in meta.multifields:
             fmeta = field.structure_class()._meta
-            if fmeta.name in ('hashtable','zset','ts'):
+            if fmeta.name in ('hashtable','zset'):
                 return ((native_str(id, encoding),
                          pairs_to_dict(fdata, encoding)) for \
                         id,fdata in data)
             else:
-                return data
+                return ((native_str(id, encoding),fdata) for id,fdata in data)
         else:
             # this is data for stdmodel instances
             return self.build(data, fields, fields, encoding)
@@ -377,7 +378,7 @@ elements in the query.'''
             yield len(related)
             for rel in related:
                 field = meta.dfields[rel]
-                typ = 'structure' if field in meta.multifields else ''
+                typ = field.type if field in meta.multifields else ''
                 relmodel = field.relmodel
                 bk = self.backend.basekey(relmodel._meta) if relmodel else ''
                 fi = related[rel]
@@ -606,40 +607,48 @@ class Hash(RedisStructure):
         return iter(self.client.hgetall(self.id))
     
     
-class TS(Zset):
-    
+class TS(RedisStructure):
+    '''Redis timeseries implementation is based on the ts.lua script'''
     def flush(self):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            self.client.tsadd(self.id, *cache.toadd.flat())
+            self.client.script_call('ts_commands', self.id, 'add',
+                                    *cache.toadd.flat())
             result = True
         if cache.toremove:
             raise NotImplementedError('Cannot remove. TSDEL not implemented')
         return result
     
-    def _iter(self):
-        return iter(self.irange(novalues = True))
+    def __contains__(self, timestamp):
+        return self.client.script_call('ts_commands', self.id, 'exists',
+                                       timestamp)
     
     def size(self):
-        return self.client.tslen(self.id)
+        return self.client.script_call('ts_commands', self.id, 'size')
     
     def count(self, start, stop):
-        return self.client.tscount(self.id, start, stop)
-
-    def range(self, time_start, time_stop, desc = False, withscores = True,
-              **options):
-        return self.client.tsrangebytime(self.id, time_start, time_stop,
-                                         withtimes = withscores, **options)
-            
-    def irange(self, start=0, stop=-1, desc = False, withscores = True,
-               novalues = False, **options):
-        return self.client.tsrange(self.id, start, stop,
-                                   withtimes = withscores,
-                                   novalues = novalues, **options)
+        return self.client.script_call('ts_commands', self.id, 'count',
+                                       start, stop)
     
-    def items(self, **options):
-        return self.irange(**options)
+    def times(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'times',
+                                       time_start, time_stop, **kwargs)
+            
+    def itimes(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'itimes',
+                                       start, stop, **kwargs)
+    
+    def get(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'get', dte)
+            
+    def range(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'range',
+                                       time_start, time_stop, **kwargs)
+            
+    def irange(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'irange',
+                                       start, stop, **kwargs)
 
 
 class NumberArray(RedisStructure):
@@ -675,6 +684,12 @@ class NumberArray(RedisStructure):
         return self.client.strlen(self.id)//8
     
 
+class ts_commands(redis.RedisScript):
+    script = (redis.read_lua_file('commands.timeseries'),
+              redis.read_lua_file('tabletools'),
+              redis.read_lua_file('ts'))
+    
+    
 class numberarray_resize(redis.RedisScript):
     script = (redis.read_lua_file('odm.numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')

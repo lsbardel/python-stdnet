@@ -161,8 +161,8 @@ local columnts = {
     --
     -- remove a range by time from the timeseries and return it
     pop_range = function(self, start, stop, skip_unpack)
-        local i1 = redis.call('zrank', self.key, start+0)
-        local i2 = redis.call('zrank', self.key, stop+0)
+        local i1 = self:rank(start)
+        local i2 = self:rank(stop)
         return self:ipop_range(i1, i2, skip_unpack)
     end,
     --

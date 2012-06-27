@@ -18,14 +18,14 @@ class key_data(object):
              'big': 10000,
              'huge': 1000000}
     
-    def __init__(self, size, sizes = None, **kwargs):
+    def __init__(self, size, sizes=None, **kwargs):
         self.sizes = sizes or self.sizes
         self.size = self.sizes[size]
         self.generate(**kwargs)
         
-    def generate(self, min_len = 10, max_len = 20, **kwargs):
-        self.keys = populate('string', self.size, min_len = min_len,
-                             max_len = max_len)
+    def generate(self, min_len=10, max_len=20, **kwargs):
+        self.keys = populate('string', self.size, min_len=min_len,
+                             max_len=max_len)
         self.values = populate('string', self.size, min_len = min_len+10,
                                max_len = max_len+20)
         
@@ -168,7 +168,7 @@ with different sizes by passing the'''
     
     @classmethod
     def setUpClass(cls):
-        cls.data = finance_data(size = cls.size)
+        cls.data = finance_data(size=cls.size)
         
         
     

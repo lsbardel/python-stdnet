@@ -15,11 +15,14 @@ BENCHMARK_TEMPLATE = '{0[test]}\nRepeated {0[number]} times.\
 class TestCase(test.TestCase):
     @classmethod
     def setUpClass(cls):
-        size = cls.worker.cfg.size
-        cls.data = hash_data(size = size, fieldtype = 'date')
+        cls.data = hash_data(size=cls.size, fieldtype = 'date')
         
     def setUp(self):
         self.backend.load_scripts()
+        self.startUp()
+        
+    def startUp(self):
+        pass
         
 
 ######### Create TEST CASES

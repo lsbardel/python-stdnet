@@ -720,7 +720,7 @@ if their managers have the same backend database.'''
         return self.session().begin(**kwargs)
     
     # SESSION Proxy methods
-    def query(self, transaction = None):
+    def query(self, transaction=None):
         '''Returns a new :class:`Query` for the :attr:`Manager.model`.'''
         return self.session(transaction=transaction).query(self.model)
     

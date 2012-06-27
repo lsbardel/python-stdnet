@@ -63,19 +63,6 @@ class Settings(object):
         self.REDIS_PY_PARSER = False
         self.MAX_CONNECTIONS = 2**31
         self.RedisConnectionClass = None
-    
-    def redis_status(self):
-        from stdnet import getdb
-        from stdnet.lib.redis import RedisConnectionError
-        db = getdb(self.DEFAULT_BACKEND)
-        status = "ok"
-        if db.name == 'redis':
-            status = db.client.redis_status()
-        if not status:
-            raise RedisConnectionError('No connection available for server\
- at "{0}"'.format(self.DEFAULT_BACKEND))
-        os.environ['stdnet_backend_status'] = status
-        return status
         
         
 settings = Settings()

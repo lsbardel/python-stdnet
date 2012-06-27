@@ -1,9 +1,8 @@
-import unittest as test
-
+from stdnet import test
 from stdnet.utils import Interval, Intervals, pickle
 
 
-class IntervalTest(test.TestCase):
+class TestInterval(test.TestCase):
     
     def intervals(self):
         a = Interval(4,6)
@@ -19,7 +18,7 @@ class IntervalTest(test.TestCase):
         self.assertEqual(a.start,4)
         self.assertEqual(a.end,6)
         self.assertEqual(tuple(a),(4,6))
-        self.assertRaises(ValueError,Interval, 6, 3)
+        self.assertRaises(ValueError, Interval, 6, 3)
         
     def testPickle(self):
         a = Interval(4,6)

@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from .main import TestColumnTSBase
 
 class TestManipulate(TestColumnTSBase):
@@ -49,3 +51,16 @@ class TestManipulate(TestColumnTSBase):
         ts = self.create()
         start, end = ts.itimes(-2)
         self.pop_range(False, ts, start, end, 2, slice(0,-2))
+        
+    def test_contains(self):
+        ts = self.create()
+        all_dates = list(ts.itimes())
+        dt = all_dates[10]
+        self.assertTrue(dt in ts)
+        # now lets pop dt
+        v = ts.pop(dt)
+        self.assertEqual(len(v), 6)
+        self.assertFalse(dt in ts)
+        #
+        dn = datetime.now()
+        self.assertFalse(dn in ts)

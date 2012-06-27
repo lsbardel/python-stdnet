@@ -1,6 +1,4 @@
-'''A Redis timeseries module base on redis time-series and
-redis strings.
-'''
+'''Multivariate numeric timeseries interface.'''
 from stdnet import odm, SessionNotAvailable
 from stdnet.lib import skiplist
 from stdnet.utils import encoders, iteritems, zip
@@ -9,7 +7,7 @@ from .encoders import DoubleEncoder
 
 __all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
 
-
+    
 class TimeseriesCache(object):
     cache = None
     def __init__(self):
@@ -41,22 +39,22 @@ multivariate timeseries.'''
     
     def front(self, *fields):
         '''Return the front pair of the structure'''
-        v,f = tuple(self.irange(0, 0, fields = fields))
+        v,f = tuple(self.irange(0, 0, fields=fields))
         if v:
             return (v[0],dict(((field,f[field][0]) for field in f)))
     
     def back(self, *fields):
         '''Return the back pair of the structure'''
-        v,f = tuple(self.irange(-1, -1, fields = fields))
+        v,f = tuple(self.irange(-1, -1, fields=fields))
         if v:
             return (v[0],dict(((field,f[field][0]) for field in f)))
     
     def fields(self):
-        '''Return a tuple of ordered fields for this :class:`ColumnTS`.'''
+        '''Tuple of ordered fields for this :class:`ColumnTS`.'''
         return self.backend_structure().fields()
     
     def numfields(self):
-        '''Number of fields'''
+        '''Number of fields.'''
         return self.backend_structure().numfields()
     
     @odm.commit_when_no_transaction
@@ -128,7 +126,17 @@ this :class:`ColumnTS` and other *series*.
     
     def merge(self, *series, **kwargs):
         '''Merge this :class:`ColumnTS` with several other *series*.
-It invokes the :meth:`merged_series` class method.'''
+        
+:parameters series: a list of tuples where the nth element is a tuple
+    of the form::
+
+    (wight_n, ts_n1, ts_n2, ..., ts_nMn)
+
+The result will be calculated using the formula::
+
+    ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
+         ...
+'''
         session = self.session
         for serie in series:
             if len(serie) < 2:
@@ -145,22 +153,11 @@ It invokes the :meth:`merged_series` class method.'''
         
     @classmethod 
     def merged_series(cls, *series, **kwargs):
-        '''Merge series into a new :class:`ColumnTS`.
-        
-:parameters series: a list of tuples where the nth element is a tuple
-    of the form::
-
-    (wight_n, ts_n1, ts_n2, ..., ts_nMn)
-
-The result will be calculated using the formula::
-
-    ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
-         ...
-'''
-        kwargs['store'] = False
+        '''Merge series into a new :class:`ColumnTS`.'''
         target = cls()
         target.merge(*series, **kwargs)
-        return target.irange_and_delete()
+        res = target.backend_structure().irange_and_delete()
+        return target.async_handle(res, target.load_data)
         
     # INTERNALS
     
@@ -204,8 +201,8 @@ The result will be calculated using the formula::
         
     
 class ColumnTSField(odm.StructureField):
-    '''An experimenta timeseries field.'''
-    
+    '''A multivariate timeseries field.'''
+    type = 'columnts'
     def structure_class(self):
         return ColumnTS
     

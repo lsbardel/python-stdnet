@@ -260,31 +260,9 @@ class PairMixin(object):
     
     def setup(self, pickler = None, **kwargs):
         self.pickler = pickler or self.pickler
-        
-    @withsession
-    def __getitem__(self, key):
-        dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key)
     
     def __setitem__(self, key, value):
         self.add(key, value)
-
-    def get(self, key, default=None):
-        '''Retrieve a single element from the structure.
-If the element is not available return the default value.
-
-:parameter key: lookup field
-:parameter default: default value when the field is not available'''
-        dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key, default)
-    
-    @withsession
-    def _iter(self):
-        loads = self.pickler.loads
-        for k in self.session.structure(self):
-            yield loads(k)
     
     @withsession
     def items(self):
@@ -326,9 +304,6 @@ Equivalent to python dictionary update method.
                 pair = pair,
             k,v = p(pair)
             yield tokey(k),dumps(v)
-        
-    def load_get_data(self, value):
-        return self.value_pickler.loads(value)
     
     def load_data(self, mapping):
         loads = self.pickler.loads
@@ -345,33 +320,45 @@ Equivalent to python dictionary update method.
         vloads = self.value_pickler.loads
         return (vloads(v) for v in iterable)
     
-    def _load_get_data(self, value, key, *args):
-        if value is None:
-            if not args:
-                raise KeyError(key)
-            else:
-                return args[0]
-        return self.load_get_data(value)
-    
 
 class KeyValueMixin(PairMixin):
-    '''A mixin for key-valued pair containes.'''
+    '''A mixin for ordered and unordered key-valued pair containers.
+A key-value pair container has the :meth:`values` and :meth:`items`
+methods, while its iterator is over keys.'''
+    def _iter(self):
+        return self.keys()
+            
     def __delitem__(self, key):
         '''Immediately remove an element. To remove with transactions use the
 :meth:`remove` method`.'''
-        self._pop(key)
-            
+        self.pop(key)
+
+    @withsession
+    def __getitem__(self, key):
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key)
+    
+    def get(self, key, default=None):
+        '''Retrieve a single element from the structure.
+If the element is not available return the default value.
+
+:parameter key: lookup field
+:parameter default: default value when the field is not available'''
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).get(dkey)
+        return self.async_handle(res, self._load_get_data, key, default)
+        
     def pop(self, key, *args):
-        if len(args) > 1:
+        dkey = self.pickler.dumps(key)
+        res = self.session.backend.structure(self).pop(dkey)
+        if len(args) == 1:
+            return self.async_handle(res, self._load_get_data, key, args[0])
+        elif not args:
+            return self.async_handle(res, self._load_get_data, key)
+        else:
             raise TypeError('pop expected at most 2 arguments, got {0}'\
                             .format(len(args)+1))
-        try:
-            return self._pop(key)
-        except KeyError:
-            if args:
-                return args[0]
-            else:
-                raise
         
     @commit_when_no_transaction
     def remove(self, *keys):
@@ -379,21 +366,26 @@ class KeyValueMixin(PairMixin):
         dumps = self.pickler.dumps
         self.cache.remove([dumps(v) for v in keys])
         
+    def keys(self):
+        raise NotImplementedError()
+    
     @withsession
     def values(self):
         vloads = self.value_pickler.loads
         for v in self.session.structure(self).values():
             yield vloads(v)
-            
-    # PRIVATE
-    def _pop(self, key):
-        k = self.pickler.dumps(key)
-        v = self.session.structure(self).pop(k)
-        if v is None:
-            raise KeyError(key)
-        else:
-            self.cache.remove((k,),False)
-            return self.value_pickler.loads(v)
+    
+    def load_get_data(self, value):
+        return self.value_pickler.loads(value)
+    
+    # INTERNALS
+    def _load_get_data(self, value, key, *args):
+        if value is None:
+            if not args:
+                raise KeyError(key)
+            else:
+                return args[0]
+        return self.load_get_data(value)
     
     
 class OrderedMixin(object):
@@ -549,6 +541,11 @@ class HashTable(KeyValueMixin, Structure):
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     cache_class = hashcache
     
+    def keys(self):
+        loads = self.pickler.loads
+        for k in self.session.structure(self):
+            yield loads(k)
+        
     def addnx(self, field, value, transaction = None):
         '''Set the value of a hash field only if the field
 does not exist.'''
@@ -565,6 +562,23 @@ and values are objects.'''
     pickler = encoders.DateTimeConverter()
     value_pickler = encoders.Json()
     cache_class = tscache
+    
+    def items(self):
+        return self.irange()
+    
+    def keys(self):
+        return self.itimes()
+    
+    def rank(self, dte):
+        '''The rank of a given *dte* in the timeseries'''
+        timestamp = self.pickler.dumps(dte)
+        return self.backend_structure().rank(timestamp)
+    
+    def ipop(self, index):
+        '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
+index is not out of bound.'''
+        res = self.session.backend.structure(self).ipop(index)
+        return self.async_handle(res, self._load_get_data, index, None)
     
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''

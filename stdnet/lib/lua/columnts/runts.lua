@@ -1,22 +1,40 @@
 -- MANAGE ALL COLUMNTS SCRIPTS called by stdnet
 local scripts = {
-	-- Run a user script agains the timeserie
-	evaluate = function(self, series, script, ...)
-		local context = {
-			self = series[1],
-			series = series,
-			others = tabletools.slice(series, 2, -1)
-		}
-		local script_function = tabletools.load_code(script, context)
-		return script_function()
+	--
+	size = function(self, series, dte)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:length()
 	end,
-	-- Merge timeseries
-	merge = function(self, series, ...)
+	-- Check if *timestamp* exists in the timeseries
+	exists = function (self, series, timestamp)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:exists(timestamp)
+	end,
+	-- Rank of *timestamp* in timeseries
+	rank = function (self, series, timestamp)
+		local serie = self.on_serie_only(series, 'size')
+		return serie:rank(timestamp)
 	end,
 	--
 	get = function(self, series, dte)
 		local serie = self.on_serie_only(series, 'get')
 		local fields = serie:get(dte, true)
+		if fields then
+			return tabletools.flat(fields)
+		end
+	end,
+	--
+	pop = function(self, series, dte)
+		local serie = self.on_serie_only(series, 'pop')
+		local fields = serie:pop(dte, true)
+		if fields then
+			return tabletools.flat(fields)
+		end
+	end,
+	--
+	ipop = function(self, series, index)
+		local serie = self.on_serie_only(series, 'ipop')
+		local fields = serie:ipop(index, true)
 		if fields then
 			return tabletools.flat(fields)
 		end
@@ -40,6 +58,13 @@ local scripts = {
 	irange = function(self, series, start, stop, ...)
 		local serie = self.on_serie_only(series, 'irange')
 		return self.flatten(serie:irange(start, stop, arg, true))
+	end,
+	--
+	irange_and_delete = function(self, series)
+		local serie = self.on_serie_only(series, 'irange_and_delete')
+		local result = self.flatten(serie:irange(0, -1, nil, true))
+		serie:del()
+		return result
 	end,
 	--
 	pop_range = function(self, series, start, stop)
@@ -141,6 +166,17 @@ local scripts = {
 		return serie:length()
 	end,
 	--
+	-- Run a user script agains the timeserie
+	evaluate = function(self, series, script, ...)
+		local context = {
+			self = series[1],
+			series = series,
+			others = tabletools.slice(series, 2, -1)
+		}
+		local script_function = tabletools.load_code(script, context)
+		return script_function()
+	end,
+	--
 	----------------------------------------------------------------------------
 	-- INTERNALS
 	--
@@ -161,7 +197,7 @@ local scripts = {
 	end,
 	--
 	stats_data = function(series, start, stop, fields, byrank)
-		sdata = {}
+		local sdata = {}
 		local time_values
 		for i, serie in ipairs(series) do
         	local fields = fields[i]

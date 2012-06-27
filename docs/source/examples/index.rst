@@ -29,4 +29,3 @@ available in :mod:`stdnet`.
    search
    performance
    twitter
-   timeseries

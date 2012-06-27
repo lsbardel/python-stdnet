@@ -71,8 +71,18 @@ Data structures are fundamental constructs around which you build your applicati
 They are used in almost all computer programs, therefore becoming fluent in what the standard
 data-structures can do for you is essential to get full value out of them.
 The `standard template library`_ in C++ implements a wide array of structures,
-python has several of them too. ``stdnet`` implements **five** remote structures:
-list, set, ordered set, hash and timeseries.
+python has several of them too. ``stdnet`` implements **six** remote structures:
+
+ * :class:`List`, implemented as a doubly-linked sequence.
+ * :class:`Set`, a container of unique values.
+ * :class:`HashTable`, unique associative container.
+ * :class:`Zset`, an ordered container of unique values.
+ * :class:`TS`, a timeseries implemented as a ordered unique associative container.
+ 
+An additional structure is provided in the :mod:`stdnet.apps.columnts` module
+
+ * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate timeseries structure
+   (useful for modelling financial timeseries for example).
 
 The structures are bind to a remote dataserver and they derive from
 from :class:`Structure` base class.

@@ -4,7 +4,9 @@ Development
 ===============================
 * A new ``C`` redis_ parser shipped with the library.
 * Several fixes in the documentation.
-* **575 regression tests** with **90%** coverage.
+* Lua script for univariate timeseries. This means the standard redis distribution 
+  works with the :class:`stdnet.odm.TS` structure.
+* **577 regression tests** with **90%** coverage.
   
 Ver. 0.7c3 - 2012 May 02
 ===============================

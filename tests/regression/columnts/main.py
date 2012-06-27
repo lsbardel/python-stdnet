@@ -418,7 +418,7 @@ class TestOperations(TestColumnTSBase):
             v2 = ts2.get(dt)
             m1 = mul1.get(dt)
             if v1 is not None and v2 is not None and m1 is not None:
-                m1 = m1[0]
+                m1 = m1['eurusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -426,7 +426,7 @@ class TestOperations(TestColumnTSBase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-                        
+    
     def testAddMultiply(self):
         session = self.session()
         with session.begin():
@@ -459,8 +459,8 @@ class TestOperations(TestColumnTSBase):
             m2 = mul2.get(dt)
             if v1 is not None and v2 is not None and m1 is not None\
                      and m2 is not None:
-                m1 = m1[0]
-                m2 = m2[0]
+                m1 = m1['eurusd']
+                m2 = m2['gbpusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -526,8 +526,8 @@ class TestOperations(TestColumnTSBase):
             m2 = mul2.get(dt)
             if v1 is not None and v2 is not None and m1 is not None\
                      and m2 is not None:
-                m1 = m1[0]
-                m2 = m2[0]
+                m1 = m1['eurusd']
+                m2 = m2['gbpusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -537,7 +537,7 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
 
 
-class TestMultivariate(TestColumnTSBase):
+class TestMultivariateStats(TestColumnTSBase):
     
     def testSimpleMultiStats(self):
         ts1 = self.create()

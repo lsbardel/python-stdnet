@@ -116,7 +116,6 @@ try:    # pragma nocover
         def configure(self, cfg):
             settings.DEFAULT_BACKEND = cfg.server
             settings.REDIS_PY_PARSER = cfg.http_py_parser
-            settings.redis_status()
             
     
     class PulsarRedisParser(TestOptionPlugin):

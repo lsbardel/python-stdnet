@@ -505,13 +505,15 @@ class Zset(RedisStructure):
                                        withscores = withscores, **options),
                     self._range, withscores)
     
-    def ipop(self, start, stop=None, withscores=False, **options):
+    def ipop_range(self, start, stop=None, withscores=False, **options):
+        '''Remove and return a range from the ordered set by rank (index).'''
         return self.async_handle(
                 self.client.zpopbyrank(self.id, start, stop,
-                                       withscores = withscores, **options),
+                                       withscores=withscores, **options),
                 self._range, withscores)
         
-    def pop(self, start, stop=None, withscores=False, **options):
+    def pop_range(self, start, stop=None, withscores=False, **options):
+        '''Remove and return a range from the ordered set by score.'''
         return self.async_handle(
                 self.client.zpopbyscore(self.id, start, stop,
                                         withscores=withscores, **options),

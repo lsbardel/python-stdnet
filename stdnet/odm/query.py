@@ -581,7 +581,7 @@ is returned directly without performing any query.'''
                 raise QuerySetError('Get query {0} yielded non\
  unique results'.format(self))
         else:
-            raise self.model.DoesNotExist
+            raise self.model.DoesNotExist()
     
     def count(self):
         '''Return the number of objects in ``self``.

@@ -1,9 +1,10 @@
 import os
 from datetime import date, datetime, timedelta
+from struct import unpack
 
 from stdnet import test, SessionNotAvailable, CommitException
-from stdnet.utils import encoders, populate
-from stdnet.apps.columnts import ColumnTS, DoubleEncoder, nil
+from stdnet.utils import encoders, populate, ispy3k
+from stdnet.apps.columnts import ColumnTS
 from stdnet.lib import redis
 
 from examples.data import tsdata
@@ -14,7 +15,12 @@ from tests.regression import struct
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
-
+bin_to_float = lambda f : unpack('>d', f)[0]
+if ispy3k:  #pragma nocover
+    bitflag = lambda value: value
+else:   #pragma nocover
+    bitflag = ord
+    
 class timeseries_test1(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
               redis.read_lua_file('columnts.columnts'),
@@ -93,14 +99,14 @@ class TestTimeSeries(struct.StructMixin, TestCase):
     def testEmpty2(self):
         '''Check an empty timeseries'''
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
+        ts = session.add(ColumnTS(id='goog'))
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.numfields(),0)
         self.assertEqual(ts.fields(),())
         
     def testFrontBack(self):
         session = self.session()
-        ts = session.add(ColumnTS(pickler = encoders.DateConverter()))
+        ts = session.add(ColumnTS(pickler=encoders.DateConverter()))
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(), None)
         self.assertEqual(ts.back(), None)
@@ -119,14 +125,14 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testAddSimple(self):
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
+        ts = session.add(ColumnTS(id='goog'))
         # start a transaction
         session.begin()
         ts.add(date.today(),'pv',56)
         self.assertEqual(ts.size(),0)
         self.assertTrue(ts.cache.fields)
-        ts.add(date.today()-timedelta(days=2),'pv',56.8)
-        self.assertTrue(len(ts.cache.fields['pv']),2)
+        ts.add(date.today()-timedelta(days=2), 'pv', 53.8)
+        self.assertTrue(len(ts.cache.fields['pv']), 2)
         # commit transaction
         session.commit()
         self.assertEqual(ts.fields(),('pv',))
@@ -143,26 +149,36 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         raw_data = bts.field('pv')
         self.assertTrue(raw_data)
         self.assertEqual(len(raw_data),18)
+        a1 = raw_data[:9]
+        a2 = raw_data[9:]
+        n = bitflag(a1[0])
+        self.assertEqual(n, bitflag(a2[0]))
+        self.assertEqual(n, 2)
+        self.assertEqual(bin_to_float(a1[1:]), 53.8)
+        self.assertEqual(bin_to_float(a2[1:]), 56)
         #
         data = ts.irange()
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(dt),2)
         self.assertTrue('pv' in fields)
-        self.assertEqual(fields['pv'],[56.8,56])
+        for v, t in zip(fields['pv'],[53.8, 56]):
+            self.assertAlmostEqual(v, t)
         
     def testAddNil(self):
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
-        ts.add(date.today(),'pv',56)
-        ts.add(date.today()-timedelta(days=2),'pv',nan)
+        # start a transaction
+        session.begin()
+        ts = session.add(ColumnTS(id='goog'))
+        ts.add(date.today(), 'pv', 56)
+        ts.add(date.today()-timedelta(days=2), 'pv', nan)
         session.commit()
-        self.assertEqual(ts.size(),2)
-        dt,fields = ts.irange()
-        self.assertEqual(len(dt),2)
+        self.assertEqual(ts.size(), 2)
+        dt, fields = ts.irange()
+        self.assertEqual(len(dt), 2)
         self.assertTrue('pv' in fields)
         n = fields['pv'][0]
-        self.assertNotEqual(n,n)
+        self.assertNotEqual(n, n)
         
     def testGoogleDrop(self):
         ts = self.makeGoogle()
@@ -347,7 +363,7 @@ class TestOperations(TestColumnTSBase):
             v1 = ts1.get(dt)
             v2 = ts2.get(dt)
             if dt in self.data1.unique_dates and dt in self.data2.unique_dates:
-                for field,values in fields.items():
+                for field, values in fields.items():
                     res = 2*v2[field] - v1[field]
                     self.assertAlmostEqual(values[i],res)
             else:
@@ -492,7 +508,7 @@ class TestOperations(TestColumnTSBase):
                     v = values[i]
                     self.assertNotEqual(v,v)
 
-    def testFields(self):
+    def testMergedFields(self):
         session = self.session()
         with session.begin():
             ts1 = session.add(self.ColumnTS())
@@ -508,7 +524,7 @@ class TestOperations(TestColumnTSBase):
         self.assertEqual(mul1.size(),self.data_mul1.length)
         self.assertEqual(mul2.size(),self.data_mul2.length)
         with session.begin():
-            ts = self.ColumnTS(id = 'merged')
+            ts = self.ColumnTS(id='merged')
             ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2),
                      fields = ('a','b','c','badone'))
             self.assertEqual(ts.session,session)
@@ -590,5 +606,5 @@ class TestColumnTSField(TestCase):
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
         self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
+        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
         

@@ -1,7 +1,7 @@
 import os
 
 from stdnet import odm, test
-from stdnet.apps.columnts import DoubleEncoder
+from stdnet.utils import encoders
 try:
     from stdnet.apps.columnts import npts
     from dynts import tsname
@@ -70,6 +70,6 @@ class TestColumnTSField(main.TestCase):
         meta = self.model._meta
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
-        self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
+        self.assertEqual(m.name, 'data')
+        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
         

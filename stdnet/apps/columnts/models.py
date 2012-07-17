@@ -1,9 +1,8 @@
 '''Multivariate numeric timeseries interface.'''
 from stdnet import odm, SessionNotAvailable
 from stdnet.lib import skiplist
-from stdnet.utils import encoders, iteritems, zip
+from stdnet.utils import encoders, iteritems, zip, iterpair
 
-from .encoders import DoubleEncoder
 
 __all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
 
@@ -35,7 +34,7 @@ multivariate timeseries.'''
     
     cache_class = TimeseriesCache
     pickler = encoders.DateTimeConverter()
-    value_pickler = DoubleEncoder()
+    value_pickler = encoders.Double()
     
     def front(self, *fields):
         '''Return the front pair of the structure'''
@@ -167,13 +166,13 @@ The result will be calculated using the formula::
         vloads = self.value_pickler.loads
         dt = [loads(t) for t in result[0]]
         vals = {}
-        for f, data in result[1]:
+        for f, data in iterpair(result[1]):
             vals[f] = [vloads(d) for d in data]
         return (dt,vals)
     
     def load_get_data(self, result):
         vloads = self.value_pickler.loads
-        return dict(((f,vloads(v)) for f,v in result))
+        return dict(((f, vloads(v)) for f, v in iterpair(result)))
     
     def _stats(self, result):
         if result:

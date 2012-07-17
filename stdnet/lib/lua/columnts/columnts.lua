@@ -1,7 +1,9 @@
 -- Not a number
 local nan = 0/0
+local NaN = 'NaN'
 -- 9 bytes string for nil data
 local nildata = string.char(0,0,0,0,0,0,0,0,0)
+
 
 -- Column timeseries class
 local columnts = {
@@ -45,7 +47,7 @@ local columnts = {
     del = function(self)
         local keys = redis.call('keys', self.key .. '*')
         if # keys > 0 then
-            redis.call('del',unpack(keys))
+            redis.call('del', unpack(keys))
         end
     end,
     --
@@ -155,7 +157,7 @@ local columnts = {
     -- Add a timeseries *ts*, multiplied by the given weight, to self
     addserie = function (self, ts, weight, fields, tsmul)
     	-- get data without unpacking. IMPORTANT
-        local times, field_values = unpack(ts:all(fields, true))
+        local times, field_values = unpack(ts:all(fields))
         return self:add(times, field_values, weight, tsmul)
     end,
     --
@@ -209,6 +211,7 @@ local columnts = {
     	return self:get_range(times, fields, skip_unpack)
     end,
     --
+    -- return a range by rank (index)
     irange = function (self, start, stop, fields, skip_unpack)
     	local times = self:itimes(start, stop)
     	return self:get_range(times, fields, skip_unpack)
@@ -262,7 +265,6 @@ local columnts = {
             assert(tsmul:num_fields() == 1, 'Timeseries ' .. tsmul.key .. ' has more than one field. Cannot be used tu multiply timeseries.')
             tsmul = tsmul:asdict()
         end
-        
         -- Make sure all fields are available and have same data length
         for field, value in pairs(field_values) do
             -- add field to the fields set
@@ -275,7 +277,6 @@ local columnts = {
                 end
             end
         end
-        
         -- If we are adding to an existing timeseries
         -- Fill the time_set dictionary with false values at self:times
         if weights and not new_serie then
@@ -284,7 +285,6 @@ local columnts = {
                 time_set[timestamp] = false
             end
         end
-        
         -- Loop over times
         for index, timestamp in ipairs(times) do
             time_set[timestamp] = true
@@ -315,39 +315,34 @@ local columnts = {
 	        for field, values in pairs(field_values) do
 	            -- add field to the fields set
 	            fkey = fields[field]
-	            value = values[index]
-	            -- set the field value
-	            if weights then
-	                if type(weights) == 'number' then
-	                    weight = weights
-	                else
-	                    weight = weights[field]
-	                end
-	                dvalue = weight*self:unpack_value(value)
-	                if tsmul then
-	                   mul = tsmul[timestamp]
-	                   if mul then
-	                       dvalue = mul*dvalue
-	                   else
-	                       dvalue = nan
-	                   end
-	                end
-	                -- If the value is a number
-	                if dvalue == dvalue then
-	                    -- If the field was available add to the current value
-	                    if not new_serie then
-	                        v1 = redis.call('getrange', fkey, rank9, rank9+9)
-	                        dvalue = dvalue + self:unpack_value(v1)
-	                    end
-	                    value = self:pack_value(dvalue)
-	                else
-	                    value = self:pack_value(dvalue)
-	                end
-	            elseif string.len(value) > 9 then
-	                key = string.sub(value, 2, 9)
-	                redis.call('set', self.key .. ':key:' .. key, string.sub(value, 10))
-	                value = string.sub(value, 1, 9)
-	            end
+	            dvalue = tonumber(values[index])
+	            if dvalue == nil or dvalue ~= dvalue then
+	                value = nildata
+	            else   
+    	            -- set the field value
+    	            if weights then
+    	                if type(weights) == 'number' then
+    	                    weight = weights
+    	                else
+    	                    weight = weights[field]
+    	                end
+    	                dvalue = weight*dvalue
+    	                if tsmul then
+    	                   mul = tsmul[timestamp]
+    	                   if mul then
+    	                       dvalue = mul*dvalue
+    	                   else
+    	                       dvalue = nan
+    	                   end
+    	                end
+    	                -- If the value is a number
+    	                if dvalue == dvalue and not new_serie then
+    	                    v1 = redis.call('getrange', fkey, rank9, rank9+9)
+    	                    dvalue = dvalue + self:unpack_value(v1)
+    	                end
+    	            end
+    	            value = self:pack_value(dvalue)
+    	        end
 	            redis.call('setrange', fkey, rank9, value)
 	        end
 	    end
@@ -363,7 +358,6 @@ local columnts = {
 	       end
 	    end
     end,
-
     --
     ----------------------------------------------------------------------------
     -- INTERNAL FUNCTIONS
@@ -372,36 +366,32 @@ local columnts = {
     -- unpack a single value
     unpack_value = function (self, value)
         local byte = string.byte(value)
-        --assert(string.len(value) == 9, 'Invalid string to unpack. Length is ' .. string.len(value))
-        if byte == 0 then
-            return nan
-        elseif byte == 1 then
-            return struct.unpack('>i',string.sub(value,2,5))
+        assert(string.len(value) >= 9, 'Invalid string to unpack. Length is ' .. string.len(value))
+        if byte == 1 then
+            return struct.unpack('>i', string.sub(value,2,5))
         elseif byte == 2 then
-            return struct.unpack('>d',string.sub(value,2))
-        elseif byte == 3 then
-            return string.sub(value,3,3+string.byte(value,2))
+            return struct.unpack('>d', string.sub(value,2))
         else
-            assert(byte == 4, 'Invalid string to unpack. First byte is ' .. byte)
-            return self:string_value(string.sub(value,2))
+            return nan
+        end
+    end,
+    --
+    -- unpack to JSON serializable value
+    unpack_value_s = function (self, value)
+        local v = self:unpack_value(value)
+        if v ~= v then
+            return NaN
+        else
+            return v
         end
     end,
     --
     -- pack a single value
     pack_value = function (self, value)
-        if type(value) == 'number' then
-            if value == value then
-                return string.char(2) .. struct.pack('>d', value)
-            else
-                return nildata
-            end
+        if value == value then
+            return string.char(2) .. struct.pack('>d', value)
         else
-            local n = string.len(value)
-            if n < 8 then
-                return string.char(3) .. n .. value + string.sub(nildata,1,7-n)
-            else
-                return value
-            end
+            return nildata
         end
     end,
     --
@@ -423,19 +413,20 @@ local columnts = {
     end,
     --
     -- fill table with values
-    fill_table = function(self, sdata, len, skip_unpack)
+    fill_table = function(self, sdata, len, serializable)
     	local fdata = {}
         local p = 0
-        if skip_unpack then
+        local v
+        if serializable then
         	while p < 9*len do
-                table.insert(fdata, string.sub(sdata, p+1, p+9))
+        	    v = self:unpack_value_s(string.sub(sdata, p+1, p+9))
+                table.insert(fdata, v)
                 p = p + 9
             end
         else
-            local v
             while p < 9*len do
                 v = self:unpack_value(string.sub(sdata, p+1, p+9))
-                table.insert(fdata,v)
+                table.insert(fdata, v)
                 p = p + 9
             end
         end

@@ -855,7 +855,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
-                delquery = sm.get_delete_query(pipe = pipe)
+                delquery = sm.get_delete_query(pipe=pipe)
                 self.accumulate_delete(pipe, delquery)
                 dirty = tuple(sm.iterdirty())
                 N = len(dirty)

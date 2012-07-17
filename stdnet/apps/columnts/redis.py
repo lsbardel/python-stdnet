@@ -143,6 +143,20 @@ class RedisColumnTS(redisb.RedisStructure):
     def flat(self):
         cache = self.instance.cache
         if cache.deleted_timestamps or cache.delete_fields or cache.fields:
+            fields = []
+            for field in cache.fields:
+                times = []
+                data = []
+                for t,v in cache.fields[field]:
+                    times.append(t)
+                    data.append('%s'%v)
+                fields.append({'times': times,
+                               'fields': {field: data}})
+            data = {'delete_times': list(cache.deleted_timestamps),
+                    'delete_fields': list(cache.delete_fields),
+                    'add': fields}
+            return [json.dumps(data)]
+            
             args = [len(cache.deleted_timestamps)]
             args.extend(cache.deleted_timestamps)
             # fields to delete
@@ -157,7 +171,7 @@ class RedisColumnTS(redisb.RedisStructure):
             return args
     
     def _multi_stats(self, start, end, command, fields, series, stats):
-        all = [(self.id,fields)]
+        all = [(self.id, fields)]
         if series:
             all.extend(((ts.backend_structure().id, fields)\
                             for ts,fields in series))
@@ -189,26 +203,9 @@ class timeseries_run(redis.RedisScript):
     def callback(self, request, response, args, fields=None,
                  return_type=None, **options):
         encoding = request.client.encoding
-        if return_type == 'range':
-            rfields = (f.decode(encoding) for f in response[1::2])
-            data = dict(zip(rfields, response[2::2]))
-            newdata = []
-            if fields:
-                for field in fields:
-                    value = data.pop(field,None)
-                    if value is not None:
-                        newdata.append((field,value))
-            for field in sorted(data):
-                newdata.append((field,data[field]))
-            return response[0], newdata
-        elif return_type == 'json':
+        if return_type and response:
             return json.loads(response.decode(encoding))
-        elif return_type == 'get' and response:
-            rfields = (f.decode(encoding) for f in response[::2])
-            return zip(rfields, response[1::2])
         else:
             return response
     
-    
-        
     

@@ -1,6 +1,7 @@
 import os
 import sys
 from itertools import chain
+from collections import Mapping
 from uuid import uuid4
 
 from .py2py3 import *
@@ -24,6 +25,11 @@ def gen_unique_id(short = True):
         id = id[:8]
     return id
 
+def iterpair(iterable):
+    if isinstance(iterable, Mapping):
+        return iteritems(iterable)
+    else:
+        return iterable
     
 def grouper(n, iterable, padvalue=None):
     "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"

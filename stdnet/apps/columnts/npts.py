@@ -4,6 +4,8 @@ dynts.timeseries. It requires dynts_.
 
 .. _dynts: https://github.com/quantmind/dynts
 '''
+from collections import Mapping
+
 from . import models as columnts 
 
 import numpy as ny
@@ -32,14 +34,13 @@ class ColumnTS(columnts.ColumnTS):
         dt, va = result
         if result[0] and va:
             dates = ny.array([loads(t) for t in dt])
-            # fromiter does not work for object arrays
-            #dates = ny.fromiter((loads(t) for t in dt),
-            #                    self.pickler.type,
-            #                    len(dt)) 
             fields = []
             vals = []
-            for f,data in va:
+            if not isinstance(va, Mapping):
+                va = dict(va)
+            for f in sorted(va):
                 fields.append(f)
+                data = va[f]
                 vals.append((vloads(v) for v in data))
             values = ny.array(list(zip(*vals)))
             name = tsname(*fields)

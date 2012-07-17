@@ -27,7 +27,7 @@ def is_query(query):
 
 def commit_element_when_no_transaction(f):
     
-    def _(self, element, modified = True):
+    def _(self, element, modified=True):
         r = f(self, element, modified = modified)
         if modified and not self.transaction:
             self.commit()

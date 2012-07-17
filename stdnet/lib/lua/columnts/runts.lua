@@ -18,26 +18,17 @@ local scripts = {
 	--
 	get = function(self, series, dte)
 		local serie = self.on_serie_only(series, 'get')
-		local fields = serie:get(dte, true)
-		if fields then
-			return tabletools.flat(fields)
-		end
+		return self.flatten(serie:get(dte, true))
 	end,
 	--
 	pop = function(self, series, dte)
 		local serie = self.on_serie_only(series, 'pop')
-		local fields = serie:pop(dte, true)
-		if fields then
-			return tabletools.flat(fields)
-		end
+		return self.flatten(serie:pop(dte, true))
 	end,
 	--
 	ipop = function(self, series, index)
 		local serie = self.on_serie_only(series, 'ipop')
-		local fields = serie:ipop(index, true)
-		if fields then
-			return tabletools.flat(fields)
-		end
+		return self.flatten(serie:ipop(index, true))
 	end,
 	--
 	times = function(self, series, start, stop)
@@ -56,7 +47,7 @@ local scripts = {
 	end,
 	--
 	irange = function(self, series, start, stop, ...)
-		local serie = self.on_serie_only(series, 'irange')
+		local serie = self.on_serie_only(series, 'irange', true)
 		return self.flatten(serie:irange(start, stop, arg, true))
 	end,
 	--
@@ -134,35 +125,22 @@ local scripts = {
     	end
     	return serie:length()
 	end,
-	--
-	session = function(self, series, ...)
+	-- data is a JSON string containing a table containing the following entries
+	-- delete_times, list of times to delete
+	-- delete_fields, list of fields to delete
+	-- add, list of times,fields to add
+	session = function(self, series, data)
 		local serie = self.on_serie_only(series, 'session')
-		local index = 1
-		local num_remove = arg[index] + index
-		while index < num_remove do
-			index = index + 1
-			serie:pop(arg[index])
+		local data = cjson.decode(data)
+		for i, t in ipairs(data.delete_times) do
+		    serie:pop(t)
 		end
-		index  = index + 1
-		local num_strings = arg[index] + index
-		while index < num_strings do
-			local field = arg[index+1]
-			index = index + 1
-			serie:popfield(field)
-		end
-		while index < # arg do
-			local field = arg[index+1]
-			local times, values, field_values = {}, {}, {}
-			field_values[field] = values
-			index = index + 2
-			local len_data = index + 2*arg[index]
-			while index < len_data do
-			    table.insert(times, arg[index+1] + 0)
-			    table.insert(values, arg[index+2])
-			    index = index + 2
-			end
-			serie:add(times, field_values)
-		end
+		for i, field in ipairs(data.delete_fields) do
+            serie:popfield(field)
+        end
+        for i, time_fields in ipairs(data.add) do
+            serie:add(time_fields.times, time_fields.fields)
+        end
 		return serie:length()
 	end,
 	--
@@ -188,12 +166,9 @@ local scripts = {
 	end,
 	--
 	flatten = function(time_values)
-		local result = {time_values[1]}
-    	for k, v in pairs(time_values[2]) do
-        	table.insert(result, k)
-        	table.insert(result, v)	
-    	end
-    	return result
+	    if time_values then
+	       return cjson.encode(time_values)
+	    end
 	end,
 	--
 	stats_data = function(series, start, stop, fields, byrank)

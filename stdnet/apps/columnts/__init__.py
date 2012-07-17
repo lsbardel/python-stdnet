@@ -57,5 +57,4 @@ API
 .. _timeseries: http://en.wikipedia.org/wiki/Time_series
 '''
 from . import redis
-from .encoders import *
 from .models import *

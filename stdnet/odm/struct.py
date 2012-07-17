@@ -2,7 +2,7 @@ from uuid import uuid4
 from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
-                            BytesIO
+                            BytesIO, iterpair
 from stdnet.lib import zset, skiplist
 from stdnet import SessionNotAvailable
 
@@ -308,9 +308,7 @@ Equivalent to python dictionary update method.
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        if isinstance(mapping, dict):
-            mapping = iteritems(mapping)
-        return ((loads(k),vloads(v)) for k,v in mapping)
+        return ((loads(k),vloads(v)) for k,v in iterpair(mapping))
     
     def load_keys(self, iterable):
         loads = self.pickler.loads

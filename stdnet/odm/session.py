@@ -348,9 +348,9 @@ or using the ``with`` context manager::
 '''
     default_name = 'transaction'
     
-    def __init__(self, session, name = None,
-                 signal_commit = True, signal_delete = True,
-                 signal_session = True, logger = None):
+    def __init__(self, session, name=None,
+                 signal_commit=True, signal_delete=True,
+                 signal_session=True, logger=None):
         self.name = name or self.default_name
         self.session = session
         self.signal_commit = signal_commit

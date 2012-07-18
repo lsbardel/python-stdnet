@@ -109,13 +109,14 @@ class JsonSerializer(Serializer):
         stream.write(line)
         return stream
 
-    def load(self, stream, model = None):
+    def load(self, stream, model=None):
         if hasattr(stream, 'read'):
             stream = stream.read()
         data = json.loads(stream, **self.options)
         for model_data in data:
             model = get_model_from_hash(model_data['hash'])
-            with model.objects.transaction() as t:
+            with model.objects.transaction(signal_commit=False,
+                                           signal_session=False) as t:
                 for item_data in model_data['data']:
                     t.add(model.from_base64_data(**item_data))
             

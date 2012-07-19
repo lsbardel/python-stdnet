@@ -249,7 +249,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
     def get_sorting(self, sortby, errorClass = None):
         s = None
         desc = False
-        if isinstance(sortby,autoincrement):
+        if isinstance(sortby, autoincrement):
             f = self.pk
             return orderinginfo(sortby, f, desc, self.model, None, True)
         elif sortby.startswith('-'):

@@ -463,7 +463,7 @@ the :meth:`union` method.'''
 :return type: a new :class:`Query` instance.
 '''
         if ordering:
-            ordering = self._meta.get_sorting(ordering,QuerySetError)
+            ordering = self._meta.get_sorting(ordering, QuerySetError)
         q = self._clone()
         q.data['ordering'] = ordering
         return q

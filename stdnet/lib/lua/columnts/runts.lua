@@ -5,6 +5,14 @@ local scripts = {
 		local serie = self.on_serie_only(series, 'size')
 		return serie:length()
 	end,
+	-- information regarding the timeserie
+	info = function (self, series)
+	   local serie = self.on_serie_only(series, 'info')
+	   local info = serie:info()
+	   if info then
+           return cjson.encode(info)
+       end
+	end,
 	-- Check if *timestamp* exists in the timeseries
 	exists = function (self, series, timestamp)
 		local serie = self.on_serie_only(series, 'size')

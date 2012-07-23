@@ -302,7 +302,7 @@ local columnts = {
                         data = nildata .. redis.call('getrange', fkey, rank9, -1)
                     else
                         data = nildata
-                    end 
+                    end
                     redis.call('setrange', fkey, rank9, data)
                 end
             -- No need to insert a new timestamp
@@ -310,7 +310,7 @@ local columnts = {
                 rank = available + 0
                 rank9 = 9*rank
             end
-            
+
             -- Loop over field/values pairs
 	        for field, values in pairs(field_values) do
 	            -- add field to the fields set
@@ -318,7 +318,7 @@ local columnts = {
 	            dvalue = tonumber(values[index])
 	            if dvalue == nil or dvalue ~= dvalue then
 	                value = nildata
-	            else   
+	            else
     	            -- set the field value
     	            if weights then
     	                if type(weights) == 'number' then
@@ -346,17 +346,36 @@ local columnts = {
 	            redis.call('setrange', fkey, rank9, value)
 	        end
 	    end
-	    
+
 	    if weight then
 	        for timestamp, avail in pairs(time_set) do
 	            if not avail then
 	               rank9 = redis.call('zrank', self.key, timestamp)*9
-	               for field, fkey in pairs(fields) do 
+	               for field, fkey in pairs(fields) do
                         redis.call('setrange', fkey, rank9, nildata)
 	               end
 	           end
 	       end
 	    end
+    end,
+    -- Information about the timeserie
+    info = function (self)
+        local times, field_values = unpack(self:all())
+        local size = # times
+        local result = {size=size, fields={}}
+        if size > 0 then
+            for field, data in pairs(field_values) do
+                local f = {}
+                local missing = 0
+                for _, v in ipairs(data) do
+                    if v ~= v then
+                        missing = missing + 1
+                    end
+                end
+                result.fields[field] = {missing=missing}
+            end
+        end
+        return result
     end,
     --
     ----------------------------------------------------------------------------

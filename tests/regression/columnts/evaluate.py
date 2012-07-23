@@ -4,7 +4,7 @@ from stdnet import test
 from stdnet.apps.columnts import ColumnTS
 
 class TestEvaluate(test.TestCase):
-    
+
     def testSimple(self):
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))

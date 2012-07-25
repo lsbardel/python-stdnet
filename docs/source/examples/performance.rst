@@ -23,7 +23,7 @@ using :class:`Transaction`. A transaction is started
 with the :meth:`Session.begin` method and concluded with
 the :meth:`Session.commit` method. A session for
 :ref:`registered models <register-model>` can be obtained from the model
-manager. For example, using the ``Fund`` model in 
+manager. For example, using the ``Fund`` model in
 :ref:`tutorial 1 <tutorial-application>`::
 
     session = Fund.objects.session()
@@ -58,8 +58,8 @@ Or for more than one model::
         for kwargs in data2:
             t.add(Instrument(**kwargs))
         ...
-        
-        
+
+
 As soon as the ``with`` statement finishes, the transaction commit changes
 to the server via the :meth:`commit` method.
 
@@ -69,7 +69,7 @@ to the server via the :meth:`commit` method.
 Use load_only
 ================
 
-One of the main advantages of using key-values databases as opposed to 
+One of the main advantages of using key-values databases as opposed to
 traditional relational databases, is the ability to add or remove
 :class:`Field` without requiring database migration.
 In addition, the :class:`JSONField` can be a factory
@@ -85,12 +85,16 @@ where you know you don't need those particular fields, you can tell stdnet
 to load a subset from the database by using the :meth:`Query.load_only`
 or :meth:`Query.dont_load` methods.
 
-For example I need to load all my `EUR` Funds but I don't need to
-see the description and documentation::
+For example I need to load all my *EUR* Funds from the :ref:`example application <tutorial-application>`
+but I don't need to see the *description* and *ccy*::
 
-    qs = Fund.objects.filter(ccy = "EUR").load_only('name')
+    qs = Fund.objects.filter(ccy="EUR").load_only('name')
 
-    
+or equivantely::
+
+    qs = Fund.objects.filter(ccy="EUR").dont_load('description', 'ccy')
+
+
 
 .. _performance-loadrelated:
 
@@ -98,4 +102,13 @@ Use load_related
 ====================
 
 
-    
+Get single fields
+====================
+It is possible to obtain only the values of a given field. If
+I need to obtain all the Funds names from the :ref:`example application <tutorial-application>`
+I could issue the following command::
+
+    names = Fund.objects.query().get_field('name')
+
+The :meth:`Q.get_field` method returns a new query which evaluates to a
+list of field values.

@@ -20,7 +20,7 @@ __all__ = ['clearall',
            'register_applications',
            'register_application_models']
 
-    
+
 def clearall(exclude = None):
     global _GLOBAL_REGISTRY
     exclude = exclude or []
@@ -36,9 +36,9 @@ def models_from_names(names):
     for m in _GLOBAL_REGISTRY:
         if str(m._meta) in s:
             yield m
-    
 
-def flush_models(includes = None, excludes = None):
+
+def flush_models(includes=None, excludes = None):
     '''Utility for flushing models data.
 It removes all keys associated with models.'''
     global _GLOBAL_REGISTRY
@@ -56,41 +56,41 @@ It removes all keys associated with models.'''
             model.objects.flush()
             flushed.append(str(model._meta))
     return flushed
-            
+
 
 def register(model, backend = None, ignore_duplicates = True,
              local_thread = False, **params):
     '''The low level function for registering a :class:`StdModel`
 classes with a :class:`stdnet.BackendDataServer` data server.
-    
+
 :parameter model: a :class:`StdModel`. Must be provided.
 
 :parameter backend: a backend connection string.
     For example::
 
         redis://localhost:8080?db=6&prefix=bla.
-    
+
     Default ``settings.DEFAULT_BACKEND``.
-    
+
 :parameter params: optional parameters which can be used to override the
     connection string parameters.
-    
+
 **Usage**
-    
+
 For Redis the syntax is the following::
 
     import odm
-    
+
     odm.register(Author, 'redis://my.host.name:6379/?db=1')
     odm.register(Book, 'redis://my.host.name:6379/?db=2')
-    odm.register(MyOtherModel, 
+    odm.register(MyOtherModel,
                 'redis://my.host.name:6379/?db=2&keyprefix=differentprefix.')
-    
+
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
     if model in _GLOBAL_REGISTRY:
-        if not ignore_duplicates:  
+        if not ignore_duplicates:
             raise AlreadyRegistered(
                     'Model {0} is already registered'.format(model._meta))
         else:
@@ -102,7 +102,7 @@ on the same redis instance).'''
     return model.objects.backend
 
 
-def unregister(model = None):
+def unregister(model=None):
     '''Unregister a *model* if provided, otherwise it unregister all
 registered models.'''
     global _GLOBAL_REGISTRY
@@ -116,28 +116,28 @@ registered models.'''
     else:
         for model in list(_GLOBAL_REGISTRY):
             unregister(model)
-        
+
 
 def registered_models():
     '''An iterator over registered models'''
     return (m for m in _GLOBAL_REGISTRY)
-    
-    
+
+
 def model_iterator(application):
     '''A generator of :class:`StdModel` classes found in *application*.
 
 :parameter application: A python dotted path or an iterable over python
     dotted-paths where models are defined.
-    
+
 Only models defined in these paths are considered.
 
 For example::
 
     from stdnet.odm import model_iterator
-    
+
     APPS = ('stdnet.contrib.searchengine',
             'stdnet.contrib.timeseries')
-    
+
     for model in model_iterator(APPS):
         ...
 
@@ -180,7 +180,7 @@ and register them using the :func:`register` low level function.
     all models found in *applications* will be included.
 :parameter app_defaults: optional dictionary which specify a model and/or
     application backend connection string.
-:parameter default: The default connection string. 
+:parameter default: The default connection string.
 :rtype: A generator over registered :class:`StdModel`.
 
 For example::

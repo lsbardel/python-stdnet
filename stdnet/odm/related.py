@@ -20,13 +20,13 @@ class ModelFieldPickler(encoders.Encoder):
     '''An encoder for :class:`StdModel` instances.'''
     def __init__(self, model):
         self.model = model
-        
+
     def loads(self, s):
         return self.model.objects.get(id = s)
-    
+
     def dumps(self, obj):
         return obj.id
-    
+
 
 def load_relmodel(field, callback):
     relmodel = None
@@ -49,8 +49,8 @@ def load_relmodel(field, callback):
         if key not in pending_lookups:
             pending_lookups[key] = []
         pending_lookups[key].append(callback)
-    
-    
+
+
 def do_pending_lookups(sender, **kwargs):
     """Handle any pending relations to the sending model.
 Sent from class_prepared."""
@@ -75,7 +75,7 @@ def Many2ManyThroughModel(field):
         name = '{0}_{1}'.format(name_model,name_relmodel)
         through = StdNetType(name,(StdModel,),{})
         field.through = through
-        
+
     # The field
     field1 = ForeignKey(field.model, related_name = field.name,
             related_manager_class = makeMany2ManyRelatedManager(field.relmodel,
@@ -83,7 +83,7 @@ def Many2ManyThroughModel(field):
                                                                 name_relmodel,
                                                                 through))
     field1.register_with_model(name_model, through)
-    
+
     field2 = ForeignKey(field.relmodel, related_name = field.related_name,
             related_manager_class = makeMany2ManyRelatedManager(field.model,
                                                                 name_relmodel,
@@ -96,20 +96,20 @@ class LazyForeignQuery(object):
     '''Descriptor for a :class:`ForeignKey` field.'''
     def __init__(self, field):
         self.field = field
-    
+
     def filter(self, instance):
         val = getattr(instance, self.field.attname)
         if val is not None:
             return {self.field.relmodel._meta.pkname(): val}
-    
+
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
         f = self.filter(instance)
         if f:
             return instance.session.query(self.field.relmodel).filter(**f)
-        
-        
+
+
 class LazyForeignKey(LazyForeignQuery):
 
     def __get__(self, instance, instance_type=None):
@@ -123,7 +123,7 @@ class LazyForeignKey(LazyForeignQuery):
             val = getattr(instance, field.attname)
             if val is None:
                 return None
-            
+
             rel_obj = instance.session.query(field.relmodel).get(id = val)
             setattr(instance, cache_name, rel_obj)
             return rel_obj
@@ -137,7 +137,7 @@ class LazyForeignKey(LazyForeignQuery):
             raise ValueError(
                         'Cannot assign "%r": "%s" must be a "%s" instance.' %
                                 (value, field, field.relmodel._meta.name))
-        
+
         cache_name = self.field.get_cache_name()
         # If we're setting the value of a OneToOneField to None,
         # we need to clear
@@ -163,7 +163,7 @@ def _register_container_model(field, related):
     field.relmodel = related
     if not field.pickler:
         field.pickler = ModelFieldPickler(related)
-        
+
 
 class RelatedManager(Manager):
     '''Base class for managers handling relationships between models.
@@ -175,10 +175,10 @@ of a related model.'''
         model = model or field.model
         super(RelatedManager,self).__init__(model)
         self.related_instance = instance
-    
+
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
-    
+
     def session(self, transaction = None):
         '''Retrieve the session for this :class:`RelatedManager`.
 
@@ -192,28 +192,28 @@ of a related model.'''
                 return session
         raise QuerySetError('Related manager can be accessed only from\
  a loaded instance of its related model.')
-    
-        
+
+
 class One2ManyRelatedManager(RelatedManager):
     '''A specialised :class:`RelatedManager` for handling one-to-many
 relationships under the hood.
 If a model has a :class:`ForeignKey` field, instances of
 that model will have access to the related (foreign) objects
-via a simple attribute of the model.'''    
+via a simple attribute of the model.'''
     @property
     def relmodel(self):
         return self.field.relmodel
-    
+
     def query(self, transaction = None):
         kwargs = {self.field.name: self.related_instance}
         return super(RelatedManager,self).query(transaction = transaction)\
                                          .filter(**kwargs)
-    
+
     def query_from_query(self, query):
         session = query.session
         return session.query(self.model,
-                             fargs = {self.field.name: query}) 
-            
+                             fargs = {self.field.name: query})
+
 
 def makeMany2ManyRelatedManager(formodel, name_relmodel,
                                 name_formodel, through):
@@ -232,8 +232,8 @@ attribute of the model.'''
             kwargs = {self.name_formodel: value,
                       self.name_relmodel: self.related_instance}
             return self.session(transaction), kwargs
-    
-        def add(self, value, transaction = None, **kwargs):
+
+        def add(self, value, transaction=None, **kwargs):
             '''Add *value*, an instance of ``self.formodel``,
             to the throw model.'''
             session, kw = self.session_kwargs(value, transaction)
@@ -246,25 +246,27 @@ attribute of the model.'''
             for k,v in iteritems(kwargs):
                 setattr(m,k,v)
             return session.add(m)
-        
-        def remove(self, value, transaction = None):
+
+        def remove(self, value, transaction=None):
             '''Remove *value*, an instance of ``self.model`` from the set of
     elements contained by the field.'''
             session, kwargs = self.session_kwargs(value, transaction)
             query = session.query(self.model).filter(**kwargs)
             session.delete(query)
-        
-        def throughquery(self, transaction = None):
+
+        def throughquery(self, transaction=None):
+            '''Return a query on the *throughmodel*, the model
+used to hold the many-to-many relationship.'''
             return super(Many2ManyRelatedManager,self).query(
-                                                    transaction = transaction)
-        
-        def query(self, transaction = None):
+                                                    transaction=transaction)
+
+        def query(self, transaction=None):
             ids = self.throughquery().get_field(self.name_formodel)
             session = self.session(transaction)
             return session.query(self.formodel).filter(id__in = ids)
-            
+
     Many2ManyRelatedManager.formodel = formodel
     Many2ManyRelatedManager.name_relmodel = name_relmodel
-    Many2ManyRelatedManager.name_formodel = name_formodel 
+    Many2ManyRelatedManager.name_formodel = name_formodel
     Many2ManyRelatedManager.through = through
     return Many2ManyRelatedManager

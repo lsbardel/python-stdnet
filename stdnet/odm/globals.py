@@ -4,12 +4,23 @@ from stdnet.utils import to_bytes, JSPLITTER
 
 __all__ = ['get_model_from_hash', 'hashmodel', 'JSPLITTER']
 
-_model_dict = {}
+class ModelDict(dict):
+
+    def from_hash(self, hash):
+        return self.get(hash)
+
+    def to_hash(self, model):
+        return model._meta.hash
+
+_model_dict = ModelDict()
+
 
 def get_model_from_hash(hash):
-    if hash in _model_dict:
-        return _model_dict[hash]
-    
+    return _model_dict.from_hash(hash)
+
+def get_hash_from_model(model):
+    return _model_dict.to_hash(model)
+
 
 def hashmodel(model, library = None):
     '''Calculate the Hash id of metaclass ``meta``'''
@@ -20,6 +31,5 @@ def hashmodel(model, library = None):
     meta.hash = hash
     if hash in _model_dict:
         raise KeyError('Model "{0}" already in hash table.\
- Rename your model or the module containing the model.'.format(meta)) 
+ Rename your model or the module containing the model.'.format(meta))
     _model_dict[hash] = model
-    

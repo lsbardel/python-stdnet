@@ -15,7 +15,7 @@ from stdnet.utils import pickle, DefaultJSONEncoder,\
                          string_type
 
 from . import related
-from .globals import get_model_from_hash, JSPLITTER
+from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER
 
 
 orderinginfo = namedtuple('orderinginfo','name field desc model nested, auto')
@@ -753,11 +753,12 @@ registered in the model hash table, it can be used.'''
     @field_value_error
     def index_value(self, value):
         if value is not None:
-            if not hasattr(value,'_meta'):
+            v = get_hash_from_model(value)
+            if v is None:
                 value = self.to_python(value)
-                if not hasattr(value,'_meta'):
-                    return
-            return value._meta.hash
+                return get_hash_from_model(value)
+            else:
+                return v
 
     def serialize(self, value):
         value = self.index_value(value)

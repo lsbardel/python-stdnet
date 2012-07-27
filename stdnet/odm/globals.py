@@ -2,7 +2,10 @@ import hashlib
 
 from stdnet.utils import to_bytes, JSPLITTER
 
-__all__ = ['get_model_from_hash', 'hashmodel', 'JSPLITTER']
+__all__ = ['get_model_from_hash',
+           'get_hash_from_model',
+           'hashmodel',
+           'JSPLITTER']
 
 class ModelDict(dict):
 
@@ -21,8 +24,7 @@ def get_model_from_hash(hash):
 def get_hash_from_model(model):
     return _model_dict.to_hash(model)
 
-
-def hashmodel(model, library = None):
+def hashmodel(model, library=None):
     '''Calculate the Hash id of metaclass ``meta``'''
     library = library or 'python-stdnet'
     meta = model._meta

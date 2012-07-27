@@ -21,7 +21,7 @@ __all__ = ['clearall',
            'register_application_models']
 
 
-def clearall(exclude = None):
+def clearall(exclude=None):
     global _GLOBAL_REGISTRY
     exclude = exclude or []
     for model in _GLOBAL_REGISTRY:
@@ -38,7 +38,7 @@ def models_from_names(names):
             yield m
 
 
-def flush_models(includes=None, excludes = None):
+def flush_models(includes=None, excludes=None):
     '''Utility for flushing models data.
 It removes all keys associated with models.'''
     global _GLOBAL_REGISTRY
@@ -58,8 +58,8 @@ It removes all keys associated with models.'''
     return flushed
 
 
-def register(model, backend = None, ignore_duplicates = True,
-             local_thread = False, **params):
+def register(model, backend=None, ignore_duplicates=True,
+             local_thread=False, **params):
     '''The low level function for registering a :class:`StdModel`
 classes with a :class:`stdnet.BackendDataServer` data server.
 
@@ -164,7 +164,7 @@ For example::
 
 
 def register_application_models(applications,
-                                models = None,
+                                models=None,
                                 app_defaults=None,
                                 default=None):
     '''\

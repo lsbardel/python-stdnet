@@ -5,7 +5,7 @@ from examples.data import FinanceTest, Position, Instrument, Fund
 
 
 class load_related(FinanceTest):
-    
+
     def testMeta(self):
         self.data.makePositions(self)
         session = self.session()
@@ -25,7 +25,7 @@ class load_related(FinanceTest):
         self.assertEqual(pos2.select_related['instrument'],set(('name','ccy')))
         self.assertEqual(pos3.select_related['instrument'],set(('name','ccy')))
         self.assertEqual(pos3.select_related['fund'],set(('name',)))
-        
+
     def testSingle(self):
         self.data.makePositions(self)
         session = self.session()
@@ -43,7 +43,7 @@ class load_related(FinanceTest):
             cache = fund.get_cache_name()
             val = getattr(p,cache,None)
             self.assertFalse(val)
-            
+
     def testSingle_withFields(self):
         self.data.makePositions(self)
         session = self.session()
@@ -61,7 +61,7 @@ class load_related(FinanceTest):
             self.assertTrue(val.name)
             self.assertTrue(val.ccy)
             self.assertFalse(hasattr(val,'type'))
-            
+
     def testDouble(self):
         self.data.makePositions(self)
         session = self.session()
@@ -80,7 +80,7 @@ class load_related(FinanceTest):
             val = getattr(p,cache,None)
             self.assertTrue(val)
             self.assertTrue(isinstance(val,fund.relmodel))
-            
+
     def testError(self):
         self.data.makePositions(self)
         session = self.session()
@@ -90,7 +90,7 @@ class load_related(FinanceTest):
         pos = query.load_related('instrument','id')
         self.assertEqual(len(pos.select_related),1)
         self.assertEqual(pos.select_related['instrument'],set())
-        
+
     def testLoadRelatedLoadOnly(self):
         self.data.makePositions(self)
         session = self.session()
@@ -105,11 +105,29 @@ class load_related(FinanceTest):
             val = getattr(p, cache, None)
             self.assertTrue(val)
             self.assertTrue(isinstance(val,inst.relmodel))
-        
-    
+
+    def testEmpty(self):
+        session = self.session()
+        instruments = session.query(Position).load_related('instrument').all()
+        self.assertEqual(instruments, [])
+
+    def testWithFilter(self):
+        self.data.makePositions(self)
+        session = self.session()
+        instruments = session.query(Instrument).filter(ccy='EUR')
+        qs = session.query(Position).filter(instrument=instruments)\
+                                    .load_related('instrument')
+        inst = Position._meta.dfields['instrument']
+        for p in qs:
+            cache = inst.get_cache_name()
+            val = getattr(p, cache, None)
+            self.assertTrue(val)
+            self.assertTrue(isinstance(val, inst.relmodel))
+            self.assertEqual(p.instrument.ccy, 'EUR')
+
 
 class load_related_structure(test.TestCase):
-    
+
     def setUp(self):
         session = self.session()
         with session.begin():
@@ -122,7 +140,7 @@ class load_related_structure(test.TestCase):
             d2.data.update((('palla','ball'),
                             ('nave','boat'),
                             ('gatto','cat')))
-            
+
     def testGet(self):
         session = self.session()
         query = session.query(Dictionary)
@@ -137,5 +155,4 @@ class load_related_structure(test.TestCase):
         cache = data.cache.cache
         self.assertEqual(len(cache),3)
         self.assertEqual(cache,remote)
-        
-    
+

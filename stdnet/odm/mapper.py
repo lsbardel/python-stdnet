@@ -17,6 +17,7 @@ __all__ = ['clearall',
            'unregister',
            'registered_models',
            'model_iterator',
+           'all_models_sessions',
            'register_applications',
            'register_application_models']
 
@@ -110,12 +111,15 @@ registered models.'''
         try:
             _GLOBAL_REGISTRY.remove(model)
         except KeyError:
-            return
+            return 0
         for manager in model._managers:
             manager.backend = None
+        return 1
     else:
+        n = 0
         for model in list(_GLOBAL_REGISTRY):
-            unregister(model)
+            n += unregister(model)
+        return n
 
 
 def registered_models():
@@ -161,6 +165,29 @@ For example::
             if isinstance(model, StdNetType) and meta:
                 if not meta.abstract and meta.app_label == label:
                     yield model
+
+
+def all_models_sessions(models, processed=None, session=None):
+    '''Given an iterable over models, return a generator of the same models
+plus hidden models such as the through model of :class:`ManyToManyField`
+through models.'''
+    processed = processed if processed is not None else set()
+    for model in models:
+        if model and model not in processed:
+            try:
+                model_session = model.objects.session()
+            except ModelNotRegistered:
+                model_session = session
+            yield model, model_session
+            processed.add(model)
+            for field in model._meta.fields:
+                if hasattr(field, 'relmodel'):
+                    for m in all_models_sessions((field.relmodel,), processed):
+                        yield m
+                if hasattr(field, 'through'):
+                    for m in all_models_sessions((field.through,), processed,
+                                                 model_session):
+                        yield m
 
 
 def register_application_models(applications,

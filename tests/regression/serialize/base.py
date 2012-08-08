@@ -5,43 +5,43 @@ from stdnet import odm, test
 from stdnet.utils import BytesIO, to_bytes
 
 class Tempfile(object):
-    
+
     def __init__(self, data, text = True):
         fd, path = tempfile.mkstemp(text = text)
         self.handler = None
         self.path = path
         os.write(fd, to_bytes(data))
         os.close(fd)
-        
+
     def __enter__(self):
         return self
-    
+
     def write(self, data):
         if self.fd:
             os.write(self.fd,data)
             os.close(self.fd)
             self.fd = None
-        
+
     def close(self):
         if self.handler:
             self.handler.close()
             self.handler = None
-        
+
     def open(self):
         if self.handler:
             raise RuntimeError('File is already opened')
         self.handler = open(self.path, 'r')
         return self.handler
-        
+
     def __exit__(self, type, value, trace):
         self.close()
         os.remove(self.path)
-        
 
 
 class SerializerMixin(object):
+    '''A mixin for testing serializers.'''
     serializer = 'json'
-    
+
     def get(self, **options):
         s = odm.get_serializer(self.serializer)
         if not s.default_options:
@@ -49,10 +49,10 @@ class SerializerMixin(object):
         self.assertFalse(s.data)
         self.assertTrue(s)
         return s
-        
+
     def testMeta(self):
         self.get()
-        
+
     def testDump(self):
         self.data.create(self)
         s = self.get()
@@ -60,12 +60,12 @@ class SerializerMixin(object):
         s.serialize(qs)
         self.assertTrue(s.data)
         return s
-    
+
     def testWrite(self):
         s = self.testDump()
         data = s.write()
         self.assertTrue(data)
-        
+
     def testLoad(self):
         s = self.testDump()
         qs = self.model.objects.query().sort_by('id').all()
@@ -78,14 +78,15 @@ class SerializerMixin(object):
 
 
 class DummySerializer(odm.Serializer):
+    '''A Serializer for testing registration'''
     pass
 
 
 class TestMeta(test.TestCase):
-    
+
     def testBadSerializer(self):
         self.assertRaises(ValueError, odm.get_serializer, 'djsbvjchvsdjcvsdj')
-        
+
     def testRegisterUnregister(self):
         odm.register_serializer('dummy',DummySerializer())
         s = odm.get_serializer('dummy')
@@ -96,4 +97,3 @@ class TestMeta(test.TestCase):
         self.assertRaises(NotImplementedError, s.load, None)
         self.assertTrue(odm.unregister_serializer('dummy'))
         self.assertRaises(ValueError, odm.get_serializer, 'dummy')
-        

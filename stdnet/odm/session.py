@@ -675,10 +675,10 @@ for a given :class:`StdModel`::
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
 '''
-    def __init__(self, model = None, backend = None):
+    def __init__(self, model = None, backend=None):
         self.register(model, backend)
 
-    def register(self, model, backend = None):
+    def register(self, model, backend=None):
         '''Register the Manager with a model and a backend database.'''
         self.backend = backend
         self.model = model
@@ -695,7 +695,7 @@ for a given :class:`StdModel`::
             return self.__class__.__name__
     __repr__ = __str__
 
-    def session(self, transaction = None):
+    def session(self, transaction=None):
         '''Returns a new :class:`Session`.'''
         if transaction:
             return transaction.session

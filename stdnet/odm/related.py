@@ -71,24 +71,28 @@ def Many2ManyThroughModel(field):
     if name_model == name_relmodel:
         name_relmodel += '2'
     through = field.through
+    # Create the through model
     if through is None:
-        name = '{0}_{1}'.format(name_model,name_relmodel)
+        name = '{0}_{1}'.format(name_model, name_relmodel)
         through = StdNetType(name,(StdModel,),{})
         field.through = through
-
-    # The field
-    field1 = ForeignKey(field.model, related_name = field.name,
-            related_manager_class = makeMany2ManyRelatedManager(field.relmodel,
-                                                                name_model,
-                                                                name_relmodel,
-                                                                through))
+    # The first field
+    field1 = ForeignKey(field.model,
+                        related_name=field.name,
+                        related_manager_class=makeMany2ManyRelatedManager(
+                                                    field.relmodel,
+                                                    name_model,
+                                                    name_relmodel,
+                                                    through))
     field1.register_with_model(name_model, through)
-
-    field2 = ForeignKey(field.relmodel, related_name = field.related_name,
-            related_manager_class = makeMany2ManyRelatedManager(field.model,
-                                                                name_relmodel,
-                                                                name_model,
-                                                                through))
+    # The second field
+    field2 = ForeignKey(field.relmodel,
+                        related_name=field.related_name,
+                        related_manager_class=makeMany2ManyRelatedManager(
+                                                    field.model,
+                                                    name_relmodel,
+                                                    name_model,
+                                                    through))
     field2.register_with_model(name_relmodel, through)
 
 

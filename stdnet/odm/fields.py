@@ -544,7 +544,7 @@ the relation from the related object back to self.
     proxy_class = related.LazyForeignKey
     related_manager_class = related.One2ManyRelatedManager
 
-    def __init__(self, model, related_name = None, related_manager_class = None,
+    def __init__(self, model, related_name=None, related_manager_class=None,
                  **kwargs):
         if related_manager_class:
             self.related_manager_class = related_manager_class

@@ -281,6 +281,12 @@ class ObjectAnalytics(odm.StdModel):
     @property
     def object(self):
         if not hasattr(self,'_object'):
-            self._object = self.model_type.objects.get(id = self.object_id)
+            self._object = self.model_type.objects.get(id=self.object_id)
         return self._object
 
+
+class AnalyticData(odm.StdModel):
+    group = odm.ForeignKey(Group)
+    object = odm.ForeignKey(ObjectAnalytics, related_name='analytics')
+    data = odm.JSONField()
+    

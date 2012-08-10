@@ -175,9 +175,9 @@ mapper.
                  ordering = None, modelkey = None,
                  **kwargs):
         super(Metaclass,self).__init__(model,
-                                       app_label = app_label,
-                                       modelkey = modelkey,
-                                       abstract = abstract)
+                                       app_label=app_label,
+                                       modelkey=modelkey,
+                                       abstract=abstract)
         self.fields = []
         self.scalarfields = []
         self.indices = []

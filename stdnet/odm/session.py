@@ -675,7 +675,7 @@ for a given :class:`StdModel`::
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
 '''
-    def __init__(self, model = None, backend=None):
+    def __init__(self, model=None, backend=None):
         self.register(model, backend)
 
     def register(self, model, backend=None):

@@ -289,4 +289,3 @@ class AnalyticData(odm.StdModel):
     group = odm.ForeignKey(Group)
     object = odm.ForeignKey(ObjectAnalytics, related_name='analytics')
     data = odm.JSONField()
-    

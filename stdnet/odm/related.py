@@ -62,6 +62,20 @@ Sent from class_prepared."""
 signals.class_prepared.connect(do_pending_lookups)
 
 
+class ProxyManager(Manager):
+
+    def __init__(self, proxymodel):
+        self.model = None
+        self.proxymodel = proxymodel
+
+    @property
+    def backend(self):
+        return self.proxymodel.objects.backend
+
+    def register(self, model, backend=None):
+        self.model = model
+
+
 def Many2ManyThroughModel(field):
     '''Create a Many2Many through model with two foreign key fields'''
     from stdnet.odm import StdNetType, StdModel, ForeignKey
@@ -74,7 +88,9 @@ def Many2ManyThroughModel(field):
     # Create the through model
     if through is None:
         name = '{0}_{1}'.format(name_model, name_relmodel)
-        through = StdNetType(name,(StdModel,),{})
+        pmanager = ProxyManager(field.model)
+        through = StdNetType(name, (StdModel,), {'objects': pmanager})
+        pmanager.register(through)
         field.through = through
     # The first field
     field1 = ForeignKey(field.model,
@@ -174,7 +190,7 @@ class RelatedManager(Manager):
 While standard :class:`Manager` are class properties of a model,
 related managers are accessed by instances to easily retrieve instances
 of a related model.'''
-    def __init__(self, field, model = None, instance = None):
+    def __init__(self, field, model=None, instance=None):
         self.field = field
         model = model or field.model
         super(RelatedManager,self).__init__(model)

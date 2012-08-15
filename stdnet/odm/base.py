@@ -28,11 +28,11 @@ def get_fields(bases, attrs):
     for base in bases:
         if hasattr(base, '_meta'):
             fields.update(deepcopy(base._meta.dfields))
-    
+
     for name,field in list(attrs.items()):
         if isinstance(field,Field):
             fields[name] = attrs.pop(name)
-    
+
     return fields
 
 
@@ -51,8 +51,7 @@ def make_app_label(new_class, app_label = None):
 
 class ModelMeta(object):
     '''A class for storing meta data of a :class:`Model` class.'''
-    def __init__(self, model, app_label = None, modelkey = None,
-                 abstract = False):
+    def __init__(self, model, app_label=None, modelkey=None, abstract=False):
         self.abstract = abstract
         self.model = model
         self.model._meta = self
@@ -66,27 +65,27 @@ class ModelMeta(object):
         self.modelkey = modelkey
         if not abstract:
             hashmodel(model)
-        
+
     def pkname(self):
         return 'id'
-    
+
     def maker(self):
         model = self.model
         return model.__new__(model)
-        
+
     def __repr__(self):
         if self.app_label:
             return '%s.%s' % (self.app_label,self.name)
         else:
             return self.name
-    
+
     def __str__(self):
         return self.__repr__()
-    
+
     def pk_to_python(self, id):
         return to_string(id)
-    
-        
+
+
 class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
 which maps a :class:`StdModel` into an object in the in a remote
@@ -98,15 +97,15 @@ class of :class:`StdModel` in the following way::
 
     from datetime import datetime
     from stdnet import odm
-    
+
     class MyModel(odm.StdModel):
         timestamp = odm.DateTimeField(default = datetime.now)
         ...
-        
+
         class Meta:
             ordering = '-timestamp'
             modelkey = 'custom'
-            
+
 
 :parameter abstract: Check the :attr:`abstract` attribute.
 :parameter ordering: Check the :attr:`ordering` attribute.
@@ -128,47 +127,47 @@ mapper.
 
     Unless specified it is the name of the directory or file
     (if at top level) containing the :class:`StdModel` definition.
-    
+
 .. attribute:: model
 
     The :class:`StdModel` represented by the :class:`Metaclass`.
     This attribute is set by the ``odm`` during class initialization.
-    
+
 .. attribute:: ordering
 
     Optional name of a :class:`stdnet.odm.Field` in the :attr:`model`.
     If provided, model indices will be sorted with respect to the value of the
     specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
-    
+
     Default: ``None``.
-    
+
 .. attribute:: dfields
 
     dictionary of :class:`stdnet.odm.Field` instances.
-    
+
 .. attribute:: fields
 
     list of all :class:`Field` instances.
-    
+
 .. attribute:: indices
 
     List of :class:`Field` which are indices (:attr:`Field.index` attribute
     set to ``True``).
-    
+
 .. attribute:: modelkey
 
     Override the modelkey which is by default given by ``app_label.name``
-    
+
     Default ``None``.
-        
+
 .. attribute:: pk
 
     The :class:`Field` representing the primary key.
 '''
     searchengine = None
     connection_string = None
-    
+
     def __init__(self, model, fields,
                  abstract = False, app_label = '',
                  verbose_name = None,
@@ -207,13 +206,13 @@ mapper.
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
-    
+
     def pkname(self):
         return self.pk.name
-    
+
     def pk_to_python(self, id):
         return self.pk.to_python(id)
-    
+
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
@@ -221,7 +220,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
         dbdata = instance._dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
-        
+
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
@@ -243,7 +242,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
                     else:
                         if svalue is not None:
                             data[name] = svalue
-                                
+
         return len(errors) == 0
 
     def get_sorting(self, sortby, errorClass = None):
@@ -273,7 +272,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
         errorClass = errorClass or ValueError
         raise errorClass('Cannot Order by attribute "{0}".\
  It is not a scalar field.'.format(sortby))
-        
+
     def backend_fields(self, fields):
         '''Return a two elements tuple containing a list
 of fields names and a list of field attribute names.'''
@@ -298,7 +297,7 @@ of fields names and a list of field attribute names.'''
                         names.append(name)
                         atts.append(name)
         return names,atts
-        
+
 
 class autoincrement(object):
     '''An :class:`autoincrement` is used in a :class:`StdModel` Meta
@@ -307,17 +306,17 @@ class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
 .. attribute:: incrby
 
     The ammount to increment the score by when a duplicate element is saved.
-    
+
     Default: 1.
-    
+
 For example, the :class:`stdnet.apps.searchengine.Word` model is defined as::
 
     class Word(odm.StdModel):
         id = odm.SymbolField(primary_key = True)
-        
+
         class Meta:
             ordering = -autoincrement()
-    
+
 This means every time we save a new instance of Word, and that instance has
 an id already available, the score of that word is incremented by the
 :attr:`incrby` attribute.
@@ -326,36 +325,36 @@ an id already available, the score of that word is incremented by the
     def __init__(self, incrby = 1, desc = False):
         self.incrby = incrby
         self._asce = -1 if desc else 1
-        
+
     def __neg__(self):
         c = copy(self)
         c._asce *= -1
         return c
-    
+
     @property
     def desc(self):
         return True if self._asce == -1 else False
-    
+
     def __repr__(self):
         return ('' if self._asce == 1 else '-') + '{0}({1})'\
             .format(self.__class__.__name__,self.incrby)
-    
+
     def __str__(self):
-        return self.__repr__()       
-        
-        
+        return self.__repr__()
+
+
 class ModelType(type):
     '''StdModel python metaclass'''
     is_base_class = True
     def __new__(cls, name, bases, attrs):
         parents = [b for b in bases if isinstance(b, ModelType)]
-        if not parents or attrs.pop('is_base_class',False):
+        if not parents or attrs.pop('is_base_class', False):
             return super(ModelType, cls).__new__(cls, name, bases, attrs)
         return cls.make(name, bases, attrs, attrs.pop('Meta', None))
-    
-    @classmethod    
+
+    @classmethod
     def make(cls, name, bases, attrs, meta):
-        new_class = type.__new__(cls, name, bases, attrs) 
+        new_class = type.__new__(cls, name, bases, attrs)
         ModelMeta(new_class)
         return new_class
 
@@ -368,9 +367,9 @@ class StdNetType(ModelType):
             kwargs = meta_options(**meta.__dict__)
         else:
             kwargs = meta_options()
-            
+
         # remove and build field list
-        fields = get_fields(bases, attrs)        
+        fields = get_fields(bases, attrs)
         # create the new class
         new_class = type.__new__(cls, name, bases, attrs)
         setup_managers(new_class)
@@ -378,20 +377,20 @@ class StdNetType(ModelType):
         Metaclass(new_class, fields, app_label=app_label, **kwargs)
         signals.class_prepared.send(sender=new_class)
         return new_class
-    
 
-def meta_options(abstract = False,
-                 app_label = None,
-                 ordering = None,
-                 modelkey = None,
-                 unique_together = None,
+
+def meta_options(abstract=False,
+                 app_label=None,
+                 ordering=None,
+                 modelkey=None,
+                 unique_together=None,
                  **kwargs):
     return {'abstract': abstract,
             'app_label':app_label,
             'ordering':ordering,
             'modelkey':modelkey,
             'unique_together':unique_together}
-    
+
 
 class ModelState(object):
     __slots__ = ('_persistent','deleted','_iid','score')
@@ -410,24 +409,24 @@ class ModelState(object):
         elif not pkvalue:
             pkvalue = 'new.{0}'.format(id(instance))
         self._iid = pkvalue
-    
+
     @property
     def persistent(self):
         return self._persistent
-    
+
     @property
     def iid(self):
         return self._iid
-    
+
     @property
     def action(self):
         return 'delete' if self.deleted else 'save'
-    
+
     def __repr__(self):
         return self.iid + (' deleted' if self.deleted else '')
     __str__ = __repr__
-    
-    
+
+
 class Model(AsyncObject):
     '''This is the base class for both :class:`StdModel` and :class:`Structure`
 classes. It implements the :attr:`uuid` attribute which provides the universal
@@ -439,38 +438,38 @@ unique identifier for an instance of a model.'''
     DoesNotValidate = ObjectNotValidated
     '''Exception raised when an instance of a model does not validate. Usually
 raised when trying to save an invalid instance.'''
-    
+
     def __new__(cls, *args, **kwargs):
         o = super(Model,cls).__new__(cls)
         pkname = cls._meta.pkname()
         setattr(o, pkname, kwargs.pop(pkname,None))
         o._dbdata = {}
         return o
-        
+
     def __eq__(self, other):
         if other.__class__ == self.__class__:
             return self.id == other.id
         else:
             return False
-        
+
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def __hash__(self):
         return hash(self.get_uuid(self.state().iid))
-    
+
     def state(self, update = False):
         if 'state' not in self._dbdata or update:
             self._dbdata['state'] = ModelState(self)
         return self._dbdata['state']
-    
+
     def pkvalue(self):
         return getattr(self,self._meta.pkname())
-    
+
     @classmethod
     def get_uuid(cls, id):
         return '{0}.{1}'.format(cls._meta.hash,id)
-        
+
     @property
     def uuid(self):
         '''Universally unique identifier for an instance of a :class:`Model`.'''
@@ -478,13 +477,13 @@ raised when trying to save an invalid instance.'''
             raise self.DoesNotExist(\
                     'Object not saved. Cannot obtain universally unique id')
         return self.get_uuid(self.id)
-    
+
     def __get_session(self):
         return self._dbdata.get('session')
     def __set_session(self,session):
         self._dbdata['session'] = session
     session = property(__get_session,__set_session)
-    
+
     def get_session(self, use_current_session = True):
         if use_current_session:
             session = self.session
@@ -495,10 +494,10 @@ raised when trying to save an invalid instance.'''
         if session is None:
             raise SessionNotAvailable('No session available')
         return session
-        
+
     def obtain_session(self):
         pass
-    
+
     def save(self, use_current_session=True):
         '''A direct method for saving an object. This method is provided for
 convenience and should not be used when using a :class:`Transaction`.
@@ -510,24 +509,24 @@ from its :class:`Manager`.'''
         with session.begin():
             session.add(self)
         return self
-    
+
     def delete(self, use_current_session = True):
         session = self.get_session(use_current_session)
         with session.begin():
             session.delete(self)
         return self
-    
+
     def force_save(self):
         '''Same as the :meth:`save` method, however this method never
 uses the current session. Instead it creates a new one for immediate commit.'''
         return self.save(use_current_session = False)
-    
+
     def force_delete(self):
         '''Same as the :meth:`delete` method, however this method never
 uses the current session. Instead it creates a new one for immediate commit.'''
         return self.delete(use_current_session = False)
-        
-    
+
+
 ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})
 
 

@@ -1,3 +1,4 @@
+import logging
 import json
 import sys
 import csv
@@ -14,6 +15,8 @@ __all__ = ['get_serializer',
            'Serializer']
 
 
+logger = logging.getLogger('stdnet')
+
 _serializers = {}
 
 
@@ -24,7 +27,7 @@ if sys.version_info < (2,7):    # pragma: no cover
 else:
     def writeheader(dw):
         dw.writeheader()
-    
+
 
 def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
@@ -40,7 +43,7 @@ available an exception will raise. A common use usage pattern::
         return serializer(**options)
     else:
         raise ValueError('Unknown serializer {0}.'.format(name))
-    
+
 def register_serializer(name, serializer):
     '''\
 Register a new serializer to the library.
@@ -52,57 +55,57 @@ Register a new serializer to the library.
     if not isclass(serializer):
         serializer = serializer.__class__
     _serializers[name] = serializer
-    
+
 def unregister_serializer(name):
     return _serializers.pop(name,None)
 
 def all_serializers():
     return sorted(_serializers)
-    
-    
+
+
 class Serializer(object):
     '''The stdnet serializer base class.'''
     default_options = {}
     arguments = ()
-    
+
     def __init__(self, **options):
         opts = self.default_options.copy()
         opts.update(((v,options[v]) for v in options if v in self.arguments))
         self.options = opts
-        
+
     @property
     def data(self):
         if not hasattr(self,'_data'):
             self._data = []
         return self._data
-    
+
     def serialize(self, qs):
         '''Serialize a :class:`Query` *qs*.'''
         raise NotImplementedError()
-    
+
     def write(self, stream = None):
         raise NotImplementedError()
-    
+
     def load(self, stream, model = None):
         '''Load a stream of data into the database.'''
         raise NotImplementedError()
-    
-    
+
+
 class JsonSerializer(Serializer):
     arguments = ('indent',)
-    
+
     def get_data(self, qs):
         data = []
         for obj in qs:
             data.append(obj.tojson())
-            meta = obj._meta            
+            meta = obj._meta
         return {'model':str(meta),
                 'hash':meta.hash,
                 'data':data}
-        
+
     def serialize(self, qs):
         self.data.append(self.get_data(qs))
-        
+
     def write(self, stream = None):
         stream = stream or StringIO()
         line = json.dumps(self.data, stream, **self.options)
@@ -115,17 +118,22 @@ class JsonSerializer(Serializer):
         data = json.loads(stream, **self.options)
         for model_data in data:
             model = get_model_from_hash(model_data['hash'])
-            with model.objects.transaction(signal_commit=False,
-                                           signal_session=False) as t:
-                for item_data in model_data['data']:
-                    t.add(model.from_base64_data(**item_data))
-            
-        
+            if model:
+                logger.info('Loading model %s' % model._meta)
+                with model.objects.transaction(signal_commit=False,
+                                               signal_session=False) as t:
+                    for item_data in model_data['data']:
+                        t.add(model.from_base64_data(**item_data))
+            else:
+                logger.error('Could not load model %s'\
+                              % model_data.get('model'))
+
+
 class CsvSerializer(Serializer):
     '''A csv serializer for single model. It serialize a model query into
 a csv file.'''
     default_options = {'lineterminator': '\n'}
-    
+
     def serialize(self, qs):
         if self.data:
             raise ValueError('Cannot serialize more than one model into CSV')
@@ -146,7 +154,7 @@ a csv file.'''
                 'hash': meta.hash,
                 'data': data}
         self.data.append(data)
-                
+
     def write(self, stream = None):
         stream = stream or StringIO()
         if self.data:
@@ -158,7 +166,7 @@ a csv file.'''
                 for row in data:
                     w.writerow(row)
         return stream
-    
+
     def load(self, stream, model = None):
         if not model:
             raise ValueError('Model is required when loading from csv file')
@@ -166,7 +174,7 @@ a csv file.'''
         with model.objects.transaction() as t:
             for item_data in r:
                 t.add(model.from_base64_data(**item_data))
-            
+
 
 register_serializer('json', JsonSerializer)
 register_serializer('csv', CsvSerializer)

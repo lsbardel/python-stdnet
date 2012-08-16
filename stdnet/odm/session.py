@@ -28,7 +28,7 @@ def is_query(query):
 def commit_element_when_no_transaction(f):
 
     def _(self, element, modified=True):
-        r = f(self, element, modified = modified)
+        r = f(self, element, modified=modified)
         if modified and not self.transaction:
             self.commit()
         return r
@@ -424,7 +424,6 @@ Results can contain errors.
         self.close()
         if not response:
             return self
-
         signals = []
         exceptions = []
         for result in self.result:
@@ -445,12 +444,10 @@ Results can contain errors.
                 self.saved[meta] = saved
                 if self.signal_commit:
                     signals.append((post_commit.send, sm, saved))
-
         # Once finished we send signals
-        for send,sm,instances in signals:
-            send(sm.model, instances = instances, session = session,
-                 transaction = self)
-
+        for send, sm, instances in signals:
+            send(sm.model, instances=instances, session=session,
+                 transaction=self)
         if exceptions:
             failures = len(exceptions)
             if failures > 1:
@@ -463,8 +460,8 @@ Results can contain errors.
         return self
 
     def close(self):
-        if self.result and self.signal_session:
-            post_commit.send(Session, transaction = self)
+        #if self.result and self.signal_session:
+        #    post_commit.send(Session, transaction=self)
         for sm in self.session:
             if sm._delete_query:
                 sm._delete_query = []
@@ -586,7 +583,7 @@ from the **kwargs** parameters.
             return sm.get(id)
 
     @commit_element_when_no_transaction
-    def add(self, instance, modified = True):
+    def add(self, instance, modified=True):
         '''Add an *instance* to the session.
 
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.

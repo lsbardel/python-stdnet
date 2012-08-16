@@ -263,7 +263,20 @@ Stdnet includes a signal dispatcher which helps allow decoupled
 applications get notified when actions occur elsewhere in the framework.
 In a nutshell, signals allow certain senders to notify a set of receivers
 that some action has taken place.
-They’re especially useful when many pieces of code may be interested in
+They are especially useful when many pieces of code may be interested in
 the same events.
+
+The data mapper provide with the following built-in signals in the :mod:`stdnet.odm`
+module:
+
+* ``pre_commit`` triggered before new instances or changes on existing instances
+  are committed to the backend server.
+* ``post_commit`` triggered after new instances or changes on existing instances
+  are committed to the backend server.
+
+It is also possible to add callback to single instances in the following way::
+
+    instance = MyModel(...)
+    instance.post_commit(callable)
 
 .. _standard template library: http://www.sgi.com/tech/stl/

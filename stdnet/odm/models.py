@@ -6,6 +6,7 @@ from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 
 from .base import StdNetType, Model
 from .session import Session, Manager
+from . import signals
 
 
 __all__ = ['StdModel', 'model_to_dict']
@@ -191,6 +192,12 @@ attribute set to ``True`` will be excluded.'''
                 field = meta.dfields.get(name)
                 if field is not None:
                     setattr(self,field.attname,getattr(obj,field.attname,None))
+
+    def post_commit(self, callable, **params):
+        signals.post_commit.add_callback(lambda *args, **kwargs:\
+                                          callable(self, kwargs, **params),
+                                          sender=self._meta.model)
+        return self
 
     # PICKLING SUPPORT
 

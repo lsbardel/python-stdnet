@@ -168,7 +168,6 @@ within this :class:`Session`.'''
                 self._loaded[iid] = instance
         else:
             self._new[iid] = instance
-
         return instance
 
     def delete(self, instance, session):
@@ -433,7 +432,7 @@ Results can contain errors.
             meta, response = result
             if not response:
                 continue
-            sm = session.model(meta, True)
+            sm = session.model(meta)
             saved, deleted, errors = sm.post_commit(response)
             exceptions.extend(errors)
             if deleted:
@@ -467,6 +466,9 @@ Results can contain errors.
                 sm._delete_query = []
         self.session.transaction = None
         self.session = None
+
+    def model(self, model):
+        return self.session.model(model)
 
     # INTERNAL FUNCTIONS
     def pre_commit(self):
@@ -523,7 +525,9 @@ class Session(object):
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
 
-    def model(self, meta, make = False):
+    def model(self, meta):
+        if hasattr(meta, '_meta'):
+            meta = meta._meta
         sm = self._models.get(meta)
         if sm is None:
             if meta.model._model_type == 'structure':
@@ -590,7 +594,7 @@ from the **kwargs** parameters.
 :parameter modified: a boolean flag indictaing if the instance was modified.
 
 '''
-        sm = self.model(instance._meta, True)
+        sm = self.model(instance._meta)
         instance.session = self
         return sm.add(instance, modified)
 
@@ -600,7 +604,7 @@ from the **kwargs** parameters.
 
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
 '''
-        sm = self.model(instance._meta, True)
+        sm = self.model(instance._meta)
         # not an instance of a Model. Assume it is a query.
         if is_query(instance):
             if instance.session is not self:

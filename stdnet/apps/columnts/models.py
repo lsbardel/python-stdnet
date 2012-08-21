@@ -40,17 +40,18 @@ multivariate timeseries.'''
         '''Return the front pair of the structure'''
         v,f = tuple(self.irange(0, 0, fields=fields))
         if v:
-            return (v[0],dict(((field,f[field][0]) for field in f)))
+            return (v[0],dict(((field, f[field][0]) for field in f)))
 
     def back(self, *fields):
         '''Return the back pair of the structure'''
         v,f = tuple(self.irange(-1, -1, fields=fields))
         if v:
-            return (v[0],dict(((field,f[field][0]) for field in f)))
+            return (v[0],dict(((field, f[field][0]) for field in f)))
 
     def info(self):
         '''Provide information for this :class:`ColumnTS`.'''
-        return self.backend_structure().info()
+        res = self.backend_structure().info()
+        return self.async_handle(res, self._stats)
 
     def fields(self):
         '''Tuple of ordered fields for this :class:`ColumnTS`.'''
@@ -179,7 +180,7 @@ The result will be calculated using the formula::
         return dict(((f, vloads(v)) for f, v in iterpair(result)))
 
     def _stats(self, result):
-        if result:
+        if result and 'start' in result:
             result['start'] = self.pickler.loads(result['start'])
             result['stop'] = self.pickler.loads(result['stop'])
         return result

@@ -152,19 +152,24 @@ For example::
                 yield m
     else:
         label = application.split('.')[-1]
-        mod = import_module(application)
-        mod_name = mod.__name__
         try:
-            mod_models = import_module('.models',application)
+            mod = import_module(application)
         except ImportError:
-            mod_models = mod
-        label = getattr(mod_models, 'app_label', label)
-        for name in dir(mod_models):
-            model = getattr(mod_models, name)
-            meta = getattr(model, '_meta', None)
-            if isinstance(model, StdNetType) and meta:
-                if not meta.abstract and meta.app_label == label:
-                    yield model
+            # the module is not there
+            mod = None
+        if mod:
+            try:
+                mod_models = import_module('.models', application)
+            except ImportError:
+                mod_models = mod
+            mod_name = mod.__name__
+            label = getattr(mod_models, 'app_label', label)
+            for name in dir(mod_models):
+                model = getattr(mod_models, name)
+                meta = getattr(model, '_meta', None)
+                if isinstance(model, StdNetType) and meta:
+                    if not meta.abstract and meta.app_label == label:
+                        yield model
 
 
 def all_models_sessions(models, processed=None, session=None):

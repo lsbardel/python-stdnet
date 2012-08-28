@@ -364,6 +364,10 @@ local columnts = {
         local size = # times
         local result = {size=size, fields={}}
         if size > 0 then
+            result['start'] = times[1]
+            result['stop'] = times[size]
+        end
+        if size > 0 then
             for field, data in pairs(field_values) do
                 local f = {}
                 local missing = 0

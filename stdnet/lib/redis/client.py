@@ -4,10 +4,10 @@ in January 2011. Since than it has moved on a different direction.
 
 Copyright (c)
 
-* 2010 Andy McCurdy. BSD License   
+* 2010 Andy McCurdy. BSD License
 * 2011-2012 Luca Sbardella. BSD License
-    
-    
+
+
 .. _redis-py: https://github.com/andymccurdy/redis-py
 '''
 import time
@@ -63,7 +63,7 @@ def timestamp_to_datetime(request, response, args, **options):
 def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
 
-        
+
 def dict_merge(*dicts):
     merged = {}
     [merged.update(d) for d in dicts]
@@ -116,8 +116,8 @@ def ts_pairs(request, response, args, withtimes = False, novalues = False,
         elif options.get('single') and len(response) == 1:
             return response[0]
     return response
-    
-    
+
+
 def zset_score_pairs(request, response, args, **options):
     """
     If ``withscores`` is specified in the options, return the response as
@@ -156,7 +156,7 @@ def config_callback(request, response, args, **options):
             for k,v in pairs_to_dict_cbk(request, response, args, **options)))
     else:
         return response == b'OK'
-    
+
 
 def slowlog_callback(request, response, args, **options):
     if args[0] == 'GET':
@@ -243,7 +243,7 @@ class Redis(object):
             'SLOWLOG': slowlog_callback
         }
         )
-    
+
     RESPONSE_ERRBACKS = {
         'EVALSHA': eval_command_callback,
         'EVAL': eval_command_callback
@@ -271,11 +271,11 @@ class Redis(object):
         self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.response_errbacks = self.RESPONSE_ERRBACKS.copy()
-        
+
     @property
     def client(self):
         return self
-    
+
     @property
     def pipelined(self):
         return self.client is not self
@@ -283,15 +283,15 @@ class Redis(object):
     def _get_db(self):
         return self.connection_pool.db
     db = property(_get_db)
-    
+
     def __eq__(self, other):
         return self.connection_pool == other.connection_pool
-    
+
     def clone(self, **kwargs):
         c = copy(self)
         c.connection_pool = self.connection_pool.clone(**kwargs)
         return c
-        
+
     def pipeline(self):
         """
 Return a new :class:`Pipeline` that can queue multiple commands for
@@ -313,7 +313,7 @@ between the client and server.
             cbk = callbacks[command_name]
             return cbk(request, response, args, **options)
         return response
-    
+
     def parse_response(self, request):
         "Parses a response from the Redis server"
         return self._parse_response(request,
@@ -343,7 +343,7 @@ between the client and server.
     def config_set(self, name, value):
         "Set config item ``name`` with ``value``"
         return self.execute_command('CONFIG', 'SET', name, value, parse='SET')
-    
+
     def dbsize(self):
         "Returns the number of keys in the current database"
         return self.execute_command('DBSIZE')
@@ -382,7 +382,7 @@ between the client and server.
         blocking until the save is complete
         """
         return self.execute_command('SAVE')
-    
+
     def shutdown(self):
         "Shutdown the server"
         try:
@@ -400,16 +400,16 @@ instance is promoted to a master instead.
         if host is None and port is None:
             return self.execute_command("SLAVEOF", "NO", "ONE")
         return self.execute_command("SLAVEOF", host, port)
-    
+
     def slowlog_get(self, entries = 1):
         return self.execute_command("SLOWLOG", 'GET', entries)
-    
+
     def slowlog_len(self):
         return self.execute_command("SLOWLOG", 'LEN')
-    
+
     def slowlog_reset(self):
         return self.execute_command("SLOWLOG", 'RESET')
-    
+
     #### BASIC KEY COMMANDS ####
     def append(self, key, value):
         """
@@ -523,7 +523,7 @@ the ``SETEX`` command is executed instead."""
     def strlen(self, name):
         "Return the number of bytes stored in the value of ``name``"
         return self.execute_command('STRLEN', name)
-    
+
     def substr(self, name, start, end=-1):
         """
         Return a substring of the string at key ``name``. ``start`` and ``end``
@@ -830,7 +830,7 @@ The first element is the score and the second is the value.'''
         '''
         return self.execute_command('ZREMRANGEBYRANK', name, start, stop,
                                     **options)
-        
+
     def zremrangebyscore(self, name, min, max, **options):
         """
         Remove all elements in the sorted set ``name`` with scores
@@ -858,7 +858,7 @@ The first element is the score and the second is the value.'''
         """
         keys = list_or_args(keys, args)
         return self._zaggregate('ZINTERSTORE', dest, keys, **options)
-    
+
     def zunionstore(self, dest, keys, *args, **options):
         """
         Union multiple sorted sets specified by ``keys`` into
@@ -867,7 +867,7 @@ The first element is the score and the second is the value.'''
         """
         keys = list_or_args(keys, args)
         return self._zaggregate('ZUNIONSTORE', dest, keys, **options)
-    
+
     def zdiffstore(self, dest, keys, *args, **options):
         """
         Compute the difference of multiple sorted sets specified by
@@ -880,9 +880,9 @@ The first element is the score and the second is the value.'''
         else:
             withscores = ''
         return self.script_call('zdiffstore', keys, withscores, **options)
-    
+
     # zset script commands
-    
+
     def zpopbyrank(self, name, start, stop = None, withscores = False,
                    desc = False, **options):
         '''Pop a range by rank'''
@@ -892,7 +892,7 @@ The first element is the score and the second is the value.'''
                                 'rank',
                                 start, stop, int(desc), int(withscores),
                                 **options)
-        
+
     def zpopbyscore(self, name, start, stop = None, withscores = False,
                     desc = False, **options):
         '''Pop a range by score'''
@@ -923,7 +923,7 @@ The first element is the score and the second is the value.'''
             pieces.append('WITHSCORES')
             pieces.append(withscores)
         return self.execute_command(*pieces, **options)
-        
+
     ############################################################################
     ##    HASH COMMANDS
     ############################################################################
@@ -1000,65 +1000,65 @@ The first element is the score and the second is the value.'''
             num_keys = 0
             params = args
         return self.execute_command(command, body, num_keys, *params, **options)
-    
+
     def eval(self, body, keys, *args, **options):
         return self._eval('EVAL', body, keys, *args, **options)
-    
+
     def evalsha(self, body, keys, *args, **options):
         return self._eval('EVALSHA', body, keys, *args, **options)
-    
+
     def script_call(self, name, keys, *args, **options):
         '''Execute a registered lua script.'''
         script = get_script(name)
         if not script:
             raise ValueError('No such script {0}'.format(name))
         return script.evalsha(self, keys, *args, **options)
-        
+
     def script_flush(self):
         return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
-    
+
     def script_load(self, script, script_name=None):
         return self.execute_command('SCRIPT', 'LOAD', script, command='LOAD',
                                     script_name=script_name)
-    
+
     ############################################################################
     ##    Script commands
     ############################################################################
     def countpattern(self, pattern):
         "delete all keys matching *pattern*."
         return self.script_call('countpattern', (), pattern)
-    
+
     def delpattern(self, pattern):
         "delete all keys matching *pattern*."
         return self.script_call('delpattern', (), pattern)
 
 
 class RedisProxy(Redis):
-    
+
     def __init__(self, client):
         self.__client = client
-        
+
     @property
     def client(self):
         return self.__client
-    
+
     @property
     def connection_pool(self):
         return self.client.connection_pool
-    
+
     @property
     def response_callbacks(self):
         return self.client.response_callbacks
-    
+
     @property
     def response_errbacks(self):
         return self.client.response_errbacks
-    
+
     @property
     def encoding(self):
         return self.client.encoding
-    
-    
+
+
 class Pipeline(RedisProxy):
     """A :class:`Pipeline` provide a way to commit multiple commands
 to the Redis server in one transmission.
@@ -1084,11 +1084,11 @@ on a key of a different datatype.
     def __init__(self, client):
         super(Pipeline,self).__init__(client)
         self.reset()
-    
+
     def reset(self):
         self.command_stack = []
         self.execute_command('MULTI')
-        
+
     @property
     def empty(self):
         return len(self.command_stack) <= 1
@@ -1112,18 +1112,18 @@ which will execute all commands queued in the pipe.
         self.command_stack.append(
                         redis_command(cmnd, args, options, callbacks))
         return self
-    
+
     def add_callback(self, callback):
         '''Adding a callback to the latest command in the pipeline.
 Typical usage::
 
     pipe.sadd('foo').add_callback(mycallback)
-    
+
 The callback will be executed after the default callback for the command
 with the following syntax::
 
     mycallback(results, current_result)
-    
+
 where ``results`` is a list of previous pipeline's command results and
 ``current_result`` is the result of the command the callback is
 associated with. The result from the callback will be added to
@@ -1136,7 +1136,7 @@ Several callbacks can be added for a given command::
             raise ValueError('Cannot add callback. No command in the stack')
         self.command_stack[-1].callbacks.append(callback)
         return self
-                
+
     def parse_response(self, request):
         response = request.response
         commands = request.args
@@ -1145,7 +1145,7 @@ Several callbacks can be added for a given command::
         commands = commands[1:-1]
         if len(response) != len(commands):
             raise ResponseError("Wrong number of response items from "
-                "pipeline execution")
+                                "pipeline execution")
         parse_response = self._parse_response
         for r, cmd in zip(response, commands):
             command, args, options, callbacks = cmd
@@ -1171,5 +1171,5 @@ Several callbacks can be added for a given command::
         if load_script:
             return load_missing_scripts(self, commands[1:-1], result)
         return result
-                    
-            
+
+

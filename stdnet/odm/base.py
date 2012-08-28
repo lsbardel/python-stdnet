@@ -458,7 +458,7 @@ raised when trying to save an invalid instance.'''
     def __hash__(self):
         return hash(self.get_uuid(self.state().iid))
 
-    def state(self, update = False):
+    def state(self, update=False):
         if 'state' not in self._dbdata or update:
             self._dbdata['state'] = ModelState(self)
         return self._dbdata['state']

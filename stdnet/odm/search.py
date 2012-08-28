@@ -124,13 +124,18 @@ It extracts content from the given *item* and add it to the index.
 """
         # Index only if the item is fully loaded. This means item
         # with a _loadedfields not None are not indexed
-        if item._loadedfields is None:
-            self.remove_item(item, session)
-            wft = self.words_from_text
-            words = chain(*[wft(value) for value in\
-                                self.item_field_iterator(item)])
-            self.add_item(item, words, session)
-        return session
+        #if item._loadedfields is None:
+        #    self.remove_item(item, session)
+        #    wft = self.words_from_text
+        #    words = chain(*[wft(value) for value in\
+        #                        self.item_field_iterator(item)])
+        #    self.add_item(item, words, session)
+        #return session
+        self.remove_item(item, session)
+        wft = self.words_from_text
+        words = chain(*[wft(value) for value in\
+                            self.item_field_iterator(item)])
+        self.add_item(item, words, session)
 
     def reindex(self):
         '''Re-index models by removing items in
@@ -140,7 +145,9 @@ If models are not provided, it reindex all models registered
 with the search engine.'''
         self.flush()
         n = 0
+        # Loop over models
         for model in self.REGISTERED_MODELS:
+            # get all fiels to index
             fields = tuple((f.name for f in model._meta.scalarfields\
                             if f.type == 'text'))
             session = self.session()

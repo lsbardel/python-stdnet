@@ -11,11 +11,8 @@ else:   # pragma nocover
     
 def_converter = lambda x : x
 
-def populate(datatype = 'string', size  = 10,
-             start = None, end = None, 
-             converter = None, 
-             choice_from = None,
-             **kwargs):
+def populate(datatype='string', size=10, start=None, end=None, 
+             converter=None, choice_from=None, **kwargs):
     '''Utility function for populating lists with random data.
 Useful for populating database with data for fuzzy testing.
 Supported data-types

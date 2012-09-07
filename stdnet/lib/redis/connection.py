@@ -67,7 +67,8 @@ __all__ = ['RedisRequest',
            'RedisReader',
            'PyRedisReader',
            'redis_before_send',
-           'redis_after_receive']
+           'redis_after_receive',
+           'NOT_READY']
 
 
 # SIGNALS
@@ -84,13 +85,15 @@ else:
     RedisReader = PyRedisReader
     
 
+class NOT_READY:
+    pass
 
 class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
     retry = 2
     def __init__(self, client, connection, command_name, args,
-                 release_connection = True, **options):
+                 release_connection=True, **options):
         self.client = client
         self.connection = connection
         self.command_name = command_name
@@ -152,8 +155,8 @@ handling of a single command from start to the response from the server.'''
         "Send the command to the server"
         # broadcast BEFORE SEND signal
         redis_before_send.send(self.client.__class__,
-                               request = self,
-                               command = self.command)
+                               request=self,
+                               command=self.command)
         self.connection.connect(self, self.tried)
         try:
             self.connection.sock.sendall(self.command)
@@ -169,19 +172,15 @@ handling of a single command from start to the response from the server.'''
         redis_after_receive.send(self.client.__class__, request=self)
         c = self.connection
         try:
-            #if isinstance(self.response, ResponseError):
-            #    if str(self.response) == NoScriptError.msg:
-            #        self.response = NoScriptError()
-            #    else:
-            #        raise self.response
-            self._response = self.client.parse_response(self)
-            if isinstance(self._response, Exception):
-                raise self._response
+            response = self.client.parse_response(self)
+            if isinstance(response, Exception):
+                raise response
         except:
             c.disconnect()
             raise
         if self.release_connection:
             c.pool.release(c)
+        return response
         
     def parse(self, data):
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
@@ -195,11 +194,12 @@ handling of a single command from start to the response from the server.'''
                     break
                 self.response.append(response)
             if len(self.response) == self.num_responses:
-                self.close()
+                return self.close()
         else:
             self.response = parser.gets()
             if self.response is not False:
-                self.close()
+                return self.close()
+        return NOT_READY
         
     def execute(self):
         raise NotImplementedError()
@@ -222,11 +222,9 @@ class SyncRedisRequest(RedisRequest):
     
     def _sendrecv(self):
         self._send()
-        return self.read_response()
-    
-    def read_response(self):
         sock = self.connection.sock
-        while not self.done:
+        response = NOT_READY
+        while response is NOT_READY:
             try:
                 stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             except (socket.error, socket.timeout) as e:
@@ -234,8 +232,8 @@ class SyncRedisRequest(RedisRequest):
                         (e.args,))
             if not stream:
                 raise RedisConnectionError("Socket closed on remote end", True)
-            self.parse(stream)
-        return self._response
+            response = self.parse(stream)
+        return response
     
     
 class Connection(object):
@@ -333,16 +331,18 @@ This class should not be directly initialized. Instead use the
                             self.READ_BUFFER_SIZE)
         elif self.socket_type == 'UNIX':
             sock = self.socket_class(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.__sock = sock
+        sock.settimeout(self.socket_timeout)
         try:
-            return self._connect(request, counter)
+            sock.connect(self.address)
         except socket.error as e:
             raise RedisConnectionError(self._error_message(e))
-
-    def _connect(self, request, counter):
-        self.sock.settimeout(self.socket_timeout)
-        self.sock.connect(self.address)
+        self.__sock = self._wrap_socket(sock)
         return self.on_connect(request, counter)
+
+    #    INTERNAL METHODS
+    
+    def _wrap_socket(self, sock):
+        return sock
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -440,7 +440,7 @@ class ConnectionPool(object):
     "A :class:`Redis` :class:`Connection` pool."
     default_encoding = 'utf-8'
     
-    def __init__(self, address, connection_class = None, db = 0,
+    def __init__(self, address, connection_class=None, db=0,
                  max_connections=None, **connection_kwargs):
         if not address:
             raise ValueError('Redis connection address not supplied')

@@ -20,6 +20,7 @@ from stdnet import odm, getdb, BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
+skipUnless = unittest.skipUnless
 
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet. It contains
@@ -33,6 +34,7 @@ some utility functions for tesing in a parallel test suite.
 '''
     models = ()
     model = None
+    backend = None
 
     def backend_params(self):
         '''Optional backend parameters'''
@@ -75,9 +77,10 @@ will be unregistered after the :meth:`tearDown` method.'''
             self.backend.load_scripts()
 
     def _post_teardown(self):
-        session = odm.Session(self.backend)
-        self.clear_all()
-        odm.unregister()
+        if self.backend:
+            session = odm.Session(self.backend)
+            self.clear_all()
+            odm.unregister()
 
     def __call__(self, result=None):
         """Wrapper around default __call__ method

@@ -4,6 +4,7 @@ Development
 ===============================
 * A new ``C`` redis_ parser shipped with the library.
 * Several fixes in the documentation.
+* Added an asynchronous connection class for Redis.
 * Lua script for univariate timeseries. This means the standard redis distribution
   works with the :class:`stdnet.odm.TS` structure.
 * Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via

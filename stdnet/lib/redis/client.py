@@ -207,7 +207,7 @@ class Redis(object):
             ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
-            'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME'
+            'FLUSHALL FLUSHDB LSET LTRIM MSET RENAME SELECT'
             'SAVE SET SHUTDOWN SLAVEOF WATCH UNWATCH',
             lambda request, response, args, **options: response == b'OK'
             ),
@@ -375,6 +375,10 @@ between the client and server.
     def ping(self):
         "Ping the Redis server"
         return self.execute_command('PING')
+    
+    def echo(self, message):
+        "Ping the Redis server"
+        return self.execute_command('ECHO', message)
 
     def save(self):
         """
@@ -1015,7 +1019,7 @@ The first element is the score and the second is the value.'''
         return script.evalsha(self, keys, *args, **options)
 
     def script_flush(self):
-        return self.execute_command('SCRIPT', 'FLUSH', command = 'FLUSH')
+        return self.execute_command('SCRIPT', 'FLUSH', command='FLUSH')
 
     def script_load(self, script, script_name=None):
         return self.execute_command('SCRIPT', 'LOAD', script, command='LOAD',

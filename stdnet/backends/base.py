@@ -27,7 +27,8 @@ session_result = namedtuple('session_result','meta results')
 
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
-    pass
+    def add_callback(self, callback):
+        raise NotImplementedError()
 
 
 class AsyncObject(UnicodeMixin):

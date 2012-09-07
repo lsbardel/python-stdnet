@@ -761,7 +761,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             cp = self.connection_pools[cp]
         else:
             self.connection_pools[cp] = cp
-        rpy = redis.Redis(connection_pool = cp)
+        rpy = redis.Redis(connection_pool=cp)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
         #self.keys = rpy.keys

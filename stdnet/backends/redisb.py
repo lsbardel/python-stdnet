@@ -13,7 +13,7 @@ from stdnet.utils import to_string, map, gen_unique_id, zip,\
 from stdnet.lib import redis
 
 from .base import BackendStructure, query_result, session_result,\
-                    instance_session_result
+                    instance_session_result, on_result
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
@@ -54,6 +54,7 @@ class load_query(redis.RedisScript):
 loading of different fields, loading of related fields, sorting and
 limiting.'''
     script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('commands.timeseries'),
               redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm.load_query'))
     
@@ -82,24 +83,24 @@ limiting.'''
             data = self.build(data, fields, fields_attributes, encoding)
             related_fields = {}
             if related:
-                for fname,rdata,fields in related:
+                for fname, rdata, fields in related:
                     fname = native_str(fname, encoding)
                     fields = tuple(native_str(f, encoding) for f in fields)
                     related_fields[fname] =\
                         self.load_related(meta, fname, rdata, fields, encoding)
-            return query.backend.make_objects(meta, data, related_fields)
+            return query.backend.objects_from_db(meta, data, related_fields)
         
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
         field = meta.dfields[fname]
         if field in meta.multifields:
             fmeta = field.structure_class()._meta
-            if fmeta.name in ('hashtable','zset','ts'):
+            if fmeta.name in ('hashtable','zset'):
                 return ((native_str(id, encoding),
                          pairs_to_dict(fdata, encoding)) for \
                         id,fdata in data)
             else:
-                return data
+                return ((native_str(id, encoding),fdata) for id,fdata in data)
         else:
             # this is data for stdmodel instances
             return self.build(data, fields, fields, encoding)
@@ -153,16 +154,17 @@ def structure_session_callback(sm, processed, response):
 
 def results_and_erros(results, result_type):
     if results:
-        for v in results:
-            if isinstance(v, Exception) or isinstance(v, result_type):
-                yield v
+        return [v for v in results if isinstance(v, Exception) or\
+                                      isinstance(v, result_type)]
+    else:
+        return ()
                 
-                
+
 def redis_execution(pipe, result_type):
     pipe.request_info = {}
     results = pipe.execute(load_script=True)
-    info = pipe.__dict__.pop('request_info',None)
-    return info, results_and_erros(results, result_type)
+    info = pipe.__dict__.pop('request_info', None)
+    return info, on_result(results, results_and_erros, result_type)
     
     
 ################################################################################
@@ -265,8 +267,11 @@ elements in the query.'''
         self.card(self.query_key, script_dependency = 'build_query')
         pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
-        self.commands, res = redis_execution(pipe, query_result)
-        self.query_results = list(res)
+        self.commands, result = redis_execution(pipe, query_result)
+        return on_result(result, self._execute_query_result)
+    
+    def _execute_query_result(self, result):
+        self.query_results = result
         return self.query_results[-1].count
     
     def order(self, last):
@@ -331,7 +336,6 @@ elements in the query.'''
             stop -= start
         elif stop is None:
             stop = -1
-                
         get = self.queryelem._get_field or ''
         fields_attributes = None
         keys = (self.query_key, backend.basekey(meta))
@@ -353,14 +357,12 @@ elements in the query.'''
             elif fields:
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
-                fields_attributes = ()
-        
+                fields_attributes = () 
         args.append(len(fields_attributes))
         args.extend(fields_attributes)
         args.extend(self.related_lua_args())
         args.extend((name,start,stop))
         args.extend(order)
-                    
         options = {'fields':fields,
                    'fields_attributes':fields_attributes,
                    'query':self,
@@ -377,7 +379,7 @@ elements in the query.'''
             yield len(related)
             for rel in related:
                 field = meta.dfields[rel]
-                typ = 'structure' if field in meta.multifields else ''
+                typ = field.type if field in meta.multifields else ''
                 relmodel = field.relmodel
                 bk = self.backend.basekey(relmodel._meta) if relmodel else ''
                 fi = related[rel]
@@ -461,7 +463,7 @@ class Set(RedisStructure):
     
 
 class Zset(RedisStructure):
-    
+    '''Redis ordered set structure'''
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -504,13 +506,15 @@ class Zset(RedisStructure):
                                        withscores = withscores, **options),
                     self._range, withscores)
     
-    def ipop(self, start, stop=None, withscores=False, **options):
+    def ipop_range(self, start, stop=None, withscores=True, **options):
+        '''Remove and return a range from the ordered set by rank (index).'''
         return self.async_handle(
                 self.client.zpopbyrank(self.id, start, stop,
-                                       withscores = withscores, **options),
+                                       withscores=withscores, **options),
                 self._range, withscores)
         
-    def pop(self, start, stop=None, withscores=False, **options):
+    def pop_range(self, start, stop=None, withscores=True, **options):
+        '''Remove and return a range from the ordered set by score.'''
         return self.async_handle(
                 self.client.zpopbyscore(self.id, start, stop,
                                         withscores=withscores, **options),
@@ -606,40 +610,65 @@ class Hash(RedisStructure):
         return iter(self.client.hgetall(self.id))
     
     
-class TS(Zset):
-    
+class TS(RedisStructure):
+    '''Redis timeseries implementation is based on the ts.lua script'''
     def flush(self):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            self.client.tsadd(self.id, *cache.toadd.flat())
+            self.client.script_call('ts_commands', self.id, 'add',
+                                    *cache.toadd.flat())
             result = True
         if cache.toremove:
             raise NotImplementedError('Cannot remove. TSDEL not implemented')
         return result
     
-    def _iter(self):
-        return iter(self.irange(novalues = True))
+    def __contains__(self, timestamp):
+        return self.client.script_call('ts_commands', self.id, 'exists',
+                                       timestamp)
     
     def size(self):
-        return self.client.tslen(self.id)
+        return self.client.script_call('ts_commands', self.id, 'size')
     
     def count(self, start, stop):
-        return self.client.tscount(self.id, start, stop)
-
-    def range(self, time_start, time_stop, desc = False, withscores = True,
-              **options):
-        return self.client.tsrangebytime(self.id, time_start, time_stop,
-                                         withtimes = withscores, **options)
-            
-    def irange(self, start=0, stop=-1, desc = False, withscores = True,
-               novalues = False, **options):
-        return self.client.tsrange(self.id, start, stop,
-                                   withtimes = withscores,
-                                   novalues = novalues, **options)
+        return self.client.script_call('ts_commands', self.id, 'count',
+                                       start, stop)
     
-    def items(self, **options):
-        return self.irange(**options)
+    def times(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'times',
+                                       time_start, time_stop, **kwargs)
+            
+    def itimes(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'itimes',
+                                       start, stop, **kwargs)
+    
+    def get(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'get', dte)
+    
+    def rank(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'rank', dte)
+    
+    def pop(self, dte):
+        return self.client.script_call('ts_commands', self.id, 'pop', dte)
+    
+    def ipop(self, index):
+        return self.client.script_call('ts_commands', self.id, 'ipop', index)
+            
+    def range(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'range',
+                                       time_start, time_stop, **kwargs)
+            
+    def irange(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'irange',
+                                       start, stop, **kwargs)
+        
+    def pop_range(self, time_start, time_stop, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'pop_range',
+                                       time_start, time_stop, **kwargs)
+            
+    def ipop_range(self, start=0, stop=-1, **kwargs):
+        return self.client.script_call('ts_commands', self.id, 'ipop_range',
+                                       start, stop, **kwargs)
 
 
 class NumberArray(RedisStructure):
@@ -675,6 +704,12 @@ class NumberArray(RedisStructure):
         return self.client.strlen(self.id)//8
     
 
+class ts_commands(redis.RedisScript):
+    script = (redis.read_lua_file('commands.timeseries'),
+              redis.read_lua_file('tabletools'),
+              redis.read_lua_file('ts'))
+    
+    
 class numberarray_resize(redis.RedisScript):
     script = (redis.read_lua_file('odm.numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
@@ -715,19 +750,19 @@ class BackendDataServer(stdnet.BackendDataServer):
                   'numberarray':NumberArray,
                   'string': String}
         
-    def setup_connection(self, address, **params):
+    def setup_connection(self, address):
         addr = address.split(':')
         if len(addr) == 2:
             try:
                 address = (addr[0],int(addr[1]))
             except:
                 pass
-        cp = redis.ConnectionPool(address, **params)
+        cp = redis.ConnectionPool(address, **self.params)
         if cp in self.connection_pools:
             cp = self.connection_pools[cp]
         else:
             self.connection_pools[cp] = cp
-        rpy = redis.Redis(connection_pool = cp)
+        rpy = redis.Redis(connection_pool=cp)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
         #self.keys = rpy.keys
@@ -750,20 +785,9 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def cursor(self, pipelined = False):
         return self.client.pipeline() if pipelined else self.client
-    
-    def issame(self, other):
-        return self.client == other.client
         
     def disconnect(self):
         self.client.connection_pool.disconnect()
-    
-    def unwind_query(self, meta, qset):
-        '''Unwind queryset'''
-        table = meta.table()
-        ids = list(qset)
-        make_object = self.make_object
-        for id,data in zip(ids,table.mget(ids)):
-            yield make_object(meta,id,data)
     
     def set_timeout(self, id, timeout):
         if timeout:
@@ -780,14 +804,6 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _get(self, id):
         return self.execute_command('GET', id)
-    
-    def _loadfields(self, obj, toload):
-        if toload:
-            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id),
-                                       toload)
-            return dict(zip(toload,fields))
-        else:
-            return EMPTY_DICT
     
     def flat_indices(self, meta):
         for idx in meta.indices:
@@ -824,7 +840,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
-                delquery = sm.get_delete_query(pipe = pipe)
+                delquery = sm.get_delete_query(pipe=pipe)
                 self.accumulate_delete(pipe, delquery)
                 dirty = tuple(sm.iterdirty())
                 N = len(dirty)
@@ -864,9 +880,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                     options = {'sm': sm, 'iids': processed}
                     pipe.script_call('commit_session',
                                      (bk,bk+':*'), *lua_data, **options)
-    
         command, result = redis_execution(pipe, session_result)
-        return callback(result, command)
+        return on_result(result, callback, command)
     
     def accumulate_delete(self, pipe, backend_query):
         # Accumulate models queries for a delete. It loops through the
@@ -908,7 +923,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.basekey(meta, TMP, name if name is not None else\
                                         gen_unique_id())
         
-    def flush(self, meta = None, pattern = None):
+    def flush(self, meta=None, pattern=None):
         '''Flush all model keys from the database'''
         if meta is not None:
             pattern = '{0}*'.format(self.basekey(meta))

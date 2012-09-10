@@ -50,7 +50,7 @@ class TestDeleteSimpleModel(test.TestCase):
             session.add(self.model(code = 'pluto', group = 'planet'))
         with session.begin() as t:
             session.delete(query.filter(group = 'star'))
-        self.assertTrue(t.done)
+        self.assertTrue(t.commands)
         self.assertEqual(len(query.all()),1)
         qs = query.filter(group = 'star')
         self.assertEqual(qs.count(),0)

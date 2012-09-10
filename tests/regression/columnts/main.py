@@ -1,9 +1,10 @@
 import os
 from datetime import date, datetime, timedelta
+from struct import unpack
 
 from stdnet import test, SessionNotAvailable, CommitException
-from stdnet.utils import encoders, populate
-from stdnet.apps.columnts import ColumnTS, DoubleEncoder, nil
+from stdnet.utils import encoders, populate, ispy3k
+from stdnet.apps.columnts import ColumnTS
 from stdnet.lib import redis
 
 from examples.data import tsdata
@@ -11,20 +12,21 @@ from examples.tsmodels import ColumnTimeSeries
 
 from tests.regression import struct
 
-skipUnless = test.unittest.skipUnless
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
-do_tests = True
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
-
+bin_to_float = lambda f : unpack('>d', f)[0]
+if ispy3k:  #pragma nocover
+    bitflag = lambda value: value
+else:   #pragma nocover
+    bitflag = ord
+    
 class timeseries_test1(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
               redis.read_lua_file('columnts.columnts'),
               redis.read_lua_file('test1',this_path))
     
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMeta(test.TestCase):
     
     def testLuaClass(self):
@@ -35,7 +37,6 @@ class TestMeta(test.TestCase):
         self.assertEqual(r,b'OK')
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestCase(test.TestCase):
     
     def check_stats(self, stat_field, data):
@@ -54,7 +55,6 @@ class TestCase(test.TestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestTimeSeries(struct.StructMixin, TestCase):
     structure = ColumnTS
     name = 'columnts'
@@ -99,14 +99,14 @@ class TestTimeSeries(struct.StructMixin, TestCase):
     def testEmpty2(self):
         '''Check an empty timeseries'''
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
+        ts = session.add(ColumnTS(id='goog'))
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.numfields(),0)
         self.assertEqual(ts.fields(),())
         
     def testFrontBack(self):
         session = self.session()
-        ts = session.add(ColumnTS(pickler = encoders.DateConverter()))
+        ts = session.add(ColumnTS(pickler=encoders.DateConverter()))
         self.assertEqual(ts.size(),0)
         self.assertEqual(ts.front(), None)
         self.assertEqual(ts.back(), None)
@@ -125,14 +125,14 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testAddSimple(self):
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
+        ts = session.add(ColumnTS(id='goog'))
         # start a transaction
         session.begin()
         ts.add(date.today(),'pv',56)
         self.assertEqual(ts.size(),0)
         self.assertTrue(ts.cache.fields)
-        ts.add(date.today()-timedelta(days=2),'pv',56.8)
-        self.assertTrue(len(ts.cache.fields['pv']),2)
+        ts.add(date.today()-timedelta(days=2), 'pv', 53.8)
+        self.assertTrue(len(ts.cache.fields['pv']), 2)
         # commit transaction
         session.commit()
         self.assertEqual(ts.fields(),('pv',))
@@ -149,26 +149,36 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         raw_data = bts.field('pv')
         self.assertTrue(raw_data)
         self.assertEqual(len(raw_data),18)
+        a1 = raw_data[:9]
+        a2 = raw_data[9:]
+        n = bitflag(a1[0])
+        self.assertEqual(n, bitflag(a2[0]))
+        self.assertEqual(n, 2)
+        self.assertEqual(bin_to_float(a1[1:]), 53.8)
+        self.assertEqual(bin_to_float(a2[1:]), 56)
         #
         data = ts.irange()
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(dt),2)
         self.assertTrue('pv' in fields)
-        self.assertEqual(fields['pv'],[56.8,56])
+        for v, t in zip(fields['pv'],[53.8, 56]):
+            self.assertAlmostEqual(v, t)
         
     def testAddNil(self):
         session = self.session()
-        ts = session.add(ColumnTS(id = 'goog'))
-        ts.add(date.today(),'pv',56)
-        ts.add(date.today()-timedelta(days=2),'pv',nan)
+        # start a transaction
+        session.begin()
+        ts = session.add(ColumnTS(id='goog'))
+        ts.add(date.today(), 'pv', 56)
+        ts.add(date.today()-timedelta(days=2), 'pv', nan)
         session.commit()
-        self.assertEqual(ts.size(),2)
-        dt,fields = ts.irange()
-        self.assertEqual(len(dt),2)
+        self.assertEqual(ts.size(), 2)
+        dt, fields = ts.irange()
+        self.assertEqual(len(dt), 2)
         self.assertTrue('pv' in fields)
         n = fields['pv'][0]
-        self.assertNotEqual(n,n)
+        self.assertNotEqual(n, n)
         
     def testGoogleDrop(self):
         ts = self.makeGoogle()
@@ -189,7 +199,7 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         
     def testRangeField(self):
         ts = self.makeGoogle()
-        data = ts.irange(fields = ('low','high','badone'))
+        data = ts.irange(fields=('low','high','badone'))
         self.assertEqual(len(data),2)
         dt,fields = data
         self.assertEqual(len(fields),2)
@@ -248,10 +258,6 @@ class TestTimeSeries(struct.StructMixin, TestCase):
         self.assertEqual(len(v),4)
         v2 = ts[date(2012,1,23)]
         self.assertEqual(v,v2)
-        v3 = ts.get(date(2012,1,23),'open','close')
-        self.assertEqual(len(v3),2)
-        self.assertEqual(v3['open'],v['open'])
-        self.assertEqual(v3['close'],v['close'])
         self.assertEqual(ts.get(date(2014,1,1)),None)
         self.assertRaises(KeyError, lambda: ts[date(2014,1,1)])
         
@@ -275,28 +281,27 @@ class TestTimeSeries(struct.StructMixin, TestCase):
             self.assertTrue(isinstance(dt,datetime))
         
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestColumnTSBase(TestCase):
-    
+    '''Class for testing large data'''
     @classmethod
     def setUpClass(cls):
         size = cls.size
-        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data_mul1 = tsdata(size = size, fields = ('eurusd',))
-        cls.data_mul2 = tsdata(size = size, fields = ('gbpusd',))
+        cls.data1 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data2 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data3 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
+        cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
         cls.ColumnTS = ColumnTS
     
     def create(self):
+        '''Create one ColumnTS with six fields and cls.size dates'''
         session = self.session()
         with session.begin():
             ts1 = session.add(self.ColumnTS())
             ts1.update(self.data1.values)
         return ts1
-            
-            
-@skipUnless(do_tests, 'Requires stdnet-redis')
+    
+
 class TestOperations(TestColumnTSBase):
     
     def testSimpleStats(self):
@@ -358,7 +363,7 @@ class TestOperations(TestColumnTSBase):
             v1 = ts1.get(dt)
             v2 = ts2.get(dt)
             if dt in self.data1.unique_dates and dt in self.data2.unique_dates:
-                for field,values in fields.items():
+                for field, values in fields.items():
                     res = 2*v2[field] - v1[field]
                     self.assertAlmostEqual(values[i],res)
             else:
@@ -429,7 +434,7 @@ class TestOperations(TestColumnTSBase):
             v2 = ts2.get(dt)
             m1 = mul1.get(dt)
             if v1 is not None and v2 is not None and m1 is not None:
-                m1 = m1[0]
+                m1 = m1['eurusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -437,7 +442,7 @@ class TestOperations(TestColumnTSBase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-                        
+    
     def testAddMultiply(self):
         session = self.session()
         with session.begin():
@@ -454,7 +459,7 @@ class TestOperations(TestColumnTSBase):
         self.assertEqual(mul1.size(),self.data_mul1.length)
         self.assertEqual(mul2.size(),self.data_mul2.length)
         with session.begin():
-            ts = self.ColumnTS(id = 'merged')
+            ts = self.ColumnTS(id='merged')
             ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2))
             self.assertEqual(ts.session,session)
         length = ts.size()
@@ -470,8 +475,8 @@ class TestOperations(TestColumnTSBase):
             m2 = mul2.get(dt)
             if v1 is not None and v2 is not None and m1 is not None\
                      and m2 is not None:
-                m1 = m1[0]
-                m2 = m2[0]
+                m1 = m1['eurusd']
+                m2 = m2['gbpusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -503,7 +508,7 @@ class TestOperations(TestColumnTSBase):
                     v = values[i]
                     self.assertNotEqual(v,v)
 
-    def testFields(self):
+    def testMergedFields(self):
         session = self.session()
         with session.begin():
             ts1 = session.add(self.ColumnTS())
@@ -519,7 +524,7 @@ class TestOperations(TestColumnTSBase):
         self.assertEqual(mul1.size(),self.data_mul1.length)
         self.assertEqual(mul2.size(),self.data_mul2.length)
         with session.begin():
-            ts = self.ColumnTS(id = 'merged')
+            ts = self.ColumnTS(id='merged')
             ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2),
                      fields = ('a','b','c','badone'))
             self.assertEqual(ts.session,session)
@@ -537,8 +542,8 @@ class TestOperations(TestColumnTSBase):
             m2 = mul2.get(dt)
             if v1 is not None and v2 is not None and m1 is not None\
                      and m2 is not None:
-                m1 = m1[0]
-                m2 = m2[0]
+                m1 = m1['eurusd']
+                m2 = m2['gbpusd']
                 for field,values in fields.items():
                     res = 1.5*m1*v1[field] - 1.2*m2*v2[field]
                     self.assertAlmostEqual(values[i],res)
@@ -548,8 +553,7 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
 
 
-@skipUnless(do_tests, 'Requires stdnet-redis')
-class TestMultivariate(TestColumnTSBase):
+class TestMultivariateStats(TestColumnTSBase):
     
     def testSimpleMultiStats(self):
         ts1 = self.create()
@@ -562,7 +566,6 @@ class TestMultivariate(TestColumnTSBase):
         self.assertEqual(result['N'],len(dt))
     
     
-@skipUnless(do_tests, 'Requires stdnet-redis')
 class TestMissingValues(TestCase):
     
     @classmethod
@@ -603,5 +606,5 @@ class TestColumnTSField(TestCase):
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
         self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
+        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
         

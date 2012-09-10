@@ -1,5 +1,5 @@
 from datetime import datetime
-from stdnet import orm
+from stdnet import odm
 
 class Post(odm.StdModel):
     
@@ -11,7 +11,7 @@ class Post(odm.StdModel):
     
 class User(odm.StdModel):
     '''A model for holding information about users'''
-    username  = odm.AtomField(unique = True)
+    username  = odm.AtomField(unique=True)
     password  = odm.AtomField()
     updates   = odm.ListField()
     

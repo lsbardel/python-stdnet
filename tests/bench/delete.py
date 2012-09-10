@@ -9,8 +9,8 @@ class DeleteTest(FinanceTest):
     
     def setUp(self):
         self.register()
-        self.data.create()
-        self.instruments = Instrument.objects.all()
+        self.data.create(self)
+        self.instruments = Instrument.objects.query().all()
                         
     def testDelete(self):
         for inst in self.instruments:
@@ -23,4 +23,4 @@ class DeleteTest(FinanceTest):
                 session.delete(inst)
         
     def testDeleteTransaction(self):
-        Instruments.objects.query().delete()
+        Instrument.objects.query().delete()

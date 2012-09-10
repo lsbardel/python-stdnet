@@ -96,20 +96,18 @@ There are plans to extend it to
  
 Object Data Mapper
 ================================
-The ``stdnet.odm`` module is the ODM, it maps python object into database data.
-It is design to be fast and safe to use::
+The ``stdnet.odm`` module is the ODM, it maps python objects into database data
+and vice-versa. It is design to be fast and safe to use::
  
 	from stdnet import odm
  		
 	class Base(odm.StdModel):
 	    '''An abstract model. This won't have any data in the database.'''
-	    # A unique symbol field, a symbol is an immutable string
 	    name = odm.SymbolField(unique = True)
-	    # Another symbol, symbol fields are by default indexes
 	    ccy  = odm.SymbolField()
 	    
-	    def __str__(self):
-	        return str(self.name)
+	    def __unicode__(self):
+	        return self.name
 	    
 	    class Meta:
 	        abstract = True
@@ -120,25 +118,22 @@ It is design to be fast and safe to use::
 	
 	    
 	class Fund(Base):
-		# A char field is a string and it is never an index
 	    description = odm.CharField()
 	
 	
 	class PositionDescriptor(odm.StdModel):
 	    dt    = odm.DateField()
-	    # A float field is not an index by default
 	    size  = odm.FloatField()
 	    price = odm.FloatField()
-	    # A FK field which we explicitly set as non-index
-	    position = odm.ForeignKey("Position", index = False)
+	    position = odm.ForeignKey("Position", index=False)
 	
 	
 	class Position(odm.StdModel):
-	    instrument = odm.ForeignKey(Instrument, related_name = 'positions')
+	    instrument = odm.ForeignKey(Instrument, related_name='positions')
 	    fund       = odm.ForeignKey(Fund)
 	    history    = odm.ListField(model = PositionDescriptor)
 	    
-	    def __str__(self):
+	    def __unicode__(self):
 	        return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
 	
 	
@@ -152,7 +147,7 @@ Register models with backend::
 
 And play with the API::
 
-	>>> f = Fund(name="pluto,description="The super pluto fund",ccy="EUR").save()
+	>>> f = Fund(name="pluto, description="The pluto fund", ccy="EUR").save()
 	Fund: pluto
 
 

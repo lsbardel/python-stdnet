@@ -8,6 +8,7 @@ from stdnet.utils import JSONDateDecimalEncoder, pickle, \
                          ispy3k, date2timestamp, timestamp2date,\
                          string_type
 
+nan = float('nan')
 
 class Encoder(object):
     '''Virtaul class for encoding data in
@@ -74,7 +75,7 @@ def safe_number(v):
 
 class NumericDefault(Default):
     
-    def loads(self, x, logger = None):
+    def loads(self, x, logger=None):
         x = super(NumericDefault,self).loads(x,logger)
         return safe_number(x)
         
@@ -82,11 +83,12 @@ class NumericDefault(Default):
 class Double(Encoder):
     type = float
     
-    def loads(self, x, logger = None):
-        return float(x)
-    
-    def dumps(self, x , logger = None):
-        return x
+    def loads(self, x, logger=None):
+        try:
+            return float(x)
+        except (ValueError, TypeError):
+            return nan
+    dumps = loads
     
     
 class Bytes(Encoder):

@@ -13,9 +13,8 @@ class TransactionReceiver(object):
     def __init__(self):
         self.transactions = []
         
-    def __call__(self, sender, instances = None, transaction = None, **kwargs):
-        self.transactions.append((sender,instances,transaction,
-                                  transaction.session))
+    def __call__(self, sender, instances=None, **kwargs):
+        self.transactions.append((sender, instances))
         
 
 class TestTransactions(test.TestCase):
@@ -25,7 +24,6 @@ class TestTransactions(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         receiver = TransactionReceiver()
-        odm.post_commit.connect(receiver, odm.Session)
         odm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
             self.assertEqual(t.backend,session.backend)
@@ -36,15 +34,12 @@ class TestTransactions(test.TestCase):
                                    description = 'just a test'))
             
         all = query.all()
-        self.assertEqual(len(all),2)
-        self.assertTrue(len(receiver.transactions),2)
-        sender,instances,t,s = receiver.transactions[0]
-        self.assertEqual(sender, odm.Session)
-        self.assertEqual(s, session)
-        sender,instances,t,s = receiver.transactions[1]
+        self.assertEqual(len(all), 2)
+        self.assertTrue(len(receiver.transactions), 1)
+        sender, instances = receiver.transactions[0]
+        self.assertEqual(sender, self.model)
         self.assertTrue(instances)
-        self.assertEqual(instances,all)
-        self.assertEqual(sender,self.model)
+        self.assertEqual(instances, all)
         
     def testDelete(self):
         session = self.session()
@@ -75,17 +70,13 @@ class TestTransactions(test.TestCase):
         s = session.add(odm.Set())
         l = session.add(odm.List())
         h = session.add(odm.HashTable())
-        self.assertEqual(l.size(),0)
-        r = TransactionReceiver()
-        odm.post_commit.connect(r, odm.Session)
-        m = session.add(self.model(code = 'test', description = 'just a test'))
+        self.assertEqual(l.size(), 0)
+        m = session.add(self.model(code='test', description='just a test'))
         # add an entry to the hashtable
-        h.add('test','bla')
-        self.assertEqual(len(r.transactions),2)
+        h.add('test', 'bla')
         l.push_back(5)
         l.push_back(8)
         s.update((2,3,4,5,6,7))
-        self.assertEqual(len(r.transactions),5)
         self.assertTrue(m.state().persistent)
         self.assertEqual(s.size(),6)
         self.assertEqual(h.size(),1)

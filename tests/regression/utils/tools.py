@@ -104,8 +104,8 @@ class testFunctions(test.TestCase):
         l = u.encode('latin')
         self.assertEqual(to_bytes(b,'latin'),l)
         self.assertEqual(to_string(l,'latin'),u)
+        self.assertEqual(to_bytes(1), b'1')
         
     def test_git_version(self):
         g = get_git_changeset()
-        self.assertTrue(g) 
-        
+        self.assertTrue(g)

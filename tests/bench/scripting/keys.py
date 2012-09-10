@@ -4,10 +4,10 @@ from stdnet import test
 from examples.data import key_data
 
 onebyone = '''
-prefix = ARGV[1]
-hash = ARGV[2] + 0
-keys = redis.call('keys',prefix .. '*')
-hkey = prefix .. 'hash-onebyone-test'
+local prefix = ARGV[1]
+local hash = ARGV[2] + 0
+local keys = redis.call('keys', prefix .. '*')
+local hkey = prefix .. 'hash-onebyone-test'
 redis.call('del',hkey)
 
 if hash == 1 then
@@ -25,15 +25,15 @@ return table.getn(keys)
 
 
 unpack = '''
-limit = 3000
-prefix = ARGV[1]
-hash = ARGV[2] + 0
-keys = redis.call('keys',prefix .. '*')
-mapping = {}
-hkey = prefix .. 'hash-unpack-test'
+local limit = 3000
+local prefix = ARGV[1]
+local hash = ARGV[2] + 0
+local keys = redis.call('keys', prefix .. '*')
+local mapping = {}
+local hkey = prefix .. 'hash-unpack-test'
 redis.call('del',hkey)
 
-function mset()
+local function mset()
     if hash == 1 then
         redis.call('hmset', hkey, unpack(mapping))
     else
@@ -42,7 +42,7 @@ function mset()
     mapping = {}
 end
 
-j = 0
+local j = 0
 for _,key in ipairs(keys) do
     if j > limit then
         mset()
@@ -65,7 +65,7 @@ class ScriptingKeyTest(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        cls.data = key_data(cls.worker.cfg.size)
+        cls.data = key_data(cls.size)
         
     def setUp(self):
         client = self.backend.client
@@ -73,27 +73,19 @@ class ScriptingKeyTest(test.TestCase):
         client.mset(mapping)
         
     def testOneByOne(self):
-        n = self.backend.client.eval(onebyone,
-                                     prefix = self.backend.namespace,
-                                     hash = 1)
+        n = self.backend.client.eval(onebyone, (), self.backend.namespace, 1)
         self.assertEqual(n, self.data.size)
         
     def testUnpack(self):
-        n = self.backend.client.eval(unpack,
-                                     prefix = self.backend.namespace,
-                                     hash = 0)
+        n = self.backend.client.eval(unpack, (), self.backend.namespace, 0)
         self.assertEqual(n, self.data.size)
         
     def testHashOneByOne(self):
-        n = self.backend.client.eval(onebyone,
-                                     prefix = self.backend.namespace,
-                                     hash = 1)
+        n = self.backend.client.eval(onebyone, (), self.backend.namespace, 1)
         self.assertEqual(n, self.data.size)
         
     def testHashUnpack(self):
-        n = self.backend.client.eval(unpack,
-                                     prefix = self.backend.namespace,
-                                     hash = 1)
+        n = self.backend.client.eval(unpack, (), self.backend.namespace, 1)
         self.assertEqual(n, self.data.size)
         
         

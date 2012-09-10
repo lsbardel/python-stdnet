@@ -1,7 +1,7 @@
 import os
 
-from stdnet import odm
-from stdnet.apps.columnts import DoubleEncoder
+from stdnet import odm, test
+from stdnet.utils import encoders
 try:
     from stdnet.apps.columnts import npts
     from dynts import tsname
@@ -17,9 +17,9 @@ except ImportError:
 from . import main
 
 do_tests = npts is not None
-skipUnless = main.skipUnless
+skipUnless = test.unittest.skipUnless
 
-@skipUnless(do_tests, 'Requires stdnet-redis and dynts') 
+@skipUnless(do_tests, 'Requires dynts') 
 class TestDynTsIntegration(main.TestColumnTSBase):
     
     @classmethod
@@ -70,6 +70,6 @@ class TestColumnTSField(main.TestCase):
         meta = self.model._meta
         self.assertTrue(len(meta.multifields),1)
         m = meta.multifields[0]
-        self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, DoubleEncoder))
+        self.assertEqual(m.name, 'data')
+        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
         

@@ -1,6 +1,17 @@
 .. _vers07:
 
-Ver. 0.7c3 - 2012 May 08
+Ver. 0.7c3 - 2012 Sep 10
+===============================
+* **Tested with redis 2.6.0-rc6**.
+* Several fixes in the documentation.
+* Added an asynchronous connection class for Redis.
+* Lua script for univariate timeseries. This means the standard redis distribution
+  works with the :class:`stdnet.odm.TS` structure.
+* Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
+  the :func:`stdnet.odm.all_models_sessions` function (issue #48).
+* **587 regression tests** with **91%** coverage.
+
+Ver. 0.7c3 - 2012 May 02
 ===============================
 * **It requires redis 2.6 or higher**.
 * Some backward incompatible changes in the API and database schema.
@@ -131,7 +142,7 @@ Ver. 0.5.5 - 2011 June 6
 * Added tests for timeseries with date as keys (rather than datetimes).
 * Bug fix in Backend and test suite, Redis port was not read.
 * Bug fix in :class:`stdnet.contrib.timeseries`. The models were overridding
-  the :meth:`__str__` rather than :meth:`__unicode__`. 
+  the :meth:`__str__` rather than :meth:`__unicode__`.
 * Added :func:`stdnet.odm.flush_models`, a utility functions for flushing model data.
 * Added a new :class:`stdnet.odm.ByteField` which saves bytes rather than strings.
 * Renamed ``start`` and ``end`` in TimeSeres to ``data_start`` and ``data_end``.
@@ -144,7 +155,7 @@ Ver. 0.5.4 - 2011 May 18
 * Refactored registration utilities.
 * Added :func:`stdnet.odm.test_unique` for testing uniqueness.
 * Removed `tagging` from :mod:`contrib` and included in the :mod:`contrib.searchengine`.
-  The search engine application has been refactored so that it can perform 
+  The search engine application has been refactored so that it can perform
   a fast, fuzzy, full text index using Redis.
 * Added ``pre_save`` and ``post_save`` signals.
 * Added ``pre_delete`` and ``post_delete`` signals.
@@ -193,7 +204,7 @@ Ver. 0.5.0 - 2011 Feb 24
     python runtests.py -t bench
     python runtests.py -t bench tag1 tag2
     python runtests.py -t profile
-* Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis. 
+* Included support for redis ``timeseries`` which requires redis fork at https://github.com/lsbardel/redis.
 * Added :mod:`stdnet.contrib.sessions` module for handling web sessions. Experimental and pre-alpha.
 * Added :class:`stdnet.odm.JSONField` with tests.
 * **167 regression tests** with **61%** coverage.
@@ -205,8 +216,8 @@ Ver. 0.4.2 - 2010 Nov 17
 * Added ``tags`` in tests. You can now run specific tags::
 
 	python runtests.py hash
-	
-  will run tests specific to hashtables.	
+
+  will run tests specific to hashtables.
 * Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
 * **54** tests.
 
@@ -229,11 +240,11 @@ Ver. 0.4.0 - 2010 Nov 11
   For example, using redis database 11 as cache is obtained by::
 
 	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
-	
+
 * Overall refactoring of :mod:`stdnet.odm` and :mod:`stdnet.backends` modules.
 * Lazy loading of models via the :mod:`stdnet.dispatch` module.
 * Added :mod:`stdnet.dispatch` module from django_.
-* Added :class:`stdnet.odm.AtomField` subclasses. 
+* Added :class:`stdnet.odm.AtomField` subclasses.
 * Before adding elements to a :class:`stdnet.odm.MultiField` the object needs to be saved, i.e. it needs to have a valid id.
 * Made clear that :class:`stdnet.odm.StdModel` classes are mapped to :class:`stdnet.HashTable`
   structures in a :class:`stdnet.BackendDataServer`.

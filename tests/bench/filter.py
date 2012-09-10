@@ -24,20 +24,20 @@ class QueryTest(test.TestCase):
         inst_names = populate('string',size, min_len = 5, max_len = 20)
         inst_types = populate('choice',size, choice_from = insts_types)
         inst_ccys  = populate('choice',size, choice_from = ccys_types)
-        with Instrument.session().begin() as t:
+        with Instrument.objects.transaction() as t:
             for name,typ,ccy in zip(inst_names,inst_types,inst_ccys):
                 t.add(Instrument(name = name, type = typ, ccy = ccy))
     
     def testCount(self):
-        f = Instrument.objects.filter(ccy = 'EUR')
+        f = Instrument.objects.filter(ccy='EUR')
         n = f.count()
 
     def testSimpleFilter(self):
-        f = Instrument.objects.filter(ccy = 'EUR')
+        f = Instrument.objects.filter(ccy='EUR')
         v = list(f)
         f.count()
         
     def testInFilter(self):
-        f = Instrument.objects.filter(ccy__in = ('JPY','USD'))
+        f = Instrument.objects.filter(ccy__in=('JPY','USD'))
         v = list(f)
         f.count()

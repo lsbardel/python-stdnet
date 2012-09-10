@@ -7,13 +7,14 @@ from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin
 
 
 __all__ = ['BackendRequest',
+           'BackendStructure',
            'AsyncObject',
            'BackendDataServer',
-           'ServerOperation',
            'BackendQuery',
            'session_result',
            'instance_session_result',
-           'query_result']
+           'query_result',
+           'on_result']
 
 
 query_result = namedtuple('query_result','key count')
@@ -27,8 +28,16 @@ session_result = namedtuple('session_result','meta results')
 
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
-    pass
+    def add_callback(self, callback, errback=None):
+        raise NotImplementedError()
 
+
+def on_result(result, callback, *args, **kwargs):
+    if isinstance(result, BackendRequest):
+        return result.add_callback(lambda res : callback(res, *args, **kwargs))
+    else:
+        return callback(result, *args, **kwargs)
+       
 
 class AsyncObject(UnicodeMixin):
     '''A class for handling asynchronous requests. The main method here
@@ -46,19 +55,6 @@ this method should be called.'''
             raise result
         else:
             return callback(result, *args, **kwargs)
-
-
-class ServerOperation(object):
-    
-    def __new__(cls, *args, **kwargs):
-        o = super(ServerOperation,cls).__new__(cls)
-        o.commands = None
-        o._callbacks = []
-        return o
-    
-    @property
-    def done(self):
-        return self.commands is not None
     
     
 class BackendStructure(AsyncObject):
@@ -106,7 +102,7 @@ class BackendStructure(AsyncObject):
         raise NotImplementedError()
     
     
-class BackendQuery(ServerOperation):
+class BackendQuery(object):
     '''Backend queryset class which implements the database
 queries specified by :class:`stdnet.odm.Query`.
 
@@ -119,7 +115,7 @@ queries specified by :class:`stdnet.odm.Query`.
     flag indicating if the query has been executed in the backend server
     
 '''
-    def __init__(self, queryelem, timeout = 0, **kwargs):
+    def __init__(self, queryelem, timeout=0, **kwargs):
         '''Initialize the query for the backend database.'''
         self.queryelem = queryelem
         self.expire = max(timeout,10)
@@ -157,14 +153,12 @@ queries specified by :class:`stdnet.odm.Query`.
         return self._has(val)
         
     def items(self, slic):
-        if self.execute_query():
-            return self._items(slic)
-        else:
-            return ()
+        count = self.execute_query()
+        return on_result(self.execute_query(), self._get_items, slic)
     
     def execute_query(self):
-        if self.__count is None:
-            self.__count = self._execute_query()
+        if not self.executed:
+            self.__count = on_result(self._execute_query(), self._got_count)
         return self.__count
     
     # VIRTUAL FUNCTIONS
@@ -183,6 +177,17 @@ queries specified by :class:`stdnet.odm.Query`.
  be implemented by data-server backends.'''
         raise NotImplementedError()
     
+    # PRIVATE
+    def _got_count(self, c):
+        self.__count = c
+        return c
+    
+    def _get_items(self, c, slic):
+        if c:
+            return self._items(slic)
+        else:
+            return ()
+
 
 class BackendDataServer(object):
     '''\
@@ -199,8 +204,8 @@ It must implement the *loads* and *dumps* methods.'''
     struct_map = {}
     
     def __init__(self, name, address, pickler = None,
-                 charset = 'utf-8', connection_string = '',
-                 prefix = None, **params):
+                 charset='utf-8', connection_string='',
+                 prefix=None, **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
@@ -210,7 +215,7 @@ It must implement the *loads* and *dumps* methods.'''
         self.params = params
         self.namespace = prefix if prefix is not None else\
                          settings.DEFAULT_KEYPREFIX
-        self.client = self.setup_connection(address, **params)
+        self.client = self.setup_connection(address)
 
     @property
     def name(self):
@@ -226,9 +231,9 @@ It must implement the *loads* and *dumps* methods.'''
             return False
         
     def issame(self, other):
-        return False
+        return self.client == other.client
     
-    def cursor(self, pipelined = False):
+    def cursor(self, pipelined=False):
         return self
     
     def disconnect(self):
@@ -246,7 +251,7 @@ It must implement the *loads* and *dumps* methods.'''
             keys = list(keys)
         return len(keys)
     
-    def make_objects(self, meta, data, related_fields = None):
+    def make_objects(self, meta, data, related_fields=None):
         '''Generator of :class:`stdnet.odm.StdModel` instances with data
 from database.
 
@@ -265,9 +270,8 @@ from database.
                     multi = False
                     relmodel = field.relmodel
                     related = dict(((obj.id,obj)\
-                            for obj in self.make_objects(relmodel._meta,fdata)))
-                related_data.append((field,related,multi))
-                
+                        for obj in self.make_objects(relmodel._meta, fdata)))
+                related_data.append((field, related, multi))
         for state in data:
             obj = make_object()
             obj.__setstate__(state)
@@ -281,6 +285,9 @@ from database.
                         value = rdata.get(rid)
                         setattr(obj,field.name,value)
             yield obj
+            
+    def objects_from_db(self, meta, data, related_fields=None):
+        return list(self.make_objects(meta, data, related_fields))
             
     def structure(self, instance, client = None):
         '''Create a backend :class:`stdnet.odm.Structure` handler.'''
@@ -308,7 +315,7 @@ from database.
     
     # PURE VIRTUAL METHODS
     
-    def setup_connection(self, address, **params):  # pragma: no cover
+    def setup_connection(self, address):  # pragma: no cover
         '''Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.'''
@@ -333,7 +340,8 @@ must return a instance of the backend handler.'''
         """Remove *all* values from the database at once."""
         raise NotImplementedError()
     
-    def flush(self, meta = None, pattern = None):   # pragma: no cover
+    def flush(self, meta=None, pattern=None):   # pragma: no cover
+        '''Flush all model keys from the database'''
         raise NotImplementedError()
     
     def subscriber(self):   # pragma: no cover

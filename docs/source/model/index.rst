@@ -6,7 +6,7 @@
 Object Data Mapper
 ============================
 
-The *object-data mapper* is the core of the library. It defines an API for mapping
+The *object-data mapper* (ODM) is the core of the library. It defines an API for mapping
 data in the backend key-value store to objects in Python.
 It'is name is closely related to
 `object relational Mapping <http://en.wikipedia.org/wiki/Object-relational_mapping>`_ (ORM),
@@ -18,7 +18,7 @@ There are two well known ORMs for Python: SQLAlchemy_ and Django_ models.
 Both of them are fully feature open-source libraries with an incredible community
 of users and developers. 
 
-Stdnet is aN ``ODM``, an object data mapper for non-conventional databases or nosql_ as
+Stdnet is an object data mapper for non-conventional databases or nosql_ as
 they are known. It is also a lightweight module, which deal only with data mapping,
 advanced queries and nothing else.
 

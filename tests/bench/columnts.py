@@ -7,20 +7,27 @@ from stdnet.apps.columnts import ColumnTS
 from examples.data import tsdata
 
 class TestCase(test.TestCase):
+    
     @classmethod
     def setUpClass(cls):
-        size = cls.worker.cfg.size
-        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        cls.data1 = tsdata(size=cls.size, fields=('a','b','c','d','f','g'))
         
     def setUp(self):
         self.backend.load_scripts()
+        self.startUp()
+        self.resetlog()
+    
+    def startUp(self):
+        pass
+    
+    def resetlog(self):
+        pass
     
 
 class SlowLogMixin(object):
     command = 'EXEC'
     
     def resetlog(self):
-        self.backend.load_scripts()
         c = self.backend.client
         self.slowlog = c.config_get('slowlog-log-slower-than')
         c.config_set('slowlog-log-slower-than', 0)
@@ -61,11 +68,8 @@ class CreateTest(TestCase):
         self.ts.session.commit()
         
     
-class CreateTestRedis(SlowLogMixin,CreateTest):
-    
-    def startUp(self):
-        super(CreateTestRedis,self).startUp()
-        self.resetlog()
+class CreateTestRedis(SlowLogMixin, CreateTest):
+    pass
     
     
 ####### Stats Tests
@@ -85,9 +89,6 @@ class StatTest(TestCase):
         
 class StatTestRedis(SlowLogMixin, StatTest):
     command = 'EVAL'
-    
-    def startUp(self):
-        self.resetlog()
         
    
 ##### Merge Tests
@@ -96,13 +97,12 @@ class MergeTest(TestCase):
     
     @classmethod
     def setUpClass(cls):
-        size = cls.worker.cfg.size
-        cls.data1 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data2 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
-        cls.data3 = tsdata(size = size, fields = ('a','b','c','d','f','g'))
+        size = cls.size
+        cls.data1 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data2 = tsdata(size=size, fields=('a','b','c','d','f','g'))
+        cls.data3 = tsdata(size=size, fields=('a','b','c','d','f','g'))
         
-    def setUp(self):
-        self.backend.load_scripts()
+    def startUp(self):
         session = self.session()
         with session.begin():
             self.ts1 = session.add(ColumnTS())
@@ -117,11 +117,9 @@ class MergeTest(TestCase):
         
     def testMerge(self):
         ts = ColumnTS()
-        ts.merge((self.ts1,1.5),(self.ts2,2),(self.ts3,-0.5))
+        ts.merge((self.ts1,1.5), (self.ts2,2), (self.ts3,-0.5))
         ts.session.commit()
         
         
 class MergeTestRedis(SlowLogMixin, MergeTest):
-    
-    def startUp(self):
-        self.resetlog()
+    pass

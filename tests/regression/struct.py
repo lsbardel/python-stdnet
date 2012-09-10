@@ -5,9 +5,6 @@ from stdnet import test, odm, InvalidTransaction
 from stdnet.utils import encoders, zip
 from stdnet.utils.populate import populate
 
-skipUnless = test.unittest.skipUnless
-do_tests = os.environ.get('stdnet_backend_status') == 'stdnet'
-
 dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
 
@@ -186,11 +183,21 @@ class TestZset(StructMixin,test.TestCase):
         self.assertFalse(z in session)
         self.assertTrue(z.session)
         
-    def testiRange(self):
+    def test_irange(self):
         l = self.planets()
         # Get the whole range
         r = list(l.irange())
         self.assertEqual(r,self.result)
+        
+    def test_range(self):
+        l = self.planets()
+        r = list(l.range(0.5,20))
+        self.assertTrue(r)
+        k1 = 0.5
+        for k,v in r:
+            self.assertTrue(k>=k1)
+            self.assertTrue(k<=20)
+            k1 = k
         
     def testIter(self):
         '''test a very simple zset with integer'''
@@ -204,11 +211,6 @@ class TestZset(StructMixin,test.TestCase):
         l = self.planets()
         r = list(l.items())
         self.assertEqual(r,self.result)
-        
-    def testGet(self):
-        l = self.planets()
-        self.assertEqual(l[1],'earth')
-        self.assertEqual(l.get(0.11),'mars')
 
 
 class TestList(StructMixin, test.TestCase):
@@ -285,7 +287,7 @@ class TestHash(StructMixin, test.TestCase):
         self.assertEqual(h.get('ggg',1),1)
         self.assertRaises(KeyError, lambda : h['gggggg'])
         
-@skipUnless(do_tests, 'Requires stdnet-redis')
+
 class TestTS(StructMixin, test.TestCase):
     structure = odm.TS
     name = 'ts'
@@ -338,7 +340,46 @@ class TestTS(StructMixin, test.TestCase):
         self.assertEqual(ts.get(date(1990,1,1)),None)
         self.assertEqual(ts.get(date(1990,1,1),1),1)
         self.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
-    
+        
+    def testPop(self):
+        session = self.session()
+        with session.begin():
+            ts = session.add(odm.TS())
+            ts.update(zip(dates,values))
+        dt = dates[5]
+        self.assertTrue(dt in ts)
+        v = ts.pop(dt)
+        self.assertTrue(v)
+        self.assertFalse(dt in ts)
+        self.assertRaises(KeyError, ts.pop, dt)
+        self.assertEqual(ts.pop(dt,'bla'), 'bla')
+        
+    def test_rank_ipop(self):
+        session = self.session()
+        with session.begin():
+            ts = session.add(odm.TS())
+            ts.update(zip(dates,values))
+        dt = dates[5]
+        value = ts.get(dt)
+        r = ts.rank(dt)
+        all_dates = list((d.date() for d in ts.itimes()))
+        self.assertEqual(all_dates[r], dt)
+        value2 = ts.ipop(r)
+        self.assertEqual(value, value2)
+        self.assertFalse(dt in ts)
+        
+    def test_pop_range(self):
+        session = self.session()
+        with session.begin():
+            ts = session.add(odm.TS())
+            ts.update(zip(dates,values))
+        all_dates = list((d.date() for d in ts.itimes()))
+        range = list(ts.range(all_dates[5],all_dates[15]))
+        self.assertTrue(range)
+        range2 = list(ts.pop_range(all_dates[5],all_dates[15]))
+        self.assertEqual(range, range2)
+        for dt,_ in range:
+            self.assertFalse(dt in ts) 
 
 class TestString(StructMixin, test.TestCase):
     structure = odm.String

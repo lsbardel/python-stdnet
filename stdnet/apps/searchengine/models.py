@@ -8,7 +8,7 @@ from stdnet import odm
 
 
 class WordItemManager(odm.Manager):
-    
+
     def for_model(self, model):
         q = self.query()
         if not isclass(model):
@@ -21,24 +21,24 @@ class WordItemManager(odm.Manager):
 class WordItem(odm.StdModel):
     '''A model for associating a word with general
 :class:`stdnet.odm.StdModel` instance.'''
-    id = odm.CompositeIdField('word','model_type','object_id')
+    id = odm.CompositeIdField('word', 'model_type', 'object_id')
     word = odm.SymbolField()
     model_type = odm.ModelField()
     object_id = odm.SymbolField()
-    
+
     def __unicode__(self):
         return self.word
-    
+
     objects = WordItemManager()
-    
+
     class Meta:
         ordering = -odm.autoincrement()
-    
+
     @property
     def object(self):
         '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
         if not hasattr(self,'_object'):
             self._object = self.model_type.objects.get(id = self.object_id)
         return self._object
-    
-    
+
+

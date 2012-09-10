@@ -67,7 +67,8 @@ __all__ = ['RedisRequest',
            'RedisReader',
            'PyRedisReader',
            'redis_before_send',
-           'redis_after_receive']
+           'redis_after_receive',
+           'NOT_READY']
 
 
 # SIGNALS
@@ -84,13 +85,15 @@ else:
     RedisReader = PyRedisReader
     
 
+class NOT_READY:
+    pass
 
 class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
 handling of a single command from start to the response from the server.'''
     retry = 2
     def __init__(self, client, connection, command_name, args,
-                 release_connection = True, **options):
+                 release_connection=True, **options):
         self.client = client
         self.connection = connection
         self.command_name = command_name
@@ -152,8 +155,8 @@ handling of a single command from start to the response from the server.'''
         "Send the command to the server"
         # broadcast BEFORE SEND signal
         redis_before_send.send(self.client.__class__,
-                               request = self,
-                               command = self.command)
+                               request=self,
+                               command=self.command)
         self.connection.connect(self, self.tried)
         try:
             self.connection.sock.sendall(self.command)
@@ -169,19 +172,15 @@ handling of a single command from start to the response from the server.'''
         redis_after_receive.send(self.client.__class__, request=self)
         c = self.connection
         try:
-            #if isinstance(self.response, ResponseError):
-            #    if str(self.response) == NoScriptError.msg:
-            #        self.response = NoScriptError()
-            #    else:
-            #        raise self.response
-            self._response = self.client.parse_response(self)
-            if isinstance(self._response, Exception):
-                raise self._response
+            response = self.client.parse_response(self)
+            if isinstance(response, Exception):
+                raise response
         except:
             c.disconnect()
             raise
         if self.release_connection:
             c.pool.release(c)
+        return response
         
     def parse(self, data):
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
@@ -195,11 +194,12 @@ handling of a single command from start to the response from the server.'''
                     break
                 self.response.append(response)
             if len(self.response) == self.num_responses:
-                self.close()
+                return self.close()
         else:
             self.response = parser.gets()
             if self.response is not False:
-                self.close()
+                return self.close()
+        return NOT_READY
         
     def execute(self):  # pragma : no cover
         raise NotImplementedError()
@@ -214,7 +214,7 @@ class SyncRedisRequest(RedisRequest):
                 return self._sendrecv()
             except RedisConnectionError as e:
                 if e.retry:
-                    self.connection.disconnect(release_connection = False)
+                    self.connection.disconnect(release_connection=False)
                     self.tried += 1
                 else:
                     raise
@@ -222,11 +222,9 @@ class SyncRedisRequest(RedisRequest):
     
     def _sendrecv(self):
         self._send()
-        return self.read_response()
-    
-    def read_response(self):
         sock = self.connection.sock
-        while not self.done:
+        response = NOT_READY
+        while response is NOT_READY:
             try:
                 stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             except (socket.error, socket.timeout) as e:
@@ -234,8 +232,8 @@ class SyncRedisRequest(RedisRequest):
                         (e.args,))
             if not stream:
                 raise RedisConnectionError("Socket closed on remote end", True)
-            self.parse(stream)
-        return self._response
+            response = self.parse(stream)
+        return response
     
     
 class Connection(object):
@@ -261,6 +259,7 @@ This class should not be directly initialized. Instead use the
     Python socket which handle the sending and receiving of data.
 '''
     request_class = SyncRedisRequest
+    socket_class = socket.socket
     
     "Manages TCP communication to and from a Redis server"
     def __init__(self, pool, password=None,
@@ -319,7 +318,7 @@ This class should not be directly initialized. Instead use the
         if self.__sock:
             return
         if self.socket_type == 'TCP':
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = self.socket_class(socket.AF_INET, socket.SOCK_STREAM)
             #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             # Disables Nagle's algorithm so that we send the data we mean and
             # better speed.
@@ -331,17 +330,19 @@ This class should not be directly initialized. Instead use the
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,
                             self.READ_BUFFER_SIZE)
         elif self.socket_type == 'UNIX':
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.__sock = sock
+            sock = self.socket_class(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(self.socket_timeout)
         try:
-            return self._connect(request, counter)
+            sock.connect(self.address)
         except socket.error as e:
             raise RedisConnectionError(self._error_message(e))
-
-    def _connect(self, request, counter):
-        self.sock.settimeout(self.socket_timeout)
-        self.sock.connect(self.address)
+        self.__sock = self._wrap_socket(sock)
         return self.on_connect(request, counter)
+
+    #    INTERNAL METHODS
+    
+    def _wrap_socket(self, sock):
+        return sock
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -386,32 +387,28 @@ This class should not be directly initialized. Instead use the
             self.pool.release(self)
 
     if ispy3k:
-        def __pack_gen(self, args):
-            encoding = self.encoding
-            encoding_errors = self.encoding_errors
-            crlf = b'\r\n'
-            yield ('*%s\r\n'%len(args)).encode()
-            for value in args:
-                if not isinstance(value, bytes):
-                    value = ('%s'%value).encode(encoding, encoding_errors)
-                yield ('$%s\r\n'%len(value)).encode()
-                yield value
-                yield crlf
-                
-    else:       # pragma : no cover
-        def __pack_gen(self, args):
-            encoding = self.encoding
-            encoding_errors = self.encoding_errors
-            crlf = b'\r\n'
-            yield '*%s\r\n'%len(args)
-            for value in args:
-                if isinstance(value, unicode):
-                    value = value.encode(encoding, encoding_errors)
-                else:
-                    value = '%s'%value
-                yield ('$%s\r\n'%len(value)).encode()
-                yield value
-                yield crlf
+        def encode(self, value):
+            return value if isinstance(value,bytes) else str(value).encode(
+                                        self.encoding,self.encoding_errors)
+            
+    else:   #pragma    nocover
+        def encode(self, value):
+            if isinstance(value,unicode):
+                return value.encode(self.encoding,self.encoding_errors)
+            else:
+                return str(value)
+    
+    def _decode(self, value):
+        return value.decode(self.encoding,self.encoding_errors)
+    
+    def __pack_gen(self, args):
+        e = self.encode
+        crlf = b'\r\n'
+        yield e('*%s\r\n'%len(args))
+        for value in map(e, args):
+            yield e('$%s\r\n'%len(value))
+            yield value
+            yield crlf
     
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"
@@ -424,6 +421,7 @@ command byte to be send to redis.'''
         return b''.join(starmap(pack, ((c.command,)+c.args for c in commands)))
         
     def execute_command(self, client, command_name, *args, **options):
+        '''Execute a command'''
         return self.request_class(client, self, command_name, args, **options)\
                    .execute()
     
@@ -442,7 +440,7 @@ class ConnectionPool(object):
     "A :class:`Redis` :class:`Connection` pool."
     default_encoding = 'utf-8'
     
-    def __init__(self, address, connection_class = None, db = 0,
+    def __init__(self, address, connection_class=None, db=0,
                  max_connections=None, **connection_kwargs):
         if not address:
             raise ValueError('Redis connection address not supplied')

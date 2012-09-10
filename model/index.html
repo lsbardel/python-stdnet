@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Object Data Mapper &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Object Data Mapper &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="next" title="Model and Query API" href="models.html" />
-    <link rel="prev" title="Time Series" href="../examples/timeseries.html" /> 
+    <link rel="prev" title="A twitter clone" href="../examples/twitter.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,9 +39,9 @@
           <a href="models.html" title="Model and Query API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../examples/timeseries.html" title="Time Series"
+          <a href="../examples/twitter.html" title="A twitter clone"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,7 +52,7 @@
             
   <span class="target" id="module-stdnet.odm"><span id="model-index"></span></span><div class="section" id="object-data-mapper">
 <h1>Object Data Mapper<a class="headerlink" href="#object-data-mapper" title="Permalink to this headline">¶</a></h1>
-<p>The <em>object-data mapper</em> is the core of the library. It defines an API for mapping
+<p>The <em>object-data mapper</em> (ODM) is the core of the library. It defines an API for mapping
 data in the backend key-value store to objects in Python.
 It&#8217;is name is closely related to
 <a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">object relational Mapping</a> (ORM),
@@ -62,14 +62,15 @@ and object-oriented programming languages.</p>
 <p>There are two well known ORMs for Python: <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/models/instances/">Django</a> models.
 Both of them are fully feature open-source libraries with an incredible community
 of users and developers.</p>
-<p>Stdnet is aN <tt class="docutils literal"><span class="pre">ODM</span></tt>, an object data mapper for non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
+<p>Stdnet is an object data mapper for non-conventional databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
 they are known. It is also a lightweight module, which deal only with data mapping,
 advanced queries and nothing else.</p>
 <p><strong>Contents</strong></p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Model and Query API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models.html#model-and-query">Model and Query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#queries">Queries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#data-structures">Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#registration">Registration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#signals">Signals</a></li>
@@ -109,8 +110,8 @@ advanced queries and nothing else.</p>
 </a>
 </p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../examples/timeseries.html"
-                        title="previous chapter">Time Series</a></p>
+  <p class="topless"><a href="../examples/twitter.html"
+                        title="previous chapter">A twitter clone</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="models.html"
                         title="next chapter">Model and Query API</a></p>
@@ -149,9 +150,9 @@ advanced queries and nothing else.</p>
           <a href="models.html" title="Model and Query API"
              >next</a> |</li>
         <li class="right" >
-          <a href="../examples/timeseries.html" title="Time Series"
+          <a href="../examples/twitter.html" title="A twitter clone"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

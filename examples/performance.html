@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Performance &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Performance &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="A twitter clone" href="twitter.html" />
     <link rel="prev" title="Search for text in your models" href="search.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="search.html" title="Search for text in your models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -118,14 +118,29 @@ If you are using the results of a <a class="reference internal" href="../model/m
 where you know you don&#8217;t need those particular fields, you can tell stdnet
 to load a subset from the database by using the <a class="reference internal" href="../model/models.html#stdnet.odm.Query.load_only" title="stdnet.odm.Query.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">Query.load_only()</span></tt></a>
 or <a class="reference internal" href="../model/models.html#stdnet.odm.Query.dont_load" title="stdnet.odm.Query.dont_load"><tt class="xref py py-meth docutils literal"><span class="pre">Query.dont_load()</span></tt></a> methods.</p>
-<p>For example I need to load all my <cite>EUR</cite> Funds but I don&#8217;t need to
-see the description and documentation:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span> <span class="o">=</span> <span class="s">&quot;EUR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">load_only</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span>
+<p>For example I need to load all my <em>EUR</em> Funds from the <a class="reference internal" href="tutorial.html#tutorial-application"><em>example application</em></a>
+but I don&#8217;t need to see the <em>description</em> and <em>ccy</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&quot;EUR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">load_only</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or equivantely:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&quot;EUR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dont_load</span><span class="p">(</span><span class="s">&#39;description&#39;</span><span class="p">,</span> <span class="s">&#39;ccy&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="use-load-related">
 <span id="performance-loadrelated"></span><h2>Use load_related<a class="headerlink" href="#use-load-related" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="get-single-fields">
+<h2>Get single fields<a class="headerlink" href="#get-single-fields" title="Permalink to this headline">¶</a></h2>
+<p>It is possible to obtain only the values of a given field. If
+I need to obtain all the Funds names from the <a class="reference internal" href="tutorial.html#tutorial-application"><em>example application</em></a>
+I could issue the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">names</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">get_field</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../model/models.html#stdnet.odm.Q.get_field" title="stdnet.odm.Q.get_field"><tt class="xref py py-meth docutils literal"><span class="pre">Q.get_field()</span></tt></a> method returns a new query which evaluates to a
+list of field values.</p>
 </div>
 </div>
 
@@ -145,6 +160,7 @@ see the description and documentation:</p>
 <li><a class="reference internal" href="#transactions">Transactions</a></li>
 <li><a class="reference internal" href="#use-load-only">Use load_only</a></li>
 <li><a class="reference internal" href="#use-load-related">Use load_related</a></li>
+<li><a class="reference internal" href="#get-single-fields">Get single fields</a></li>
 </ul>
 </li>
 </ul>
@@ -192,7 +208,7 @@ see the description and documentation:</p>
         <li class="right" >
           <a href="search.html" title="Search for text in your models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

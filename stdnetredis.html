@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Stdnet Redis branch &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Stdnet Redis branch &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="index.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
     <link rel="prev" title="Internals and Utilities" href="utility.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="utility.html" title="Internals and Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,8 +50,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="stdnet-redis-branch">
-<span id="stdnetredis"></span><h1>Stdnet Redis branch<a class="headerlink" href="#stdnet-redis-branch" title="Permalink to this headline">¶</a></h1>
+  <div class="admonition note" id="stdnetredis">
+<p class="first admonition-title">Note</p>
+<p class="last">This branch is not longer active. Both the <em>ZDIFFSTORE</em> command and the
+<em>timeseries</em> data-structure have been implemented using lua scripts.
+If timeseries is what you are looking for, check the
+<a class="reference internal" href="model/models.html#model-structures"><em>timeseries data structure</em></a> for
+univariate timeseries and the <a class="reference internal" href="apps/timeseries.html#apps-timeserie"><em>column timeseries</em></a> for
+numeric multivariate timeseries suitable for modelling financial timeseries.
+Stdnet uses redis &gt;= 2.6 from the standard (antirez) distribution.</p>
+</div>
+<div class="section" id="stdnet-redis-branch">
+<h1>Stdnet Redis branch<a class="headerlink" href="#stdnet-redis-branch" title="Permalink to this headline">¶</a></h1>
 <p>During the development of <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">stdnet</a> we came across several design decisions, some
 more critical than others, and most of them were resolved coding the client
 only. However, more exotic features, such as the time series structure,
@@ -258,7 +268,7 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
         <li class="right" >
           <a href="utility.html" title="Internals and Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

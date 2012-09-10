@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Data Server &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Backend Data Server &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="next" title="Redis Backend" href="redis.html" />
     <link rel="prev" title="Search" href="../model/search.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="../model/search.html" title="Search"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -150,7 +150,7 @@ from database.</p>
 
 <dl class="method">
 <dt id="stdnet.BackendDataServer.setup_connection">
-<tt class="descname">setup_connection</tt><big>(</big><em>address</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.setup_connection" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">setup_connection</tt><big>(</big><em>address</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.setup_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.</p>
@@ -180,6 +180,12 @@ must return a instance of the backend handler.</p>
 <dd><p>Remove <em>all</em> values from the database at once.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="stdnet.BackendDataServer.flush">
+<tt class="descname">flush</tt><big>(</big><em>meta=None</em>, <em>pattern=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush all model keys from the database</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -193,7 +199,7 @@ queries specified by <a class="reference internal" href="../model/models.html#st
 <dl class="attribute">
 <dt id="stdnet.BackendQuery.queryelem">
 <tt class="descname">queryelem</tt><a class="headerlink" href="#stdnet.BackendQuery.queryelem" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt> to process.</p>
+<dd><p>The <a class="reference internal" href="../model/models.html#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt></a> to process.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -276,7 +282,7 @@ queries specified by <a class="reference internal" href="../model/models.html#st
         <li class="right" >
           <a href="../model/search.html" title="Search"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

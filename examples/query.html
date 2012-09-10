@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Query your Data &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Query your Data &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sorting and Ordering" href="sorting.html" />
     <link rel="prev" title="Using Models" href="tutorial.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="tutorial.html" title="Using Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -148,16 +148,16 @@ if we need all instruments with <em>ccy</em> &#8216;EUR&#8217; OR <em>type</em> 
 <span id="query-related"></span><h2>Related Fields<a class="headerlink" href="#related-fields" title="Permalink to this headline">¶</a></h2>
 <p>The query API goes even further by allowing to operate on
 <tt class="xref py py-class docutils literal"><span class="pre">Fields</span></tt> of <a class="reference internal" href="../model/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> models. For example, lets consider
-the <tt class="xref py py-class docutils literal"><span class="pre">Position</span></tt> model in our <cite>example application &lt;tutorial-application&gt;&#8217;_.
-The model has a :class:`ForeignKey</cite> to the <tt class="xref py py-class docutils literal"><span class="pre">Instrument</span></tt> model.
-using the related field query API one can construct a query to fetch positions
+the <tt class="xref py py-class docutils literal"><span class="pre">Position</span></tt> model in our <a class="reference internal" href="tutorial.html#tutorial-application"><em>example application</em></a>.
+The model has a <a class="reference internal" href="../model/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> to the <tt class="xref py py-class docutils literal"><span class="pre">Instrument</span></tt> model.</p>
+<p>Using the related field query API one can construct a query to fetch positions
 an subset of instruments in this way:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument__ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>that is the name of the <a class="reference internal" href="../model/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, followed by a double underscore (__),
-followed by the name of the field in the model.</p>
-<p>This is merely a syntactic sugar in place of this equivalent expression:</p>
+followed by the name of the field in the related model.</p>
+<p>This is merely a syntactic sugar in place of this equivalent query:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument</span><span class="o">=</span><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -230,7 +230,7 @@ followed by the name of the field in the model.</p>
         <li class="right" >
           <a href="tutorial.html" title="Using Models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

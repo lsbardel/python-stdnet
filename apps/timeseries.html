@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Column Time Series &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Column Time Series &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="up" title="Applications" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="../utility.html" />
     <link rel="prev" title="A Search Engine for Stdnet Models" href="searchengine.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Applications</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,33 +54,56 @@
             
   <div class="section" id="module-stdnet.apps.columnts">
 <span id="column-time-series"></span><span id="apps-timeserie"></span><h1>Column Time Series<a class="headerlink" href="#module-stdnet.apps.columnts" title="Permalink to this headline">¶</a></h1>
-<p>An application for managing multivariate <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a>. It provides
-tools for performing aggregation and statistics via lua scripts.</p>
+<p>This is an application for managing multivariate <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> of
+numbers. It provides tools for performing aggregation and statistics
+via lua scripts.</p>
 <p>The redis implementation uses several redis structures for a given
-class:<cite>ColumnTS</cite> instance:</p>
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> instance.</p>
 <ul class="simple">
 <li>A zset for holding times in an ordered fashion.</li>
 <li>A redis <em>set</em> for holding <em>fields</em> names.</li>
-<li>A redis string for each <em>field</em> in the timeseries.</li>
+<li>A redis string for each <em>field</em> in the timeseries for holding values.</li>
 </ul>
-<p>The data for a given <em>field string</em> is stored in a sequence of 9-bytes strings
+<p>This composite data-structure looks and feels like a redis zset.
+However, the ordered set doesn&#8217;t actually store the data, it is there to
+maintain order and facilitate retrieval by times (scores) and rank.</p>
+<p>For a given <em>field</em>, the data is stored in a sequence of 9-bytes string
 with the initial byte (<tt class="docutils literal"><span class="pre">byte0</span></tt>) indicating the type of data:</p>
 <div class="highlight-python"><pre>&lt;byte0&gt;&lt;byte1,...,byte8&gt;</pre>
 </div>
 <p>The API is straightforward:</p>
-<div class="highlight-python"><pre>from datetime date
-from stdnet.apps.columnts ColumnTS
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTS</span>
 
-ts = ColumnTS(id='test')
-ts.add(date(2012,2,21), {'open': 603.87, 'close': 614.00})</pre>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">ColumnTS</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">21</span><span class="p">),</span> <span class="p">{</span><span class="s">&#39;open&#39;</span><span class="p">:</span> <span class="mf">603.87</span><span class="p">,</span> <span class="s">&#39;close&#39;</span><span class="p">:</span> <span class="mf">614.00</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>It can also be used as a <a class="reference internal" href="../model/fields.html#model-field-structure"><em>datastructure fields</em></a>.
+For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+<span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTSField</span>
+
+<span class="k">class</span> <span class="nc">Ticker</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">ColumnTSField</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="section" id="analysis">
+<h2>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h2>
+<p>To perform analysis you write lua scripts:</p>
+<div class="highlight-python"><pre>self:range()
+
+ts.evaluate(script)</pre>
+</div>
 </div>
 <div class="section" id="api">
 <h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="stdnet.apps.columnts.ColumnTS">
 <em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTS</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialised timeseries structure for handling several fields and
-statistical calculations.</p>
+<dd><p>A specialised <a class="reference internal" href="../model/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> structure for numeric
+multivariate timeseries.</p>
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.front">
 <tt class="descname">front</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.front" title="Permalink to this definition">¶</a></dt>
@@ -94,22 +117,46 @@ statistical calculations.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.info">
+<tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide information for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.fields">
 <tt class="descname">fields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.fields" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a tuple of ordered fields for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
+<dd><p>Tuple of ordered fields for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.numfields">
 <tt class="descname">numfields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.numfields" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of fields</p>
+<dd><p>Number of fields.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.imulti_stats">
 <tt class="descname">imulti_stats</tt><big>(</big><em>start=0</em>, <em>end=-1</em>, <em>series=None</em>, <em>fields=None</em>, <em>stats=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.imulti_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform cross multivariate statistics calculation of
-this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other optional <em>series</em>.</p>
+this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other optional <em>series</em> from <em>start</em>
+to <em>end</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; the start rank.</li>
+<li><strong>start</strong> &#8211; the end rank</li>
+<li><strong>field</strong> &#8211; name of field to perform multivariate statistics.</li>
+<li><strong>series</strong> &#8211; a list of two elements tuple containing the id of the
+a <tt class="xref py py-class docutils literal"><span class="pre">columnTS</span></tt> and a field name.</li>
+<li><strong>stats</strong> &#8211; list of statistics to evaluate.
+Default: [&#8216;covariance&#8217;]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -139,33 +186,7 @@ Default: [&#8216;covariance&#8217;]</li>
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.merge">
 <tt class="descname">merge</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Merge this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> with several other.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>series</strong> &#8211; <p>a tuple of two or three elements tuple.
-For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">ts1</span><span class="p">),(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">ts2</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><strong>kwargs</strong> &#8211; key-valued parameters for the merge.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a new <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a></p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="stdnet.apps.columnts.ColumnTS.merged_series">
-<em class="property">classmethod </em><tt class="descname">merged_series</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merged_series" title="Permalink to this definition">¶</a></dt>
-<dd><p>Merge series into one timeseries.</p>
+<dd><p>Merge this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> with several other <em>series</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -173,7 +194,8 @@ For example:</p>
 <tr class="field"><th class="field-name" colspan="2">Parameters series:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first">a list of tuples where the nth element is a tuple
 of the form:</p>
-<div class="last highlight-python"><pre>(wight_n,ts_n1,ts_n2,..,ts_nMn)</pre>
+<div class="last highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">wight_n</span><span class="p">,</span> <span class="n">ts_n1</span><span class="p">,</span> <span class="n">ts_n2</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ts_nMn</span><span class="p">)</span>
+</pre></div>
 </div>
 </td>
 </tr>
@@ -183,6 +205,18 @@ of the form:</p>
 <div class="highlight-python"><pre>ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
      ...</pre>
 </div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="stdnet.apps.columnts.ColumnTS.merged_series">
+<em class="property">classmethod </em><tt class="descname">merged_series</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merged_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge series into a new <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.load_data">
+<tt class="descname">load_data</tt><big>(</big><em>result</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overwrite <tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.PairMixin.load_data()</span></tt> method</p>
 </dd></dl>
 
 </dd></dl>
@@ -203,6 +237,7 @@ of the form:</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Column Time Series</a><ul>
+<li><a class="reference internal" href="#analysis">Analysis</a></li>
 <li><a class="reference internal" href="#api">API</a></li>
 </ul>
 </li>
@@ -251,7 +286,7 @@ of the form:</p>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" >Applications</a> &raquo;</li> 
       </ul>
     </div>

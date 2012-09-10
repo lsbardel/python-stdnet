@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Models &mdash; python stdnet v0.7c3 documentation</title>
+    <title>Using Models &mdash; python stdnet v0.7c6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c3',
+        VERSION:     '0.7c6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c3 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Query your Data" href="query.html" />
     <link rel="prev" title="Tutorials &amp; Examples" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -60,15 +60,15 @@ in a backend database.</p>
 <span id="creating-models"></span><h2>Writing Models<a class="headerlink" href="#writing-models" title="Permalink to this headline">¶</a></h2>
 <p>Defining stdnet <em>models</em> is achieved by subclassing the
 <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class. The following
-snipped implements two models, <tt class="docutils literal"><span class="pre">Author</span></tt> and <tt class="docutils literal"><span class="pre">Book</span></tt>:</p>
+snippet implements two models, <tt class="docutils literal"><span class="pre">Author</span></tt> and <tt class="docutils literal"><span class="pre">Book</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
 <span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StModel</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
 
 <span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">title</span>  <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">author</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Author</span><span class="p">,</span> <span class="n">related_name</span> <span class="o">=</span> <span class="s">&#39;books&#39;</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Author</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">&#39;books&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The API should look familiar if you have come across <a class="reference external" href="https://www.djangoproject.com/">django</a>
@@ -82,7 +82,7 @@ fields of a redis hash table which represents an instance of a model.</p>
 </div>
 <div class="section" id="an-application">
 <span id="tutorial-application"></span><h2>An application<a class="headerlink" href="#an-application" title="Permalink to this headline">¶</a></h2>
-<p>Let&#8217;s start with tutorial application: a small hedge fund.
+<p>Let&#8217;s start with the tutorial application: a small hedge fund.
 You never know it may become useful in the future!
 The application uses the following three models,</p>
 <ul class="simple">
@@ -90,11 +90,11 @@ The application uses the following three models,</p>
 <li><tt class="docutils literal"><span class="pre">Instrument</span></tt> holds information about tradable financial intruments.</li>
 <li><tt class="docutils literal"><span class="pre">Position</span></tt> is an investment on a particular <tt class="docutils literal"><span class="pre">Instrument</span></tt> in a <tt class="docutils literal"><span class="pre">Fund</span></tt>.</li>
 </ul>
-<p>A minimal <tt class="docutils literal"><span class="pre">stdnet</span></tt> implementation can look like this:</p>
+<p>A minimal <a class="reference internal" href="../utility.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> implementation can look like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
 <span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">ccy</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
     <span class="n">description</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
 
@@ -103,7 +103,7 @@ The application uses the following three models,</p>
 
 
 <span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">ccy</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
     <span class="nb">type</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
     <span class="n">prices</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">()</span>
@@ -269,7 +269,7 @@ Here&#8217;s an example:</p>
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

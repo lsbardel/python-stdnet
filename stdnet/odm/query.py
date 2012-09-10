@@ -1,6 +1,7 @@
 from copy import copy
 from inspect import isgenerator
 
+from stdnet import on_result, BackendRequest
 from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER
 
@@ -254,7 +255,11 @@ def queryset(qs, **kwargs):
 class QueryBase(Q):
 
     def __iter__(self):
-        return iter(self.items())
+        result = self.items()
+        if isinstance(result, BackendRequest):
+            raise RuntimeError('Cannot iterate. Asynchronous result not ready.')
+        else:
+            return iter(result)
 
     def __len__(self):
         return self.count()
@@ -267,7 +272,7 @@ class QueryBase(Q):
 class EmptyQuery(QueryBase):
     '''Degenerate :class:`QueryBase` simulating and empty set.'''
     keyword = 'empty'
-    def items(self, slic = None):
+    def items(self, slic=None):
         return []
 
     def count(self):
@@ -583,16 +588,7 @@ is returned directly without performing any query.'''
             if el is not None:
                 return el
         # not there, perform the database query
-        qs = self.filter(**kwargs)
-        items = qs.items()
-        if items:
-            if len(items) == 1:
-                return items[0]
-            else:
-                raise QuerySetError('Get query {0} yielded non\
- unique results'.format(self))
-        else:
-            raise self.model.DoesNotExist()
+        return on_result(self.filter(**kwargs).items(), self._get)
 
     def count(self):
         '''Return the number of objects in ``self``.
@@ -753,31 +749,40 @@ an exception is raised.
                     'lookup':lookup}
             yield queryset(self, **data)
 
-    def items(self, slic = None):
+    def items(self, slic=None):
         '''Fetch data matching theis :class:`Query` and return a list
 of instances of models.'''
-        cache = self.cache()
         key = None
-        seq = cache.get(None)
+        seq = self.cache().get(None)
         if slic:
-            if seq:
-                seq = seq[slic]
+            if seq is not None:
+                return seq[slic]
             else:
-                key = (slic.start,slic.step,slic.stop)
-
+                key = (slic.start, slic.step, slic.stop)
         if seq is not None:
             return seq
         else:
-            seq = []
-            session = self.session
-            items = self.backend_query().items(slic)
-            if isinstance(items, Exception):
-                raise items
-            model = self.model
-            for el in items:
-                if isinstance(el,model):
-                    session.add(el,modified=False)
-                seq.append(el)
-            cache[key] = seq
-            return seq
+            return on_result(self.backend_query().items(slic), self._items, key)
+        
+    def _items(self, items, key):
+        if isinstance(items, Exception):
+            raise items
+        session = self.session
+        seq = []
+        model = self.model
+        for el in items:
+            if isinstance(el, model):
+                session.add(el, modified=False)
+            seq.append(el)
+        self.cache()[key] = seq
+        return seq
 
+    def _get(self, items):
+        if items:
+            if len(items) == 1:
+                return items[0]
+            else:
+                raise QuerySetError('Get query {0} yielded non\
+ unique results'.format(self))
+        else:
+            raise self.model.DoesNotExist()

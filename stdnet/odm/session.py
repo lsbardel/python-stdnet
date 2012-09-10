@@ -2,7 +2,7 @@ import json
 from copy import copy
 from itertools import chain
 
-from stdnet import getdb, ServerOperation
+from stdnet import getdb
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
@@ -240,12 +240,12 @@ within this :class:`Session`.'''
             else:
                 self._delete_query.extend(d)
             if transaction.signal_delete:
-                pre_delete.send(self.model, instances = self._delete_query,
-                                transaction = transaction)
+                pre_delete.send(self.model, instances=self._delete_query,
+                                transaction=transaction)
         dirty = tuple(self.iterdirty())
         if dirty and transaction.signal_commit:
-            pre_commit.send(self.model, instances = dirty,
-                            transaction = transaction)
+            pre_commit.send(self.model, instances=dirty,
+                            transaction=transaction)
         return len(self._delete_query) + len(dirty)
 
     def post_commit(self, results):
@@ -298,7 +298,7 @@ class SessionStructure(SessionModel):
         return instance
 
 
-class Transaction(ServerOperation):
+class Transaction(object):
     '''Transaction class for pipelining commands to the backend server.
 An instance of this class is usually obtained via the :meth:`Session.begin`
 or the :meth:`Manager.transaction` methods::
@@ -346,6 +346,8 @@ or using the ``with`` context manager::
     Optional python logging object
 '''
     default_name = 'transaction'
+    commands = None
+    pending = None
 
     def __init__(self, session, name=None,
                  signal_commit=True, signal_delete=True,
@@ -382,7 +384,7 @@ or using the ``with`` context manager::
     def __exit__(self, type, value, traceback):
         if type is None:
             try:
-                self.commit()
+                self.pending = self.commit()
             except:
                 self.rollback()
                 raise
@@ -417,6 +419,7 @@ Results can contain errors.
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
+        self.pending = None
         self.commands = commands
         self.result = response
         session = self.session

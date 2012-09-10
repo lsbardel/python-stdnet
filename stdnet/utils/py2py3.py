@@ -86,10 +86,8 @@ encoded as specified in 'encoding'."""
             return s.decode('utf-8', errors).encode(encoding, errors)
         else:
             return s
-        
     if not is_string(s):
-        s = string_type(s)    
-    
+        s = string_type(s)
     return s.encode(encoding, errors)
 
 

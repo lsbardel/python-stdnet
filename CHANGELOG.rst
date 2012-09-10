@@ -297,7 +297,6 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _cython: http://cython.org/
 .. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
-.. _pulsar: https://github.com/quantmind/pulsar
 .. _django: http://www.djangoproject.com/
 .. _hiredis: https://github.com/pietern/hiredis-py
 .. _pulsar: http://packages.python.org/pulsar/

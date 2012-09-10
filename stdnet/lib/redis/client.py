@@ -44,10 +44,8 @@ def list_or_args(keys, args = None):
         keys.extend(args)
     return keys
 
-
 def pairs_to_dict_cbk(request, response, args, **options):
     return pairs_to_dict(response, request.client.encoding)
-
 
 def timestamp_to_datetime(request, response, args, **options):
     "Converts a unix timestamp to a Python datetime object"
@@ -59,16 +57,13 @@ def timestamp_to_datetime(request, response, args, **options):
         return None
     return datetime.fromtimestamp(response)
 
-
 def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
-
 
 def dict_merge(*dicts):
     merged = {}
     [merged.update(d) for d in dicts]
     return merged
-
 
 def parse_info(request, response, args, **options):
     '''Parse the response of Redis's INFO command into a Python dict.
@@ -101,23 +96,6 @@ In doing so, convert byte data into unicode.'''
             info[line[2:]] = data
     return info
 
-
-def ts_pairs(request, response, args, withtimes = False, novalues = False,
-             single = False, raw = False, **options):
-    '''Parse the timeseries TSRANGE and TSRANGEBYTIME command'''
-    if not raw:
-        if not response:
-            return response
-        elif withtimes and not novalues:
-            times = (float(t) for t in response[::2])
-            return zip(times, response[1::2])
-        elif novalues:
-            return (float(t) for t in response)
-        elif options.get('single') and len(response) == 1:
-            return response[0]
-    return response
-
-
 def zset_score_pairs(request, response, args, **options):
     """
     If ``withscores`` is specified in the options, return the response as
@@ -127,18 +105,15 @@ def zset_score_pairs(request, response, args, **options):
         return response
     return zip(response[::2], map(float, response[1::2]))
 
-
 def int_or_none(request, response, args, **options):
     if response is None:
         return None
     return int(response)
 
-
 def float_or_none(request, response, args, **options):
     if response is None:
         return None
     return float(response)
-
 
 def bytes_to_string(request, response, args, **options):
     encoding = request.client.encoding
@@ -156,7 +131,6 @@ def config_callback(request, response, args, **options):
             for k,v in pairs_to_dict_cbk(request, response, args, **options)))
     else:
         return response == b'OK'
-
 
 def slowlog_callback(request, response, args, **options):
     if args[0] == 'GET':
@@ -697,10 +671,7 @@ can be one of: refcount, encoding, idletime.'''
             pieces.append('DESC')
         if alpha:
             pieces.append('ALPHA')
-        if storeset is not None:
-            pieces.append('STORESET')
-            pieces.append(storeset)
-        elif store is not None:
+        if store is not None:
             pieces.append('STORE')
             pieces.append(store)
         return self.execute_command('SORT', *pieces, **options)

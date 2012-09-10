@@ -7,6 +7,7 @@ from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin
 
 
 __all__ = ['BackendRequest',
+           'BackendStructure',
            'AsyncObject',
            'BackendDataServer',
            'BackendQuery',
@@ -28,9 +29,6 @@ session_result = namedtuple('session_result','meta results')
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
     def add_callback(self, callback, errback=None):
-        raise NotImplementedError()
-    
-    def add_errback(self, errback):
         raise NotImplementedError()
 
 

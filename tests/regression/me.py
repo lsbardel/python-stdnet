@@ -3,7 +3,7 @@ from stdnet.conf import settings
 from stdnet.lib import redis
 import stdnet as me
 
-from example.models import SimpleModel
+from examples.models import SimpleModel
 
 class TestInitFile(test.TestCase):
 

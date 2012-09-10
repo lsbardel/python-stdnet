@@ -1,10 +1,10 @@
 .. _vers07:
 
-Ver. 0.7c3 - 2012 Sep 10
+Ver. 0.7c6 - 2012 Sep 10
 ===============================
 * **Tested with redis 2.6.0-rc6**.
 * Several fixes in the documentation.
-* Added an asynchronous connection class for Redis.
+* Added an asynchronous connection class for Redis. It requires pulsar_ concurrent framework.
 * Lua script for univariate timeseries. This means the standard redis distribution
   works with the :class:`stdnet.odm.TS` structure.
 * Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
@@ -297,6 +297,7 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _cython: http://cython.org/
 .. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
+.. _pulsar: https://github.com/quantmind/pulsar
 .. _django: http://www.djangoproject.com/
 .. _hiredis: https://github.com/pietern/hiredis-py
 .. _pulsar: http://packages.python.org/pulsar/

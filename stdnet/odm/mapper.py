@@ -228,11 +228,12 @@ For example::
             continue
         if name not in app_defaults:
             name = model._meta.app_label
-        if name in app_defaults:
-            args = app_defaults[name]
-        else:
-            args = default
-        if register(model, args, ignore_duplicates=True):
+        kwargs = app_defaults.get(name, default)
+        if not isinstance(kwargs, dict):
+            kwargs = {'backend': kwargs}
+        if 'ignore_duplicates' not in kwargs:
+            kwargs['ignore_duplicates'] = True
+        if register(model, **kwargs):
             yield model
 
 

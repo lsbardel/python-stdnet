@@ -27,7 +27,10 @@ session_result = namedtuple('session_result','meta results')
 
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
-    def add_callback(self, callback):
+    def add_callback(self, callback, errback=None):
+        raise NotImplementedError()
+    
+    def add_errback(self, errback):
         raise NotImplementedError()
 
 
@@ -36,7 +39,7 @@ def on_result(result, callback, *args, **kwargs):
         return result.add_callback(lambda res : callback(res, *args, **kwargs))
     else:
         return callback(result, *args, **kwargs)
-    
+       
 
 class AsyncObject(UnicodeMixin):
     '''A class for handling asynchronous requests. The main method here

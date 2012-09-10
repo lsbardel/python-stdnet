@@ -384,7 +384,11 @@ or using the ``with`` context manager::
     def __exit__(self, type, value, traceback):
         if type is None:
             try:
-                self.pending = self.commit()
+                result = self.commit()
+                # allow for asynchronous results
+                if result is not self:
+                    self.pending = result
+                return result
             except:
                 self.rollback()
                 raise

@@ -505,10 +505,12 @@ This method always commit changes immediately and if the :class:`Session`
 has already started a :class:`Transaction` an error will occur.
 If a session is not available, it tries to create one
 from its :class:`Manager`.'''
-        session = self.get_session(use_current_session)
-        with session.begin():
-            session.add(self)
-        return self
+        with self.get_session(use_current_session).begin() as t:
+            t.add(self)
+        if t.pending:
+            return t.pending.add_callback(lambda r: self)
+        else:
+            return self
 
     def delete(self, use_current_session = True):
         session = self.get_session(use_current_session)

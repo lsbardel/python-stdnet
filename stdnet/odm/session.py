@@ -377,6 +377,10 @@ or using the ``with`` context manager::
     def delete(self, instance):
         '''A convenience proxy for :meth:`Session.delete` method.'''
         return self.session.delete(instance)
+    
+    def query(self, model, **kwargs):
+        '''A convenience proxy for :meth:`Session.query` method.'''
+        return self.session.query(model, **kwargs)
 
     def __enter__(self):
         return self
@@ -561,7 +565,7 @@ If this :class:`Session` is already within a transaction, an error is raised.'''
             self.transaction = Transaction(self, **options)
         return self.transaction
 
-    def query(self, model, query_class = None, **kwargs):
+    def query(self, model, query_class=None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         query_class = query_class or self.query_class
         return query_class(model._meta, self, **kwargs)

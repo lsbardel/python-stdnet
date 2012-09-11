@@ -1,3 +1,5 @@
+import logging
+
 from itertools import chain
 from inspect import isgenerator
 from datetime import datetime
@@ -6,6 +8,8 @@ from .models import StdModel
 from .fields import DateTimeField, CharField
 from .signals import post_commit, post_delete
 
+
+logger = logging.getLogger('stdnet.search')
 
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
@@ -49,7 +53,7 @@ The main methods to be implemented are :meth:`add_item`,
         self.word_middleware = []
         self.add_processor(stdnet_processor())
 
-    def register(self, model, related = None):
+    def register(self, model, related=None):
         '''Register a :class:`StdModel` to the search engine.
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.
@@ -64,7 +68,7 @@ indexed by the search engine.
         post_commit.connect(update_model, sender = model)
         post_delete.connect(update_model, sender = model)
 
-    def words_from_text(self, text, for_search = False):
+    def words_from_text(self, text, for_search=False):
         '''Generator of indexable words in *text*.
 This functions loop through the :attr:`word_middleware` attribute
 to process the text.
@@ -116,26 +120,32 @@ for preprocessing words to be indexed.
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
 
-    def index_item(self, item, session):
+    def index_item(self, item, transaction):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
 :parameter item: an instance of a :class:`stdnet.odm.StdModel`.
 """
-        # Index only if the item is fully loaded. This means item
-        # with a _loadedfields not None are not indexed
-        #if item._loadedfields is None:
-        #    self.remove_item(item, session)
-        #    wft = self.words_from_text
-        #    words = chain(*[wft(value) for value in\
-        #                        self.item_field_iterator(item)])
-        #    self.add_item(item, words, session)
-        #return session
-        self.remove_item(item, session)
+        self.index_items_from_model((item,), item.__class__, transaction)
+            
+    def index_items_from_model(self, items, model, transaction):
+        """This is the main function for indexing items.
+It extracts content from a list of *items* belonging to *model* and
+add it to the index.
+
+:parameter items: an iterable over instances of of a :class:`stdnet.odm.StdModel`.
+:parameter model: The *model* of all *items*.
+:parameter transaction: A transaction for updauing indexes.
+"""
+        ids = []
         wft = self.words_from_text
-        words = chain(*[wft(value) for value in\
-                            self.item_field_iterator(item)])
-        self.add_item(item, words, session)
+        add = self.add_item
+        for item, data in self._item_data(items):
+            ids.append(item.id)
+            words = chain(*[wft(value) for value in data])
+            add(item, words, transaction)
+        if ids:
+            self.remove_item(model, transaction, ids)
 
     def reindex(self):
         '''Re-index models by removing items in
@@ -163,10 +173,18 @@ with the search engine.'''
     def item_field_iterator(self, item):
         for processor in self.ITEM_PROCESSORS:
             result = processor(item)
-            if result:
+            if result is not None:
                 return result
         raise ValueError(
                 'Cound not iterate through item {0} fields'.format(item))
+        
+    def _item_data(self, items):
+        fi = self.item_field_iterator
+        for item in items:
+            data = fi(item)
+            if data:
+                yield item, data
+        
 
     # ABSTRACT FUNCTIONS
     ################################################################
@@ -175,7 +193,7 @@ with the search engine.'''
         '''Create a session for the search engine'''
         return None
 
-    def remove_item(self, item_or_model, session, ids = None):
+    def remove_item(self, item_or_model, session, ids=None):
         '''Remove an item from the search indices'''
         raise NotImplementedError()
 
@@ -212,28 +230,31 @@ class UpdateSE(object):
     def __init__(self, se):
         self.se = se
 
-    def __call__(self, instances, session = None, signal = None, sender = None,
+    def __call__(self, instances, session=None, signal=None, sender=None,
                  **kwargs):
         '''An update on instances has occured. Propagate it to the search
 engine index models.'''
         if session is None:
             raise ValueError('No session available. Cannot updated indexes.')
-        if signal == post_delete:
-            self.remove(instances, session, sender)
-        else:
-            self.index(instances, session, sender)
+        if sender:
+            if signal == post_delete:
+                self.remove(instances, session, sender)
+            else:
+                self.index(instances, session, sender)
 
     def index(self, instances, session, sender):
-        index_item = self.se.index_item
-        with session.begin(name = 'Update search indexes'):
-            for instance in instances:
-                index_item(instance, session)
+        # The session is not in a transaction since this is a callback
+        logger.debug('indexing %s instances of %s',
+                     len(instances), sender._meta)
+        with session.begin(name='Index search engine') as t:
+            self.se.index_items_from_model(instances, sender, t)
 
     def remove(self, instances, session, sender):
-        if sender:
-            remove_item = self.se.remove_item
-            with session.begin(name = 'Remove search indexes'):
-                remove_item(sender, session, instances)
+        logger.debug('Removing from search index %s instances of %s',
+                     len(instances), sender._meta)
+        remove_item = self.se.remove_item
+        with session.begin(name='Remove search indexes') as t:
+            remove_item(sender, t, instances)
 
 
 class stdnet_processor(object):
@@ -241,20 +262,22 @@ class stdnet_processor(object):
 An engine processor is a callable
 which return an iterable over text.'''
     def __call__(self, item):
-        if isinstance(item,StdModel):
+        if isinstance(item, StdModel):
             return self.field_iterator(item)
 
     def field_iterator(self, item):
-        related = getattr(item,'_index_related',())
+        related = getattr(item, '_index_related', ())
+        data = []
         for field in item._meta.fields:
             if field.hidden:
                 continue
             if field.type == 'text':
-                value = getattr(item,field.attname)
-                if value:
-                    yield value
+                if hasattr(item, field.attname):
+                    data.append(getattr(item, field.attname))
+                else:
+                    return ()
             elif field.name in related:
-                value = getattr(item,field.name,None)
+                value = getattr(item, field.name, None)
                 if value:
-                    for value in self.field_iterator(value):
-                        yield value
+                    data.extend(self.field_iterator(value))
+        return data

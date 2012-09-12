@@ -26,7 +26,7 @@ class StructureFieldProxy(object):
     def name(self):
         return self.field.name
         
-    def __get__(self, instance, instance_type = None):
+    def __get__(self, instance, instance_type=None):
         if not self.field.class_field:
             if instance is None:
                 return self
@@ -71,7 +71,8 @@ class StructureFieldProxy(object):
 class StructureField(Field):
     '''Virtual base class for :class:`Field` which are proxies to
 :ref:`data structures <model-structures>` such as :class:`List`,
-:class:`Set`, :class:`OrderedSet` and :class:`HashTable`.
+:class:`Set`, :class:`OrderedSet`, :class:`HashTable` and timeseries
+:class:`TS`.
 
 Sometimes you want to structure your data model without breaking it up
 into multiple entities. For example, you might want to define model
@@ -86,19 +87,21 @@ that contains a list of messages an instance receive::
 By defining structured fields in a model, an instance of that model can access
 a stand alone structure in the back-end server with very little effort::
 
-    m = MyModel.objects.get(id = 1)
+    m = MyModel.objects.get(id=1)
     m.messages.push_back('Hello there!')
 
 Behind the scenes, this functionality is implemented by Python descriptors_.
 
-:parameter model: an optional :class:`stdnet.odm.StdModel` class. If
-    specified, the structured will contains ids of instances of the model.
-    It is saved in the :attr:`relmodel` attribute.
+:parameter model: an optional :class:`StdModel` class. If
+    specified, the structured will contains ids of instances of the model and
+    it can be accessed via the :attr:`relmodel` attribute.
+    It can also be specified as a string if class specification is not possible.
     
+**Additional Field attributes**
+
 .. attribute:: relmodel
 
     Optional :class:`StdModel` class contained in the structure.
-    It can also be specified as a string.
     
 .. attribute:: value_pickler
 
@@ -266,8 +269,7 @@ it returns an instance of :class:`HashTable` structure.
 
 
 class TimeSeriesField(HashField):
-    '''A timeseries field based on TS data structure in Redis.
-To be used with subclasses of :class:`TimeSeriesBase`'''
+    '''A timeseries field based on :class:`TS` data structure.'''
     type = 'ts'
     default_pickler = None
     

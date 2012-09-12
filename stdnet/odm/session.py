@@ -20,10 +20,8 @@ __all__ = ['Session',
            'commit_when_no_transaction',
            'withsession']
 
-
 def is_query(query):
     return isinstance(query,Q)
-
 
 def commit_element_when_no_transaction(f):
 
@@ -32,11 +30,9 @@ def commit_element_when_no_transaction(f):
         if modified and not self.transaction:
             self.commit()
         return r
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
-
 
 def commit_when_no_transaction(f):
     '''Decorator for committing changes when the instance session is
@@ -49,27 +45,24 @@ not in a transaction.'''
             raise SessionNotAvailable('Session not available')
         session.add(self)
         return r
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
 
-
 def withsession(f):
     '''Decorator for instance methods which require a :class:`Session`
 available to perform their call. If a session is not available. It raises
-a :class:`SessionNotAvailable` exception.
-'''
+a :class:`SessionNotAvailable` exception.'''
     def _(self, *args, **kwargs):
         if self.session is not None:
             return f(self, *args, **kwargs)
         else:
             raise SessionNotAvailable(
                         'Cannot perform operation. No session available')
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
+
 
 class SessionModel(SessionModelBase):
     '''A :class:`SessionModel` is the container of all objects for a given

@@ -27,8 +27,9 @@ Contents
 Requirements
 =================
 * Python 2.6 to Python 3.3. Single codebase.
+* You need access to a Redis_ server version 2.6 or above.
 * Optional Cython_ for faster redis protocol parser.
-* You need access to a Redis_ server.
+* Optional pulsar_ only when using the asynchronous redis connection.
 
 
 Philosophy
@@ -242,3 +243,4 @@ file in the top distribution directory for the full license text.
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _nose: http://readthedocs.org/docs/nose/en/latest
 .. _DynamoDB: http://aws.amazon.com/dynamodb/
+.. _pulsar: https://github.com/quantmind/pulsar

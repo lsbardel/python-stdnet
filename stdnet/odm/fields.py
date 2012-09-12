@@ -837,6 +837,9 @@ This model contains two :class:`ForeignKeys`, one to model holding the
 
 
 class CompositeIdField(SymbolField):
+    '''This field can be used when an instance of a model is uniquely
+identified by a combination of two or more :class:`Field` in the model
+itself.'''
     type = 'composite'
     def __init__(self, *fields, **kwargs):
         kwargs['primary_key'] = True

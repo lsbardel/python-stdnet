@@ -359,7 +359,7 @@ local columnts = {
 	    end
     end,
     -- Information about the timeserie
-    info = function (self)
+    info = function (self, start, stop, field_values)
         local times, field_values = unpack(self:all())
         local size = # times
         local result = {size=size, fields={}}

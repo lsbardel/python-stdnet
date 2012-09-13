@@ -1,3 +1,4 @@
+'''Redis implementation of ColumnTS'''
 import os
 import json
 
@@ -42,8 +43,10 @@ class RedisColumnTS(redisb.RedisStructure):
         return tuple(sorted((f.decode(encoding) \
                              for f in self.client.smembers(key))))
 
-    def info(self):
+    def info(self, start, end, fields):
+        fields = fields or ()
         return self.client.script_call('timeseries_run', self.id, 'info',
+                                       start or -1, end or -1, *fields,
                                        return_type='json')
 
     def field(self, field):

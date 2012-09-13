@@ -98,7 +98,7 @@ handling of a single command from start to the response from the server.'''
         self.connection = connection
         self.command_name = command_name
         self.args = args
-        self.release_connection = release_connection
+        self._release_connection = release_connection
         self.options = options
         self.tried = 0
         self._raw_response = []
@@ -116,6 +116,13 @@ handling of a single command from start to the response from the server.'''
         else:
             self.command = None
 
+    @property
+    def release_connection(self):
+        if self.connection.streaming:
+            return False
+        else:
+            return self._release_connection
+        
     @property
     def num_responses(self):
         if self.command_name:
@@ -265,12 +272,14 @@ This class should not be directly initialized. Instead use the
     def __init__(self, pool, password=None,
                  socket_timeout=None, encoding='utf-8',
                  encoding_errors='strict', reader_class=None,
-                 decode = False, **kwargs):
+                 decode = False, streaming=False,
+                 **kwargs):
         self.pool = pool
         self.password = password
         self.socket_timeout = socket_timeout
         self.encoding = encoding
         self.encoding_errors = encoding_errors
+        self.streaming = streaming
         self.__sock = None
         if reader_class is None:
             if settings.REDIS_PY_PARSER:

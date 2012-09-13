@@ -500,7 +500,7 @@ class Session(object):
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, query_class = None):
+    def __init__(self, backend, query_class=None):
         self.backend = getdb(backend)
         self.transaction = None
         self._models = OrderedDict()

@@ -782,9 +782,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             return self.pickler.loads(v)
         else:
             return default
-    
-    def cursor(self, pipelined = False):
-        return self.client.pipeline() if pipelined else self.client
         
     def disconnect(self):
         self.client.connection_pool.disconnect()
@@ -969,5 +966,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             pipe.add_callback(
                         partial(structure_session_callback,sm))
         
-    def subscriber(self):
-        return redis.Subscriber(self.client)    
+    def publish(self, channel, message):
+        return self.client.execute_command('PUBLISH', channel, message)
+        
+    def subscriber(self, **kwargs):
+        return redis.Subscriber(self.client, **kwargs)    

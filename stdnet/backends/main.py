@@ -64,7 +64,7 @@ def get_connection_string(scheme, address, params):
     
 def getdb(backend_uri=None, **kwargs):
     '''get a backend database'''
-    if isinstance(backend_uri,BackendDataServer):
+    if isinstance(backend_uri, BackendDataServer):
         return backend_uri
     backend_uri = backend_uri or settings.DEFAULT_BACKEND
     if not backend_uri:

@@ -203,7 +203,7 @@ It must implement the *loads* and *dumps* methods.'''
     structure_module = None
     struct_map = {}
     
-    def __init__(self, name, address, pickler = None,
+    def __init__(self, name, address, pickler=None,
                  charset='utf-8', connection_string='',
                  prefix=None, **params):
         self.__name = name
@@ -233,9 +233,6 @@ It must implement the *loads* and *dumps* methods.'''
     def issame(self, other):
         return self.client == other.client
     
-    def cursor(self, pipelined=False):
-        return self
-    
     def disconnect(self):
         '''Disconnect the connection.'''
         pass
@@ -243,13 +240,6 @@ It must implement the *loads* and *dumps* methods.'''
     def __repr__(self):
         return self.connection_string
     __str__ = __repr__
-    
-    def isempty(self):
-        '''Returns ``True`` if the database has no keys.'''
-        keys = self.keys()
-        if not hasattr(keys,'__len__'):
-            keys = list(keys)
-        return len(keys)
     
     def make_objects(self, meta, data, related_fields=None):
         '''Generator of :class:`stdnet.odm.StdModel` instances with data
@@ -289,8 +279,11 @@ from database.
     def objects_from_db(self, meta, data, related_fields=None):
         return list(self.make_objects(meta, data, related_fields))
             
-    def structure(self, instance, client = None):
-        '''Create a backend :class:`stdnet.odm.Structure` handler.'''
+    def structure(self, instance, client=None):
+        '''Create a backend :class:`stdnet.odm.Structure` handler.
+        
+:parameter instance: a :class:`stdnet.odm.Structure`
+:parameter client: Optional client handler'''
         struct = self.struct_map.get(instance._meta.name)
         if struct is None:
             raise ModelNotAvailable('structure "{0}" is not available for\
@@ -315,36 +308,40 @@ from database.
     
     # PURE VIRTUAL METHODS
     
-    def setup_connection(self, address):  # pragma: no cover
+    def setup_connection(self, address):
         '''Callback during initialization. Implementation should override
 this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.'''
         raise NotImplementedError()
     
-    def execute_session(self, session, callback):   # pragma: no cover
+    def execute_session(self, session, callback):
         '''Execute a :class:`stdnet.odm.Session` in the backend server.'''
         raise NotImplementedError()
     
-    def model_keys(self, meta):     # pragma: no cover
+    def model_keys(self, meta):
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
         
-    def instance_keys(self, obj):   # pragma: no cover
+    def instance_keys(self, obj):
         '''Return a list of database keys used by instance *obj*'''
         raise NotImplementedError()
     
-    def as_cache(self):     # pragma: no cover
+    def as_cache(self):
         raise NotImplementedError('This backend cannot be used as cache')
     
-    def clear(self):    # pragma: no cover
+    def clear(self):
         """Remove *all* values from the database at once."""
         raise NotImplementedError()
     
-    def flush(self, meta=None, pattern=None):   # pragma: no cover
+    def flush(self, meta=None, pattern=None):
         '''Flush all model keys from the database'''
         raise NotImplementedError()
     
-    def subscriber(self):   # pragma: no cover
+    def publish(self, channel, message):
+        '''Publish a message to a *channel*'''
+        raise NotImplementedError('This backend cannot publish messages')
+    
+    def subscriber(self, **kwargs):
         raise NotImplementedError()
     
 

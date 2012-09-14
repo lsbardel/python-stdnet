@@ -49,6 +49,9 @@ class Subscriber(RedisProxy):
     def punsubscribe(self, channels):
         return self.execute_command('punsubscribe', channels)
     
+    def pull(self):
+        pass
+    
     # INTERNALS
     
     def execute_command(self, command, channels):

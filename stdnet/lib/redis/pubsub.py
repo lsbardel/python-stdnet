@@ -2,7 +2,7 @@ from collections import deque
 
 from stdnet.utils import is_string
 
-from .client import RedisProxy
+from .client import RedisProxy, RedisConnectionTimeout
     
 
 __all__ = ['Subscriber']
@@ -13,7 +13,6 @@ class Subscriber(RedisProxy):
     subscribe_commands = frozenset(('subscribe', 'psubscribe'))
     unsubscribe_commands = frozenset(('unsubscribe', 'punsubscribe'))
     message_commands = frozenset(('message', 'pmessage'))
-    connection = None
     request = None
     
     def __init__(self, client, message_callback=None):
@@ -51,25 +50,19 @@ class Subscriber(RedisProxy):
     def punsubscribe(self, channels):
         return self.execute_command('punsubscribe', channels)
     
-    def pool(self):
-        if self.request:
-            return self.request.read_response()
-    
     def execute_command(self, command, channels):
-        cmd = (command, channels) 
-        if self.connection is None:
+        command, channels = (command, channels) 
+        if self.request is None:
             if command in self.subscribe_commands:
-                self.connection = self.client.connection_pool.get_connection()
-                self.command_queue.append(cmd)
-                return self._execute_next()
-        else:
-            self.command_queue.append(cmd)
-            return cmd
-        
-    def _execute_next(self):
-        if self.command_queue:
-            command, channels = self.command_queue.popleft()
-            return self.connection.execute_command(self, command, *channels)
+                connection = self.connection_pool.get_connection()
+                self.request = connection.request(self, command, *channels,
+                                                  release_connection=False)
+                return self.request.execute()
+        if self.request:
+            return self.request.send()
+    
+    def pool(self):
+        return self.request.pool()
     
     def parse_response(self, request):
         "Parse the response from a publish/subscribe command"
@@ -85,10 +78,10 @@ class Subscriber(RedisProxy):
             self.message_callback('unsubscribe', response[1].decode())
             self._subscription_count = response[2]
         elif command in self.message_commands:
-            self.message_callback('message', self.get_message(response))
+            self.message_callback('message', *self.get_message(response))
         if not self._subscription_count:
             self.disconnect()
         return response
     
     def get_message(self, response):
-        return response
+        return response[1].decode(), response[2].decode()

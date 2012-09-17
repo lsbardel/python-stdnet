@@ -225,24 +225,9 @@ class Redis(object):
 
     _STATUS = ''
 
-    def __init__(self, address = None,
-                 db=0, password=None,
-                 socket_timeout=None,
-                 connection_pool=None,
-                 encoding = 'utf-8',
-                 prefix = '',
-                 **kwargs):
-        if not connection_pool:
-            kwargs.update({
-                    'db': db,
-                    'password': password,
-                    'socket_timeout': socket_timeout,
-                    'encoding': encoding
-                })
-            connection_pool = ConnectionPool(address, **kwargs)
-        self.prefix = prefix
+    def __init__(self, connection_pool=None, **connection_kwargs):
+        connection_pool = connection_pool or ConnectionPool(**connection_kwargs)
         self.connection_pool = connection_pool
-        self.encoding = self.connection_pool.encoding
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.response_errbacks = self.RESPONSE_ERRBACKS.copy()
 
@@ -253,6 +238,10 @@ class Redis(object):
     @property
     def pipelined(self):
         return self.client is not self
+    
+    @property
+    def encoding(self):
+        return self.connection_pool.encoding
 
     def _get_db(self):
         return self.connection_pool.db

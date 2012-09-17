@@ -1,7 +1,6 @@
 import logging
 
 from inspect import isclass
-from collections import deque
 
 from stdnet import getdb, AsyncObject
 from stdnet.utils.encoders import Json
@@ -58,19 +57,33 @@ class Subscriber(PubSubBase):
 
     def message_callback(self, command, channel, message=None):
         if command == 'subscribe':
-            self.channels[channel] = deque()
+            self.channels[channel] = []
         elif command == 'unsubscribe':
             self.channels.pop(channel, None)
         elif channel in self.channels:
-            self.channels.append(message)
+            self.channels[channel].append(self.pickler.loads(message))
         else:
             logger.warn('Got message for unsubscribed channel "%s"' % channel)
     
-    def pool(self, timeout=3):
+    def get_all(self, channel=None):
+        if channel is None:
+            channels = {}
+            for channel in self.channels:
+                data = self.channels[channel]
+                if data:
+                    channels[channel] = data
+                    self.channels[channel] = []
+            return channels
+        elif channel in self.channels:
+            data = self.channels[channel]
+            self.channels[channel] = []
+            return data
+        
+    def pool(self):
         '''Pull data from subscribed channels.
         
 :param timeout: Pool timeout in seconds'''
-        return self._subscriber.pool(timeout)
+        return self._subscriber.pool()
         
     def channel_list(self, channels):
         ch = []

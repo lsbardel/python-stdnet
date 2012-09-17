@@ -6,9 +6,13 @@ class RedisError(Exception):
     pass
 
 class RedisConnectionError(stdnet.ConnectionError):
-    def __init__(self, msg, retry = False):
+    def __init__(self, msg='', retry=False):
         self.retry = retry
         super(RedisConnectionError,self).__init__(msg)
+        
+
+class RedisConnectionTimeout(RedisConnectionError):
+    pass
 
 
 class RedisProtocolError(stdnet.ResponseError):

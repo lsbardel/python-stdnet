@@ -740,7 +740,6 @@ end''')
 ################################################################################
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
-    connection_pools = {}
     _redis_clients = {}
     struct_map = {'set':Set,
                   'list':List,
@@ -754,15 +753,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         addr = address.split(':')
         if len(addr) == 2:
             try:
-                address = (addr[0],int(addr[1]))
+                address = (addr[0], int(addr[1]))
             except:
                 pass
-        cp = redis.ConnectionPool(address, **self.params)
-        if cp in self.connection_pools:
-            cp = self.connection_pools[cp]
-        else:
-            self.connection_pools[cp] = cp
-        rpy = redis.Redis(connection_pool=cp)
+        rpy = redis.Redis(address=address, **self.params)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
         #self.keys = rpy.keys

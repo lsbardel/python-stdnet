@@ -302,9 +302,9 @@ from database.
 :parameter args: optional list of strings which are attached to the basekey.
 :rtype: a native string
 """
-        key = '{0}{1}'.format(self.namespace,meta.modelkey)
+        key = '%s%s' % (self.namespace, meta.modelkey)
         postfix = ':'.join((str(p) for p in args if p is not None))
-        return '{0}:{1}'.format(key,postfix) if postfix else key
+        return '%s:%s' % (key, postfix) if postfix else key
     
     # PURE VIRTUAL METHODS
     
@@ -338,7 +338,8 @@ must return a instance of the backend handler.'''
         raise NotImplementedError()
     
     def publish(self, channel, message):
-        '''Publish a message to a *channel*'''
+        '''Publish a *message* to a *channel*. The backend must support pub/sub
+paradigm.'''
         raise NotImplementedError('This backend cannot publish messages')
     
     def subscriber(self, **kwargs):

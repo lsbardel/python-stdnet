@@ -54,7 +54,16 @@ class RedisRequest(Deferred, connection.RedisRequest):
         for response in self.read_response():
             yield response
 
-
+    @async(max_errors=1)
+    def pool(self):
+        if not self.pooling:
+            self.pooling = True
+            yield self
+            while self.pooling and self.connection.sock:
+                yield self.read_response()
+            self.pooling = False
+                
+                
 class RedisConnection(connection.Connection):
     request_class = RedisRequest
     
@@ -80,4 +89,3 @@ class RedisConnection(connection.Connection):
         
     def connection_error(self, failure, msg):
         raise ConnectionError(msg)
-

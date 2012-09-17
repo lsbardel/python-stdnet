@@ -54,8 +54,6 @@ class Subscriber(RedisProxy):
     def pool(self):
         if self.request:
             return self.request.read_response()
-                
-    # INTERNALS
     
     def execute_command(self, command, channels):
         cmd = (command, channels) 

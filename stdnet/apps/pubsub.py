@@ -65,7 +65,13 @@ class Subscriber(PubSubBase):
             self.channels.append(message)
         else:
             logger.warn('Got message for unsubscribed channel "%s"' % channel)
-               
+    
+    def pool(self, timeout=3):
+        '''Pull data from subscribed channels.
+        
+:param timeout: Pool timeout in seconds'''
+        return self._subscriber.pool(timeout)
+        
     def channel_list(self, channels):
         ch = []
         for channel in channels:

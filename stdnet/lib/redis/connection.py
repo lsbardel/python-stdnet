@@ -218,7 +218,8 @@ class SyncRedisRequest(RedisRequest):
         self.tried = 1
         while self.tried < self.retry:
             try:
-                return self._sendrecv()
+                self._send()
+                return self.read_response()
             except RedisConnectionError as e:
                 if e.retry:
                     self.connection.disconnect(release_connection=False)
@@ -227,10 +228,10 @@ class SyncRedisRequest(RedisRequest):
                     raise
         return self._sendrecv()
     
-    def _sendrecv(self):
-        self._send()
-        sock = self.connection.sock
+    def read_response(self):
+        '''Read a redis response from the socket and parse it.'''
         response = NOT_READY
+        sock = self.connection.sock
         while response is NOT_READY:
             try:
                 stream = sock.recv(io.DEFAULT_BUFFER_SIZE)

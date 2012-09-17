@@ -34,14 +34,9 @@ class RedisRequest(Deferred, connection.RedisRequest):
         result.add_callback(self.callback)
         return self
         
-    @async(max_errors=1)
-    def _send(self, result=None):
-        redis_before_send.send(self.client.__class__,
-                               request=self,
-                               command=self.command)
-        sock = self.connection.sock
-        yield sock.write(self.command)
+    def read_response(self):
         response = NOT_READY
+        sock = self.connection.sock
         while response is NOT_READY:
             rawdata = sock.read()
             if is_async(rawdata):
@@ -49,6 +44,15 @@ class RedisRequest(Deferred, connection.RedisRequest):
                 rawdata = rawdata.result
             response = self.parse(rawdata)
         yield response
+        
+    @async(max_errors=1)
+    def _send(self, result=None):
+        redis_before_send.send(self.client.__class__,
+                               request=self,
+                               command=self.command)
+        yield self.connection.sock.write(self.command)
+        for response in self.read_response():
+            yield response
 
 
 class RedisConnection(connection.Connection):
@@ -76,4 +80,4 @@ class RedisConnection(connection.Connection):
         
     def connection_error(self, failure, msg):
         raise ConnectionError(msg)
-    
+

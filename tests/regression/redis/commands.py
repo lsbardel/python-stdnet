@@ -64,7 +64,7 @@ class ServerCommandsTestCase(TestCase):
         else:
             keyspace = info
         db = self.client.db
-        self.assertEquals(keyspace['db{0}'.format(db)]['keys'], 2)
+        self.assertTrue(keyspace['db%s' % db]['keys']>=2)
 
     def test_lastsave(self):
         self.assert_(isinstance(self.client.lastsave(), datetime.datetime))
@@ -161,11 +161,10 @@ class ServerCommandsTestCase(TestCase):
         self.assertEquals(self.client['d'], None)
 
     def test_randomkey(self):
-        self.assertEquals(self.client.randomkey(), None)
         self.client['a'] = '1'
         self.client['b'] = '2'
         self.client['c'] = '3'
-        self.assert_(self.client.randomkey() in ('a', 'b', 'c'))
+        self.assertTrue(self.client.randomkey())
 
     def test_rename(self):
         self.client['a'] = '1'
@@ -224,11 +223,11 @@ class ServerCommandsTestCase(TestCase):
     def test_blpop(self):
         self.make_list('a', 'ab')
         self.make_list('b', 'cd')
-        self.assertEquals(self.client.blpop(['b', 'a'],timeout=1),(b'b', b'c'))
-        self.assertEquals(self.client.blpop(['b', 'a'],timeout=1),(b'b', b'd'))
-        self.assertEquals(self.client.blpop(['b', 'a'],timeout=1),(b'a', b'a'))
-        self.assertEquals(self.client.blpop(['b', 'a'],timeout=1),(b'a', b'b'))
-        self.assertEquals(self.client.blpop(['b', 'a'],timeout=1),None)
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1),(b'b', b'c'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1),(b'b', b'd'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1),(b'a', b'a'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1),(b'a', b'b'))
+        self.assertEquals(self.client.blpop(['b', 'a'], timeout=1),None)
         self.make_list('c', 'a')
         self.assertEquals(self.client.blpop('c', timeout=1), (b'c', b'a'))
 
@@ -429,7 +428,7 @@ class ServerCommandsTestCase(TestCase):
         del self.client['a']
         # real logic
         members = set([b'a1', b'a2', b'a3'])
-        self.make_set('a', members)
+        self.client.sadd('a', *members)
         self.assertEquals(self.client.smembers('a'), members)
 
     def test_scard(self):
@@ -438,27 +437,27 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.scard, 'a')
         del self.client['a']
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         self.assertEquals(self.client.scard('a'), 3)
 
     def test_sdiff(self):
         # some key is not a set
-        self.make_set('a', ['a1', 'a2', 'a3'])
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sdiff, ['a', 'b'])
         del self.client['b']
         # real logic
-        self.make_set('b', ['b1', 'a2', 'b3'])
+        self.client.sadd('b', 'b1', 'a2', 'b3')
         self.assertEquals(self.client.sdiff(['a', 'b']), set([b'a1', b'a3']))
 
     def test_sdiffstore(self):
         # some key is not a set
-        self.make_set('a', ['a1', 'a2', 'a3'])
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sdiffstore,
             'c', ['a', 'b'])
         del self.client['b']
-        self.make_set('b', ['b1', 'a2', 'b3'])
+        self.client.sadd('b', 'b1', 'a2', 'b3')
         # dest key always gets overwritten, even if it's not a set, so don't
         # test for that
         # real logic
@@ -467,22 +466,22 @@ class ServerCommandsTestCase(TestCase):
 
     def test_sinter(self):
         # some key is not a set
-        self.make_set('a', ('a1', 'a2', 'a3'))
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sinter, ['a', 'b'])
         del self.client['b']
         # real logic
-        self.make_set('b', ['a1', 'b2', 'a3'])
+        self.client.sadd('b', 'a1', 'b2', 'a3')
         self.assertEquals(self.client.sinter(['a', 'b']), set([b'a1', b'a3']))
 
     def test_sinterstore(self):
         # some key is not a set
-        self.make_set('a', ['a1', 'a2', 'a3'])
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sinterstore,
             'c', ['a', 'b'])
         del self.client['b']
-        self.make_set('b', ['a1', 'b2', 'a3'])
+        self.client.sadd('b', 'a1', 'b2', 'a3')
         # dest key always gets overwritten, even if it's not a set, so don't
         # test for that
         # real logic
@@ -495,7 +494,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.sismember, 'a', 'a')
         del self.client['a']
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         self.assertEquals(self.client.sismember('a', 'a'), True)
         self.assertEquals(self.client.sismember('a', 'b'), True)
         self.assertEquals(self.client.sismember('a', 'c'), True)
@@ -509,26 +508,26 @@ class ServerCommandsTestCase(TestCase):
         # set doesn't exist
         self.assertEquals(self.client.smembers('a'), set())
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         self.assertEquals(self.client.smembers('a'), set([b'a', b'b', b'c']))
 
     def test_smove(self):
         # src key is not set
-        self.make_set('b', ['b1', 'b2'])
+        self.client.sadd('b', 'b1', 'b2')
         self.assertEquals(self.client.smove('a', 'b', 'a1'), 0)
         # src key is not a set
         self.client['a'] = 'a'
         self.assertRaises(ResponseError, self.client.smove,
             'a', 'b', 'a1')
         del self.client['a']
-        self.make_set('a', ['a1', 'a2'])
+        self.client.sadd('a', 'a1', 'a2')
         # dest key is not a set
         del self.client['b']
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.smove,
             'a', 'b', 'a1')
         del self.client['b']
-        self.make_set('b', ['b1', 'b2'])
+        self.client.sadd('b', 'b1', 'b2')
         # real logic
         self.assert_(self.client.smove('a', 'b', 'a1'))
         self.assertEquals(self.client.smembers('a'), set([b'a2']))
@@ -542,7 +541,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.spop, 'a')
         del self.client['a']
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         bs = binary_set(b'abc')
         value = self.client.spop('a')
         self.assert_(value in b'abc')
@@ -556,7 +555,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.srandmember, 'a')
         del self.client['a']
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         self.assert_(self.client.srandmember('a') in b'abc')
 
     def test_srem(self):
@@ -567,7 +566,7 @@ class ServerCommandsTestCase(TestCase):
         self.assertRaises(ResponseError, self.client.srem, 'a', 'a')
         del self.client['a']
         # real logic
-        self.make_set('a', 'abc')
+        self.client.sadd('a', 'a', 'b', 'c')
         self.assertEquals(self.client.srem('a', 'd'), False)
         self.assertEquals(self.client.srem('a', 'b'), True)
         bs = binary_set(b'ac')
@@ -575,23 +574,23 @@ class ServerCommandsTestCase(TestCase):
 
     def test_sunion(self):
         # some key is not a set
-        self.make_set('a', ['a1', 'a2', 'a3'])
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sunion, ['a', 'b'])
         del self.client['b']
         # real logic
-        self.make_set('b', ['a1', 'b2', 'a3'])
+        self.client.sadd('b', 'a1', 'b2', 'a3')
         self.assertEquals(self.client.sunion(['a', 'b']),
             set([b'a1', b'a2', b'a3', b'b2']))
 
     def test_sunionstore(self):
         # some key is not a set
-        self.make_set('a', ['a1', 'a2', 'a3'])
+        self.client.sadd('a', 'a1', 'a2', 'a3')
         self.client['b'] = 'b'
         self.assertRaises(ResponseError, self.client.sunionstore,
             'c', ['a', 'b'])
         del self.client['b']
-        self.make_set('b', ['a1', 'b2', 'a3'])
+        self.client.sadd('b', 'a1', 'b2', 'a3')
         # dest key always gets overwritten, even if it's not a set, so don't
         # test for that
         # real logic
@@ -1093,16 +1092,15 @@ class ServerCommandsTestCase(TestCase):
     def test_binary_get_set(self):
         self.assertTrue(self.client.set(' foo bar ', '123'))
         self.assertEqual(self.client.get(' foo bar '), b'123')
-
+        #
         self.assertTrue(self.client.set(' foo\r\nbar\r\n ', '456'))
         self.assertEqual(self.client.get(' foo\r\nbar\r\n '), b'456')
-
+        #
         self.assertTrue(self.client.set(' \r\n\t\x07\x13 ', '789'))
         self.assertEqual(self.client.get(' \r\n\t\x07\x13 '), b'789')
 
         self.assertEqual(sorted(self.client.keys('*')),
                  [' \r\n\t\x07\x13 ', ' foo\r\nbar\r\n ', ' foo bar '])
-
         self.assertTrue(self.client.delete(' foo bar '))
         self.assertTrue(self.client.delete(' foo\r\nbar\r\n '))
         self.assertTrue(self.client.delete(' \r\n\t\x07\x13 '))

@@ -24,6 +24,14 @@ Contents
     :local:
     
 
+Features
+=================
+* Models with scalar and multi-value fields.
+* Reach query API including unions, intersections, ranges and more.
+* Full text search.
+* Multi-variate numeric timeseries application.
+* Publish/Subscribe application.
+
 Requirements
 =================
 * Python 2.6 to Python 3.3. Single codebase.
@@ -168,7 +176,8 @@ Requirements for running tests:
 
 * unittest2_ for python 2.6 only.
 * argparse_ for python 2.6, 3 and 3.1 only.
-* nose_
+* mock_ for python 2.6 to python 3.2 only.
+* nose_ or pulsar_.
 
 Note, these requirements are only needed if you are planning to run tests.
 To run tests open a shell and launch Redis. On another shell,
@@ -244,3 +253,4 @@ file in the top distribution directory for the full license text.
 .. _nose: http://readthedocs.org/docs/nose/en/latest
 .. _DynamoDB: http://aws.amazon.com/dynamodb/
 .. _pulsar: https://github.com/quantmind/pulsar
+.. _mock: http://pypi.python.org/pypi/mock

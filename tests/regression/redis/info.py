@@ -69,7 +69,7 @@ class TestInfo(TestCase):
         dbs = RedisDb.objects.all(info)
         for db in dbs:
             keys = RedisKey.objects.query(db)
-            self.assertTrue(keys)
+            self.assertEqual(keys.db, db)
     
     def test_tails(self):
         # Make sure we have an 100% coverage

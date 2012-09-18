@@ -96,7 +96,7 @@ class RedisDbManager(object):
     def all(self, info):
         rd = []
         kdata = info.keyspace
-        for k,n,data in info.dbs(info.keyspace):
+        for k, n, data in info.dbs(info.keyspace):
             rdb = RedisDb(client=info.client, db=n, keys=data['keys'],
                           expires=data['expires'])
             rd.append(rdb)

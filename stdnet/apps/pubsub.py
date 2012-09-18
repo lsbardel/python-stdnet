@@ -55,13 +55,21 @@ class Subscriber(PubSub):
     def punsubscribe(self, *channels):
         return self._subscriber.punsubscribe(self.channel_list(channels))
 
-    def message_callback(self, command, channel, message=None):
+    def message_callback(self, command, channel, msg=None, sub_channel=None):
         if command == 'subscribe':
             self.channels[channel] = []
         elif command == 'unsubscribe':
             self.channels.pop(channel, None)
         elif channel in self.channels:
-            self.channels[channel].append(self.pickler.loads(message))
+            ch = self.channels[channel]
+            if sub_channel:
+                if not isinstance(ch, dict):
+                    ch = {}
+                    self.channels[channel] = ch
+                if sub_channel not in ch:
+                    ch[sub_channel] = []
+                ch = ch[sub_channel]
+            ch.append(self.pickler.loads(msg))
         else:
             logger.warn('Got message for unsubscribed channel "%s"' % channel)
     

@@ -5,6 +5,8 @@ class PipelineTestCase(TestCase):
     
     def test_pipeline(self):
         pipe = self.client.pipeline()
+        self.assertTrue(pipe.empty)
+        self.assertRaises(redis.RedisError, pipe.add_callback, None)
         pipe.set('a', 'a1').get('a').zadd('z', 1, 'z1', -4, 'z2', 5, 'z3')\
                                     .zadd('z', -10, 'z4')
         pipe.zincrby('z', 'z1', 2).zrange('z', 0, 5, withscores=True)
@@ -51,4 +53,11 @@ class PipelineTestCase(TestCase):
         self.assertEquals(self.client['a'], b'a1')
         self.assertEquals(self.client['b'], b'b1')
         self.assertEquals(self.client['c'], b'c1')
+        
+    def test_pipeline_request(self):
+        pipe = self.client.pipeline()
+        pipe.set('a', 'a1').set('b', 'b1').set('c', 'c1')
+        request = pipe.request()
+        self.assertTrue(request.is_pipeline)
+        self.assertTrue(str(request).startswith('PIPELINE'))
 

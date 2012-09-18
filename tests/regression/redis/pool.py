@@ -1,12 +1,28 @@
+import mock
+import socket
+
 from .base import TestCase, redis
 
 
 class DummyConnection(redis.Connection):
-    pass
+    request_class = redis.RedisRequest
+
+
+def write_mock():
+    parent = mock.MagicMock()
+    parent.sendall = mock.MagicMock(side_effect=socket.error)
+    parent.close = mock.MagicMock(side_effect=socket.error)
+    return parent
+
+def read_mock():
+    parent = mock.MagicMock()
+    parent.recv = mock.MagicMock(side_effect=socket.error)
+    parent.close = mock.MagicMock(side_effect=socket.error)
+    return parent
 
 
 class ConnectionPoolTestCase(TestCase):
-    
+        
     def get_pool(self, connection_class=DummyConnection, **kwargs):
         return redis.ConnectionPool.create(address='localhost:0',
                                            connection_class=connection_class,
@@ -44,3 +60,43 @@ class ConnectionPoolTestCase(TestCase):
         pool.release(c1)
         c2 = pool.get_connection()
         self.assertEquals(c1, c2)
+        
+    def test_redisRequest(self):
+        rpy = redis.Redis(self.get_pool())
+        request = rpy.request('PING')
+        self.assertTrue(isinstance(request, redis.RedisRequest))
+        self.assertFalse(request.is_pipeline)
+        self.assertEqual(request.num_responses, 1)
+        self.assertRaises(NotImplementedError, request.execute)
+        self.assertRaises(NotImplementedError, request.pool)
+        self.assertEqual(request.raw_response, b'')
+        self.assertEqual(str(request), 'PING()')
+    
+    def testFailWrite(self):
+        request = self.client.request('PING')
+        request.connection._sock = write_mock()
+        self.assertTrue(request.execute())
+        self.assertEqual(request.tried, 2)
+        
+    def testFailWriteAll(self):
+        request = self.client.request('PING')
+        request.retry = 1
+        request.connection._sock = write_mock()
+        self.assertRaises(socket.error, request.execute)
+        self.assertEqual(request.tried, 1)
+        self.assertEqual(request.connection, None)
+        
+    def testFailRead(self):
+        request = self.client.request('PING')
+        request.connection._sock = read_mock()
+        self.assertRaises(socket.error, request.execute)
+        self.assertEqual(request.tried, 1)
+        self.assertEqual(request.connection, None)
+        
+    def testFailClose(self):
+        client = self.client.clone()
+        client.parse_response = mock.MagicMock(return_value=RuntimeError())
+        request = client.request('PING')
+        self.assertRaises(RuntimeError, request.execute)
+        self.assertEqual(request.tried, 1)
+        self.assertEqual(request.connection.sock, None)

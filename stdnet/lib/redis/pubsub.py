@@ -17,22 +17,16 @@ class Subscriber(RedisProxy):
     
     def __init__(self, client, message_callback=None):
         super(Subscriber,self).__init__(client)
-        self.command_queue = deque()
         self.message_callback = message_callback
         self._subscription_count = 0
         
     def __del__(self):
-        try:
-            if self.connection and (self.channels or self.patterns):
-                self.connection.disconnect()
-            self.disconnect()
-        except:
-            pass
+        self.disconnect()
         
     def disconnect(self):
-        if self.connection is not None:
-            self.client.connection_pool.release(self.connection)
-            self.connection = None
+        if self.request is not None:
+            self._subscription_count = 0
+            self.request.connection.disconnect()
             self.request = None
             
     def subscription_count(self):
@@ -59,32 +53,26 @@ class Subscriber(RedisProxy):
                                                   release_connection=False)
                 return self.request.execute()
         if self.request:
-            if self.request.pooling:
-                return self.request.send()
-            else:
-                return self.request.execute()
+            c = self.request.connection
+            return c.request(self, command, *channels,
+                             release_connection=False).send()
     
     def pool(self, num_messages):
         return self.request.pool(num_messages)
     
     def parse_response(self, request):
         "Parse the response from a publish/subscribe command"
-        self.request = request
         response = request.response
-        #request.connection.streaming = True
-        #request.command = None
-        command = response[0].decode()
+        command, channel = [r.decode() for r in response[:2]]
         if command in self.subscribe_commands:
-            self.message_callback('subscribe', response[1].decode())
+            self.message_callback('subscribe', channel)
             self._subscription_count = response[2]
         elif command in self.unsubscribe_commands:
-            self.message_callback('unsubscribe', response[1].decode())
+            self.message_callback('unsubscribe', channel)
             self._subscription_count = response[2]
         elif command in self.message_commands:
-            self.message_callback('message', *self.get_message(response))
+            msg = tuple(reversed([r.decode() for r in response[2:]]))
+            self.message_callback('message', channel, *msg)
         if not self._subscription_count:
             self.disconnect()
         return response
-    
-    def get_message(self, response):
-        return response[1].decode(), response[2].decode()

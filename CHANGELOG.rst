@@ -2,14 +2,20 @@
 
 Development
 ===============================
-* A new ``C`` redis_ parser shipped with the library.
 * Several fixes in the documentation.
-* Added an asynchronous connection class for Redis.
+* Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
+* **601 regression tests** with **92%** coverage.
+
+Ver. 0.7c6 - 2012 Sep 10
+===============================
+* **Tested with redis 2.6.0-rc6**.
+* Several fixes in the documentation.
+* Added an asynchronous connection class for Redis. It requires pulsar_ concurrent framework.
 * Lua script for univariate timeseries. This means the standard redis distribution
   works with the :class:`stdnet.odm.TS` structure.
 * Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
   the :func:`stdnet.odm.all_models_sessions` function (issue #48).
-* **593 regression tests** with **90%** coverage.
+* **587 regression tests** with **91%** coverage.
 
 Ver. 0.7c3 - 2012 May 02
 ===============================

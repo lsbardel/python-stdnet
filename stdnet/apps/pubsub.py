@@ -8,9 +8,9 @@ from stdnet.utils import is_string
 
 
 logger = logging.getLogger('stdnet.pubsub')
+    
 
-
-class PubSubBase(object):
+class PubSub(object):
     pickler = Json
     
     def __init__(self, server=None, pickler=None):
@@ -20,16 +20,16 @@ class PubSubBase(object):
         self.pickler = pickler
         self.server = getdb(server)
         
+        
+class Publisher(PubSub):
     
-class Publisher(PubSubBase):
-    '''Class which publish messages to message queues.'''        
-    def publish(self, channel, data):
-        data = self.pickler.dumps(data)
-        return self.server.publish(channel, data)
-    
-    
-class Subscriber(PubSubBase):
-    '''A subscriber to channels'''
+    def publish(self, channel, message):
+        message = self.pickler.dumps(message)
+        return self.server.publish(channel, message)
+        
+        
+class Subscriber(PubSub):
+    '''A subscriber to channels'''    
     def __init__(self, server=None, pickler=None):
         super(Subscriber, self).__init__(server, pickler)
         self.channels = {}
@@ -79,11 +79,11 @@ class Subscriber(PubSubBase):
             self.channels[channel] = []
             return data
         
-    def pool(self):
+    def pool(self, num_messages=None):
         '''Pull data from subscribed channels.
         
 :param timeout: Pool timeout in seconds'''
-        return self._subscriber.pool()
+        return self._subscriber.pool(num_messages)
         
     def channel_list(self, channels):
         ch = []

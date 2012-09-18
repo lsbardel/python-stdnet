@@ -226,7 +226,8 @@ class Redis(object):
     _STATUS = ''
 
     def __init__(self, connection_pool=None, **connection_kwargs):
-        connection_pool = connection_pool or ConnectionPool(**connection_kwargs)
+        connection_pool = connection_pool or\
+                            ConnectionPool.create(**connection_kwargs)
         self.connection_pool = connection_pool
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.response_errbacks = self.RESPONSE_ERRBACKS.copy()
@@ -237,7 +238,7 @@ class Redis(object):
 
     @property
     def pipelined(self):
-        return self.client is not self
+        return False
     
     @property
     def encoding(self):
@@ -263,6 +264,9 @@ atomic, pipelines are useful for reducing the back-and-forth overhead
 between the client and server.
 """
         return Pipeline(self)
+    
+    def prefixed(self, prefix):
+        return PrefixedRedis(self, prefix)
 
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
@@ -1023,6 +1027,35 @@ class RedisProxy(Redis):
         return self.client.encoding
 
 
+class PrefixedRedis(RedisProxy):
+    '''A prefixed redis client. It append a prefix to all keys.'''
+    
+    SERVER_COMMANDS = frozenset(('BGREWRITEOF', 'BGSAVE', 'CLIENT', 'CONFIG',
+                                 'DBSIZE', 'DEBUG', 'SHUTDOWN', 'SLAVEOF',
+                                 'SLOWLOG','SYNC', 'TIME'))
+    def __init__(self, prefix, client):
+        self.prefix = prefix
+        super(PrefixedRedis, self).__init__(client)
+        
+    def execute_command(self, cmnd, *args, **options):
+        if args and cmnd not in self.SERVER_COMMANDS:
+            args = list(args)
+            args[0] = '%s%s' % (self.prefix, args[0])
+        return self.client.execute_command(cmnd, *args, **options)
+    
+    def dbsize(self):
+        return self.client.countpattern('%s*' % self.prefix)
+    
+    def flushdb(self):
+        return self.client.delpattern('%s*' % self.prefix)
+    
+    def delpattern(self, pattern):
+        return self.client.delpattern('%s%s' % (self.prefix, pattern))
+    
+    def flushall(self):
+        raise NotImplementedError()
+        
+        
 class Pipeline(RedisProxy):
     """A :class:`Pipeline` provide a way to commit multiple commands
 to the Redis server in one transmission.
@@ -1053,6 +1086,10 @@ on a key of a different datatype.
         self.command_stack = []
         self.execute_command('MULTI')
 
+    @property
+    def pipelined(self):
+        return True
+    
     @property
     def empty(self):
         return len(self.command_stack) <= 1

@@ -206,7 +206,7 @@ handling of a single command from start to the response from the server.'''
     def execute(self):
         raise NotImplementedError()
     
-    def pool(self):
+    def pool(self, num_messages=None):
         raise NotImplementedError()
 
 
@@ -243,11 +243,15 @@ class SyncRedisRequest(RedisRequest):
             response = self.parse(stream)
         return response
     
-    def pool(self):
+    def pool(self, num_messages=None):
         if not self.pooling:
             self.pooling = True
+            count = 0
             while self.pooling:
                 yield self.read_response()
+                count += 1
+                if num_messages and count >= num_messages:
+                    break 
             self.pooling = False
     
     
@@ -398,15 +402,14 @@ This class should not be directly initialized. Instead use the
             
         return request
 
-    def disconnect(self, release_connection = True):
+    def disconnect(self, release_connection=True):
         "Disconnects from the Redis server"
-        if self.__sock is None:
-            return
-        try:
-            self.__sock.close()
-        except socket.error:
-            pass
-        self.__sock = None
+        if self.__sock is not None:
+            try:
+                self.__sock.close()
+            except socket.error:
+                pass
+            self.__sock = None
         if release_connection:
             self.pool.release(self)
 
@@ -470,12 +473,13 @@ class ConnectionPool(object):
     READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
     encoding = 'utf-8'
     
-    def __new__(cls, address=None, connection_class=None, db=0,
-                max_connections=None, encoding=None,
-                socket_timeout=None, password=None):
+    @classmethod
+    def create(cls, address=None, connection_class=None, db=0,
+               max_connections=None, encoding=None,
+               socket_timeout=None, password=None):
         if not address:
             raise ValueError('Redis connection address not supplied')
-        o = super(ConnectionPool, cls).__new__(cls)
+        o = ConnectionPool()
         o._address = address
         o._db = db
         o.password = password
@@ -530,14 +534,14 @@ class ConnectionPool(object):
 
     def release(self, connection):
         "Releases the connection back to the pool"
-        self._in_use_connections.remove(connection)
-        self._available_connections.append(connection)
+        self._in_use_connections.discard(connection)
+        if connection not in self._available_connections: 
+            self._available_connections.append(connection)
 
     def disconnect(self):
         "Disconnects all connections in the pool"
-        all_conns = chain(self._available_connections,
-                          self._in_use_connections)
-        for connection in all_conns:
+        for connection in list(chain(self._available_connections,
+                                     self._in_use_connections)):
             connection.disconnect()
 
     def clone(self, **kwargs):
@@ -545,7 +549,9 @@ class ConnectionPool(object):
         c._init()
         for k,v in kwargs.items():
             if k in ('address','db'):
-                k = '_'+k
+                k = '_' + k
             setattr(c, k, v)
-        return c
+        if c not in self.connection_pools:
+            self.connection_pools[c] = c
+        return self.connection_pools[c]
         

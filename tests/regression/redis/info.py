@@ -7,7 +7,7 @@ class TestInfo(TestCase):
     
     def setUp(self):
         super(TestInfo,self).setUp()
-        self.client.set('test','bla')
+        self.client.set('test', 'bla')
         self.db = self.client.db
         self.info = redis_info(self.client)
         

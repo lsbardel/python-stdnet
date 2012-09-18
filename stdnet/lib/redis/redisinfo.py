@@ -97,8 +97,8 @@ class RedisDbManager(object):
         rd = []
         kdata = info.keyspace
         for k,n,data in info.dbs(info.keyspace):
-            rdb = RedisDb(client = info.client, db = n, keys = data['keys'],
-                          expires = data['expires'])
+            rdb = RedisDb(client=info.client, db=n, keys=data['keys'],
+                          expires=data['expires'])
             rd.append(rdb)
         return rd
     
@@ -118,7 +118,7 @@ class RedisDb(odm.ModelBase):
         if client and db is None:
             self.id = client.db
         if self.id != client.db:
-            client = client.clone(db = self.id)
+            client = client.clone(db=self.id)
         self.client = client
         self.keys = keys
         self.expires = expires

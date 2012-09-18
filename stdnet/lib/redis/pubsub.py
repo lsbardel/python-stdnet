@@ -59,10 +59,13 @@ class Subscriber(RedisProxy):
                                                   release_connection=False)
                 return self.request.execute()
         if self.request:
-            return self.request.send()
+            if self.request.pooling:
+                return self.request.send()
+            else:
+                return self.request.execute()
     
-    def pool(self):
-        return self.request.pool()
+    def pool(self, num_messages):
+        return self.request.pool(num_messages)
     
     def parse_response(self, request):
         "Parse the response from a publish/subscribe command"

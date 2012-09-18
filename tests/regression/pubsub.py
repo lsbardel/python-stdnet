@@ -6,46 +6,45 @@ from stdnet.apps.pubsub import Publisher, Subscriber
 from .backend import DummyBackendDataServer
 
 
-@test.skipUnless(os.environ['stdnet_test_suite'] == 'pulsar', 'Requires Pulsar')
 class TestPubSub(test.TestCase):
     
-    def setUp(self):
-        self.s = Subscriber()
-    
-    #def tearDown(self):
-    #    self.s.unsubscribe()
-    #    self.s.punsubscribe()
-    
-    def publisher(self):
-        p = Publisher(self.backend)
-        self.assertTrue(p.pickler)
-        self.assertTrue(p.server)
-        return p
+    def server(self):
+        return getdb(self.backend.connection_string)
         
     def subscriber(self):
-        from stdnet.lib.redis.async import RedisConnection
-        b = getdb(self.backend.connection_string,
-                  connection_class=RedisConnection)
-        s = Subscriber(b)
+        s = Subscriber(self.server())
         self.assertTrue(s.server)
         return s
     
+    def publisher(self):
+        s = Publisher(self.server())
+        self.assertTrue(s.server)
+        return s
+    
+    def setUp(self):
+        self.s = self.subscriber()
+        self.p = self.publisher()
+    
+    def tearDown(self):
+        self.s.unsubscribe()
+        self.s.punsubscribe()
+        
     def testDummy(self):
-        p = Publisher(DummyBackendDataServer('',''))
+        p = DummyBackendDataServer('','')
         self.assertRaises(NotImplementedError, p.publish, '', '')
         
     def testClasses(self):
-        p = self.publisher()
         s = self.subscriber()
+        s = self.publisher()
         
-    def testSimple(self):
-        p = self.publisher()
-        s = self.subscriber()
-        yield s.subscribe('test')
+    def testOneMessage(self):
+        p = self.p
+        s = self.s
+        self.assertEqual(s.subscribe('test'), [b'subscribe', b'test', 1])
         self.assertEqual(s.subscription_count(), 1)
-        self.assertEqual(p.publish('test','hello world!'), 1)
-        res = list(s.pool())
-        self.assertEqual(len(res),1)
-        res = res[0]
-        self.assertEqual(res['data'],'hello world!')
+        self.assertEqual(p.publish('test', 'hello world!'), 1)
+        res = list(s.pool(1))
+        self.assertEqual(len(res), 1)
+        data = s.get_all()
+        self.assertEqual(data['test'],['hello world!'])
         

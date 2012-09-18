@@ -9,7 +9,7 @@ Development
   works with the :class:`stdnet.odm.TS` structure.
 * Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
   the :func:`stdnet.odm.all_models_sessions` function (issue #48).
-* **588 regression tests** with **90%** coverage.
+* **593 regression tests** with **90%** coverage.
 
 Ver. 0.7c3 - 2012 May 02
 ===============================

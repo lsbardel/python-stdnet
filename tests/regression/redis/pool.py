@@ -1,26 +1,30 @@
 from .base import TestCase, redis
 
 
-class DummyConnection(object):
-    def __init__(self, pool, **kwargs):
-        self.pool = pool
-        self.kwargs = kwargs
+class DummyConnection(redis.Connection):
+    pass
 
 
 class ConnectionPoolTestCase(TestCase):
     
-    def get_pool(self, connection_info=None, max_connections=None):
-        connection_info = connection_info or {'a': 1, 'b': 2, 'c': 3}
-        pool = redis.ConnectionPool('localhost:0',
-            connection_class=DummyConnection, max_connections=max_connections,
-            **connection_info)
-        return pool
+    def get_pool(self, connection_class=DummyConnection, **kwargs):
+        return redis.ConnectionPool.create(address='localhost:0',
+                                           connection_class=connection_class,
+                                           **kwargs)
+        
+    def tearDown(self):
+        for pool in redis.ConnectionPool.connection_pools.values():
+            pool.disconnect()
+        redis.ConnectionPool.connection_pools.clear()
 
     def test_connection_creation(self):
-        connection_info = {'foo': 'bar', 'biz': 'baz', 'encoding': 'utf-8'}
-        pool = self.get_pool(connection_info=connection_info)
+        pool = self.get_pool(socket_timeout=3)
         connection = pool.get_connection()
-        self.assertEquals(connection.kwargs, connection_info)
+        self.assertEquals(connection.socket_timeout, 3)
+        self.assertEquals(connection.encoding, 'utf-8')
+        self.assertRaises(ValueError, redis.ConnectionPool.create)
+        #pool2 = self.get_pool(socket_timeout=2)
+        #self.assertNotEqual(pool, pool2)
 
     def test_multiple_connections(self):
         pool = self.get_pool()

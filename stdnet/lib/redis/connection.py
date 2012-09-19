@@ -216,6 +216,7 @@ class SyncRedisRequest(RedisRequest):
             try:
                 self.connection.connect(self)
                 self.send()
+                return self.read_response()
             except (socket.timeout, socket.error):
                 if tried < self.retry:
                     self.connection.disconnect(release_connection=False)
@@ -232,11 +233,7 @@ class SyncRedisRequest(RedisRequest):
         response = NOT_READY
         sock = self.connection.sock
         while response is NOT_READY:
-            try:
-                stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
-            except:
-                self.disconnect()
-                raise
+            stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
             response = self.parse(stream)
         return response
     

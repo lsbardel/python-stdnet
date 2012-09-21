@@ -4,7 +4,7 @@ Development
 ===============================
 * Several fixes in the documentation.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
-* **601 regression tests** with **92%** coverage.
+* **600 regression tests** with **92%** coverage.
 
 Ver. 0.7c6 - 2012 Sep 10
 ===============================

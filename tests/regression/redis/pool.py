@@ -86,17 +86,10 @@ class ConnectionPoolTestCase(TestCase):
         self.assertEqual(request.tried, 1)
         self.assertEqual(request.connection, None)
         
-    def testFailRead(self):
-        request = self.client.request('PING')
-        request.connection._sock = read_mock()
-        self.assertRaises(socket.error, request.execute)
-        self.assertEqual(request.tried, 1)
-        self.assertEqual(request.connection, None)
-        
     def testFailClose(self):
         client = self.client.clone()
         client.parse_response = mock.MagicMock(return_value=RuntimeError())
         request = client.request('PING')
         self.assertRaises(RuntimeError, request.execute)
         self.assertEqual(request.tried, 1)
-        self.assertEqual(request.connection.sock, None)
+        self.assertEqual(request.connection, None)

@@ -1,6 +1,10 @@
+-- Model metaclass
+local AUTO_ID = 1
+local COMPOSITE_ID = 2
+local CUSTOM_ID = 3
+
 local ModelMeta = {
-    auto_id = true,
-    composite_id = false,
+    id_type = AUTO_ID,
     indices = {},
     uniques = {}
 }
@@ -50,7 +54,7 @@ local Model = {
     --[[
      Initialize model with:
         bk: the model base key (prefix to all model keys)
-        meta: table containing the model metadata.
+        meta: table containing the model MetaData.
     --]]
     init = function (self, bk, meta)
         self.bk = bk

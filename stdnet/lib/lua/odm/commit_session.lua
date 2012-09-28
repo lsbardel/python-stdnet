@@ -15,7 +15,7 @@ elseif id_info ~= '' then
     id_info = id_info + 0
     composite_id = tabletools.slice(ARGV,idx1+1,idx1+id_info)
     idx1 = idx1 + id_info
-end 
+end
 i = idx1 + 2*length_indices
 local indices = tabletools.slice(ARGV,idx1+1,idx1+length_indices)
 local uniques = tabletools.slice(ARGV,idx1+length_indices+1,i)
@@ -39,7 +39,7 @@ local function update_indices(score, id, idkey, oldid, add)
 	                    -- remove field `name` from the instance hashtable so that
 	                    -- the next call to update_indices won't delete the index
 	                    redis.call('hdel', idkey, name)
-	                    table.insert(errors, 'Unique constraint "' .. name .. '" violated.')
+	                    table.insert(errors, 'Unique constraint "' .. name .. '" violated: "' .. value .. '" is already in database.')
 	                end
                 end
             else
@@ -118,11 +118,11 @@ while j < num_instances do
             end
         end
     end
-    
+
     if id == '' and not composite_id then
         table.insert(errors, 'Id not avaiable.')
     end
-    
+
     if # errors == 0 then
         local oldid = id
 	    local idkey = bk .. ':obj:' .. oldid

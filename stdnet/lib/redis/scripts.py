@@ -114,9 +114,9 @@ lua scripts to redis via the ``evalsha`` command.
     abstract = True
     script = None
         
-    def __str__(self):
+    def __repr__(self):
         return self.__class__.__name__
-    __repr__ = __str__
+    __str__ = __repr__
     
     @property
     def name(self):
@@ -124,8 +124,13 @@ lua scripts to redis via the ``evalsha`` command.
     
     def call(self, client, command, body, keys, *args, **options):
         options['script_name'] = str(self)
+        args, options = self.preprocess_args(client, args, options)
         return client._eval(command, body, keys, *args, **options)
         
+    def preprocess_args(self, client, args, options):
+        '''A chance to modify the arguments before sending request to server'''
+        return args, options
+    
     def eval(self, client, keys, *args, **options):
         return self.call(client, 'EVAL', self.script, keys, *args, **options)
     
@@ -192,10 +197,9 @@ of a missing script, are also re-executed.'''
             break
     if not toload:
         return results
-    
     loaded = set()
     positions = []
-    for i, result in enumerate(zip(commands,results)):
+    for i, result in enumerate(zip(commands, results)):
         command, result = result    
         if isinstance(result, NoScriptError):
             name = command.options.get('script_name')
@@ -252,6 +256,10 @@ class countpattern(RedisScript):
     script = '''\
 return # redis.call('keys', ARGV[1])
 '''
+    def preprocess_args(self, client, args, options):
+        if args and client.prefix:
+            args = ['%s%s' % (client.prefix, a) for a in args]
+        return args, options
     
 # Delete all keys from a pattern and return the total number of keys deleted
 # This fails when there are too many keys
@@ -264,7 +272,7 @@ else
 end
 '''
 # This just works
-class delpattern(RedisScript):
+class delpattern(countpattern):
     script = '''\
 local n = 0
 for i,key in ipairs(redis.call('keys', ARGV[1])) do
@@ -272,6 +280,7 @@ for i,key in ipairs(redis.call('keys', ARGV[1])) do
 end
 return n
 '''
+
 
 class zpop(RedisScript):
     script = read_lua_file('commands.zpop')
@@ -286,20 +295,22 @@ class zdiffstore(RedisScript):
     script = read_lua_file('commands.zdiffstore')
     
     
-class keyinfo(RedisScript):
+class keyinfo(countpattern):
     script = read_lua_file('commands.keyinfo')
     
     def callback(self, request, response, args, **options):
         client = request.client
+        if client.pipelined:
+            client = client.client
         encoding = request.encoding
-        for key,typ,len,ttl,enc,idle in response:
-            yield RedisKey(id = key.decode(encoding),\
-                           client = client,
-                           type = typ.decode(encoding),\
-                           length = len,
-                           ttl = ttl if ttl != -1 else False,\
-                           encoding = enc.decode(encoding),\
-                           idle = idle)
+        for key, typ, length, ttl, enc, idle in response:
+            key = key.decode(encoding)[len(client.prefix):]
+            yield RedisKey(id=key, client=client,
+                           type=typ.decode(encoding),
+                           length=length,
+                           ttl=ttl if ttl != -1 else False,
+                           encoding=enc.decode(encoding),
+                           idle=idle)
 
 
 class move2set(RedisScript):

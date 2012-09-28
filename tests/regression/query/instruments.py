@@ -22,7 +22,6 @@ class TestFilter(FinanceTest):
         # count so that we execute the query
         self.assertEqual(qs.count(),1)
         bq = qs.backend_query()
-        self.assertTrue(bq.done)
         # test the redis internals
         if qs.backend.name == 'redis':
             rqs = qs.backend_query()

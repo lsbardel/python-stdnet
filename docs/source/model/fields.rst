@@ -234,6 +234,14 @@ HashField
 .. autoclass:: HashField
    :members:
    :member-order: bysource
+   
+
+TimeSeriesField
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: TimeSeriesField
+   :members:
+   :member-order: bysource
 
 
 .. _model-field-descriptors:

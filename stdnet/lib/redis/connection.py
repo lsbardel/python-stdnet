@@ -1,15 +1,4 @@
 '''
-This file was originally forked from redis-py in January 2011.
-
-Original Copyright
-Copyright (c) 2010 Andy McCurdy
-    BSD License
-
-Since than it has moved on a different direction.
-
-Copyright (c) 2011 Luca Sbardella
-    BSD License
-
 A note on TCP performance.
 
 TCP depends on several factors for performance. Two of the most important
@@ -67,7 +56,8 @@ __all__ = ['RedisRequest',
            'RedisReader',
            'PyRedisReader',
            'redis_before_send',
-           'redis_after_receive']
+           'redis_after_receive',
+           'NOT_READY']
 
 
 # SIGNALS
@@ -77,42 +67,64 @@ redis_after_receive = Signal(providing_args=["request"])
 
 PyRedisReader = lambda : fallback.RedisReader(RedisProtocolError,
                                               RedisInvalidResponse)
-if hr:
+if hr:  #pragma    nocover
     RedisReader = lambda : hr.RedisReader(RedisProtocolError,
                                           RedisInvalidResponse)
-else:
+else:   #pragma    nocover
     RedisReader = PyRedisReader
     
+
+class NOT_READY:
+    pass
 
 
 class RedisRequest(BackendRequest):
     '''Redis request base class. A request instance manages the
-handling of a single command from start to the response from the server.'''
-    retry = 2
+handling of a single command from start to the response from the server.
+
+.. attribute::    client
+
+    A :class:`Redis` client or :class:`Pipeline`.
+    
+.. attribute::    connection
+
+    the :class:`Connection` managing this request
+
+.. attribute::    command_name
+
+    The command name if :attr:`client` is a standard :class:`Redis` client,
+    ``None`` if it is a :class:`Pipeline`
+    
+.. attribute::    release_connection
+
+    if ``True`` this request will release the :attr:`connection` once it has
+    obtained the response from the server.
+    
+.. attribute:: pooling
+
+    The request is pooling data from redis server.
+'''
+    pooling = False
+    
     def __init__(self, client, connection, command_name, args,
-                 release_connection = True, **options):
+                 release_connection=True, **options):
         self.client = client
         self.connection = connection
         self.command_name = command_name
         self.args = args
         self.release_connection = release_connection
         self.options = options
-        self.tried = 0
         self._raw_response = []
         self._response = None
-        self._is_pipeline = False
         self.response = connection.parser.gets()
         # if the command_name is missing, it means it is a pipeline of commands
         # in the args input parameter
-        if self.command_name is None:
-            self._is_pipeline = True
-            self.response = []
-            self.command = connection.pack_pipeline(args)
-        elif self.command_name:
+        if command_name:
             self.command = connection.pack_command(command_name, *args)
         else:
-            self.command = None
-
+            self.response = []
+            self.command = connection.pack_pipeline(args)
+            
     @property
     def num_responses(self):
         if self.command_name:
@@ -122,66 +134,36 @@ handling of a single command from start to the response from the server.'''
         
     @property
     def is_pipeline(self):
-        return self._is_pipeline
+        return self.command_name is None
     
     @property
     def encoding(self):
         return self.client.encoding
     
     @property
-    def done(self):
-        if self.is_pipeline:
-            return len(self.response) == self.num_responses
-        else:
-            return self.response is not False
-        
-    @property
     def raw_response(self):
         return b''.join(self._raw_response)
                     
-    def __str__(self):
+    def __repr__(self):
         if self.command_name:
             return '{0}{1}'.format(self.command_name,self.args)
         else:
             return 'PIPELINE{0}'.format(self.args)
-    
-    def __repr__(self):
-        return self.__str__()
-        
-    def _send(self):
-        "Send the command to the server"
-        # broadcast BEFORE SEND signal
-        redis_before_send.send(self.client.__class__,
-                               request = self,
-                               command = self.command)
-        self.connection.connect(self, self.tried)
-        try:
-            self.connection.sock.sendall(self.command)
-        except socket.error as e:
-            if len(e.args) == 1:
-                _errno, errmsg = 'UNKNOWN', e.args[0]
-            else:
-                _errno, errmsg = e.args
-            raise RedisConnectionError("Error %s while writing to socket. %s." % \
-                (_errno, errmsg))
+    __str__ = __repr__
         
     def close(self):
         redis_after_receive.send(self.client.__class__, request=self)
         c = self.connection
         try:
-            #if isinstance(self.response, ResponseError):
-            #    if str(self.response) == NoScriptError.msg:
-            #        self.response = NoScriptError()
-            #    else:
-            #        raise self.response
-            self._response = self.client.parse_response(self)
-            if isinstance(self._response, Exception):
-                raise self._response
+            response = self.client.parse_response(self)
+            if isinstance(response, Exception):
+                raise response
         except:
             c.disconnect()
             raise
         if self.release_connection:
             c.pool.release(c)
+        return response
         
     def parse(self, data):
         '''Got data from redis, feeds it to the :attr:`Connection.parser`.'''
@@ -195,47 +177,80 @@ handling of a single command from start to the response from the server.'''
                     break
                 self.response.append(response)
             if len(self.response) == self.num_responses:
-                self.close()
+                return self.close()
         else:
             self.response = parser.gets()
             if self.response is not False:
-                self.close()
+                return self.close()
+        return NOT_READY
         
+    def disconnect(self):
+        self.connection.disconnect()
+        self.connection = None
+        
+    def send(self, result=None):
+        "Send the command to the server"
+        # broadcast BEFORE SEND signal
+        redis_before_send.send(self.client.__class__,
+                               request=self,
+                               command=self.command)
+        return self._write()
+    
+    def _write(self):
+        return self.connection.sock.sendall(self.command)
+    
     def execute(self):
         raise NotImplementedError()
     
+    def pool(self, num_messages=None):
+        raise NotImplementedError()
+
 
 class SyncRedisRequest(RedisRequest):
     '''A :class:`RedisRequest` for blocking sockets.'''
-    def execute(self):
-        self.tried = 1
-        while self.tried < self.retry:
+    retry = 2
+    def execute(self, tried=0):
+        tried += 1
+        self.tried = tried
+        try:
             try:
-                return self._sendrecv()
-            except RedisConnectionError as e:
-                if e.retry:
+                self.connection.connect(self)
+                self.send()
+                return self.read_response()
+            except (socket.timeout, socket.error):
+                if tried < self.retry:
                     self.connection.disconnect(release_connection=False)
-                    self.tried += 1
+                    return self.execute(tried)
                 else:
                     raise
-        return self._sendrecv()
-    
-    def _sendrecv(self):
-        self._send()
+        except:
+            self.disconnect()
+            raise
         return self.read_response()
     
     def read_response(self):
+        '''Read a redis response from the socket and parse it.'''
+        response = NOT_READY
         sock = self.connection.sock
-        while not self.done:
-            try:
-                stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
-            except (socket.error, socket.timeout) as e:
-                raise RedisConnectionError("Error while reading from socket: %s" % \
-                        (e.args,))
-            if not stream:
-                raise RedisConnectionError("Socket closed on remote end", True)
-            self.parse(stream)
-        return self._response
+        while response is NOT_READY:
+            stream = sock.recv(io.DEFAULT_BUFFER_SIZE)
+            response = self.parse(stream)
+        return response
+    
+    def pool(self, num_messages=None):
+        if not self.pooling:
+            self.pooling = True
+            count = 0
+            while self.pooling:
+                try:
+                    yield self.read_response()
+                except:
+                    self.pooling = False
+                    raise
+                count += 1
+                if num_messages and count >= num_messages:
+                    break 
+            self.pooling = False
     
     
 class Connection(object):
@@ -245,7 +260,7 @@ This class should not be directly initialized. Instead use the
 
     from stdnet.lib.connection ConnectionPool
     
-    pool = ConnectionPool(('',6379),db=1)
+    pool = ConnectionPool(('',6379), db=1)
     c = pool.get_connection()
     
 .. attribute:: pool
@@ -262,18 +277,12 @@ This class should not be directly initialized. Instead use the
 '''
     request_class = SyncRedisRequest
     socket_class = socket.socket
+    encoding_errors = 'strict'
     
     "Manages TCP communication to and from a Redis server"
-    def __init__(self, pool, password=None,
-                 socket_timeout=None, encoding='utf-8',
-                 encoding_errors='strict', reader_class=None,
-                 decode = False, **kwargs):
+    def __init__(self, pool, reader_class=None):
         self.pool = pool
-        self.password = password
-        self.socket_timeout = socket_timeout
-        self.encoding = encoding
-        self.encoding_errors = encoding_errors
-        self.__sock = None
+        self._sock = None
         if reader_class is None:
             if settings.REDIS_PY_PARSER:
                 reader_class = PyRedisReader
@@ -287,9 +296,23 @@ This class should not be directly initialized. Instead use the
         return self.pool.address
     
     @property
+    def encoding(self):
+        '''Redis server address'''
+        return self.pool.encoding
+    
+    @property
     def db(self):
         '''Redis server database number'''
         return self.pool.db
+
+    @property
+    def password(self):
+        '''Redis server database number'''
+        return self.pool.password
+        
+    @property
+    def socket_timeout(self):
+        return self.pool.socket_timeout
     
     @property
     def socket_type(self):
@@ -305,7 +328,7 @@ This class should not be directly initialized. Instead use the
     @property
     def sock(self):
         '''Connection socket'''
-        return self.__sock
+        return self._sock
 
     @property
     def WRITE_BUFFER_SIZE(self):
@@ -315,9 +338,9 @@ This class should not be directly initialized. Instead use the
     def READ_BUFFER_SIZE(self):
         return self.pool.READ_BUFFER_SIZE
     
-    def connect(self, request, counter=1):
+    def connect(self, request):
         "Connects to the Redis server if not already connected."
-        if self.__sock:
+        if self._sock:
             return
         if self.socket_type == 'TCP':
             sock = self.socket_class(socket.AF_INET, socket.SOCK_STREAM)
@@ -333,16 +356,18 @@ This class should not be directly initialized. Instead use the
                             self.READ_BUFFER_SIZE)
         elif self.socket_type == 'UNIX':
             sock = self.socket_class(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.__sock = sock
+        sock.settimeout(self.socket_timeout)
         try:
-            return self._connect(request, counter)
+            sock.connect(self.address)
         except socket.error as e:
             raise RedisConnectionError(self._error_message(e))
+        self._sock = self._wrap_socket(sock)
+        return self.on_connect(request)
 
-    def _connect(self, request, counter):
-        self.sock.settimeout(self.socket_timeout)
-        self.sock.connect(self.address)
-        return self.on_connect(request, counter)
+    #    INTERNAL METHODS
+    
+    def _wrap_socket(self, sock):
+        return sock
     
     def _error_message(self, exception):
         # args for socket.error can either be (errno, "message")
@@ -354,52 +379,45 @@ This class should not be directly initialized. Instead use the
             return "Error %s connecting %s. %s." % \
                 (exception.args[0], self.address, exception.args[1])
 
-    def on_connect(self, request, counter):
+    def on_connect(self, request):
         "Initialize the connection, authenticate and select a database"
         # if a password is specified, authenticate
         client = request.client.client
         if self.password:
-            r = self.execute_command(client, 'AUTH', self.password,
-                                     release_connection = False)
+            r = self.request(client, 'AUTH', self.password,
+                             release_connection=False).execute()
             if not r:
-                raise RedisConnectionError('Invalid Password ({0})'.format(counter))
-
+                raise RedisConnectionError('Invalid Password')
         # if a database is specified, switch to it
         if self.db:
-            r = self.execute_command(client, 'SELECT', self.db,
-                                     release_connection = False)
+            r = self.request(client, 'SELECT', self.db,
+                             release_connection=False).execute()
             if not r:
-                raise RedisConnectionError('Invalid Database "{0}". ({1})'\
-                                      .format(self.db, counter))
-            
+                raise RedisConnectionError('Invalid Database "%s"' % self.db)
         return request
 
-    def disconnect(self, release_connection = True):
+    def disconnect(self, release_connection=True):
         "Disconnects from the Redis server"
-        if self.__sock is None:
-            return
-        try:
-            self.__sock.close()
-        except socket.error:
-            pass
-        self.__sock = None
+        if self._sock is not None:
+            try:
+                self._sock.close()
+            except socket.error:
+                pass
+            self._sock = None
         if release_connection:
             self.pool.release(self)
 
     if ispy3k:
         def encode(self, value):
-            return value if isinstance(value,bytes) else str(value).encode(
+            return value if isinstance(value, bytes) else str(value).encode(
                                         self.encoding,self.encoding_errors)
             
-    else:
+    else:   #pragma    nocover
         def encode(self, value):
             if isinstance(value,unicode):
-                return value.encode(self.encoding,self.encoding_errors)
+                return value.encode(self.encoding, self.encoding_errors)
             else:
                 return str(value)
-    
-    def _decode(self, value):
-        return value.decode(self.encoding,self.encoding_errors)
     
     def __pack_gen(self, args):
         e = self.encode
@@ -420,42 +438,38 @@ command byte to be send to redis.'''
         pack = self.pack_command
         return b''.join(starmap(pack, ((c.command,)+c.args for c in commands)))
         
-    def execute_command(self, client, command_name, *args, **options):
-        '''Execute a command'''
-        return self.request_class(client, self, command_name, args, **options)\
-                   .execute()
-    
-    def execute_pipeline(self, client, commands):
-        '''Execute a :class:`Pipeline` in the server.
-
-:parameter commands: the list of commands to execute in the server.
-:parameter parse_response: callback for parsing the response from server.
-:rtype: ?'''
-        return self.request_class(client, self, None, commands).execute()
+    def request(self, client, command_name, *args, **options):
+        return self.request_class(client, self, command_name, args, **options)
 
 ConnectionClass = None
 
 
 class ConnectionPool(object):
     "A :class:`Redis` :class:`Connection` pool."
-    default_encoding = 'utf-8'
+    connection_pools = {}
+    WRITE_BUFFER_SIZE = 128 * 1024
+    READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
+    encoding = 'utf-8'
     
-    def __init__(self, address, connection_class = None, db = 0,
-                 max_connections=None, **connection_kwargs):
+    @classmethod
+    def create(cls, address=None, connection_class=None, db=0,
+               max_connections=None, encoding=None,
+               socket_timeout=None, password=None):
         if not address:
             raise ValueError('Redis connection address not supplied')
-        self._address = address
-        self._db = db
-        self.connection_class = connection_class or\
-                                settings.RedisConnectionClass or\
-                                Connection
-        self.connection_kwargs = connection_kwargs
-        if 'encoding' not in connection_kwargs:
-            connection_kwargs['encoding'] = self.default_encoding
-        self.max_connections = max_connections or settings.MAX_CONNECTIONS
-        self.WRITE_BUFFER_SIZE = 128 * 1024
-        self.READ_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
-        self._init()
+        o = ConnectionPool()
+        o._address = address
+        o._db = db
+        o.password = password
+        o.connection_class = connection_class or\
+                             settings.RedisConnectionClass or Connection
+        o.encoding = encoding or cls.encoding
+        o.socket_timeout = socket_timeout
+        if o not in cls.connection_pools:
+            o.max_connections = max_connections or settings.MAX_CONNECTIONS
+            o._init()
+            cls.connection_pools[o] = o
+        return cls.connection_pools[o]
         
     def _init(self):
         self._created_connections = 0
@@ -463,7 +477,8 @@ class ConnectionPool(object):
         self._in_use_connections = set()
 
     def __hash__(self):
-        return hash((self.address,self.db,self.connection_class))
+        return hash((self.address, self.db, self.connection_class,
+                     self.socket_timeout, self.password))
     
     @property
     def address(self):
@@ -472,10 +487,6 @@ class ConnectionPool(object):
     @property
     def db(self):
         return self._db
-    
-    @property
-    def encoding(self):
-        return self.connection_kwargs['encoding']
     
     def __eq__(self, other):
         if isinstance(other,self.__class__):
@@ -497,18 +508,18 @@ class ConnectionPool(object):
         if self._created_connections >= self.max_connections:
             raise RedisConnectionError("Too many connections")
         self._created_connections += 1
-        return self.connection_class(self, **self.connection_kwargs)
+        return self.connection_class(self)
 
     def release(self, connection):
         "Releases the connection back to the pool"
-        self._in_use_connections.remove(connection)
-        self._available_connections.append(connection)
+        self._in_use_connections.discard(connection)
+        if connection not in self._available_connections: 
+            self._available_connections.append(connection)
 
     def disconnect(self):
         "Disconnects all connections in the pool"
-        all_conns = chain(self._available_connections,
-                          self._in_use_connections)
-        for connection in all_conns:
+        for connection in list(chain(self._available_connections,
+                                     self._in_use_connections)):
             connection.disconnect()
 
     def clone(self, **kwargs):
@@ -516,7 +527,9 @@ class ConnectionPool(object):
         c._init()
         for k,v in kwargs.items():
             if k in ('address','db'):
-                k = '_'+k
+                k = '_' + k
             setattr(c, k, v)
-        return c
+        if c not in self.connection_pools:
+            self.connection_pools[c] = c
+        return self.connection_pools[c]
         

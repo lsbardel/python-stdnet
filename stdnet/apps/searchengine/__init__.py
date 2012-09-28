@@ -113,28 +113,27 @@ driver.
     def flush(self):
         WordItem.objects.flush()
         
-    def add_item(self, item, words, session):
+    def add_item(self, item, words, transaction):
         for word in words:
-            wi = WordItem(word = word,
-                          model_type = item.__class__,
-                          object_id = item.id)
-            session.add(wi)
+            transaction.add(WordItem(word=word,
+                                     model_type=item.__class__,
+                                     object_id=item.id))
     
-    def remove_item(self, item_or_model, session, ids = None):
+    def remove_item(self, item_or_model, transaction, ids=None):
         '''
 Remove indexes for *item_or_model*.
 
 :parameter item: an instance of a :class:`stdnet.odm.StdModel`.        
 '''
-        query = session.query(WordItem)
+        query = transaction.query(WordItem)
         if isclass(item_or_model):
-            wi = query.filter(model_type = item_or_model)
+            wi = query.filter(model_type=item_or_model)
             if ids is not None:
-                wi = wi.filter(object_id__in = ids)
+                wi = wi.filter(object_id=ids)
         else:
-            wi = query.filter(model_type = item_or_model.__class__,
-                              object_id = item_or_model.id)
-        session.delete(wi)
+            wi = query.filter(model_type=item_or_model.__class__,
+                              object_id=item_or_model.id)
+        transaction.delete(wi)
     
     def search(self, text, include = None, exclude = None, lookup = None):
         '''Full text search. Return a list of queries to intersect.'''

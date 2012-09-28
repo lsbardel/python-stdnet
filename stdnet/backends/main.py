@@ -17,10 +17,10 @@ BACKENDS = {
 }
 
 
-def parse_backend_uri(backend_uri):
-    """Converts the "backend_uri" into the database connection parameters.
+def parse_backend(backend):
+    """Converts the "backend" into the database connection parameters.
 It returns a (scheme, host, params) tuple."""
-    r = urlparse.urlsplit(backend_uri)
+    r = urlparse.urlsplit(backend)
     scheme, host = r.scheme, r.netloc
     if scheme not in ('https', 'http'):
         query = r.path
@@ -62,24 +62,24 @@ def get_connection_string(scheme, address, params):
     return scheme + '://' + address
     
     
-def getdb(backend_uri=None, **kwargs):
+def getdb(backend=None, **kwargs):
     '''get a backend database'''
-    if isinstance(backend_uri,BackendDataServer):
-        return backend_uri
-    backend_uri = backend_uri or settings.DEFAULT_BACKEND
-    if not backend_uri:
+    if isinstance(backend, BackendDataServer):
+        return backend
+    backend = backend or settings.DEFAULT_BACKEND
+    if not backend:
         return None
-    scheme, address, params = parse_backend_uri(backend_uri)
+    scheme, address, params = parse_backend(backend)
     params.update(kwargs)
-    backend_uri = get_connection_string(scheme, address, params)
-    params['connection_string'] = backend_uri
+    backend = get_connection_string(scheme, address, params)
+    params['connection_string'] = backend
     return _getdb(scheme, address, params)
 
 
-def getcache(backend_uri=None, encoder = encoders.PythonPickle, **kwargs):
+def getcache(backend=None, encoder = encoders.PythonPickle, **kwargs):
     if isclass(encoder):
         encoder = encoder()
-    db = getdb(backend_uri = backend_uri, pickler = encoder, **kwargs)
+    db = getdb(backend=backend, pickler=encoder, **kwargs)
     return db.as_cache() 
 
         

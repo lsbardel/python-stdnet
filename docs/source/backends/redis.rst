@@ -137,8 +137,22 @@ Redis
 .. autoclass:: Redis
    :members:
    :member-order: bysource
-   
 
+
+RedisProxy
+~~~~~~~~~~~~~~~~
+.. autoclass:: RedisProxy
+   :members:
+   :member-order: bysource
+   
+      
+PrefixedRedis
+~~~~~~~~~~~~~~~~
+.. autoclass:: PrefixedRedis
+   :members:
+   :member-order: bysource
+   
+   
 Pipeline
 ~~~~~~~~~~~~~~~
 .. autoclass:: Pipeline

@@ -1,8 +1,9 @@
-from stdnet import test
+from stdnet import test, BackendRequest, BackendStructure
 from stdnet.conf import settings
 from stdnet.lib import redis
 import stdnet as me
 
+from examples.models import SimpleModel
 
 class TestInitFile(test.TestCase):
 
@@ -19,3 +20,13 @@ class TestInitFile(test.TestCase):
         for m in ("__author__", "__contact__", "__homepage__", "__doc__"):
             self.assertTrue(getattr(me, m, None))
             
+            
+class TestBackendClasses(test.TestCase):
+    
+    def testBackendRequest(self):
+        b = BackendRequest()
+        self.assertRaises(NotImplementedError, b.add_callback, None)
+        
+    def testBackendStructure_error(self):
+        m = SimpleModel()
+        self.assertRaises(ValueError, BackendStructure, m, None, None)

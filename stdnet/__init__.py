@@ -1,10 +1,10 @@
 '''Data manager and advanced queries for Redis.'''
 from .exceptions import *
 from .backends import *
-from .utils.version import get_version, stdnet_version 
- 
-VERSION = stdnet_version(0, 7, 0, 'rc', 3)
- 
+from .utils.version import get_version, stdnet_version
+
+VERSION = stdnet_version(0, 7, 0, 'rc', 6)
+
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"
 __author__ = "Luca Sbardella"
@@ -29,4 +29,4 @@ CLASSIFIERS = [
                'Topic :: Internet'
                ]
 
-sphinxtogithub = True
+sphinxtogithub = False

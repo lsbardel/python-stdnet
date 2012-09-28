@@ -7,7 +7,7 @@ Model and Query API
 ============================
 
 
-Model and Query
+Model
 ==================
 
 The object data mapper presents a method of
@@ -24,8 +24,8 @@ StdModel Class
    :members:
    :member-order: bysource
 
- 
- 
+
+
 .. _database-metaclass:
 
 Data Server Metaclass
@@ -42,6 +42,26 @@ Model
    :members:
    :member-order: bysource
 
+
+autoincrement
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: autoincrement
+   :members:
+   :member-order: bysource
+
+
+Queries
+================
+
+Query base class
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: Q
+   :members:
+   :member-order: bysource
+
+
 .. _model-query:
 
 Query
@@ -50,17 +70,16 @@ Query
 .. autoclass:: Query
    :members:
    :member-order: bysource
-   
+
    .. automethod:: __init__
 
+QueryElement
+~~~~~~~~~~~~~~~
 
-autoincrement
-~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: autoincrement
+.. autoclass:: QueryElement
    :members:
    :member-order: bysource
-   
+
 
 .. _model-structures:
 
@@ -78,7 +97,7 @@ python has several of them too. ``stdnet`` implements **six** remote structures:
  * :class:`HashTable`, unique associative container.
  * :class:`Zset`, an ordered container of unique values.
  * :class:`TS`, a timeseries implemented as a ordered unique associative container.
- 
+
 An additional structure is provided in the :mod:`stdnet.apps.columnts` module
 
  * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate timeseries structure
@@ -91,9 +110,9 @@ from :class:`Structure` base class.
 Creating Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Creating the five structures available in stdnet is accomplished 
+Creating the five structures available in stdnet is accomplished
 in the following way::
-    
+
     from stdnet import odm
 
     session = odm.Session(...)
@@ -102,29 +121,29 @@ in the following way::
     o = session.add(odm.Zset())
     h = session.add(odm.HashTable())
     t = session.add(odm.TS())
-    
+
 If no ``id`` is specified, stdnet will create one for you::
 
     >>> l.id
     '2d0cbac9'
     >>>
-    
+
 To add data you have two options: immediate commit or transactions. For example,
 lets add elements to a set::
-    
+
     >>> s.update((4, 6, 'bla', 'foo', 4))
     >>> s.size()
     4
-    
+
 Alternatively, one could use :ref:`transactions <model-transactions>` to
 combine several updates together::
- 
+
     with session.begin():
         s.update((4, 6, 'bla', 'foo', 4))
         h['foo'] = 56
         o.add(3,'a zset element with score 3')
-    
-        
+
+
 Base Class and Mixins
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -139,7 +158,7 @@ Base Class and Mixins
 .. autoclass:: PairMixin
    :members:
    :member-order: bysource
-   
+
 .. autoclass:: KeyValueMixin
    :members:
    :member-order: bysource
@@ -147,8 +166,8 @@ Base Class and Mixins
 .. autoclass:: OrderedMixin
    :members:
    :member-order: bysource
-   
-   
+
+
 List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -175,23 +194,23 @@ OrderedSet
    :member-order: bysource
 
 
-.. _hash-structure:   
-   
+.. _hash-structure:
+
 HashTable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: HashTable
    :members:
    :member-order: bysource
-   
-   
+
+
 TS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: TS
    :members:
    :member-order: bysource
-        
+
 
 .. _register-model:
 
@@ -202,7 +221,7 @@ Registration
 Models can be registered with a :class:`stdnet.BackendDataServer` so that
 the model :class:`Manager` can be used to create instance and query the database.
 If a model is not registered, the only way to operate on it is via the
-:class:`Session` API. 
+:class:`Session` API.
 
 Stdnet provides two registration functions, a low level and a higher level one
 which can be used to register several models at once.
@@ -216,7 +235,7 @@ Register
 Register application models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: register_application_models  
+.. autofunction:: register_application_models
 
 
 Register applications
@@ -244,7 +263,20 @@ Stdnet includes a signal dispatcher which helps allow decoupled
 applications get notified when actions occur elsewhere in the framework.
 In a nutshell, signals allow certain senders to notify a set of receivers
 that some action has taken place.
-They’re especially useful when many pieces of code may be interested in
+They are especially useful when many pieces of code may be interested in
 the same events.
+
+The data mapper provide with the following built-in signals in the :mod:`stdnet.odm`
+module:
+
+* ``pre_commit`` triggered before new instances or changes on existing instances
+  are committed to the backend server.
+* ``post_commit`` triggered after new instances or changes on existing instances
+  are committed to the backend server.
+
+It is also possible to add callback to single instances in the following way::
+
+    instance = MyModel(...)
+    instance.post_commit(callable)
 
 .. _standard template library: http://www.sgi.com/tech/stl/

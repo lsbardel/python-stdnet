@@ -6,9 +6,9 @@ local scripts = {
 		return serie:length()
 	end,
 	-- information regarding the timeserie
-	info = function (self, series)
+	info = function (self, series, start, stop, ...)
 	   local serie = self.on_serie_only(series, 'info')
-	   local info = serie:info()
+	   local info = serie:info(start, stop, arg)
 	   if info then
            return cjson.encode(info)
        end

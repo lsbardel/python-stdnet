@@ -1,19 +1,14 @@
 import gc
-import sys
 
 from stdnet.utils.dispatch import Signal
 from stdnet import test
 
 
-if sys.platform.startswith('java'):
-    def garbage_collect():
-        """Run the garbage collector and wait a bit to let it do his work"""
-        import time
-        gc.collect()
-        time.sleep(0.1)
-else:
-    def garbage_collect():
-        gc.collect()
+def garbage_collect():
+    """Run the garbage collector and wait a bit to let it do his work"""
+    import time
+    gc.collect()
+    time.sleep(0.1)
 
 def receiver_1_arg(val, **kwargs):
     return val

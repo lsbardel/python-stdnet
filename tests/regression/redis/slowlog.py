@@ -14,13 +14,14 @@ class SlowLogTestCase(base.TestCase):
         
     def testOneCommand(self):
         self.client.set('bla','foo')
+        pfix = self.client.prefix
         res = self.client.slowlog_get(2)
         self.assertTrue(res)
         self.assertEqual(len(res),2)
         self.assertEqual(res[0]['command'],'SET')
         self.assertTrue(res[0]['microseconds']>0)
         self.assertTrue(res[0]['timestamp']>0)
-        self.assertEqual(res[0]['args'],(b'bla',b'foo'))
+        self.assertEqual(res[0]['args'], (('%sbla' % pfix).encode(), b'foo'))
         self.assertTrue(res[0]['id']>res[1]['id'])
         
     def testReset(self):

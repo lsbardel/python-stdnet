@@ -20,13 +20,13 @@ Defining stdnet *models* is achieved by subclassing the
 snippet implements two models, ``Author`` and ``Book``::
 
     from stdnet import odm
-    
+
     class Author(odm.StModel):
         name = odm.SymbolField()
-    
+
     class Book(odm.StdModel):
-        title  = odm.CharField()
-        author = odm.ForeignKey(Author, related_name = 'books')
+        title = odm.CharField()
+        author = odm.ForeignKey(Author, related_name='books')
 
 The API should look familiar if you have come across django_
 web framework. :ref:`Fields <model-field>` (name in the Author model,
@@ -36,7 +36,7 @@ backend database table, fields in stdnet are stored in different ways, depending
 on the :ref:`backend <db-index>` used.
 For example, in :ref:`redis <redis-server>`, fields are equivalent to the
 fields of a redis hash table which represents an instance of a model.
- 
+
 
 .. _tutorial-application:
 
@@ -54,38 +54,38 @@ The application uses the following three models,
 A minimal :mod:`stdnet` implementation can look like this::
 
     from stdnet import odm
-    
+
     class Fund(odm.StdModel):
-        name = odm.SymbolField(unique = True)
+        name = odm.SymbolField(unique=True)
         ccy = odm.SymbolField()
         description = odm.CharField()
-        
+
         def __unicode__(self):
             return self.name
-        
-        
+
+
     class Instrument(odm.StdModel):
-        name = odm.SymbolField(unique = True)
+        name = odm.SymbolField(unique=True)
         ccy = odm.SymbolField()
         type = odm.SymbolField()
         prices = odm.ListField()
-        
+
         def __unicode__(self):
             return self.name
-        
-        
+
+
     class Position(odm.StdModel):
         instrument = odm.ForeignKey(Instrument)
         fund = odm.ForeignKey(Fund)
         size = odm.FloatField()
         dt = odm.DateField()
-        
+
         def __unicode__(self):
             return self.instrument
 
         class Meta:
             ordering = '-dt'
-            
+
 If you are familiar with django_ you will see several similarities and you should be able to understand,
 with a certain degree of confidence, what it is going on.
 The only difference is the ``prices`` :class:`ListField`
@@ -118,7 +118,7 @@ model's :class:`Manager`::
     odm.register(Fund, 'redis://my.host.name:6379/?db=1')
     odm.register(Instrument, 'redis://my.host.name:6379/?db=1')
     odm.register(Position, 'redis://my.host.name:6379/?db=1')
-    
+
 
 .. _one-to-many:
 
@@ -135,7 +135,7 @@ related :class:`StdModel` instance.
 Behind the scenes, this functionality is implemented by Python descriptors_.
 This shouldn't really matter to you, but we point it out here for the curious.
 
-        
+
 Using Models
 ==================
 
@@ -143,7 +143,7 @@ Using models is equivalent to executing queries to the backend database.
 Once again, the API is very similar to executing queries in django_.
 Once you've created your models, ``stdnet`` automatically gives you
 a data-server abstraction API that lets you create, retrieve,
-update and delete objects. 
+update and delete objects.
 
 Creating objects
 ~~~~~~~~~~~~~~~~~~~~~

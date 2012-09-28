@@ -13,7 +13,7 @@ from stdnet.utils import to_string, map, gen_unique_id, zip,\
 from stdnet.lib import redis
 
 from .base import BackendStructure, query_result, session_result,\
-                    instance_session_result
+                    instance_session_result, on_result
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
@@ -88,7 +88,7 @@ limiting.'''
                     fields = tuple(native_str(f, encoding) for f in fields)
                     related_fields[fname] =\
                         self.load_related(meta, fname, rdata, fields, encoding)
-            return query.backend.make_objects(meta, data, related_fields)
+            return query.backend.objects_from_db(meta, data, related_fields)
         
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
@@ -154,16 +154,17 @@ def structure_session_callback(sm, processed, response):
 
 def results_and_erros(results, result_type):
     if results:
-        for v in results:
-            if isinstance(v, Exception) or isinstance(v, result_type):
-                yield v
+        return [v for v in results if isinstance(v, Exception) or\
+                                      isinstance(v, result_type)]
+    else:
+        return ()
                 
-                
+
 def redis_execution(pipe, result_type):
     pipe.request_info = {}
     results = pipe.execute(load_script=True)
-    info = pipe.__dict__.pop('request_info',None)
-    return info, results_and_erros(results, result_type)
+    info = pipe.__dict__.pop('request_info', None)
+    return info, on_result(results, results_and_erros, result_type)
     
     
 ################################################################################
@@ -266,8 +267,11 @@ elements in the query.'''
         self.card(self.query_key, script_dependency = 'build_query')
         pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
-        self.commands, res = redis_execution(pipe, query_result)
-        self.query_results = list(res)
+        self.commands, result = redis_execution(pipe, query_result)
+        return on_result(result, self._execute_query_result)
+    
+    def _execute_query_result(self, result):
+        self.query_results = result
         return self.query_results[-1].count
     
     def order(self, last):
@@ -332,7 +336,6 @@ elements in the query.'''
             stop -= start
         elif stop is None:
             stop = -1
-                
         get = self.queryelem._get_field or ''
         fields_attributes = None
         keys = (self.query_key, backend.basekey(meta))
@@ -354,14 +357,12 @@ elements in the query.'''
             elif fields:
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
-                fields_attributes = ()
-        
+                fields_attributes = () 
         args.append(len(fields_attributes))
         args.extend(fields_attributes)
         args.extend(self.related_lua_args())
         args.extend((name,start,stop))
         args.extend(order)
-                    
         options = {'fields':fields,
                    'fields_attributes':fields_attributes,
                    'query':self,
@@ -739,7 +740,6 @@ end''')
 ################################################################################
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
-    connection_pools = {}
     _redis_clients = {}
     struct_map = {'set':Set,
                   'list':List,
@@ -753,15 +753,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         addr = address.split(':')
         if len(addr) == 2:
             try:
-                address = (addr[0],int(addr[1]))
+                address = (addr[0], int(addr[1]))
             except:
                 pass
-        cp = redis.ConnectionPool(address, **self.params)
-        if cp in self.connection_pools:
-            cp = self.connection_pools[cp]
-        else:
-            self.connection_pools[cp] = cp
-        rpy = redis.Redis(connection_pool = cp)
+        rpy = redis.Redis(address=address, **self.params)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
         #self.keys = rpy.keys
@@ -781,20 +776,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             return self.pickler.loads(v)
         else:
             return default
-    
-    def cursor(self, pipelined = False):
-        return self.client.pipeline() if pipelined else self.client
         
     def disconnect(self):
         self.client.connection_pool.disconnect()
-    
-    def unwind_query(self, meta, qset):
-        '''Unwind queryset'''
-        table = meta.table()
-        ids = list(qset)
-        make_object = self.make_object
-        for id,data in zip(ids,table.mget(ids)):
-            yield make_object(meta,id,data)
     
     def set_timeout(self, id, timeout):
         if timeout:
@@ -811,14 +795,6 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _get(self, id):
         return self.execute_command('GET', id)
-    
-    def _loadfields(self, obj, toload):
-        if toload:
-            fields = self.client.hmget(self.basekey(obj._meta, OBJ, obj.id),
-                                       toload)
-            return dict(zip(toload,fields))
-        else:
-            return EMPTY_DICT
     
     def flat_indices(self, meta):
         for idx in meta.indices:
@@ -895,9 +871,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                     options = {'sm': sm, 'iids': processed}
                     pipe.script_call('commit_session',
                                      (bk,bk+':*'), *lua_data, **options)
-    
         command, result = redis_execution(pipe, session_result)
-        return callback(result, command)
+        return on_result(result, callback, command)
     
     def accumulate_delete(self, pipe, backend_query):
         # Accumulate models queries for a delete. It loops through the
@@ -985,5 +960,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             pipe.add_callback(
                         partial(structure_session_callback,sm))
         
-    def subscriber(self):
-        return redis.Subscriber(self.client)    
+    def publish(self, channel, message):
+        return self.client.execute_command('PUBLISH', channel, message)
+        
+    def subscriber(self, **kwargs):
+        return redis.Subscriber(self.client, **kwargs)    

@@ -54,13 +54,13 @@ actually retrieving them.
 It is possible to filter from a list/tuple of values::
 
     qs = Fund.objects.filter(ccy__in=('EUR','USD'))
-    
+
 This filter statement is equivalent to an union of two filters statements::
 
     q1 = Fund.objects.filter(ccy='EUR')
     q2 = Fund.objects.filter(ccy='USD')
     qs = q1.union(q2)
-   
+
 
 Concatenating
 =================
@@ -74,10 +74,10 @@ Which is equivalent to an intersection of two filter statement:
     q1 = Fund.objects.filter(ccy__in=('EUR', 'USD'))
     q2 = Fund.objects.filter(types__in=('equity',bond'))
     qs = q1.intersect(q2)
-    
+
 
 Excluding
-===============================    
+===============================
 You can also exclude fields from lookups::
 
     Instrument.objects.exclude(type='future')
@@ -96,14 +96,14 @@ two or more :class:`Query` into a different query. The :class:`Query.union`
 method performs just that, an union of queries. Consider the following example::
 
     qs = Instrument.objects.filter(ccy='EUR', type='equity')
-    
+
 this retrieve all instruments with *ccy* 'EUR' AND *type* 'equity'. What about
 if we need all instruments with *ccy* 'EUR' OR *type* 'equity'? We use the
 :meth:`Query.union` method::
 
     q1 = Instruments.objecyts.filter(type = 'equity')
     qs = Instrument.objects.filter(ccy = 'EUR').union(q1)
-    
+
 
 .. _query_related:
 
@@ -112,17 +112,18 @@ Related Fields
 
 The query API goes even further by allowing to operate on
 :class:`Fields` of :class:`ForeignKey` models. For example, lets consider
-the :class:`Position` model in our `example application <tutorial-application>'_.
+the :class:`Position` model in our :ref:`example application <tutorial-application>`.
 The model has a :class:`ForeignKey` to the :class:`Instrument` model.
-using the related field query API one can construct a query to fetch positions
+
+Using the related field query API one can construct a query to fetch positions
 an subset of instruments in this way::
 
     qs = Position.objects.filter(instrument__ccy='EUR')
-    
-that is the name of the :class:`ForeignKey` field, followed by a double underscore (__),
-followed by the name of the field in the model.
 
-This is merely a syntactic sugar in place of this equivalent expression::
+that is the name of the :class:`ForeignKey` field, followed by a double underscore (__),
+followed by the name of the field in the related model.
+
+This is merely a syntactic sugar in place of this equivalent query::
 
     qs = Position.objects.filter(instrument=Instrument.objects.filter(ccy='EUR'))
 

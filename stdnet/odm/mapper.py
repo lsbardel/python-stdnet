@@ -17,11 +17,12 @@ __all__ = ['clearall',
            'unregister',
            'registered_models',
            'model_iterator',
+           'all_models_sessions',
            'register_applications',
            'register_application_models']
 
-    
-def clearall(exclude = None):
+
+def clearall(exclude=None):
     global _GLOBAL_REGISTRY
     exclude = exclude or []
     for model in _GLOBAL_REGISTRY:
@@ -36,9 +37,9 @@ def models_from_names(names):
     for m in _GLOBAL_REGISTRY:
         if str(m._meta) in s:
             yield m
-    
 
-def flush_models(includes = None, excludes = None):
+
+def flush_models(includes=None, excludes=None):
     '''Utility for flushing models data.
 It removes all keys associated with models.'''
     global _GLOBAL_REGISTRY
@@ -56,53 +57,53 @@ It removes all keys associated with models.'''
             model.objects.flush()
             flushed.append(str(model._meta))
     return flushed
-            
 
-def register(model, backend = None, ignore_duplicates = True,
-             local_thread = False, **params):
+
+def register(model, backend=None, ignore_duplicates=True,
+             local_thread=False, **params):
     '''The low level function for registering a :class:`StdModel`
 classes with a :class:`stdnet.BackendDataServer` data server.
-    
+
 :parameter model: a :class:`StdModel`. Must be provided.
 
 :parameter backend: a backend connection string.
     For example::
 
         redis://localhost:8080?db=6&prefix=bla.
-    
+
     Default ``settings.DEFAULT_BACKEND``.
-    
+
 :parameter params: optional parameters which can be used to override the
     connection string parameters.
-    
+
 **Usage**
-    
+
 For Redis the syntax is the following::
 
     import odm
-    
+
     odm.register(Author, 'redis://my.host.name:6379/?db=1')
     odm.register(Book, 'redis://my.host.name:6379/?db=2')
-    odm.register(MyOtherModel, 
+    odm.register(MyOtherModel,
                 'redis://my.host.name:6379/?db=2&keyprefix=differentprefix.')
-    
+
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
     if model in _GLOBAL_REGISTRY:
-        if not ignore_duplicates:  
+        if not ignore_duplicates:
             raise AlreadyRegistered(
                     'Model {0} is already registered'.format(model._meta))
         else:
             return
-    backend = getdb(backend_uri=backend, **params)
+    backend = getdb(backend=backend, **params)
     for manager in model._managers:
         manager.backend = backend
     _GLOBAL_REGISTRY.add(model)
     return model.objects.backend
 
 
-def unregister(model = None):
+def unregister(model=None):
     '''Unregister a *model* if provided, otherwise it unregister all
 registered models.'''
     global _GLOBAL_REGISTRY
@@ -110,34 +111,37 @@ registered models.'''
         try:
             _GLOBAL_REGISTRY.remove(model)
         except KeyError:
-            return
+            return 0
         for manager in model._managers:
             manager.backend = None
+        return 1
     else:
+        n = 0
         for model in list(_GLOBAL_REGISTRY):
-            unregister(model)
-        
+            n += unregister(model)
+        return n
+
 
 def registered_models():
     '''An iterator over registered models'''
     return (m for m in _GLOBAL_REGISTRY)
-    
-    
+
+
 def model_iterator(application):
     '''A generator of :class:`StdModel` classes found in *application*.
 
 :parameter application: A python dotted path or an iterable over python
     dotted-paths where models are defined.
-    
+
 Only models defined in these paths are considered.
 
 For example::
 
     from stdnet.odm import model_iterator
-    
+
     APPS = ('stdnet.contrib.searchengine',
             'stdnet.contrib.timeseries')
-    
+
     for model in model_iterator(APPS):
         ...
 
@@ -148,23 +152,51 @@ For example::
                 yield m
     else:
         label = application.split('.')[-1]
-        mod = import_module(application)
-        mod_name = mod.__name__
         try:
-            mod_models = import_module('.models',application)
+            mod = import_module(application)
         except ImportError:
-            mod_models = mod
-        label = getattr(mod_models, 'app_label', label)
-        for name in dir(mod_models):
-            model = getattr(mod_models, name)
-            meta = getattr(model, '_meta', None)
-            if isinstance(model, StdNetType) and meta:
-                if not meta.abstract and meta.app_label == label:
-                    yield model
+            # the module is not there
+            mod = None
+        if mod:
+            try:
+                mod_models = import_module('.models', application)
+            except ImportError:
+                mod_models = mod
+            mod_name = mod.__name__
+            label = getattr(mod_models, 'app_label', label)
+            for name in dir(mod_models):
+                model = getattr(mod_models, name)
+                meta = getattr(model, '_meta', None)
+                if isinstance(model, StdNetType) and meta:
+                    if not meta.abstract and meta.app_label == label:
+                        yield model
+
+
+def all_models_sessions(models, processed=None, session=None):
+    '''Given an iterable over models, return a generator of the same models
+plus hidden models such as the through model of :class:`ManyToManyField`
+through models.'''
+    processed = processed if processed is not None else set()
+    for model in models:
+        if model and model not in processed:
+            try:
+                model_session = model.objects.session()
+            except ModelNotRegistered:
+                model_session = session
+            yield model, model_session
+            processed.add(model)
+            for field in model._meta.fields:
+                if hasattr(field, 'relmodel'):
+                    for m in all_models_sessions((field.relmodel,), processed):
+                        yield m
+                if hasattr(field, 'through'):
+                    for m in all_models_sessions((field.through,), processed,
+                                                 model_session):
+                        yield m
 
 
 def register_application_models(applications,
-                                models = None,
+                                models=None,
                                 app_defaults=None,
                                 default=None):
     '''\
@@ -180,7 +212,7 @@ and register them using the :func:`register` low level function.
     all models found in *applications* will be included.
 :parameter app_defaults: optional dictionary which specify a model and/or
     application backend connection string.
-:parameter default: The default connection string. 
+:parameter default: The default connection string.
 :rtype: A generator over registered :class:`StdModel`.
 
 For example::
@@ -196,11 +228,14 @@ For example::
             continue
         if name not in app_defaults:
             name = model._meta.app_label
-        if name in app_defaults:
-            args = app_defaults[name]
+        kwargs = app_defaults.get(name, default)
+        if not isinstance(kwargs, dict):
+            kwargs = {'backend': kwargs}
         else:
-            args = default
-        if register(model, args, ignore_duplicates=True):
+            kwargs = kwargs.copy()
+        if 'ignore_duplicates' not in kwargs:
+            kwargs['ignore_duplicates'] = True
+        if register(model, **kwargs):
             yield model
 
 

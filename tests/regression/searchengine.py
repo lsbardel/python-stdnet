@@ -113,8 +113,7 @@ of words which have been included in the Items.'''
         self.assertTrue(wis.count())
         return words
     
-    def simpleadd(self, name = 'python', counter = 10, content = None,
-                  related = None):
+    def simpleadd(self, name='python', counter=10, content=None, related=None):
         item = self.make_item(name, counter, content, related)
         wis = WordItem.objects.for_model(item).all()
         self.assertTrue(wis)
@@ -122,7 +121,7 @@ of words which have been included in the Items.'''
             self.assertEqual(wi.object, item)
         return item, wis
     
-    def sometags(self, num = 10, minlen = 3):
+    def sometags(self, num=10, minlen=3):
         def _():
             for tag in populate('choice',num,choice_from=basic_english_words):
                 if len(tag) >= minlen:
@@ -274,17 +273,26 @@ class TestSearchEngine(TestCase):
         self.assertTrue(result)
         
     def testNoWords(self):
-        self.make_items(num = 30, content = True)
+        self.make_items(num = 30, content=True)
         q = set(Item.objects.search(''))
         all = set(Item.objects.query())
         self.assertEqual(q,all)
         
     def testReindex(self):
-        self.make_items(num = 30, content = True)
+        self.make_items(num = 30, content=True)
         wis1 = set(WordItem.objects.query())
         self.engine.reindex()
         wis2 = set(WordItem.objects.query())
         self.assertEqual(wis1,wis2)
+        
+    def test_skip_indexing_when_missing_fields(self):
+        session = self.session()
+        item, wis = self.simpleadd()
+        obj = session.query(Item).load_only('id').get(id=item.id)
+        obj.save()
+        wis2 = session.query(WordItem).filter(model_type=Item,
+                                              object_id=obj.id).all()
+        self.assertEqual(wis, wis2)
         
 
 class TestCoverage(TestCase):

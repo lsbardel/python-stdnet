@@ -11,6 +11,7 @@ print '=============================='
 
 lunatest.suite("tests/lua/utils")
 lunatest.suite("tests/lua/redis_mock")
+lunatest.suite("tests/lua/odm")
 lunatest.suite("tests/lua/columnts")
 
 

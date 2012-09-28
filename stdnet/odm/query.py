@@ -11,6 +11,8 @@ from .signals import *
 __all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
 
+range_lookups = frozenset(('gt', 'ge', 'lt', 'le',
+                           'startswith', 'endswith', 'contains'))
 
 def iterable(value):
     if isgenerator(value) or isinstance(value,(tuple,list,set,frozenset)):
@@ -175,7 +177,7 @@ class QueryElement(Q):
 '''
     def __init__(self, *args, **kwargs):
         self.__backend_query = None
-        underlying = kwargs.pop('underlying',None)
+        underlying = kwargs.pop('underlying', None)
         super(QueryElement,self).__init__(*args,**kwargs)
         self.underlying = underlying if underlying is not None else ()
 
@@ -223,8 +225,8 @@ class QuerySet(QueryElement):
     keyword = 'set'
     name = 'id'
     def __init__(self, *args, **kwargs):
-        self.unique = kwargs.pop('unique',False)
-        self.lookup = kwargs.pop('lookup','in')
+        self.unique = kwargs.pop('unique', False)
+        self.lookup = kwargs.pop('lookup', 'in')
         super(QuerySet,self).__init__(*args,**kwargs)
 
 
@@ -249,7 +251,7 @@ def difference(queries):
     return make_select('diff',queries)
 
 def queryset(qs, **kwargs):
-    return QuerySet(qs._meta,qs.session,**kwargs)
+    return QuerySet(qs._meta,qs.session, **kwargs)
 
 
 class QueryBase(Q):
@@ -666,7 +668,6 @@ an exception is raised.
                     return EmptyQuery(self._meta, self.session)
         else:
             fargs = None
-
         # no filters, get the whole set
         if not fargs:
             q = queryset(self)
@@ -674,7 +675,6 @@ an exception is raised.
             q = intersect(fargs)
         else:
             q = fargs[0]
-
         if self.eargs:
             eargs = self.aggregate(self.eargs)
             for a in tuple(eargs):
@@ -684,16 +684,12 @@ an exception is raised.
                 eargs = [union(eargs)]
         else:
             eargs = None
-
         if eargs:
             q = difference([q]+eargs)
-
         if self.intersections:
             q = intersect((q,)+self.intersections)
-
         if self.unions:
             q = union((q,)+self.unions)
-
         q = self.search_queries(q)
         data = self.data.copy()
         if self.exclude_fields:
@@ -714,24 +710,25 @@ an exception is raised.
         '''Aggregate lookup parameters.'''
         meta    = self._meta
         fields  = meta.dfields
-        for name,value in kwargs.items():
+        for name, value in kwargs.items():
             names = name.split(JSPLITTER)
             field_name = names[0]
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta, field_name))
             field = fields[field_name]
-            if not field.index:
-                raise QuerySetError("{0} {1} is not an index.\
- Cannot query.".format(field.__class__.__name__,field_name))
             lookup = JSPLITTER.join(names[1:])
-            if lookup:
-                lvalue = field.filter(self.session, lookup, value)
-                if lvalue is not None:
+            if lookup not in range_lookups:
+                if not field.index:
+                    raise QuerySetError("{0} {1} is not an index.\
+ Cannot query.".format(field.__class__.__name__,field_name))
+                if lookup:
+                    lvalue = field.filter(self.session, lookup, value)
+                    if lvalue is not None:
+                        lookup = 'in'
+                        value = lvalue
+                else:
                     lookup = 'in'
-                    value = lvalue
-            else:
-                lookup = 'in'
             if not iterable(value):
                 value = (value,)
             values = []
@@ -741,7 +738,6 @@ an exception is raised.
                 else:
                     v = field.serialize(v)
                 values.append(v)
-
             #data = self.data.copy()
             data = {'name':field.attname,
                     'underlying':tuple(values),

@@ -168,11 +168,8 @@ mapper.
     searchengine = None
     connection_string = None
 
-    def __init__(self, model, fields,
-                 abstract = False, app_label = '',
-                 verbose_name = None,
-                 ordering = None, modelkey = None,
-                 **kwargs):
+    def __init__(self, model, fields, abstract=False, app_label='',
+                 verbose_name=None, ordering=None, modelkey=None, **kwargs):
         super(Metaclass,self).__init__(model,
                                        app_label=app_label,
                                        modelkey=modelkey,
@@ -205,7 +202,7 @@ mapper.
             field.register_with_model(name, model)
         self.ordering = None
         if ordering:
-            self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
+            self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
 
     def pkname(self):
         return self.pk.name

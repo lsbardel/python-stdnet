@@ -39,24 +39,44 @@ def redis_before_send(sender, request, command, **kwargs):
 redis.redis_before_send.connect(redis_before_send)
 
 
-class build_query(redis.RedisScript):
+class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('odm.build_query'))
+              redis.read_lua_file('tabletools'),
+              redis.read_lua_file('odm'),
+              redis.read_lua_file('odmrun'))
     
+    def callback(self, request, response, args, meta=None,
+                 iids=None, **options):
+        script = args[0]
+        if script == 'delete':
+            res = (instance_session_result(r,False,r,True,0) for r in response)
+            return session_result(meta, res)
+        elif script == 'commit':
+            res = self._wrap_commit(request, response, iids)
+            return session_result(meta, res)
+        
+    def _wrap_commit(self, request, response, iids):
+        for id, iid in zip(response, iids):
+            id, flag, info = id
+            if int(flag):
+                yield instance_session_result(iid, True, id, False, float(info))
+            else:
+                msg = info.decode(request.encoding)
+                yield CommitException(msg)        
 
-class add_recursive(redis.RedisScript):
-    script = (redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('odm.add_recursive'))
+#class add_recursive(redis.RedisScript):
+#    script = (redis.read_lua_file('commands.utils'),
+#              redis.read_lua_file('odm.add_recursive'))
     
     
 class load_query(redis.RedisScript):
     '''Rich script for loading a query result into stdnet. It handles
 loading of different fields, loading of related fields, sorting and
 limiting.'''
-    script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('commands.timeseries'),
-              redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('odm.load_query'))
+    script = (redis.read_lua_file('tabletools'),)
+    #          redis.read_lua_file('commands.timeseries'),
+    #          redis.read_lua_file('commands.utils'),
+    #          redis.read_lua_file('odm.load_query'))
     
     def build(self, response, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
@@ -104,36 +124,6 @@ limiting.'''
         else:
             # this is data for stdmodel instances
             return self.build(data, fields, fields, encoding)
-        
-
-class delete_query(redis.RedisScript):
-    '''Lua script for bulk delete of an odm query, including cascade items.
-The first parameter is the model'''
-    script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('odm.delete_query'))
-    
-    def callback(self, request, response, args, meta = None, client = None,
-                 **kwargs):
-        res = (instance_session_result(r,False,r,True,0) for r in response)
-        return session_result(meta, res)
-    
-
-class commit_session(redis.RedisScript):
-    script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('odm.commit_session'))
-    
-    def callback(self, request, response, args, sm=None, iids=None, **kwargs):
-        response = self._wrap(request, response, iids)
-        return session_result(sm.meta, response)
-    
-    def _wrap(self, request, response, iids):
-        for id, iid in zip(response, iids):
-            id, flag, info = id
-            if int(flag):
-                yield instance_session_result(iid, True, id, False, float(info))
-            else:
-                msg = info.decode(request.encoding)
-                yield CommitException(msg)
     
     
 def structure_session_callback(sm, processed, response):
@@ -188,11 +178,12 @@ class RedisQuery(stdnet.BackendQuery):
         meta = self.meta
         keys = []
         args = []
+        # loop over element in queries
         for child in qs:
-            if getattr(child,'backend',None) != backend:
+            if getattr(child, 'backend', None) != backend:
                 args.extend(('','' if child is None else child))
             else:
-                be = child.backend_query(pipe = pipe)
+                be = child.backend_query(pipe=pipe)
                 keys.append(be.query_key)
                 args.extend(('key',be.query_key))
         
@@ -240,7 +231,7 @@ class RedisQuery(stdnet.BackendQuery):
             
         return 'key',key
         
-    def _build(self, pipe = None, **kwargs):
+    def _build(self, pipe=None, **kwargs):
         '''Set up the query for redis'''
         self.pipe = pipe if pipe is not None else self.backend.client.pipeline()
         what, key = self.accumulate(self.queryelem)
@@ -255,16 +246,17 @@ elements in the query.'''
         pipe = self.pipe
         if not self.card:
             if self.meta.ordering:
-                self.ismember = getattr(self.backend.client,'zrank')
+                self.ismember = getattr(self.backend.client, 'zrank')
                 self.card = getattr(self.pipe,'zcard')
                 self._check_member = self.zism
             else:
-                self.ismember = getattr(self.backend.client,'sismember')
+                self.ismember = getattr(self.backend.client, 'sismember')
                 self.card = getattr(self.pipe,'scard')
                 self._check_member = self.sism
         else:
             self.ismember = None
-        self.card(self.query_key, script_dependency = 'build_query')
+        
+        self.card(self.query_key, script_dependency='build_query')
         pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
         self.commands, result = redis_execution(pipe, query_result)
@@ -765,7 +757,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     def as_cache(self):
         return self
     
-    def set(self, id, value, timeout = None):
+    def set(self, id, value, timeout=None):
         timeout = timeout or 0
         value = self.pickler.dumps(value)
         return self.client.set(id, value, timeout)
@@ -795,12 +787,6 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def _get(self, id):
         return self.execute_command('GET', id)
-    
-    def flat_indices(self, meta):
-        for idx in meta.indices:
-            yield idx.attname
-        for idx in meta.indices:
-            yield 1 if idx.unique else 0
             
     def load_scripts(self, *names):
         if not names:
@@ -812,18 +798,27 @@ class BackendDataServer(stdnet.BackendDataServer):
                 pipe.script_load(script.script)
         return pipe.execute()
     
-    def pk_info(self, meta):
+    def meta(self, meta):
+        '''Extract model metadata for lua script stdnet/lib/lua/odm.lua'''
         pk = meta.pk
+        id_type = 3
+        id_fields = None
         if pk.type == 'auto':
-            return ('auto',)
+            id_type = 1
         elif pk.type == 'composite':
-            return (len(pk.fields),) + pk.fields
-        else:
-            return ('',)
+            id_type = 2
+            id_fields = pk.fields
+        return {'namespace': self.basekey(meta),
+                'id_name': pk.name,
+                'id_type': id_type,
+                'id_fields': id_fields,
+                'sorted': bool(meta.ordering),
+                'multi_fields': [field.name for field in meta.multifields],
+                'indices': dict(((idx.attname, idx.unique)\
+                                for idx in meta.indices))}
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
-        basekey = self.basekey
         pipe = self.client.pipeline()
         for sm in session:
             meta = sm.meta
@@ -836,12 +831,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 dirty = tuple(sm.iterdirty())
                 N = len(dirty)
                 if N:
-                    bk = basekey(meta)
-                    s = 'z' if meta.ordering else 's'
-                    indices = list(self.flat_indices(meta))
-                    lua_data = [s,N,len(indices)//2]
-                    lua_data.extend(self.pk_info(meta))
-                    lua_data.extend(indices)
+                    lua_data = ['commit', json.dumps(self.meta(meta)), N]
                     processed = []
                     for instance in dirty:
                         state = instance.state()
@@ -851,26 +841,27 @@ class BackendDataServer(stdnet.BackendDataServer):
                         score = MIN_FLOAT
                         if meta.ordering:
                             if meta.ordering.auto:
-                                score = 'auto {0}'.format(\
-                                                    meta.ordering.name.incrby) 
+                                score = 'auto %s' % meta.ordering.name.incrby 
                             else:
                                 v = getattr(instance,meta.ordering.name,None)
                                 if v is not None:
                                     score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         if state.persistent:
-                            action = 'o' if instance.has_all_data else 'c'
+                            if instance.has_all_data:
+                                action = 'override'
+                            else:
+                                action = 'change'
                             id = state.iid
                         else:
-                            action = 'a'
+                            action = 'add'
                             id = instance.pkvalue() or ''
                         data = flat_mapping(data)
                         lua_data.extend((action, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
-                    options = {'sm': sm, 'iids': processed}
-                    pipe.script_call('commit_session',
-                                     (bk,bk+':*'), *lua_data, **options)
+                    pipe.script_call('odmrun', (), *lua_data,
+                                     meta=meta, iids=iids)
         command, result = redis_execution(pipe, session_result)
         return on_result(result, callback, command)
     
@@ -883,31 +874,23 @@ class BackendDataServer(stdnet.BackendDataServer):
             return
         query = backend_query.queryelem
         meta = query.meta
-        bk = self.basekey(meta)
-        s = 'z' if meta.ordering else 's'
+        lua_data = ['delete', json.dumps(self.meta(meta))]
         recursive = []
         rel_managers = []
         for name in meta.related:
-            rmanager = getattr(meta.model,name)
+            rmanager = getattr(meta.model, name)
+            # the related manager model is the same as current model
             if rmanager.model == meta.model:
                 pipe.script_call('add_recursive',
                                  (bk, backend_query.query_key, bk + ':*'),
                                  s, rmanager.field.attname)
             else:
                 rel_managers.append(rmanager)
-        
+        # loop over related managers
         for rmanager in rel_managers:
-            rq = rmanager.query_from_query(query).backend_query(pipe = pipe)
+            rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
             self.accumulate_delete(pipe, rq)
-        indices = list(self.flat_indices(meta))
-        multi_fields = [field.name for field in meta.multifields]
-        keys = (bk, backend_query.query_key, bk + ':*')
-        lua_data = [s, len(indices)//2]
-        lua_data.extend(indices)
-        lua_data.append(len(multi_fields))
-        lua_data.extend(multi_fields)
-        options = {'meta':meta}
-        pipe.script_call('delete_query', keys, *lua_data, **options)
+        pipe.script_call('odmrun', (), *lua_data, meta=meta)
         return query
     
     def tempkey(self, meta, name = None):
@@ -938,7 +921,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def flush_structure(self, sm, pipe):
         processed = False
-        for instance in chain(sm._delete_query,sm.dirty):
+        for instance in chain(sm._delete_query, sm.dirty):
             processed = True
             state = instance.state()
             binstance = instance.backend_structure(pipe)
@@ -949,7 +932,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 script_name = c.options.get('script_name')
                 if script_name:
                     script_dependency.append(script_name)
-            pipe.exists(binstance.id, script_dependency = script_dependency)
+            pipe.exists(binstance.id, script_dependency=script_dependency)
             pipe.add_callback(lambda p,result:\
                     instance_session_result(state.iid,
                                             result,

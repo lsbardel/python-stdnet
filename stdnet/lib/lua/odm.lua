@@ -36,8 +36,6 @@ local odm = {
         end
     }
 }
-
-
 -- Model pseudo-class
 odm.Model = {
     --[[
@@ -70,8 +68,8 @@ odm.Model = {
         It returns a dictionary containg the temporary set key and the
         size of the temporary set
     --]]
-    query = function (self, field, queries)
-        local ranges, field_type, tmp = {}, self.meta.indices[field], self:temp_key()
+    query = function (self, field, tmp, queries)
+        local ranges, field_type = {}, self.meta.indices[field]
         for _, q in ipairs(queries) do
             if q.type == 'set' then
                 self:_queryset(tmp, field, field_type, q.value)
@@ -107,10 +105,7 @@ odm.Model = {
     --
     --          INTERNAL METHODS
     --
-    index = function (instance)
-    end,
-    --
-    object_key = function (id)
+    object_key = function (self, id)
         return self.meta.namespace .. ':obj:' .. id
     end,
     --
@@ -157,10 +152,10 @@ odm.Model = {
     end,
     --
     setadd = function(self, setid, score, id)
-        if self.meta.sorted then
-            redis.call('zadd', setid, score, id)
-        elseif self.meta.autoincr then
+        if self.meta.autoincr then
             score = redis.call('zincrby', setid, score, id)
+        elseif self.meta.sorted then
+            redis.call('zadd', setid, score, id)
         else
             redis.call('sadd', setid, id)
         end
@@ -223,11 +218,8 @@ odm.Model = {
         end
     end,
     --
-    _commit_instance = function (action, id, score, data)
-        local created_id, errors = self.meta.id_type == COMPOSITE_ID, {}
-        if score:find(' ') == 5 then
-            score = score:sub(6) + 0
-        end
+    _commit_instance = function (self, action, id, score, data)
+        local created_id, composite_id, errors = false, self.meta.id_type == COMPOSITE_ID, {}
         if self.meta.id_type == AUTO_ID then
             if id == '' then
                 created_id = true
@@ -240,13 +232,13 @@ odm.Model = {
                 end
             end
         end
-        if id == '' and not created_id then
+        if id == '' and not composite_id then
             table.insert(errors, 'Id not avaiable.')
         else
-            local oldid, idkey, original_values = id, self.object_key(id), {}
+            local oldid, idkey, original_values = id, self:object_key(id), {}
             if action == 'override' or action == 'change' then  -- override or change
                 original_values = redis.call('hgetall', idkey)
-                self:_update_indices(false, id, oldid, score)
+                errors = self:_update_indices(false, id, oldid, score)
                 if action == 'override' then
                     redis.call('del', idkey)
                 end
@@ -254,16 +246,16 @@ odm.Model = {
             -- Composite ID. Calculate new ID and data
             if composite_id then
                 id = update_composite_id(original_values, data)
-                idkey = self.object_key(id)
+                idkey = self:object_key(id)
             end
             if id ~= oldid and oldid ~= '' then
                 self:setrem(self.idset, oldid)
             end
-            score = self:setadd(idset, score, id)
-            if length_data > 0 then
+            score = self:setadd(self.idset, score, id)
+            if # data > 0 then
                 redis.call('hmset', idkey, unpack(data))
             end
-            errors = self:update_indices(true, id, oldid, score)
+            errors = self:_update_indices(true, id, oldid, score)
             -- An error has occured. Rollback changes.
             if # errors > 0 then
                 -- Remove indices
@@ -278,7 +270,7 @@ odm.Model = {
                     id = oldid
                     idkey = self:object_key(id)
                     redis.call('hmset', idkey, unpack(original_values))
-                    self:update_indices(true, id, oldid, score)
+                    self:_update_indices(true, id, oldid, score)
                 end
             end
         end
@@ -290,7 +282,7 @@ odm.Model = {
     end,
     --
     _update_indices = function (self, oper, id, oldid, score)
-        local idkey, errors, idxkey = self.object_key(id), {}
+        local idkey, errors, idxkey = self:object_key(id), {}
         for field, unique in pairs(self.meta.indices) do
             local value = redis.call('hget', idkey, field)
             if unique then

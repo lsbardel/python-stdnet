@@ -17,15 +17,10 @@ from .base import BackendStructure, query_result, session_result,\
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
-EMPTY_DICT = {}
-
 
 ################################################################################
 #    prefixes for data
-ID = 'id'       # the set of all ids
 OBJ = 'obj'     # the hash table for a instance
-UNI = 'uni'     # the hashtable for the unique field value to id mapping
-IDX = 'idx'     # the set of indexes for a field value
 TMP = 'tmp'     # temorary key
 ################################################################################
 
@@ -162,6 +157,7 @@ def redis_execution(pipe, result_type):
 ################################################################################
 class RedisQuery(stdnet.BackendQuery):
     card = None
+    meta_info = None
     script_dep = {'script_dependency': ('build_query','move2set')}
     
     def zism(self, r):
@@ -170,37 +166,35 @@ class RedisQuery(stdnet.BackendQuery):
     def sism(self, r):
         return r
     
-    def accumulate(self, qs):
+    def _build(self, pipe=None, **kwargs):
         # Accumulate a query
+        self.pipe = pipe if pipe is not None else self.backend.client.pipeline()
+        qs = self.queryelem
         pipe = self.pipe
         backend = self.backend
-        p = 'z' if self.meta.ordering else 's'
-        meta = self.meta
-        keys = []
-        args = []
+        key, meta, keys, args = None, self.meta, (), []
         # loop over element in queries
         for child in qs:
             if getattr(child, 'backend', None) != backend:
-                args.extend(('','' if child is None else child))
+                args.extend(('value','' if child is None else child))
             else:
                 be = child.backend_query(pipe=pipe)
                 keys.append(be.query_key)
-                args.extend(('key',be.query_key))
-        
+                args.extend(('set', be.query_key))
         temp_key = True
         if qs.keyword == 'set':
             if qs.name == 'id' and not args:
-                key = backend.basekey(meta,'id')
+                key = backend.basekey(meta, 'id')
                 temp_key = False
             else:
-                bk = backend.basekey(meta)
+                if self.meta_info == None:
+                    self.meta_info = backend.meta(meta)
                 key = backend.tempkey(meta)
-                unique = 'u' if qs.unique else ''
-                keys = [bk, key, bk+':*'] + keys
-                pipe.script_call('build_query', keys, p, qs.name,
-                                 unique, qs.lookup, *args)
+                pipe.script_call('odmrun', (), 'query', self.meta_info,
+                                 qs.name, key, *args)
         else:
             key = backend.tempkey(meta)
+            p = 'z' if self.meta.ordering else 's'
             pipe.script_call('move2set', keys, p,
                              **{'script_dependency':'build_query'})
             if qs.keyword == 'intersect':
@@ -212,7 +206,6 @@ class RedisQuery(stdnet.BackendQuery):
             else:
                 raise ValueError('Could not perform "{0}" operation'\
                                  .format(qs.keyword))
-    
         # If e requires a different field other than id, perform a sort
         # by nosort and get the object field.
         gf = qs._get_field
@@ -225,41 +218,25 @@ class RedisQuery(stdnet.BackendQuery):
             okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
             pipe.sort(bkey, by = 'nosort', get = okey, store = key)
             self.card = getattr(pipe,'llen')
-            
         if temp_key:
             pipe.expire(key, self.expire)
-            
-        return 'key',key
-        
-    def _build(self, pipe=None, **kwargs):
-        '''Set up the query for redis'''
-        self.pipe = pipe if pipe is not None else self.backend.client.pipeline()
-        what, key = self.accumulate(self.queryelem)
-        if what == 'key':
-            self.query_key = key
-        else:
-            raise ValueError('Critical error while building query')
+        self.query_key = key
     
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
-        pipe = self.pipe
-        if not self.card:
-            if self.meta.ordering:
-                self.ismember = getattr(self.backend.client, 'zrank')
-                self.card = getattr(self.pipe,'zcard')
-                self._check_member = self.zism
-            else:
-                self.ismember = getattr(self.backend.client, 'sismember')
-                self.card = getattr(self.pipe,'scard')
-                self._check_member = self.sism
+        if self.meta.ordering:
+            self.ismember = getattr(self.backend.client, 'zrank')
+            self.card = getattr(self.pipe,'zcard')
+            self._check_member = self.zism
         else:
-            self.ismember = None
-        
-        self.card(self.query_key, script_dependency='build_query')
-        pipe.add_callback(lambda processed, result :
+            self.ismember = getattr(self.backend.client, 'sismember')
+            self.card = getattr(self.pipe,'scard')
+            self._check_member = self.sism
+        self.card(self.query_key, script_dependency='odmrun')
+        self.pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
-        self.commands, result = redis_execution(pipe, query_result)
+        self.commands, result = redis_execution(self.pipe, query_result)
         return on_result(result, self._execute_query_result)
     
     def _execute_query_result(self, result):
@@ -813,6 +790,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 'id_type': id_type,
                 'id_fields': id_fields,
                 'sorted': bool(meta.ordering),
+                'autoincr': meta.ordering and meta.ordering.auto,
                 'multi_fields': [field.name for field in meta.multifields],
                 'indices': dict(((idx.attname, idx.unique)\
                                 for idx in meta.indices))}
@@ -841,9 +819,9 @@ class BackendDataServer(stdnet.BackendDataServer):
                         score = MIN_FLOAT
                         if meta.ordering:
                             if meta.ordering.auto:
-                                score = 'auto %s' % meta.ordering.name.incrby 
+                                score = meta.ordering.name.incrby 
                             else:
-                                v = getattr(instance,meta.ordering.name,None)
+                                v = getattr(instance, meta.ordering.name, None)
                                 if v is not None:
                                     score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
@@ -861,7 +839,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                         lua_data.extend(data)
                         processed.append(state.iid)
                     pipe.script_call('odmrun', (), *lua_data,
-                                     meta=meta, iids=iids)
+                                     meta=meta, iids=processed)
         command, result = redis_execution(pipe, session_result)
         return on_result(result, callback, command)
     

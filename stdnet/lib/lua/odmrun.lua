@@ -2,11 +2,11 @@
 local scripts = {
     -- Commit a session to redis
     commit = function(self, model, num, ...)
-        return model:commit(num, arg)
+        return model:commit(num+0, arg)
     end,
     -- Build a query and store results on a new set. Returns the set id
-    query = function(self, model, field, ...)
-        return model:query(field, arg)
+    query = function(self, model, field, tmpkey, ...)
+        return model:query(field, tmpkey, arg)
     end,
     -- Load a query
     load = function(self, model, key)
@@ -28,4 +28,4 @@ if not script then
 	error('Script ' .. ARGV[1] .. ' not available')
 end
 local model = odm.model(cjson.decode(meta))
-return script(scripts, model, unpack(tabletools.slice(ARGV, 4, -1)))
+return script(scripts, model, unpack(tabletools.slice(ARGV, 3, -1)))

@@ -302,7 +302,7 @@ class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
 
 .. attribute:: incrby
 
-    The ammount to increment the score by when a duplicate element is saved.
+    The amount to increment the score by when a duplicate element is saved.
 
     Default: 1.
 
@@ -319,7 +319,7 @@ an id already available, the score of that word is incremented by the
 :attr:`incrby` attribute.
 
 '''
-    def __init__(self, incrby = 1, desc = False):
+    def __init__(self, incrby=1, desc=False):
         self.incrby = incrby
         self._asce = -1 if desc else 1
 

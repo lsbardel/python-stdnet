@@ -64,7 +64,7 @@ class TestSession(test.TestCase):
             session.add(SimpleModel(code='pluto', group='planet'))
         query = session.query(SimpleModel)
         qs = query.filter(group = 'planet')
-        self.assertEqual(qs.count(),1)
+        self.assertEqual(qs.count(), 1)
         el = qs[0]
         self.assertEqual(el.id,1)
         session = self.session()

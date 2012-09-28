@@ -231,7 +231,7 @@ elements in the query.'''
             self._check_member = self.zism
         else:
             self.ismember = getattr(self.backend.client, 'sismember')
-            self.card = getattr(self.pipe,'scard')
+            self.card = getattr(self.pipe, 'scard')
             self._check_member = self.sism
         self.card(self.query_key, script_dependency='odmrun')
         self.pipe.add_callback(lambda processed, result :

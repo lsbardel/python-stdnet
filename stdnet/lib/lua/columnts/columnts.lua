@@ -512,3 +512,9 @@ function columnts:merge(key, elements, fields)
     end
     return result
 end
+
+
+-- Return the module only when this module is not in REDIS
+if not (KEYS and ARGV) then
+    return columnts
+end

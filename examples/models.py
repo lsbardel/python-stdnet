@@ -11,13 +11,13 @@ class CustomManager(odm.Manager):
 
 
 class SimpleModel(odm.StdModel):
-    code = odm.SymbolField(unique = True)
-    group = odm.SymbolField(required = False)
+    code = odm.SymbolField(unique=True)
+    group = odm.SymbolField(required=False)
     description = odm.CharField()
     somebytes = odm.ByteField()
-    object = odm.PickleObjectField(required = False)
-    cached_data = odm.ByteField(as_cache = True)
-    timestamp = odm.DateTimeField(as_cache = True)
+    object = odm.PickleObjectField(required=False)
+    cached_data = odm.ByteField(as_cache=True)
+    timestamp = odm.DateTimeField(as_cache=True)
 
     objects = CustomManager()
 
@@ -28,7 +28,7 @@ class SimpleModel(odm.StdModel):
 #####################################################################
 #    FINANCE APPLICATION
 class Base(odm.StdModel):
-    name = odm.SymbolField(unique = True)
+    name = odm.SymbolField(unique=True)
     ccy  = odm.SymbolField()
 
     def __unicode__(self):

@@ -188,6 +188,7 @@ class RedisQuery(stdnet.BackendQuery):
             else:
                 if self.meta_info == None:
                     self.meta_info = backend.meta(meta)
+                # Get a temporary key where to store the queryset
                 key = backend.tempkey(meta)
                 pipe.script_call('odmrun', (), 'query', self.meta_info,
                                  qs.name, key, *args)
@@ -217,6 +218,7 @@ class RedisQuery(stdnet.BackendQuery):
             okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
             pipe.sort(bkey, by = 'nosort', get = okey, store = key)
             self.card = getattr(pipe,'llen')
+        # if the key is temporary, add an expiry
         if temp_key:
             pipe.expire(key, self.expire)
         self.query_key = key
@@ -224,14 +226,18 @@ class RedisQuery(stdnet.BackendQuery):
     def _execute_query(self):
         '''Execute the query without fetching data. Returns the number of
 elements in the query.'''
-        if self.meta.ordering:
-            self.ismember = getattr(self.backend.client, 'zrank')
-            self.card = getattr(self.pipe,'zcard')
-            self._check_member = self.zism
+        pipe = self.pipe
+        if not self.card:
+            if self.meta.ordering:
+                self.ismember = getattr(self.backend.client, 'zrank')
+                self.card = getattr(pipe, 'zcard')
+                self._check_member = self.zism
+            else:
+                self.ismember = getattr(self.backend.client, 'sismember')
+                self.card = getattr(pipe, 'scard')
+                self._check_member = self.sism
         else:
-            self.ismember = getattr(self.backend.client, 'sismember')
-            self.card = getattr(self.pipe, 'scard')
-            self._check_member = self.sism
+            self.ismember = None
         self.card(self.query_key, script_dependency='odmrun')
         self.pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))

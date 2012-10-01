@@ -5,8 +5,8 @@ local scripts = {
         return model:commit(num+0, arg)
     end,
     -- Build a query and store results on a new set. Returns the set id
-    query = function(self, model, field, tmpkey, ...)
-        return model:query(field, tmpkey, arg)
+    query = function(self, model, field, setkey, ...)
+        return model:query(field, setkey, arg)
     end,
     -- Load a query
     load = function(self, model, key)
@@ -23,9 +23,8 @@ local scripts = {
 if # ARGV < 2 then
     error('Wrong number of arguments.')
 end
-local script, meta = scripts[ARGV[1]], ARGV[2] 
+local script, meta = scripts[ARGV[1]], cjson.decode(ARGV[2]) 
 if not script then
 	error('Script ' .. ARGV[1] .. ' not available')
 end
-local model = odm.model(cjson.decode(meta))
-return script(scripts, model, unpack(tabletools.slice(ARGV, 3, -1)))
+return script(scripts, odm.model(meta), unpack(tabletools.slice(ARGV, 3, -1)))

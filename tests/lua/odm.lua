@@ -60,20 +60,38 @@ suite.test_commit_simple = function ()
     local ids = commit_data(model, {{action='add', data={code = 'bla'}},
                                     {action='add', data={code = 'pippo'}}})
     assert_equal(# ids, 2)
-    assert_equal(ids[1][1], '')
-    assert_equal(ids[1][2], 0)
-    assert_equal(ids[2][1], 3)
-    assert_equal(ids[2][2], 1)
+    assert_equal('', ids[1][1])
+    assert_equal(0, ids[1][2])
+    assert_equal(3, ids[2][1])
+    assert_equal(1, ids[2][2])
     --
     assert_equal(redis.call('scard', model.idset), 3)
 end
+
+suite.test_commit_update_index = function ()
+    odm.redis.call('flushdb')
+    local model = odm.model(model_meta)
+    local ids = commit_data(model, {{action='add', data={code='pluto', group='planet'}}})
+    assert_equal(# ids, 1)
+    assert_equal(ids[1][1], 1)
+    -- Update the instance with a different group
+    ids = commit_data(model, {{action='change', id=1, data={code='pluto', group='smallplanet'}}})
+    assert_equal(# ids, 1)
+    assert_equal(1, ids[1][1])
+end
+
 
 suite.test_query = function ()
     odm.redis.call('flushdb')
     local model = odm.model(model_meta)
     local ids = commit_data(model, {{action='add', data={code = 'bla'}},
                                     {action='add', data={code = 'foo'}}})
-    
+    local r = model:query('group', model.idset, {})
+    assert_equal(r, 2)
+    r = model:query('group', model:index_key('group'), {})
+    assert_equal(r, 2)
+    r = model:query('group', model:index_key('group','pippo'), {})
+    assert_equal(r, 0)
 end
 
 return suite

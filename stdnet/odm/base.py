@@ -295,6 +295,24 @@ of fields names and a list of field attribute names.'''
                         atts.append(name)
         return names,atts
 
+    def as_dict(self):
+        '''Model metadata in a dictionary'''
+        pk = self.pk
+        id_type = 3
+        id_fields = None
+        if pk.type == 'auto':
+            id_type = 1
+        elif pk.type == 'composite':
+            id_type = 2
+            id_fields = pk.fields
+        return {'id_name': pk.name,
+                'id_type': id_type,
+                'id_fields': id_fields,
+                'sorted': bool(self.ordering),
+                'autoincr': self.ordering and self.ordering.auto,
+                'multi_fields': [field.name for field in self.multifields],
+                'indices': dict(((idx.attname, idx.unique)\
+                                for idx in self.indices))}
 
 class autoincrement(object):
     '''An :class:`autoincrement` is used in a :class:`StdModel` Meta

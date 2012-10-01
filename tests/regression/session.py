@@ -18,7 +18,7 @@ class TestSession(test.TestCase):
     def testSimpleCreate(self):
         session = self.session()
         session.begin()
-        m = SimpleModel(code='pluto',group='planet')
+        m = SimpleModel(code='pluto', group='planet')
         session.add(m)
         self.assertTrue(m in session)
         sm = session.model(m._meta)
@@ -35,8 +35,8 @@ class TestSession(test.TestCase):
         with session.begin():
             session.add(SimpleModel(code='pluto',group='planet'))
             session.add(Instrument(name='bla',ccy='EUR',type='equity'))
-        self.assertEqual(session.query(Instrument).count(),1)
-        self.assertEqual(session.query(SimpleModel).count(),1)
+        self.assertEqual(session.query(Instrument).count(), 1)
+        self.assertEqual(session.query(SimpleModel).count(), 1)
         
     def testSimpleFilter(self):
         session = self.session()

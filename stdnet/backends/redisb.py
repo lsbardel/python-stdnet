@@ -41,8 +41,7 @@ class odmrun(redis.RedisScript):
               redis.read_lua_file('odmrun'))
     
     def callback(self, request, response, args, meta=None,
-                 iids=None, **options):
-        script = args[0]
+                 iids=None, script=None, **options):
         if script == 'delete':
             res = (instance_session_result(r,False,r,True,0) for r in response)
             return session_result(meta, res)
@@ -241,7 +240,11 @@ elements in the query.'''
     
     def _execute_query_result(self, result):
         self.query_results = result
-        return self.query_results[-1].count
+        res = self.query_results[-1].count
+        if isinstance(res, Exception):
+            raise res
+        else:
+            return res
     
     def order(self, last):
         '''Perform ordering with respect model fields.'''
@@ -777,23 +780,9 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def meta(self, meta):
         '''Extract model metadata for lua script stdnet/lib/lua/odm.lua'''
-        pk = meta.pk
-        id_type = 3
-        id_fields = None
-        if pk.type == 'auto':
-            id_type = 1
-        elif pk.type == 'composite':
-            id_type = 2
-            id_fields = pk.fields
-        return {'namespace': self.basekey(meta),
-                'id_name': pk.name,
-                'id_type': id_type,
-                'id_fields': id_fields,
-                'sorted': bool(meta.ordering),
-                'autoincr': meta.ordering and meta.ordering.auto,
-                'multi_fields': [field.name for field in meta.multifields],
-                'indices': dict(((idx.attname, idx.unique)\
-                                for idx in meta.indices))}
+        data = meta.as_dict()
+        data['namespace'] = self.basekey(meta)
+        return data
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
@@ -838,7 +827,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                         lua_data.extend((action, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
-                    pipe.script_call('odmrun', (), *lua_data,
+                    pipe.script_call('odmrun', (), *lua_data, script='commit',
                                      meta=meta, iids=processed)
         command, result = redis_execution(pipe, session_result)
         return on_result(result, callback, command)

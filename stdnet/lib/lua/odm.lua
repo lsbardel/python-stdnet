@@ -1,5 +1,5 @@
 local AUTO_ID, COMPOSITE_ID, CUSTOM_ID = 1, 2, 3
--- odm namespace
+-- odm namespace - object-data mapping
 local odm = {
     TMP_KEY_LENGTH = 12,
     ModelMeta = {
@@ -44,12 +44,13 @@ odm.Model = {
     init = function (self, meta)
         self.meta = meta
         self.idset = self.meta.namespace .. ':id'    -- key for set containing all ids
-        self.auto_ids = self.meta.namespace .. ':ids'
+        self.auto_ids = self.meta.namespace .. ':ids' -- key for auto ids
     end,
     --[[
      Commit an instance to redis
-        action: either 'o' for complete override or 'c' for change
-        id: instance id, if not provided this is a new instance.
+        num: number of instances to commit
+        args: tuable containing data to save. The data is on the form
+            action, id, score, data_length
     --]]
     commit = function (self, num, args)
         local count, p, results = 0, 0, {}
@@ -96,7 +97,7 @@ odm.Model = {
     delete = function (self, tmp)
         local ids, results = redis_members(tmp), {}
         for _, id in ipairs(ids) do
-            if self:_update_indices('delete', id) == 1 then
+            if self:update_indices('delete', id) == 1 then
                 table.insert(results, id)
             end
         end
@@ -151,8 +152,8 @@ odm.Model = {
         end
     end,
     --
-    setadd = function(self, setid, score, id)
-        if self.meta.autoincr then
+    setadd = function(self, setid, score, id, autoincr)
+        if autoincr then
             score = redis.call('zincrby', setid, score, id)
         elseif self.meta.sorted then
             redis.call('zadd', setid, score, id)
@@ -238,7 +239,7 @@ odm.Model = {
             local oldid, idkey, original_values = id, self:object_key(id), {}
             if action == 'override' or action == 'change' then  -- override or change
                 original_values = redis.call('hgetall', idkey)
-                errors = self:_update_indices(false, id, oldid, score)
+                errors = self:update_indices(false, id, oldid, score)
                 if action == 'override' then
                     redis.call('del', idkey)
                 end
@@ -251,17 +252,17 @@ odm.Model = {
             if id ~= oldid and oldid ~= '' then
                 self:setrem(self.idset, oldid)
             end
-            score = self:setadd(self.idset, score, id)
+            score = self:setadd(self.idset, score, id, self.meta.autoincr)
             if # data > 0 then
                 redis.call('hmset', idkey, unpack(data))
             end
-            errors = self:_update_indices(true, id, oldid, score)
+            errors = self:update_indices(true, id, oldid, score)
             -- An error has occured. Rollback changes.
             if # errors > 0 then
                 -- Remove indices
-                self:update_indices(false, id, oldid, false)
+                self:update_indices(false, id, oldid)
                 if action == 'add' then
-                    self:_update_indices('delete', id)
+                    self:update_indices('delete', id)
                     if created_id then
                         redis.call('decr', self.auto_ids)
                         id = ''
@@ -270,7 +271,7 @@ odm.Model = {
                     id = oldid
                     idkey = self:object_key(id)
                     redis.call('hmset', idkey, unpack(original_values))
-                    self:_update_indices(true, id, oldid, score)
+                    self:update_indices(true, id, oldid, score)
                 end
             end
         end
@@ -281,21 +282,22 @@ odm.Model = {
         end
     end,
     --
-    _update_indices = function (self, oper, id, oldid, score)
+    update_indices = function (self, oper, id, oldid, score)
         local idkey, errors, idxkey = self:object_key(id), {}
         for field, unique in pairs(self.meta.indices) do
             local value = redis.call('hget', idkey, field)
             if unique then
-                idxkey = self:mapkey(field)
+                idxkey = self:mapkey(field) -- id for the hash table mapping field value to instance ids
                 if oper == 'delete' then
                     redis.call('hdel', idxkey, value)
                 elseif oper then
                     if redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
+                        -- The value was already available!
                         if oldid == id or not redis.call('hget', idxkey, value) == oldid then
-                            -- remove field `name` from the instance hashtable so that
+                            -- remove the field from the instance hashtable so that
                             -- the next call to update_indices won't delete the index
-                            redis.call('hdel', idkey, name)
-                            table.insert(errors, 'Unique constraint "' .. name .. '" violated: "' .. value .. '" is already in database.')
+                            redis.call('hdel', idkey, field)
+                            table.insert(errors, 'Unique constraint "' .. field .. '" violated: "' .. value .. '" is already in database.')
                         end
                     end
                 end
@@ -304,11 +306,7 @@ odm.Model = {
                 if oper == 'delete' then
                     self:setrem(idxkey, id)
                 elseif oper then
-                    if self.meta.sorted then
-                        redis.call('zadd', idxkey, score, id)
-                    else
-                        redis.call('sadd', idxkey, id)
-                    end
+                    self:setadd(idxkey, score, id)
                 end
             end
         end

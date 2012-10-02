@@ -1,3 +1,8 @@
+
+--[[
+Redis lua script for managing object-data mapping and queries. The script
+define the odm namespace, where the pseudo-class odm.Model is the main component. 
+--]]
 local AUTO_ID, COMPOSITE_ID, CUSTOM_ID = 1, 2, 3
 -- odm namespace - object-data mapping
 local odm = {
@@ -77,18 +82,21 @@ odm.Model = {
         return results
     end,
     --[[
-        Build a new query and store the resulting ids into a temporary set.
-        It returns a dictionary containing the temporary set key and the
-        size of the temporary set
+        Build a new query and store the resulting ids into destkey.
+        It returns the size of the set in destkey.
+        :param field: the field to query
+        :param destkey: the key which will store the set of ids resulting from the query
+        :param queries: an array containing pairs of query_type, value where query_type
+            can be one of 'set', 'value' or a range filter.
     --]]
-    query = function (self, field, setkey, queries)
+    query = function (self, field, destkey, queries)
         local ranges, unique, qtype = {}, self.meta.indices[field]
         for i, value in ipairs(queries) do
             if 2*math.floor(i/2) == i then
                 if qtype == 'set' then
-                    self:_queryset(setkey, field, unique, value)
+                    self:_queryset(destkey, field, unique, value)
                 elseif qtype == 'value' then
-                    self:_queryvalue(setkey, field, unique, value)
+                    self:_queryvalue(destkey, field, unique, value)
                 else
                     -- Range queries are processed together
                     selector = range_selectors[qtype]
@@ -103,9 +111,9 @@ odm.Model = {
             end
         end
         if # ranges > 0 then
-            self:_selectranges(setkey, field, unique, ranges)
+            self:_selectranges(destkey, field, unique, ranges)
         end
-        return self:setsize(setkey)
+        return self:setsize(destkey)
     end,
     --[[
         Delete a query stored in tmp id
@@ -406,4 +414,3 @@ if not redis then
 else
     odm.redis = redis
 end
-    

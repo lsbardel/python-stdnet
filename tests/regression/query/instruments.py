@@ -81,9 +81,10 @@ class TestFilter(FinanceTest):
             
     def testSimpleExcludeFilter(self):
         session = self.session()
-        qs = session.query(self.model).exclude(ccy = 'JPY')
+        qs = session.query(self.model).exclude(ccy='JPY')
+        self.assertTrue(qs)
         for inst in qs:
-            self.assertNotEqual(inst.ccy,'JPY')
+            self.assertNotEqual(inst.ccy, 'JPY')
             
     def testExcludeFilterIn(self):
         CCYS = ('EUR','GBP','JPY')
@@ -161,7 +162,7 @@ class TestFilter(FinanceTest):
         
     def testFilterWithSpace(self):
         session = self.session()
-        insts = session.query(self.model).filter(type = 'bond option')
+        insts = session.query(self.model).filter(type='bond option')
         self.assertTrue(insts)
         for inst in insts:
             self.assertEqual(inst.type,'bond option')

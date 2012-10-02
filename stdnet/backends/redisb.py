@@ -169,7 +169,7 @@ class RedisQuery(stdnet.BackendQuery):
         qs = self.queryelem
         pipe = self.pipe
         backend = self.backend
-        key, meta, keys, args = None, self.meta, (), []
+        key, meta, keys, args = None, self.meta, [], []
         # loop over element in queries
         for child in qs:
             if getattr(child, 'backend', None) != backend:
@@ -185,20 +185,22 @@ class RedisQuery(stdnet.BackendQuery):
                 temp_key = False
             else:
                 key = backend.tempkey(meta)
-                backend.odmrun(pipe, 'query', meta, (key,), self.meta_info,
+                keys.insert(0, key)
+                backend.odmrun(pipe, 'query', meta, keys, self.meta_info,
                                qs.name, *args)
         else:
             key = backend.tempkey(meta)
             p = 'z' if meta.ordering else 's'
             pipe.script_call('move2set', keys, p, script_dependency='odmrun')
             if qs.keyword == 'intersect':
-                getattr(pipe, p+'interstore')(key, keys, **self.script_dep)
+                command = getattr(pipe, p+'interstore')
             elif qs.keyword == 'union':
-                getattr(pipe, p+'unionstore')(key, keys, **self.script_dep)
+                command = getattr(pipe, p+'unionstore')
             elif qs.keyword == 'diff':
-                getattr(pipe, p+'diffstore')(key, keys, **self.script_dep)
+                command = getattr(pipe, p+'diffstore')
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
+            command(key, keys, script_dependency='odmrun')
         # If e requires a different field other than id, perform a sort
         # by nosort and get the object field.
         gf = qs._get_field
@@ -247,24 +249,22 @@ elements in the query.'''
     
     def order(self, last):
         '''Perform ordering with respect model fields.'''
-        desc = 'DESC' if last.desc else ''
+        desc = last.desc
         field = last.name
         nested = last.nested
         nested_args = []
         while nested:
             meta = nested.model._meta
-            nested_args.extend((self.backend.basekey(meta),nested.name))
+            nested_args.extend((self.backend.basekey(meta), nested.name))
             last = nested
             nested = nested.nested
-        meth = ''
-        if last.field.internal_type == 'text':
-            meth = 'ALPHA'
-        
+        method = 'ALPHA' if last.field.internal_type == 'text' else ''
         if field == last.model._meta.pkname():
             field = ''
-        args = [field, meth, desc, len(nested_args)//2]
-        args.extend(nested_args)
-        return args
+        return {'field': field,
+                'method': method,
+                'desc': desc,
+                'nested': nested_args}
             
     def _has(self, val):
         r = self.ismember(self.query_key, val)
@@ -888,7 +888,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         
     def instance_keys(self, obj):
         meta = obj._meta
-        keys = [self.basekey(meta,OBJ,obj.id)]
+        keys = [self.basekey(meta, OBJ, obj.id)]
         for field in meta.multifields:
             f = getattr(obj,field.attname)
             keys.append(f.id)

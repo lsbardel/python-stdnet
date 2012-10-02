@@ -135,7 +135,7 @@ mapper.
 
 .. attribute:: ordering
 
-    Optional name of a :class:`stdnet.odm.Field` in the :attr:`model`.
+    Optional name of a :class:`Field` in the :attr:`model`.
     If provided, model indices will be sorted with respect to the value of the
     specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
@@ -144,7 +144,7 @@ mapper.
 
 .. attribute:: dfields
 
-    dictionary of :class:`stdnet.odm.Field` instances.
+    dictionary of :class:`Field` instances.
 
 .. attribute:: fields
 

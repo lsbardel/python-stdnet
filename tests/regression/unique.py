@@ -14,10 +14,10 @@ class TestUnique(test.TestCase):
         
     def testAddNew(self):
         session = self.session()
-        m = session.add(self.model(code = 'me', group = 'bla'))
-        self.assertEqual(m.id,1)
+        m = session.add(self.model(code='me', group='bla'))
+        self.assertEqual(m.id, 1)
         # Try to create another one
-        s = self.model(code = 'me', group = 'foo')
+        s = self.model(code='me', group='foo')
         self.assertRaises(CommitException, s.save)
         query = session.query(self.model)
         self.assertEqual(query.count(),1)

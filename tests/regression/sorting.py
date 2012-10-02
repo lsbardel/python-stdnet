@@ -31,7 +31,7 @@ class TestSort(test.TestCase):
         self.assertEqual(qs.count(),NUM_DATES)
         return qs
     
-    def checkOrder(self, qs, attr, desc = None):
+    def checkOrder(self, qs, attr, desc=None):
         self.assertTrue(qs)
         desc = desc if desc is not None else self.desc
         at0 = qs[0].get_attr_value(attr)
@@ -64,9 +64,9 @@ class ExplicitOrderingMixin(object):
         
     def testFilter(self):
         qs = self.fill().filter(name='rugby').sort_by('dt')
-        self.checkOrder(qs,'dt')
+        self.checkOrder(qs, 'dt')
         for v in qs:
-            self.assertEqual(v.name,'rugby')
+            self.assertEqual(v.name, 'rugby')
 
     def _slicingTest(self, attr, desc, start = 0, stop = 10,
                      expected_len = 10):
@@ -149,14 +149,12 @@ class TestOrderingModel(TestSort):
         self.checkOrder(self.fill(),'dt')
         
     def testFilter(self):
-        # Require zdiffstore
-        qs = self.fill().filter(name__in = ('football','rugby'))
+        qs = self.fill().filter(name=('football','rugby'))
         self.checkOrder(qs,'dt')
         
     def testExclude(self):
-        # Require zdiffstore
         qs = self.fill().exclude(name='rugby')
-        self.checkOrder(qs,'dt')
+        self.checkOrder(qs, 'dt')
         
         
 class TestOrderingModelDesc(TestOrderingModel):

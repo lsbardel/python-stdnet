@@ -126,11 +126,11 @@ odm.Model = {
         local result, ids, related_items
         options = tabletools.json_clean(options)
         if options.ordering == 'explicit' then
-            ids = self:_explicit_ordering(key, options)
+            ids = self:_explicit_ordering(key, options.start, options.stop, options.order)
         elseif options.ordering == 'DESC' then
-            ids = odm.redis.call('zrevrange', key, start, stop)
+            ids = odm.redis.call('zrevrange', key, options.start, options.stop)
         elseif options.ordering == 'ASC' then
-            ids = odm.redis.call('range', key, start, stop)
+            ids = odm.redis.call('zrange', key, options.start, options.stop)
         else
             ids = odm.redis.call('smembers', key)
         end
@@ -407,60 +407,48 @@ odm.Model = {
         end
     end,
     --
-    _explicit_ordering = function (self, key, options)
-        local field = ARGV[io+1]
-        local alpha = ARGV[io+2]
-        local desc = ARGV[io+3]
-        local tkeys = {}
-        local sortargs = {}
-        local bykey
-        io = io + 4
+    _explicit_ordering = function (self, key, start, stop, order)
+        local tkeys, sortargs, bykey, ids = {}, {}
         -- nested sorting for foreign key fields
-        if options.nested and options.nested > 0 then
+        if order.nested and # order.nested > 0 then
             -- generate a temporary key where to store the hash table holding
             -- the values to sort with
-            local ion, key, name
-            local skey = redis_randomkey(bk)
-            for i,id in pairs(redis_members(rkey)) do
-                local value = redis.call('hget', bk .. ':obj:' .. id, field)
-                local n = 0
-                while n < nested do
-                    ion = io + 2*n
-                    n = n + 1
-                    key = ARGV[ion+1] .. ':obj:' .. value
-                    name = ARGV[ion+2]
-                    value = redis.call('hget', key, name)
+            local skey = self:temp_key()
+            for i, id in ipairs(redis_members(key)) do
+                local value, key = redis.call('hget', self:object_key(id), order.field)
+                for n, name in ipairs(order.nested) do
+                    if 2*math.floor(n/2) == n then
+                        value = redis.call('hget', key, name)
+                    else
+                        key = name .. ':obj:' .. value
+                    end
                 end
-                -- store value on temporary hash table
-                --redis.call('hset', skey, id, value)
-                tkeys[i] = skey .. id
                 -- store value on temporary key
+                tkeys[i] = skey .. id
                 redis.call('set', tkeys[i], value)
             end
-            --bykey = skey .. '->*'
             bykey = skey .. '*'
-            --redis.call('expire', skey, 5)
-        elseif field == '' then
-            bykey = nil
-        else
-            bykey = bk .. ':obj:*->' .. field
+        elseif order.field ~= '' then
+            bykey = self:object_key('*->' .. order.field)
         end
+        -- sort by field
         if bykey then
-           sortargs = {'BY',bykey}
+           sortargs = {'BY', bykey}
         end
         if start > 0 or stop > 0 then
             table.insert(sortargs, 'LIMIT')
             table.insert(sortargs, start)
             table.insert(sortargs, stop)
         end
-        if alpha == 'ALPHA' then
-            table.insert(sortargs, alpha)
+        if order.method == 'ALPHA' then
+            table.insert(sortargs, 'ALPHA')
         end
-        if desc == 'DESC' then
-            table.insert(sortargs, desc)
+        if order.desc then
+            table.insert(sortargs, 'DESC')
         end
-        ids = redis.call('sort', rkey, unpack(sortargs))
+        ids = odm.redis.call('sort', key, unpack(sortargs))
         redis_delete(tkeys)
+        return ids
     end,
     --
     _load_related = function (self, result, related)

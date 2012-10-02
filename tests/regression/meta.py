@@ -36,8 +36,8 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertTrue(inst != f)
         
     def testNotEqual(self):
-        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
-        inst2 = Instrument(name = 'edz14', type = 'future', ccy = 'USD').save()
+        inst = Instrument(name='erz12', type='future', ccy='EUR').save()
+        inst2 = Instrument(name='edz14', type='future', ccy='USD').save()
         id = inst.id
         b = Instrument.objects.get(id = id)
         self.assertEqual(b.id,id)

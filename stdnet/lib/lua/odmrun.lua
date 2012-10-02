@@ -6,7 +6,7 @@ local scripts = {
     end,
     -- Build a query and store results on a new set. Returns the set id
     query = function(self, model, keys, field, ...)
-        if # keys == 1 then
+        if # keys > 0 then
             return model:query(field, keys[1], arg)
         else
             error('Script query requires 1 key for the id set')
@@ -14,7 +14,7 @@ local scripts = {
     end,
     -- Load a query
     load = function(self, model, keys, options)
-        if # keys == 1 then
+        if # keys > 0 then
             return model:load(keys[1], cjson.decode(options))
         else
             error('Script load requires 1 key for the id set')
@@ -22,7 +22,7 @@ local scripts = {
     end,
     -- delete a query
     delete = function(self, model, keys)
-        if # keys == 1 then
+        if # keys > 0 then
             return model:delete(keys[1])
         else
             error('Script delete requires 1 key for the id set')

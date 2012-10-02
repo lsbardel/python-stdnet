@@ -1,13 +1,16 @@
 -- Obtain the redis client
 local client = require("redis")
-local redis = {
-    hsetnx = function (result)
-        if result then
-            return 1
-        else
-            return 0
-        end
+local function bool2int (result)
+    if result then
+        return 1
+    else
+        return 0
     end
+end
+
+local redis = {
+    hsetnx = bool2int,
+    exists = bool2int
 }
 
 redis.connect = function (...)

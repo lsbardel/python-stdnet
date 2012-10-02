@@ -33,6 +33,9 @@ def redis_before_send(sender, request, command, **kwargs):
     
 redis.redis_before_send.connect(redis_before_send)
 
+#class add_recursive(redis.RedisScript):
+#    script = (redis.read_lua_file('commands.utils'),
+#              redis.read_lua_file('odm.add_recursive'))
 
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('commands.utils'),
@@ -41,53 +44,29 @@ class odmrun(redis.RedisScript):
               redis.read_lua_file('odmrun'))
     
     def callback(self, request, response, args, meta=None,
-                 iids=None, script=None, **options):
+                 backend=None, script=None, **options):
         if script == 'delete':
             res = (instance_session_result(r,False,r,True,0) for r in response)
             return session_result(meta, res)
         elif script == 'commit':
-            res = self._wrap_commit(request, response, iids)
+            res = self._wrap_commit(request, response, **options)
             return session_result(meta, res)
+        elif script == 'load':
+            return self.load_query(request, response, backend, meta, **options)
+        else:
+            return response
         
-    def _wrap_commit(self, request, response, iids):
+    def _wrap_commit(self, request, response, iids=None, **options):
         for id, iid in zip(response, iids):
             id, flag, info = id
             if int(flag):
                 yield instance_session_result(iid, True, id, False, float(info))
             else:
                 msg = info.decode(request.encoding)
-                yield CommitException(msg)        
-
-#class add_recursive(redis.RedisScript):
-#    script = (redis.read_lua_file('commands.utils'),
-#              redis.read_lua_file('odm.add_recursive'))
+                yield CommitException(msg)
     
-    
-class load_query(redis.RedisScript):
-    '''Rich script for loading a query result into stdnet. It handles
-loading of different fields, loading of related fields, sorting and
-limiting.'''
-    script = (redis.read_lua_file('tabletools'),)
-    #          redis.read_lua_file('commands.timeseries'),
-    #          redis.read_lua_file('commands.utils'),
-    #          redis.read_lua_file('odm.load_query'))
-    
-    def build(self, response, fields, fields_attributes, encoding):
-        fields = tuple(fields) if fields else None
-        if fields:
-            if len(fields) == 1 and fields[0] == 'id':
-                for id in response:
-                    yield id,(),{}
-            else:
-                for id,fdata in response:
-                    yield id,fields,dict(zip(fields_attributes,fdata))
-        else:
-            for id,fdata in response:
-                yield id,None,dict(pairs_to_dict(fdata, encoding))
-    
-    def callback(self, request, response, args, query=None, get=None,
-                 fields=None, fields_attributes=None, **kwargs):
-        meta = query.meta
+    def load_query(self, request, response, backend, meta, get=None,
+                   fields=None, fields_attributes=None, **options):
         if get:
             tpy = meta.dfields[get].to_python
             return [tpy(v) for v in response]
@@ -102,14 +81,27 @@ limiting.'''
                     fields = tuple(native_str(f, encoding) for f in fields)
                     related_fields[fname] =\
                         self.load_related(meta, fname, rdata, fields, encoding)
-            return query.backend.objects_from_db(meta, data, related_fields)
-        
+            return backend.objects_from_db(meta, data, related_fields)
+    
+    def build(self, response, fields, fields_attributes, encoding):
+        fields = tuple(fields) if fields else None
+        if fields:
+            if len(fields) == 1 and fields[0] == 'id':
+                for id in response:
+                    yield id,(),{}
+            else:
+                for id,fdata in response:
+                    yield id,fields,dict(zip(fields_attributes,fdata))
+        else:
+            for id,fdata in response:
+                yield id,None,dict(pairs_to_dict(fdata, encoding))
+                
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
         field = meta.dfields[fname]
         if field in meta.multifields:
             fmeta = field.structure_class()._meta
-            if fmeta.name in ('hashtable','zset'):
+            if fmeta.name in ('hashtable', 'zset'):
                 return ((native_str(id, encoding),
                          pairs_to_dict(fdata, encoding)) for \
                         id,fdata in data)
@@ -156,7 +148,7 @@ def redis_execution(pipe, result_type):
 ################################################################################
 class RedisQuery(stdnet.BackendQuery):
     card = None
-    meta_info = None
+    _meta_info = None
     script_dep = {'script_dependency': ('build_query','move2set')}
     
     def zism(self, r):
@@ -164,6 +156,12 @@ class RedisQuery(stdnet.BackendQuery):
     
     def sism(self, r):
         return r
+    
+    @property
+    def meta_info(self):
+        if self._meta_info == None:
+            self._meta_info = json.dumps(self.backend.meta(self.meta))
+        return self._meta_info
     
     def _build(self, pipe=None, **kwargs):
         # Accumulate a query
@@ -186,26 +184,21 @@ class RedisQuery(stdnet.BackendQuery):
                 key = backend.basekey(meta, 'id')
                 temp_key = False
             else:
-                if self.meta_info == None:
-                    self.meta_info = backend.meta(meta)
-                # Get a temporary key where to store the queryset
                 key = backend.tempkey(meta)
-                pipe.script_call('odmrun', (), 'query', self.meta_info,
-                                 qs.name, key, *args)
+                backend.odmrun(pipe, 'query', meta, (key,), self.meta_info,
+                               qs.name, *args)
         else:
             key = backend.tempkey(meta)
-            p = 'z' if self.meta.ordering else 's'
-            pipe.script_call('move2set', keys, p,
-                             **{'script_dependency':'build_query'})
+            p = 'z' if meta.ordering else 's'
+            pipe.script_call('move2set', keys, p, script_dependency='odmrun')
             if qs.keyword == 'intersect':
-                getattr(pipe,p+'interstore')(key, keys, **self.script_dep)
+                getattr(pipe, p+'interstore')(key, keys, **self.script_dep)
             elif qs.keyword == 'union':
-                getattr(pipe,p+'unionstore')(key, keys, **self.script_dep)
+                getattr(pipe, p+'unionstore')(key, keys, **self.script_dep)
             elif qs.keyword == 'diff':
-                getattr(pipe,p+'diffstore')(key, keys, **self.script_dep)
+                getattr(pipe, p+'diffstore')(key, keys, **self.script_dep)
             else:
-                raise ValueError('Could not perform "{0}" operation'\
-                                 .format(qs.keyword))
+                raise ValueError('Could not perform %s operation' % qs.keyword)
         # If e requires a different field other than id, perform a sort
         # by nosort and get the object field.
         gf = qs._get_field
@@ -216,7 +209,7 @@ class RedisQuery(stdnet.BackendQuery):
                 temp_key = True
                 key = backend.tempkey(meta)
             okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
-            pipe.sort(bkey, by = 'nosort', get = okey, store = key)
+            pipe.sort(bkey, by='nosort', get = okey, store = key)
             self.card = getattr(pipe,'llen')
         # if the key is temporary, add an expiry
         if temp_key:
@@ -316,12 +309,11 @@ elements in the query.'''
             stop = -1
         get = self.queryelem._get_field or ''
         fields_attributes = None
-        keys = (self.query_key, backend.basekey(meta))
-        args = [get]
+        pkname_tuple = (meta.pk.name,)
         # if the get_field is available, we simply load that field
         if get:
-            if get == 'id':
-                fields_attributes = fields = (get,)
+            if get == meta.pk.name:
+                fields_attributes = fields = pkname_tuple
             else:
                 fields, fields_attributes = meta.backend_fields((get,))
         else:
@@ -330,22 +322,24 @@ elements in the query.'''
                 fields = set(fields)
                 fields.update(self.queryelem.select_related or ())
                 fields = tuple(fields)
-            if fields == ('id',):
+            if fields == pkname_tuple:
                 fields_attributes = fields
             elif fields:
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
-                fields_attributes = () 
-        args.append(len(fields_attributes))
-        args.extend(fields_attributes)
-        args.extend(self.related_lua_args())
-        args.extend((name,start,stop))
-        args.extend(order)
-        options = {'fields':fields,
-                   'fields_attributes':fields_attributes,
-                   'query':self,
-                   'get':get}
-        return backend.client.script_call('load_query', keys, *args, **options)    
+                fields_attributes = ()
+        options = {'get': get,
+                   'ordering': name,
+                   'order': order,
+                   'start': start,
+                   'stop': stop,
+                   'fields': fields_attributes,
+                   'get': get}
+        joptions = json.dumps(options)
+        options.update({'fields': fields,
+                        'fields_attributes': fields_attributes})
+        return backend.odmrun(backend.client, 'load', meta, (self.query_key,),
+                              self.meta_info, joptions, **options) 
 
     def related_lua_args(self):
         '''Generator of load_related arguments'''
@@ -789,6 +783,13 @@ class BackendDataServer(stdnet.BackendDataServer):
         data = meta.as_dict()
         data['namespace'] = self.basekey(meta)
         return data
+    
+    def odmrun(self, client, script, meta, keys, meta_info, *args, **options):
+        options.update({'backend': self,
+                        'meta': meta,
+                        'script': script})
+        return client.script_call('odmrun', keys, script, meta_info, *args,
+                                  **options)
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
@@ -804,7 +805,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 dirty = tuple(sm.iterdirty())
                 N = len(dirty)
                 if N:
-                    lua_data = ['commit', json.dumps(self.meta(meta)), N]
+                    lua_data = [N]
                     processed = []
                     for instance in dirty:
                         state = instance.state()
@@ -833,8 +834,9 @@ class BackendDataServer(stdnet.BackendDataServer):
                         lua_data.extend((action, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
-                    pipe.script_call('odmrun', (), *lua_data, script='commit',
-                                     meta=meta, iids=processed)
+                    self.odmrun(pipe, 'commit', meta, (),
+                                json.dumps(self.meta(meta)), *lua_data,
+                                iids=processed)
         command, result = redis_execution(pipe, session_result)
         return on_result(result, callback, command)
     
@@ -920,4 +922,4 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.client.execute_command('PUBLISH', channel, message)
         
     def subscriber(self, **kwargs):
-        return redis.Subscriber(self.client, **kwargs)    
+        return redis.Subscriber(self.client, **kwargs)

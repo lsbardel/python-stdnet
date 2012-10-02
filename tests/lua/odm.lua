@@ -85,12 +85,13 @@ suite.test_query = function ()
     odm.redis.call('flushdb')
     local model = odm.model(model_meta)
     local ids = commit_data(model, {{action='add', data={code = 'bla'}},
-                                    {action='add', data={code = 'foo'}}})
-    local r = model:query('group', model.idset, {})
+                                    {action='add', data={code = 'foo'}},
+                                    {action='add', data={code = 'pluto', group='planet'}}})
+    local r = model:query('group', model:temp_key(), {'value', ''})
     assert_equal(r, 2)
-    r = model:query('group', model:index_key('group'), {})
-    assert_equal(r, 2)
-    r = model:query('group', model:index_key('group','pippo'), {})
+    r = model:query('group', model:temp_key(), {'value', 'planet'})
+    assert_equal(r, 1)
+    r = model:query('group', model:temp_key(), {'value', 'xxxxx'})
     assert_equal(r, 0)
 end
 

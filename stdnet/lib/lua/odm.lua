@@ -1,4 +1,3 @@
-
 --[[
 Redis lua script for managing object-data mapping and queries. The script
 define the odm namespace, where the pseudo-class odm.Model is the main component. 
@@ -48,16 +47,7 @@ odm.Model = {
      Initialize model with model MetaData table
     --]]
     init = function (self, meta)
-        local m, t = {}
-        for k, v in pairs(meta) do
-            t = type(v)
-            -- json return null as a function while cjson as userdata. In both
-            -- cases we don't want the values.
-            if t ~= 'function' and t ~= 'userdata' then
-                m[k] = v
-            end
-        end
-        self.meta = m
+        self.meta = tabletools.json_clean(meta)
         self.idset = self.meta.namespace .. ':id'    -- key for set containing all ids
         self.auto_ids = self.meta.namespace .. ':ids' -- key for auto ids
     end,
@@ -127,6 +117,46 @@ odm.Model = {
         end
         return results
     end,
+    --[[
+        Load instances from ids stored in a query temporary key
+        :param key: the key containing the set of ids
+        :param options: dictionary of options 
+    --]]
+    load = function (self, key, options)
+        local result, ids, related_items
+        options = tabletools.json_clean(options)
+        if options.ordering == 'explicit' then
+            ids = self:_explicit_ordering(key, options)
+        elseif options.ordering == 'DESC' then
+            ids = odm.redis.call('zrevrange', key, start, stop)
+        elseif options.ordering == 'ASC' then
+            ids = odm.redis.call('range', key, start, stop)
+        else
+            ids = odm.redis.call('smembers', key)
+        end
+        -- Now load fields
+        if options.fields and # options.fields > 0 then
+            if # options.fields == 1 and options.fields[1] == self.meta.id_name then
+                result = ids
+            else
+                result = {}
+                for _, id in ipairs(ids) do
+                    table.insert(result, {id, odm.redis.call('hmget', self:object_key(id), unpack(fields))})
+                end
+            end
+        else
+            result = {}
+            for _, id in ipairs(ids) do
+                table.insert(result, {id, odm.redis.call('hgetall', self:object_key(id))})
+            end
+        end
+        if options.related and # options.related > 0 then
+            related_items = self:_load_related(result, options.related)
+        else
+            related_items = {}
+        end
+        return {result, related_items}
+    end,
     --
     --          INTERNAL METHODS
     --
@@ -146,6 +176,9 @@ odm.Model = {
         return idxkey
     end,
     --
+    --[[
+        A temporary key in the model namespace
+    --]]
     temp_key = function (self)
         local bk = self.meta.namespace .. ':tmp:'
         while true do
@@ -241,9 +274,9 @@ odm.Model = {
     _union = function(self, destkey, field, value)
         local idxkey = self:index_key(field, value)
         if self.meta.sorted then
-            redis.call('zunionstore', destkey, 2, destkey, idxkey)
+            odm.redis.call('zunionstore', destkey, 2, destkey, idxkey)
         else
-            redis.call('sunionstore', destkey, destkey, idxkey)
+            odm.redis.call('sunionstore', destkey, destkey, idxkey)
         end
     end,
     --
@@ -371,6 +404,97 @@ odm.Model = {
             return num
         else
             return errors
+        end
+    end,
+    --
+    _explicit_ordering = function (self, key, options)
+        local field = ARGV[io+1]
+        local alpha = ARGV[io+2]
+        local desc = ARGV[io+3]
+        local tkeys = {}
+        local sortargs = {}
+        local bykey
+        io = io + 4
+        -- nested sorting for foreign key fields
+        if options.nested and options.nested > 0 then
+            -- generate a temporary key where to store the hash table holding
+            -- the values to sort with
+            local ion, key, name
+            local skey = redis_randomkey(bk)
+            for i,id in pairs(redis_members(rkey)) do
+                local value = redis.call('hget', bk .. ':obj:' .. id, field)
+                local n = 0
+                while n < nested do
+                    ion = io + 2*n
+                    n = n + 1
+                    key = ARGV[ion+1] .. ':obj:' .. value
+                    name = ARGV[ion+2]
+                    value = redis.call('hget', key, name)
+                end
+                -- store value on temporary hash table
+                --redis.call('hset', skey, id, value)
+                tkeys[i] = skey .. id
+                -- store value on temporary key
+                redis.call('set', tkeys[i], value)
+            end
+            --bykey = skey .. '->*'
+            bykey = skey .. '*'
+            --redis.call('expire', skey, 5)
+        elseif field == '' then
+            bykey = nil
+        else
+            bykey = bk .. ':obj:*->' .. field
+        end
+        if bykey then
+           sortargs = {'BY',bykey}
+        end
+        if start > 0 or stop > 0 then
+            table.insert(sortargs, 'LIMIT')
+            table.insert(sortargs, start)
+            table.insert(sortargs, stop)
+        end
+        if alpha == 'ALPHA' then
+            table.insert(sortargs, alpha)
+        end
+        if desc == 'DESC' then
+            table.insert(sortargs, desc)
+        end
+        ids = redis.call('sort', rkey, unpack(sortargs))
+        redis_delete(tkeys)
+    end,
+    --
+    _load_related = function (self, result, related)
+        for r, rel in ipairs(related) do
+            local field_items = {}
+            local field = rel['field']
+            local fields = rel['fields']
+            related_items[r] = {rel['name'], field_items, fields}
+            -- A structure
+            if # rel['type'] > 0 then
+                for i,res in ipairs(result) do
+                    local id = res[1]
+                    local fid = bk .. ':obj:' .. id .. ':' .. field
+                    field_items[i] = {id, redis_members(fid, true, rel['type'])}
+                end
+            else
+                local processed = {}
+                local j = 0
+                local rbk = rel['bk']
+                for i,res in ipairs(result) do
+                    local id = bk .. ':obj:' .. res[1]
+                    local rid = redis.call('hget', id, field)
+                    local val = processed[rid]
+                    if not val then
+                        j = j + 1
+                        processed[rid] = j
+                        if # fields > 0 then
+                            field_items[j] = {rid, redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))}
+                        else
+                            field_items[j] = {rid, redis.call('hgetall', rbk .. ':obj:' .. rid)}
+                        end
+                    end
+                end
+            end
         end
     end,
     --

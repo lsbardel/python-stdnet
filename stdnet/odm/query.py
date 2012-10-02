@@ -403,7 +403,7 @@ criteria and options associated with it.
     __str__ = __repr__
 
     def __getitem__(self, slic):
-        if isinstance(slic,slice):
+        if isinstance(slic, slice):
             return self.items(slic)
         return self.items()[slic]
 

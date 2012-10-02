@@ -67,6 +67,22 @@ tabletools.load_code = function(code, environment)
     end
 end
 
+tabletools.json_clean = function (meta)
+    local m, t = {}
+    for k, v in pairs(meta) do
+        t = type(v)
+        -- json return null as a function while cjson as userdata. In both
+        -- cases we don't want the values.
+        if t ~= 'function' and t ~= 'userdata' then
+            if t == 'table' then
+                v = tabletools.json_clean(v)
+            end
+            m[k] = v
+        end
+    end
+    return m
+end
+
 -- Return the module only when this module is not in REDIS
 if not (KEYS and ARGV) then
     return tabletools

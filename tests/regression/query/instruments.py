@@ -34,7 +34,7 @@ class TestFilter(FinanceTest):
         
     def testSimpleFilter(self):
         session = self.session()
-        qs = session.query(self.model).filter(ccy = 'EUR')
+        qs = session.query(self.model).filter(ccy='EUR')
         self.assertTrue(qs.count() > 0)
         for i in qs:
             self.assertEqual(i.ccy,'EUR')
@@ -42,8 +42,8 @@ class TestFilter(FinanceTest):
     def testFilterIn(self):
         session = self.session()
         qs = session.query(self.model)
-        eur = dict(((o.id,o) for o in qs.filter(ccy = 'EUR')))
-        usd = dict(((o.id,o) for o in qs.filter(ccy = 'USD')))
+        eur = dict(((o.id,o) for o in qs.filter(ccy='EUR')))
+        usd = dict(((o.id,o) for o in qs.filter(ccy='USD')))
         all = set(eur).union(set(usd))
         CCYS = ('EUR','USD')
         qs = qs.filter(ccy__in = CCYS)

@@ -141,7 +141,7 @@ odm.Model = {
             else
                 result = {}
                 for _, id in ipairs(ids) do
-                    table.insert(result, {id, odm.redis.call('hmget', self:object_key(id), unpack(fields))})
+                    table.insert(result, {id, odm.redis.call('hmget', self:object_key(id), unpack(options.fields))})
                 end
             end
         else

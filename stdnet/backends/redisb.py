@@ -800,6 +800,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
+                meta_info = json.dumps(self.meta(meta))
                 delquery = sm.get_delete_query(pipe=pipe)
                 self.accumulate_delete(pipe, delquery)
                 dirty = tuple(sm.iterdirty())
@@ -834,9 +835,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                         lua_data.extend((action, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
-                    self.odmrun(pipe, 'commit', meta, (),
-                                json.dumps(self.meta(meta)), *lua_data,
-                                iids=processed)
+                    self.odmrun(pipe, 'commit', meta, (), meta_info,
+                                *lua_data, iids=processed)
         command, result = redis_execution(pipe, session_result)
         return on_result(result, callback, command)
     
@@ -849,8 +849,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             return
         query = backend_query.queryelem
         meta = query.meta
-        lua_data = ['delete', json.dumps(self.meta(meta))]
-        recursive = []
         rel_managers = []
         for name in meta.related:
             rmanager = getattr(meta.model, name)
@@ -865,7 +863,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         for rmanager in rel_managers:
             rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
             self.accumulate_delete(pipe, rq)
-        pipe.script_call('odmrun', (), *lua_data, meta=meta)
+        self.odmrun(pipe, 'delete', meta, (backend_query.query_key,),
+                    backend_query.meta_info)
         return query
     
     def tempkey(self, meta, name = None):

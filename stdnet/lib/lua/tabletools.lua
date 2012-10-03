@@ -57,6 +57,18 @@ tabletools.flat = function (tbl)
     return result
 end
 
+tabletools.asdict = function (tbl)
+    local result, key = {}
+    for i, value in ipairs(tbl) do
+        if 2*math.floor(i/2) == i then
+            result[key] = value
+        else
+            key = value
+        end
+    end
+    return result
+end
+
 tabletools.load_code = function(code, environment)
     if setfenv and loadstring then
         local f = assert(loadstring(code))

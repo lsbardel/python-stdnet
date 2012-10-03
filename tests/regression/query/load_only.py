@@ -60,7 +60,7 @@ class LoadOnly(test.TestCase):
         qs = query.load_only('id')
         with s.begin():
             for m in qs:
-                self.assertFalse(hasattr(m,'description'))
+                self.assertFalse(hasattr(m, 'description'))
                 m.description = None
                 s.add(m)
         # Check that description are empty
@@ -91,14 +91,14 @@ class LoadOnly(test.TestCase):
     def testSave(self):
         session = self.session()
         query = session.query(self.model)
-        original = dict(((m.id,m.group) for m in query.load_only('group')))
-        self.assertEqual(query.filter(group = 'group1').count(),3)
+        original = dict(((m.id, m.group) for m in query.load_only('group')))
+        self.assertEqual(query.filter(group='group1').count(),3)
         # save the models
         with session.begin():
             for m in query.load_only('code'):
                 session.add(m)
         for m in query.load_only('group'):
-            self.assertEqual(m.group,original[m.id])
+            self.assertEqual(m.group, original[m.id])
         # No check indexes
         self.assertEqual(query.filter(group = 'group1').count(),3)
         

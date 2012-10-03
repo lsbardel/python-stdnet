@@ -112,7 +112,16 @@ odm.Model = {
     delete = function (self, tmp)
         local ids, results = redis_members(tmp), {}
         for _, id in ipairs(ids) do
-            if self:_update_indices('delete', id) == 1 then
+            local idkey = self:object_key(id)
+            self:_update_indices(false, id)
+            local num = odm.redis.call('del', idkey) + 0
+            self:setrem(self.idset, id)
+            if self.meta.multi_fields then
+                for _, name in ipairs(self.meta.multi_fields) do
+                    odm.redis.call('del', idkey .. ':' .. name)
+                end
+            end
+            if num == 1 then
                 table.insert(results, id)
             end
         end
@@ -125,7 +134,7 @@ odm.Model = {
             if recusive then
                 self._add(key, field, id)
             end
-            self:aggregate(self:_index_key(field, id), field, true) 
+            self:aggregate(self:index_key(field, id), field, true) 
         end
     end,
     --[[
@@ -163,7 +172,7 @@ odm.Model = {
                 table.insert(result, {id, odm.redis.call('hgetall', self:object_key(id))})
             end
         end
-        if options.related and # options.related > 0 then
+        if options.related then
             related_items = self:_load_related(result, options.related)
         else
             related_items = {}
@@ -177,7 +186,7 @@ odm.Model = {
         return self.meta.namespace .. ':obj:' .. id
     end,
     --
-    mapkey = function (self, field)
+    map_key = function (self, field)
         return self.meta.namespace .. ':uni:' .. field
     end,
     --
@@ -245,7 +254,7 @@ odm.Model = {
         if field == self.meta.id_name then
             self:_add_to_dest(destkey, field, key)
         elseif unique then
-            local mapkey, ids = self:mapkey(field), self:setids(key)
+            local mapkey, ids = self:map_key(field), self:setids(key)
             for _, v in ipairs(ids) do
                 add(odm.redis.call('hget', mapkey, v))
             end
@@ -260,7 +269,7 @@ odm.Model = {
         if field == self.meta.id_name then
             self:_add(destkey, field, value)
         elseif unique then
-            local mapkey = self:mapkey(field)
+            local mapkey = self:map_key(field)
             self:_add(destkey, field, odm.redis.call('hget', mapkey, value))
         elseif unique == false then
             self:_union(destkey, field, value)
@@ -329,6 +338,7 @@ odm.Model = {
     end,
     --
     _commit_instance = function (self, action, id, score, data)
+        -- Commit one instance and update indices
         local created_id, composite_id, errors = false, self.meta.id_type == COMPOSITE_ID, {}
         if self.meta.id_type == AUTO_ID then
             if id == '' then
@@ -345,41 +355,42 @@ odm.Model = {
         if id == '' and not composite_id then
             table.insert(errors, 'Id not avaiable.')
         else
-            local oldid, idkey, original_values = id, self:object_key(id), {}
-            if action == 'override' or action == 'change' then  -- override or change
-                original_values = odm.redis.call('hgetall', idkey)
-                errors = self:_update_indices('delete', id, oldid, score)
+            local oldid, idkey, original_data, field = id, self:object_key(id), {}
+            if action ~= 'add' then  -- override or change
+                original_data = odm.redis.call('hgetall', idkey)
+                self:_update_indices(false, id)
                 if action == 'override' then
                     odm.redis.call('del', idkey)
                 end
             end
             -- Composite ID. Calculate new ID and data
             if composite_id then
-                id = self:_update_composite_id(composite_id, original_values, data)
+                id = self:_update_composite_id(original_data, data)
                 idkey = self:object_key(id)
             end
             if id ~= oldid and oldid ~= '' then
                 self:setrem(self.idset, oldid)
             end
             score = self:setadd(self.idset, score, id, self.meta.autoincr)
+            -- set the new data in the hash table
             if # data > 0 then
                 odm.redis.call('hmset', idkey, unpack(data))
             end
-            errors = self:_update_indices(action, id, oldid, score)
+            errors = self:_update_indices(true, id, oldid, score)
             -- An error has occured. Rollback changes.
             if # errors > 0 then
                 -- Remove indices
-                self:_update_indices('delete', id, oldid)
+                self:_update_indices(false, id)
                 if action == 'add' then
                     if created_id then
                         odm.redis.call('decr', self.auto_ids)
                         id = ''
                     end
-                elseif # original_values > 0 then
+                elseif # original_data > 0 then
                     id = oldid
                     idkey = self:object_key(id)
-                    odm.redis.call('hmset', idkey, unpack(original_values))
-                    self:_update_indices(action, id, oldid, score)
+                    odm.redis.call('hmset', idkey, unpack(original_data))
+                    self:_update_indices(true, id, oldid, score)
                 end
             end
         end
@@ -390,18 +401,14 @@ odm.Model = {
         end
     end,
     --
-    _update_indices = function (self, oper, id, oldid, score)
-        local idkey, errors, idxkey = self:object_key(id), {}
+    _update_indices = function (self, update, id, oldid, score)
+        local idkey, errors, idxkey, value = self:object_key(id), {}
         for field, unique in pairs(self.meta.indices) do
             -- obtain the field value
-            local value = odm.redis.call('hget', idkey, field)
+            value = odm.redis.call('hget', idkey, field)
             if unique then
-                idxkey = self:mapkey(field) -- id for the hash table mapping field value to instance ids
-                if oper == 'delete' then
-                    if value then
-                        odm.redis.call('hdel', idxkey, value)
-                    end
-                else
+                idxkey = self:map_key(field) -- id for the hash table mapping field value to instance ids
+                if update then
                     if odm.redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
                         -- The value was already available!
                         if oldid == id or not odm.redis.call('hget', idxkey, value) == oldid then
@@ -411,28 +418,19 @@ odm.Model = {
                             table.insert(errors, 'Unique constraint "' .. field .. '" violated: "' .. value .. '" is already in database.')
                         end
                     end
+                elseif value then
+                    odm.redis.call('hdel', idxkey, value)
                 end
             else
                 idxkey = self:index_key(field, value)
-                if oper == 'delete' then
-                    self:setrem(idxkey, id)
-                else
+                if update then
                     self:setadd(idxkey, score, id)
+                else
+                    self:setrem(idxkey, id)
                 end
             end
         end
-        if oper == 'delete' then
-            local num = odm.redis.call('del', idkey) + 0
-            self:setrem(self.idset, id)
-            if self.meta.multifields then
-                for _, name in ipairs(self.meta.multifields) do
-                    odm.redis.call('del', idkey .. ':' .. name)
-                end
-            end
-            return num
-        else
-            return errors
-        end
+        return errors
     end,
     --
     _explicit_ordering = function (self, key, start, stop, order)
@@ -481,32 +479,29 @@ odm.Model = {
     --
     _load_related = function (self, result, related)
         local related_items = {}
-        for _, rel in ipairs(related) do
-            local field_items, field = {}, rel.field
-            table.insert(related_items, {rel['name'], field_items, rel.fields})
+        for name, rel in pairs(related) do
+            local field_items, field, fields = {}, rel.field, rel.fields
+            table.insert(related_items, {name, field_items, rel.fields})
             -- A structure
             if # rel.type > 0 then
-                for i,res in ipairs(result) do
+                for i, res in ipairs(result) do
                     local id = res[1]
                     local fid = self:object_key(id .. ':' .. field)
                     field_items[i] = {id, redis_members(fid, true, rel.type)}
                 end
             else
-                local processed = {}
-                local j = 0
-                local rbk = rel['bk']
-                for i,res in ipairs(result) do
-                    local id = bk .. ':obj:' .. res[1]
-                    local rid = redis.call('hget', id, field)
+                local rbk, processed = rel.bk, {}
+                for i, res in ipairs(result) do
+                    local rid = redis.call('hget', self:object_key(res[1]), field)
                     local val = processed[rid]
                     if not val then
-                        j = j + 1
-                        processed[rid] = j
                         if # fields > 0 then
-                            field_items[j] = {rid, redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))}
+                            val = redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))
                         else
-                            field_items[j] = {rid, redis.call('hgetall', rbk .. ':obj:' .. rid)}
+                            val = redis.call('hgetall', rbk .. ':obj:' .. rid)
                         end
+                        processed[rid] = val
+                        table.insert(field_items, {rid, val})
                     end
                 end
             end
@@ -516,7 +511,7 @@ odm.Model = {
     --
     -- Update a composite ID. Composite IDs are formed by two or more fields
     -- in an unique way.
-    _update_composite_id = function (self, composite_id, original_values, data)
+    _update_composite_id = function (self, original_values, data)
         local fields, j = {}, 0
         while j < # original_values do
             fields[original_values[j+1]] = original_values[j+2]
@@ -527,9 +522,8 @@ odm.Model = {
             fields[data[j+1]] = data[j+2]
             j = j + 2
         end
-        local newid = ''
-        local joiner = ''
-        for _,name in ipairs(composite_id) do
+        local newid, joiner = '', ''
+        for _, name in ipairs(self.meta.id_fields) do
             newid = newid .. joiner .. name .. ':' .. fields[name]
             joiner = ','
         end
@@ -546,52 +540,47 @@ if not redis then
     return odm
 else
     odm.redis = redis
+    local function first_key(keys)
+        if # keys > 0 then
+            return keys[1]
+        else
+            error('Script query requires 1 key for the id set')
+        end
+    end
     -- MANAGE ALL COLUMNTS SCRIPTS called by stdnet
     local scripts = {
         -- Commit a session to redis
-        commit = function(self, model, keys, num, ...)
-            return model:commit(num+0, arg)
+        commit = function(self, model, keys, num, args)
+            return model:commit(num+0, args)
         end,
         -- Build a query and store results on a new set. Returns the set id
-        query = function(self, model, keys, field, ...)
-            if # keys > 0 then
-                return model:query(field, keys[1], arg)
-            else
-                error('Script query requires 1 key for the id set')
-            end
+        query = function(self, model, keys, field, args)
+            return model:query(field, first_key(keys), args)
         end,
         -- Load a query
-        load = function(self, model, keys, options)
-            if # keys > 0 then
-                return model:load(keys[1], cjson.decode(options))
-            else
-                error('Script load requires 1 key for the id set')
-            end
+        load = function(self, model, keys, options, args)
+            return model:load(first_key(keys), cjson.decode(options))
         end,
         -- delete a query
-        delete = function(self, model, keys)
-            if # keys > 0 then
-                return model:delete(keys[1])
-            else
-                error('Script delete requires 1 key for the id set')
-            end
+        delete = function(self, model, keys, ...)
+            return model:delete(first_key(keys))
         end,
         -- recursively add id to a set
-        aggregate = function(self, model, keys, field)
-            if # keys > 0 then
-                return model:aggregate(keys[1], field)
-            else
-                error('Script "aggregate" requires 1 key for the id set')
-            end
+        aggregate = function(self, model, keys, field, args)
+            return model:aggregate(first_key(keys), field)
         end
     }
     -- THE FIRST ARGUMENT IS THE NAME OF THE SCRIPT
     if # ARGV < 2 then
         error('Wrong number of arguments.')
     end
-    local script, meta = scripts[ARGV[1]], cjson.decode(ARGV[2]) 
+    local script, meta, arg, args = scripts[ARGV[1]], cjson.decode(ARGV[2]) 
     if not script then
         error('Script ' .. ARGV[1] .. ' not available')
     end
-    return script(scripts, odm.model(meta), KEYS, unpack(tabletools.slice(ARGV, 3, -1)))
+    if # ARGV > 2 then
+        arg = ARGV[3]
+        args = tabletools.slice(ARGV, 4, -1)
+    end
+    return script(scripts, odm.model(meta), KEYS, arg, args)
 end

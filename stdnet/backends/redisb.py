@@ -34,8 +34,9 @@ def redis_before_send(sender, request, command, **kwargs):
 redis.redis_before_send.connect(redis_before_send)
 
 class odmrun(redis.RedisScript):
-    script = (redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('tabletools'),
+    script = (redis.read_lua_file('tabletools'),
+              redis.read_lua_file('commands.timeseries'),
+              redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm'))
     
     def callback(self, request, response, args, meta=None,
@@ -328,6 +329,7 @@ elements in the query.'''
                    'start': start,
                    'stop': stop,
                    'fields': fields_attributes,
+                   'related': dict(self.related_lua_args()),
                    'get': get}
         joptions = json.dumps(options)
         options.update({'fields': fields,
@@ -338,24 +340,17 @@ elements in the query.'''
     def related_lua_args(self):
         '''Generator of load_related arguments'''
         related = self.queryelem.select_related
-        if not related:
-            yield 0
-        else:
+        if related:
             meta = self.meta
-            yield len(related)
             for rel in related:
                 field = meta.dfields[rel]
-                typ = field.type if field in meta.multifields else ''
                 relmodel = field.relmodel
                 bk = self.backend.basekey(relmodel._meta) if relmodel else ''
-                fi = related[rel]
-                yield bk
-                yield field.name
-                yield field.attname
-                yield typ
-                yield len(fi)
-                for v in fi:
-                    yield v
+                data = {'field': field.attname,
+                        'type': field.type if field in meta.multifields else '',
+                        'bk': bk,
+                        'fields': tuple(related[rel])}
+                yield field.name, data
             
 
 def iteretor_pipelined(f):
@@ -816,10 +811,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                                     score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         if state.persistent:
-                            if instance.has_all_data:
-                                action = 'override'
-                            else:
-                                action = 'change'
+                            action = 'override' if instance.has_all_data else\
+                                     'change'
                             id = state.iid
                         else:
                             action = 'add'

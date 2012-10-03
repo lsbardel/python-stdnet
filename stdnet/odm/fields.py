@@ -48,12 +48,11 @@ def field_value_error(f):
 
     def _(self, value):
         try:
-            return f(self,value)
+            return f(self, value)
         except FieldValueError:
             raise
         except:
-            raise FieldValueError('{0} is not a valid value for "{1}" field'\
-                                  .format(value,self.name))
+            raise FieldValueError('%s not valid for "%s"' % (value, self.name))
 
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__

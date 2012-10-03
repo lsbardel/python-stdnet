@@ -15,15 +15,16 @@ end
 
 
 local function redis_type(key)
-    return redis.call('type',key)['ok']
+    return redis.call('type', key)['ok']
 end
 
 -- The length of any structure in redis
 local function redis_len(key)
-    typ = redis_type(key)
-    command = type_table[typ]
+    local command = type_table[redis_type(key)]
     if command then
     	return redis.call(command, key) + 0
+    else
+        return 0
     end
 end
 

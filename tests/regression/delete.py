@@ -21,8 +21,7 @@ class TestDeleteSimpleModel(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         with session.begin():
-            m = session.add(self.model(code = 'ciao'))
-            
+            m = session.add(self.model(code='ciao'))
         ids = query.get_field('id').all()
         self.assertEqual(len(ids),1)
         id = ids[0]
@@ -134,8 +133,8 @@ class TestDeleteScalarFields(FinanceTest):
         session = self.data.makePositions(self)
         self.assertTrue(session.query(Position).count()>0)
         session.query(Instrument).delete()
-        self.assertEqual(session.query(Instrument).all(),[])
-        self.assertEqual(session.query(Position).all(),[])
+        self.assertEqual(session.query(Instrument).all(), [])
+        self.assertEqual(session.query(Position).all(), [])
         keys = list(session.keys(Instrument))
         self.assertTrue(len(keys)>0)
         
@@ -163,8 +162,8 @@ test as it involves lots of operations and consistency checks.'''
         with session.begin():
             for inst in session.query(Instrument):
                 session.delete(inst)
-        self.assertEqual(session.query(Instrument).all(),[])
-        self.assertEqual(session.query(Position).all(),[])
+        self.assertEqual(session.query(Instrument).all(), [])
+        self.assertEqual(session.query(Position).all(), [])
                 
     def testDeleteRelated(self):
         '''Test delete on models with related models. This is a crucial

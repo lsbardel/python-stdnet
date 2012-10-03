@@ -15,25 +15,23 @@ class TestManyToMany(test.TestCase):
             profile3 = session.add(Profile())
             role1 = session.add(Role(name='admin'))
             role2 = session.add(Role(name='coder'))
-            
         with session.begin():
             profile.roles.add(role1)
             profile.roles.add(role2)
-        
         # Check role    
         t1 = role1.profiles.throughquery().all()
         t2 = role2.profiles.throughquery().all()
-        self.assertEqual(len(t1),1)
-        self.assertEqual(len(t2),1)
-        self.assertEqual(t1[0].role,role1)
-        self.assertEqual(t2[0].role,role2)
+        self.assertEqual(len(t1), 1)
+        self.assertEqual(len(t2), 1)
+        self.assertEqual(t1[0].role, role1)
+        self.assertEqual(t2[0].role, role2)
         #
         p1 = role1.profiles.query().all()
         p2 = role2.profiles.query().all()
-        self.assertEqual(len(p1),1)
-        self.assertEqual(len(p2),1)
-        self.assertEqual(p1[0],profile)
-        self.assertEqual(p2[0],profile)
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(len(p2), 1)
+        self.assertEqual(p1[0], profile)
+        self.assertEqual(p2[0], profile)
         #
         # Check profile
         t1 = profile.roles.throughquery().all()

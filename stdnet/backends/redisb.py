@@ -33,15 +33,10 @@ def redis_before_send(sender, request, command, **kwargs):
     
 redis.redis_before_send.connect(redis_before_send)
 
-#class add_recursive(redis.RedisScript):
-#    script = (redis.read_lua_file('commands.utils'),
-#              redis.read_lua_file('odm.add_recursive'))
-
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('commands.utils'),
               redis.read_lua_file('tabletools'),
-              redis.read_lua_file('odm'),
-              redis.read_lua_file('odmrun'))
+              redis.read_lua_file('odm'))
     
     def callback(self, request, response, args, meta=None,
                  backend=None, script=None, **options):
@@ -170,6 +165,7 @@ class RedisQuery(stdnet.BackendQuery):
         pipe = self.pipe
         backend = self.backend
         key, meta, keys, args = None, self.meta, [], []
+        pkname = meta.pkname()
         # loop over element in queries
         for child in qs:
             if getattr(child, 'backend', None) != backend:
@@ -180,7 +176,7 @@ class RedisQuery(stdnet.BackendQuery):
                 args.extend(('set', be.query_key))
         temp_key = True
         if qs.keyword == 'set':
-            if qs.name == 'id' and not args:
+            if qs.name == pkname and not args:
                 key = backend.basekey(meta, 'id')
                 temp_key = False
             else:
@@ -201,19 +197,18 @@ class RedisQuery(stdnet.BackendQuery):
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
             command(key, keys, script_dependency='odmrun')
-        # If e requires a different field other than id, perform a sort
-        # by nosort and get the object field.
-        gf = qs._get_field
-        if gf and gf != 'id':
+        # If we are getting a field (for a subsequent query maybe)
+        # unwind the query and store the result
+        gf = qs._get_field 
+        if gf and gf != pkname:
             field_attribute = meta.dfields[gf].attname
             bkey = key
             if not temp_key:
                 temp_key = True
                 key = backend.tempkey(meta)
             okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
-            pipe.sort(bkey, by='nosort', get = okey, store = key)
-            self.card = getattr(pipe,'llen')
-        # if the key is temporary, add an expiry
+            pipe.sort(bkey, by='nosort', get=okey, store=key)
+            self.card = getattr(pipe, 'llen')
         if temp_key:
             pipe.expire(key, self.expire)
         self.query_key = key
@@ -307,10 +302,10 @@ elements in the query.'''
             stop -= start
         elif stop is None:
             stop = -1
-        get = self.queryelem._get_field or ''
+        get = self.queryelem._get_field
         fields_attributes = None
         pkname_tuple = (meta.pk.name,)
-        # if the get_field is available, we simply load that field
+        # if the get_field is available, we only load that field
         if get:
             if get == meta.pk.name:
                 fields_attributes = fields = pkname_tuple
@@ -328,8 +323,7 @@ elements in the query.'''
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
                 fields_attributes = ()
-        options = {'get': get,
-                   'ordering': name,
+        options = {'ordering': name,
                    'order': order,
                    'start': start,
                    'stop': stop,
@@ -683,15 +677,15 @@ class ts_commands(redis.RedisScript):
     
     
 class numberarray_resize(redis.RedisScript):
-    script = (redis.read_lua_file('odm.numberarray'),
+    script = (redis.read_lua_file('numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
     
 class numberarray_all_raw(redis.RedisScript):
-    script = (redis.read_lua_file('odm.numberarray'),
+    script = (redis.read_lua_file('numberarray'),
               '''return array:new(KEYS[1]):all_raw()''')
     
 class numberarray_getset(redis.RedisScript):
-    script = (redis.read_lua_file('odm.numberarray'),
+    script = (redis.read_lua_file('numberarray'),
               '''local a = array:new(KEYS[1])
 if ARGV[1] == 'get' then
     return a:get(ARGV[2],true)
@@ -700,7 +694,7 @@ else
 end''')
     
 class numberarray_pushback(redis.RedisScript):
-    script = (redis.read_lua_file('odm.numberarray'),
+    script = (redis.read_lua_file('numberarray'),
               '''local a = array:new(KEYS[1])
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)
@@ -713,12 +707,12 @@ end''')
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     _redis_clients = {}
-    struct_map = {'set':Set,
-                  'list':List,
-                  'zset':Zset,
-                  'hashtable':Hash,
-                  'ts':TS,
-                  'numberarray':NumberArray,
+    struct_map = {'set': Set,
+                  'list': List,
+                  'zset': Zset,
+                  'hashtable': Hash,
+                  'ts': TS,
+                  'numberarray': NumberArray,
                   'string': String}
         
     def setup_connection(self, address):
@@ -731,7 +725,6 @@ class BackendDataServer(stdnet.BackendDataServer):
         rpy = redis.Redis(address=address, **self.params)
         self.execute_command = rpy.execute_command
         self.clear = rpy.flushdb
-        #self.keys = rpy.keys
         return rpy
     
     def as_cache(self):
@@ -848,24 +841,23 @@ class BackendDataServer(stdnet.BackendDataServer):
         if backend_query is None:
             return
         query = backend_query.queryelem
+        keys = (backend_query.query_key,)
+        meta_info = backend_query.meta_info
         meta = query.meta
         rel_managers = []
         for name in meta.related:
             rmanager = getattr(meta.model, name)
             # the related manager model is the same as current model
             if rmanager.model == meta.model:
-                pipe.script_call('add_recursive',
-                                 (bk, backend_query.query_key, bk + ':*'),
-                                 s, rmanager.field.attname)
+                self.odmrun(pipe, 'aggregate', meta, keys, meta_info,
+                            rmanager.field.attname)
             else:
                 rel_managers.append(rmanager)
         # loop over related managers
         for rmanager in rel_managers:
             rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
             self.accumulate_delete(pipe, rq)
-        self.odmrun(pipe, 'delete', meta, (backend_query.query_key,),
-                    backend_query.meta_info)
-        return query
+        self.odmrun(pipe, 'delete', meta, keys, meta_info)
     
     def tempkey(self, meta, name = None):
         return self.basekey(meta, TMP, name if name is not None else\

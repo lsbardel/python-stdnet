@@ -22,10 +22,10 @@ class TestManager(test.TestCase):
                 t.session.add(SimpleModel(code = name))
                 
     def testGetOrCreate(self):
-        v, created = SimpleModel.objects.get_or_create(code = 'test')
+        v, created = SimpleModel.objects.get_or_create(code='test')
         self.assertTrue(created)
         self.assertEqual(v.code,'test')
-        v2,created = SimpleModel.objects.get_or_create(code = 'test')
+        v2,created = SimpleModel.objects.get_or_create(code='test')
         self.assertFalse(created)
         self.assertEqual(v,v2)
         

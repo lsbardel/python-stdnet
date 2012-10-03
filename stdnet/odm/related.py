@@ -230,9 +230,7 @@ via a simple attribute of the model.'''
                                          .filter(**kwargs)
 
     def query_from_query(self, query):
-        session = query.session
-        return session.query(self.model,
-                             fargs = {self.field.name: query})
+        return query.session.query(self.model, fargs={self.field.name: query})
 
 
 def makeMany2ManyRelatedManager(formodel, name_relmodel,
@@ -264,7 +262,7 @@ attribute of the model.'''
             except self.model.DoesNotExist:
                 m = self.model(**kw)
             for k,v in iteritems(kwargs):
-                setattr(m,k,v)
+                setattr(m, k, v)
             return session.add(m)
 
         def remove(self, value, transaction=None):
@@ -283,7 +281,7 @@ used to hold the many-to-many relationship.'''
         def query(self, transaction=None):
             ids = self.throughquery().get_field(self.name_formodel)
             session = self.session(transaction)
-            return session.query(self.formodel).filter(id__in = ids)
+            return session.query(self.formodel).filter(id__in=ids)
 
     Many2ManyRelatedManager.formodel = formodel
     Many2ManyRelatedManager.name_relmodel = name_relmodel

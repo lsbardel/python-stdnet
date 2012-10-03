@@ -277,8 +277,9 @@ of fields names and a list of field attribute names.'''
         processed = set()
         names = []
         atts = []
+        pkname = self.pkname()
         for name in fields:
-            if name == 'id' or name in processed:
+            if name == pkname or name in processed:
                 continue
             elif name in dfields:
                 processed.add(name)

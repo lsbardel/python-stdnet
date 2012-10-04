@@ -123,10 +123,10 @@ class TestFilter(FinanceTest):
         ids = set((1,5,10))
         session = self.session()
         query = session.query(self.model)
-        qs = query.filter(id__in = ids)
-        self.assertEqual(len(qs),3)
+        qs = query.filter(id__in=ids)
+        self.assertEqual(len(qs), 3)
         cids = set((o.id for o in qs))
-        self.assertEqual(cids,ids)
+        self.assertEqual(cids, ids)
         
     def testFilterIdExclude(self):
         CCYS = ('EUR','GBP')
@@ -141,8 +141,8 @@ class TestFilter(FinanceTest):
         qt3 = set(query.exclude(id__in = qt))
         qt4 = qt2.intersection(qt3)
         self.assertFalse(qt4)
-        qs1 = set(query.filter(ccy__in = CCYS).exclude(type__in = types))
-        qs2 = set(query.filter(ccy__in = CCYS).exclude(id__in = qt))
+        qs1 = set(query.filter(ccy__in=CCYS).exclude(type__in=types))
+        qs2 = set(query.filter(ccy__in=CCYS).exclude(id__in=qt))
         self.assertEqual(qs1,qs2)
         
     def testChangeFilter(self):

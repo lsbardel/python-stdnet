@@ -14,7 +14,9 @@ __all__ = ['BackendRequest',
            'session_result',
            'instance_session_result',
            'query_result',
-           'on_result']
+           'on_result',
+           'range_lookups',
+           'lookup_value']
 
 
 query_result = namedtuple('query_result','key count')
@@ -23,8 +25,12 @@ query_result = namedtuple('query_result','key count')
 # if the instance is persistent on the backend, bid is the id in the backend.
 instance_session_result = namedtuple('instance_session_result',
                                      'iid persistent id deleted score')
-session_result = namedtuple('session_result','meta results') 
+session_result = namedtuple('session_result','meta results')
 
+lookup_value = namedtuple('lookup_value', 'lookup value')
+
+range_lookups = frozenset(('gt', 'ge', 'lt', 'le',
+                           'startswith', 'endswith', 'contains'))
 
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''

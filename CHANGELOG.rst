@@ -3,8 +3,9 @@
 Development
 ===============================
 * Several fixes in the documentation.
+* Implemented range filters ``gt``, ``gt``, ``lt`` and ``le``.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
-* **616 regression tests** with **92%** coverage.
+* **621 regression tests** with **92%** coverage.
 
 Ver. 0.7c6 - 2012 Sep 10
 ===============================

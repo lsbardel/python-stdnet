@@ -13,7 +13,7 @@ from stdnet.utils import to_string, map, gen_unique_id, zip,\
 from stdnet.lib import redis
 
 from .base import BackendStructure, query_result, session_result,\
-                    instance_session_result, on_result
+                    instance_session_result, on_result, range_lookups
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
@@ -169,14 +169,17 @@ class RedisQuery(stdnet.BackendQuery):
         backend = self.backend
         key, meta, keys, args = None, self.meta, [], []
         pkname = meta.pkname()
-        # loop over element in queries
         for child in qs:
-            if getattr(child, 'backend', None) != backend:
-                args.extend(('value','' if child is None else child))
+            if getattr(child, 'backend', None) == backend:
+                lookup, value = 'set', child
             else:
-                be = child.backend_query(pipe=pipe)
+                lookup, value = child
+            if lookup == 'set':
+                be = value.backend_query(pipe=pipe)
                 keys.append(be.query_key)
                 args.extend(('set', be.query_key))
+            else:
+                args.extend((lookup, '' if value is None else value))
         temp_key = True
         if qs.keyword == 'set':
             if qs.name == pkname and not args:

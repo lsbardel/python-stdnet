@@ -1,18 +1,15 @@
 from copy import copy
 from inspect import isgenerator
 
-from stdnet import on_result, BackendRequest
+from stdnet import on_result, BackendRequest, range_lookups, lookup_value
 from stdnet.exceptions import *
-from stdnet.utils import zip, JSPLITTER
+from stdnet.utils import zip, JSPLITTER, iteritems
 
 from .signals import *
 
 
 __all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
-
-range_lookups = frozenset(('gt', 'ge', 'lt', 'le',
-                           'startswith', 'endswith', 'contains'))
 
 def iterable(value):
     if isgenerator(value) or isinstance(value,(tuple,list,set,frozenset)):
@@ -178,7 +175,7 @@ class QueryElement(Q):
     def __init__(self, *args, **kwargs):
         self.__backend_query = None
         underlying = kwargs.pop('underlying', None)
-        super(QueryElement,self).__init__(*args,**kwargs)
+        super(QueryElement,self).__init__(*args, **kwargs)
         self.underlying = underlying if underlying is not None else ()
 
     def __repr__(self):
@@ -214,7 +211,7 @@ class QueryElement(Q):
 
     @property
     def valid(self):
-        if isinstance(self.underlying,QueryElement):
+        if isinstance(self.underlying, QueryElement):
             return self.keyword == 'set'
         else:
             return len(self.underlying) > 0
@@ -224,10 +221,6 @@ class QuerySet(QueryElement):
     '''A :class:`QueryElement` which represents a lookup on a field.'''
     keyword = 'set'
     name = 'id'
-    def __init__(self, *args, **kwargs):
-        self.unique = kwargs.pop('unique', False)
-        self.lookup = kwargs.pop('lookup', 'in')
-        super(QuerySet,self).__init__(*args,**kwargs)
 
 
 class Select(QueryElement):
@@ -251,7 +244,7 @@ def difference(queries):
     return make_select('diff',queries)
 
 def queryset(qs, **kwargs):
-    return QuerySet(qs._meta,qs.session, **kwargs)
+    return QuerySet(qs._meta, qs.session, **kwargs)
 
 
 class QueryBase(Q):
@@ -704,20 +697,22 @@ an exception is raised.
         return q
 
     def aggregate(self, kwargs):
-        return sorted(self._aggregate(kwargs), key = lambda x : x.name)
-
-    def _aggregate(self, kwargs):
         '''Aggregate lookup parameters.'''
-        meta    = self._meta
-        fields  = meta.dfields
-        for name, value in kwargs.items():
+        meta = self._meta
+        fields = meta.dfields
+        field_lookups = {}
+        for name, value in iteritems(kwargs):
             names = name.split(JSPLITTER)
             field_name = names[0]
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta, field_name))
             field = fields[field_name]
-            lookup = JSPLITTER.join(names[1:])
+            lookups = field_lookups.get(field.attname)
+            if lookups is None:
+                lookups = []
+                field_lookups[field.attname] = lookups
+            lookup = JSPLITTER.join(names[1:]).lower()
             if lookup not in range_lookups:
                 if not field.index:
                     raise QuerySetError("{0} {1} is not an index.\
@@ -725,25 +720,19 @@ an exception is raised.
                 if lookup:
                     lvalue = field.filter(self.session, lookup, value)
                     if lvalue is not None:
-                        lookup = 'in'
                         value = lvalue
-                else:
-                    lookup = 'in'
-            if not iterable(value):
-                value = (value,)
-            values = []
-            for v in value:
-                if isinstance(v, Q):
-                    v = v.construct()
-                else:
-                    v = field.serialize(v)
-                values.append(v)
-            #data = self.data.copy()
-            data = {'name':field.attname,
-                    'underlying':tuple(values),
-                    'unique':field.unique,
-                    'lookup':lookup}
-            yield queryset(self, **data)
+                if not iterable(value):
+                    value = (value,)
+                for v in value:
+                    if isinstance(v, Q):
+                        v = lookup_value('set', v.construct())
+                    else:
+                        v = lookup_value('value', field.serialize(v))
+                    lookups.append(v)
+            else:
+                lookups.append(lookup_value(lookup, field.serialize(value)))
+        return [queryset(self, name=name, underlying=field_lookups[name])\
+                for name in sorted(field_lookups)]
 
     def items(self, slic=None):
         '''Fetch data matching theis :class:`Query` and return a list

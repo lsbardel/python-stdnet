@@ -19,16 +19,16 @@ local odm = {
     },
     range_selectors = {
         ge = function (v, v1)
-            return v >= v1
+            return v+0 >= v1+0
         end,
         gt = function (v, v1)
-            return v > v1
+            return v+0 > v1+0
         end,
         le = function (v, v1)
-            return v <= v2
+            return v+0 <= v1+0
         end,
         lt = function (v, v1)
-            return v < v1
+            return v+0 < v1+0
         end,
         startswith = function (v, v1)
             return string.sub(v, 1, string.len(v1)) == v1
@@ -80,19 +80,21 @@ odm.Model = {
         :param queries: an array containing pairs of query_type, value where query_type
             can be one of 'set', 'value' or a range filter.
     --]]
-    query = function (self, field, destkey, queries)
-        local ranges, unique, qtype = {}, self.meta.indices[field]
+    query = function (self, destkey, field, queries)
+        local ranges, unique, qtype, oper = {}, self.meta.indices[field]
         for i, value in ipairs(queries) do
             if 2*math.floor(i/2) == i then
                 if qtype == 'set' then
+                    oper = true
                     self:_queryset(destkey, field, unique, value)
                 elseif qtype == 'value' then
+                    oper = true
                     self:_queryvalue(destkey, field, unique, value)
                 else
                     -- Range queries are processed together
-                    selector = range_selectors[qtype]
+                    local selector = odm.range_selectors[qtype]
                     if selector then
-                        table.insert(ranges, {selector=selector, v1=value})
+                        table.insert(ranges, {selector=selector, value=value})
                     else
                         error('Cannot understand query type "' .. qtype .. '".')
                     end
@@ -102,7 +104,11 @@ odm.Model = {
             end
         end
         if # ranges > 0 then
-            self:_selectranges(destkey, field, unique, ranges)
+            if not oper then
+                self:_selectranges(destkey, self.idset, field, ranges)
+            else
+                self:_selectranges(destkey, destkey, field, ranges)
+            end
         end
         return self:setsize(destkey)
     end,
@@ -316,20 +322,39 @@ odm.Model = {
         end
     end,
     --
-    _selectranges = function(self, tmp, field, field_type, ranges)
-        local ids = self:setids(tmp)
-        for _, range in ipairs(ranges) do
-            if field == self.meta.id_name then
-                for _, id in ipairs(ids) do
-                    if range.selector(id, r.v1, r.v2) then
-                        all(id)
+    _selectranges = function(self, destkey, fromkey, field, ranges)
+        local ordered, ids, scores, value = self.meta.ordered
+        if ordered then
+            ids, scores = {}, {}
+            for i, score in ipairs(self.redis.call('zrange', fromkey, 0, -1, 'withscores')) do
+                if 2*math.floor(i/2) == i then
+                    table.insert(scores, score)
+                else
+                    table.insert(ids, score)
+                end
+            end
+        else
+            ids = redis.call('smembers', fromkey)
+        end
+        redis.call('del', destkey)
+        for i, id in ipairs(ids) do
+            if field ~= self.meta.id_name then
+                value = redis.call('hget', self:object_key(id), field)
+            else
+                value = id
+            end
+            if value then
+                for _, range in ipairs(ranges) do
+                    if not range.selector(value, range.value) then
+                        value = nil
+                        break
                     end
                 end
-            else
-                for _, id in ipairs(ids) do
-                    v = odm.redis.call('hget', self:object_key(id), field)
-                    if range.selector(v, r.v1, r.v2) then
-                        add(v)
+                if value then
+                    if ordered then
+                        redis.call('zadd', destkey, scores[i], id)
+                    else
+                        redis.call('sadd', destkey, id)
                     end
                 end
             end
@@ -567,7 +592,7 @@ else
         end,
         -- Build a query and store results on a new set. Returns the set id
         query = function(self, model, keys, field, args)
-            return model:query(field, first_key(keys), args)
+            return model:query(first_key(keys), field, args)
         end,
         -- Load a query
         load = function(self, model, keys, options, args)

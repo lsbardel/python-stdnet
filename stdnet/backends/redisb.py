@@ -22,6 +22,7 @@ MIN_FLOAT =-1.e99
 #    prefixes for data
 OBJ = 'obj'     # the hash table for a instance
 TMP = 'tmp'     # temorary key
+ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
 ################################################################################
 
 def redis_before_send(sender, request, command, **kwargs):
@@ -35,6 +36,7 @@ redis.redis_before_send.connect(redis_before_send)
 
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
+              # timeseries must be included before utils
               redis.read_lua_file('commands.timeseries'),
               redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm'))
@@ -84,13 +86,13 @@ class odmrun(redis.RedisScript):
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
                 for id in response:
-                    yield id,(),{}
+                    yield id, set(), {}
             else:
-                for id,fdata in response:
-                    yield id,fields,dict(zip(fields_attributes,fdata))
+                for id, fdata in response:
+                    yield id, set(fields), dict(zip(fields_attributes,fdata))
         else:
             for id,fdata in response:
-                yield id,None,dict(pairs_to_dict(fdata, encoding))
+                yield id, None, dict(pairs_to_dict(fdata, encoding))
                 
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
@@ -188,7 +190,8 @@ class RedisQuery(stdnet.BackendQuery):
         else:
             key = backend.tempkey(meta)
             p = 'z' if meta.ordering else 's'
-            pipe.script_call('move2set', keys, p, script_dependency='odmrun')
+            pipe.script_call('move2set', keys, p,
+                             scripts_dependency=ODM_SCRIPTS)
             if qs.keyword == 'intersect':
                 command = getattr(pipe, p+'interstore')
             elif qs.keyword == 'union':
@@ -197,7 +200,7 @@ class RedisQuery(stdnet.BackendQuery):
                 command = getattr(pipe, p+'diffstore')
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
-            command(key, keys, script_dependency='odmrun')
+            command(key, keys, script_dependency='move2set')
         # If we are getting a field (for a subsequent query maybe)
         # unwind the query and store the result
         gf = qs._get_field 
@@ -229,7 +232,7 @@ elements in the query.'''
                 self._check_member = self.sism
         else:
             self.ismember = None
-        self.card(self.query_key, script_dependency='odmrun')
+        self.card(self.query_key, script_dependency=ODM_SCRIPTS)
         self.pipe.add_callback(lambda processed, result :
                                     query_result(self.query_key, result))
         self.commands, result = redis_execution(self.pipe, query_result)
@@ -775,7 +778,8 @@ class BackendDataServer(stdnet.BackendDataServer):
     def odmrun(self, client, script, meta, keys, meta_info, *args, **options):
         options.update({'backend': self,
                         'meta': meta,
-                        'script': script})
+                        'script': script,
+                        'script_dependency': ODM_SCRIPTS})
         return client.script_call('odmrun', keys, script, meta_info, *args,
                                   **options)
         

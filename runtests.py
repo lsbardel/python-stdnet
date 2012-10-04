@@ -3,11 +3,12 @@
 '''
 import sys
 import os
-try:
-    import mock
-except ImportError:
-    print('The mock library is required to run tests.')
-    exit(0)
+if sys.version_info < (3,3):
+    try:
+        import mock
+    except ImportError:
+        print('The mock library is required to run tests.')
+        exit(0)
 
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run

@@ -20,10 +20,14 @@ class TestUnique(test.TestCase):
         s = self.model(code='me', group='foo')
         self.assertRaises(CommitException, s.save)
         query = session.query(self.model)
-        self.assertEqual(query.count(),1)
-        m = query.get(code = 'me')
-        self.assertEqual(m.id,1)
-        self.assertEqual(m.group,'bla')
+        self.assertEqual(query.count(), 1)
+        m = query.get(code='me')
+        self.assertEqual(m.id, 1)
+        self.assertEqual(m.group, 'bla')
+        m = session.add(self.model(code='me2', group='bla'))
+        self.assertEqual(m.id, 2)
+        query = session.query(self.model)
+        self.assertEqual(query.count(), 2)
     
     def testChangeValue(self):
         session = self.session()

@@ -13,9 +13,10 @@ dates = populate('date',NUM_DATES,
                  end=date(2010,6,6))
 
 groups = populate('choice',NUM_DATES,
-            choice_from=['football','rugby','swimming','running','cycling'])
+            choice_from=['football', 'rugby', 'swimming', 'running', 'cycling'])
 persons = populate('choice',NUM_DATES,
-            choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
+            choice_from=['pippo', 'pluto', 'saturn', 'luca', 'josh', 'carl',
+                         'paul'])
  
     
 class TestSort(test.TestCase):
@@ -25,10 +26,10 @@ class TestSort(test.TestCase):
     def fill(self):
         session = self.session()
         with session.begin():
-            for p,n,d in zip(persons,groups,dates):
-                session.add(self.model(person = p, name = n, dt = d))
+            for p, n, d in zip(persons, groups, dates):
+                session.add(self.model(person=p, name=n, dt=d))
         qs = session.query(self.model)
-        self.assertEqual(qs.count(),NUM_DATES)
+        self.assertEqual(qs.count(), NUM_DATES)
         return qs
     
     def checkOrder(self, qs, attr, desc=None):
@@ -105,7 +106,7 @@ class TestSortByForeignKeyField(TestSort):
             for p,g in zip(persons,gps):
                 session.add(model(name = p, group = g))
         qs = session.query(model)
-        self.assertEqual(qs.count(),NUM_DATES)
+        self.assertEqual(qs.count(), NUM_DATES)
         return qs
     
     def testNameSortBy(self):
@@ -154,6 +155,7 @@ class TestOrderingModel(TestSort):
         
     def testExclude(self):
         qs = self.fill().exclude(name='rugby')
+        self.assertTrue(qs)
         self.checkOrder(qs, 'dt')
         
         

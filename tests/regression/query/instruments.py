@@ -1,6 +1,6 @@
 from stdnet import test
 
-from examples.models import Instrument
+from examples.models import Instrument, Instrument2
 from examples.data import FinanceTest
 
 
@@ -8,7 +8,7 @@ class TestFilter(FinanceTest):
     model = Instrument
     
     def setUp(self):
-        self.data.create(self)
+        self.data.create(self, InstrumentModel=self.model)
         
     def testAll(self):
         session = self.session()
@@ -18,9 +18,9 @@ class TestFilter(FinanceTest):
     def testSimpleFilterId_WithRedisInternal(self):
         session = self.session()
         query = session.query(self.model)
-        qs = query.filter(id = 1)
+        qs = query.filter(id=1)
         # count so that we execute the query
-        self.assertEqual(qs.count(),1)
+        self.assertEqual(qs.count(), 1)
         bq = qs.backend_query()
         # test the redis internals
         if qs.backend.name == 'redis':
@@ -184,3 +184,7 @@ class TestFilter(FinanceTest):
         res = set((q.id for q in qt))
         self.assertTrue(res)
         self.assertFalse(res.intersection(set((2,3,4))))
+
+
+class TestFilterOrdered(TestFilter):
+    model = Instrument2

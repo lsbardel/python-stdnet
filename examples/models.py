@@ -213,13 +213,13 @@ class Statistics(odm.StdModel):
 
 class Statistics3(odm.StdModel):
     name = odm.SymbolField()
-    data = odm.JSONField(as_string = False)
+    data = odm.JSONField(as_string=False)
 
 
 class ComplexModel(odm.StdModel):
     name = odm.SymbolField()
-    timestamp = odm.DateTimeField(as_cache = True)
-    data = odm.JSONField(as_string = False, as_cache = True)
+    timestamp = odm.DateTimeField(as_cache=True)
+    data = odm.JSONField(as_string=False, as_cache=True)
 
 
 
@@ -235,9 +235,9 @@ class Environment(odm.StdModel):
 
 class NumericData(odm.StdModel):
     pv = odm.FloatField()
-    vega = odm.FloatField(default = 0.0)
-    delta = odm.FloatField(default = 1.0)
-    gamma = odm.FloatField(required = False)
+    vega = odm.FloatField(default=0.0)
+    delta = odm.FloatField(default=1.0)
+    gamma = odm.FloatField(required=False)
     ok = odm.BooleanField()
 
 

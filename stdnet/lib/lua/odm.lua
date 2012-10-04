@@ -107,15 +107,15 @@ odm.Model = {
         return self:setsize(destkey)
     end,
     --[[
-        Delete a query stored in tmp id
+        Delete a query stored in key id
     --]]
-    delete = function (self, tmp)
-        local ids, results = redis_members(tmp), {}
+    delete = function (self, key)
+        local ids, results = redis_members(key), {}
         for _, id in ipairs(ids) do
             local idkey = self:object_key(id)
             self:_update_indices(false, id)
             local num = odm.redis.call('del', idkey) + 0
-            self:setrem(self.idset, id)
+            self:remove_from_set(self.idset, id)
             if self.meta.multi_fields then
                 for _, name in ipairs(self.meta.multi_fields) do
                     odm.redis.call('del', idkey .. ':' .. name)
@@ -129,12 +129,11 @@ odm.Model = {
     end,
     --[[
     --]]
-    aggregate = function (self, key, field, recusive)
-        for _, id in ipairs(redis_members(key)) do
-            if recusive then
-                self._add(key, field, id)
-            end
-            self:aggregate(self:index_key(field, id), field, true) 
+    aggregate = function (self, destkey, field)
+        -- Loop over ids to aggregate id from a recursive-related field
+        local processed = {}
+        for _, id in ipairs(self:setids(destkey)) do
+            self:_aggregate(destkey, id, field, processed)
         end
     end,
     --[[
@@ -242,7 +241,7 @@ odm.Model = {
         return score
     end,
     --
-    setrem = function(self, setid, id)
+    remove_from_set = function(self, setid, id)
         if self.meta.sorted then
             odm.redis.call('zrem', setid, id)
         else
@@ -353,7 +352,7 @@ odm.Model = {
             end
         end
         if id == '' and not composite_id then
-            table.insert(errors, 'Id not avaiable.')
+            table.insert(errors, 'Id not available. Cannot commit.')
         else
             local oldid, idkey, original_data, field = id, self:object_key(id), {}
             if action ~= 'add' then  -- override or change
@@ -369,19 +368,21 @@ odm.Model = {
                 idkey = self:object_key(id)
             end
             if id ~= oldid and oldid ~= '' then
-                self:setrem(self.idset, oldid)
+                self:remove_from_set(self.idset, oldid)
             end
+            -- Add id to the idset
             score = self:setadd(self.idset, score, id, self.meta.autoincr)
             -- set the new data in the hash table
             if # data > 0 then
                 odm.redis.call('hmset', idkey, unpack(data))
             end
             errors = self:_update_indices(true, id, oldid, score)
-            -- An error has occured. Rollback changes.
+            -- An error has occurred. Rollback changes.
             if # errors > 0 then
                 -- Remove indices
                 self:_update_indices(false, id)
                 if action == 'add' then
+                    self:remove_from_set(self.idset, id)
                     if created_id then
                         odm.redis.call('decr', self.auto_ids)
                         id = ''
@@ -410,11 +411,12 @@ odm.Model = {
                 idxkey = self:map_key(field) -- id for the hash table mapping field value to instance ids
                 if update then
                     if odm.redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
-                        -- The value was already available!
+                        -- The value was already available! If the oldid is different from current id and the
+                        -- index match the oldid, it is fine otherwise it is a conflict
                         if oldid == id or not odm.redis.call('hget', idxkey, value) == oldid then
                             -- remove the field from the instance hashtable so that
-                            -- the next call to _update_indices won't delete the index
-                            -- odm.redis.call('hdel', idkey, field)
+                            -- the next call to _update_indices won't delete the index. Important!
+                            odm.redis.call('hdel', idkey, field)
                             table.insert(errors, 'Unique constraint "' .. field .. '" violated: "' .. value .. '" is already in database.')
                         end
                     end
@@ -426,7 +428,7 @@ odm.Model = {
                 if update then
                     self:setadd(idxkey, score, id)
                 else
-                    self:setrem(idxkey, id)
+                    self:remove_from_set(idxkey, id)
                 end
             end
         end
@@ -507,6 +509,16 @@ odm.Model = {
             end
         end
         return related_items
+    end,
+    -- Aggregate ids into destkey
+    _aggregate = function (self, destkey, id, field, processed)
+        if not processed[id] then
+            processed[id] = true
+            for _, rid in ipairs(self:setids(self:index_key(field, id))) do
+                self:_add(destkey, field, rid)
+                self:_aggregate(destkey, rid, field, processed)
+            end
+        end
     end,
     --
     -- Update a composite ID. Composite IDs are formed by two or more fields

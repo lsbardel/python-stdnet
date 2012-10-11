@@ -217,7 +217,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
         dbdata = instance._dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
-
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
@@ -234,15 +233,13 @@ Return ``True`` if the instance is ready to be saved to database.'''
                                     .format(name,self)
                 else:
                     if isinstance(svalue, dict):
-                        #data[name] = svalue
                         data.update(svalue)
                     else:
                         if svalue is not None:
                             data[name] = svalue
-
         return len(errors) == 0
 
-    def get_sorting(self, sortby, errorClass = None):
+    def get_sorting(self, sortby, errorClass=None):
         s = None
         desc = False
         if isinstance(sortby, autoincrement):
@@ -251,7 +248,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
         elif sortby.startswith('-'):
             desc = True
             sortby = sortby[1:]
-        if sortby == 'id':
+        if sortby == self.pkname():
             f = self.pk
             return orderinginfo(f.attname, f, desc, self.model, None, False)
         else:

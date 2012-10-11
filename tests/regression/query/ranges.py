@@ -12,6 +12,8 @@ class NumberGenerator(data_generator):
         self.d2 = populate('float', self.size, start=-10, end=10)
         self.d3 = populate('float', self.size, start=-10, end=10)
         self.d4 = populate('float', self.size, start=-10, end=10)
+        self.d5 = populate('integer', self.size, start=-5, end=5)
+        self.d6 = populate('integer', self.size, start=-5, end=5)
 
 
 class TestNumericRange(DataTest):
@@ -22,8 +24,10 @@ class TestNumericRange(DataTest):
         session = self.session()
         d = self.data
         with session.begin() as t:
-            for a, b, c, d in zip(d.d1, d.d2, d.d3, d.d4):
-                t.add(self.model(pv=a, vega=b, delta=c, gamma=d))
+            for a, b, c, d, e, f in zip(d.d1, d.d2, d.d3, d.d4, d.d5, d.d6):
+                t.add(self.model(pv=a, vega=b, delta=c, gamma=d,
+                                 data={'test': {'': e,
+                                                'inner': f}}))
                 
     def testGT(self):
         session = self.session()
@@ -79,5 +83,40 @@ class TestNumericRange(DataTest):
             self.assertTrue(v.pv < 3)
             self.assertTrue(v.pv >= -2)
         
+    def testMoreThanOne(self):
+        session = self.session()
+        qs = session.query(NumericData).filter(pv__ge=-2, pv__lt=3)\
+                                       .filter(vega__gt=0)
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.pv < 3)
+            self.assertTrue(v.pv >= -2)
+            self.assertTrue(v.vega > 0)
+    
+    def testWithString(self):
+        session = self.session()
+        qs = session.query(NumericData).filter(pv__ge='-2')
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.pv >= -2)
+        
+    def testJson(self):
+        session = self.session()
+        qs = session.query(NumericData).filter(data__test__gt=1)
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.data__test > 1)
+        qs = session.query(NumericData).filter(data__test__gt='-2')
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.data__test > -2)
+        qs = session.query(NumericData).filter(data__test__inner__gt='1')
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.data__test__inner > 1)
+        qs = session.query(NumericData).filter(data__test__inner__gt=-2)
+        self.assertTrue(qs)
+        for v in qs:
+            self.assertTrue(v.data__test__inner > -2)
             
     

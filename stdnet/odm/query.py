@@ -702,35 +702,51 @@ an exception is raised.
         fields = meta.dfields
         field_lookups = {}
         for name, value in iteritems(kwargs):
-            names = name.split(JSPLITTER)
-            field_name = names[0]
+            bits = name.split(JSPLITTER)
+            field_name = bits.pop(0)
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta, field_name))
             field = fields[field_name]
-            lookups = field_lookups.get(field.attname)
+            attname = field.attname
+            if bits:
+                bits = [n.lower() for n in bits]
+                if bits[-1] == 'in':
+                    bits.pop()
+                lookup = JSPLITTER.join(bits)
+                if lookup and lookup not in range_lookups:
+                    lvalue = field.filter(self.session, lookup, value)
+                    if lvalue is not None:
+                        value = lvalue
+                        lookup = None
+                    else:
+                        if bits[-1] in range_lookups:
+                            lookup = bits.pop()
+                        else:
+                            lookup = None
+                        bits.insert(0, attname)
+                        attname = JSPLITTER.join(bits)
+            else:
+                lookup = None
+            # Get lookups on attribute name
+            lookups = field_lookups.get(attname)
             if lookups is None:
                 lookups = []
-                field_lookups[field.attname] = lookups
-            lookup = JSPLITTER.join(names[1:]).lower()
+                field_lookups[attname] = lookups
             if lookup not in range_lookups:
                 if not field.index:
                     raise QuerySetError("{0} {1} is not an index.\
  Cannot query.".format(field.__class__.__name__,field_name))
-                if lookup:
-                    lvalue = field.filter(self.session, lookup, value)
-                    if lvalue is not None:
-                        value = lvalue
                 if not iterable(value):
                     value = (value,)
                 for v in value:
                     if isinstance(v, Q):
                         v = lookup_value('set', v.construct())
                     else:
-                        v = lookup_value('value', field.serialize(v))
+                        v = lookup_value('value', field.dumps(v, lookup))
                     lookups.append(v)
             else:
-                lookups.append(lookup_value(lookup, field.serialize(value)))
+                lookups.append(lookup_value(lookup, field.dumps(value, lookup)))
         return [queryset(self, name=name, underlying=field_lookups[name])\
                 for name in sorted(field_lookups)]
 

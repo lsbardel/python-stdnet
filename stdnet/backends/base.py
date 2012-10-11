@@ -3,7 +3,8 @@ from collections import namedtuple
 
 from stdnet.conf import settings
 from stdnet.exceptions import *
-from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin
+from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin,\
+                            int_or_float, to_string
 
 
 __all__ = ['BackendRequest',
@@ -29,9 +30,22 @@ session_result = namedtuple('session_result','meta results')
 
 lookup_value = namedtuple('lookup_value', 'lookup value')
 
-range_lookups = frozenset(('gt', 'ge', 'lt', 'le',
-                           'startswith', 'endswith', 'contains'))
+pass_through = lambda x: x
+str_lower_case = lambda x: to_string(x).lower()
 
+range_lookups = {
+    'gt': int_or_float,
+    'ge': int_or_float,
+    'lt': int_or_float,
+    'le': int_or_float,
+    'contains': pass_through,
+    'startswith': pass_through,
+    'endswith': pass_through,
+    'icontains': str_lower_case,
+    'icontains': str_lower_case,
+    'icontains': str_lower_case}
+    
+    
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
     def add_callback(self, callback, errback=None):

@@ -238,12 +238,13 @@ class NumericData(odm.StdModel):
     vega = odm.FloatField(default=0.0)
     delta = odm.FloatField(default=1.0)
     gamma = odm.FloatField(required=False)
+    data = odm.JSONField(as_string=False)
     ok = odm.BooleanField()
 
 
 class DateData(odm.StdModel):
     dt1 = odm.DateField(required = False)
-    dt2 = odm.DateTimeField(default = datetime.now)
+    dt2 = odm.DateTimeField(default=datetime.now)
 
 
 ####################################################
@@ -251,7 +252,7 @@ class DateData(odm.StdModel):
 class Task(odm.StdModel):
     id = odm.SymbolField(primary_key = True)
     name = odm.CharField()
-    timestamp = odm.DateTimeField(default = datetime.now)
+    timestamp = odm.DateTimeField(default=datetime.now)
 
     class Meta:
         ordering = '-timestamp'

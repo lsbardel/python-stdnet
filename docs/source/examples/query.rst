@@ -67,12 +67,16 @@ Concatenating
 
 You can perform further selection by concatenating queries::
 
-    qs = Instrument.objects.filter(ccy__in=('EUR','USD')).filter(types__in=('equity',bond'))
+    qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
+    
+or equivalently::
+    
+    qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))
 
 Which is equivalent to an intersection of two filter statement:
 
-    q1 = Fund.objects.filter(ccy__in=('EUR', 'USD'))
-    q2 = Fund.objects.filter(types__in=('equity',bond'))
+    q1 = Fund.objects.filter(ccy=('EUR', 'USD'))
+    q2 = Fund.objects.filter(types=('equity',bond'))
     qs = q1.intersect(q2)
 
 
@@ -127,3 +131,19 @@ This is merely a syntactic sugar in place of this equivalent query::
 
     qs = Position.objects.filter(instrument=Instrument.objects.filter(ccy='EUR'))
 
+
+Field lookups
+===============
+
+Field lookups allowed a greater control over your query
+
+Numerical lookups
+~~~~~~~~~~~~~~~~~~~
+
+    qs = MyModel.objects.filter(price__ge=20)
+    qs = MyModel.objects.filter(price__gt=20)
+    qs = MyModel.objects.filter(price__le=20)
+    qs = MyModel.objects.filter(price__lt=20)
+    qs = MyModel.objects.filter(price__ge=20, price__le=40)
+    
+    

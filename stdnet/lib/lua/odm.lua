@@ -323,7 +323,7 @@ odm.Model = {
     end,
     --
     _selectranges = function(self, destkey, fromkey, field, ranges)
-        local ordered, ids, scores, value = self.meta.ordered
+        local ordered, ids, scores, value = self.meta.sorted
         if ordered then
             ids, scores = {}, {}
             for i, score in ipairs(self.redis.call('zrange', fromkey, 0, -1, 'withscores')) do

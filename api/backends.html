@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Data Server &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Backend Data Server &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
+    <link rel="up" title="API" href="index.html" />
     <link rel="next" title="Redis Backend" href="redis.html" />
-    <link rel="prev" title="Search" href="../model/search.html" /> 
+    <link rel="prev" title="Fields API" href="fields.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,9 +40,10 @@
           <a href="redis.html" title="Redis Backend"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../model/search.html" title="Search"
+          <a href="fields.html" title="Fields API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -93,14 +95,14 @@ an open door is left for including other backends.</p>
 <dl class="method">
 <dt id="stdnet.BackendDataServer.make_objects">
 <tt class="descname">make_objects</tt><big>(</big><em>meta</em>, <em>data</em>, <em>related_fields=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.make_objects" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generator of <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instances with data
+<dd><p>Generator of <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instances with data
 from database.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>meta</strong> &#8211; instance of model <a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
+<li><strong>meta</strong> &#8211; instance of model <a class="reference internal" href="models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
 <li><strong>data</strong> &#8211; iterator over instances data.</li>
 </ul>
 </td>
@@ -112,13 +114,13 @@ from database.</p>
 <dl class="method">
 <dt id="stdnet.BackendDataServer.structure">
 <tt class="descname">structure</tt><big>(</big><em>instance</em>, <em>client=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.structure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a backend <a class="reference internal" href="../model/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a> handler.</p>
+<dd><p>Create a backend <a class="reference internal" href="models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a> handler.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>instance</strong> &#8211; a <a class="reference internal" href="../model/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a></li>
+<li><strong>instance</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a></li>
 <li><strong>client</strong> &#8211; Optional client handler</li>
 </ul>
 </td>
@@ -142,7 +144,7 @@ from database.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>meta</strong> &#8211; a <a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
+<li><strong>meta</strong> &#8211; a <a class="reference internal" href="models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
 <li><strong>args</strong> &#8211; optional list of strings which are attached to the basekey.</li>
 </ul>
 </td>
@@ -165,7 +167,7 @@ must return a instance of the backend handler.</p>
 <dl class="method">
 <dt id="stdnet.BackendDataServer.execute_session">
 <tt class="descname">execute_session</tt><big>(</big><em>session</em>, <em>callback</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.execute_session" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute a <a class="reference internal" href="../model/session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> in the backend server.</p>
+<dd><p>Execute a <a class="reference internal" href="models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> in the backend server.</p>
 </dd></dl>
 
 <dl class="method">
@@ -208,11 +210,11 @@ paradigm.</p>
 <dt id="stdnet.BackendQuery">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendQuery</tt><big>(</big><em>queryelem</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendQuery" title="Permalink to this definition">¶</a></dt>
 <dd><p>Backend queryset class which implements the database
-queries specified by <a class="reference internal" href="../model/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a>.</p>
+queries specified by <a class="reference internal" href="models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a>.</p>
 <dl class="attribute">
 <dt id="stdnet.BackendQuery.queryelem">
 <tt class="descname">queryelem</tt><a class="headerlink" href="#stdnet.BackendQuery.queryelem" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="../model/models.html#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt></a> to process.</p>
+<dd><p>The <a class="reference internal" href="models.html#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt></a> to process.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -253,14 +255,14 @@ queries specified by <a class="reference internal" href="../model/models.html#st
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../model/search.html"
-                        title="previous chapter">Search</a></p>
+  <p class="topless"><a href="fields.html"
+                        title="previous chapter">Fields API</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="redis.html"
                         title="next chapter">Redis Backend</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/backends/index.txt"
+    <li><a href="../sources/api/backends.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -293,9 +295,10 @@ queries specified by <a class="reference internal" href="../model/models.html#st
           <a href="redis.html" title="Redis Backend"
              >next</a> |</li>
         <li class="right" >
-          <a href="../model/search.html" title="Search"
+          <a href="fields.html" title="Fields API"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API</a> &raquo;</li> 
       </ul>
     </div>
 

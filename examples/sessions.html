@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search for text in your models &mdash; python stdnet v0.7 documentation</title>
+    <title>Sessions &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
-    <link rel="next" title="Sessions" href="sessions.html" />
-    <link rel="prev" title="Sorting and Ordering" href="sorting.html" /> 
+    <link rel="next" title="Performance" href="performance.html" />
+    <link rel="prev" title="Search for text in your models" href="search.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,10 +37,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="sessions.html" title="Sessions"
+          <a href="performance.html" title="Performance"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="sorting.html" title="Sorting and Ordering"
+          <a href="search.html" title="Search for text in your models"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
@@ -52,42 +52,30 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.odm"><span id="tutorial-search"></span></span><div class="section" id="search-for-text-in-your-models">
-<h1>Search for text in your models<a class="headerlink" href="#search-for-text-in-your-models" title="Permalink to this headline">¶</a></h1>
-<p>Full text search in most key-value stores is not provided out of the box as
-it is in traditional relational databases.</p>
-<p>One may argue that no-sql databases don&#8217;t need to provide such feature since
-search engines such as <a class="reference external" href="http://lucene.apache.org/solr/">Solr</a>, <a class="reference external" href="http://www.elasticsearch.org/">ElasticSearch</a> or <a class="reference external" href="http://sphinxsearch.com/">Sphinx</a> can be used to
-provide a full text search solution.</p>
-<p>Stdnet provides an <em class="xref std std-ref">interface for searching</em> so that such
-engines can be used by third party applications.</p>
-<span class="target" id="module-stdnet.apps.searchengine"></span><div class="section" id="redis-based-solution">
-<h2>Redis based solution<a class="headerlink" href="#redis-based-solution" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet also provides a redis-based implementation so that you can have your models
-stored and indexed in the same redis instance.
-This is a great solution during development and for medium sized applications.
-Installing the search engine is explained in
-<a class="reference internal" href="../apps/searchengine.html#apps-searchengine"><em>redis search</em></a> documention. It is as easy as</p>
-<ul>
-<li><p class="first"><a class="reference internal" href="../api/models.html#register-model"><em>Registering</em></a> the <a class="reference internal" href="../apps/searchengine.html#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a> model which stores
-the indices for your models</p>
-</li>
-<li><p class="first">Create the search engine singletone:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
+  <span class="target" id="module-stdnet.odm"><span id="model-session"></span></span><div class="section" id="sessions">
+<h1>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is designed along the lines of <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>. It establishes
+all conversations with the database and represents a <em>holding zone</em> for all the
+objects which you have loaded or associated with it during its lifespan.</p>
+<p>It also provides the entry point to acquire a <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> object, which sends
+queries to the database using the <a class="reference internal" href="../api/models.html#stdnet.odm.Session.backend" title="stdnet.odm.Session.backend"><tt class="xref py py-attr docutils literal"><span class="pre">Session.backend</span></tt></a>, the session
+database connection.</p>
+<div class="section" id="getting-a-session">
+<h2>Getting a session<a class="headerlink" href="#getting-a-session" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is a regular Python class which can be directly instantiated
+by passing the backend connection string or an instance of
+a class:<cite>stdnet.BackendDataServer</cite>.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
-<span class="n">se</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="s">&#39;redis://localhost:8060?db=3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-</li>
-<li><p class="first">Register models you want to search to the search engine signletone:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">se</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
-</pre></div>
 </div>
-</li>
-</ul>
-<p>searching model instances for text can be achieved using the
-<tt class="xref py py-class docutils literal"><span class="pre">Query.search</span></tt> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;bla foo...&#39;</span><span class="p">)</span>
+<div class="section" id="query-a-model">
+<h2>Query a model<a class="headerlink" href="#query-a-model" title="Permalink to this headline">¶</a></h2>
+<p>Once a session is obtained, one can create a query on a model by simply invoking
+the <a class="reference internal" href="../api/models.html#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -105,21 +93,22 @@ the indices for your models</p>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Search for text in your models</a><ul>
-<li><a class="reference internal" href="#redis-based-solution">Redis based solution</a></li>
+<li><a class="reference internal" href="#">Sessions</a><ul>
+<li><a class="reference internal" href="#getting-a-session">Getting a session</a></li>
+<li><a class="reference internal" href="#query-a-model">Query a model</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="sorting.html"
-                        title="previous chapter">Sorting and Ordering</a></p>
+  <p class="topless"><a href="search.html"
+                        title="previous chapter">Search for text in your models</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="sessions.html"
-                        title="next chapter">Sessions</a></p>
+  <p class="topless"><a href="performance.html"
+                        title="next chapter">Performance</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/examples/search.txt"
+    <li><a href="../sources/examples/sessions.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -149,10 +138,10 @@ the indices for your models</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="sessions.html" title="Sessions"
+          <a href="performance.html" title="Performance"
              >next</a> |</li>
         <li class="right" >
-          <a href="sorting.html" title="Sorting and Ordering"
+          <a href="search.html" title="Search for text in your models"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 

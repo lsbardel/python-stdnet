@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sorting and Ordering &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Sorting and Ordering &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Search for text in your models" href="search.html" />
     <link rel="prev" title="Query your Data" href="query.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="query.html" title="Query your Data"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,16 +57,16 @@
 <p>Stdnet can sort instances of a model in three different ways:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#explicit-sorting"><em>Explicit sorting</em></a> using the
-<a class="reference internal" href="../model/models.html#stdnet.odm.Query.sort_by" title="stdnet.odm.Query.sort_by"><tt class="xref py py-attr docutils literal"><span class="pre">Query.sort_by</span></tt></a> method.</li>
+<a class="reference internal" href="../api/models.html#stdnet.odm.Query.sort_by" title="stdnet.odm.Query.sort_by"><tt class="xref py py-attr docutils literal"><span class="pre">Query.sort_by</span></tt></a> method.</li>
 <li><a class="reference internal" href="#implicit-sorting"><em>Implicit sorting</em></a> via the
-<a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass.ordering" title="stdnet.odm.Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">Metaclass.ordering</span></tt></a> attribute of the model metaclass.</li>
+<a class="reference internal" href="../api/models.html#stdnet.odm.Metaclass.ordering" title="stdnet.odm.Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">Metaclass.ordering</span></tt></a> attribute of the model metaclass.</li>
 <li><a class="reference internal" href="#incremental-sorting"><em>Incremental sorting</em></a>, a variant of the
 implicit sorting for models which require to keep track how many
 times instances with the same id are created.</li>
 </ul>
 <div class="section" id="explicit-sorting">
 <span id="id1"></span><h2>Explicit Sorting<a class="headerlink" href="#explicit-sorting" title="Permalink to this headline">¶</a></h2>
-<p>Sorting is usually achieved by using the <a class="reference internal" href="../model/models.html#stdnet.odm.Query.sort_by" title="stdnet.odm.Query.sort_by"><tt class="xref py py-meth docutils literal"><span class="pre">Query.sort_by()</span></tt></a>
+<p>Sorting is usually achieved by using the <a class="reference internal" href="../api/models.html#stdnet.odm.Query.sort_by" title="stdnet.odm.Query.sort_by"><tt class="xref py py-meth docutils literal"><span class="pre">Query.sort_by()</span></tt></a>
 method with a field name as parameter. Lets consider the following model:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SportActivity</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdNet</span><span class="p">):</span>
     <span class="n">person</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
@@ -82,7 +82,7 @@ method with a field name as parameter. Lets consider the following model:</p>
 </div>
 <div class="section" id="implicit-sorting">
 <span id="id2"></span><h2>Implicit Sorting<a class="headerlink" href="#implicit-sorting" title="Permalink to this headline">¶</a></h2>
-<p>Implicit sorting is achieved by setting the <a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass.ordering" title="stdnet.odm.Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">Metaclass.ordering</span></tt></a>
+<p>Implicit sorting is achieved by setting the <a class="reference internal" href="../api/models.html#stdnet.odm.Metaclass.ordering" title="stdnet.odm.Metaclass.ordering"><tt class="xref py py-attr docutils literal"><span class="pre">Metaclass.ordering</span></tt></a>
 attribute in the model <tt class="docutils literal"><span class="pre">Meta</span></tt> class.
 Let&#8217;s consider the following Log model example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Log</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
@@ -179,7 +179,7 @@ sorted sets as indices rather than sets.</p>
         <li class="right" >
           <a href="query.html" title="Query your Data"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>

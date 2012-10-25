@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Applications &mdash; python stdnet v0.7 documentation</title>
+    <title>API &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -22,8 +22,8 @@
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
-    <link rel="next" title="A Search Engine for Stdnet Models" href="searchengine.html" />
-    <link rel="prev" title="Internals and Utilities" href="../api/utility.html" /> 
+    <link rel="next" title="Model and Query API" href="models.html" />
+    <link rel="prev" title="A twitter clone" href="../examples/twitter.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,10 +36,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="searchengine.html" title="A Search Engine for Stdnet Models"
+          <a href="models.html" title="Model and Query API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../api/utility.html" title="Internals and Utilities"
+          <a href="../examples/twitter.html" title="A twitter clone"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>
@@ -50,26 +50,44 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.apps"><span id="contrib-index"></span></span><div class="section" id="applications">
-<h1>Applications<a class="headerlink" href="#applications" title="Permalink to this headline">¶</a></h1>
-<p>The <a class="reference internal" href="#module-stdnet.apps" title="stdnet.apps"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.apps</span></tt></a> module contains applications
-which are based on <a class="reference internal" href="../api/utility.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> but are not part of the
-core library.</p>
-<p>They don&#8217;t have external dependencies but some require
-a <a class="reference internal" href="../stdnetredis.html#stdnetredis"><em>non vanilla redis</em></a> implementation. They are here
-mainly as use cases and in the future they may be removed
-and placed into their own installable packages.</p>
+  <span class="target" id="module-stdnet.odm"><span id="model-index"></span></span><div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<p>Stdnet is an object data mapper for non-relational databases or <a class="reference external" href="http://nosql-database.org/">nosql</a> as
+they are known. It is also a lightweight module, which deal only with data mapping,
+advanced queries and nothing else.</p>
+<p><strong>Contents</strong></p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="searchengine.html">A Search Engine for Stdnet Models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="searchengine.html#usage">Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="searchengine.html#api">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model and Query API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#queries">Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#data-structures">Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#session-and-managers">Session and Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#registration">Registration</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Column Time Series</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#analysis">Analysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#api">API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="timeseries.html#redis-implementation">Redis Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#base-classes">Base Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#atom-fields">Atom Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#object-type-fields">Object Type Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#related-fields">Related Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#data-structure-fields">Data-structure Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#model-field-descriptors">Descriptors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backend Data Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="backends.html#backends">Backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="backends.html#api">API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utility.html">Internals and Utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#module-stdnet.conf">Default Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#model-utilities">Model Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#serialization">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#id1">Encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#exceptions">Exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#signals">Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#miscellaneous">Miscellaneous</a></li>
 </ul>
 </li>
 </ul>
@@ -87,14 +105,14 @@ and placed into their own installable packages.</p>
 </a>
 </p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../api/utility.html"
-                        title="previous chapter">Internals and Utilities</a></p>
+  <p class="topless"><a href="../examples/twitter.html"
+                        title="previous chapter">A twitter clone</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="searchengine.html"
-                        title="next chapter">A Search Engine for Stdnet Models</a></p>
+  <p class="topless"><a href="models.html"
+                        title="next chapter">Model and Query API</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/apps/index.txt"
+    <li><a href="../sources/api/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -124,10 +142,10 @@ and placed into their own installable packages.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="searchengine.html" title="A Search Engine for Stdnet Models"
+          <a href="models.html" title="Model and Query API"
              >next</a> |</li>
         <li class="right" >
-          <a href="../api/utility.html" title="Internals and Utilities"
+          <a href="../examples/twitter.html" title="A twitter clone"
              >previous</a> |</li>
         <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>

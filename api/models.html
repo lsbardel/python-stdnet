@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Model and Query API &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Model and Query API &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
-    <link rel="up" title="Object Data Mapper" href="index.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
+    <link rel="up" title="API" href="index.html" />
     <link rel="next" title="Fields API" href="fields.html" />
-    <link rel="prev" title="Object Data Mapper" href="index.html" /> 
+    <link rel="prev" title="API" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="fields.html" title="Fields API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Object Data Mapper"
+          <a href="index.html" title="API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Object Data Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,11 +54,18 @@
             
   <span class="target" id="module-stdnet.odm"><span id="model-model"></span></span><div class="section" id="model-and-query-api">
 <h1>Model and Query API<a class="headerlink" href="#model-and-query-api" title="Permalink to this headline">¶</a></h1>
+<p>The <em>object-data mapper</em> (ODM) is the core of the library. It defines an API for mapping
+data in the backend key-value store to objects in Python.
+It&#8217;is name is closely related to
+<a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">object relational Mapping</a> (ORM),
+a programming technique for converting data between incompatible
+type systems in traditional <a class="reference external" href="http://en.wikipedia.org/wiki/Relational_database">relational databases</a>
+and object-oriented programming languages.</p>
 <div class="section" id="model">
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
 <p>The object data mapper presents a method of
 associating user-defined Python classes, referred as <strong>models</strong>,
-with data in a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
+with data in a <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
 These python classes are subclasses of
 <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</p>
 <div class="section" id="stdmodel-class">
@@ -89,7 +96,7 @@ by a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.back
 <dl class="attribute">
 <dt id="stdnet.odm.StdModel.session">
 <tt class="descname">session</tt><a class="headerlink" href="#stdnet.odm.StdModel.session" title="Permalink to this definition">¶</a></dt>
-<dd><p>the <a class="reference internal" href="session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> instance which loaded the instance (available
+<dd><p>the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> instance which loaded the instance (available
 when the instance is loaded from the data server).</p>
 </dd></dl>
 
@@ -201,7 +208,7 @@ attribute set to <tt class="xref docutils literal"><span class="pre">True</span>
 <em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Metaclass</tt><big>(</big><em>model</em>, <em>fields</em>, <em>abstract=False</em>, <em>app_label=''</em>, <em>verbose_name=None</em>, <em>ordering=None</em>, <em>modelkey=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Metaclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>An instance of <a class="reference internal" href="#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt></a> stores all information
 which maps a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> into an object in the in a remote
-<a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
+<a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.
 An instance is initiated by the odm when a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class is created.</p>
 <p>To override default behaviour you can specify the <tt class="docutils literal"><span class="pre">Meta</span></tt> class as an inner
 class of <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> in the following way:</p>
@@ -353,11 +360,11 @@ raised when trying to save an invalid instance.</p>
 <dt id="stdnet.odm.Model.save">
 <tt class="descname">save</tt><big>(</big><em>use_current_session=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.Model.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>A direct method for saving an object. This method is provided for
-convenience and should not be used when using a <a class="reference internal" href="session.html#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>.
-This method always commit changes immediately and if the <a class="reference internal" href="session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>
-has already started a <a class="reference internal" href="session.html#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> an error will occur.
+convenience and should not be used when using a <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>.
+This method always commit changes immediately and if the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>
+has already started a <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> an error will occur.
 If a session is not available, it tries to create one
-from its <a class="reference internal" href="session.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>.</p>
+from its <a class="reference internal" href="#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -455,7 +462,7 @@ matched elements value. Must be an index.</td>
 <dl class="method">
 <dt id="stdnet.odm.Q.backend_query">
 <tt class="descname">backend_query</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Q.backend_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build the <a class="reference internal" href="../backends/index.html#stdnet.BackendQuery" title="stdnet.BackendQuery"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendQuery</span></tt></a> for this instance. This
+<dd><p>Build the <a class="reference internal" href="backends.html#stdnet.BackendQuery" title="stdnet.BackendQuery"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendQuery</span></tt></a> for this instance. This
 is a virtual method with different implementation in <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>
 and <a class="reference internal" href="#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">QueryElement</span></tt></a>.</p>
 </dd></dl>
@@ -468,8 +475,8 @@ and <a class="reference internal" href="#stdnet.odm.QueryElement" title="stdnet.
 <dl class="class">
 <dt id="stdnet.odm.Query">
 <em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Query</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Query" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> is produced in terms of a given <a class="reference internal" href="session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>,
-using the <a class="reference internal" href="session.html#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method:</p>
+<dd><p>A <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> is produced in terms of a given <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>,
+using the <a class="reference internal" href="#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -493,14 +500,14 @@ criteria and options associated with it.</p>
 <dl class="attribute">
 <dt id="stdnet.odm.Query.session">
 <tt class="descname">session</tt><a class="headerlink" href="#stdnet.odm.Query.session" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> which created the <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via the
-<a class="reference internal" href="session.html#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method.</p>
+<dd><p>The <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> which created the <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via the
+<a class="reference internal" href="#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.Query.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#stdnet.odm.Query.backend" title="Permalink to this definition">¶</a></dt>
-<dd><p>the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> holding the data to query.</p>
+<dd><p>the <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> holding the data to query.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -554,7 +561,7 @@ manipulated via the <a class="reference internal" href="#stdnet.odm.Query.exclud
 <dt id="stdnet.odm.Query.__init__">
 <tt class="descname">__init__</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Query.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> is not initialized directly but via the
-<a class="reference internal" href="session.html#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> or <a class="reference internal" href="session.html#stdnet.odm.Manager.query" title="stdnet.odm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> methods.</p>
+<a class="reference internal" href="#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> or <a class="reference internal" href="#stdnet.odm.Manager.query" title="stdnet.odm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> methods.</p>
 </dd></dl>
 
 <dl class="method">
@@ -754,7 +761,7 @@ list of ids deleted.</p>
 <dl class="method">
 <dt id="stdnet.odm.Query.backend_query">
 <tt class="descname">backend_query</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Query.backend_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build and return the <a class="reference internal" href="../backends/index.html#stdnet.BackendQuery" title="stdnet.BackendQuery"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendQuery</span></tt></a>.
+<dd><p>Build and return the <a class="reference internal" href="backends.html#stdnet.BackendQuery" title="stdnet.BackendQuery"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendQuery</span></tt></a>.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.</p>
 </dd></dl>
@@ -826,6 +833,229 @@ an iterable or another <a class="reference internal" href="#stdnet.odm.Query" ti
 <tt class="descname">valid</tt><a class="headerlink" href="#stdnet.odm.QueryElement.valid" title="Permalink to this definition">¶</a></dt>
 <dd><p>if <tt class="xref docutils literal"><span class="pre">False</span></tt> this <a class="reference internal" href="#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">QueryElement</span></tt></a> has no underlying elements and
 won&#8217;t produce any query.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="searchengine-interface">
+<h3>SearchEngine Interface<a class="headerlink" href="#searchengine-interface" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.SearchEngine">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">SearchEngine</tt><a class="headerlink" href="#stdnet.odm.SearchEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stdnet search engine driver. This is an abstract class which
+expose the base functionalities for full text-search on model instances.
+Stdnet also provides a <a class="reference internal" href="../apps/searchengine.html#apps-searchengine"><em>python implementation</em></a>
+of this interface.</p>
+<p>The main methods to be implemented are <a class="reference internal" href="#stdnet.odm.SearchEngine.add_item" title="stdnet.odm.SearchEngine.add_item"><tt class="xref py py-meth docutils literal"><span class="pre">add_item()</span></tt></a>,
+<tt class="xref py py-meth docutils literal"><span class="pre">remove_index()</span></tt> and <a class="reference internal" href="#stdnet.odm.SearchEngine.search_model" title="stdnet.odm.SearchEngine.search_model"><tt class="xref py py-meth docutils literal"><span class="pre">search_model()</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="stdnet.odm.SearchEngine.word_middleware">
+<tt class="descname">word_middleware</tt><a class="headerlink" href="#stdnet.odm.SearchEngine.word_middleware" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of middleware functions for preprocessing text
+to be indexed. A middleware function has arity 1 by
+accepting an iterable of words and
+returning an iterable of words. Word middleware functions
+are added to the search engine via the
+<a class="reference internal" href="#stdnet.odm.SearchEngine.add_word_middleware" title="stdnet.odm.SearchEngine.add_word_middleware"><tt class="xref py py-meth docutils literal"><span class="pre">add_word_middleware()</span></tt></a> method.</p>
+<p>For example this function remove a group of words from the index:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">se</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">stopwords</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">swords</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">swords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">swords</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swords</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">word</span>
+
+<span class="n">se</span><span class="o">.</span><span class="n">add_word_middleware</span><span class="p">(</span><span class="n">stopwords</span><span class="p">(</span><span class="s">&#39;and&#39;</span><span class="p">,</span><span class="s">&#39;or&#39;</span><span class="p">,</span><span class="s">&#39;this&#39;</span><span class="p">,</span><span class="s">&#39;that&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.register">
+<tt class="descname">register</tt><big>(</big><em>model</em>, <em>related=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to the search engine.
+When registering a model, every time an instance is created, it will be
+indexed by the search engine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class.</li>
+<li><strong>related</strong> &#8211; a list of related fields to include in the index.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.words_from_text">
+<tt class="descname">words_from_text</tt><big>(</big><em>text</em>, <em>for_search=False</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.words_from_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of indexable words in <em>text</em>.
+This functions loop through the <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> attribute
+to process the text.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>text</strong> &#8211; string from which to extract words.</li>
+<li><strong>for_search</strong> &#8211; <p>flag indicating if the the words will be used for search
+or to index the database. This flug is used in conjunction with the
+middleware flag <em>for_search</em>. If this flag is <tt class="xref docutils literal"><span class="pre">True</span></tt> (i.e. we need to
+search the database for the words in <em>text</em>), only the
+middleware functions in <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a> enabled for searching are
+used.</p>
+<p>Default: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>return a <em>list</em> of cleaned words.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.split_text">
+<tt class="descname">split_text</tt><big>(</big><em>text</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.split_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split text into words and return an iterable over them.
+Can and should be reimplemented by subclasses.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.add_word_middleware">
+<tt class="descname">add_word_middleware</tt><big>(</big><em>middleware</em>, <em>for_search=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.add_word_middleware" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a <em>middleware</em> function to the list of <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>,
+for preprocessing words to be indexed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>middleware</strong> &#8211; a callable receving an iterable over words.</li>
+<li><strong>for_search</strong> &#8211; flag indicating if the <em>middleware</em> can be used for the
+text to search. Default: <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.index_item">
+<tt class="descname">index_item</tt><big>(</big><em>item</em>, <em>transaction</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function for indexing items.
+It extracts content from the given <em>item</em> and add it to the index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.index_items_from_model">
+<tt class="descname">index_items_from_model</tt><big>(</big><em>items</em>, <em>model</em>, <em>transaction</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_items_from_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function for indexing items.
+It extracts content from a list of <em>items</em> belonging to <em>model</em> and
+add it to the index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>items</strong> &#8211; an iterable over instances of of a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</li>
+<li><strong>model</strong> &#8211; The <em>model</em> of all <em>items</em>.</li>
+<li><strong>transaction</strong> &#8211; A transaction for updauing indexes.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.reindex">
+<tt class="descname">reindex</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.reindex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-index models by removing items in
+<tt class="xref py py-class docutils literal"><span class="pre">stdnet.contrib.searchengine.WordItem</span></tt> and rebuilding them by iterating
+through all the instances of model provided.
+If models are not provided, it reindex all models registered
+with the search engine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.session">
+<tt class="descname">session</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a session for the search engine</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.remove_item">
+<tt class="descname">remove_item</tt><big>(</big><em>item_or_model</em>, <em>session</em>, <em>ids=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.remove_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an item from the search indices</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.add_item">
+<tt class="descname">add_item</tt><big>(</big><em>item</em>, <em>words</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.add_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create indices for <em>item</em> and each word in <em>words</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>item</strong> &#8211; a <em>model</em> instance to be indexed. It does not need to be
+a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</li>
+<li><strong>words</strong> &#8211; iterable over words. This iterable has been obtained from the
+text in <em>item</em> via the <a class="reference internal" href="#stdnet.odm.SearchEngine.word_middleware" title="stdnet.odm.SearchEngine.word_middleware"><tt class="xref py py-attr docutils literal"><span class="pre">word_middleware</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.search_model">
+<tt class="descname">search_model</tt><big>(</big><em>query</em>, <em>text</em>, <em>lookup=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search <em>text</em> in <em>model</em> instances. This is the functions
+needing implementation by custom serach engines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> &#8211; a <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> on a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</li>
+<li><strong>text</strong> &#8211; text to search</li>
+<li><strong>lookup</strong> &#8211; Optional lookup, one of <tt class="docutils literal"><span class="pre">contains</span></tt> or <tt class="docutils literal"><span class="pre">in</span></tt>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">An updated <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.flush">
+<tt class="descname">flush</tt><big>(</big><em>full=False</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean the search engine</p>
 </dd></dl>
 
 </dd></dl>
@@ -948,7 +1178,7 @@ Do not override this function. Use <a class="reference internal" href="#stdnet.o
 <dl class="method">
 <dt id="stdnet.odm.Structure.load_data">
 <tt class="descname">load_data</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#stdnet.odm.Structure.load_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load data from the <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
+<dd><p>Load data from the <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1217,12 +1447,505 @@ index is not out of bound.</p>
 
 </div>
 </div>
+<div class="section" id="session-and-managers">
+<h2>Session and Managers<a class="headerlink" href="#session-and-managers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="session">
+<h3>Session<a class="headerlink" href="#session" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.Session">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Session</tt><big>(</big><em>backend</em>, <em>query_class=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>The manager of persistent operations on the backend data server for
+<a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes.</p>
+<dl class="attribute">
+<dt id="stdnet.odm.Session.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.odm.Session.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> instance</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Session.transaction">
+<tt class="descname">transaction</tt><a class="headerlink" href="#stdnet.odm.Session.transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> instance. Not <tt class="xref docutils literal"><span class="pre">None</span></tt> if this <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>
+is in a transactional state.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Session.query_class">
+<tt class="descname">query_class</tt><a class="headerlink" href="#stdnet.odm.Session.query_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>class for querying. Default is <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.session">
+<tt class="descname">session</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Session.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new session from this <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Session.dirty">
+<tt class="descname">dirty</tt><a class="headerlink" href="#stdnet.odm.Session.dirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>set of all changed instances in the session</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.begin">
+<tt class="descname">begin</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.begin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Begin a new class:<cite>Transaction</cite>.
+If this <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is already within a transaction, an error is raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.query">
+<tt class="descname">query</tt><big>(</big><em>model</em>, <em>query_class=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> for <em>model</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.get_or_create">
+<tt class="descname">get_or_create</tt><big>(</big><em>model</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.get_or_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an instance of <em>model</em> from the internal cache (only if the
+dictionary <em>kwargs</em> is of length 1 and has key given by <tt class="docutils literal"><span class="pre">id</span></tt>) or from the
+server. If it the instance is not available, it tries to create one
+from the <strong>kwargs</strong> parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a></li>
+<li><strong>kwargs</strong> &#8211; dictionary of parameters.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">an instance of  two elements tuple containing the instance and a boolean
+indicating if the instance was created or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.add">
+<tt class="descname">add</tt><big>(</big><em>element</em>, <em>modified=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an <em>instance</em> to the session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>instance</strong> &#8211; a class:<cite>StdModel</cite> or a <a class="reference internal" href="#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a> instance.</li>
+<li><strong>modified</strong> &#8211; a boolean flag indictaing if the instance was modified.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.delete">
+<tt class="descname">delete</tt><big>(</big><em>element</em>, <em>modified=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an <em>instance</em> to the session instances to be deleted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instance</strong> &#8211; a class:<cite>StdModel</cite> or a <a class="reference internal" href="#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.flush">
+<tt class="descname">flush</tt><big>(</big><em>model</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completely flush a <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> from the database. No keys
+associated with the model will exists after this operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.clean">
+<tt class="descname">clean</tt><big>(</big><em>model</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove empty keys for a <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> from the database. No
+empty keys associated with the model will exists after this operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.keys">
+<tt class="descname">keys</tt><big>(</big><em>model</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve all keys for a <em>model</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.commit">
+<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Session.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commit the current transaction.
+If no transaction is in progress, this method open one a.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Session.structure">
+<tt class="descname">structure</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.odm.Session.structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendStructure</span></tt> for a given
+<a class="reference internal" href="#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a> <em>instance</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="session-model">
+<h3>Session Model<a class="headerlink" href="#session-model" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.SessionModel">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">SessionModel</tt><big>(</big><em>meta</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#stdnet.odm.SessionModel" title="stdnet.odm.SessionModel"><tt class="xref py py-class docutils literal"><span class="pre">SessionModel</span></tt></a> is the container of all objects for a given
+<a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> in a stdnet <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="stdnet.odm.SessionModel.new">
+<tt class="descname">new</tt><a class="headerlink" href="#stdnet.odm.SessionModel.new" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of all modified instances within this <tt class="docutils literal"><span class="pre">Session</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.SessionModel.modified">
+<tt class="descname">modified</tt><a class="headerlink" href="#stdnet.odm.SessionModel.modified" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of all modified instances within this <tt class="docutils literal"><span class="pre">Session</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.SessionModel.loaded">
+<tt class="descname">loaded</tt><a class="headerlink" href="#stdnet.odm.SessionModel.loaded" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of all unmodified, but not deleted, instances within this
+<a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.SessionModel.deleted">
+<tt class="descname">deleted</tt><a class="headerlink" href="#stdnet.odm.SessionModel.deleted" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of all instances marked as &#8216;deleted&#8217; within this
+<a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.SessionModel.dirty">
+<tt class="descname">dirty</tt><a class="headerlink" href="#stdnet.odm.SessionModel.dirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of all instances which have changed, but not deleted,
+within this <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.iterdirty">
+<tt class="descname">iterdirty</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.iterdirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ordered iterator over dirty elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.add">
+<tt class="descname">add</tt><big>(</big><em>instance</em>, <em>modified=True</em>, <em>persistent=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new instance to the session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">The instance added to the session</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.delete">
+<tt class="descname">delete</tt><big>(</big><em>instance</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete an <em>instance</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.pop">
+<tt class="descname">pop</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove <em>instance</em> from the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>. Instance could be a
+<a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> or an id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instance</strong> &#8211; a <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> or an <em>id</em></td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">the <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> removed from session or <tt class="xref docutils literal"><span class="pre">None</span></tt> if
+it was not in the session.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.expunge">
+<tt class="descname">expunge</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.expunge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove <em>instance</em> from the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>. Instance could be a
+<a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> or an id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instance</strong> &#8211; a <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> or an <em>id</em></td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">the <a class="reference internal" href="#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> removed from session or <tt class="xref docutils literal"><span class="pre">None</span></tt> if
+it was not in the session.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SessionModel.post_commit">
+<tt class="descname">post_commit</tt><big>(</big><em>results</em><big>)</big><a class="headerlink" href="#stdnet.odm.SessionModel.post_commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process results after a commit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>results</strong> &#8211; iterator over <tt class="xref py py-class docutils literal"><span class="pre">stdnet.instance_session_result</span></tt>
+items.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a two elements tuple containing a list of instances saved and
+a list of ids of instances deleted.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="transaction">
+<h3>Transaction<a class="headerlink" href="#transaction" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.Transaction">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Transaction</tt><big>(</big><em>session</em>, <em>name=None</em>, <em>signal_commit=True</em>, <em>signal_delete=True</em>, <em>signal_session=True</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transaction class for pipelining commands to the backend server.
+An instance of this class is usually obtained via the <a class="reference internal" href="#stdnet.odm.Session.begin" title="stdnet.odm.Session.begin"><tt class="xref py py-meth docutils literal"><span class="pre">Session.begin()</span></tt></a>
+or the <a class="reference internal" href="#stdnet.odm.Manager.transaction" title="stdnet.odm.Manager.transaction"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.transaction()</span></tt></a> methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or using the <tt class="docutils literal"><span class="pre">with</span></tt> context manager:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">session</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.session">
+<tt class="descname">session</tt><a class="headerlink" href="#stdnet.odm.Transaction.session" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> which is being transacted.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.name">
+<tt class="descname">name</tt><a class="headerlink" href="#stdnet.odm.Transaction.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.odm.Transaction.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> to which the transaction
+is being performed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.signal_commit">
+<tt class="descname">signal_commit</tt><a class="headerlink" href="#stdnet.odm.Transaction.signal_commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, a signal for each model in the transaction is triggered
+just after changes are committed.
+The signal carries a list of updated <tt class="docutils literal"><span class="pre">instances</span></tt> of the model,
+the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> and the <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> itself.</p>
+<p>default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.signal_delete">
+<tt class="descname">signal_delete</tt><a class="headerlink" href="#stdnet.odm.Transaction.signal_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> a signal for each model in the transaction is triggered
+just after deletion of instances.
+The signal carries the list <tt class="docutils literal"><span class="pre">ids</span></tt> of deleted instances of the mdoel,
+the <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> and the <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> itself.</p>
+<p>default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Transaction.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#stdnet.odm.Transaction.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional python logging object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Transaction.add">
+<tt class="descname">add</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenience proxy for <a class="reference internal" href="#stdnet.odm.Session.add" title="stdnet.odm.Session.add"><tt class="xref py py-meth docutils literal"><span class="pre">Session.add()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Transaction.delete">
+<tt class="descname">delete</tt><big>(</big><em>instance</em><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenience proxy for <a class="reference internal" href="#stdnet.odm.Session.delete" title="stdnet.odm.Session.delete"><tt class="xref py py-meth docutils literal"><span class="pre">Session.delete()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Transaction.query">
+<tt class="descname">query</tt><big>(</big><em>model</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenience proxy for <a class="reference internal" href="#stdnet.odm.Session.query" title="stdnet.odm.Session.query"><tt class="xref py py-meth docutils literal"><span class="pre">Session.query()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Transaction.commit">
+<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the transaction and commit session to the backend.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Transaction.post_commit">
+<tt class="descname">post_commit</tt><big>(</big><em>response=None</em>, <em>commands=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Transaction.post_commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback from the <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> once the
+<a class="reference internal" href="#stdnet.odm.Transaction.session" title="stdnet.odm.Transaction.session"><tt class="xref py py-attr docutils literal"><span class="pre">session</span></tt></a> commit has finished and results are available.
+Results can contain errors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; list of results for each <a class="reference internal" href="#stdnet.odm.SessionModel" title="stdnet.odm.SessionModel"><tt class="xref py py-class docutils literal"><span class="pre">SessionModel</span></tt></a>
+in <a class="reference internal" href="#stdnet.odm.Transaction.session" title="stdnet.odm.Transaction.session"><tt class="xref py py-attr docutils literal"><span class="pre">session</span></tt></a>. Each element in the list is a three-element tuple
+with the <tt class="xref py py-attr docutils literal"><span class="pre">SessionModel.meta</span></tt> element, a list of ids and the commit
+action performed (one of <tt class="docutils literal"><span class="pre">save</span></tt> and <tt class="docutils literal"><span class="pre">delete</span></tt>).</li>
+<li><strong>commands</strong> &#8211; The commands executed by the
+<a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> and stored in this <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>
+for information.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="manager">
+<h3>Manager<a class="headerlink" href="#manager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.Manager">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">Manager</tt><big>(</big><em>model=None</em>, <em>backend=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>A manager class for models. Each <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>
+contains at least one manager which can be accessed via the <tt class="docutils literal"><span class="pre">objects</span></tt>
+class attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+
+<span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span>
+</pre></div>
+</div>
+<p>Managers are used as <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> and <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> factories
+for a given <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">session</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">session</span><span class="p">()</span>
+<span class="n">query</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="stdnet.odm.Manager.model">
+<tt class="descname">model</tt><a class="headerlink" href="#stdnet.odm.Manager.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> for this <a class="reference internal" href="#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>. This attribute is
+assigned by the Object relational mapper at runtime.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.odm.Manager.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.odm.Manager.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> for this <a class="reference internal" href="#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Manager.register">
+<tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Manager.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register the Manager with a model and a backend database.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Manager.session">
+<tt class="descname">session</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Manager.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Manager.transaction">
+<tt class="descname">transaction</tt><big>(</big><em>*models</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.Manager.transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a>. If models are specified, it check
+if their managers have the same backend database.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Manager.query">
+<tt class="descname">query</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.Manager.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> for the <a class="reference internal" href="#stdnet.odm.Manager.model" title="stdnet.odm.Manager.model"><tt class="xref py py-attr docutils literal"><span class="pre">Manager.model</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Manager.empty">
+<tt class="descname">empty</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Manager.empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an empty :class;`Query`</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="relatedmanager">
+<h3>RelatedManager<a class="headerlink" href="#relatedmanager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.related.RelatedManager">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.related.</tt><tt class="descname">RelatedManager</tt><big>(</big><em>field</em>, <em>model=None</em>, <em>instance=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.related.RelatedManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for managers handling relationships between models.
+While standard <a class="reference internal" href="#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> are class properties of a model,
+related managers are accessed by instances to easily retrieve instances
+of a related model.</p>
+<dl class="method">
+<dt id="stdnet.odm.related.RelatedManager.session">
+<tt class="descname">session</tt><big>(</big><em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.related.RelatedManager.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the session for this <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>transaction</strong> &#8211; an optional session <a class="reference internal" href="#stdnet.odm.Transaction" title="stdnet.odm.Transaction"><tt class="xref py py-class docutils literal"><span class="pre">Transaction</span></tt></a> to use.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="one2manyrelatedmanager">
+<h3>One2ManyRelatedManager<a class="headerlink" href="#one2manyrelatedmanager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.odm.related.One2ManyRelatedManager">
+<em class="property">class </em><tt class="descclassname">stdnet.odm.related.</tt><tt class="descname">One2ManyRelatedManager</tt><big>(</big><em>field</em>, <em>model=None</em>, <em>instance=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.related.One2ManyRelatedManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
+relationships under the hood.
+If a model has a <a class="reference internal" href="fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, instances of
+that model will have access to the related (foreign) objects
+via a simple attribute of the model.</p>
+</dd></dl>
+
+</div>
+</div>
 <div class="section" id="registration">
 <span id="register-model"></span><h2>Registration<a class="headerlink" href="#registration" title="Permalink to this headline">¶</a></h2>
-<p>Models can be registered with a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> so that
-the model <a class="reference internal" href="session.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> can be used to create instance and query the database.
+<p>Models can be registered with a <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> so that
+the model <a class="reference internal" href="#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> can be used to create instance and query the database.
 If a model is not registered, the only way to operate on it is via the
-<a class="reference internal" href="session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> API.</p>
+<a class="reference internal" href="#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> API.</p>
 <p>Stdnet provides two registration functions, a low level and a higher level one
 which can be used to register several models at once.</p>
 <div class="section" id="register">
@@ -1231,7 +1954,7 @@ which can be used to register several models at once.</p>
 <dt id="stdnet.odm.register">
 <tt class="descclassname">stdnet.odm.</tt><tt class="descname">register</tt><big>(</big><em>model</em>, <em>backend=None</em>, <em>ignore_duplicates=True</em>, <em>local_thread=False</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.odm.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>The low level function for registering a <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>
-classes with a <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> data server.</p>
+classes with a <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> data server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1274,7 +1997,7 @@ on the same redis instance).</p>
 <tt class="descclassname">stdnet.odm.</tt><tt class="descname">register_application_models</tt><big>(</big><em>applications</em>, <em>models=None</em>, <em>app_defaults=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.register_application_models" title="Permalink to this definition">¶</a></dt>
 <dd><p>A higher level registration functions for group of models located
 on application modules.
-It uses the <a class="reference internal" href="../utility.html#stdnet.odm.model_iterator" title="stdnet.odm.model_iterator"><tt class="xref py py-func docutils literal"><span class="pre">model_iterator()</span></tt></a> function to iterate
+It uses the <a class="reference internal" href="utility.html#stdnet.odm.model_iterator" title="stdnet.odm.model_iterator"><tt class="xref py py-func docutils literal"><span class="pre">model_iterator()</span></tt></a> function to iterate
 through all <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> models available in <tt class="docutils literal"><span class="pre">applications</span></tt>
 and register them using the <a class="reference internal" href="#stdnet.odm.register" title="stdnet.odm.register"><tt class="xref py py-func docutils literal"><span class="pre">register()</span></tt></a> low level function.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1335,28 +2058,6 @@ registered models.</p>
 
 </div>
 </div>
-<div class="section" id="signals">
-<span id="signal-api"></span><h2>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet includes a signal dispatcher which helps allow decoupled
-applications get notified when actions occur elsewhere in the framework.
-In a nutshell, signals allow certain senders to notify a set of receivers
-that some action has taken place.
-They are especially useful when many pieces of code may be interested in
-the same events.</p>
-<p>The data mapper provide with the following built-in signals in the <a class="reference internal" href="../utility.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a>
-module:</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">pre_commit</span></tt> triggered before new instances or changes on existing instances
-are committed to the backend server.</li>
-<li><tt class="docutils literal"><span class="pre">post_commit</span></tt> triggered after new instances or changes on existing instances
-are committed to the backend server.</li>
-</ul>
-<p>It is also possible to add callback to single instances in the following way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">instance</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<span class="n">instance</span><span class="o">.</span><span class="n">post_commit</span><span class="p">(</span><span class="nb">callable</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
 </div>
 
 
@@ -1383,6 +2084,7 @@ are committed to the backend server.</li>
 <li><a class="reference internal" href="#query-base-class">Query base class</a></li>
 <li><a class="reference internal" href="#query">Query</a></li>
 <li><a class="reference internal" href="#queryelement">QueryElement</a></li>
+<li><a class="reference internal" href="#searchengine-interface">SearchEngine Interface</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#data-structures">Data Structures</a><ul>
@@ -1395,6 +2097,15 @@ are committed to the backend server.</li>
 <li><a class="reference internal" href="#ts">TS</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#session-and-managers">Session and Managers</a><ul>
+<li><a class="reference internal" href="#session">Session</a></li>
+<li><a class="reference internal" href="#session-model">Session Model</a></li>
+<li><a class="reference internal" href="#transaction">Transaction</a></li>
+<li><a class="reference internal" href="#manager">Manager</a></li>
+<li><a class="reference internal" href="#relatedmanager">RelatedManager</a></li>
+<li><a class="reference internal" href="#one2manyrelatedmanager">One2ManyRelatedManager</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#registration">Registration</a><ul>
 <li><a class="reference internal" href="#register">Register</a></li>
 <li><a class="reference internal" href="#register-application-models">Register application models</a></li>
@@ -1403,20 +2114,19 @@ are committed to the backend server.</li>
 <li><a class="reference internal" href="#unregister-model">Unregister model</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#signals">Signals</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Object Data Mapper</a></p>
+                        title="previous chapter">API</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="fields.html"
                         title="next chapter">Fields API</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/models.txt"
+    <li><a href="../sources/api/models.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -1449,10 +2159,10 @@ are committed to the backend server.</li>
           <a href="fields.html" title="Fields API"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Object Data Mapper"
+          <a href="index.html" title="API"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Object Data Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API</a> &raquo;</li> 
       </ul>
     </div>
 

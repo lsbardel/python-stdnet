@@ -172,7 +172,7 @@ text to search. Default: <tt class="xref docutils literal"><span class="pre">Tru
 
 <dl class="method">
 <dt id="stdnet.odm.SearchEngine.index_item">
-<tt class="descname">index_item</tt><big>(</big><em>item</em>, <em>session</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">index_item</tt><big>(</big><em>item</em>, <em>transaction</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main function for indexing items.
 It extracts content from the given <em>item</em> and add it to the index.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -180,6 +180,27 @@ It extracts content from the given <em>item</em> and add it to the index.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; an instance of a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.SearchEngine.index_items_from_model">
+<tt class="descname">index_items_from_model</tt><big>(</big><em>items</em>, <em>model</em>, <em>transaction</em><big>)</big><a class="headerlink" href="#stdnet.odm.SearchEngine.index_items_from_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function for indexing items.
+It extracts content from a list of <em>items</em> belonging to <em>model</em> and
+add it to the index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>items</strong> &#8211; an iterable over instances of of a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</li>
+<li><strong>model</strong> &#8211; The <em>model</em> of all <em>items</em>.</li>
+<li><strong>transaction</strong> &#8211; A transaction for updauing indexes.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>

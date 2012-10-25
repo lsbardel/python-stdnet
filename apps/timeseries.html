@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Column Time Series &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Column Time Series &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
     <link rel="up" title="Applications" href="index.html" />
-    <link rel="next" title="Internals and Utilities" href="../utility.html" />
+    <link rel="next" title="Changelog" href="../changelog.html" />
     <link rel="prev" title="A Search Engine for Stdnet Models" href="searchengine.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../utility.html" title="Internals and Utilities"
+          <a href="../changelog.html" title="Changelog"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Applications</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,23 +54,12 @@
             
   <div class="section" id="module-stdnet.apps.columnts">
 <span id="column-time-series"></span><span id="apps-timeserie"></span><h1>Column Time Series<a class="headerlink" href="#module-stdnet.apps.columnts" title="Permalink to this headline">¶</a></h1>
-<p>This is an application for managing multivariate <a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> of
-numbers. It provides tools for performing aggregation and statistics
-via lua scripts.</p>
-<p>The redis implementation uses several redis structures for a given
-<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> instance.</p>
-<ul class="simple">
-<li>A zset for holding times in an ordered fashion.</li>
-<li>A redis <em>set</em> for holding <em>fields</em> names.</li>
-<li>A redis string for each <em>field</em> in the timeseries for holding values.</li>
-</ul>
-<p>This composite data-structure looks and feels like a redis zset.
-However, the ordered set doesn&#8217;t actually store the data, it is there to
-maintain order and facilitate retrieval by times (scores) and rank.</p>
-<p>For a given <em>field</em>, the data is stored in a sequence of 9-bytes string
-with the initial byte (<tt class="docutils literal"><span class="pre">byte0</span></tt>) indicating the type of data:</p>
-<div class="highlight-python"><pre>&lt;byte0&gt;&lt;byte1,...,byte8&gt;</pre>
-</div>
+<p>An application which implements a specialised remote
+<a class="reference internal" href="../api/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a> for managing numeric multivariate
+<a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> and perform remote analysis on them. The main classes
+for this application are <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>, the stand alone data structure, and
+the correspondent <a class="reference internal" href="#stdnet.apps.columnts.ColumnTSField" title="stdnet.apps.columnts.ColumnTSField"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTSField</span></tt></a> which can be used as
+a <a class="reference internal" href="../api/fields.html#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StructureField</span></tt></a> on a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</p>
 <p>The API is straightforward:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 <span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTS</span>
@@ -79,7 +68,7 @@ with the initial byte (<tt class="docutils literal"><span class="pre">byte0</spa
 <span class="n">ts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">21</span><span class="p">),</span> <span class="p">{</span><span class="s">&#39;open&#39;</span><span class="p">:</span> <span class="mf">603.87</span><span class="p">,</span> <span class="s">&#39;close&#39;</span><span class="p">:</span> <span class="mf">614.00</span><span class="p">})</span>
 </pre></div>
 </div>
-<p>It can also be used as a <a class="reference internal" href="../model/fields.html#model-field-structure"><em>datastructure fields</em></a>.
+<p>It can also be used as a <a class="reference internal" href="../api/fields.html#model-field-structure"><em>datastructure fields</em></a>.
 For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 <span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTSField</span>
@@ -99,10 +88,12 @@ ts.evaluate(script)</pre>
 </div>
 <div class="section" id="api">
 <h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="columnts">
+<h3>ColumnTS<a class="headerlink" href="#columnts" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.apps.columnts.ColumnTS">
 <em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTS</tt><big>(</big><em>instance=None</em>, <em>timeout=0</em>, <em>value_pickler=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialised <a class="reference internal" href="../model/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> structure for numeric
+<dd><p>A specialised <a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> structure for numeric
 multivariate timeseries.</p>
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.front">
@@ -118,8 +109,10 @@ multivariate timeseries.</p>
 
 <dl class="method">
 <dt id="stdnet.apps.columnts.ColumnTS.info">
-<tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provide information for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
+<tt class="descname">info</tt><big>(</big><em>start=None</em>, <em>end=None</em>, <em>fields=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide data information for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>. If no
+parameters are specified it returns the number of data points for each
+fields, as well as the start and end date.</p>
 </dd></dl>
 
 <dl class="method">
@@ -222,6 +215,35 @@ of the form:</p>
 </dd></dl>
 
 </div>
+<div class="section" id="columntsfield">
+<h3>ColumnTSField<a class="headerlink" href="#columntsfield" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.apps.columnts.ColumnTSField">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTSField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTSField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A multivariate timeseries field.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="redis-implementation">
+<h2>Redis Implementation<a class="headerlink" href="#redis-implementation" title="Permalink to this headline">¶</a></h2>
+<p>It provides tools for performing aggregation and statistics
+via lua scripts.
+The redis implementation uses several redis structures for a given
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> instance.</p>
+<ul class="simple">
+<li>A zset for holding times in an ordered fashion.</li>
+<li>A redis <em>set</em> for holding <em>fields</em> names.</li>
+<li>A redis string for each <em>field</em> in the timeseries for holding values.</li>
+</ul>
+<p>This composite data-structure looks and feels like a redis zset.
+However, the ordered set doesn&#8217;t actually store the data, it is there to
+maintain order and facilitate retrieval by times (scores) and rank.</p>
+<p>For a given <em>field</em>, the data is stored in a sequence of 9-bytes string
+with the initial byte (<tt class="docutils literal"><span class="pre">byte0</span></tt>) indicating the type of data:</p>
+<div class="highlight-python"><pre>&lt;byte0&gt;&lt;byte1,...,byte8&gt;</pre>
+</div>
+</div>
 </div>
 
 
@@ -238,7 +260,12 @@ of the form:</p>
   <ul>
 <li><a class="reference internal" href="#">Column Time Series</a><ul>
 <li><a class="reference internal" href="#analysis">Analysis</a></li>
-<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#columnts">ColumnTS</a></li>
+<li><a class="reference internal" href="#columntsfield">ColumnTSField</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#redis-implementation">Redis Implementation</a></li>
 </ul>
 </li>
 </ul>
@@ -247,8 +274,8 @@ of the form:</p>
   <p class="topless"><a href="searchengine.html"
                         title="previous chapter">A Search Engine for Stdnet Models</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../utility.html"
-                        title="next chapter">Internals and Utilities</a></p>
+  <p class="topless"><a href="../changelog.html"
+                        title="next chapter">Changelog</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/apps/timeseries.txt"
@@ -281,12 +308,12 @@ of the form:</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../utility.html" title="Internals and Utilities"
+          <a href="../changelog.html" title="Changelog"
              >next</a> |</li>
         <li class="right" >
           <a href="searchengine.html" title="A Search Engine for Stdnet Models"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >Applications</a> &raquo;</li> 
       </ul>
     </div>

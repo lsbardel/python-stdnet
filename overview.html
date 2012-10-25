@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Overview and Installation &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="index.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="index.html" />
     <link rel="next" title="Tutorials &amp; Examples" href="examples/index.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,8 +50,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="overview">
-<span id="intro-overview"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="overview-and-installation">
+<span id="intro-overview"></span><h1>Overview and Installation<a class="headerlink" href="#overview-and-installation" title="Permalink to this headline">¶</a></h1>
 <p><strong>A stand-alone Python 3 compatible data manager for Redis remote data structures.</strong></p>
 <p>The data is owned by different, configurable back-end databases and it is accessed using a
 light-weight Object Data Mapper (ODM).
@@ -66,8 +66,6 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 </tr>
 <tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="https://github.com/lsbardel/python-stdnet">https://github.com/lsbardel/python-stdnet</a></td>
 </tr>
-<tr class="field"><th class="field-name">Issues:</th><td class="field-body"><a class="reference external" href="https://github.com/lsbardel/python-stdnet/issues">https://github.com/lsbardel/python-stdnet/issues</a></td>
-</tr>
 <tr class="field"><th class="field-name">Mailing List:</th><td class="field-body"><a class="reference external" href="https://groups.google.com/group/python-stdnet">https://groups.google.com/group/python-stdnet</a></td>
 </tr>
 <tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, odm</td>
@@ -78,10 +76,10 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="contents local topic" id="id4">
 <ul class="simple">
-<li><a class="reference internal" href="#requirements" id="id9">Requirements</a></li>
-<li><a class="reference internal" href="#philosophy" id="id10">Philosophy</a></li>
-<li><a class="reference internal" href="#installing" id="id11">Installing</a></li>
-<li><a class="reference internal" href="#documentation" id="id12">Documentation</a></li>
+<li><a class="reference internal" href="#features" id="id9">Features</a></li>
+<li><a class="reference internal" href="#requirements" id="id10">Requirements</a></li>
+<li><a class="reference internal" href="#philosophy" id="id11">Philosophy</a></li>
+<li><a class="reference internal" href="#installing" id="id12">Installing</a></li>
 <li><a class="reference internal" href="#version-check" id="id13">Version Check</a></li>
 <li><a class="reference internal" href="#backends" id="id14">Backends</a></li>
 <li><a class="reference internal" href="#object-data-mapper" id="id15">Object Data Mapper</a></li>
@@ -91,16 +89,28 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 <li><a class="reference internal" href="#license" id="id19">License</a></li>
 </ul>
 </div>
+<div class="section" id="features">
+<h3><a class="toc-backref" href="#id9">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Models with scalar and multi-value fields.</li>
+<li>Reach query API including unions, intersections, exclusions, ranges and more.</li>
+<li>Full text search.</li>
+<li>Multi-variate numeric timeseries application.</li>
+<li>Publish/Subscribe application.</li>
+</ul>
+</div>
 <div class="section" id="requirements">
-<h3><a class="toc-backref" href="#id9">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Python 2.6 to Python 3.3. Single codebase.</li>
+<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server version 2.6 or above.</li>
 <li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for faster redis protocol parser.</li>
-<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server.</li>
+<li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a> only when using the asynchronous redis connection or the
+test suite.</li>
 </ul>
 </div>
 <div class="section" id="philosophy">
-<h3><a class="toc-backref" href="#id10">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h3>
 <p>Key-valued pairs databases, also know as key-value stores, have many differences
 from traditional relational databases,
 most important being they do not use <tt class="docutils literal"><span class="pre">SQL</span></tt> as their query language,
@@ -114,7 +124,7 @@ Bandwidth and server round-trips can be reduced to the bare minimum
 so that your application is fast and memory efficient.</p>
 </div>
 <div class="section" id="installing">
-<h3><a class="toc-backref" href="#id11">Installing</a><a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Installing</a><a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h3>
 <p>To install, download, uncompress and type:</p>
 <div class="highlight-python"><pre>python setup.py install</pre>
 </div>
@@ -124,13 +134,6 @@ so that your application is fast and memory efficient.</p>
 <p>or <tt class="docutils literal"><span class="pre">pip</span></tt>:</p>
 <div class="highlight-python"><pre>pip install python-stdnet</pre>
 </div>
-</div>
-<div class="section" id="documentation">
-<h3><a class="toc-backref" href="#id12">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
-<p>StdNet uses <a class="reference external" href="http://sphinx.pocoo.org/">Sphinx</a> for its documentation, and the latest is available at GitHub:</p>
-<ul class="simple">
-<li><a class="reference external" href="http://lsbardel.github.com/python-stdnet/">http://lsbardel.github.com/python-stdnet/</a></li>
-</ul>
 </div>
 <div class="section" id="version-check">
 <h3><a class="toc-backref" href="#id13">Version Check</a><a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h3>
@@ -223,7 +226,8 @@ binaries at <a class="reference external" href="http://code.google.com/p/service
 <ul class="simple">
 <li><a class="reference external" href="http://pypi.python.org/pypi/unittest2">unittest2</a> for python 2.6 only.</li>
 <li><a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> for python 2.6, 3 and 3.1 only.</li>
-<li><a class="reference external" href="http://readthedocs.org/docs/nose/en/latest">nose</a></li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/mock">mock</a> for python 2.6 to python 3.2 only.</li>
+<li><a class="reference external" href="http://readthedocs.org/docs/nose/en/latest">nose</a> or <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a>.</li>
 </ul>
 <p>Note, these requirements are only needed if you are planning to run tests.
 To run tests open a shell and launch Redis. On another shell,
@@ -285,12 +289,12 @@ file in the top distribution directory for the full license text.</p>
 </p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#">Overview and Installation</a><ul>
 <li><a class="reference internal" href="#contents">Contents</a><ul>
+<li><a class="reference internal" href="#features">Features</a></li>
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
 <li><a class="reference internal" href="#philosophy">Philosophy</a></li>
 <li><a class="reference internal" href="#installing">Installing</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a></li>
 <li><a class="reference internal" href="#version-check">Version Check</a></li>
 <li><a class="reference internal" href="#backends">Backends</a></li>
 <li><a class="reference internal" href="#object-data-mapper">Object Data Mapper</a></li>
@@ -347,7 +351,7 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Fields API &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Fields API &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
-    <link rel="up" title="Object Data Mapper" href="index.html" />
-    <link rel="next" title="Sessions" href="session.html" />
+    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
+    <link rel="up" title="API" href="index.html" />
+    <link rel="next" title="Backend Data Server" href="backends.html" />
     <link rel="prev" title="Model and Query API" href="models.html" /> 
   </head>
   <body>
@@ -37,13 +37,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="session.html" title="Sessions"
+          <a href="backends.html" title="Backend Data Server"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Object Data Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -88,7 +88,7 @@ If you don&#8217;t need to query the field you should set this value to
 <p class="first admonition-title">Note</p>
 <p class="last">if <tt class="docutils literal"><span class="pre">index</span></tt> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> executing queries
 against the field will
-throw a <a class="reference internal" href="../utility.html#stdnet.QuerySetError" title="stdnet.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.QuerySetError</span></tt></a> exception.
+throw a <a class="reference internal" href="utility.html#stdnet.QuerySetError" title="stdnet.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.QuerySetError</span></tt></a> exception.
 No database queries are allowed for non indexed fields
 as a design decision (explicit better than implicit).</p>
 </div>
@@ -100,7 +100,7 @@ as a design decision (explicit better than implicit).</p>
 <tt class="descname">unique</tt><a class="headerlink" href="#stdnet.odm.Field.unique" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
 In this case <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
-Enforced at <a class="reference internal" href="../backends/index.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
+Enforced at <a class="reference internal" href="backends.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
 <p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
@@ -214,7 +214,7 @@ function users should never call.</p>
 <dt id="stdnet.odm.Field.to_python">
 <tt class="descname">to_python</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.to_python" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts the input value into the expected Python
-data type, raising <a class="reference internal" href="../utility.html#stdnet.FieldValueError" title="stdnet.FieldValueError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldValueError</span></tt></a> if the data
+data type, raising <a class="reference internal" href="utility.html#stdnet.FieldValueError" title="stdnet.FieldValueError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.FieldValueError</span></tt></a> if the data
 can&#8217;t be converted.
 Returns the converted value. Subclasses should override this.</p>
 </dd></dl>
@@ -309,9 +309,9 @@ It can also be specified as a string if class specification is not possible.</td
 <dl class="attribute">
 <dt id="stdnet.odm.StructureField.value_pickler">
 <tt class="descname">value_pickler</tt><a class="headerlink" href="#stdnet.odm.StructureField.value_pickler" title="Permalink to this definition">¶</a></dt>
-<dd><p>An <a class="reference internal" href="../utility.html#stdnet.utils.encoders.Encoder" title="stdnet.utils.encoders.Encoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Encoder</span></tt></a> used to encode and decode
+<dd><p>An <a class="reference internal" href="utility.html#stdnet.utils.encoders.Encoder" title="stdnet.utils.encoders.Encoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Encoder</span></tt></a> used to encode and decode
 values.</p>
-<p>Default: <a class="reference internal" href="../utility.html#stdnet.utils.encoders.Json" title="stdnet.utils.encoders.Json"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Json</span></tt></a>.</p>
+<p>Default: <a class="reference internal" href="utility.html#stdnet.utils.encoders.Json" title="stdnet.utils.encoders.Json"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Json</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -852,11 +852,11 @@ it returns an instance of <a class="reference internal" href="models.html#stdnet
   <p class="topless"><a href="models.html"
                         title="previous chapter">Model and Query API</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="session.html"
-                        title="next chapter">Sessions</a></p>
+  <p class="topless"><a href="backends.html"
+                        title="next chapter">Backend Data Server</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/model/fields.txt"
+    <li><a href="../sources/api/fields.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -886,13 +886,13 @@ it returns an instance of <a class="reference internal" href="models.html#stdnet
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="session.html" title="Sessions"
+          <a href="backends.html" title="Backend Data Server"
              >next</a> |</li>
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Object Data Mapper</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API</a> &raquo;</li> 
       </ul>
     </div>
 

@@ -14,10 +14,6 @@ advanced configuration parameters and functionalities can be investigated.
 The collection of tutorials examples is available in the
 :mod:`examples` module in the source distribution.
 
-They illustrate the use of the different :ref:`scalar <model-field>`
-and :ref:`data structure <model-field-structure>` fields
-available in :mod:`stdnet`.
-
 **Tutorials**
 
 .. toctree::
@@ -27,5 +23,6 @@ available in :mod:`stdnet`.
    query
    sorting
    search
+   sessions
    performance
    twitter

@@ -14,42 +14,11 @@ management and retrieval of large data-sets.
 It includes a stand-alone, ``python 3`` compatible,
 :ref:`redis client <redis-client>` which was originally forked from redis-py_.
 There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
-there are over 500 tests with a coverage of about 90%.
+there are over 600 tests with a coverage over 90%.
 
 **The library is stable, used in production and continuously maintained**.
 
 **Dependencies**: None
-
-**Optional Dependencies**: cython_ for the :ref:`Redis C parser <redis-parser>`.
-
-
-First steps
-===============
-
-**From scratch:**
-:ref:`Overview and Installation <intro-overview>`
-
-**Tutorials:**
-:ref:`Using Models <tutorial>` |
-:ref:`Query your data <tutorial-query>` |
-:ref:`Sorting <sorting>` |
-:ref:`Searching <tutorial-search>` |
-:ref:`Twitter Clone<twitter-example>`
-
-**API:**
-:ref:`Structures API <model-structures>` |
-:ref:`Model API <model-model>` |
-:ref:`Fields API <model-field>` |
-:ref:`Redis Client <redis-server>`
-
-**Special Topic**
-:ref:`Multivariate numeric time-series <apps-timeserie>`
- 
-**Miscellaneous:**
-:ref:`Contributing <contributing>` |
-:ref:`Tests <runningtests>` |
-:ref:`Changelog <changelog>` |
-:ref:`Kudos <kudos>`
 
 .. _contents:
 
@@ -61,18 +30,19 @@ Contents
    
    overview
    examples/index
-   model/index
-   backends/index
+   api/index
    apps/index
-   utility
-   stdnetredis
    changelog
+   stdnetredis
+   
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
+
+
 
 .. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py

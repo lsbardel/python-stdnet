@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python Stdnet &mdash; python stdnet v0.7c6 documentation</title>
+    <title>Python Stdnet &mdash; python stdnet v0.7 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7c6',
+        VERSION:     '0.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +21,8 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="#" />
-    <link rel="next" title="Overview" href="overview.html" /> 
+    <link rel="top" title="python stdnet v0.7 documentation" href="#" />
+    <link rel="next" title="Overview and Installation" href="overview.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,9 +35,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="overview.html" title="Overview"
+          <a href="overview.html" title="Overview and Installation"
              accesskey="N">next</a> |</li>
-        <li><a href="#">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="#">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,47 +54,21 @@ in the future.</p>
 <p>It is shipped with an object-data mapper which greatly facilitates the
 management and retrieval of large data-sets.
 It includes a stand-alone, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3</span></tt> compatible,
-<a class="reference internal" href="backends/redis.html#redis-client"><em>redis client</em></a> which was originally forked from <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>.
+<a class="reference internal" href="api/redis.html#redis-client"><em>redis client</em></a> which was originally forked from <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>.
 There are no dependencies, it requires <tt class="docutils literal"><span class="pre">python</span> <span class="pre">2.6</span></tt> up to <tt class="docutils literal"><span class="pre">python</span> <span class="pre">3.3</span></tt> and
-there are over 500 tests with a coverage of about 90%.</p>
+there are over 600 tests with a coverage over 90%.</p>
 <p><strong>The library is stable, used in production and continuously maintained</strong>.</p>
 <p><strong>Dependencies</strong>: None</p>
-<p><strong>Optional Dependencies</strong>: <a class="reference external" href="http://cython.org/">cython</a> for the <a class="reference internal" href="backends/redis.html#redis-parser"><em>Redis C parser</em></a>.</p>
-<div class="section" id="first-steps">
-<h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
-<p><strong>From scratch:</strong>
-<a class="reference internal" href="overview.html#intro-overview"><em>Overview and Installation</em></a></p>
-<p><strong>Tutorials:</strong>
-<a class="reference internal" href="examples/tutorial.html#tutorial"><em>Using Models</em></a> |
-<a class="reference internal" href="examples/query.html#tutorial-query"><em>Query your data</em></a> |
-<a class="reference internal" href="examples/sorting.html#sorting"><em>Sorting</em></a> |
-<a class="reference internal" href="examples/search.html#tutorial-search"><em>Searching</em></a> |
-<a class="reference internal" href="examples/twitter.html#twitter-example"><em>Twitter Clone</em></a></p>
-<p><strong>API:</strong>
-<a class="reference internal" href="model/models.html#model-structures"><em>Structures API</em></a> |
-<a class="reference internal" href="model/models.html#model-model"><em>Model API</em></a> |
-<a class="reference internal" href="model/fields.html#model-field"><em>Fields API</em></a> |
-<a class="reference internal" href="backends/redis.html#redis-server"><em>Redis Client</em></a></p>
-<p><strong>Special Topic</strong>
-<a class="reference internal" href="apps/timeseries.html#apps-timeserie"><em>Multivariate numeric time-series</em></a></p>
-<p><strong>Miscellaneous:</strong>
-<a class="reference internal" href="overview.html#contributing"><em>Contributing</em></a> |
-<a class="reference internal" href="overview.html#runningtests"><em>Tests</em></a> |
-<a class="reference internal" href="changelog.html#changelog"><em>Changelog</em></a> |
-<a class="reference internal" href="overview.html#kudos"><em>Kudos</em></a></p>
-</div>
 <div class="section" id="contents">
 <span id="id1"></span><h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview and Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/index.html">Tutorials &amp; Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="model/index.html">Object Data Mapper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="backends/index.html">Backend Data Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apps/index.html">Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utility.html">Internals and Utilities</a></li>
-<li class="toctree-l1"><a class="reference internal" href="stdnetredis.html">Stdnet Redis branch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdnetredis.html">Stdnet Redis branch (Discontinued)</a></li>
 </ul>
 </div>
 </div>
@@ -172,9 +146,9 @@ there are over 500 tests with a coverage of about 90%.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="overview.html" title="Overview"
+          <a href="overview.html" title="Overview and Installation"
              >next</a> |</li>
-        <li><a href="#">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="#">python stdnet v0.7 documentation</a> &raquo;</li> 
       </ul>
     </div>
 

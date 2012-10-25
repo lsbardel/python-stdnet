@@ -1,16 +1,15 @@
 from copy import copy
 from inspect import isgenerator
 
-from stdnet import on_result, BackendRequest
+from stdnet import on_result, BackendRequest, range_lookups, lookup_value
 from stdnet.exceptions import *
-from stdnet.utils import zip, JSPLITTER
+from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 
 from .signals import *
 
 
 __all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
-
 
 def iterable(value):
     if isgenerator(value) or isinstance(value,(tuple,list,set,frozenset)):
@@ -175,8 +174,8 @@ class QueryElement(Q):
 '''
     def __init__(self, *args, **kwargs):
         self.__backend_query = None
-        underlying = kwargs.pop('underlying',None)
-        super(QueryElement,self).__init__(*args,**kwargs)
+        underlying = kwargs.pop('underlying', None)
+        super(QueryElement,self).__init__(*args, **kwargs)
         self.underlying = underlying if underlying is not None else ()
 
     def __repr__(self):
@@ -212,7 +211,7 @@ class QueryElement(Q):
 
     @property
     def valid(self):
-        if isinstance(self.underlying,QueryElement):
+        if isinstance(self.underlying, QueryElement):
             return self.keyword == 'set'
         else:
             return len(self.underlying) > 0
@@ -222,10 +221,6 @@ class QuerySet(QueryElement):
     '''A :class:`QueryElement` which represents a lookup on a field.'''
     keyword = 'set'
     name = 'id'
-    def __init__(self, *args, **kwargs):
-        self.unique = kwargs.pop('unique',False)
-        self.lookup = kwargs.pop('lookup','in')
-        super(QuerySet,self).__init__(*args,**kwargs)
 
 
 class Select(QueryElement):
@@ -249,7 +244,7 @@ def difference(queries):
     return make_select('diff',queries)
 
 def queryset(qs, **kwargs):
-    return QuerySet(qs._meta,qs.session,**kwargs)
+    return QuerySet(qs._meta, qs.session, **kwargs)
 
 
 class QueryBase(Q):
@@ -401,7 +396,7 @@ criteria and options associated with it.
     __str__ = __repr__
 
     def __getitem__(self, slic):
-        if isinstance(slic,slice):
+        if isinstance(slic, slice):
             return self.items(slic)
         return self.items()[slic]
 
@@ -558,10 +553,8 @@ to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
         q = self._clone()
-        fs = set(q.fields) if q.fields else set()
-        if fields:
-            fs.update(fields)
-        q.data['fields'] = tuple(fs) if fs else None
+        fs = unique_tuple(q.fields, fields)
+        q.data['fields'] = fs if fs else None
         return q
 
     def dont_load(self, *fields):
@@ -570,10 +563,8 @@ data intensive fields you don't need.
 to load all fields except a subset specified by *fields*.
 '''
         q = self._clone()
-        fs = set(q.exclude_fields) if q.exclude_fields else set()
-        if fields:
-            fs.update(fields)
-        q.exclude_fields = tuple(fs) if fs else None
+        fs = unique_tuple(q.exclude_fields, fields)
+        q.exclude_fields = fs if fs else None
         return q
 
     def get(self, **kwargs):
@@ -666,7 +657,6 @@ an exception is raised.
                     return EmptyQuery(self._meta, self.session)
         else:
             fargs = None
-
         # no filters, get the whole set
         if not fargs:
             q = queryset(self)
@@ -674,7 +664,6 @@ an exception is raised.
             q = intersect(fargs)
         else:
             q = fargs[0]
-
         if self.eargs:
             eargs = self.aggregate(self.eargs)
             for a in tuple(eargs):
@@ -684,70 +673,76 @@ an exception is raised.
                 eargs = [union(eargs)]
         else:
             eargs = None
-
         if eargs:
             q = difference([q]+eargs)
-
         if self.intersections:
             q = intersect((q,)+self.intersections)
-
         if self.unions:
             q = union((q,)+self.unions)
-
         q = self.search_queries(q)
         data = self.data.copy()
         if self.exclude_fields:
             fields = data['fields']
             if not fields:
-                fields = set((f.name for f in self._meta.scalarfields))
-            else:
-                fields = set(fields)
-            fields.difference_update(self.exclude_fields)
+                fields = tuple((f.name for f in self._meta.scalarfields))
+            fields = tuple((f for f in fields if f not in self.exclude_fields))
             data['fields'] = fields
         q.data = data
         return q
 
     def aggregate(self, kwargs):
-        return sorted(self._aggregate(kwargs), key = lambda x : x.name)
-
-    def _aggregate(self, kwargs):
         '''Aggregate lookup parameters.'''
-        meta    = self._meta
-        fields  = meta.dfields
-        for name,value in kwargs.items():
-            names = name.split(JSPLITTER)
-            field_name = names[0]
+        meta = self._meta
+        fields = meta.dfields
+        field_lookups = {}
+        for name, value in iteritems(kwargs):
+            bits = name.split(JSPLITTER)
+            field_name = bits.pop(0)
             if field_name not in fields:
                 raise QuerySetError('Could not filter on model "{0}".\
  Field "{1}" does not exist.'.format(meta, field_name))
             field = fields[field_name]
-            if not field.index:
-                raise QuerySetError("{0} {1} is not an index.\
- Cannot query.".format(field.__class__.__name__,field_name))
-            lookup = JSPLITTER.join(names[1:])
-            if lookup:
-                lvalue = field.filter(self.session, lookup, value)
-                if lvalue is not None:
-                    lookup = 'in'
-                    value = lvalue
+            attname = field.attname
+            if bits:
+                bits = [n.lower() for n in bits]
+                if bits[-1] == 'in':
+                    bits.pop()
+                lookup = JSPLITTER.join(bits)
+                if lookup and lookup not in range_lookups:
+                    lvalue = field.filter(self.session, lookup, value)
+                    if lvalue is not None:
+                        value = lvalue
+                        lookup = None
+                    else:
+                        if bits[-1] in range_lookups:
+                            lookup = bits.pop()
+                        else:
+                            lookup = None
+                        bits.insert(0, attname)
+                        attname = JSPLITTER.join(bits)
             else:
-                lookup = 'in'
-            if not iterable(value):
-                value = (value,)
-            values = []
-            for v in value:
-                if isinstance(v, Q):
-                    v = v.construct()
-                else:
-                    v = field.serialize(v)
-                values.append(v)
-
-            #data = self.data.copy()
-            data = {'name':field.attname,
-                    'underlying':tuple(values),
-                    'unique':field.unique,
-                    'lookup':lookup}
-            yield queryset(self, **data)
+                lookup = None
+            # Get lookups on attribute name
+            lookups = field_lookups.get(attname)
+            if lookups is None:
+                lookups = []
+                field_lookups[attname] = lookups
+            if lookup not in range_lookups:
+                if not field.index:
+                    raise QuerySetError("{0} {1} is not an index.\
+ Cannot query.".format(field.__class__.__name__,field_name))
+                if not iterable(value):
+                    value = (value,)
+                for v in value:
+                    if isinstance(v, Q):
+                        v = lookup_value('set', v.construct())
+                    else:
+                        v = lookup_value('value', field.dumps(v, lookup))
+                    lookups.append(v)
+            else:
+                lookups.append(lookup_value(lookup, field.dumps(value, lookup)))
+        return [queryset(self, name=name, underlying=field_lookups[name])\
+                for name in sorted(field_lookups)]
 
     def items(self, slic=None):
         '''Fetch data matching theis :class:`Query` and return a list

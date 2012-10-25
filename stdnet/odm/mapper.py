@@ -96,7 +96,7 @@ on the same redis instance).'''
                     'Model {0} is already registered'.format(model._meta))
         else:
             return
-    backend = getdb(backend_uri=backend, **params)
+    backend = getdb(backend=backend, **params)
     for manager in model._managers:
         manager.backend = backend
     _GLOBAL_REGISTRY.add(model)
@@ -231,6 +231,8 @@ For example::
         kwargs = app_defaults.get(name, default)
         if not isinstance(kwargs, dict):
             kwargs = {'backend': kwargs}
+        else:
+            kwargs = kwargs.copy()
         if 'ignore_duplicates' not in kwargs:
             kwargs['ignore_duplicates'] = True
         if register(model, **kwargs):

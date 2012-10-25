@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 from inspect import isclass
+from datetime import timedelta
 
 import sys
 
@@ -16,11 +17,21 @@ else:   # pragma nocover
               'the unittest2 package')
         exit(0)
 
+if sys.version_info < (3,3):
+    try:
+        import mock
+    except ImportError:
+        print('The mock library is required to run tests.')
+        exit(0)
+else:
+    from unittest import mock
+
 from stdnet import odm, getdb, BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
 skipUnless = unittest.skipUnless
+
 
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet. It contains

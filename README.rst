@@ -7,7 +7,6 @@ The `source code`__ and documentation__ are hosted at github while Downloads__ a
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
-:Issues: https://github.com/lsbardel/python-stdnet/issues
 :Mailing List: https://groups.google.com/group/python-stdnet
 :Keywords: server, database, cache, redis, odm
 
@@ -24,11 +23,21 @@ Contents
     :local:
     
 
+Features
+=================
+* Models with scalar and multi-value fields.
+* Reach query API including unions, intersections, exclusions, ranges and more.
+* Full text search.
+* Multi-variate numeric timeseries application.
+* Publish/Subscribe application.
+
 Requirements
 =================
 * Python 2.6 to Python 3.3. Single codebase.
+* You need access to a Redis_ server version 2.6 or above.
 * Optional Cython_ for faster redis protocol parser.
-* You need access to a Redis_ server.
+* Optional pulsar_ only when using the asynchronous redis connection or the
+  test suite.
 
 
 Philosophy
@@ -60,13 +69,6 @@ otherwise use ``easy_install``::
 or ``pip``::
 
 	pip install python-stdnet
-	
-	
-Documentation
-============================
-StdNet uses Sphinx_ for its documentation, and the latest is available at GitHub:
-
-* http://lsbardel.github.com/python-stdnet/
 	
 
 Version Check
@@ -167,7 +169,8 @@ Requirements for running tests:
 
 * unittest2_ for python 2.6 only.
 * argparse_ for python 2.6, 3 and 3.1 only.
-* nose_
+* mock_ for python 2.6 to python 3.2 only.
+* nose_ or pulsar_.
 
 Note, these requirements are only needed if you are planning to run tests.
 To run tests open a shell and launch Redis. On another shell,
@@ -242,3 +245,5 @@ file in the top distribution directory for the full license text.
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _nose: http://readthedocs.org/docs/nose/en/latest
 .. _DynamoDB: http://aws.amazon.com/dynamodb/
+.. _pulsar: http://pypi.python.org/pypi/pulsar
+.. _mock: http://pypi.python.org/pypi/mock

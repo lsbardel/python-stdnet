@@ -34,7 +34,7 @@ class TestUtils(test.TestCase):
     def test_date2timestamp(self):
         t1 = datetime.now()
         ts1 = date2timestamp(t1)
-        self.assertEqual(timestamp2date(ts1),t1)
+        self.assertAlmostEqual(ts1, date2timestamp(t1))
         t1 = date.today()
         ts1 = date2timestamp(t1)
         t = timestamp2date(ts1)

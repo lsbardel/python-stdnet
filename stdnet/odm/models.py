@@ -205,7 +205,7 @@ attribute set to ``True`` will be excluded.'''
         return (self.id, self._loadedfields, self.todict())
 
     def __setstate__(self, state):
-        id,loadedfields,data = state
+        id, loadedfields, data = state
         meta = self._meta
         field = meta.pk
         setattr(self, 'id', field.to_python(id))

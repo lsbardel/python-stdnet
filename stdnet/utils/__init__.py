@@ -31,6 +31,11 @@ def iterpair(iterable):
     else:
         return iterable
     
+def int_or_float(v):
+    v = float(v)
+    i = int(v)
+    return i if v==i else v
+
 def grouper(n, iterable, padvalue=None):
     "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
     return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
@@ -61,20 +66,17 @@ def _flat2d_gen(iterable):
     for v in iterable:
         yield v[0]
         yield v[1]
-        
-        
+                
 def flat2d(iterable):
     if hasattr(iterable,'__len__'):
         return chain(*iterable)
     else:
         return _flat2d_gen(iterable)
-
     
 def _flatzsetdict(kwargs):
     for k,v in iteritems(kwargs):
         yield v
         yield k
-
 
 def flatzset(iterable = None, kwargs = None):
     if iterable:
@@ -85,6 +87,12 @@ def flatzset(iterable = None, kwargs = None):
         c = _flatzsetdict(kwargs)
     return tuple(c)
 
+def unique_tuple(*iterables):
+    vals = []
+    for v in chain(*[it for it in iterables if it]):
+        if v not in vals:
+            vals.append(v)
+    return tuple(vals)
 
 memory_symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
 memory_size = dict(((s,1 << (i+1)*10) for i,s in enumerate(memory_symbols)))

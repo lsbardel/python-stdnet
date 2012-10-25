@@ -7,7 +7,7 @@ cdef class RedisReader:
     cdef common.pythonReader *_c_reader
 
     def __cinit__(self, perr, rerr):
-        self._c_reader = common.pythonReaderCreate(perr,rerr)
+        self._c_reader = common.pythonReaderCreate(perr, rerr)
         if self._c_reader is NULL:
             raise MemoryError()
         
@@ -16,10 +16,9 @@ cdef class RedisReader:
             common.pythonReaderFree(self._c_reader)
             self._c_reader = NULL
         
-    def feed(self, char* stream):
-        size = len(stream)
-        common.pythonReaderFeed(self._c_reader, stream, size)
+    def feed(self, object stream):
+        common.pythonReader_feed(self._c_reader, stream)
         
     def gets(self):
-        return common.redisRead(self._c_reader)
+        return common.pythonReader_gets(self._c_reader)
         

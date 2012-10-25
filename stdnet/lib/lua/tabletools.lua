@@ -57,6 +57,18 @@ tabletools.flat = function (tbl)
     return result
 end
 
+tabletools.asdict = function (tbl)
+    local result, key = {}
+    for i, value in ipairs(tbl) do
+        if 2*math.floor(i/2) == i then
+            result[key] = value
+        else
+            key = value
+        end
+    end
+    return result
+end
+
 tabletools.load_code = function(code, environment)
     if setfenv and loadstring then
         local f = assert(loadstring(code))
@@ -65,6 +77,22 @@ tabletools.load_code = function(code, environment)
     else
         return assert(load(code, nil,"t",environment))
     end
+end
+
+tabletools.json_clean = function (meta)
+    local m, t = {}
+    for k, v in pairs(meta) do
+        t = type(v)
+        -- json return null as a function while cjson as userdata. In both
+        -- cases we don't want the values.
+        if t ~= 'function' and t ~= 'userdata' then
+            if t == 'table' then
+                v = tabletools.json_clean(v)
+            end
+            m[k] = v
+        end
+    end
+    return m
 end
 
 -- Return the module only when this module is not in REDIS

@@ -135,7 +135,7 @@ mapper.
 
 .. attribute:: ordering
 
-    Optional name of a :class:`stdnet.odm.Field` in the :attr:`model`.
+    Optional name of a :class:`Field` in the :attr:`model`.
     If provided, model indices will be sorted with respect to the value of the
     specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
@@ -144,7 +144,7 @@ mapper.
 
 .. attribute:: dfields
 
-    dictionary of :class:`stdnet.odm.Field` instances.
+    dictionary of :class:`Field` instances.
 
 .. attribute:: fields
 
@@ -168,11 +168,8 @@ mapper.
     searchengine = None
     connection_string = None
 
-    def __init__(self, model, fields,
-                 abstract = False, app_label = '',
-                 verbose_name = None,
-                 ordering = None, modelkey = None,
-                 **kwargs):
+    def __init__(self, model, fields, abstract=False, app_label='',
+                 verbose_name=None, ordering=None, modelkey=None, **kwargs):
         super(Metaclass,self).__init__(model,
                                        app_label=app_label,
                                        modelkey=modelkey,
@@ -205,7 +202,7 @@ mapper.
             field.register_with_model(name, model)
         self.ordering = None
         if ordering:
-            self.ordering = self.get_sorting(ordering,ImproperlyConfigured)
+            self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
 
     def pkname(self):
         return self.pk.name
@@ -220,7 +217,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
         dbdata = instance._dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
-
         #Loop over scalar fields first
         for field,value in instance.fieldvalue_pairs():
             name = field.attname
@@ -237,15 +233,13 @@ Return ``True`` if the instance is ready to be saved to database.'''
                                     .format(name,self)
                 else:
                     if isinstance(svalue, dict):
-                        #data[name] = svalue
                         data.update(svalue)
                     else:
                         if svalue is not None:
                             data[name] = svalue
-
         return len(errors) == 0
 
-    def get_sorting(self, sortby, errorClass = None):
+    def get_sorting(self, sortby, errorClass=None):
         s = None
         desc = False
         if isinstance(sortby, autoincrement):
@@ -254,7 +248,7 @@ Return ``True`` if the instance is ready to be saved to database.'''
         elif sortby.startswith('-'):
             desc = True
             sortby = sortby[1:]
-        if sortby == 'id':
+        if sortby == self.pkname():
             f = self.pk
             return orderinginfo(f.attname, f, desc, self.model, None, False)
         else:
@@ -280,8 +274,9 @@ of fields names and a list of field attribute names.'''
         processed = set()
         names = []
         atts = []
+        pkname = self.pkname()
         for name in fields:
-            if name == 'id' or name in processed:
+            if name == pkname or name in processed:
                 continue
             elif name in dfields:
                 processed.add(name)
@@ -298,6 +293,24 @@ of fields names and a list of field attribute names.'''
                         atts.append(name)
         return names,atts
 
+    def as_dict(self):
+        '''Model metadata in a dictionary'''
+        pk = self.pk
+        id_type = 3
+        id_fields = None
+        if pk.type == 'auto':
+            id_type = 1
+        elif pk.type == 'composite':
+            id_type = 2
+            id_fields = pk.fields
+        return {'id_name': pk.name,
+                'id_type': id_type,
+                'id_fields': id_fields,
+                'sorted': bool(self.ordering),
+                'autoincr': self.ordering and self.ordering.auto,
+                'multi_fields': [field.name for field in self.multifields],
+                'indices': dict(((idx.attname, idx.unique)\
+                                for idx in self.indices))}
 
 class autoincrement(object):
     '''An :class:`autoincrement` is used in a :class:`StdModel` Meta
@@ -305,7 +318,7 @@ class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
 
 .. attribute:: incrby
 
-    The ammount to increment the score by when a duplicate element is saved.
+    The amount to increment the score by when a duplicate element is saved.
 
     Default: 1.
 
@@ -322,7 +335,7 @@ an id already available, the score of that word is incremented by the
 :attr:`incrby` attribute.
 
 '''
-    def __init__(self, incrby = 1, desc = False):
+    def __init__(self, incrby=1, desc=False):
         self.incrby = incrby
         self._asce = -1 if desc else 1
 

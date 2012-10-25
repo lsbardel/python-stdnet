@@ -1,6 +1,6 @@
 from stdnet import test
 
-from examples.models import Instrument
+from examples.models import Instrument, Instrument2
 from examples.data import FinanceTest
 
 
@@ -8,7 +8,7 @@ class TestFilter(FinanceTest):
     model = Instrument
     
     def setUp(self):
-        self.data.create(self)
+        self.data.create(self, InstrumentModel=self.model)
         
     def testAll(self):
         session = self.session()
@@ -18,9 +18,9 @@ class TestFilter(FinanceTest):
     def testSimpleFilterId_WithRedisInternal(self):
         session = self.session()
         query = session.query(self.model)
-        qs = query.filter(id = 1)
+        qs = query.filter(id=1)
         # count so that we execute the query
-        self.assertEqual(qs.count(),1)
+        self.assertEqual(qs.count(), 1)
         bq = qs.backend_query()
         # test the redis internals
         if qs.backend.name == 'redis':
@@ -34,7 +34,7 @@ class TestFilter(FinanceTest):
         
     def testSimpleFilter(self):
         session = self.session()
-        qs = session.query(self.model).filter(ccy = 'EUR')
+        qs = session.query(self.model).filter(ccy='EUR')
         self.assertTrue(qs.count() > 0)
         for i in qs:
             self.assertEqual(i.ccy,'EUR')
@@ -42,8 +42,8 @@ class TestFilter(FinanceTest):
     def testFilterIn(self):
         session = self.session()
         qs = session.query(self.model)
-        eur = dict(((o.id,o) for o in qs.filter(ccy = 'EUR')))
-        usd = dict(((o.id,o) for o in qs.filter(ccy = 'USD')))
+        eur = dict(((o.id,o) for o in qs.filter(ccy='EUR')))
+        usd = dict(((o.id,o) for o in qs.filter(ccy='USD')))
         all = set(eur).union(set(usd))
         CCYS = ('EUR','USD')
         qs = qs.filter(ccy__in = CCYS)
@@ -81,9 +81,10 @@ class TestFilter(FinanceTest):
             
     def testSimpleExcludeFilter(self):
         session = self.session()
-        qs = session.query(self.model).exclude(ccy = 'JPY')
+        qs = session.query(self.model).exclude(ccy='JPY')
+        self.assertTrue(qs)
         for inst in qs:
-            self.assertNotEqual(inst.ccy,'JPY')
+            self.assertNotEqual(inst.ccy, 'JPY')
             
     def testExcludeFilterIn(self):
         CCYS = ('EUR','GBP','JPY')
@@ -122,10 +123,10 @@ class TestFilter(FinanceTest):
         ids = set((1,5,10))
         session = self.session()
         query = session.query(self.model)
-        qs = query.filter(id__in = ids)
-        self.assertEqual(len(qs),3)
+        qs = query.filter(id__in=ids)
+        self.assertEqual(len(qs), 3)
         cids = set((o.id for o in qs))
-        self.assertEqual(cids,ids)
+        self.assertEqual(cids, ids)
         
     def testFilterIdExclude(self):
         CCYS = ('EUR','GBP')
@@ -140,8 +141,8 @@ class TestFilter(FinanceTest):
         qt3 = set(query.exclude(id__in = qt))
         qt4 = qt2.intersection(qt3)
         self.assertFalse(qt4)
-        qs1 = set(query.filter(ccy__in = CCYS).exclude(type__in = types))
-        qs2 = set(query.filter(ccy__in = CCYS).exclude(id__in = qt))
+        qs1 = set(query.filter(ccy__in=CCYS).exclude(type__in=types))
+        qs2 = set(query.filter(ccy__in=CCYS).exclude(id__in=qt))
         self.assertEqual(qs1,qs2)
         
     def testChangeFilter(self):
@@ -161,7 +162,7 @@ class TestFilter(FinanceTest):
         
     def testFilterWithSpace(self):
         session = self.session()
-        insts = session.query(self.model).filter(type = 'bond option')
+        insts = session.query(self.model).filter(type='bond option')
         self.assertTrue(insts)
         for inst in insts:
             self.assertEqual(inst.type,'bond option')
@@ -183,3 +184,7 @@ class TestFilter(FinanceTest):
         res = set((q.id for q in qt))
         self.assertTrue(res)
         self.assertFalse(res.intersection(set((2,3,4))))
+
+
+class TestFilterOrdered(TestFilter):
+    model = Instrument2

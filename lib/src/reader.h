@@ -23,9 +23,9 @@ typedef struct pythonReader {
 
 
 pythonReader* pythonReaderCreate(PyObject*, PyObject*);
-PyObject* redisRead(pythonReader*);
 void pythonReaderFree(pythonReader*);
-void pythonReaderFeed(pythonReader*, const char*, size_t);
+PyObject* pythonReader_gets(pythonReader*);
+void pythonReader_feed(pythonReader*, PyObject*);
 
 
 #endif	//	__READER_H

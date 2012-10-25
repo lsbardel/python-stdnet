@@ -15,19 +15,21 @@ class TestInstrument(FinanceTest):
 
     def testName(self):
         session = self.session()
-        qb = session.query(self.model).all()
+        qb = dict(((i.name,i) for i in session.query(self.model)))
         qs = session.query(self.model).get_field('name')
-        self.assertEqual(qs._get_field,'name')
+        self.assertEqual(qs._get_field, 'name')
         result = qs.all()
         self.assertTrue(result)
         for r in result:
             self.assertTrue(is_string(r))
+            qb.pop(r)
+        self.assertFalse(qb)
 
     def testId(self):
         session = self.session()
         qb = session.query(self.model).all()
         qs = session.query(self.model).get_field('id')
-        self.assertEqual(qs._get_field,'id')
+        self.assertEqual(qs._get_field, 'id')
         result = qs.all()
         self.assertTrue(result)
         for r in result:
@@ -52,7 +54,7 @@ class TestRelated(FinanceTest):
     def testFilter(self):
         session = self.session()
         qs = session.query(self.model).get_field('instrument')
-        qi = session.query(Instrument).filter(id__in = qs)
+        qi = session.query(Instrument).filter(id=qs)
         inst = qi.all()
         ids = qs.all()
         self.assertTrue(inst)

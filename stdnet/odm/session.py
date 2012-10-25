@@ -20,10 +20,8 @@ __all__ = ['Session',
            'commit_when_no_transaction',
            'withsession']
 
-
 def is_query(query):
     return isinstance(query,Q)
-
 
 def commit_element_when_no_transaction(f):
 
@@ -32,11 +30,9 @@ def commit_element_when_no_transaction(f):
         if modified and not self.transaction:
             self.commit()
         return r
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
-
 
 def commit_when_no_transaction(f):
     '''Decorator for committing changes when the instance session is
@@ -49,27 +45,24 @@ not in a transaction.'''
             raise SessionNotAvailable('Session not available')
         session.add(self)
         return r
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
 
-
 def withsession(f):
     '''Decorator for instance methods which require a :class:`Session`
 available to perform their call. If a session is not available. It raises
-a :class:`SessionNotAvailable` exception.
-'''
+a :class:`SessionNotAvailable` exception.'''
     def _(self, *args, **kwargs):
         if self.session is not None:
             return f(self, *args, **kwargs)
         else:
             raise SessionNotAvailable(
                         'Cannot perform operation. No session available')
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
+
 
 class SessionModel(SessionModelBase):
     '''A :class:`SessionModel` is the container of all objects for a given
@@ -377,6 +370,10 @@ or using the ``with`` context manager::
     def delete(self, instance):
         '''A convenience proxy for :meth:`Session.delete` method.'''
         return self.session.delete(instance)
+    
+    def query(self, model, **kwargs):
+        '''A convenience proxy for :meth:`Session.query` method.'''
+        return self.session.query(model, **kwargs)
 
     def __enter__(self):
         return self
@@ -503,7 +500,7 @@ class Session(object):
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, query_class = None):
+    def __init__(self, backend, query_class=None):
         self.backend = getdb(backend)
         self.transaction = None
         self._models = OrderedDict()
@@ -561,7 +558,7 @@ If this :class:`Session` is already within a transaction, an error is raised.'''
             self.transaction = Transaction(self, **options)
         return self.transaction
 
-    def query(self, model, query_class = None, **kwargs):
+    def query(self, model, query_class=None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         query_class = query_class or self.query_class
         return query_class(model._meta, self, **kwargs)

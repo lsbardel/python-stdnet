@@ -359,7 +359,7 @@ local columnts = {
 	    end
     end,
     -- Information about the timeserie
-    info = function (self)
+    info = function (self, start, stop, field_values)
         local times, field_values = unpack(self:all())
         local size = # times
         local result = {size=size, fields={}}
@@ -511,4 +511,10 @@ function columnts:merge(key, elements, fields)
         result:addserie(ts, elem.weight, fields, tsmul)
     end
     return result
+end
+
+
+-- Return the module only when this module is not in REDIS
+if not (KEYS and ARGV) then
+    return columnts
 end

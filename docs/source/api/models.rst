@@ -6,6 +6,14 @@
 Model and Query API
 ============================
 
+The *object-data mapper* (ODM) is the core of the library. It defines an API for mapping
+data in the backend key-value store to objects in Python.
+It'is name is closely related to
+`object relational Mapping <http://en.wikipedia.org/wiki/Object-relational_mapping>`_ (ORM),
+a programming technique for converting data between incompatible
+type systems in traditional `relational databases <http://en.wikipedia.org/wiki/Relational_database>`_
+and object-oriented programming languages.
+
 
 Model
 ==================
@@ -77,6 +85,14 @@ QueryElement
 ~~~~~~~~~~~~~~~
 
 .. autoclass:: QueryElement
+   :members:
+   :member-order: bysource
+
+
+SearchEngine Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: SearchEngine
    :members:
    :member-order: bysource
 
@@ -212,6 +228,52 @@ TS
    :member-order: bysource
 
 
+Session and Managers
+=========================
+
+Session
+~~~~~~~~~~~~~~~
+
+.. autoclass:: Session
+   :members:
+   :member-order: bysource
+   
+Session Model
+~~~~~~~~~~~~~~~
+
+.. autoclass:: SessionModel
+   :members:
+   :member-order: bysource
+   
+Transaction
+~~~~~~~~~~~~~~~
+
+.. autoclass:: Transaction
+   :members:
+   :member-order: bysource
+   
+Manager
+~~~~~~~~~~~~~~~~~~
+.. autoclass:: Manager
+   :members:
+   :member-order: bysource
+   
+   
+RelatedManager
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.odm.related.RelatedManager
+   :members:
+   :member-order: bysource
+   
+One2ManyRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.odm.related.One2ManyRelatedManager
+   :members:
+   :member-order: bysource
+   
+   
 .. _register-model:
 
 
@@ -255,28 +317,7 @@ Unregister model
 
 .. autofunction:: unregister
 
-.. _signal-api:
-
-Signals
-=====================
-Stdnet includes a signal dispatcher which helps allow decoupled
-applications get notified when actions occur elsewhere in the framework.
-In a nutshell, signals allow certain senders to notify a set of receivers
-that some action has taken place.
-They are especially useful when many pieces of code may be interested in
-the same events.
-
-The data mapper provide with the following built-in signals in the :mod:`stdnet.odm`
-module:
-
-* ``pre_commit`` triggered before new instances or changes on existing instances
-  are committed to the backend server.
-* ``post_commit`` triggered after new instances or changes on existing instances
-  are committed to the backend server.
-
-It is also possible to add callback to single instances in the following way::
-
-    instance = MyModel(...)
-    instance.post_commit(callable)
 
 .. _standard template library: http://www.sgi.com/tech/stl/
+.. _SQLAlchemy: http://www.sqlalchemy.org/   
+.. _Django: http://docs.djangoproject.com/en/dev/ref/models/instances/

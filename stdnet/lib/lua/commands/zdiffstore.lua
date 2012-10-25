@@ -35,5 +35,5 @@ else    -- REMOVE REGARDLESS OF SCORE
         end
     end
 end
-return redis.call('zcard',dest)
+return redis.call('zcard', dest)
 

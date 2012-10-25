@@ -1,6 +1,6 @@
-'''Asynchronous Redis Connection For pulsar_ concurrent framework.
+'''Asynchronous Redis Connection for pulsar_ concurrent framework.
 
-Requires pulsar_
+Requires pulsar_ concurrent framework.
 
 .. _pulsar: http://packages.python.org/pulsar/
 '''
@@ -28,20 +28,23 @@ class RedisRequest(Deferred, connection.RedisRequest):
     def execute(self):
         result = self.connection.connect(self)
         if is_async(result):
-            result = result.add_callback(self._send)
+            result = result.add_callback(self.send)
         else:
-            result = self._send()
-        result.add_callback(self.callback)
+            result = self.send()
+        if is_async(result):
+            result.add_callback(self.read_response)
+        else:
+            result = self.read_response()
+        result.addBoth(self.callback)
         return self
-        
-    @async(max_errors=1)
-    def _send(self, result=None):
-        redis_before_send.send(self.client.__class__,
-                               request=self,
-                               command=self.command)
-        sock = self.connection.sock
-        yield sock.write(self.command)
+    
+    def _write(self, result=None):
+        return self.connection.sock.write(self.command)
+
+    @async(max_errors=1)    
+    def read_response(self, result=None):
         response = NOT_READY
+        sock = self.connection.sock
         while response is NOT_READY:
             rawdata = sock.read()
             if is_async(rawdata):
@@ -49,31 +52,41 @@ class RedisRequest(Deferred, connection.RedisRequest):
                 rawdata = rawdata.result
             response = self.parse(rawdata)
         yield response
-
-
+        
+    @async(max_errors=1)
+    def pool(self, num_messages=None):
+        if not self.pooling:
+            self.pooling = True
+            yield self
+            while self.pooling and self.connection.sock:
+                yield self.read_response()
+                if num_messages and count >= num_messages:
+                    break
+            self.pooling = False
+                
+                
 class RedisConnection(connection.Connection):
     request_class = RedisRequest
     
     def _wrap_socket(self, sock):
         return AsyncIOStream(sock)
         
-    def on_connect(self, request, counter):
+    def on_connect(self, request):
         "Initialize the connection, authenticate and select a database"
         client = request.client.client
         cmnd = None
         if self.password:
-            cmnd = self.execute_command(client, 'AUTH', self.password,
-                                        release_connection=False)\
+            cmnd = self.request(client, 'AUTH', self.password,
+                                release_connection=False).execute()\
                        .add_errback(lambda r: self.connection_error(r,
                                                         'Invalid Password'))
         if self.db:
             cmnd = make_async(cmnd)
             cmnd.add_callback(
-                lambda r: self.execute_command(
-                        client, 'SELECT', self.db, release_connection=False),
+                lambda r: self.request(client, 'SELECT', self.db,
+                                       release_connection=False).execute(),
                 lambda r: self.connection_error(r, 'Invalid Database'))
         return cmnd
         
     def connection_error(self, failure, msg):
         raise ConnectionError(msg)
-    

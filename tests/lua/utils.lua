@@ -10,7 +10,7 @@ end
 
 
 suite.test_init_value = function ()
-    local vector = t.init(7,98)
+    local vector = t.init(7, 98)
     assert_true(# vector == 7)
     for i,v in ipairs(vector) do
         assert(v == 98)

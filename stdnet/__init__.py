@@ -3,7 +3,7 @@ from .exceptions import *
 from .backends import *
 from .utils.version import get_version, stdnet_version
 
-VERSION = stdnet_version(0, 7, 0, 'rc', 6)
+VERSION = stdnet_version(0, 7, 0, 'final', 1)
 
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"
@@ -21,9 +21,9 @@ CLASSIFIERS = [
                'Programming Language :: Python',
                'Programming Language :: Python :: 2.6',
                'Programming Language :: Python :: 2.7',
-               'Programming Language :: Python :: 3.1',
                'Programming Language :: Python :: 3.2',
                'Programming Language :: Python :: 3.3',
+               'Programming Language :: Python :: Implementation :: PyPy',
                'Topic :: Utilities',
                'Topic :: Database',
                'Topic :: Internet'

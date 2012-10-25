@@ -11,13 +11,13 @@ class CustomManager(odm.Manager):
 
 
 class SimpleModel(odm.StdModel):
-    code = odm.SymbolField(unique = True)
-    group = odm.SymbolField(required = False)
+    code = odm.SymbolField(unique=True)
+    group = odm.SymbolField(required=False)
     description = odm.CharField()
     somebytes = odm.ByteField()
-    object = odm.PickleObjectField(required = False)
-    cached_data = odm.ByteField(as_cache = True)
-    timestamp = odm.DateTimeField(as_cache = True)
+    object = odm.PickleObjectField(required=False)
+    cached_data = odm.ByteField(as_cache=True)
+    timestamp = odm.DateTimeField(as_cache=True)
 
     objects = CustomManager()
 
@@ -28,7 +28,7 @@ class SimpleModel(odm.StdModel):
 #####################################################################
 #    FINANCE APPLICATION
 class Base(odm.StdModel):
-    name = odm.SymbolField(unique = True)
+    name = odm.SymbolField(unique=True)
     ccy  = odm.SymbolField()
 
     def __unicode__(self):
@@ -213,13 +213,13 @@ class Statistics(odm.StdModel):
 
 class Statistics3(odm.StdModel):
     name = odm.SymbolField()
-    data = odm.JSONField(as_string = False)
+    data = odm.JSONField(as_string=False)
 
 
 class ComplexModel(odm.StdModel):
     name = odm.SymbolField()
-    timestamp = odm.DateTimeField(as_cache = True)
-    data = odm.JSONField(as_string = False, as_cache = True)
+    timestamp = odm.DateTimeField(as_cache=True)
+    data = odm.JSONField(as_string=False, as_cache=True)
 
 
 
@@ -235,15 +235,16 @@ class Environment(odm.StdModel):
 
 class NumericData(odm.StdModel):
     pv = odm.FloatField()
-    vega = odm.FloatField(default = 0.0)
-    delta = odm.FloatField(default = 1.0)
-    gamma = odm.FloatField(required = False)
+    vega = odm.FloatField(default=0.0)
+    delta = odm.FloatField(default=1.0)
+    gamma = odm.FloatField(required=False)
+    data = odm.JSONField(as_string=False)
     ok = odm.BooleanField()
 
 
 class DateData(odm.StdModel):
     dt1 = odm.DateField(required = False)
-    dt2 = odm.DateTimeField(default = datetime.now)
+    dt2 = odm.DateTimeField(default=datetime.now)
 
 
 ####################################################
@@ -251,7 +252,7 @@ class DateData(odm.StdModel):
 class Task(odm.StdModel):
     id = odm.SymbolField(primary_key = True)
     name = odm.CharField()
-    timestamp = odm.DateTimeField(default = datetime.now)
+    timestamp = odm.DateTimeField(default=datetime.now)
 
     class Meta:
         ordering = '-timestamp'

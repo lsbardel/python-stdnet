@@ -6,6 +6,7 @@ import time
 from datetime import date, datetime
 from base64 import b64encode
 
+from stdnet import range_lookups
 from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
@@ -48,12 +49,11 @@ def field_value_error(f):
 
     def _(self, value):
         try:
-            return f(self,value)
+            return f(self, value)
         except FieldValueError:
             raise
         except:
-            raise FieldValueError('{0} is not a valid value for "{1}" field'\
-                                  .format(value,self.name))
+            raise FieldValueError('%s not valid for "%s"' % (value, self.name))
 
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
@@ -288,6 +288,9 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         '''Function which evaluate a score from the field value. Used by
 the ordering alorithm'''
         return self.to_python(value)
+    
+    def dumps(self, value, lookup=None):
+        return self.serialize(value)
 
     ############################################################################
     ##    TOOLS
@@ -699,21 +702,23 @@ behaviour and how the field is stored in the back-end server.
         else:
             # unwind as a dictionary
             value = dict(dict_flat_generator(value,
-                                             attname = self.attname,
-                                             dumps = self.dumps,
-                                             error = FieldValueError))
+                                             attname=self.attname,
+                                             dumps=self.dumps,
+                                             error=FieldValueError))
             # If the dictionary is empty we modify so that
             # an update is possible.
             if not value:
                 value = {self.attname: self.dumps(None)}
-            elif value.get(self.attname,None) is None:
+            elif value.get(self.attname, None) is None:
                 # TODO Better implementation of this is a ack!
                 # set the root value to an empty string to distinguish
                 # from None.
                 value[self.attname] = self.dumps('')
             return value
 
-    def dumps(self, value):
+    def dumps(self, value, lookup=None):
+        if lookup:
+            value = range_lookups[lookup](value)
         try:
             return self.encoder.dumps(value)
         except TypeError as e:
@@ -721,11 +726,11 @@ behaviour and how the field is stored in the back-end server.
 
     def value_from_data(self, instance, data):
         if self.as_string:
-            return data.pop(self.attname,None)
+            return data.pop(self.attname, None)
         else:
-            return flat_to_nested(data, instance = instance,
-                                  attname = self.attname,
-                                  loads = self.encoder.loads)
+            return flat_to_nested(data, instance=instance,
+                                  attname=self.attname,
+                                  loads=self.encoder.loads)
 
     def get_sorting(self, name, errorClass):
         pass
@@ -837,6 +842,9 @@ This model contains two :class:`ForeignKeys`, one to model holding the
 
 
 class CompositeIdField(SymbolField):
+    '''This field can be used when an instance of a model is uniquely
+identified by a combination of two or more :class:`Field` in the model
+itself.'''
     type = 'composite'
     def __init__(self, *fields, **kwargs):
         kwargs['primary_key'] = True

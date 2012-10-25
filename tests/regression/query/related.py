@@ -80,11 +80,11 @@ in this test class so that we can use the manager in a parallel test suite.'''
     def testSelfRelatedFilterDelete(self):
         session = self.session()
         query = session.query(Node)
-        root = query.get(parent = None)
-        qs = query.filter(parent = root)
+        root = query.get(parent=None)
+        qs = query.filter(parent=root)
         qs.delete()
-        self.assertEqual(query.count(),1)
-        self.assertEqual(query[0],root)
+        self.assertEqual(query.count(), 1)
+        self.assertEqual(query[0], root)
 
 
 class TestRealtedQuery(FinanceTest):

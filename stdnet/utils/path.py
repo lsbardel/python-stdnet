@@ -13,7 +13,7 @@ __all__ = ['Path']
 
 class Path(string_type):
 
-    def __new__(cls, path = None):
+    def __new__(cls, path=None):
         path = path or ''
         abspath = os.path.abspath(path)
         return super(Path,cls).__new__(cls, abspath)
@@ -53,8 +53,8 @@ class Path(string_type):
             p = p.parent
         return p
         
-    def add2python(self, module = None, up = 0, down = None, front = False,
-                   must_exist = True):
+    def add2python(self, module=None, up=0, down=None, front=False,
+                   must_exist=True):
         '''Add a directory to the python path.
         
 :parameter module: Optional module name to try to import once we have found
@@ -80,12 +80,12 @@ class Path(string_type):
         if dir.isdir():
             if dir not in sys.path:
                 if front:
-                    sys.path.insert(0,dir)
+                    sys.path.insert(0, dir)
                 else:
                     sys.path.append(dir)
                 added = True
-            else:
-                raise ValueError('Directory {0} not available'.format(dir))
+        else:
+            raise ValueError('Directory {0} not available'.format(dir))
         if module:
             try:
                 __import__(module)
@@ -93,6 +93,5 @@ class Path(string_type):
             except ImportError:
                 if must_exist:
                     raise
-        return added
 
     

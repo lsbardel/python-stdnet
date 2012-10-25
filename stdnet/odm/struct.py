@@ -247,7 +247,7 @@ Do not override this function. Use :meth:`load_data` method instead.'''
     ############################################################################
     ## INTERNALS
     @withsession
-    def backend_structure(self, client = None):
+    def backend_structure(self, client=None):
         return self.session.backend.structure(self, client)
 
 

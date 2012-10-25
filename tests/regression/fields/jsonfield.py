@@ -9,6 +9,7 @@ from random import random, randint, choice
 import stdnet
 from stdnet import test
 from stdnet.utils import zip, is_string, to_string, unichr, ispy3k, range
+from stdnet.utils import date2timestamp
 from stdnet.utils.populate import populate
 
 from examples.models import Statistics, Statistics3
@@ -67,14 +68,15 @@ class TestJsonField(test.TestCase):
         self.assertEqual(len(a.data),4)
         self.assertEqual(a.data['mean'],mean)
         self.assertEqual(a.data['started'],started)
-        self.assertEqual(a.data['timestamp'],timestamp)
+        self.assertAlmostEqual(date2timestamp(a.data['timestamp']),
+                               date2timestamp(timestamp), 5)
         
     def testCreateFromString(self):
         mean = 'mean'
         timestamp = time.time()
         data = {'mean': mean,
                 'std': 5.78,
-                'timestamp':timestamp}
+                'timestamp': timestamp}
         datas = json.dumps(data)
         a = Statistics(dt = date.today(), data = datas).save()
         a = Statistics.objects.get(id = a.id)
@@ -82,7 +84,7 @@ class TestJsonField(test.TestCase):
         a = Statistics.objects.get(id = a.id)
         self.assertEqual(len(a.data),3)
         self.assertEqual(a.data['mean'],mean)
-        self.assertEqual(a.data['timestamp'],timestamp)
+        self.assertAlmostEqual(a.data['timestamp'], timestamp)
         
     def testEmpty(self):
         a = Statistics(dt = date.today())

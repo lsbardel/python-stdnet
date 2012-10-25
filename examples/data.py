@@ -52,7 +52,7 @@ class tsdata(key_data):
         if not start:
             start = end - timedelta(days = self.size)
         # random dates
-        self.dates = populate('date', self.size, start = start, end = end)
+        self.dates = populate('date', self.size, start=start, end=end)
         self.unique_dates = set(self.dates)
         self.fields = {}
         self.sorted_fields = {}
@@ -116,31 +116,31 @@ class finance_data(data_generator):
         self.dates =  populate('date',num_dates,start=date(2009,6,1),
                                end=date(2010,6,6))
 
-    def create(self, test, use_transaction=True):
+    def create(self, test, use_transaction=True, InstrumentModel = Instrument):
         session = test.session()
-        test.assertEqual(session.query(Instrument).count(),0)
+        test.assertEqual(session.query(InstrumentModel).count(),0)
         if use_transaction:
             with session.begin():
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
-                    session.add(Fund(name = name, ccy = ccy))
+                    session.add(Fund(name=name, ccy=ccy))
                 for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                         self.inst_ccys):
-                    session.add(Instrument(name = name, type = typ, ccy = ccy))
+                    session.add(InstrumentModel(name=name, type=typ, ccy=ccy))
         else:
             test.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                     self.inst_ccys):
-                Instrument(name = name, type = typ, ccy = ccy).save()
+                InstrumentModel(name=name, type=typ, ccy=ccy).save()
             for name,ccy in zip(self.fund_names,self.fund_ccys):
-                Fund(name = name, ccy = ccy).save()
+                Fund(name=name, ccy=ccy).save()
 
-        self.num_insts = session.query(Instrument).count()
+        self.num_insts = session.query(InstrumentModel).count()
         self.num_funds = session.query(Fund).count()
         test.assertEqual(self.num_insts,len(self.inst_names))
         test.assertEqual(self.num_funds,len(self.fund_names))
         return session
 
-    def makePositions(self, test, use_transaction = True):
+    def makePositions(self, test, use_transaction=True):
         session = self.create(test, use_transaction)
         instruments = session.query(Instrument).all()
         if use_transaction:

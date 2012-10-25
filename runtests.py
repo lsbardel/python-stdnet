@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-'''Stdnet asynchronous test suite. Requires pulsar or nose
-'''
+'''Stdnet asynchronous test suite. Requires pulsar or nose'''
 import sys
 import os
-
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run
 from stdnet.utils import Path

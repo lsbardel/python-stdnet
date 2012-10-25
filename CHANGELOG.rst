@@ -1,5 +1,13 @@
 .. _vers07:
 
+Ver. 0.7.0 - 2012 Oct 25
+===============================
+* First official release of version 0.7.0. Requires redis_ 2.6 or above.
+* Several fixes in documentation.
+* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``gt``, ``lt`` and ``le``.
+* Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
+* **624 regression tests** with **92%** coverage.
+
 Ver. 0.7c6 - 2012 Sep 10
 ===============================
 * **Tested with redis 2.6.0-rc6**.

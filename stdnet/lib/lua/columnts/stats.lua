@@ -170,3 +170,7 @@ statistics.multivariate = function (series)
     end
 end
 
+-- Return the module only when this module is not in REDIS
+if not (KEYS and ARGV) then
+    return statistics
+end

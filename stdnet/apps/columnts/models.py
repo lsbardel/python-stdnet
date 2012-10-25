@@ -1,5 +1,5 @@
 '''Multivariate numeric timeseries interface.'''
-from stdnet import odm, SessionNotAvailable
+from stdnet import odm, SessionNotAvailable, on_result
 from stdnet.lib import skiplist
 from stdnet.utils import encoders, iteritems, zip, iterpair
 
@@ -48,10 +48,14 @@ multivariate timeseries.'''
         if v:
             return (v[0],dict(((field, f[field][0]) for field in f)))
 
-    def info(self):
-        '''Provide information for this :class:`ColumnTS`.'''
-        res = self.backend_structure().info()
-        return self.async_handle(res, self._stats)
+    def info(self, start=None, end=None, fields=None):
+        '''Provide data information for this :class:`ColumnTS`. If no
+parameters are specified it returns the number of data points for each
+fields, as well as the start and end date.'''
+        start = self.pickler.dumps(start) if start else None
+        end = self.pickler.dumps(end) if end else None
+        return on_result(self.backend_structure().info(start, end, fields),
+                         self._stats)
 
     def fields(self):
         '''Tuple of ordered fields for this :class:`ColumnTS`.'''

@@ -100,10 +100,6 @@ void pythonReaderFree(pythonReader *self) {
 	}
 }
 
-void pythonReaderFeed(pythonReader *self, const char *buf, size_t len) {
-	redisReaderFeed(self->reader, buf, len);
-}
-
 
 pythonReader* pythonReaderCreate(PyObject *protocolErrorClass,
 								 PyObject *replyErrorClass) {
@@ -132,7 +128,15 @@ pythonReader* pythonReaderCreate(PyObject *protocolErrorClass,
 }
 
 
-PyObject* redisRead(pythonReader* self) {
+void pythonReader_feed(pythonReader *self, PyObject *args) {
+	const char *str;
+	int len;
+	if (!PyArg_ParseTuple(args, "s#", &str, &len))
+		return;
+	redisReplyReaderFeed(self->reader, str, len);
+}
+
+PyObject* pythonReader_gets(pythonReader* self) {
 	PyObject *obj;
 	char *err;
 

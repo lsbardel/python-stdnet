@@ -13,9 +13,10 @@ dates = populate('date',NUM_DATES,
                  end=date(2010,6,6))
 
 groups = populate('choice',NUM_DATES,
-            choice_from=['football','rugby','swimming','running','cycling'])
+            choice_from=['football', 'rugby', 'swimming', 'running', 'cycling'])
 persons = populate('choice',NUM_DATES,
-            choice_from=['pippo','pluto','saturn','luca','josh','carl','paul'])
+            choice_from=['pippo', 'pluto', 'saturn', 'luca', 'josh', 'carl',
+                         'paul'])
  
     
 class TestSort(test.TestCase):
@@ -25,13 +26,13 @@ class TestSort(test.TestCase):
     def fill(self):
         session = self.session()
         with session.begin():
-            for p,n,d in zip(persons,groups,dates):
-                session.add(self.model(person = p, name = n, dt = d))
+            for p, n, d in zip(persons, groups, dates):
+                session.add(self.model(person=p, name=n, dt=d))
         qs = session.query(self.model)
-        self.assertEqual(qs.count(),NUM_DATES)
+        self.assertEqual(qs.count(), NUM_DATES)
         return qs
     
-    def checkOrder(self, qs, attr, desc = None):
+    def checkOrder(self, qs, attr, desc=None):
         self.assertTrue(qs)
         desc = desc if desc is not None else self.desc
         at0 = qs[0].get_attr_value(attr)
@@ -64,9 +65,9 @@ class ExplicitOrderingMixin(object):
         
     def testFilter(self):
         qs = self.fill().filter(name='rugby').sort_by('dt')
-        self.checkOrder(qs,'dt')
+        self.checkOrder(qs, 'dt')
         for v in qs:
-            self.assertEqual(v.name,'rugby')
+            self.assertEqual(v.name, 'rugby')
 
     def _slicingTest(self, attr, desc, start = 0, stop = 10,
                      expected_len = 10):
@@ -105,7 +106,7 @@ class TestSortByForeignKeyField(TestSort):
             for p,g in zip(persons,gps):
                 session.add(model(name = p, group = g))
         qs = session.query(model)
-        self.assertEqual(qs.count(),NUM_DATES)
+        self.assertEqual(qs.count(), NUM_DATES)
         return qs
     
     def testNameSortBy(self):
@@ -149,14 +150,13 @@ class TestOrderingModel(TestSort):
         self.checkOrder(self.fill(),'dt')
         
     def testFilter(self):
-        # Require zdiffstore
-        qs = self.fill().filter(name__in = ('football','rugby'))
+        qs = self.fill().filter(name=('football','rugby'))
         self.checkOrder(qs,'dt')
         
     def testExclude(self):
-        # Require zdiffstore
         qs = self.fill().exclude(name='rugby')
-        self.checkOrder(qs,'dt')
+        self.assertTrue(qs)
+        self.checkOrder(qs, 'dt')
         
         
 class TestOrderingModelDesc(TestOrderingModel):

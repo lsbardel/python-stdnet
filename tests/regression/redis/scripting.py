@@ -85,22 +85,22 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(script.sha1,sha)
         
     def testEvalSha(self):
-        self.assertEqual(self.client.script_flush(),True)
+        self.assertEqual(self.client.script_flush(), True)
         re = Receiver()
         redis.redis_after_receive.connect(re)
-        r = self.client.script_call('test_script',None,
+        r = self.client.script_call('test_script', None,
                                     json.dumps([1,2,3,4,5,6]))
         self.assertEqual(r,[1,2,3,4,5,6])
         self.assertEqual(len(re.get()),2)
-        r = self.client.script_call('test_script',None,json.dumps([1,2,3]))
+        r = self.client.script_call('test_script', None, json.dumps([1,2,3]))
         self.assertEqual(r,[1,2,3])
         self.assertEqual(len(re.get()),1)
-        self.assertEqual(self.client.script_flush(),True)
-        self.assertEqual(len(re.get()),1)
-        r = self.client.script_call('test_script',None,
+        self.assertEqual(self.client.script_flush(), True)
+        self.assertEqual(len(re.get()), 1)
+        r = self.client.script_call('test_script', None,
                                     json.dumps([1,2,3,4,5,'bla']))
-        self.assertEqual(r,[1,2,3,4,5,'bla'])
-        self.assertEqual(len(re.get()),2)
+        self.assertEqual(r,[1,2,3,4,5, 'bla'])
+        self.assertEqual(len(re.get()), 2)
         redis.redis_after_receive.disconnect(re)
         
     def testEvalShaPipeline(self):
@@ -112,18 +112,19 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertTrue(result[1])
 
     def testEvalShaPipeline(self):
-        self.assertEqual(self.client.script_flush(),True)
+        # Flush server scripts
+        self.assertEqual(self.client.script_flush(), True)
         pipe = self.client.pipeline()
-        pipe.script_call('test_script',None,json.dumps({'foo':[1,2]}))\
+        pipe.script_call('test_script', None, json.dumps({'foo':[1,2]}))\
             .sadd('bla','foo')
-        result = pipe.execute(load_script = True)
-        self.assertEqual(len(result),2)
+        result = pipe.execute(load_script=True)
+        self.assertEqual(len(result), 2)
         self.assertEqual(result[0],{'foo':[1,2]})
     
     def testMove2Set(self):
-        self.client.sadd('foo',1,2,3,4,5)
-        self.client.lpush('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set',('foo','bla'),'s')
+        self.client.sadd('foo', 1, 2, 3, 4, 5)
+        self.client.lpush('bla', 4, 5, 6, 7, 8)
+        r = self.client.script_call('move2set', ('foo', 'bla'), 's')
         self.assertEqual(len(r),2)
         self.assertEqual(r[0],2)
         self.assertEqual(r[1],1)
@@ -165,12 +166,12 @@ class ScriptingCommandsTestCase(TestCase):
         self.assertEqual(r[1],2)
         
     def testKeyInfo(self):
-        self.client.set('planet','mars')
-        self.client.lpush('foo',1,2,3,4,5)
-        self.client.lpush('bla',4,5,6,7,8)
-        keys = list(self.client.script_call('keyinfo',(),'*'))
-        self.assertEqual(len(keys),3)
-        d = dict(((k.id,k) for k in keys))
+        self.client.set('planet', 'mars')
+        self.client.lpush('foo', 1, 2, 3, 4, 5)
+        self.client.lpush('bla', 4, 5, 6, 7, 8)
+        keys = list(self.client.script_call('keyinfo', (), '*'))
+        self.assertEqual(len(keys), 3)
+        d = dict(((k.id, k) for k in keys))
         self.assertEqual(d['planet'].length,4)
         self.assertEqual(d['planet'].type,'string')
         self.assertEqual(d['planet'].encoding,'raw')
@@ -198,7 +199,7 @@ class ScriptingCommandsTestCase(TestCase):
         
     def testzpopbyscore(self):
         self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
-        res = self.client.zpopbyscore('foo',2)
+        res = self.client.zpopbyscore('foo', 2)
         rem = self.client.zrange('foo',0,-1)
         self.assertEqual(len(rem),4)
         self.assertEqual(rem,[b'a',b'c',b'd',b'e'])
@@ -208,23 +209,28 @@ class ScriptingCommandsTestCase(TestCase):
         rem = self.client.zrange('foo',0,-1)
         self.assertEqual(rem,[b'e'])
         
-        
 
+class TestForCoverage(TestCase):
+    
+    def test_bad_script_call(self):
+        self.assertRaises(redis.RedisError, self.client.script_call, 'foo', ())
+        
+        
 class TestStruct(TestCase):
     
     def testDouble(self):
         c = self.client
-        numbers = [-4.45,3,5.89,23434234234.394,-239453.49]
+        numbers = [3, -4.45, 5.89, 23434234234.394, -239453.49]
         for n in numbers:
             # need this trick for python 2
             sn = str(n)
             n = float(sn)
             # pack in lua
             r = c.eval("return struct.pack('>d',ARGV[1])", None, sn)
-            self.assertEqual(len(r),8)
+            self.assertEqual(len(r), 8)
             # pack in python
-            pr = struct.pack('>d',n)
-            self.assertEqual(r,pr)
+            pr = struct.pack('>d', n)
+            self.assertEqual(r, pr)
             # unpack lua-lua
             rn = float(c.eval("return '' .. struct.unpack('>d',ARGV[1])",
                               None, r))

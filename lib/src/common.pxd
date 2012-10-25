@@ -9,8 +9,8 @@ cdef extern from "reader.h":
     
     void pythonReaderFree(pythonReader *r)
     
-    void pythonReaderFeed(pythonReader *r, char *buf, size_t len)
+    void pythonReader_feed(pythonReader *r, object args)
     
-    object redisRead(pythonReader *r)
+    object pythonReader_gets(pythonReader *r)
     
     

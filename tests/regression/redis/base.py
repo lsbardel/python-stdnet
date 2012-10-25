@@ -12,18 +12,16 @@ def get_version(info):
 
 class TestCase(test.TestCase):
     
+    def get_client(self, pool=None):
+        client = redis.Redis(pool) if pool is not None else self.backend.client
+        return client.prefixed(self.prefix)
+        
     def setUp(self):
         self.client = self.get_client()
         return self.client.flushdb()
     
     def tearDown(self):
         return self.client.flushdb()
-        
-    def get_client(self, pool = None, build = False):
-        if pool or build:
-            return gedb(self.backend.connection_string).client
-        else:
-            return self.backend.client
         
     def make_hash(self, key, d):
         for k,v in d.items():
@@ -32,11 +30,7 @@ class TestCase(test.TestCase):
     def make_list(self, name, l):
         l = tuple(l)
         self.client.rpush(name, *l)
-        self.assertEqual(self.client.llen(name),len(l))
-            
-    def make_set(self, name, l):
-        for i in l:
-            self.client.sadd(name, i)
+        self.assertEqual(self.client.llen(name), len(l))
 
     def make_zset(self, name, d):
         self.client.zadd(name, *flatzset(kwargs=d))

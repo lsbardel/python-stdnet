@@ -3,6 +3,7 @@
 Ver. 0.7.0 - 2012 Oct 25
 ===============================
 * First official release of version 0.7.0. Requires redis_ 2.6 or above.
+* Supported python versions: 2.6, 2.7, 3.2, 3.3.
 * Several fixes in documentation.
 * Implemented :ref:`field lookups <field-lookups>` ``gt``, ``gt``, ``lt`` and ``le``.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.

@@ -68,13 +68,10 @@ Concatenating
 You can perform further selection by concatenating queries::
 
     qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
-<<<<<<< HEAD
-=======
     
 or equivalently::
     
     qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))
->>>>>>> 957ef07054e50920fd1640f16274e098683d3381
 
 Which is equivalent to an intersection of two filter statement::
 

@@ -20,8 +20,6 @@ there are over 600 tests with a coverage over 90%.
 
 **Dependencies**: None
 
-**Optional Dependencies**: cython_ for the :ref:`Redis C parser <redis-parser>`.
-
 .. _contents:
 
 Contents

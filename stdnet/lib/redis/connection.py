@@ -44,7 +44,7 @@ from itertools import chain, starmap
 from stdnet import BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import iteritems, map, ispy3k, range, to_string
-from stdnet.lib import hr, fallback
+from stdnet.lib import hiredis, fallback
 from stdnet.utils.dispatch import Signal
 
 from .exceptions import *
@@ -67,8 +67,8 @@ redis_after_receive = Signal(providing_args=["request"])
 
 PyRedisReader = lambda : fallback.RedisReader(RedisProtocolError,
                                               RedisInvalidResponse)
-if hr:  #pragma    nocover
-    RedisReader = lambda : hr.RedisReader(RedisProtocolError,
+if hiredis:  #pragma    nocover
+    RedisReader = lambda : hiredis.Reader(RedisProtocolError,
                                           RedisInvalidResponse)
 else:   #pragma    nocover
     RedisReader = PyRedisReader

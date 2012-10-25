@@ -1,10 +1,8 @@
 try:
-    from . import hr
-    hasextensions = True
+    import hiredis
 except:
-    hasextensions = False
-    hr = None
-    
+    hiredis = None
+hiredis = None
 from . import fallback
 skiplist = fallback.skiplist
 zset = fallback.zset

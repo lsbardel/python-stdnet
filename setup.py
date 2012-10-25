@@ -5,6 +5,7 @@ from distutils.command.install import INSTALL_SCHEMES
 import os
 import sys
 
+with_extensions = False
 package_name = 'stdnet'
 package_fullname = 'python-%s' % package_name
 root_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -82,7 +83,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
 
-def run_setup(with_cext):
+def run_setup(with_cext=False):
     if with_cext:
         params = libparams
     else:
@@ -111,21 +112,24 @@ def status_msgs(*msgs):
         print(msg)
     print('*' * 75)
     
-try:
-    run_setup(True)
-except BuildFailed as exc:
-    status_msgs(
-            exc.msg,
+if with_extensions:
+    try:
+        run_setup(True)
+    except BuildFailed as exc:
+        status_msgs(
+                exc.msg,
+                "WARNING: The C extension could not be compiled, " +
+                    "speedups are not enabled.",
+                "Failure information, if any, is above.",
+                "Retrying the build without the C extension now."
+            )
+    
+        run_setup()
+    
+        status_msgs(
             "WARNING: The C extension could not be compiled, " +
                 "speedups are not enabled.",
-            "Failure information, if any, is above.",
-            "Retrying the build without the C extension now."
+            "Plain-Python build succeeded."
         )
-
-    run_setup(False)
-
-    status_msgs(
-        "WARNING: The C extension could not be compiled, " +
-            "speedups are not enabled.",
-        "Plain-Python build succeeded."
-    )
+else:
+    run_setup()

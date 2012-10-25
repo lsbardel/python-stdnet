@@ -68,6 +68,13 @@ Concatenating
 You can perform further selection by concatenating queries::
 
     qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
+<<<<<<< HEAD
+=======
+    
+or equivalently::
+    
+    qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))
+>>>>>>> 957ef07054e50920fd1640f16274e098683d3381
 
 Which is equivalent to an intersection of two filter statement::
 
@@ -134,7 +141,7 @@ This is merely a syntactic sugar in place of this equivalent query::
 Field lookups
 ====================
 
-Filed lookups is how you refine the query method you have learned so far.
+Field lookups is how you refine the query methods you have learned so far.
 They are specified by appending a suffix to the field name preceded by double underscore ``__``. 
 
 Numeric loopups
@@ -161,6 +168,4 @@ There are four of them:
     
     qs = Position.objects.filter(size__le=100)    
  
-    
-  
     

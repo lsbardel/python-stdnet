@@ -3,7 +3,7 @@ from .exceptions import *
 from .backends import *
 from .utils.version import get_version, stdnet_version
 
-VERSION = stdnet_version(0, 7, 0, 'rc', 6)
+VERSION = stdnet_version(0, 7, 0, 'final', 1)
 
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"

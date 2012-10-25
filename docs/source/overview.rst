@@ -1,7 +1,7 @@
 .. _intro-overview:
 
-=====================
-Overview
-=====================
+==============================
+Overview and Installation
+==============================
 
 .. include:: ../../README.rst

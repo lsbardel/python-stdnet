@@ -1,9 +1,10 @@
 .. _vers07:
 
-Development
+Ver. 0.7.0 - 2012 Oct 23
 ===============================
-* Several fixes in the documentation.
-* Implemented range filters ``gt``, ``gt``, ``lt`` and ``le``.
+* First official release of version 0.7.0. Requires redis_ 2.6 or above.
+* Several fixes in documentation.
+* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``gt``, ``lt`` and ``le``.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
 * **624 regression tests** with **92%** coverage.
 

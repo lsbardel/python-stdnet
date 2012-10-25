@@ -11,10 +11,12 @@ data in an efficient and elegant way.
 To retrieve objects from your data server, you construct a
 :class:`Query` via a :class:`Manager` on your model class
 or via a :class:`Session`.
+A :class:`Query` represents a collection of rules to aggregate objects
+from your model.
 
-A :class:`Query` represents a collection of objects from your model.
-It can have zero, one or many filters criteria that narrow down the collection
-based on given parameters.
+In the following tutorial, it is assumed the models are registered with a backend dataserver
+so that the default :class:`Manager` is available. Alternatively, one can use the
+:ref:`session api <model-session>`.
 
 
 Retrieving all objects
@@ -40,7 +42,7 @@ To perform such operation, you refine the initial :class:`Query` by adding
 filter conditions.
 Lets create few other objects in the same line as above and try::
 
-    >>> eur_funds = Fund.objects.filter(ccy = 'EUR')
+    >>> eur_funds = Fund.objects.filter(ccy='EUR')
     >>> eur_funds
     Query.filter({'ccy': 'EUR'})
     >>> eur_funds.count()
@@ -49,11 +51,9 @@ Lets create few other objects in the same line as above and try::
     [Fund: Markowitz]
 
 The :meth:`Query.count` method counts the object in the query without
-actually retrieving them.
+actually retrieving them. It is possible to filter from a list/tuple of values::
 
-It is possible to filter from a list/tuple of values::
-
-    qs = Fund.objects.filter(ccy__in=('EUR','USD'))
+    qs = Fund.objects.filter(ccy=('EUR','USD'))
 
 This filter statement is equivalent to an union of two filters statements::
 
@@ -67,12 +67,12 @@ Concatenating
 
 You can perform further selection by concatenating queries::
 
-    qs = Instrument.objects.filter(ccy__in=('EUR','USD')).filter(types__in=('equity',bond'))
+    qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
 
-Which is equivalent to an intersection of two filter statement:
+Which is equivalent to an intersection of two filter statement::
 
-    q1 = Fund.objects.filter(ccy__in=('EUR', 'USD'))
-    q2 = Fund.objects.filter(types__in=('equity',bond'))
+    q1 = Fund.objects.filter(ccy=('EUR', 'USD'))
+    q2 = Fund.objects.filter(types=('equity',bond'))
     qs = q1.intersect(q2)
 
 
@@ -84,7 +84,7 @@ You can also exclude fields from lookups::
 
 You can exclude a list of fields::
 
-    Instrument.objects.exclude(type__in = ('future','equity'))
+    Instrument.objects.exclude(type=('future','equity'))
 
 
 Union
@@ -97,12 +97,12 @@ method performs just that, an union of queries. Consider the following example::
 
     qs = Instrument.objects.filter(ccy='EUR', type='equity')
 
-this retrieve all instruments with *ccy* 'EUR' AND *type* 'equity'. What about
-if we need all instruments with *ccy* 'EUR' OR *type* 'equity'? We use the
+this retrieve all instruments with ``ccy='EUR'`` **AND** ``type='equity'``. What about
+if we need all instruments with ``ccy='EUR'`` **OR** ``type='equity'``? We use the
 :meth:`Query.union` method::
 
-    q1 = Instruments.objecyts.filter(type = 'equity')
-    qs = Instrument.objects.filter(ccy = 'EUR').union(q1)
+    q1 = Instruments.objecyts.filter(type='equity')
+    qs = Instrument.objects.filter(ccy='EUR').union(q1)
 
 
 .. _query_related:
@@ -120,10 +120,47 @@ an subset of instruments in this way::
 
     qs = Position.objects.filter(instrument__ccy='EUR')
 
-that is the name of the :class:`ForeignKey` field, followed by a double underscore (__),
+that is the name of the :class:`ForeignKey` field, followed by a double underscore ``__``,
 followed by the name of the field in the related model.
 
 This is merely a syntactic sugar in place of this equivalent query::
 
-    qs = Position.objects.filter(instrument=Instrument.objects.filter(ccy='EUR'))
+    qi = Instrument.objects.filter(ccy='EUR')
+    qs = Position.objects.filter(instrument=qi)
 
+
+.. _field-lookups:
+
+Field lookups
+====================
+
+Filed lookups is how you refine the query method you have learned so far.
+They are specified by appending a suffix to the field name preceded by double underscore ``__``. 
+
+Numeric loopups
+~~~~~~~~~~~~~~~~~~
+
+Numeric loopus can be applied to any field which has an internal numerical representation. Such fields
+are: :class:`IntegerField`, :class:`FloatField`, :class:`DateField`, :class:`DateTimeField` and so on.   
+
+There are four of them:
+
+ * ``gt``, greater than. For example::
+    
+    qs = Position.objects.filter(size__gt=100)
+    
+ * ``ge``, greater than or equal to. For example::
+    
+    qs = Position.objects.filter(size__ge=100)
+    
+ * ``lt``, less than. For example::
+    
+    qs = Position.objects.filter(size__lt=100)
+    
+ * ``le``, less than or equal to. For example::
+    
+    qs = Position.objects.filter(size__le=100)    
+ 
+    
+  
+    

@@ -10,9 +10,9 @@
     numeric multivariate timeseries suitable for modelling financial timeseries.
     Stdnet uses redis >= 2.6 from the standard (antirez) distribution.
     
-=======================
-Stdnet Redis branch
-=======================
+========================================
+Stdnet Redis branch (Discontinued)
+========================================
 
 During the development of stdnet_ we came across several design decisions, some
 more critical than others, and most of them were resolved coding the client

@@ -22,35 +22,6 @@ there are over 600 tests with a coverage over 90%.
 
 **Optional Dependencies**: cython_ for the :ref:`Redis C parser <redis-parser>`.
 
-
-First steps
-===============
-
-**From scratch:**
-:ref:`Overview and Installation <intro-overview>`
-
-**Tutorials:**
-:ref:`Using Models <tutorial>` |
-:ref:`Query your data <tutorial-query>` |
-:ref:`Sorting <sorting>` |
-:ref:`Searching <tutorial-search>` |
-:ref:`Twitter Clone<twitter-example>`
-
-**API:**
-:ref:`Structures API <model-structures>` |
-:ref:`Model API <model-model>` |
-:ref:`Fields API <model-field>` |
-:ref:`Redis Client <redis-server>`
-
-**Special Topic**
-:ref:`Multivariate numeric time-series <apps-timeserie>`
- 
-**Miscellaneous:**
-:ref:`Contributing <contributing>` |
-:ref:`Tests <runningtests>` |
-:ref:`Changelog <changelog>` |
-:ref:`Kudos <kudos>`
-
 .. _contents:
 
 Contents
@@ -61,18 +32,19 @@ Contents
    
    overview
    examples/index
-   model/index
-   backends/index
+   api/index
    apps/index
-   utility
-   stdnetredis
    changelog
+   stdnetredis
+   
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
+
+
 
 .. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py

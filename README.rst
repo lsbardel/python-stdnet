@@ -15,6 +15,10 @@ __ http://github.com/lsbardel/python-stdnet
 __ http://lsbardel.github.com/python-stdnet/
 __ http://pypi.python.org/pypi/python-stdnet/
 
+|stdnet-build|_
+
+.. |stdnet-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
+.. _stdnet-build: http://travis-ci.org/lsbardel/python-stdnet
 
 Contents
 ~~~~~~~~~~~~~~~

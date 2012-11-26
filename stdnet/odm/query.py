@@ -60,9 +60,9 @@ class Q(object):
 '''
     keyword = ''
     name = ''
-    def __init__(self, meta, session, select_related = None,
-                 ordering = None, fields = None,
-                 get_field = None, name = None, keyword = None):
+    def __init__(self, meta, session, select_related=None,
+                 ordering=None, fields=None,
+                 get_field=None, name=None, keyword=None):
         self._meta = meta
         self.session = session
         self.data = {'select_related': select_related,

@@ -14,7 +14,7 @@ from stdnet import test, getdb
 from stdnet.test import nose, pulsar
 
 
-def noseoption(argv,*vals,**kwargs):
+def noseoption(argv, *vals, **kwargs):
     if vals:
         for val in vals:
             if val in argv:

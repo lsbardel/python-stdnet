@@ -128,8 +128,8 @@ two-dimensional tuples containing start and end date for the interval.
 The list could countain 0,1 or 2 tuples.'''
     parseinterval = parseinterval or default_parse_interval
     dateconverter = dateconverter or todate
-    startdate = dateconverter(parseinterval(startdate,0))
-    enddate   = max(startdate,dateconverter(parseinterval(enddate,0)))
+    startdate = dateconverter(parseinterval(startdate, 0))
+    enddate   = max(startdate, dateconverter(parseinterval(enddate,0)))
     
     if intervals is not None and not isinstance(intervals,Intervals):
         intervals = Intervals(intervals)

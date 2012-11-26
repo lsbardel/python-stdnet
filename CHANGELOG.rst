@@ -1,5 +1,8 @@
 .. _vers07:
 
+Ver. 0.7.1 - Development
+===============================
+
 Ver. 0.7.0 - 2012 Oct 25
 ===============================
 * First official release of version 0.7.0. Requires redis_ 2.6 or above.

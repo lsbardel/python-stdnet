@@ -66,4 +66,11 @@ class TestFilter(FinanceTest):
         q1 = qs[-2:-1]
         self.assertEqual(len(q1),1)
         self.assertEqual(q1[0].id,N-1)
+        
+    def testSliceGetField(self):
+        '''test silve in conjunction with get_field method'''
+        session = self.session()
+        qs = session.query(self.model).get_field('id')
+        q1 = qs[:2]
+        self.assertEqual(len(q1), 2)
     

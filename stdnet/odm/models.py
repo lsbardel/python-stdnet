@@ -50,7 +50,7 @@ class StdModel(StdNetBase):
                 keys += ' are'
             else:
                 keys += ' is an'
-            raise ValueError("%s invalid keyword for %s." % (keys,self._meta))
+            raise ValueError("%s invalid keyword for %s." % (keys, self._meta))
 
     @property
     def has_all_data(self):

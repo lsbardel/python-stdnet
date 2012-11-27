@@ -10,10 +10,11 @@ services:
   - redis-server
 
 install:
+  - pip install pulsar
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install --use-mirrors argparse unittest2; fi
   - python setup.py install
 script: python -m runtests
 
 branches:
   only:
-    - 0.7
+    - master

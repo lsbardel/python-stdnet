@@ -1,5 +1,5 @@
 '''Slice Query to obtain subqueries.'''
-from stdnet import test
+from stdnet import test, QuerySetError
 
 from examples.models import Instrument
 from examples.data import FinanceTest
@@ -71,6 +71,5 @@ class TestFilter(FinanceTest):
         '''test silve in conjunction with get_field method'''
         session = self.session()
         qs = session.query(self.model).get_field('id')
-        q1 = qs[:2]
-        self.assertEqual(len(q1), 2)
+        self.assertRaises(QuerySetError, lambda: qs[:2])
     

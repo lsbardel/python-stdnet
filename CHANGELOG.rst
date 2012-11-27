@@ -2,6 +2,9 @@
 
 Ver. 0.7.1 - Development
 ===============================
+* Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request
+  throws a :class:`stdnet.QuerySetException`. See issue #50.
+* **627 regression tests** with **92%** coverage.
 
 Ver. 0.7.0 - 2012 Oct 25
 ===============================

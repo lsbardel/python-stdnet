@@ -7,7 +7,7 @@ from functools import partial
 from collections import namedtuple
 
 import stdnet
-from stdnet import FieldValueError, CommitException
+from stdnet import FieldValueError, CommitException, QuerySetError
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
 from stdnet.lib import redis
@@ -314,6 +314,9 @@ elements in the query.'''
         pkname_tuple = (meta.pk.name,)
         # if the get_field is available, we only load that field
         if get:
+            if slic:
+                raise QuerySetError('Cannot slice a queryset in conjunction '
+                                    'with get_field. Use load_only instaed.')
             if get == meta.pk.name:
                 fields_attributes = fields = pkname_tuple
             else:

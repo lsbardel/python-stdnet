@@ -39,8 +39,21 @@ class TestMeta(FinanceTest):
         self.assertEqual(query,query2)
         
     def testFilterError(self):
-        query = Instrument.objects.filter(whoaaaaa = 'foo')
+        query = Instrument.objects.filter(whoaaaaa='foo')
         self.assertRaises(QuerySetError, query.all)
         
+    def testRepr(self):
+        self.data.create(self)
+        query = Instrument.objects.filter(ccy='EUR')\
+                                  .exclude(type=('equity','bond'))
+        self.assertTrue(str(query))
+        # The query is still lazy
+        self.assertFalse(query.cache())
+        v = query.all()
+        self.assertTrue(v)
+        self.assertEqual(str(query), str(v))
         
-    
+    def testEmptyParameters(self):
+        query = Instrument.objects.filter(ccy='USD')
+        self.assertEqual(query, query.filter())
+        self.assertEqual(query, query.exclude())

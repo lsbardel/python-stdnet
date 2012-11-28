@@ -167,12 +167,12 @@ class Redis(object):
             bytes_to_string
             ),
         string_keys_to_dict(
-            'AUTH DEL EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
+            'AUTH EXISTS EXPIRE EXPIREAT HDEL HEXISTS HMSET MOVE MSETNX '
             'TSEXISTS RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
             lambda request, response, args, **options : bool(response)
             ),
         string_keys_to_dict(
-            'DECRBY HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
+            'DECRBY DEL HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
             'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
             lambda request, response, args, **options : int(response)
             ),

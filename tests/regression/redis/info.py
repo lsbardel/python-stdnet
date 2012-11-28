@@ -73,6 +73,51 @@ class TestInfo(TestCase):
             keys = RedisKey.objects.query(db)
             self.assertEqual(keys.db, db)
             self.assertEqual(keys.pattern, '*')
+            
+    def testQuery(self):
+        db = self.info.databases[0]
+        self.assertNotEqual(db.client, self.info.client)
+        db.client.set('blaxxx', 'test')
+        query = db.query()
+        self.assertEqual(query.db, db)
+        q = query.search('blax*')
+        self.assertNotEqual(query, q)
+        self.assertEqual(q.db, db)
+        self.assertEqual(q.pattern, 'blax*')
+        self.assertTrue(query.count())
+        self.assertEqual(query.count(), len(query))
+        self.assertEqual(q.count(), 1)
+        keys = list(q)
+        self.assertEqual(len(keys), 1)
+        key = q[0]
+        self.assertEqual(str(key), 'blaxxx')
+        
+    def testQuerySlice(self):
+        db = self.info.databases[0]
+        self.assertNotEqual(db.client, self.info.client)
+        db.client.set('blaxxx', 'test')
+        db.client.set('blaxyy', 'test2')
+        all = db.all()
+        self.assertTrue(isinstance(all, list))
+        self.assertEqual(len(all), 2)
+        self.assertEqual(all, db.query()[:])
+        self.assertEqual(all[-1:], db.query()[-1:])
+        self.assertEqual(all[-1:1], db.query()[-1:1])
+        self.assertEqual(all[-1:2], db.query()[-1:2])
+        self.assertEqual(all[-2:1], db.query()[-2:1])
+        self.assertEqual(db.query().search('*yy').delete(), 1)
+        self.assertEqual(db.query().delete(), 1)
+        self.assertEqual(db.all(), [])
+        
+    def testRedisKeyManager(self):
+        db = self.info.databases[0]
+        self.assertNotEqual(db.client, self.info.client)
+        db.client.set('blaxxx', 'test')
+        db.client.set('blaxyy', 'test2')
+        all = db.all()
+        self.assertEqual(len(all), 2)
+        self.assertEqual(RedisKey.objects.delete(all), 2)
+        self.assertEqual(db.all(), [])
     
     def testdataFormatter(self):
         f = RedisDataFormatter()

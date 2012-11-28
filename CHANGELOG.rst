@@ -4,8 +4,8 @@ Ver. 0.7.1 - Development
 ===============================
 * Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request
   throws a :class:`stdnet.QuerySetException`. See issue #50.
-* Travis continous integration.
-* **628 regression tests** with **92%** coverage.
+* Travis continuous integration.
+* **631 regression tests** with **93%** coverage.
 
 Ver. 0.7.0 - 2012 Oct 25
 ===============================

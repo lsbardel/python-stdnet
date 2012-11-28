@@ -298,6 +298,13 @@ class zdiffstore(RedisScript):
 class keyinfo(countpattern):
     script = read_lua_file('commands.keyinfo')
     
+    def preprocess_args(self, client, args, options):
+        if args and client.prefix:
+            a = ['%s%s' % (client.prefix, args[0])]
+            a.extend(args[1:])
+            args = tuple(a)
+        return args, options
+    
     def callback(self, request, response, args, **options):
         client = request.client
         if client.pipelined:

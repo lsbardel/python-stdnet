@@ -25,6 +25,7 @@ __all__ = ['RedisDb',
 
 
 class RediInfo(object):
+    '''Handler for gathering information from redis.'''
     names = ('Server','Memory','Persistence',
              'Replication','Clients','Stats','CPU')
     converters = {'last_save_time': ('date', None),
@@ -111,9 +112,26 @@ class RedisDbManager(object):
                             
     
 class RedisDb(odm.ModelBase):
+    '''
+    Handler for gathering information from a Redis database.
     
-    def __init__(self, client = None, db = None, keys = None,
-                 expires = None):
+.. attribute:: id
+
+    Database number
+    
+.. attribute:: db
+
+    Database number
+    
+.. attribute:: keys
+
+    Number of keys in the database
+    
+.. attribute:: expires
+
+    Number of keys with expiry in the database
+    '''
+    def __init__(self, client=None, db=None, keys=None, expires=None):
         self.id = db
         if client and db is None:
             self.id = client.db
@@ -127,6 +145,13 @@ class RedisDb(odm.ModelBase):
         flushdb(self.client) if flushdb else self.client.flushdb()
         
     objects = RedisDbManager()
+    
+    def query(self):
+        '''Build a query for keys'''
+        return RedisKey.objects.query(self)
+    
+    def all(self):
+        return RedisKey.objects.all(self)
     
     @property
     def db(self):
@@ -151,13 +176,22 @@ class KeyQuery(object):
     def count(self):
         return self.db.client.countpattern(self.pattern)
     
+    def all(self):
+        return list(self)
+    
+    def delete(self):
+        return self.db.client.delpattern(self.pattern)
+        
     def __len__(self):
         return self.count()
     
-    def __getitem__(self, slice):
+    def __getitem__(self, slic):
         o = copy(self)
-        o.slice = slice
-        return o
+        if isinstance(slic, slice):
+            o.slice = slic
+            return o.all()
+        else:
+            return self[slic:slic+1][0]
     
     def __iter__(self):
         keys = []
@@ -179,17 +213,22 @@ class KeyQuery(object):
             N = self.count()
             stop = stop or 0
             stop += N
+        start = start or 0
         if start < 0:
             if N is None:
                 N = self.count()
             start += N
         return start+1, stop-start
+    
 
 
 class RedisKeyManager(object):
     
     def query(self, db):
         return KeyQuery(db)
+    
+    def all(self, db):
+        return self.query(db).all()
             
     def delete(self, instances):
         if instances:
@@ -218,11 +257,6 @@ class RedisKey(odm.ModelBase):
         return self.key
 
 
-def niceadd(l,name,value):
-    if value is not None:
-        l.append({'name':name,'value':value})
-
-
 class RedisDataFormatter(object):
     
     def format_bool(self, val):
@@ -245,7 +279,9 @@ class RedisDataFormatter(object):
         return td
             
             
-def redis_info(client, formatter = None):
+def redis_info(client, formatter=None):
+    '''Return a :class:`RedisInfo` handler for obtaining server information
+from redis.'''
     info = client.info()
     formatter = formatter or RedisDataFormatter()
     return RediInfo(client, info, formatter)

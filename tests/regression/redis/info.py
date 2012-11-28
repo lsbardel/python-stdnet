@@ -115,8 +115,7 @@ class TestInfo(TestCase):
         self.assertEqual(db.all(), [])
         
     def testRedisKeyManager(self):
-        db = self.info.databases[0]
-        self.assertNotEqual(db.client, self.info.client)
+        db = self.newdb()
         db.client.set('blaxxx', 'test')
         db.client.set('blaxyy', 'test2')
         all = db.all()

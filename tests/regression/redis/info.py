@@ -1,4 +1,6 @@
-from stdnet.lib.redis import redis_info, RedisDb, RedisKey
+import time
+
+from stdnet.lib.redis import redis_info, RedisDb, RedisKey, RedisDataFormatter
 
 from .base import TestCase
 
@@ -70,7 +72,14 @@ class TestInfo(TestCase):
         for db in dbs:
             keys = RedisKey.objects.query(db)
             self.assertEqual(keys.db, db)
+            self.assertEqual(keys.pattern, '*')
     
+    def testdataFormatter(self):
+        f = RedisDataFormatter()
+        self.assertEqual(f.format_date('bla'), '')
+        d = f.format_date(time.time())
+        self.assertTrue(d)
+        
     def test_tails(self):
         # Make sure we have an 100% coverage
         self.assertFalse(list(self.info._dbs(('dbh',))),[])

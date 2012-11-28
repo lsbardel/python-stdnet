@@ -73,7 +73,7 @@ will be unregistered after the :meth:`tearDown` method.'''
             self.models = (self.model,)
         if not self.model and self.models:
             self.model = self.models[0]
-        self.prefix = 'stdnet-test-'+gen_unique_id()+'.'
+        self.prefix = 'stdnet-test-%s.' % gen_unique_id()
         self.backend = getdb(prefix=self.prefix, **self.backend_params())
         r = None
         if self.backend.name == 'redis':

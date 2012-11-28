@@ -307,7 +307,7 @@ between the client and server.
     ############################################################################
     ##    SERVER INFORMATION
     ############################################################################
-    def bgrewriteaof(self):
+    def bgrewriteaof(self): #pragma    nocover
         "Tell the Redis server to rewrite the AOF file from data in memory."
         return self.execute_command('BGREWRITEAOF')
 
@@ -339,9 +339,16 @@ between the client and server.
         "Delete all keys in all databases on the current host"
         return self.execute_command('FLUSHALL')
 
-    def flushdb(self):
+    def flushdb(self): #pragma    nocover
         "Delete all keys in the current database"
         return self.execute_command('FLUSHDB')
+    
+    def save(self): #pragma    nocover
+        """
+        Tell the Redis server to save its data to disk,
+        blocking until the save is complete
+        """
+        return self.execute_command('SAVE')
 
     def info(self):
         "Returns a dictionary containing information about the Redis server"
@@ -362,13 +369,6 @@ between the client and server.
         "Ping the Redis server"
         return self.execute_command('ECHO', message)
 
-    def save(self):
-        """
-        Tell the Redis server to save its data to disk,
-        blocking until the save is complete
-        """
-        return self.execute_command('SAVE')
-
     def shutdown(self): #pragma    nocover
         "Shutdown the server"
         try:
@@ -378,7 +378,7 @@ between the client and server.
             return
         raise RedisError("SHUTDOWN seems to have failed.")
 
-    def slaveof(self, host=None, port=None):
+    def slaveof(self, host=None, port=None): #pragma    nocover
         """Set the server to be a replicated slave of the instance identified
 by the ``host`` and ``port``. If called without arguements, the
 instance is promoted to a master instead.
@@ -1159,7 +1159,7 @@ Typical usage::
         return self.__prefix
     
     def preprocess_command(self, cmnd, *args, **options):
-        if args and cmnd not in self.EXCLUDE_COMMANDS:
+        if cmnd not in self.EXCLUDE_COMMANDS:
             handle = self.SPECIAL_COMMANDS.get(cmnd, self.handle)
             args = handle(self.prefix, args)
         return args, options

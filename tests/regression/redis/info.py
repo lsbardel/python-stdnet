@@ -13,6 +13,13 @@ class TestInfo(TestCase):
         self.db = self.client.db
         self.info = redis_info(self.client)
         
+    def newdb(self):
+        db = self.info.databases[0]
+        self.assertNotEqual(db.client, self.info.client)
+        # make sure the database is clean
+        db.client.flushdb()
+        return db
+        
     def testSimple(self):
         info = self.info
         self.assertTrue(info.client)
@@ -75,8 +82,7 @@ class TestInfo(TestCase):
             self.assertEqual(keys.pattern, '*')
             
     def testQuery(self):
-        db = self.info.databases[0]
-        self.assertNotEqual(db.client, self.info.client)
+        db = self.newdb()
         db.client.set('blaxxx', 'test')
         query = db.query()
         self.assertEqual(query.db, db)
@@ -93,8 +99,7 @@ class TestInfo(TestCase):
         self.assertEqual(str(key), 'blaxxx')
         
     def testQuerySlice(self):
-        db = self.info.databases[0]
-        self.assertNotEqual(db.client, self.info.client)
+        db = self.newdb()
         db.client.set('blaxxx', 'test')
         db.client.set('blaxyy', 'test2')
         all = db.all()

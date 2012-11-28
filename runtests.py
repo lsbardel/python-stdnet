@@ -4,10 +4,23 @@ import sys
 import os
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run
-from stdnet.utils import Path
-p = Path(__file__)
-p.add2python('pulsar', up=1, down=('pulsar',), must_exist=False)
-p.add2python('dynts', up=1, down=('dynts',), must_exist=False)
+p = os.path
+dir = p.dirname(p.dirname(p.abspath(__file__)))
+try:
+    import pulsar
+except ImportError:
+    pdir = p.join(dir, 'pulsar')
+    if os.path.isdir(pdir):
+        sys.path.append(pdir)
+        import pulsar
+#
+try:
+    import dynts
+except ImportError:
+    pdir = p.join(dir, 'dynts')
+    if os.path.isdir(pdir):
+        sys.path.append(pdir)
+        import dynts
 
 from stdnet.conf import settings
 from stdnet import test, getdb

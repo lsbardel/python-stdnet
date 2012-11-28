@@ -16,7 +16,6 @@ else:   # pragma: no cover
 from .jsontools import *
 from .populate import populate
 from .dates import *
-from .path import *
 
 
 def gen_unique_id(short = True):

@@ -4,6 +4,7 @@ Ver. 0.7.1 - Development
 ===============================
 * Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request
   throws a :class:`stdnet.QuerySetException`. See issue #50.
+* Travis continous integration.
 * **627 regression tests** with **92%** coverage.
 
 Ver. 0.7.0 - 2012 Oct 25
@@ -84,7 +85,7 @@ Ver. 0.6.2 - 2011 Nov 14
 * Critical bug fix in ``delete`` method when a model has no indices.
 * Critical bug fix in :class:`stdnet.odm.ManyToManyField` which was causing the
   model ``delete`` method to crash.
-* **297 regression tests**.
+* **297 regression tests** with **78%** coverage.
 
 Ver. 0.6.1 - 2011 Sep 10
 ============================

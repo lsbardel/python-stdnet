@@ -66,7 +66,7 @@ will be unregistered after the :meth:`tearDown` method.'''
             odm.register(model, self.backend)
 
     def clear_all(self):
-        return self.backend.flush(pattern=self.prefix + '*')
+        return self.backend.flush()
 
     def _pre_setup(self):
         if not self.models and self.model:

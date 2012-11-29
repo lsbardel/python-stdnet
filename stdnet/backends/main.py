@@ -13,6 +13,7 @@ __all__ = ['getdb', 'getcache']
 
 BACKENDS = {
     'redis': 'redisb',
+    'mongo': 'mongo',
     'dynamo': 'dynamob'
 }
 

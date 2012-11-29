@@ -864,12 +864,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.basekey(meta, TMP, name if name is not None else\
                                         gen_unique_id())
         
-    def flush(self, meta=None, pattern=None):
+    def flush(self, meta=None):
         '''Flush all model keys from the database'''
-        if meta is not None:
-            pattern = '{0}*'.format(self.basekey(meta))
-        if pattern:
-            return self.client.delpattern(pattern)
+        pattern = self.basekey(meta) if meta else self.namespace
+        return self.client.delpattern('%s*' % pattern)
         
     def clean(self, meta):
         return self.client.delpattern(self.tempkey(meta, '*'))

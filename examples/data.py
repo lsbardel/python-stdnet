@@ -118,7 +118,7 @@ class finance_data(data_generator):
 
     def create(self, test, use_transaction=True, InstrumentModel = Instrument):
         session = test.session()
-        test.assertEqual(session.query(InstrumentModel).count(),0)
+        test.assertEqual(session.query(InstrumentModel).count(), 0)
         if use_transaction:
             with session.begin():
                 for name,ccy in zip(self.fund_names,self.fund_ccys):

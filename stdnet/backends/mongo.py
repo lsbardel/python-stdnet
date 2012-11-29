@@ -83,17 +83,19 @@ class BackendDataServer(stdnet.BackendDataServer):
             port = int(addr[1])
         else:
             port = 27017
-        db =  self.params.pop('db', '')
-        if db:
-            self.namespace = '%s-%s' % (db, self.namespace)
-        self._db = self.namespace.replace('.', '-')
+        db = self.params.pop('db', None)
+        if not db:
+            db = self.namespace.replace('.','')
         self.namespace = ''
+        if not db:
+            db = 'test'
         mdb = pymongo.MongoClient(addr[0], port, **self.params)
+        self.params['db'] = db
         return mdb
     
     @property
     def db(self):
-        return getattr(self.client, self._db)
+        return getattr(self.client, self.params['db'])
     
     def collection(self, meta):
         return getattr(self.db, self.basekey(meta))
@@ -103,7 +105,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         if meta is not None:
             return self.db.drop_collection(self.basekey(meta))
         else:
-            return self.client.drop_database(self._db)
+            return self.client.drop_database(self.params['db'])
         
     def execute_session(self, session, callback):
         '''Execute a session in mongo.'''
@@ -113,40 +115,14 @@ class BackendDataServer(stdnet.BackendDataServer):
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
-                meta_info = json.dumps(self.meta(meta))
-                delquery = sm.get_delete_query(pipe=pipe)
-                self.accumulate_delete(pipe, delquery)
-                dirty = tuple(sm.iterdirty())
-                N = len(dirty)
-                if N:
-                    lua_data = [N]
-                    processed = []
-                    for instance in dirty:
-                        state = instance.state()
-                        if not instance.is_valid():
-                            raise FieldValueError(
-                                        json.dumps(instance._dbdata['errors']))
-                        score = MIN_FLOAT
-                        if meta.ordering:
-                            if meta.ordering.auto:
-                                score = meta.ordering.name.incrby 
-                            else:
-                                v = getattr(instance, meta.ordering.name, None)
-                                if v is not None:
-                                    score = meta.ordering.field.scorefun(v)
-                        data = instance._dbdata['cleaned_data']
-                        if state.persistent:
-                            action = 'override' if instance.has_all_data else\
-                                     'change'
-                            id = state.iid
-                        else:
-                            action = 'add'
-                            id = instance.pkvalue() or ''
-                        data = flat_mapping(data)
-                        lua_data.extend((action, id, score, len(data)))
-                        lua_data.extend(data)
-                        processed.append(state.iid)
-                    self.odmrun(pipe, 'commit', meta, (), meta_info,
-                                *lua_data, iids=processed)
-        command, result = redis_execution(pipe, session_result)
-        return on_result(result, callback, command)
+                instances = []
+                processed = []
+                for instance in sm.iterdirty():
+                    if not instance.is_valid():
+                        raise FieldValueError(
+                                    json.dumps(instance._dbdata['errors']))
+                    state = instance.state()
+                    data = instance._dbdata['cleaned_data']
+                    instances.append(data)
+                    processed.append(state.iid)
+                self.collection(meta).insert(instances)

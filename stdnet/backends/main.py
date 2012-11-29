@@ -1,7 +1,7 @@
 from inspect import isclass
 
 from stdnet.conf import settings
-from stdnet.utils import urlparse, encoders, itervalues, urlencode
+from stdnet.utils import urlparse, encoders, itervalues
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
 
@@ -53,14 +53,6 @@ def _getdb(scheme, host, params):
         name = scheme
     module = import_module(name)
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
-
-
-def get_connection_string(scheme, address, params):
-    if isinstance(address,tuple):
-        address = ':'.join(address)
-    if params:
-        address += '?' + urlencode(params)
-    return scheme + '://' + address
     
     
 def getdb(backend=None, **kwargs):
@@ -71,9 +63,8 @@ def getdb(backend=None, **kwargs):
     if not backend:
         return None
     scheme, address, params = parse_backend(backend)
+    address = address or '127.0.0.1'
     params.update(kwargs)
-    backend = get_connection_string(scheme, address, params)
-    params['connection_string'] = backend
     return _getdb(scheme, address, params)
 
 

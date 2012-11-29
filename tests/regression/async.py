@@ -9,7 +9,8 @@ from examples.models import SimpleModel
 @test.skipUnless(os.environ['stdnet_test_suite'] == 'pulsar', 'Requires Pulsar')
 class TestAsyncRedis(test.TestCase):
     
-    def backend_params(self):
+    @classmethod
+    def backend_params(cls):
         from stdnet.lib.redis.async import RedisConnection
         return {'connection_class': RedisConnection}
     

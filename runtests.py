@@ -22,9 +22,10 @@ except ImportError:
         sys.path.append(pdir)
         import dynts
 
+from stdnet import getdb
 from stdnet.conf import settings
-from stdnet import test, getdb
-from stdnet.test import nose, pulsar
+from stdnet.utils import test
+from stdnet.utils.test import nose, pulsar
 
 
 def noseoption(argv, *vals, **kwargs):
@@ -51,7 +52,7 @@ def start():
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',
-                    modules = ('tests',),
+                    modules = ('tests.regression',),
                     plugins = (test.PulsarStdnetServer(),
                                test.PulsarDataSizePlugin(),
                                test.PulsarRedisParser(),

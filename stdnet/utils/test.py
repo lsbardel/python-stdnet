@@ -47,9 +47,38 @@ some utility functions for tesing in a parallel test suite.
     model = None
     backend = None
 
-    def backend_params(self):
-        '''Optional backend parameters'''
+    @classmethod
+    def backend_params(cls):
+        '''Optional backend parameters for tests in this class'''
         return {}
+    
+    @classmethod
+    def setUpClass(cls):
+        if not cls.models and cls.model:
+            cls.models = (cls.model,)
+        if not cls.model and cls.models:
+            cls.model = cls.models[0]
+        cls.namespace = 'stdnet-test-%s.' % gen_unique_id()
+        cls.backend = getdb(namespace=cls.namespace, **cls.backend_params())
+        if cls.backend.name == 'redis':
+            r = self.backend.client.script_flush()
+            if isinstance(r, BackendRequest):
+                return r.add_callback(lambda r: self.clear_all())
+        return cls.clear_all()
+    
+    @classmethod
+    def register(cls):
+        '''Utility for registering the managers to the current backend.
+This should be used with care in parallel testing. All registered models
+will be unregistered after the :meth:`tearDown` method.'''
+        for model in cls.models:
+            odm.register(model, cls.backend)
+    
+    @classmethod
+    def clear_all(cls):
+        #override if you don't want to flush the database at the and of all
+        #tests in this class
+        return cls.backend.flush()
 
     def session(self, **kwargs):
         '''Create a new :class:`stdnet.odm.Session` bind to the
@@ -58,49 +87,29 @@ some utility functions for tesing in a parallel test suite.
         self.assertEqual(session.backend, self.backend)
         return session
 
-    def register(self):
-        '''Utility for registering the managers to the current backend.
-This should be used with care in parallel testing. All registered models
-will be unregistered after the :meth:`tearDown` method.'''
-        for model in self.models:
-            odm.register(model, self.backend)
-
-    def clear_all(self):
-        return self.backend.flush()
-
-    def _pre_setup(self):
-        if not self.models and self.model:
-            self.models = (self.model,)
-        if not self.model and self.models:
-            self.model = self.models[0]
-        self.prefix = 'stdnet-test-%s.' % gen_unique_id()
-        self.backend = getdb(prefix=self.prefix, **self.backend_params())
-        r = None
-        if self.backend.name == 'redis':
-            r = self.backend.client.script_flush()
-        if isinstance(r, BackendRequest):
-            return r.add_callback(lambda r: self.clear_all())
-        else:
-            return self.clear_all()
-
     def load_scripts(self):
         if self.backend.name == 'redis':
             self.backend.load_scripts()
 
+
+class CleanTestCase(TestCase):
+    '''A test case which flush the database at every test.'''
+    def _pre_setup(self):
+        self.clear_all()
+        
     def _post_teardown(self):
         if self.backend:
-            session = odm.Session(self.backend)
             self.clear_all()
             odm.unregister()
-
+        
     def __call__(self, result=None):
         """Wrapper around default __call__ method
 to perform cleanup, registration and unregistration.
         """
         self._pre_setup()
-        super(TestCase, self).__call__(result)
+        super(CleanTestCase, self).__call__(result)
         self._post_teardown()
-
+    
 
 class DataSizePlugin(object):   # pragma nocover
 

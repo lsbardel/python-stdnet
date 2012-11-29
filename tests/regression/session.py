@@ -1,12 +1,13 @@
-from stdnet import test, odm, getdb
+from stdnet import odm, getdb
 
+from stdnet.utils import test
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
 from examples.models import SimpleModel, Instrument
 
 
-class TestSession(test.TestCase):
+class TestSession(test.CleanTestCase):
     model = SimpleModel
         
     def testQueryMeta(self):

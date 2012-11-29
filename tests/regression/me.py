@@ -1,11 +1,12 @@
-from stdnet import test, BackendRequest, BackendStructure
+from stdnet import BackendRequest, BackendStructure
+from stdnet.utils import test
 from stdnet.conf import settings
 from stdnet.lib import redis
 import stdnet as me
 
 from examples.models import SimpleModel
 
-class TestInitFile(test.TestCase):
+class TestInitFile(test.CleanTestCase):
 
     def test_version(self):
         self.assertTrue(len(me.VERSION), 5)

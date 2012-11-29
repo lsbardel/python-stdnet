@@ -3,8 +3,8 @@ from collections import namedtuple
 
 from stdnet.conf import settings
 from stdnet.exceptions import *
-from stdnet.utils import zip, iteritems, itervalues, encoders, UnicodeMixin,\
-                            int_or_float, to_string
+from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
+                            int_or_float, to_string, urlencode
 
 
 __all__ = ['BackendRequest',
@@ -45,7 +45,15 @@ range_lookups = {
     'icontains': str_lower_case,
     'icontains': str_lower_case}
     
-    
+
+def get_connection_string(scheme, address, params):
+    if isinstance(address,tuple):
+        address = ':'.join(address)
+    if params:
+        address += '?' + urlencode(params)
+    return scheme + '://' + address
+
+
 class BackendRequest(object):
     '''Signature class for Stdnet Request classes'''
     def add_callback(self, callback, errback=None):
@@ -223,19 +231,16 @@ It must implement the *loads* and *dumps* methods.'''
     structure_module = None
     struct_map = {}
     
-    def __init__(self, name, address, pickler=None,
-                 charset='utf-8', connection_string='',
-                 prefix=None, **params):
+    def __init__(self, name, address, charset=None, namespace='', **params):
         self.__name = name
         self._cachepipe = {}
         self._keys = {}
-        self.charset = charset
-        self.pickler = pickler or encoders.NoEncoder()
-        self.connection_string = connection_string
+        self.charset = charset or 'utf-8'
         self.params = params
-        self.namespace = prefix if prefix is not None else\
-                         settings.DEFAULT_KEYPREFIX
+        self.namespace = namespace
         self.client = self.setup_connection(address)
+        self.connection_string = get_connection_string(
+                                        self.name, address, self.params)
 
     @property
     def name(self):

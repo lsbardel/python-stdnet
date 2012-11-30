@@ -1,4 +1,5 @@
-from stdnet import test, odm
+from stdnet import odm
+from stdnet.utils import test
 
 from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement

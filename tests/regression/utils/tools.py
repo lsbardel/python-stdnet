@@ -2,9 +2,9 @@ import time
 from datetime import date, datetime
 
 import stdnet
-from stdnet import test, odm
+from stdnet import odm
 from stdnet.utils.version import get_git_changeset
-from stdnet.utils import encoders, to_bytes, to_string
+from stdnet.utils import test, encoders, to_bytes, to_string
 from stdnet.utils import date2timestamp, timestamp2date,\
                             addmul_number_dicts, grouper,\
                             _format_int, populate

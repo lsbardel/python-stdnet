@@ -1,7 +1,8 @@
 import os
 
-from stdnet import test, getdb
+from stdnet import getdb
 from stdnet.apps.pubsub import Publisher, Subscriber
+from stdnet.utils import test
 
 from .backend import DummyBackendDataServer
 

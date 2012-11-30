@@ -1,7 +1,7 @@
 import datetime
 import random
 
-from stdnet import test
+from stdnet.utils import test
 
 from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund

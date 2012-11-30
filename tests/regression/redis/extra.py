@@ -1,7 +1,5 @@
 import os
 
-from stdnet import test
-
 from .base import TestCase
 
 class TestZdiffStore(TestCase):

@@ -1,5 +1,6 @@
 '''Test the JSON serializer'''
-from stdnet import test, odm
+from stdnet import odm
+from stdnet.utils import test
 
 from examples.data import FinanceTest, DataTest
 from examples.models import Instrument, Fund, Position, Folder, PortfolioView

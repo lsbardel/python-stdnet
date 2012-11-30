@@ -1,8 +1,8 @@
 from datetime import datetime
 from itertools import chain
 
-from stdnet import test, getdb
-from stdnet.utils import populate, zip, flatzset
+from stdnet import getdb
+from stdnet.utils import test, populate, zip, flatzset
 from stdnet.lib import zset
 
 from examples.models import Calendar, DateValue, Collection, Group

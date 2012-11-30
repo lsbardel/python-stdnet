@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-from stdnet import odm, test
-from stdnet.utils import BytesIO, to_bytes
+from stdnet import odm
+from stdnet.utils import test, BytesIO, to_bytes
 
 class Tempfile(object):
 

@@ -1,4 +1,5 @@
-from stdnet import test, getcache
+from stdnet import getcache
+from stdnet.utils import test
 
 class TestCache(test.TestCase):
     

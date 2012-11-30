@@ -2,8 +2,8 @@
 from random import randint
 from datetime import date
 
-from stdnet import odm, test, QuerySetError
-from stdnet.utils import to_string, range, populate
+from stdnet import odm, QuerySetError
+from stdnet.utils import test, to_string, range, populate
 from stdnet.odm.search import UpdateSE
 from stdnet.apps.searchengine import SearchEngine, processors
 from stdnet.apps.searchengine.models import WordItem

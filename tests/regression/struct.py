@@ -1,8 +1,8 @@
 import os
 from datetime import date
 
-from stdnet import test, odm, InvalidTransaction
-from stdnet.utils import encoders, zip
+from stdnet import odm, InvalidTransaction
+from stdnet.utils import test, encoders, zip
 from stdnet.utils.populate import populate
 
 dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))

@@ -1,5 +1,6 @@
-from stdnet import test, odm
+from stdnet import odm
 from stdnet.apps.searchengine.models import WordItem
+from stdnet.utils import test
 
 from examples.models import SimpleModel
 

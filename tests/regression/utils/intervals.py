@@ -1,5 +1,4 @@
-from stdnet import test
-from stdnet.utils import Interval, Intervals, pickle
+from stdnet.utils import test, Interval, Intervals, pickle
 
 
 class TestInterval(test.TestCase):

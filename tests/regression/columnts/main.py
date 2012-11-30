@@ -2,8 +2,8 @@ import os
 from datetime import date, datetime, timedelta
 from struct import unpack
 
-from stdnet import test, SessionNotAvailable, CommitException
-from stdnet.utils import encoders, populate, ispy3k
+from stdnet import SessionNotAvailable, CommitException
+from stdnet.utils import test, encoders, populate, ispy3k
 from stdnet.apps.columnts import ColumnTS
 from stdnet.lib import redis
 

@@ -1,2 +1,1 @@
-"""Unit-tests for the dispatch project
-"""
+"""dispatch module"""

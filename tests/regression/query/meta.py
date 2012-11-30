@@ -1,5 +1,6 @@
 '''Test query meta and corner cases'''
-from stdnet import test, QuerySetError
+from stdnet import QuerySetError
+from stdnet.utils import test
 
 from examples.models import Instrument
 from examples.data import FinanceTest

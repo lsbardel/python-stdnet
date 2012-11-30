@@ -1,5 +1,6 @@
 import stdnet
-from stdnet import odm, test, FieldError
+from stdnet import odm, FieldError
+from stdnet.utils import test
 
 from examples.models import Person, Group 
 

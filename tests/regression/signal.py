@@ -1,4 +1,4 @@
-from stdnet import test
+from stdnet.utils import test
 
 from examples.models import Group, Person
 

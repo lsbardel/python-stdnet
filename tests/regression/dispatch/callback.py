@@ -1,6 +1,6 @@
 '''Test the one time callback'''
 from stdnet.utils.dispatch import Signal
-from stdnet import test
+from stdnet.utils import test
 
 a_signal = Signal(providing_args=["val"])
 

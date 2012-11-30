@@ -2,7 +2,6 @@ from hashlib import sha1
 import json
 import struct
 
-from stdnet.test import unittest
 from stdnet.conf import settings
 from stdnet.lib import redis
 

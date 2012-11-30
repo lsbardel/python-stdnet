@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
-from stdnet import test, QuerySetError, odm
-from stdnet.utils import populate, zip, range
+from stdnet import QuerySetError, odm
+from stdnet.utils import test, populate, zip, range
 
 from examples.models import SportAtDate, SportAtDate2, Person,\
                              TestDateModel, Group

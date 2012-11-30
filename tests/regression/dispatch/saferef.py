@@ -1,5 +1,5 @@
 from stdnet.utils.dispatch.saferef import *
-from stdnet import test
+from stdnet.utils import test
 from stdnet.utils import range
 
 

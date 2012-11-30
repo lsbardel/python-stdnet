@@ -1,4 +1,5 @@
-from stdnet import test, FieldError
+from stdnet import FieldError
+from stdnet.utils import test
 
 from examples.models import Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund

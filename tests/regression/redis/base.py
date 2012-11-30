@@ -1,7 +1,7 @@
 __test__ = False
 from stdnet.lib import redis
-from stdnet import test, getdb
-from stdnet.utils import flatzset
+from stdnet import getdb
+from stdnet.utils import test, flatzset
 
 def get_version(info):
     if 'redis_version' in info:
@@ -10,7 +10,7 @@ def get_version(info):
         return info['Server']['redis_version']
 
 
-class TestCase(test.TestCase):
+class TestCase(test.CleanTestCase):
     
     def get_client(self, pool=None):
         client = redis.Redis(pool) if pool is not None else self.backend.client

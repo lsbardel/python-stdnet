@@ -1,8 +1,8 @@
 import random
 
-from stdnet import odm, test, InvalidTransaction
+from stdnet import odm, InvalidTransaction
 from examples.models import SimpleModel, Dictionary
-from stdnet.utils import populate
+from stdnet.utils import test, populate
 
 LEN = 100
 names = populate('string',LEN, min_len = 5, max_len = 20)

@@ -1,5 +1,4 @@
-from stdnet import test
-from stdnet.utils import populate, zip, iteritems, to_string
+from stdnet.utils import test, populate, zip, iteritems, to_string
 
 from examples.models import Dictionary
 

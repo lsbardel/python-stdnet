@@ -2,7 +2,8 @@ import datetime
 import logging
 from random import randint
 
-from stdnet import test, QuerySetError
+from stdnet import QuerySetError
+from stdnet.utils import test
 
 from examples.models import Instrument, Fund, Position, PortfolioView,\
                              UserDefaultView

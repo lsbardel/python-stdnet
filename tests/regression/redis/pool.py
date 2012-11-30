@@ -1,6 +1,6 @@
 import socket
 
-from stdnet.test import mock
+from stdnet.utils.test import mock
 
 from .base import TestCase, redis
 

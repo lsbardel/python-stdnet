@@ -1,7 +1,7 @@
 import gc
 
 from stdnet.utils.dispatch import Signal
-from stdnet import test
+from stdnet.utils import test
 
 
 def garbage_collect():

@@ -1,6 +1,5 @@
-from stdnet import test, BackendDataServer, ModelNotAvailable,\
-                     SessionNotAvailable
-from stdnet import odm
+from stdnet import odm, BackendDataServer, ModelNotAvailable, SessionNotAvailable
+from stdnet.utils import test
 
 
 class DummyBackendDataServer(BackendDataServer):

@@ -1,7 +1,7 @@
 from random import randint
 
-from stdnet import test, odm
-from stdnet.utils import populate, zip, range
+from stdnet import odm
+from stdnet.utils import test, populate, zip, range
 
 from examples.models import SimpleModel
 

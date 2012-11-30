@@ -1,8 +1,8 @@
 from datetime import datetime
 from random import randint
 
-from stdnet import odm, test
-from stdnet.utils import populate, zip
+from stdnet import odm
+from stdnet.utils import test, populate, zip
 
 from examples.models import User, Post
 

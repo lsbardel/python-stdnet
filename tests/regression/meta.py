@@ -2,8 +2,8 @@
 import inspect
 from datetime import datetime
 
-from stdnet import odm, test
-from stdnet.utils import populate, pickle
+from stdnet import odm
+from stdnet.utils import test, populate, pickle
 from stdnet.exceptions import QuerySetError
 from stdnet.odm import model_to_dict, model_iterator
 from stdnet.odm.base import StdNetType
@@ -20,18 +20,18 @@ class TestInspectionAndComparison(FinanceTest):
     def testSimple(self):
         d = model_to_dict(Instrument)
         self.assertFalse(d)
-        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
+        inst = Instrument(name='erz12', type='future', ccy='EUR').save()
         d = model_to_dict(inst)
         self.assertTrue(len(d),3)
         
     def testEqual(self):
-        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR').save()
+        inst = Instrument(name='erz12', type='future', ccy='EUR').save()
         id = inst.id
-        b = Instrument.objects.get(id = id)
+        b = Instrument.objects.get(id=id)
         self.assertEqual(b.id,id)
         self.assertTrue(inst == b)
         self.assertFalse(inst != b)
-        f = Fund(name = 'bla', ccy = 'EUR').save()
+        f = Fund(name='bla', ccy='EUR').save()
         self.assertFalse(inst == f)
         self.assertTrue(inst != f)
         
@@ -119,12 +119,12 @@ class TestStdModelMethods(test.TestCase):
         self.register()
         
     def testClone(self):
-        s = SimpleModel(code = 'pluto', group = 'planet',
-                        cached_data = 'blabla').save()
+        s = SimpleModel(code='pluto', group='planet',
+                        cached_data='blabla').save()
         self.assertEqual(s.cached_data,b'blabla')
-        self.assertEqual(s.id,1)
+        id = self.assertEqualId(s, 1)
         c = s.clone()
-        self.assertEqual(c.id,None)
+        self.assertEqual(c.id, None)
         self.assertFalse(c.cached_data)
         
     def test_clear_cache_fields(self):

@@ -1,7 +1,8 @@
 from random import randint
 from time import time
 
-from stdnet import odm, test
+from stdnet import odm
+from stdnet.utils import test
 
 from examples.observer import Observer, Observable
 

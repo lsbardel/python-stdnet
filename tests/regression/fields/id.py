@@ -3,7 +3,8 @@ from uuid import uuid4
 import time
 
 import stdnet
-from stdnet import test, FieldError
+from stdnet import FieldError
+from stdnet.utils import test
 
 from examples.models import Task, WordBook, SimpleModel
 

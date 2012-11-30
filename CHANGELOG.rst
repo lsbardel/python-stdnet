@@ -19,7 +19,7 @@ Ver. 0.7.0 - 2012 Oct 25
 * First official release of version 0.7.0. Requires redis_ 2.6 or above.
 * Supported python versions: 2.6, 2.7, 3.2, 3.3.
 * Several fixes in documentation.
-* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``gt``, ``lt`` and ``le``.
+* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``ge``, ``lt`` and ``le``.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
 * **624 regression tests** with **92%** coverage.
 
@@ -241,7 +241,8 @@ Ver. 0.4.2 - 2010 Nov 17
 	python runtests.py hash
 
   will run tests specific to hashtables.
-* Removed ``ts`` tests since the timeseries structure is not in redis yet. You can run them by setting tag ``ts``.
+* Removed ``ts`` tests since the timeseries structure is not in redis yet.
+  You can run them by setting tag ``ts``.
 * **54** tests.
 
 Ver. 0.4.1 - 2010 Nov 14

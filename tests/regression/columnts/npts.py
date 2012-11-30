@@ -1,7 +1,7 @@
 import os
 
-from stdnet import odm, test
-from stdnet.utils import encoders
+from stdnet import odm
+from stdnet.utils import test, encoders
 try:
     from stdnet.apps.columnts import npts
     from dynts import tsname

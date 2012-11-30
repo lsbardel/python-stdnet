@@ -1,4 +1,5 @@
-from stdnet import test, odm, ModelNotRegistered, AlreadyRegistered
+from stdnet import odm, ModelNotRegistered, AlreadyRegistered
+from stdnet.utils import test
 
 from examples.models import SimpleModel
 

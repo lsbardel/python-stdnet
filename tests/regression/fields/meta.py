@@ -1,6 +1,7 @@
 '''Field metadata and full coverage.'''
 import stdnet
-from stdnet import test, odm, FieldError
+from stdnet import odm, FieldError
+from stdnet.utils import test
 
 from examples.models import Task, WordBook, SimpleModel
 

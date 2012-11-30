@@ -1,5 +1,4 @@
-from stdnet import test
-from stdnet.utils import populate, zip, is_string
+from stdnet.utils import test, populate, zip, is_string
 
 from examples.models import Instrument, Position, ObjectAnalytics,\
                              AnalyticData, Group, Fund

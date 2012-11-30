@@ -1,7 +1,7 @@
 from time import sleep
 
-from stdnet import test, StructureFieldError
-from stdnet.utils import populate, zip, to_string, iteritems
+from stdnet import StructureFieldError
+from stdnet.utils import test, populate, zip, to_string, iteritems
 
 from examples.models import SimpleList, Dictionary, SimpleString 
 

@@ -108,10 +108,10 @@ class TestDeleteMethod(FinanceTest):
         session = self.data.create(self)
         query = session.query(Instrument)
         with session.begin() as t:
-            t.delete(query.filter(ccy = 'EUR'))
-            t.delete(query.filter(id__in = (1,2,3,4,5,6)))
+            t.delete(query.filter(ccy='EUR'))
+            t.delete(query.filter(type=('future','bond')))
         for inst in query.all():
-            self.assertFalse(inst.id in (1,2,3,4,5,6))
+            self.assertFalse(inst.type in ('future','bond'))
             self.assertNotEqual(inst.ccy,'EUR')
         
 

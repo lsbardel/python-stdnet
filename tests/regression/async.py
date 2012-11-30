@@ -1,7 +1,8 @@
-'''Test asynchronous pulsar connection'''
+'''Asynchronous pulsar connection'''
 import os
 
-from stdnet import test, BackendRequest
+from stdnet import BackendRequest
+from stdnet.utils import test
 
 from examples.models import SimpleModel
 

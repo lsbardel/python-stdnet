@@ -1,4 +1,7 @@
-'''MongoDB backend implementation. Requires pymongo.'''
+'''MongoDB backend implementation. Requires pymongo_.
+
+.. _pymongo: http://api.mongodb.org/python/current/
+'''
 import json
 from itertools import chain
 try:
@@ -31,8 +34,10 @@ def ids_from_query(query):
     return [v['_id'] for v in query.find(fields=['_id'])]
     
 class MongoDbQuery(stdnet.BackendQuery):
-    selector_map = {'gt': '$gt', 'lt': '$lt',
-                    'ge': '$gte', 'le': '$lte'}
+    selector_map = {'gt': '$gt',
+                    'lt': '$lt',
+                    'ge': '$gte',
+                    'le': '$lte'}
     
     def _build(self):
         self.spec = self._unwind(self.queryelem)
@@ -42,11 +47,9 @@ class MongoDbQuery(stdnet.BackendQuery):
         return collection.find(self.spec, **params)
         
     def _remove(self, commands):
-        queryelem = self.queryelem
-        kwargs = self._unwind(queryelem, '$in')
-        collection = self.backend.collection(self.meta)
-        commands.append(('remove', kwargs))
-        return collection.remove(kwargs)
+        collection = self.backend.collection(self.queryelem.meta)
+        commands.append(('remove', self.spec))
+        return collection.remove(self.spec)
             
     def _unwind(self, queryelem, selector='$in'):
         keyword = queryelem.keyword
@@ -57,13 +60,17 @@ class MongoDbQuery(stdnet.BackendQuery):
                 logical = '$or'
             elif selector == '$nin':
                 logical = '$nor'
-            return {logical: self._accumulate(self._selectors(queryelem, selector))}
+            return {logical: list(self._logical(queryelem, selector))}
         elif keyword == 'intersection':
-            return {'$and': self._accumulate(self._selectors(queryelem, selector))}
+            return {'$and': list(self._logical(queryelem, selector))}
         elif keyword == 'diff':
             selector = '$nin'
         return self._accumulate(self._selectors(queryelem, selector))
     
+    def _logical(self, queryelem, selector):
+        for child in queryelem:
+            yield self._accumulate(self._selectors(child, selector))
+            
     def _selectors(self, queryelem, selector):
         pkname = queryelem.meta.pkname()
         name = queryelem.name

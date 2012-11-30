@@ -2,8 +2,8 @@ import os
 from datetime import date, datetime
 from random import uniform
 
-from stdnet import test, odm
-from stdnet.utils import populate, todate, zip, dategenerator,\
+from stdnet import odm
+from stdnet.utils import test, populate, todate, zip, dategenerator,\
                              default_parse_interval
 
 from examples.tsmodels import TimeSeries, DateTimeSeries

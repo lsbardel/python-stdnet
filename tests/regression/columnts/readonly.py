@@ -1,6 +1,6 @@
 from datetime import date
 
-from stdnet import test
+from stdnet.utils import test
 from stdnet.apps.columnts import ColumnTS
 
 nan = float('nan')

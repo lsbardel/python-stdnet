@@ -1,6 +1,5 @@
 '''test load_only and dont_load methods'''
-from stdnet import test
-from stdnet.utils import zip
+from stdnet.utils import test, zip
 
 from examples.models import SimpleModel, Person, Group, Statistics3
 

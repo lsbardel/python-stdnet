@@ -316,7 +316,7 @@ elements in the query.'''
         if get:
             if slic:
                 raise QuerySetError('Cannot slice a queryset in conjunction '
-                                    'with get_field. Use load_only instaed.')
+                                    'with get_field. Use load_only instead.')
             if get == meta.pk.name:
                 fields_attributes = fields = pkname_tuple
             else:

@@ -1,9 +1,10 @@
-import stdnet
-
 try:
     import pymongo
 except ImportError:
     raise ImportError('Mongo backend requires pymongo')
+
+import stdnet
+from stdnet.utils import unique_tuple
 
 ################################################################################
 ##    MONGODB QUERY CLASS
@@ -13,12 +14,12 @@ class MongoDbQuery(stdnet.BackendQuery):
     def _build(self, pipe=None, **kwargs):
         collection = self.backend.collection(self.meta)
         self.query = collection.find()
-        return
         self.pipe = pipe = pipe if pipe is not None else []
         qs = self.queryelem
-        pkname = meta.pkname()
+        kwargs = {}
+        pkname = self.meta.pkname()
         for child in qs:
-            if getattr(child, 'backend', None) == backend:
+            if getattr(child, 'backend', None) == self.backend:
                 lookup, value = 'set', child
             else:
                 lookup, value = child
@@ -26,18 +27,11 @@ class MongoDbQuery(stdnet.BackendQuery):
                 be = value.backend_query(pipe=pipe)
                 keys.append(be.query_key)
                 args.extend(('set', be.query_key))
-            else:
-                args.extend((lookup, '' if value is None else value))
+            elif lookup == 'value':
+                kwargs[qs.name] = value
         #
         if qs.keyword == 'set':
-            if qs.name == pkname and not args:
-                key = backend.basekey(meta, 'id')
-                temp_key = False
-            else:
-                key = backend.tempkey(meta)
-                keys.insert(0, key)
-                backend.odmrun(pipe, 'query', meta, keys, self.meta_info,
-                               qs.name, *args)
+            query = collection.find(**kwargs)
         else:
             if qs.keyword == 'intersect':
                 command = getattr(pipe, p+'interstore')
@@ -48,26 +42,32 @@ class MongoDbQuery(stdnet.BackendQuery):
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
             command(key, keys, script_dependency='move2set')
-        # If we are getting a field (for a subsequent query maybe)
-        # unwind the query and store the result
-        gf = qs._get_field 
-        if gf and gf != pkname:
-            field_attribute = meta.dfields[gf].attname
-            bkey = key
-            if not temp_key:
-                temp_key = True
-                key = backend.tempkey(meta)
-            okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
-            pipe.sort(bkey, by='nosort', get=okey, store=key)
-            self.card = getattr(pipe, 'llen')
-        if temp_key:
-            pipe.expire(key, self.expire)
-        self.query = key
+        self.query = query
     
     def _execute_query(self):
         return self.query.count()
         
-        
+    def _items(self, slic):
+        meta = self.meta
+        get = self.queryelem._get_field
+        fields_attributes = None
+        pkname_tuple = (meta.pk.name,)
+        if get:
+            raise QuerySetError('Not implemented')
+        else:
+            fields = self.queryelem.fields or None
+            if fields:
+                fields = unique_tuple(fields, self.queryelem.select_related or ())
+            if fields == pkname_tuple:
+                fields_attributes = fields
+            elif fields:
+                fields, fields_attributes = meta.backend_fields(fields)
+            else:
+                fields_attributes = ()
+        if fields_attributes:
+            pass
+        return self.backend.build_query(meta, fields, self.query)
+            
     
     
 ################################################################################

@@ -61,7 +61,7 @@ some utility functions for tesing in a parallel test suite.
         cls.namespace = 'stdnet-test-%s.' % gen_unique_id()
         cls.backend = getdb(namespace=cls.namespace, **cls.backend_params())
         if cls.backend.name == 'redis':
-            r = self.backend.client.script_flush()
+            r = cls.backend.client.script_flush()
             if isinstance(r, BackendRequest):
                 return r.add_callback(lambda r: self.clear_all())
         return cls.clear_all()
@@ -90,6 +90,23 @@ will be unregistered after the :meth:`tearDown` method.'''
     def load_scripts(self):
         if self.backend.name == 'redis':
             self.backend.load_scripts()
+            
+    def assertEqualId(self, instance, value, exact=False):
+        pk = instance.pkvalue()
+        if exact or self.backend.name == 'redis':
+            self.assertEqual(pk, value)
+        elif self.backend.name == 'mongo':
+            if instance._meta.pk.type == 'auto':
+                self.assertTrue(pk)
+            else:
+                self.assertEqual(pk, value)
+        else:
+            raise NotImplementedError()
+        return pk
+    
+    def assertCommands(self, transaction):
+        self.assertTrue(transaction.commands)
+        
 
 
 class CleanTestCase(TestCase):

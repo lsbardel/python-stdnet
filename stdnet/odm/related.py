@@ -229,8 +229,10 @@ via a simple attribute of the model.'''
         return super(RelatedManager,self).query(transaction = transaction)\
                                          .filter(**kwargs)
 
-    def query_from_query(self, query):
-        return query.session.query(self.model, fargs={self.field.name: query})
+    def query_from_query(self, query, params=None):
+        if params is None:
+            params = query
+        return query.session.query(self.model, fargs={self.field.name: params})
 
 
 def makeMany2ManyRelatedManager(formodel, name_relmodel,

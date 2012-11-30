@@ -1,5 +1,12 @@
 .. _vers07:
 
+Ver. 0.7.2 - Development
+===============================
+* Added mongoDB backend.
+* Added ``where`` selector for ad-hoc queries. Argument is a code snipped in lua
+  for redis and javascript for mongodb.
+
+
 Ver. 0.7.1 - Development
 ===============================
 * Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request

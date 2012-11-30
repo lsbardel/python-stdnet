@@ -2,8 +2,8 @@
 import datetime
 from random import randint
 
-from stdnet import odm, test
-from stdnet.utils import populate, zip
+from stdnet import odm
+from stdnet.utils import test, populate, zip
 from stdnet.exceptions import QuerySetError
 
 from examples.models import Instrument, Fund, Position, Dictionary, SimpleModel
@@ -14,7 +14,7 @@ dict_keys   = populate('string', DICT_LEN, min_len = 5, max_len = 20)
 dict_values = populate('string', DICT_LEN, min_len = 20, max_len = 300)
 
 
-class TestDeleteSimpleModel(test.TestCase):
+class TestDeleteSimpleModel(test.CleanTestCase):
     model = SimpleModel
     
     def testSessionDelete(self):
@@ -32,7 +32,7 @@ class TestDeleteSimpleModel(test.TestCase):
     def testSimpleQuery(self):
         session = self.session()
         with session.begin():
-            session.add(self.model(code = 'ciao'))
+            session.add(self.model(code='ciao'))
         all = session.query(self.model).all()
         self.assertEqual(len(all),1)
         session.query(self.model).delete()
@@ -43,17 +43,17 @@ class TestDeleteSimpleModel(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         with session.begin():
-            session.add(self.model(code = 'sun', group = 'star'))
-            session.add(self.model(code = 'vega', group = 'star'))
-            session.add(self.model(code = 'sirus', group = 'star'))
-            session.add(self.model(code = 'pluto', group = 'planet'))
+            session.add(self.model(code='sun', group='star'))
+            session.add(self.model(code='vega', group='star'))
+            session.add(self.model(code='sirus', group='star'))
+            session.add(self.model(code='pluto', group='planet'))
         with session.begin() as t:
-            session.delete(query.filter(group = 'star'))
-        self.assertTrue(t.commands)
-        self.assertEqual(len(query.all()),1)
-        qs = query.filter(group = 'star')
-        self.assertEqual(qs.count(),0)
-        qs = query.filter(group = 'planet')
+            session.delete(query.filter(group='star'))
+        self.assertCommands(t)
+        self.assertEqual(len(query.all()), 1)
+        qs = query.filter(group='star')
+        self.assertEqual(qs.count(), 0)
+        qs = query.filter(group='planet')
         self.assertEqual(qs.count(),1)
     
 class update_model(object):
@@ -69,7 +69,7 @@ class update_model(object):
         self.transaction = transaction
         
         
-class TestPostDeleteSignal(test.TestCase):
+class TestPostDeleteSignal(test.CleanTestCase):
     model = SimpleModel
             
     def setUp(self):
@@ -81,15 +81,13 @@ class TestPostDeleteSignal(test.TestCase):
         
     def testSignal(self):
         session = self.session()
-        
         with session.begin():
-            m = session.add(self.model(code = 'ciao'))
-            m = session.add(self.model(code = 'bla'))
-            
+            m = session.add(self.model(code='ciao'))
+            m = session.add(self.model(code='bla'))
         session.query(self.model).delete()
         u = self.update_model
         self.assertEqual(u.session, session)
-        self.assertEqual(sorted(u.instances),[1,2])
+        self.assertEqual(len(u.instances), 2)
         
 
 class TestDeleteMethod(FinanceTest):
@@ -127,7 +125,8 @@ class TestDeleteScalarFields(FinanceTest):
         self.assertEqual(session.query(Instrument).all(),[])
         self.assertEqual(session.query(Position).all(),[])
         keys = list(session.keys(Instrument))
-        self.assertTrue(len(keys)>0)
+        if self.backend == 'redis':
+            self.assertTrue(len(keys)>0)
         
     def testFlushRelatedModel(self):
         session = self.data.makePositions(self)
@@ -136,7 +135,8 @@ class TestDeleteScalarFields(FinanceTest):
         self.assertEqual(session.query(Instrument).all(), [])
         self.assertEqual(session.query(Position).all(), [])
         keys = list(session.keys(Instrument))
-        self.assertTrue(len(keys)>0)
+        if self.backend == 'redis':
+            self.assertTrue(len(keys)>0)
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
@@ -186,15 +186,15 @@ test as it involves lots of operations and consistency checks.'''
         self.assertEqual(Position.objects.all().count(),0)
         
 
-class TestDeleteStructuredFields(test.TestCase):
+class TestDeleteStructuredFields(test.CleanTestCase):
     model = Dictionary
     
     def setUp(self):
         '''Create Instruments and Funds commiting at the end for speed'''
         session = self.session()
         with session.begin():
-            session.add(Dictionary(name = 'test'))
-            session.add(Dictionary(name = 'test2'))
+            session.add(Dictionary(name='test'))
+            session.add(Dictionary(name='test2'))
         self.assertEqual(session.query(Dictionary).count(),2)
         self.data = dict(zip(dict_keys,dict_values))
     
@@ -216,7 +216,7 @@ class TestDeleteStructuredFields(test.TestCase):
         self.assertEqual(session.query(Dictionary).count(),0)
         # Now we check the database if it is empty as it should
         keys = list(session.keys(Dictionary))
-        self.assertEqual(len(keys),0)
+        self.assertEqual(len(keys), 0)
         
     def testFlushWithData(self):
         self.fill('test')

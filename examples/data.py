@@ -1,8 +1,7 @@
 from datetime import date, timedelta
 from random import randint
 
-from stdnet import test
-from stdnet.utils import populate, zip, iteritems
+from stdnet.utils import test, populate, zip, iteritems
 
 from .models import Instrument, Fund, Position
 
@@ -167,13 +166,14 @@ class finance_data(data_generator):
         return session
 
 
-class DataTest(test.TestCase):
+class DataTest(test.CleanTestCase):
     '''A class for testing the Finance application example. It can be run
 with different sizes by passing the'''
     data_cls = data_generator
 
     @classmethod
     def setUpClass(cls):
+        super(DataTest, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
 
 

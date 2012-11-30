@@ -7,8 +7,7 @@ from decimal import Decimal
 from random import random, randint, choice
 
 import stdnet
-from stdnet import test
-from stdnet.utils import zip, is_string, to_string, unichr, ispy3k, range
+from stdnet.utils import test, zip, is_string, to_string, unichr, ispy3k, range
 from stdnet.utils import date2timestamp
 from stdnet.utils.populate import populate
 
@@ -43,7 +42,7 @@ class make_random(object):
                 yield key,v
     
     
-class TestJsonField(test.TestCase):
+class TestJsonField(test.CleanTestCase):
     model = Statistics
     
     def setUp(self):
@@ -59,12 +58,12 @@ class TestJsonField(test.TestCase):
         mean = Decimal('56.4')
         started = date(2010,1,1)
         timestamp = datetime.now()
-        a = self.model(dt = date.today(), data = {'mean': mean,
-                                                  'std': 5.78,
-                                                  'started': started,
-                                                  'timestamp':timestamp}).save()
+        a = self.model(dt=date.today(), data={'mean': mean,
+                                              'std': 5.78,
+                                              'started': started,
+                                              'timestamp':timestamp}).save()
         self.assertEqual(a.data['mean'],mean)
-        a = self.model.objects.get(id = a.id)
+        a = self.model.objects.get(id=a.id)
         self.assertEqual(len(a.data),4)
         self.assertEqual(a.data['mean'],mean)
         self.assertEqual(a.data['started'],started)
@@ -78,7 +77,7 @@ class TestJsonField(test.TestCase):
                 'std': 5.78,
                 'timestamp': timestamp}
         datas = json.dumps(data)
-        a = Statistics(dt = date.today(), data = datas).save()
+        a = Statistics(dt=date.today(), data=datas).save()
         a = Statistics.objects.get(id = a.id)
         self.assertEqual(a.data['mean'],mean)
         a = Statistics.objects.get(id = a.id)

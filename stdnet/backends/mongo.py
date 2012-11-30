@@ -1,51 +1,117 @@
+'''MongoDB backend implementation. Requires pymongo.'''
+import json
+from itertools import chain
 try:
     import pymongo
 except ImportError:
     raise ImportError('Mongo backend requires pymongo')
 
 import stdnet
+from stdnet import FieldValueError, QuerySetError
 from stdnet.utils import unique_tuple
+
+from .base import on_result, instance_session_result
+
+
+def extend_dict(iterable):
+    d = {}
+    for name, value in iterable:
+        if not isinstance(value, list):
+            value = [value]
+        if name in d:
+            d[name].extend(value)
+        else:
+            d[name] = value
+    return d
 
 ################################################################################
 ##    MONGODB QUERY CLASS
 ################################################################################
-class MongoDbQuery(stdnet.BackendQuery):
+def ids_from_query(query):
+    return [v['_id'] for v in query.find(fields=['_id'])]
     
-    def _build(self, pipe=None, **kwargs):
+class MongoDbQuery(stdnet.BackendQuery):
+    selector_map = {'gt': '$gt', 'lt': '$lt',
+                    'ge': '$gte', 'le': '$lte'}
+    
+    def _build(self):
+        self.spec = self._unwind(self.queryelem)
+        
+    def find(self, **params):
+        collection = self.backend.collection(self.queryelem.meta)
+        return collection.find(self.spec, **params)
+        
+    def _remove(self, commands):
+        queryelem = self.queryelem
+        kwargs = self._unwind(queryelem, '$in')
         collection = self.backend.collection(self.meta)
-        self.query = collection.find()
-        self.pipe = pipe = pipe if pipe is not None else []
-        qs = self.queryelem
-        kwargs = {}
-        pkname = self.meta.pkname()
-        for child in qs:
-            if getattr(child, 'backend', None) == self.backend:
+        commands.append(('remove', kwargs))
+        return collection.remove(kwargs)
+            
+    def _unwind(self, queryelem, selector='$in'):
+        keyword = queryelem.keyword
+        pkname = queryelem.meta.pkname()
+        data = {}
+        if keyword == 'union':
+            if selector == '$in':
+                logical = '$or'
+            elif selector == '$nin':
+                logical = '$nor'
+            return {logical: self._accumulate(self._selectors(queryelem, selector))}
+        elif keyword == 'intersection':
+            return {'$and': self._accumulate(self._selectors(queryelem, selector))}
+        elif keyword == 'diff':
+            selector = '$nin'
+        return self._accumulate(self._selectors(queryelem, selector))
+    
+    def _selectors(self, queryelem, selector):
+        pkname = queryelem.meta.pkname()
+        name = queryelem.name
+        for child in queryelem:
+            if getattr(child, 'backend', None) is not None:
                 lookup, value = 'set', child
             else:
                 lookup, value = child
+            if name == pkname:
+                name = '_id'
             if lookup == 'set':
-                be = value.backend_query(pipe=pipe)
-                keys.append(be.query_key)
-                args.extend(('set', be.query_key))
-            elif lookup == 'value':
-                kwargs[qs.name] = value
-        #
-        if qs.keyword == 'set':
-            query = collection.find(**kwargs)
-        else:
-            if qs.keyword == 'intersect':
-                command = getattr(pipe, p+'interstore')
-            elif qs.keyword == 'union':
-                command = getattr(pipe, p+'unionstore')
-            elif qs.keyword == 'diff':
-                command = getattr(pipe, p+'diffstore')
+                if value.meta != queryelem.meta:
+                    qs = self.__class__(value)
+                    yield name, selector, ids_from_query(qs)
+                else:
+                    if name == '_id' and not value.underlying:
+                        continue
+                    else:
+                        for n, sel, value in self._selectors(value, selector):
+                            yield n, sel, value
             else:
-                raise ValueError('Could not perform %s operation' % qs.keyword)
-            command(key, keys, script_dependency='move2set')
-        self.query = query
+                if lookup == 'value':
+                    sel = selector
+                else:
+                    sel = self.selector_map[lookup]
+                yield name, sel, value
+    
+    def _accumulate(self, data):
+        kwargs = {}
+        for name, selector, value in data:
+            if name in kwargs:
+                if selector in ('$in', '$nin'):
+                    data = kwargs[name]
+                    if selector in data:
+                        data[selector].append(value)
+                    else:
+                        data[selector] = [value]
+                else: 
+                    kwargs[name].update((selector, value))
+            else:
+                if selector in ('$in', '$nin') and not isinstance(value, list):
+                    value = [value]
+                kwargs[name] = {selector: value}
+        return kwargs
     
     def _execute_query(self):
-        return self.query.count()
+        collection = self.backend.collection(self.queryelem.meta)
+        return collection.find(self.spec).count()
         
     def _items(self, slic):
         meta = self.meta
@@ -62,13 +128,10 @@ class MongoDbQuery(stdnet.BackendQuery):
                 fields_attributes = fields
             elif fields:
                 fields, fields_attributes = meta.backend_fields(fields)
-            else:
-                fields_attributes = ()
-        if fields_attributes:
-            pass
-        return self.backend.build_query(meta, fields, self.query)
+        query = self.find(fields=fields_attributes)
+        data = self.backend.build(query, meta, fields, fields_attributes)
+        return self.backend.objects_from_db(meta, data)
             
-    
     
 ################################################################################
 ##    MONGODB BACKEND
@@ -83,14 +146,10 @@ class BackendDataServer(stdnet.BackendDataServer):
             port = int(addr[1])
         else:
             port = 27017
-        db = self.params.pop('db', None)
-        if not db:
-            db = self.namespace.replace('.','')
+        db = ('%s%s' % (self.params.pop('db', ''), self.namespace))
         self.namespace = ''
-        if not db:
-            db = 'test'
         mdb = pymongo.MongoClient(addr[0], port, **self.params)
-        self.params['db'] = db
+        self.params['db'] = db.replace('.','') or 'test'
         return mdb
     
     @property
@@ -99,6 +158,9 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def collection(self, meta):
         return getattr(self.db, self.basekey(meta))
+    
+    def model_keys(self, meta):
+        return ids_from_query(self.collection(meta))
     
     def flush(self, meta=None):
         '''Flush all model keys from the for a pattern'''
@@ -109,20 +171,86 @@ class BackendDataServer(stdnet.BackendDataServer):
         
     def execute_session(self, session, callback):
         '''Execute a session in mongo.'''
+        results = []
+        commands = []
         for sm in session:
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':
-                self.flush_structure(sm, pipe)
+                self.flush_structure(sm)
             elif model_type == 'object':
+                delquery = sm.get_delete_query()
+                results.extend(self.delete_query(delquery, commands))
+                collection = self.collection(meta)
                 instances = []
                 processed = []
+                modified = []
                 for instance in sm.iterdirty():
                     if not instance.is_valid():
                         raise FieldValueError(
                                     json.dumps(instance._dbdata['errors']))
                     state = instance.state()
                     data = instance._dbdata['cleaned_data']
-                    instances.append(data)
                     processed.append(state.iid)
-                self.collection(meta).insert(instances)
+                    if state.persistent:
+                        id = instance.pkvalue()
+                        spec = {'_id': id}
+                        commands.append(('update', (spec, data)))
+                        data = collection.update(spec, data)
+                        if data['err']:
+                            modified.append(Exception(data))
+                        else:
+                            modified.append(id)
+                    else:
+                        instances.append(data)
+                if instances:
+                    commands.append(('insert', instances))
+                    result = chain(collection.insert(instances), modified)
+                    result = self.process_result(result, processed)
+                else:
+                    result = self.process_result(modified, processed)
+                results.append((meta, result))
+        return on_result(results, callback, commands)
+    
+    def process_result(self, result, iids):
+        for id, iid in zip(result, iids):
+            yield instance_session_result(iid, True, id, False, 0)
+            
+    def process_delete(self, meta, ids, result):
+        if result['err']:
+            yield Exception(result)
+        else:
+            for id in ids:
+                yield instance_session_result(id, True, id, True, 0)
+                
+    def build(self, response, meta, fields, fields_attributes):
+        fields = tuple(fields) if fields else None
+        if fields:
+            if len(fields) == 1 and fields[0] == 'id':
+                for id in response:
+                    yield id, (), {}
+            else:
+                for id, fdata in response:
+                    yield id, fields, dict(zip(fields_attributes, fdata))
+        else:
+            for data in response:
+                id = data.pop('_id')
+                yield id, None, data
+    
+    def delete_query(self, backend_query, commands):
+        if backend_query is None:
+            return
+        query = backend_query.queryelem
+        ids = ids_from_query(backend_query)
+        meta = backend_query.meta
+        if ids:
+            for name in meta.related:
+                rmanager = getattr(meta.model, name)
+                rq = rmanager.query_from_query(query, ids).backend_query()
+                for m, d in self.delete_query(rq, commands):
+                    yield m, d
+            collection = self.collection(meta)
+            yield meta, self.process_delete(meta, ids, backend_query._remove(commands))
+        
+    def flush_structure(self, sm):
+        pass

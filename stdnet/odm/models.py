@@ -208,7 +208,7 @@ attribute set to ``True`` will be excluded.'''
         id, loadedfields, data = state
         meta = self._meta
         field = meta.pk
-        setattr(self, 'id', field.to_python(id))
+        setattr(self, field.attname, field.to_python(id))
         if loadedfields is not None:
             loadedfields = tuple(loadedfields)
         self._loadedfields = loadedfields

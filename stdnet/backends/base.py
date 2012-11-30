@@ -181,7 +181,6 @@ queries specified by :class:`stdnet.odm.Query`.
         return self._has(val)
         
     def items(self, slic):
-        count = self.execute_query()
         return on_result(self.execute_query(), self._get_items, slic)
     
     def execute_query(self):
@@ -288,19 +287,19 @@ from database.
                         for obj in self.make_objects(relmodel._meta, fdata)))
                 related_data.append((field, related, multi))
         for state in data:
-            obj = make_object()
-            obj.__setstate__(state)
-            obj._dbdata['id'] = obj.id
-            for field,rdata,multi in related_data:
+            instance = make_object()
+            instance.__setstate__(state)
+            instance._dbdata[instance._meta.pkname()] = instance.pkvalue()
+            for field, rdata, multi in related_data:
                 if multi:
-                    field.set_cache(obj, rdata.get(str(obj.id)))
+                    field.set_cache(instance, rdata.get(str(instance.id)))
                 else:
-                    rid = getattr(obj,field.attname,None)
+                    rid = getattr(instance, field.attname, None)
                     if rid is not None:
                         value = rdata.get(rid)
-                        setattr(obj,field.name,value)
-            yield obj
-            
+                        setattr(instance, field.name, value)
+            yield instance
+    
     def objects_from_db(self, meta, data, related_fields=None):
         return list(self.make_objects(meta, data, related_fields))
             

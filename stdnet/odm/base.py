@@ -406,7 +406,7 @@ def meta_options(abstract=False,
 
 
 class ModelState(object):
-    __slots__ = ('_persistent','deleted','_iid','score')
+    __slots__ = ('_persistent', 'deleted', '_iid', 'score')
     def __init__(self, instance):
         self._persistent = False
         self.deleted = False
@@ -417,7 +417,7 @@ class ModelState(object):
         if pkvalue and pkname in dbdata:
             if pkvalue != dbdata[pkname]:
                 raise ValueError('Id has changed from {0} to {1}.'\
-                                 .format(pkvalue,dbdata[pkname]))
+                                 .format(pkvalue, dbdata[pkname]))
             self._persistent = True
         elif not pkvalue:
             pkvalue = 'new.{0}'.format(id(instance))
@@ -436,7 +436,7 @@ class ModelState(object):
         return 'delete' if self.deleted else 'save'
 
     def __repr__(self):
-        return self.iid + (' deleted' if self.deleted else '')
+        return '%s%s' % (self.iid, ' deleted' if self.deleted else '')
     __str__ = __repr__
 
 
@@ -477,7 +477,8 @@ raised when trying to save an invalid instance.'''
         return self._dbdata['state']
 
     def pkvalue(self):
-        return getattr(self,self._meta.pkname())
+        '''Value of primary key'''
+        return getattr(self, self._meta.pkname())
 
     @classmethod
     def get_uuid(cls, id):

@@ -6,8 +6,8 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import stdnet
-from stdnet import test, FieldValueError
-from stdnet.utils import populate, zip, is_string, to_string, unichr, ispy3k
+from stdnet import FieldValueError
+from stdnet.utils import test, populate, zip, is_string, to_string, unichr, ispy3k
 
 from examples.models import TestDateModel, DateData,\
                              Page, SimpleModel, Environment, NumericData
@@ -17,7 +17,7 @@ names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
 dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 
 
-class TestAtomFields(test.TestCase):
+class TestAtomFields(test.CleanTestCase):
     model = TestDateModel
     
     def setUp(self):
@@ -27,7 +27,7 @@ class TestAtomFields(test.TestCase):
         session = self.session()
         with session.begin():
             for na,dt in zip(names,dates):
-                session.add(self.model(person = na, name = na, dt = dt))
+                session.add(self.model(person=na, name=na, dt=dt))
         return session
             
     def testFilter(self):
@@ -40,7 +40,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates.add(dt)
-                elems = query.filter(dt = dt)
+                elems = query.filter(dt=dt)
                 N += elems.count()
                 for elem in elems:
                     self.assertEqual(elem.dt,dt)
@@ -53,7 +53,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates.add(dt)
-                objs = TestDateModel.objects.filter(dt = dt)
+                objs = TestDateModel.objects.filter(dt=dt)
                 N += objs.count()
                 objs.delete()
         all = TestDateModel.objects.query()
@@ -63,7 +63,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates.add(dt)
-                objs = TestDateModel.objects.filter(dt = dt)
+                objs = TestDateModel.objects.filter(dt=dt)
                 self.assertEqual(objs.count(),0)
                 
         # The only key remaining is the ids key for the AutoField

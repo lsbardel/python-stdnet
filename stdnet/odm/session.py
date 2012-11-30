@@ -152,7 +152,7 @@ within this :class:`Session`.'''
             instance._dbdata[pkname] = instance.pkvalue()
         else:
             instance._dbdata.pop(pkname,None)
-        state = instance.state(update = True)
+        state = instance.state(update=True)
         iid = state.iid
         if state.persistent:
             if modified:
@@ -256,9 +256,9 @@ Process results after a commit.
         # The length of results must be the same as the length of
         # all committed instances
         for result in results:
-            if isinstance(result,Exception):
+            if isinstance(result, Exception):
                 errors.append(result.__class__(
-                'Exception while commiting {0}. {1}'.format(self.meta,result)))
+                'Exception while commiting {0}. {1}'.format(self.meta, result)))
                 continue
             instance = self.pop(result.iid)
             id = tpy(result.id)
@@ -267,15 +267,14 @@ Process results after a commit.
             else:
                 if instance is None:
                     raise InvalidTransaction('{0} session received id "{1}"\
- which is not in the session.'.format(self,result.iid))
+ which is not in the session.'.format(self, result.iid))
                 setattr(instance, instance._meta.pkname(), id)
                 instance = self.add(instance,
-                                    modified = False,
-                                    persistent = result.persistent)
+                                    modified=False,
+                                    persistent=result.persistent)
                 instance.state().score = result.score
                 if instance.state().persistent:
                     instances.append(instance)
-
         return instances, deleted, errors
 
 

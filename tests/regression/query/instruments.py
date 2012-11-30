@@ -1,4 +1,4 @@
-from stdnet import test
+from stdnet.utils import test
 
 from examples.models import Instrument, Instrument2
 from examples.data import FinanceTest
@@ -57,7 +57,7 @@ class TestFilter(FinanceTest):
         
     def testDoubleFilter(self):
         session = self.session()
-        qs = session.query(self.model).filter(ccy = 'EUR', type = 'future')
+        qs = session.query(self.model).filter(ccy='EUR', type='future')
         for inst in qs:
             self.assertEqual(inst.ccy,'EUR')
             self.assertEqual(inst.type,'future')
@@ -89,8 +89,8 @@ class TestFilter(FinanceTest):
     def testExcludeFilterIn(self):
         CCYS = ('EUR','GBP','JPY')
         session = self.session()
-        A = session.query(self.model).filter(ccy__in = CCYS)
-        B = session.query(self.model).exclude(ccy__in = CCYS)
+        A = session.query(self.model).filter(ccy=CCYS)
+        B = session.query(self.model).exclude(ccy=CCYS)
         for inst in B:
             self.assertTrue(inst.ccy not in CCYS)
         all = dict(((o.id,o) for o in A))
@@ -101,7 +101,7 @@ class TestFilter(FinanceTest):
         CCYS = ('EUR','GBP','JPY')
         types = ('equity','bond','future')
         session = self.session()
-        A = session.query(self.model).exclude(ccy__in = CCYS, type__in = types)
+        A = session.query(self.model).exclude(ccy=CCYS, type=types)
         for inst in A:
             self.assertTrue(inst.ccy not in CCYS)
             self.assertTrue(inst.type not in types)
@@ -170,7 +170,7 @@ class TestFilter(FinanceTest):
     def testChainedExclude(self):
         session = self.session()
         query = session.query(self.model)
-        qt = query.exclude(id__in = (1,2,3)).exclude(id__in = (4,5,6))
+        qt = query.exclude(id=(1,2,3,4)).exclude(id=(4,5,6))
         self.assertEqual(qt.eargs, {'id__in': set((1,2,3,4,5,6))})
         res = set((q.id for q in qt))
         self.assertTrue(res)

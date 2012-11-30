@@ -71,7 +71,7 @@ class odmrun(redis.RedisScript):
         else:
             data, related = response
             encoding = request.client.encoding
-            data = self.build(data, fields, fields_attributes, encoding)
+            data = self.build(data, meta, fields, fields_attributes, encoding)
             related_fields = {}
             if related:
                 for fname, rdata, fields in related:
@@ -81,18 +81,19 @@ class odmrun(redis.RedisScript):
                         self.load_related(meta, fname, rdata, fields, encoding)
             return backend.objects_from_db(meta, data, related_fields)
     
-    def build(self, response, fields, fields_attributes, encoding):
+    def build(self, response, meta, fields, fields_attributes, encoding):
+        _ = int if meta.pk.type == 'auto' else lambda x: x
         fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
                 for id in response:
-                    yield id, (), {}
+                    yield _(id), (), {}
             else:
                 for id, fdata in response:
-                    yield id, fields, dict(zip(fields_attributes, fdata))
+                    yield _(id), fields, dict(zip(fields_attributes, fdata))
         else:
-            for id,fdata in response:
-                yield id, None, dict(pairs_to_dict(fdata, encoding))
+            for id, fdata in response:
+                yield _(id), None, dict(pairs_to_dict(fdata, encoding))
                 
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
@@ -107,7 +108,7 @@ class odmrun(redis.RedisScript):
                 return ((native_str(id, encoding),fdata) for id,fdata in data)
         else:
             # this is data for stdmodel instances
-            return self.build(data, fields, fields, encoding)
+            return self.build(data, meta, fields, fields, encoding)
     
     
 def structure_session_callback(sm, processed, response):
@@ -725,8 +726,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             except:
                 pass
         rpy = redis.Redis(address=address, **self.params)
-        self.execute_command = rpy.execute_command
-        self.clear = rpy.flushdb
+        if self.namespace:
+            self.params['namespace'] = self.namespace
         return rpy
     
     def as_cache(self):
@@ -749,19 +750,19 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def set_timeout(self, id, timeout):
         if timeout:
-            self.execute_command('EXPIRE', id, timeout)
+            self.client.execute_command('EXPIRE', id, timeout)
     
     def has_key(self, id):
-        return self.execute_command('EXISTS', id)
+        return self.client.execute_command('EXISTS', id)
     
     def _set(self, id, value, timeout):
         if timeout:
-            return self.execute_command('SETEX', id, timeout, value)
+            return self.client.execute_command('SETEX', id, timeout, value)
         else:
-            return self.execute_command('SET', id, value)
+            return self.client.execute_command('SET', id, value)
     
     def _get(self, id):
-        return self.execute_command('GET', id)
+        return self.client.execute_command('GET', id)
             
     def load_scripts(self, *names):
         if not names:

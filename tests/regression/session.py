@@ -12,9 +12,9 @@ class TestSession(test.CleanTestCase):
         
     def testQueryMeta(self):
         session = self.session()
-        self.assertEqual(len(session._models),0)
+        self.assertEqual(len(session._models), 0)
         qs = session.query(SimpleModel)
-        self.assertTrue(isinstance(qs,odm.Query))
+        self.assertTrue(isinstance(qs, odm.Query))
     
     def testSimpleCreate(self):
         session = self.session()
@@ -23,12 +23,12 @@ class TestSession(test.CleanTestCase):
         session.add(m)
         self.assertTrue(m in session)
         sm = session.model(m._meta)
-        self.assertEqual(len(sm.new),1)
-        self.assertEqual(len(sm.modified),0)
-        self.assertEqual(len(sm.deleted),0)
+        self.assertEqual(len(sm.new), 1)
+        self.assertEqual(len(sm.modified), 0)
+        self.assertEqual(len(sm.deleted), 0)
         self.assertTrue(m in sm.new)
         session.commit()
-        self.assertEqual(m.id,1)
+        self.assertEqualId(m, 1)
         
     def testCreate2Models(self):
         # Tests a session with two models. This was for a bug
@@ -49,7 +49,7 @@ class TestSession(test.CleanTestCase):
         self.assertEqual(query.count(), 3)
         self.assertEqual(query.session, session)
         all = query.all()
-        self.assertEqual(len(all),3)
+        self.assertEqual(len(all), 3)
         qs = query.filter(group='planet')
         self.assertFalse(qs.executed)
         self.assertEqual(qs.count(), 2)
@@ -67,14 +67,16 @@ class TestSession(test.CleanTestCase):
         qs = query.filter(group='planet')
         self.assertEqual(qs.count(), 1)
         el = qs[0]
-        self.assertEqual(el.id, 1)
+        id = self.assertEqualId(el, 1)
         session = self.session()
         el.group = 'smallplanet'
         with session.begin():
             session.add(el)
-        self.assertEqual(el.id, 1)
+        all = session.query(self.model).all()
+        self.assertEqual(session.query(self.model).count(), 1)
+        self.assertEqualId(el, id, True)
         # lets get it from the server
-        qs = session.query(self.model).filter(id=1)
+        qs = session.query(self.model).filter(id=id)
         self.assertEqual(qs.count(), 1)
         el = qs[0]
         self.assertEqual(el.code, 'pluto')
@@ -82,7 +84,7 @@ class TestSession(test.CleanTestCase):
         # now filter on group
         qs = session.query(self.model).filter(group='smallplanet')
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs[0].id, 1)
+        self.assertEqual(qs[0].id, id)
         # now filter on old group
         qs = session.query(self.model).filter(group='planet')
         self.assertEqual(qs.count(), 0)

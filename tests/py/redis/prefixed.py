@@ -14,7 +14,7 @@ class TestRedis(TestCase):
 class TestRedisPrefixed(TestCase):
     
     def get_client2(self,):
-        return self.backend.client.prefixed('xxx' + self.prefix)
+        return self.backend.client.prefixed('xxx' + self.namespace)
     
     def setUp(self):
         self.client2 = self.get_client2()

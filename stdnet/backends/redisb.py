@@ -11,9 +11,8 @@ from stdnet import FieldValueError, CommitException, QuerySetError
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
 from stdnet.lib import redis
-
-from .base import BackendStructure, query_result, session_result,\
-                    instance_session_result, on_result, range_lookups
+from stdnet.backends import BackendStructure, query_result, session_result,\
+                            instance_session_result, on_result, range_lookups
 
 pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99

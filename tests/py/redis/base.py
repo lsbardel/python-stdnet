@@ -14,7 +14,7 @@ class TestCase(test.CleanTestCase):
     
     def get_client(self, pool=None):
         client = redis.Redis(pool) if pool is not None else self.backend.client
-        return client.prefixed(self.prefix)
+        return client.prefixed(self.namespace)
         
     def setUp(self):
         self.client = self.get_client()

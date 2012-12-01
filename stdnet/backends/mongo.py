@@ -12,8 +12,7 @@ except ImportError:
 import stdnet
 from stdnet import FieldValueError, QuerySetError
 from stdnet.utils import unique_tuple
-
-from .base import on_result, instance_session_result
+from stdnet.backends import on_result, instance_session_result
 
 
 def extend_dict(iterable):

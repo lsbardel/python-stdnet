@@ -21,7 +21,7 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
+class TestDateTimeSeries(MultiFieldMixin, test.CleanTestCase):
     model = TimeSeries
     mkdate = datetime
     defaults = {'ticker': 'GOOG'}

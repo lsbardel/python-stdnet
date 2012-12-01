@@ -52,7 +52,7 @@ def start():
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description = 'Stdnet Asynchronous test suite',
-                    modules = ('tests.regression',),
+                    modules = ('tests.py',),
                     plugins = (test.PulsarStdnetServer(),
                                test.PulsarDataSizePlugin(),
                                test.PulsarRedisParser(),

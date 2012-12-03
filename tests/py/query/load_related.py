@@ -127,7 +127,7 @@ class load_related(FinanceTest):
             self.assertEqual(p.instrument.ccy, 'EUR')
 
 
-class load_related_structure(test.TestCase):
+class load_related_structure(test.CleanTestCase):
 
     def setUp(self):
         session = self.session()

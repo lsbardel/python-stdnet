@@ -88,7 +88,7 @@ itself.'''
         self.assertFalse(l.state().deleted)
 
 
-class TestSet(StructMixin,test.TestCase):
+class TestSet(StructMixin, test.CleanTestCase):
     structure = odm.Set
     name = 'set'
     
@@ -129,7 +129,7 @@ class TestSet(StructMixin,test.TestCase):
         self.assertEqual(s.size(),0)
         
 
-class TestZset(StructMixin,test.TestCase):
+class TestZset(StructMixin, test.CleanTestCase):
     structure = odm.Zset
     name = 'zset'
     result =  [(0.0022,'pluto'),
@@ -213,7 +213,7 @@ class TestZset(StructMixin,test.TestCase):
         self.assertEqual(r,self.result)
 
 
-class TestList(StructMixin, test.TestCase):
+class TestList(StructMixin, test.CleanTestCase):
     structure = odm.List
     name = 'list'
     
@@ -244,7 +244,7 @@ class TestList(StructMixin, test.TestCase):
         self.assertEqual(list(l),[3,5.6,'save',{'test': 1},{'test': 2}])
     
 
-class TestHash(StructMixin, test.TestCase):
+class TestHash(StructMixin, test.CleanTestCase):
     structure = odm.HashTable
     name = 'hashtable'
     
@@ -288,7 +288,7 @@ class TestHash(StructMixin, test.TestCase):
         self.assertRaises(KeyError, lambda : h['gggggg'])
         
 
-class TestTS(StructMixin, test.TestCase):
+class TestTS(StructMixin, test.CleanTestCase):
     structure = odm.TS
     name = 'ts'
     
@@ -381,7 +381,8 @@ class TestTS(StructMixin, test.TestCase):
         for dt,_ in range:
             self.assertFalse(dt in ts) 
 
-class TestString(StructMixin, test.TestCase):
+
+class TestString(StructMixin, test.CleanTestCase):
     structure = odm.String
     name = 'string'
     
@@ -400,7 +401,7 @@ class TestString(StructMixin, test.TestCase):
         
     
     
-class TestNumberArray(StructMixin, test.TestCase):
+class TestNumberArray(StructMixin, test.CleanTestCase):
     structure = odm.NumberArray
     name = 'numberarray'
     

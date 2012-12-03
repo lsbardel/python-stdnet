@@ -4,7 +4,7 @@ from stdnet.utils import test
 from examples.models import SimpleModel
 
 
-class TestRegistration(test.TestCase):
+class TestRegistration(test.CleanTestCase):
 
     def register(self):
         apps = odm.register_applications('examples', default=self.backend)

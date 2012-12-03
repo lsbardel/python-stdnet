@@ -218,10 +218,8 @@ Return ``True`` if the instance is ready to be saved to database.'''
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
         #Loop over scalar fields first
-        for field,value in instance.fieldvalue_pairs():
+        for field, value in instance.fieldvalue_pairs():
             name = field.attname
-            if not name:
-                continue
             value = instance.set_field_value(field, value)
             try:
                 svalue = field.serialize(value)
@@ -431,10 +429,6 @@ class ModelState(object):
     def iid(self):
         return self._iid
 
-    @property
-    def action(self):
-        return 'delete' if self.deleted else 'save'
-
     def __repr__(self):
         return '%s%s' % (self.iid, ' deleted' if self.deleted else '')
     __str__ = __repr__
@@ -494,11 +488,11 @@ raised when trying to save an invalid instance.'''
 
     def __get_session(self):
         return self._dbdata.get('session')
-    def __set_session(self,session):
+    def __set_session(self, session):
         self._dbdata['session'] = session
-    session = property(__get_session,__set_session)
+    session = property(__get_session, __set_session)
 
-    def get_session(self, use_current_session = True):
+    def get_session(self, use_current_session=True):
         if use_current_session:
             session = self.session
             if session is None:
@@ -526,21 +520,11 @@ from its :class:`Manager`.'''
         else:
             return self
 
-    def delete(self, use_current_session = True):
+    def delete(self, use_current_session=True):
         session = self.get_session(use_current_session)
         with session.begin():
             session.delete(self)
         return self
-
-    def force_save(self):
-        '''Same as the :meth:`save` method, however this method never
-uses the current session. Instead it creates a new one for immediate commit.'''
-        return self.save(use_current_session = False)
-
-    def force_delete(self):
-        '''Same as the :meth:`delete` method, however this method never
-uses the current session. Instead it creates a new one for immediate commit.'''
-        return self.delete(use_current_session = False)
 
 
 ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})

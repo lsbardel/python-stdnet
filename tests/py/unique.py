@@ -6,7 +6,7 @@ from stdnet.utils import test, populate, zip, range
 from examples.models import SimpleModel
 
 
-class TestUnique(test.TestCase):
+class TestUnique(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):

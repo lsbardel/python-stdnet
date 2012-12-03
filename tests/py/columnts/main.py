@@ -10,7 +10,7 @@ from stdnet.lib import redis
 from examples.data import tsdata
 from examples.tsmodels import ColumnTimeSeries
 
-from tests.regression import struct
+from tests.py import struct
 
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
@@ -27,7 +27,7 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1',this_path))
     
 
-class TestMeta(test.TestCase):
+class TestMeta(test.CleanTestCase):
     
     def testLuaClass(self):
         session = self.session()
@@ -37,7 +37,7 @@ class TestMeta(test.TestCase):
         self.assertEqual(r,b'OK')
 
 
-class TestCase(test.TestCase):
+class TestCase(test.CleanTestCase):
     
     def check_stats(self, stat_field, data):
         N = len(data)
@@ -292,6 +292,7 @@ class TestColumnTSBase(TestCase):
         cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
         cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
         cls.ColumnTS = ColumnTS
+        super(TestColumnTSBase, cls).setUpClass()
     
     def create(self):
         '''Create one ColumnTS with six fields and cls.size dates'''
@@ -578,6 +579,7 @@ class TestMissingValues(TestCase):
         d2[3] =  d2[9] = nan
         cls.data = [(dt,{'a':a,'b':b}) for dt,a,b in zip(dates,d1,d2)]
         cls.ColumnTS = ColumnTS
+        super(TestMissingValues, cls).setUpClass()
         
     def setUp(self):
         session = self.session()

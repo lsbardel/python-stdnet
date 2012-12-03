@@ -7,7 +7,7 @@ from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
 
 
-class TestSelfForeignKey(test.TestCase):
+class TestSelfForeignKey(test.CleanTestCase):
     '''The Node model is used only in this test class and should be used only
 in this test class so that we can use the manager in a parallel test suite.'''
     model = Node

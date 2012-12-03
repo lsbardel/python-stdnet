@@ -8,21 +8,15 @@ from examples.models import SimpleModel
 
 
 @test.skipUnless(os.environ['stdnet_test_suite'] == 'pulsar', 'Requires Pulsar')
-class TestAsyncRedis(test.TestCase):
+class CleanAsync(test.CleanTestCase):
     
     @classmethod
     def backend_params(cls):
         from stdnet.lib.redis.async import RedisConnection
         return {'connection_class': RedisConnection}
     
-    def setUp(self):
-        self.client = self.backend.client
-        
-    def clear_all(self):
-        return self.backend.flush(pattern=self.prefix + '*')
-    
-    def _post_teardown(self):
-        yield self.clear_all()
+
+class TestAsyncRedis(CleanAsync):
             
     def testMeta(self):
         from stdnet.lib.redis.async import RedisConnection
@@ -43,13 +37,8 @@ class TestAsyncRedis(test.TestCase):
         self.assertEqual(request.result, b'ciao')
     
     
-@test.skipUnless(os.environ['stdnet_test_suite'] == 'pulsar', 'Requires Pulsar')
-class TestAsyncOdm(test.TestCase):
+class TestAsyncOdm(CleanAsync):
     model = SimpleModel
-    
-    def backend_params(self):
-        from stdnet.lib.redis.async import RedisConnection
-        return {'connection_class': RedisConnection}
     
     def addData(self):
         session=  self.session()

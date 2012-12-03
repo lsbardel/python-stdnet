@@ -14,8 +14,8 @@ usernames = populate('string',NUM_USERS, min_len = 5, max_len = 20)
 passwords = populate('string',NUM_USERS, min_len = 8, max_len = 20)
 
 
-class TestTwitter(test.TestCase):
-    models = (User,Post)
+class TestTwitter(test.CleanTestCase):
+    models = (User, Post)
 
     def setUp(self):
         self.register()

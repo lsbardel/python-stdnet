@@ -23,12 +23,6 @@ __all__ = ['BackendRequest',
            'getcache']
 
 
-BACKENDS = {
-    'redis': 'redisb',
-    'mongo': 'mongo'
-}
-
-
 query_result = namedtuple('query_result','key count')
 # tuple containing information about a commit/delete operation on the backend
 # server. Id is the id in the session, persistent is a boolean indicating
@@ -56,8 +50,7 @@ range_lookups = {
     
 
 def get_connection_string(scheme, address, params):
-    if isinstance(address,tuple):
-        address = ':'.join(address)
+    address = ':'.join((str(b) for b in address))
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
@@ -239,10 +232,15 @@ It must implement the *loads* and *dumps* methods.'''
     structure_module = None
     struct_map = {}
     
-    def __init__(self, name, address, charset=None, namespace='', **params):
-        self.__name = name
-        self._cachepipe = {}
-        self._keys = {}
+    def __init__(self, name=None, address=None, charset=None, namespace='', **params):
+        self.__name = name or 'dummy'
+        address = address or ':'
+        if not isinstance(address, (list, tuple)):
+            address = address.split(':')
+        else:
+            address = list(address)
+        if not address[0]:
+            address[0] = '127.0.0.1'
         self.charset = charset or 'utf-8'
         self.params = params
         self.namespace = namespace
@@ -323,10 +321,6 @@ from database.
  backend "{1}"'.format(instance._meta.name,self))
         client = client if client is not None else self.client
         return struct(instance, self, client)
-        
-    def clean(self, meta):
-        '''Remove temporary keys for a model'''
-        pass
     
     def basekey(self, meta, *args):
         """Calculate the key to access model data.
@@ -338,6 +332,16 @@ from database.
         key = '%s%s' % (self.namespace, meta.modelkey)
         postfix = ':'.join((str(p) for p in args if p is not None))
         return '%s:%s' % (key, postfix) if postfix else key
+    
+    # VIRTUAL METHODS
+    
+    def clean(self, meta):
+        '''Remove temporary keys for a model'''
+        pass
+    
+    def ping(self):
+        '''Ping the server'''
+        pass
     
     # PURE VIRTUAL METHODS
     
@@ -404,11 +408,10 @@ It returns a (scheme, host, params) tuple."""
 
 
 def _getdb(scheme, host, params):
-    if scheme in BACKENDS:
-        name = 'stdnet.backends.%s' % BACKENDS[scheme]
-    else:
-        name = scheme
-    module = import_module(name)
+    try:
+        module = import_module('stdnet.backends.%sb' % scheme)
+    except ImportError:
+        module = import_module(scheme)
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
     
     
@@ -420,7 +423,6 @@ def getdb(backend=None, **kwargs):
     if not backend:
         return None
     scheme, address, params = parse_backend(backend)
-    address = address or '127.0.0.1'
     params.update(kwargs)
     return _getdb(scheme, address, params)
 

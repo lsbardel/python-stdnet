@@ -60,7 +60,7 @@ WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                                for i in range(size))
     
     
-class TestCase(test.TestCase):
+class TestCase(test.CleanTestCase):
     '''Mixin for testing the search engine. No tests implemented here,
 just registration and some utility functions. All search-engine tests
 below will derive from this class.'''

@@ -17,7 +17,7 @@ class TransactionReceiver(object):
         self.transactions.append((sender, instances))
         
 
-class TestTransactions(test.TestCase):
+class TestTransactions(test.CleanTestCase):
     model = SimpleModel
     
     def testCreate(self):
@@ -84,7 +84,7 @@ class TestTransactions(test.TestCase):
         self.assertEqual(len(session.query(self.model).all()),1)
         
         
-class TestMultiFieldTransaction(test.TestCase):
+class TestMultiFieldTransaction(test.CleanTestCase):
     model = Dictionary
     
     def make(self):

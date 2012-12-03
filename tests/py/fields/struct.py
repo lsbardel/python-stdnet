@@ -66,7 +66,7 @@ related keys (keys which are related to the instance rather than the model).'''
         self.assertEqual(SimpleList.objects.all().count(),0)
 
 
-class TestStringField(MultiFieldMixin, test.TestCase):
+class TestStringField(MultiFieldMixin, test.CleanTestCase):
     model = SimpleString
     
     def adddata(self, li):
@@ -83,7 +83,7 @@ class TestStringField(MultiFieldMixin, test.TestCase):
         self.assertEqual(m.data.incr(-7),-2)
         
         
-class TestListField(MultiFieldMixin, test.TestCase):
+class TestListField(MultiFieldMixin, test.CleanTestCase):
     model = SimpleList
     attrname = 'names'
     
@@ -150,7 +150,7 @@ is not saved on databse.'''
 keys = populate('string', 200)
 values = populate('string', 200, min_len = 20, max_len = 300)
 
-class TestHashField(MultiFieldMixin, test.TestCase):
+class TestHashField(MultiFieldMixin, test.CleanTestCase):
     model = Dictionary
     defaults = {'name': 'test'}
     

@@ -33,6 +33,9 @@ def ids_from_query(query):
     return [v['_id'] for v in query.find(fields=['_id'])]
     
 class MongoDbQuery(stdnet.BackendQuery):
+    '''Backend query implementation for MongoDB.
+For detail information about mongo query selectors check the online
+documentation http://docs.mongodb.org/manual/reference/operators/.'''
     selector_map = {'gt': '$gt',
                     'lt': '$lt',
                     'ge': '$gte',
@@ -45,9 +48,10 @@ class MongoDbQuery(stdnet.BackendQuery):
         collection = self.backend.collection(self.queryelem.meta)
         return collection.find(self.spec, **params)
         
-    def _remove(self, commands):
+    def remove(self, commands=None):
         collection = self.backend.collection(self.queryelem.meta)
-        commands.append(('remove', self.spec))
+        if commands:
+            commands.append(('remove', self.spec))
         return collection.remove(self.spec)
             
     def _unwind(self, queryelem, selector='$in'):
@@ -147,14 +151,11 @@ class BackendDataServer(stdnet.BackendDataServer):
     _redis_clients = {}
         
     def setup_connection(self, address):
-        addr = address.split(':')
-        if len(addr) == 2:
-            port = int(addr[1])
-        else:
-            port = 27017
+        if len(address) == 1:
+            address.append(27017)
         db = ('%s%s' % (self.params.pop('db', ''), self.namespace))
         self.namespace = ''
-        mdb = pymongo.MongoClient(addr[0], port, **self.params)
+        mdb = pymongo.MongoClient(address[0], int(address[1]), **self.params)
         self.params['db'] = db.replace('.','') or 'test'
         return mdb
     
@@ -256,7 +257,8 @@ class BackendDataServer(stdnet.BackendDataServer):
                 for m, d in self.delete_query(rq, commands):
                     yield m, d
             collection = self.collection(meta)
-            yield meta, self.process_delete(meta, ids, backend_query._remove(commands))
+            yield meta, self.process_delete(meta, ids,
+                                            backend_query.remove(commands))
         
     def flush_structure(self, sm):
         pass

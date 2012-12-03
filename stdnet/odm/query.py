@@ -635,6 +635,10 @@ an exception is raised.
             raise exception('An instance with {0} {1} is already available'\
                             .format(fieldname,value))
 
+    def map_reduce(self, map_script, reduce_script, **kwargs):
+        '''Perform a map/reduce operation on this query.'''
+        pass
+        
     ############################################################################
     # PRIVATE METHODS
     ############################################################################

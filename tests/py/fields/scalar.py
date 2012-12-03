@@ -72,7 +72,7 @@ class TestAtomFields(test.CleanTestCase):
         self.assertEqual(len(keys),1)
         
 
-class TestCharFields(test.TestCase):
+class TestCharFields(test.CleanTestCase):
     model = SimpleModel
 
     def setUp(self):
@@ -90,7 +90,7 @@ class TestCharFields(test.TestCase):
             self.assertEqual(str(m),code)
         
     
-class TestNumericData(test.TestCase):
+class TestNumericData(test.CleanTestCase):
     model = NumericData
 
     def setUp(self):
@@ -114,7 +114,7 @@ class TestNumericData(test.TestCase):
         self.assertRaises(stdnet.FieldValueError,NumericData().save)
                 
         
-class TestIntegerField(test.TestCase):
+class TestIntegerField(test.CleanTestCase):
     model = Page
 
     def setUp(self):
@@ -144,7 +144,7 @@ class TestIntegerField(test.TestCase):
         self.assertEqual(p.in_navigation,0)
                
 
-class TestDateData(test.TestCase):
+class TestDateData(test.CleanTestCase):
     model = DateData
 
     def setUp(self):
@@ -165,7 +165,7 @@ class TestDateData(test.TestCase):
         self.assertEqual(v.dt2.date(),date.today())
         
 
-class TestBoolField(test.TestCase):
+class TestBoolField(test.CleanTestCase):
     model = NumericData
 
     def setUp(self):
@@ -203,7 +203,7 @@ class TestBoolField(test.TestCase):
         self.assertEqual(d.ok,True)
           
     
-class TestByteField(test.TestCase):
+class TestByteField(test.CleanTestCase):
     model = SimpleModel
 
     def setUp(self):
@@ -235,7 +235,7 @@ class TestByteField(test.TestCase):
         self.assertEqual(v.somebytes,b)
 
 
-class TestPickleObjectField(test.TestCase):
+class TestPickleObjectField(test.CleanTestCase):
     model = Environment
     
     def setUp(self):
@@ -268,7 +268,7 @@ class TestPickleObjectField(test.TestCase):
         self.assertEqual(v2.data, v)
     
 
-class TestErrorAtomFields(test.TestCase):
+class TestErrorAtomFields(test.CleanTestCase):
 
     def setUp(self):
         self.register()

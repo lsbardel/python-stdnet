@@ -9,7 +9,7 @@ LEN = 100
 names = populate('string',LEN, min_len = 5, max_len = 20)
 
 
-class TestManager(test.TestCase):
+class TestManager(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):

@@ -1,11 +1,13 @@
 .. _vers07:
 
-Ver. 0.7.2 - Development
+Ver. 0.8 - Development
 ===============================
 * Added mongoDB backend.
+* Increased test coverage.
 * Added ``where`` selector for ad-hoc queries. Argument is a code snipped in lua
   for redis and javascript for mongodb.
-
+* AutoField does not Inherit from IntegerField so that it works for different backends.
+* **633 regression tests** with **93%** coverage.
 
 Ver. 0.7.1 - Development
 ===============================

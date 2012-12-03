@@ -33,13 +33,25 @@ def redis_before_send(sender, request, command, **kwargs):
     
 redis.redis_before_send.connect(redis_before_send)
 
+def field_decoder(meta, field=None):
+    if not field:
+        field = meta.pk
+    else:
+        field = meta.dfields[field]
+    if hasattr(field, 'relmodel'):
+        field = field.relmodel._meta.pk
+    if field.type == 'auto':
+        return int
+    else:    
+        return field.to_python
+
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
               # timeseries must be included before utils
               redis.read_lua_file('commands.timeseries'),
               redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm'))
-    
+        
     def callback(self, request, response, args, meta=None,
                  backend=None, script=None, **options):
         if script == 'delete':
@@ -65,7 +77,7 @@ class odmrun(redis.RedisScript):
     def load_query(self, request, response, backend, meta, get=None,
                    fields=None, fields_attributes=None, **options):
         if get:
-            tpy = meta.dfields[get].to_python
+            tpy = field_decoder(meta, get)
             return [tpy(v) for v in response]
         else:
             data, related = response
@@ -81,7 +93,7 @@ class odmrun(redis.RedisScript):
             return backend.objects_from_db(meta, data, related_fields)
     
     def build(self, response, meta, fields, fields_attributes, encoding):
-        _ = int if meta.pk.type == 'auto' else lambda x: x
+        _ = field_decoder(meta)
         fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
@@ -718,16 +730,20 @@ class BackendDataServer(stdnet.BackendDataServer):
                   'string': String}
         
     def setup_connection(self, address):
-        addr = address.split(':')
-        if len(addr) == 2:
-            try:
-                address = (addr[0], int(addr[1]))
-            except:
-                pass
+        if len(address) == 2:
+            if address[1] == '':
+                address[1] = 6379
+            address[1] = int(address[1])
+            address = tuple(address)
+        elif len(address) == 1:
+            address = address[0]
         rpy = redis.Redis(address=address, **self.params)
         if self.namespace:
             self.params['namespace'] = self.namespace
         return rpy
+    
+    def ping(self):
+        return self.client.ping()
     
     def as_cache(self):
         return self
@@ -737,7 +753,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         value = self.pickler.dumps(value)
         return self.client.set(id, value, timeout)
     
-    def get(self, id, default = None):
+    def get(self, id, default=None):
         v = self.client.get(id)
         if v:
             return self.pickler.loads(v)

@@ -13,7 +13,7 @@ dates = populate('date',NUM_DATES)
 values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
     
     
-class TestSetField(test.TestCase):
+class TestSetField(test.CleanTestCase):
     models = (Collection,Group)
     model = Collection
     
@@ -28,7 +28,7 @@ class TestSetField(test.TestCase):
         self.assertEqual(m.numbers.size(),5)
         
 
-class TestPythonZset(test.TestCase):
+class TestPythonZset(test.CleanTestCase):
     
     def testAdd(self):
         s = zset()
@@ -42,7 +42,7 @@ class TestPythonZset(test.TestCase):
         self.assertEqual(data[1][1],'ciao')
         
     
-class TestCommands(test.TestCase):
+class TestCommands(test.CleanTestCase):
     tag  = 'zdiffstore'
     
     def rpy(self):
@@ -61,7 +61,7 @@ class TestCommands(test.TestCase):
         self.assertEqual(rpy.zcard('s3'),1)
         
     
-class TestOrderedSet(test.TestCase):
+class TestOrderedSet(test.CleanTestCase):
     model = Calendar
     models = (Calendar,DateValue)
     

@@ -4,7 +4,7 @@ from stdnet.utils import test, zip
 from examples.models import SimpleModel, Person, Group, Statistics3
 
 
-class LoadOnly(test.TestCase):
+class LoadOnly(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):

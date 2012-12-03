@@ -5,7 +5,7 @@ from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement
 
     
-class TestManyToMany(test.TestCase):
+class TestManyToMany(test.CleanTestCase):
     models = (Role, Profile)
         
     def addsome(self):

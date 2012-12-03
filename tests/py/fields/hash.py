@@ -5,7 +5,7 @@ from examples.models import Dictionary
 from .struct import MultiFieldMixin
         
 
-class TestMultiField(test.TestCase):
+class TestMultiField(test.CleanTestCase):
     model = Dictionary
     
     def setUp(self):

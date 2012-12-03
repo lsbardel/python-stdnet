@@ -10,19 +10,18 @@ class DummyBackendDataServer(BackendDataServer):
 
 class TestBackend(test.TestCase):
     
-    def get_backend(self, name='?', address=('',0)):
-        return DummyBackendDataServer(name, address)
+    def get_backend(self, **kwargs):
+        return DummyBackendDataServer(**kwargs)
     
     def testVirtuals(self):
         self.assertRaises(NotImplementedError, BackendDataServer, '', '')
         b = self.get_backend()
-        self.assertEqual(str(b), '')
+        self.assertEqual(str(b), 'dummy://127.0.0.1')
         self.assertFalse(b.clean(None))
         self.assertRaises(NotImplementedError, b.execute_session, None, None)
         self.assertRaises(NotImplementedError, b.model_keys, None)
         self.assertRaises(NotImplementedError, b.instance_keys, None)
         self.assertRaises(NotImplementedError, b.as_cache)
-        self.assertRaises(NotImplementedError, b.clear)
         self.assertRaises(NotImplementedError, b.flush)
         self.assertRaises(NotImplementedError, b.publish, '', '')
         

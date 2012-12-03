@@ -19,7 +19,7 @@ persons = populate('choice',NUM_DATES,
                          'paul'])
  
     
-class TestSort(test.TestCase):
+class TestSort(test.CleanTestCase):
     '''Base class for sorting'''
     desc = False
     

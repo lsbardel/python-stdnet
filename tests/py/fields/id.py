@@ -13,7 +13,7 @@ def genid():
     return str(uuid4())[:8]
 
 
-class Id(test.TestCase):
+class Id(test.CleanTestCase):
     '''Test primary key when it is not an AutoField.
 Use the manager for convenience.'''
     model = Task
@@ -69,7 +69,7 @@ Use the manager for convenience.'''
         self.assertRaises(Exception, t.save)
 
 
-class TestAutoId(test.TestCase):
+class TestAutoId(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):
@@ -79,8 +79,8 @@ class TestAutoId(test.TestCase):
         pk = self.model._meta.pk
         self.assertEqual(pk.name,'id')
         self.assertEqual(pk.type,'auto')
-        self.assertEqual(pk.internal_type,'numeric')
-        self.assertEqual(pk.python_type,int)
+        self.assertEqual(pk.internal_type, None)
+        self.assertEqual(pk.python_type, None)
         self.assertEqual(str(pk), 'examples.simplemodel.id')
         self.assertRaises(FieldError, pk.register_with_model,
                           'bla', SimpleModel)
@@ -107,7 +107,7 @@ class TestAutoId(test.TestCase):
         self.assertEqual(set(qs),set((m1,m2)))
     
     
-class CompositeId(test.TestCase):
+class CompositeId(test.CleanTestCase):
     model = WordBook
     
     def setUp(self):

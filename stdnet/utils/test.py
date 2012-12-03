@@ -31,7 +31,7 @@ from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
 skipUnless = unittest.skipUnless
-
+logger = logging.getLogger('stdnet.test')
 
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet. It contains
@@ -59,11 +59,17 @@ some utility functions for tesing in a parallel test suite.
         if not cls.model and cls.models:
             cls.model = cls.models[0]
         cls.namespace = 'stdnet-test-%s.' % gen_unique_id()
-        cls.backend = getdb(namespace=cls.namespace, **cls.backend_params())
-        if cls.backend.name == 'redis':
-            r = cls.backend.client.script_flush()
-            if isinstance(r, BackendRequest):
-                return r.add_callback(lambda r: self.clear_all())
+        cls.backends = []
+        r = None
+        for b in settings.servers:
+            server = getdb(b, namespace=cls.namespace, **cls.backend_params())
+            cls.backends.append(server)
+            if server.name == 'redis':
+                r = server.client.script_flush()
+        if cls.backens:
+            cls.backend = cls.backends[0]
+        if isinstance(r, BackendRequest):
+            return r.add_callback(lambda r: cls.clear_all())
         return cls.clear_all()
     
     @classmethod
@@ -78,7 +84,8 @@ will be unregistered after the :meth:`tearDown` method.'''
     def clear_all(cls):
         #override if you don't want to flush the database at the and of all
         #tests in this class
-        return cls.backend.flush()
+        for b in cls.backends:
+            yield b.flush()
 
     def session(self, **kwargs):
         '''Create a new :class:`stdnet.odm.Session` bind to the
@@ -87,10 +94,6 @@ will be unregistered after the :meth:`tearDown` method.'''
         self.assertEqual(session.backend, self.backend)
         return session
 
-    def load_scripts(self):
-        if self.backend.name == 'redis':
-            self.backend.load_scripts()
-            
     def assertEqualId(self, instance, value, exact=False):
         pk = instance.pkvalue()
         if exact or self.backend.name == 'redis':
@@ -143,13 +146,15 @@ class DataSizePlugin(object):   # pragma nocover
 ################################################################################
 try:    # pragma nocover
     import pulsar
-    from pulsar.apps.test import TestOptionPlugin
+    from pulsar.utils import event
+    from pulsar.apps.test import TestSuite, TestOptionPlugin
     from pulsar.apps.test.plugins import bench
 
 
     class PulsarStdnetServer(TestOptionPlugin):
         name = "server"
         flags = ["-s", "--server"]
+        nargs = '*'
         desc = 'Back-end data  server where to run tests.'
         default = settings.DEFAULT_BACKEND
 
@@ -176,6 +181,22 @@ try:    # pragma nocover
         desc = 'Size of the dataset to test. Choose one between "tiny", '\
                '"small", "normal", "big", "huge".'
         default = 'small'
+        
+    def setup_tests(sender=None, **kwargs):
+        if isinstance(sender, TestSuite):
+            servers = set()
+            for s in sender.cfg.server:
+                try:
+                    s = getdb(s)
+                    s.ping()
+                except:
+                    logger.error('Could not obtain server %s' % s,
+                                 exc_info=True)
+                else:
+                    servers.add(s.connection_string)
+            settings.servers = servers
+            
+    event.bind('ready', setup_tests)
 
 except ImportError: # pragma nocover
     pulsar = None

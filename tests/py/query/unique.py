@@ -24,7 +24,7 @@ def randomcode(num = 1):
         return a
 
 
-class TestUniqueFilter(test.TestCase):
+class TestUniqueFilter(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):

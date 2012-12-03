@@ -60,7 +60,7 @@ class TestRelated(FinanceTest):
         self.assertTrue(len(ids) >= len(inst))
         idset = set(ids)
         self.assertEqual(len(idset),len(inst))
-        self.assertEqual(idset,set((i.id for i in inst)))
+        self.assertEqual(idset, set((i.id for i in inst)))
 
 
 class generator(data_generator):

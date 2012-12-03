@@ -7,7 +7,8 @@ from stdnet.utils import test, populate, todate, zip, dategenerator,\
                              default_parse_interval
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
-from tests.regression.fields.struct import MultiFieldMixin
+
+from tests.py.fields.struct import MultiFieldMixin
 
 NUM_DATES = 300
 

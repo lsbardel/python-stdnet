@@ -602,7 +602,7 @@ the relation from the related object back to self.
 
     @field_value_error
     def to_python(self, value):
-        if isinstance(value,self.relmodel):
+        if isinstance(value, self.relmodel):
             return value.id
         else:
             return self.relmodel._meta.pk_to_python(value)
@@ -813,7 +813,7 @@ and the model holding the field. In the example above it would be
 This model contains two :class:`ForeignKeys`, one to model holding the
 :class:`ManyToManyField` and the other to the *related_model*.
 '''
-    def __init__(self, model, through = None, related_name = None, **kwargs):
+    def __init__(self, model, through=None, related_name=None, **kwargs):
         self.through = through
         self.relmodel = model
         self.related_name = related_name
@@ -838,7 +838,7 @@ This model contains two :class:`ForeignKeys`, one to model holding the
 
     def add_to_fields(self):
         #A many to many field is a dummy field. All it does it provides a proxy
-        #for the through model.
+        #for the through model. Remove it from the fields dictionary
         self.meta.dfields.pop(self.name)
 
 

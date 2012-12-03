@@ -5,7 +5,7 @@ from stdnet.utils import test
 from examples.models import Person, Group 
 
 
-class fkmeta(test.TestCase):
+class fkmeta(test.CleanTestCase):
     models = (Person, Group)
     
     def setUp(self):

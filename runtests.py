@@ -20,7 +20,10 @@ except ImportError:
     pdir = p.join(dir, 'dynts')
     if os.path.isdir(pdir):
         sys.path.append(pdir)
-        import dynts
+        try:
+            import dynts
+        except ImportError:
+            pass
 
 from stdnet import getdb
 from stdnet.conf import settings
@@ -51,14 +54,17 @@ def start():
         
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
-                description = 'Stdnet Asynchronous test suite',
-                    modules = ('tests.py',),
-                    plugins = (test.PulsarStdnetServer(),
-                               test.PulsarDataSizePlugin(),
-                               test.PulsarRedisParser(),
-                               bench.BenchMark(),
-                               profile.Profile())
+                description='Stdnet Asynchronous test suite',
+                    modules=('tests.py',),
+                    plugins=(test.PulsarStdnetServer(),
+                             test.PulsarDataSizePlugin(),
+                             test.PulsarRedisParser(),
+                             bench.BenchMark(),
+                             profile.Profile())
                   )
+        if not settings.servers:
+            print('NOT SERVERS AVAILABLE. BAILING OUT.')
+            exit(1)
         suite.start()
     elif nose:
         from stdnet.test import NoseDataSizePlugin, NoseStdnetServer

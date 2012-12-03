@@ -43,6 +43,9 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
     
     def _build(self):
         self.spec = self._unwind(self.queryelem)
+        where = self.queryelem.data.get('where')
+        if where:
+            self.spec['$where'] = where[0]
         
     def find(self, **params):
         collection = self.backend.collection(self.queryelem.meta)
@@ -67,14 +70,15 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
         elif keyword == 'intersection':
             return {'$and': list(self._logical(queryelem, selector))}
         elif keyword == 'diff':
-            selector = '$nin'
-        return self._accumulate(self._selectors(queryelem, selector))
+            return self._accumulate(self._selectors(queryelem, selector,'$nin'))
+        else:
+            return self._accumulate(self._selectors(queryelem, selector))
     
     def _logical(self, queryelem, selector):
         for child in queryelem:
             yield self._accumulate(self._selectors(child, selector))
             
-    def _selectors(self, queryelem, selector):
+    def _selectors(self, queryelem, selector, selector2=None):
         pkname = queryelem.meta.pkname()
         name = queryelem.name
         for child in queryelem:
@@ -100,19 +104,20 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
                 else:
                     sel = self.selector_map[lookup]
                 yield name, sel, value
+            selector = selector2 or selector
     
     def _accumulate(self, data):
         kwargs = {}
         for name, selector, value in data:
             if name in kwargs:
+                data = kwargs[name]
                 if selector in ('$in', '$nin'):
-                    data = kwargs[name]
                     if selector in data:
                         data[selector].append(value)
                     else:
                         data[selector] = [value]
-                else: 
-                    kwargs[name].update((selector, value))
+                else:
+                    data[selector] = value
             else:
                 if selector in ('$in', '$nin') and not isinstance(value, list):
                     value = [value]
@@ -148,11 +153,12 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
 ################################################################################
 class BackendDataServer(stdnet.BackendDataServer):
     Query = MongoDbQuery
+    default_port = 27017
     _redis_clients = {}
         
     def setup_connection(self, address):
         if len(address) == 1:
-            address.append(27017)
+            address.append(self.default_port)
         db = ('%s%s' % (self.params.pop('db', ''), self.namespace))
         self.namespace = ''
         mdb = pymongo.MongoClient(address[0], int(address[1]), **self.params)
@@ -231,18 +237,16 @@ class BackendDataServer(stdnet.BackendDataServer):
                 yield instance_session_result(id, True, id, True, 0)
                 
     def build(self, response, meta, fields, fields_attributes):
-        fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] == 'id':
-                for id in response:
-                    yield id, (), {}
+                fields = ()
             else:
-                for id, fdata in response:
-                    yield id, fields, dict(zip(fields_attributes, fdata))
+                fields = tuple(fields)
         else:
-            for data in response:
-                id = data.pop('_id')
-                yield id, None, data
+            fields = None
+        for data in response:
+            id = data.pop('_id')
+            yield id, fields, data
     
     def delete_query(self, backend_query, commands):
         if backend_query is None:

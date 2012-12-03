@@ -1,13 +1,12 @@
-from stdnet import BackendRequest, BackendStructure
 from stdnet.utils import test
 from stdnet.conf import settings
 from stdnet.lib import redis
 import stdnet as me
 
-from examples.models import SimpleModel
 
-class TestInitFile(test.CleanTestCase):
-
+class TestInitFile(test.TestCase):
+    multipledb = False
+    
     def test_version(self):
         self.assertTrue(len(me.VERSION), 5)
         version = me.__version__
@@ -20,14 +19,4 @@ class TestInitFile(test.CleanTestCase):
     def test_meta(self):
         for m in ("__author__", "__contact__", "__homepage__", "__doc__"):
             self.assertTrue(getattr(me, m, None))
-            
-            
-class TestBackendClasses(test.TestCase):
-    
-    def testBackendRequest(self):
-        b = BackendRequest()
-        self.assertRaises(NotImplementedError, b.add_callback, None)
-        
-    def testBackendStructure_error(self):
-        m = SimpleModel()
-        self.assertRaises(ValueError, BackendStructure, m, None, None)
+           

@@ -216,6 +216,15 @@ class RedisQuery(stdnet.BackendQuery):
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
             command(key, keys, script_dependency='move2set')
+        where = self.queryelem.data.get('where')
+        if where:
+            keys.insert(0, key)
+            if not temp_key:
+                temp_key = True
+                key = backend.tempkey(meta)
+            keys.insert(0, key)
+            backend.where_run(pipe, self.meta_info, keys, *where)
+        #
         # If we are getting a field (for a subsequent query maybe)
         # unwind the query and store the result
         gf = qs._get_field 
@@ -255,11 +264,10 @@ elements in the query.'''
     
     def _execute_query_result(self, result):
         self.query_results = result
-        res = self.query_results[-1].count
-        if isinstance(res, Exception):
-            raise res
-        else:
-            return res
+        for res in self.query_results:
+            if isinstance(res, Exception):
+                raise res
+        return res.count
     
     def order(self, last):
         '''Perform ordering with respect model fields.'''
@@ -721,6 +729,7 @@ end''')
 class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     _redis_clients = {}
+    default_port = 6379
     struct_map = {'set': Set,
                   'list': List,
                   'zset': Zset,
@@ -731,12 +740,11 @@ class BackendDataServer(stdnet.BackendDataServer):
         
     def setup_connection(self, address):
         if len(address) == 2:
-            if address[1] == '':
-                address[1] = 6379
-            address[1] = int(address[1])
             address = tuple(address)
         elif len(address) == 1:
             address = address[0]
+        if 'db' not in self.params:
+            self.params['db'] = 0
         rpy = redis.Redis(address=address, **self.params)
         if self.namespace:
             self.params['namespace'] = self.namespace
@@ -802,6 +810,13 @@ class BackendDataServer(stdnet.BackendDataServer):
                         'script_dependency': ODM_SCRIPTS})
         return client.script_call('odmrun', keys, script, meta_info, *args,
                                   **options)
+        
+    def where_run(self, client, meta_info, keys, where, load_only):
+        where = redis.read_lua_file('where', context={'where_clause': where})
+        args = [meta_info]
+        if load_only:
+            args.append(json.dumps(load_only))
+        return redis.RedisScriptBase(where).eval(client, keys, *args)
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''

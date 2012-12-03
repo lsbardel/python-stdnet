@@ -11,6 +11,7 @@ def get_version(info):
 
 
 class TestCase(test.CleanTestCase):
+    multipledb = 'redis'
     
     def get_client(self, pool=None):
         client = redis.Redis(pool) if pool is not None else self.backend.client

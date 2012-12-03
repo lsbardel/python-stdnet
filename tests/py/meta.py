@@ -46,13 +46,13 @@ class TestInspectionAndComparison(FinanceTest):
         
     def testHash(self):
         '''Test model instance hash'''
-        inst = Instrument(name = 'erz12', type = 'future', ccy = 'EUR')
+        inst = Instrument(name='erz12', type='future', ccy='EUR')
         h0 = hash(inst)
         self.assertTrue(h0)
         inst.save()
         h = hash(inst)
         self.assertTrue(h)
-        self.assertNotEqual(h,h0)
+        self.assertNotEqual(h, h0)
         
     def testmodelFromHash(self):
         m = odm.get_model_from_hash(Instrument._meta.hash)

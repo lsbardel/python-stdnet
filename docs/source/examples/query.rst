@@ -62,10 +62,10 @@ This filter statement is equivalent to an union of two filters statements::
     qs = q1.union(q2)
 
 
-Concatenating
-=================
+Concatenating filters
+========================
 
-You can perform further selection by concatenating queries::
+You can perform further selection by concatenating filters::
 
     qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
     
@@ -73,14 +73,14 @@ or equivalently::
     
     qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))
 
-Which is equivalent to an intersection of two filter statement::
+Which is equivalent to an **intersection** of two filter statement::
 
     q1 = Fund.objects.filter(ccy=('EUR', 'USD'))
     q2 = Fund.objects.filter(types=('equity',bond'))
     qs = q1.intersect(q2)
 
 
-Excluding
+Exclude
 ===============================
 You can also exclude fields from lookups::
 
@@ -89,6 +89,10 @@ You can also exclude fields from lookups::
 You can exclude a list of fields::
 
     Instrument.objects.exclude(type=('future','equity'))
+
+Concatenation is also supported::
+
+    qs = Instrument.objects.exclude(ccy=('EUR','USD'), types=('equity',bond'))
 
 
 Union
@@ -107,30 +111,6 @@ if we need all instruments with ``ccy='EUR'`` **OR** ``type='equity'``? We use t
 
     q1 = Instruments.objecyts.filter(type='equity')
     qs = Instrument.objects.filter(ccy='EUR').union(q1)
-
-
-.. _query_related:
-
-Related Fields
-====================
-
-The query API goes even further by allowing to operate on
-:class:`Fields` of :class:`ForeignKey` models. For example, lets consider
-the :class:`Position` model in our :ref:`example application <tutorial-application>`.
-The model has a :class:`ForeignKey` to the :class:`Instrument` model.
-
-Using the related field query API one can construct a query to fetch positions
-an subset of instruments in this way::
-
-    qs = Position.objects.filter(instrument__ccy='EUR')
-
-that is the name of the :class:`ForeignKey` field, followed by a double underscore ``__``,
-followed by the name of the field in the related model.
-
-This is merely a syntactic sugar in place of this equivalent query::
-
-    qi = Instrument.objects.filter(ccy='EUR')
-    qs = Position.objects.filter(instrument=qi)
 
 
 .. _field-lookups:
@@ -165,4 +145,54 @@ There are four of them:
     
     qs = Position.objects.filter(size__le=100)    
  
+
+.. _query_where:
     
+Where
+===========
+
+Use the :meth:`query.where` method to pass a string containing a valid 
+**expression** to the query system to provide greater flexibility with queries.
+Consider the following model::
+
+    class Data(odm.StdModel):
+        flag = odm.CharField()
+        a = odm.FloatField()
+        b = odm.FloatField()
+        ...
+
+The following is a query which works for both mongo and redis::
+
+    qs = Data.objects.query().where('this.a > this.b')
+
+The where method can be chained in the same way as filter and exclude::
+
+    s = Data.objects.filter(flag='foo', a__lt=4).where('this.a > this.b')
+
+.. note::
+    
+    The expression evaluates to lua in redis and to javascript in mongo.
+
+    
+.. _query_related:
+
+Related Fields
+====================
+
+The query API goes even further by allowing to operate on
+:class:`Fields` of :class:`ForeignKey` models. For example, lets consider
+the :class:`Position` model in our :ref:`example application <tutorial-application>`.
+The model has a :class:`ForeignKey` to the :class:`Instrument` model.
+
+Using the related field query API one can construct a query to fetch positions
+an subset of instruments in this way::
+
+    qs = Position.objects.filter(instrument__ccy='EUR')
+
+that is the name of the :class:`ForeignKey` field, followed by a double underscore ``__``,
+followed by the name of the field in the related model.
+
+This is merely a syntactic sugar in place of this equivalent query::
+
+    qi = Instrument.objects.filter(ccy='EUR')
+    qs = Position.objects.filter(instrument=qi)

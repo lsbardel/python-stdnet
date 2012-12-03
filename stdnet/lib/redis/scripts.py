@@ -8,7 +8,8 @@ from .exceptions import NoScriptError, ScriptError
 from .redisinfo import RedisKey
 
 
-__all__ = ['RedisScript',
+__all__ = ['RedisScriptBase',
+           'RedisScript',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
@@ -66,37 +67,21 @@ def get_script(script):
     return _scripts.get(script)
 
 
-def read_lua_file(dotted_module, path = None):
+def read_lua_file(dotted_module, path=None, context=None):
     '''Load lua script from the stdnet/lib/lua directory'''
     path = path or DEFAULT_LUA_PATH
     bits = dotted_module.split('.')
     bits[-1] += '.lua'
     name = os.path.join(path, *bits)
     with open(name) as f:
-        return f.read()
+        data = f.read()
+    if context:
+        data = data.format(context)
+    return data
     
- 
-class RedisScriptMeta(type):
     
-    def __new__(cls, name, bases, attrs):
-        super_new = super(RedisScriptMeta, cls).__new__
-        abstract = attrs.pop('abstract',False)
-        new_class = super_new(cls, name, bases, attrs)
-        if not abstract:
-            instance = new_class()
-            script = instance.script
-            if isinstance(script,(list,tuple)):
-                script = '\n'.join(script)
-                instance.script = script
-            instance.sha1 = sha1(instance.script.encode('utf-8')).hexdigest()
-            _scripts[new_class.__name__] = instance
-        return new_class
-    
-RedisScriptBase = RedisScriptMeta('RedisScriptBase',(object,),{'abstract':True})
-
-
-class RedisScript(RedisScriptBase):
-    ''':class:`RedisScript` is a class which helps the sending and receiving
+class RedisScriptBase(object):
+    ''':class:`RedisScriptBase` is a class which helps the sending and receiving
 lua scripts to redis via the ``evalsha`` command.
 
 .. attribute:: script
@@ -111,19 +96,29 @@ lua scripts to redis via the ``evalsha`` command.
     
 .. _SHA-1: http://en.wikipedia.org/wiki/SHA-1
 '''
-    abstract = True
-    script = None
+    def __init__(self, script, name=None):
+        if isinstance(script, (list, tuple)):
+            script = '\n'.join(script)
+        self.__name = name
+        self.script = script
         
-    def __repr__(self):
-        return self.__class__.__name__
-    __str__ = __repr__
-    
     @property
     def name(self):
-        return self.__class__.__name__
+        return self.__name
+    
+    @property
+    def sha1(self):
+        if not hasattr(self, '_sha1'):
+            self._sha1 = sha1(self.script.encode('utf-8')).hexdigest()
+        return self._sha1
+    
+    def __repr__(self):
+        return self.name if self.name else self.__class__.__name__
+    __str__ = __repr__
     
     def call(self, client, command, body, keys, *args, **options):
-        options['script_name'] = str(self)
+        if self.name:
+            options['script_name'] = self.name
         args, options = self.preprocess_args(client, args, options)
         return client._eval(command, body, keys, *args, **options)
         
@@ -183,6 +178,23 @@ It returns the result of the `evalsha` command.'''
 '''
         return response
     
+
+class RedisScriptMeta(type):
+    
+    def __new__(cls, name, bases, attrs):
+        super_new = super(RedisScriptMeta, cls).__new__
+        abstract = attrs.pop('abstract',False)
+        new_class = super_new(cls, name, bases, attrs)
+        if not abstract:
+            self = new_class(new_class.script, new_class.__name__)
+            _scripts[self.name] = self
+        return new_class
+    
+
+class RedisScript(RedisScriptMeta('_RS',(RedisScriptBase,),{'abstract':True})):
+    abstract = True
+    script = None
+   
 
 def load_missing_scripts(pipe, commands, results):
     '''Load missing scripts in a pipeline. This function loops through the

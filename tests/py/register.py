@@ -63,6 +63,6 @@ class TestRegistration(test.CleanTestCase):
 
     def testAlreadyRegistered(self):
         self.register()
-        self.assertEqual(odm.register(SimpleModel),None)
+        self.assertEqual(odm.register(SimpleModel), None)
         self.assertRaises(AlreadyRegistered, odm.register, SimpleModel,
                           ignore_duplicates = False)

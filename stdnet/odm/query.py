@@ -494,6 +494,15 @@ for this function to be available.
             raise QuerySetError('Search not implemented for {0} model'\
                                 .format(self.model))
 
+    def where(self, code, load_only=None):
+        '''For backend supporting scripting, pass the code to execute.'''
+        if code:
+            q = self._clone()
+            q.data['where'] = (code, load_only)
+            return q
+        else:
+            return self            
+        
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:

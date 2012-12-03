@@ -8,6 +8,7 @@ from .backend import DummyBackendDataServer
 
 
 class TestPubSub(test.TestCase):
+    multipledb='redis'
     
     def server(self):
         return getdb(self.backend.connection_string)

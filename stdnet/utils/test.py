@@ -45,6 +45,7 @@ some utility functions for tesing in a parallel test suite.
 '''
     models = ()
     model = None
+    connection_string = None
     backend = None
 
     @classmethod
@@ -59,40 +60,37 @@ some utility functions for tesing in a parallel test suite.
         if not cls.model and cls.models:
             cls.model = cls.models[0]
         cls.namespace = 'stdnet-test-%s.' % gen_unique_id()
-        cls.backends = []
-        r = None
-        for b in settings.servers:
-            server = getdb(b, namespace=cls.namespace, **cls.backend_params())
-            cls.backends.append(server)
+        if cls.connection_string:
+            server = getdb(cls.connection_string, namespace=cls.namespace,
+                           **cls.backend_params())
+            cls.backend = server
             if server.name == 'redis':
                 r = server.client.script_flush()
-        if cls.backens:
-            cls.backend = cls.backends[0]
-        if isinstance(r, BackendRequest):
-            return r.add_callback(lambda r: cls.clear_all())
-        return cls.clear_all()
+                if isinstance(r, BackendRequest):
+                    return r.add_callback(lambda r: cls.clear_all())
+            return cls.clear_all()
     
     @classmethod
     def register(cls):
         '''Utility for registering the managers to the current backend.
 This should be used with care in parallel testing. All registered models
 will be unregistered after the :meth:`tearDown` method.'''
-        for model in cls.models:
-            odm.register(model, cls.backend)
+        if cls.backend:
+            for model in cls.models:
+                odm.register(model, cls.backend)
     
     @classmethod
     def clear_all(cls):
         #override if you don't want to flush the database at the and of all
         #tests in this class
-        for b in cls.backends:
-            yield b.flush()
+        if cls.backend is not None:
+            yield cls.backend.flush()
 
-    def session(self, **kwargs):
+    @classmethod
+    def session(cls, **kwargs):
         '''Create a new :class:`stdnet.odm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
-        session = odm.Session(self.backend, **kwargs)
-        self.assertEqual(session.backend, self.backend)
-        return session
+        return odm.Session(cls.backend, **kwargs)
 
     def assertEqualId(self, instance, value, exact=False):
         pk = instance.pkvalue()
@@ -115,12 +113,12 @@ will be unregistered after the :meth:`tearDown` method.'''
 class CleanTestCase(TestCase):
     '''A test case which flush the database at every test.'''
     def _pre_setup(self):
-        self.clear_all()
+        return self.clear_all()
         
     def _post_teardown(self):
         if self.backend:
-            self.clear_all()
-            odm.unregister()
+            yield self.clear_all()
+            yield odm.unregister()
         
     def __call__(self, result=None):
         """Wrapper around default __call__ method
@@ -129,8 +127,8 @@ to perform cleanup, registration and unregistration.
         self._pre_setup()
         super(CleanTestCase, self).__call__(result)
         self._post_teardown()
-    
 
+    
 class DataSizePlugin(object):   # pragma nocover
 
     def configure(self, cfg, *args):
@@ -182,9 +180,11 @@ try:    # pragma nocover
                '"small", "normal", "big", "huge".'
         default = 'small'
         
+        
     def setup_tests(sender=None, **kwargs):
         if isinstance(sender, TestSuite):
-            servers = set()
+            servers = []
+            names = set()
             for s in sender.cfg.server:
                 try:
                     s = getdb(s)
@@ -193,10 +193,43 @@ try:    # pragma nocover
                     logger.error('Could not obtain server %s' % s,
                                  exc_info=True)
                 else:
-                    servers.add(s.connection_string)
+                    if s.name not in names:
+                        names.add(s.name)
+                        servers.append(s.connection_string)
             settings.servers = servers
             
+            
+    class testmaker(object):
+        
+        def __init__(self, test, name, server):
+            self.test = test
+            self.cls_name = '%s_%s' % (test.__name__, name)
+            self.server = server
+            
+        def __call__(self):
+            new_test = type(self.cls_name, (self.test,), {})
+            new_test.connection_string = self.server
+            return new_test
+            
+        
+    def create_tests(sender=None, value=None):
+        if isinstance(sender, TestSuite) and settings.servers:
+            for tag, test in list(value):
+                multipledb = getattr(test, 'multipledb', True)
+                if isinstance(multipledb, str):
+                    multipledb = [multipledb]
+                added = False
+                if multipledb:
+                    for server in settings.servers:
+                        name = server.split('://')[0]
+                        if multipledb == True or name in multipledb:
+                            added = True
+                            value.append((tag, testmaker(test, name, server)))
+                if added:
+                    value.pop(0)
+                        
     event.bind('ready', setup_tests)
+    event.bind('tests', create_tests)
 
 except ImportError: # pragma nocover
     pulsar = None

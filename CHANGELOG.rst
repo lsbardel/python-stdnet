@@ -2,13 +2,16 @@
 
 Ver. 0.8 - Development
 ===============================
-* Added mongoDB backend.
+* Added :ref:`mongoDB backend <mongo-server>`.
 * Increased test coverage.
-* Added ``where`` selector for ad-hoc queries. Argument is a code snipped in lua
-  for redis and javascript for mongodb.
-* AutoField does not Inherit from IntegerField so that it works for different backends.
+* Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
+  a valid expression (lua for redis and javascript for mongodb).
+* :class:`stdnet.odm.AutoField` does not inherit from :class:`stdnet.odm.IntegerField` so that it
+  works for different backends.
+* Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored the main test class
+  for handling tests on multiple backends at once.
 * **633 regression tests** with **93%** coverage.
-
+  
 Ver. 0.7.1 - Development
 ===============================
 * Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request

@@ -129,7 +129,8 @@ loaded. The correct behavior should be to updated the field and indexes.'''
         for m in query.all():
             self.assertEqual(m._loadedfields,('group',))
         
-class LoadOnlyRelated(test.TestCase):
+        
+class LoadOnlyRelated(test.CleanTestCase):
     models = (Person, Group)
     
     def setUp(self):
@@ -157,7 +158,7 @@ class LoadOnlyRelated(test.TestCase):
             self.assertTrue(isinstance(g,Group))
             
 
-class TestFieldReplace(test.TestCase):
+class TestFieldReplace(test.CleanTestCase):
     model = Statistics3
     
     def setUp(self):

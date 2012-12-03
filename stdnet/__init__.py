@@ -3,7 +3,7 @@ from .exceptions import *
 from .backends import *
 from .utils.version import get_version, stdnet_version
 
-VERSION = stdnet_version(0, 7, 1, 'beta', 1)
+VERSION = stdnet_version(0, 8, 0, 'alpha', 1)
 
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"
@@ -29,4 +29,4 @@ CLASSIFIERS = [
                'Topic :: Internet'
                ]
 
-sphinxtogithub = True
+sphinxtogithub = False

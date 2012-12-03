@@ -187,7 +187,7 @@ queries specified by :class:`stdnet.odm.Query`.
     
     def execute_query(self):
         if not self.executed:
-            self.__count = on_result(self._execute_query(), self._got_count)
+            return on_result(self._execute_query(), self._got_count)
         return self.__count
     
     # VIRTUAL FUNCTIONS
@@ -230,6 +230,7 @@ It must implement the *loads* and *dumps* methods.'''
     Transaction = None
     Query = None
     structure_module = None
+    default_port = 8000
     struct_map = {}
     
     def __init__(self, name=None, address=None, charset=None, namespace='', **params):
@@ -241,6 +242,11 @@ It must implement the *loads* and *dumps* methods.'''
             address = list(address)
         if not address[0]:
             address[0] = '127.0.0.1'
+        if len(address) == 2:
+            if not address[1]:
+                address[1] = self.default_port
+            else:
+                address[1] = int(address[1])
         self.charset = charset or 'utf-8'
         self.params = params
         self.namespace = namespace

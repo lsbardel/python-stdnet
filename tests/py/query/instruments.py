@@ -1,14 +1,22 @@
 from stdnet.utils import test
 
 from examples.models import Instrument, Instrument2
-from examples.data import FinanceTest
+from examples.data import finance_data
 
 
-class TestFilter(FinanceTest):
+class TestFilter(test.TestCase):
+    data_cls = finance_data
     model = Instrument
     
-    def setUp(self):
-        self.data.create(self, InstrumentModel=self.model)
+    @classmethod
+    def setUpClass(cls):
+        super(TestFilter, cls).setUpClass()
+        cls.data = cls.data_cls(size=cls.size)
+        cls.data.create(cls('testAll'), InstrumentModel=cls.model)
+        
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
         
     def testAll(self):
         session = self.session()
@@ -18,7 +26,8 @@ class TestFilter(FinanceTest):
     def testSimpleFilterId_WithRedisInternal(self):
         session = self.session()
         query = session.query(self.model)
-        qs = query.filter(id=1)
+        all = session.query(self.model).load_only('id').all()
+        qs = query.filter(id=all[0].id)
         # count so that we execute the query
         self.assertEqual(qs.count(), 1)
         bq = qs.backend_query()
@@ -26,18 +35,18 @@ class TestFilter(FinanceTest):
         if qs.backend.name == 'redis':
             rqs = qs.backend_query()
             # evalsha, expire, scard
-            self.assertEqual(len(rqs.commands),3)
-        self.assertEqual(qs.count(),1)
+            self.assertEqual(len(rqs.commands), 3)
+        self.assertEqual(qs.count(), 1)
         obj = qs[0]
-        self.assertEqual(obj.id,1)
-        self.assertEqual(obj._loadedfields,None)
+        self.assertEqual(obj.id, all[0].id)
+        self.assertEqual(obj._loadedfields, None)
         
     def testSimpleFilter(self):
         session = self.session()
-        qs = session.query(self.model).filter(ccy='EUR')
+        qs = session.query(self.model).filter(ccy='USD')
         self.assertTrue(qs.count() > 0)
         for i in qs:
-            self.assertEqual(i.ccy,'EUR')
+            self.assertEqual(i.ccy,'USD')
         
     def testFilterIn(self):
         session = self.session()
@@ -46,7 +55,7 @@ class TestFilter(FinanceTest):
         usd = dict(((o.id,o) for o in qs.filter(ccy='USD')))
         all = set(eur).union(set(usd))
         CCYS = ('EUR','USD')
-        qs = qs.filter(ccy__in = CCYS)
+        qs = qs.filter(ccy=CCYS)
         us = set()
         for inst in qs:
             us.add(inst.id)
@@ -74,7 +83,7 @@ class TestFilter(FinanceTest):
         CCYS = ('EUR','USD','JPY')
         types = ('equity','bond','future')
         session = self.session()
-        qs = session.query(self.model).filter(ccy__in = CCYS, type__in = types)
+        qs = session.query(self.model).filter(ccy=CCYS, type=types)
         for inst in qs:
             self.assertTrue(inst.ccy in CCYS)
             self.assertTrue(inst.type in types)
@@ -112,7 +121,7 @@ class TestFilter(FinanceTest):
         types = ('equity','bond','future')
         session = self.session()
         query = session.query(self.model)
-        qs = query.exclude(ccy__in = CCYS).filter(type__in = types)
+        qs = query.exclude(ccy=CCYS).filter(type=types)
         for inst in qs:
             self.assertTrue(inst.ccy not in CCYS)
             self.assertTrue(inst.type in types)
@@ -120,10 +129,11 @@ class TestFilter(FinanceTest):
         
     def testFilterIds(self):
         '''Simple filtering on ids.'''
-        ids = set((1,5,10))
         session = self.session()
+        all = session.query(self.model).load_only('id').all()
+        ids = set((all[1].id, all[5].id, all[10].id))
         query = session.query(self.model)
-        qs = query.filter(id__in=ids)
+        qs = query.filter(id=ids)
         self.assertEqual(len(qs), 3)
         cids = set((o.id for o in qs))
         self.assertEqual(cids, ids)

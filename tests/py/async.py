@@ -9,6 +9,7 @@ from examples.models import SimpleModel
 
 @test.skipUnless(os.environ['stdnet_test_suite'] == 'pulsar', 'Requires Pulsar')
 class CleanAsync(test.CleanTestCase):
+    multipledb = 'redis'
     
     @classmethod
     def backend_params(cls):
@@ -17,7 +18,7 @@ class CleanAsync(test.CleanTestCase):
     
 
 class TestAsyncRedis(CleanAsync):
-            
+    
     def testMeta(self):
         from stdnet.lib.redis.async import RedisConnection
         client = self.backend.client

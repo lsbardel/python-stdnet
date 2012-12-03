@@ -214,8 +214,8 @@ attribute set to ``True`` will be excluded.'''
         self._loadedfields = loadedfields
         fields = meta.dfields
         for field in self.loadedfields():
-            value = field.value_from_data(self,data)
-            setattr(self,field.attname,field.to_python(value))
+            value = field.value_from_data(self, data)
+            setattr(self,field.attname, field.to_python(value))
         self._dbdata = data.get('__dbdata__',{})
 
     @classmethod

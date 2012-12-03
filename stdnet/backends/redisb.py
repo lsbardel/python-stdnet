@@ -37,13 +37,23 @@ def field_decoder(meta, field=None):
     if not field:
         field = meta.pk
     else:
-        field = meta.dfields[field]
-    if hasattr(field, 'relmodel'):
-        field = field.relmodel._meta.pk
-    if field.type == 'auto':
-        return int
-    else:    
-        return field.to_python
+        field = meta.dfields.get(field)
+    if field:
+        if hasattr(field, 'relmodel'):
+            field = field.relmodel._meta.pk
+        if field.type == 'auto':
+            return int
+        else:    
+            return field.to_python
+    
+def decode_fields(meta, iterable):
+    for attname, value in iterable:
+        if attname.endswith('_id'):
+            decoder = field_decoder(meta, attname[:-3])
+            if decoder:
+                value = decoder(value)
+        yield attname, value
+        
 
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
@@ -101,10 +111,12 @@ class odmrun(redis.RedisScript):
                     yield _(id), (), {}
             else:
                 for id, fdata in response:
-                    yield _(id), fields, dict(zip(fields_attributes, fdata))
+                    yield _(id), fields, dict(decode_fields(meta,
+                                            zip(fields_attributes, fdata)))
         else:
             for id, fdata in response:
-                yield _(id), None, dict(pairs_to_dict(fdata, encoding))
+                yield _(id), None, dict(decode_fields(meta,
+                                        pairs_to_dict(fdata, encoding)))
                 
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
@@ -376,7 +388,7 @@ elements in the query.'''
                 data = {'field': field.attname,
                         'type': field.type if field in meta.multifields else '',
                         'bk': bk,
-                        'fields': tuple(related[rel])}
+                        'fields': related[rel]}
                 yield field.name, data
             
 

@@ -2,33 +2,43 @@ from stdnet import FieldError
 from stdnet.utils import test
 
 from examples.models import Dictionary
-from examples.data import FinanceTest, Position, Instrument, Fund
+from examples.data import finance_data, Position, Instrument, Fund
 
 
-class load_related(FinanceTest):
+class test_load_related(test.TestCase):
+    data_cls = finance_data
+    models = (Instrument, Fund, Position)
+    
+    @classmethod
+    def setUpClass(cls):
+        super(test_load_related, cls).setUpClass()
+        cls.data = cls.data_cls(size=cls.size)
+        cls.data.makePositions(cls('testMeta'))
+        
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
 
     def testMeta(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         self.assertEqual(query.select_related, None)
         pos1 = query.load_related('instrument')
         self.assertEqual(len(pos1.select_related),1)
-        self.assertEqual(pos1.select_related['instrument'],set())
+        self.assertEqual(pos1.select_related['instrument'], ())
         pos2 = pos1.load_related('instrument','name','ccy')
-        self.assertEqual(pos1.select_related['instrument'],set())
-        self.assertEqual(pos2.select_related['instrument'],set(('name','ccy')))
+        self.assertEqual(pos1.select_related['instrument'], ())
+        self.assertEqual(pos2.select_related['instrument'], ('name','ccy'))
         pos3 = pos2.load_related('fund','name')
         self.assertEqual(len(pos1.select_related),1)
         self.assertEqual(len(pos2.select_related),1)
         self.assertEqual(len(pos3.select_related),2)
-        self.assertEqual(pos1.select_related['instrument'],set())
-        self.assertEqual(pos2.select_related['instrument'],set(('name','ccy')))
-        self.assertEqual(pos3.select_related['instrument'],set(('name','ccy')))
-        self.assertEqual(pos3.select_related['fund'],set(('name',)))
+        self.assertEqual(pos1.select_related['instrument'], ())
+        self.assertEqual(pos2.select_related['instrument'], ('name','ccy'))
+        self.assertEqual(pos3.select_related['instrument'], ('name','ccy'))
+        self.assertEqual(pos3.select_related['fund'], ('name',))
 
     def testSingle(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         pos = query.load_related('instrument')
@@ -46,16 +56,15 @@ class load_related(FinanceTest):
             self.assertFalse(val)
 
     def testSingle_withFields(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
-        pos = query.load_related('instrument','name','ccy')
+        pos = query.load_related('instrument', 'name', 'ccy')
         inst = Position._meta.dfields['instrument']
         pos = list(pos)
         self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
-            val = getattr(p,cache,None)
+            val = getattr(p, cache, None)
             self.assertTrue(val)
             self.assertTrue(isinstance(val,inst.relmodel))
             self.assertEqual(set(val._loadedfields),set(('name','ccy')))
@@ -64,7 +73,6 @@ class load_related(FinanceTest):
             self.assertFalse(hasattr(val,'type'))
 
     def testDouble(self):
-        self.data.makePositions(self)
         session = self.session()
         pos = session.query(Position).load_related('instrument')\
                                      .load_related('fund')
@@ -83,17 +91,15 @@ class load_related(FinanceTest):
             self.assertTrue(isinstance(val,fund.relmodel))
 
     def testError(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         pos = self.assertRaises(FieldError, query.load_related, 'bla')
         pos = self.assertRaises(FieldError, query.load_related, 'size')
         pos = query.load_related('instrument','id')
         self.assertEqual(len(pos.select_related),1)
-        self.assertEqual(pos.select_related['instrument'],set())
+        self.assertEqual(pos.select_related['instrument'], ())
 
     def testLoadRelatedLoadOnly(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         inst = Position._meta.dfields['instrument']
@@ -107,13 +113,7 @@ class load_related(FinanceTest):
             self.assertTrue(val)
             self.assertTrue(isinstance(val,inst.relmodel))
 
-    def testEmpty(self):
-        session = self.session()
-        instruments = session.query(Position).load_related('instrument').all()
-        self.assertEqual(instruments, [])
-
     def testWithFilter(self):
-        self.data.makePositions(self)
         session = self.session()
         instruments = session.query(Instrument).filter(ccy='EUR')
         qs = session.query(Position).filter(instrument=instruments)\
@@ -127,6 +127,15 @@ class load_related(FinanceTest):
             self.assertEqual(p.instrument.ccy, 'EUR')
 
 
+class test_load_related_empty(test.TestCase):
+    models = (Instrument, Fund, Position)
+    
+    def testEmpty(self):
+        session = self.session()
+        instruments = session.query(Position).load_related('instrument').all()
+        self.assertEqual(instruments, [])
+        
+        
 class load_related_structure(test.CleanTestCase):
 
     def setUp(self):
@@ -150,7 +159,7 @@ class load_related_structure(test.CleanTestCase):
         remote = dict(d.data.items())
         self.assertEqual(len(remote),3)
         #
-        d = query.load_related('data').get(name = 'english-italian')
+        d = query.load_related('data').get(name='english-italian')
         data = d.data
         # the cache should be available
         cache = data.cache.cache

@@ -288,7 +288,7 @@ from database.
         make_object = meta.maker
         related_data = []
         if related_fields:
-            for fname,fdata in iteritems(related_fields):
+            for fname, fdata in iteritems(related_fields):
                 field = meta.dfields[fname]
                 if field in meta.multifields:
                     related = dict(fdata)
@@ -296,7 +296,7 @@ from database.
                 else:
                     multi = False
                     relmodel = field.relmodel
-                    related = dict(((obj.id,obj)\
+                    related = dict(((obj.id, obj)\
                         for obj in self.make_objects(relmodel._meta, fdata)))
                 related_data.append((field, related, multi))
         for state in data:

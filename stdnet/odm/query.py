@@ -531,24 +531,21 @@ in a generative way::
         meta = self._meta
         if related in meta.dfields:
             field = meta.dfields[related]
-            if not hasattr(field,'relmodel'):
+            if not hasattr(field, 'relmodel'):
                 raise FieldError('Load related does not apply to "{0}"'\
                                  .format(related))
         else:
             raise FieldError('Unknown field "{0}"'.format(related))
         q = self._clone()
-        rf = set(related_fields)
-        # if is always loaded.
-        rf.discard('id')
+        rf = unique_tuple((v for v in related_fields if v != 'id'))
         # we need to copy the related dictionary including its values
         if q.select_related:
-            d = dict(((k,set(v)) for k,v in q.select_related.items()))
+            d = dict(((k, tuple(v)) for k, v in q.select_related.items()))
         else:
             d = {}
         q.data['select_related'] = d
         if field.name in d:
-            fields = d[field.name]
-            fields.update(rf)
+            d[field.name] = unique_tuple(d[field.name], rf)
         else:
             d[field.name] = rf
         return q

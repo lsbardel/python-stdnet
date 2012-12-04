@@ -10,7 +10,7 @@ class TestCache(test.TestCase):
         
         
 class TestNoCache(test.TestCase):
-    multipledb = False
+    multipledb = 'mongo'
     
     def testSimple(self):
         self.assertRaises(NotImplementedError, getcache, 'mongo://')

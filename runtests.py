@@ -62,9 +62,6 @@ def start():
                              bench.BenchMark(),
                              profile.Profile())
                   )
-        if not settings.servers:
-            print('NOT SERVERS AVAILABLE. BAILING OUT.')
-            exit(1)
         suite.start()
     elif nose:
         from stdnet.test import NoseDataSizePlugin, NoseStdnetServer

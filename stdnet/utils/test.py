@@ -216,18 +216,21 @@ try:    # pragma nocover
         servers = getattr(settings, 'servers', None)
         if isinstance(sender, TestSuite) and servers:
             for tag, test in list(value):
+                value.pop(0)
                 multipledb = getattr(test, 'multipledb', True)
+                toadd = True
                 if isinstance(multipledb, str):
                     multipledb = [multipledb]
-                added = False
+                if isinstance(multipledb, (list, tuple)):
+                    toadd = False
                 if multipledb:
                     for server in servers:
                         name = server.split('://')[0]
                         if multipledb == True or name in multipledb:
-                            added = True
+                            toadd = False
                             value.append((tag, testmaker(test, name, server)))
-                if added:
-                    value.pop(0)
+                if toadd:
+                    value.append((tag, test))
     
     event.bind('tests', create_tests)
 

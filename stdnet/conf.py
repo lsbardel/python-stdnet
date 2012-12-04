@@ -12,14 +12,7 @@ overriding them.
     the default :class:`stdnet.BackendDataServer` connection string. Check
     the :ref:`registering models <register-model>` documentation.
     
-    Default ``"redis://127.0.0.1:6379/?db=7"``.
-    
-.. attribute:: DEFAULT_KEYPREFIX
-
-    The prefix to prepend to all keys.
-    
-    Default ``"stdnet"``.
-    
+    Default ``"redis://127.0.0.1:6379/?db=7"``.    
     
 .. attribute:: settings.REDIS_PY_PARSER
 
@@ -58,7 +51,6 @@ class Settings(object):
 
     def __init__(self):
         self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
-        self.DEFAULT_KEYPREFIX  = 'stdnet.'
         self.CHARSET = 'utf-8'
         self.REDIS_PY_PARSER = False
         self.MAX_CONNECTIONS = 2**31

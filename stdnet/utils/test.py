@@ -69,6 +69,11 @@ some utility functions for tesing in a parallel test suite.
                 if isinstance(r, BackendRequest):
                     return r.add_callback(lambda r: cls.clear_all())
             return cls.clear_all()
+        
+    @classmethod
+    def load_scripts(cls):
+        if cls.backend and cls.backend.name == 'redis':
+            cls.backend.load_scripts()
     
     @classmethod
     def register(cls):
@@ -154,38 +159,13 @@ try:    # pragma nocover
         flags = ["-s", "--server"]
         nargs = '*'
         desc = 'Back-end data  server where to run tests.'
-        default = settings.DEFAULT_BACKEND
+        default = [settings.DEFAULT_BACKEND]
+        validator = pulsar.validate_list
 
-        def configure(self, cfg):
-            settings.DEFAULT_BACKEND = cfg.server
-            settings.REDIS_PY_PARSER = cfg.http_py_parser
-
-
-    class PulsarRedisParser(TestOptionPlugin):
-        name = "py_redis_parser"
-        flags = ["--py-redis-parser"]
-        desc = 'Set the redis parser to be the pure Python implementation.'
-        action = "store_true"
-        default = False
-
-        def configure(self, cfg):
-            if cfg.py_redis_parser:
-                self.REDIS_PY_PARSER = True
-
-
-    class PulsarDataSizePlugin(DataSizePlugin, TestOptionPlugin):
-        name = "size"
-        flags = ["--size"]
-        desc = 'Size of the dataset to test. Choose one between "tiny", '\
-               '"small", "normal", "big", "huge".'
-        default = 'small'
-        
-        
-    def setup_tests(sender=None, **kwargs):
-        if isinstance(sender, TestSuite):
+        def on_start(self):
             servers = []
             names = set()
-            for s in sender.cfg.server:
+            for s in self.value:
                 try:
                     s = getdb(s)
                     s.ping()
@@ -197,6 +177,26 @@ try:    # pragma nocover
                         names.add(s.name)
                         servers.append(s.connection_string)
             settings.servers = servers
+
+
+    class PulsarRedisParser(TestOptionPlugin):
+        name = "py_redis_parser"
+        flags = ["--py-redis-parser"]
+        desc = 'Set the redis parser to be the pure Python implementation.'
+        action = "store_true"
+        default = False
+
+        def on_start(self):
+            if self.value:
+                settings.REDIS_PY_PARSER = True
+
+
+    class PulsarDataSizePlugin(DataSizePlugin, TestOptionPlugin):
+        name = "size"
+        flags = ["--size"]
+        desc = 'Size of the dataset to test. Choose one between "tiny", '\
+               '"small", "normal", "big", "huge".'
+        default = 'small'
             
             
     class testmaker(object):
@@ -213,22 +213,22 @@ try:    # pragma nocover
             
         
     def create_tests(sender=None, value=None):
-        if isinstance(sender, TestSuite) and settings.servers:
+        servers = getattr(settings, 'servers', None)
+        if isinstance(sender, TestSuite) and servers:
             for tag, test in list(value):
                 multipledb = getattr(test, 'multipledb', True)
                 if isinstance(multipledb, str):
                     multipledb = [multipledb]
                 added = False
                 if multipledb:
-                    for server in settings.servers:
+                    for server in servers:
                         name = server.split('://')[0]
                         if multipledb == True or name in multipledb:
                             added = True
                             value.append((tag, testmaker(test, name, server)))
                 if added:
                     value.pop(0)
-                        
-    event.bind('ready', setup_tests)
+    
     event.bind('tests', create_tests)
 
 except ImportError: # pragma nocover

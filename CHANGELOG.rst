@@ -10,7 +10,7 @@ Ver. 0.8 - Development
   works for different backends.
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored the main test class
   for handling tests on multiple backends at once.
-* **633 regression tests** with **93%** coverage.
+* **644 regression tests** with **93%** coverage.
   
 Ver. 0.7.1 - Development
 ===============================

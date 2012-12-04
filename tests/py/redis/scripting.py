@@ -5,7 +5,7 @@ import struct
 from stdnet.conf import settings
 from stdnet.lib import redis
 
-from .base import TestCase
+from . import base
 
 
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
@@ -36,9 +36,7 @@ class Receiver(object):
         return r
 
 
-class ScriptingCommandsTestCase(TestCase):
-    tag = 'script'
-    default_run = False
+class ScriptingCommandsTestCase(base.TestCase):
 
     def testEvalSimple(self):
         self.client = self.get_client()
@@ -182,8 +180,28 @@ class ScriptingCommandsTestCase(TestCase):
         keys = list(self.client.script_call('keyinfo',('planet','bla')))
         self.assertEqual(len(keys),2)
         
+    def test_bad_script_call(self):
+        self.assertRaises(redis.RedisError, self.client.script_call, 'foo', ())
+        
     # ZSET SCRIPTING COMMANDS
-    
+    def testDiffStore(self):
+        c = self.get_client()
+        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
+        c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')
+        r = c.zdiffstore('s3', ('s1', 's2'))
+        self.assertEqual(c.zcard('s3'), 1)
+        r = c.zrange('s3', 0, -1)
+        self.assertEqual(r, [b'd'])
+        
+    def testDiffStoreWithScores(self):
+        c = self.get_client()
+        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
+        c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')
+        r = c.zdiffstore('s3', ('s1', 's2'), withscores=True)
+        self.assertEqual(c.zcard('s3'), 3)
+        r = dict(c.zrange('s3', 0, -1, withscores=True))
+        self.assertEqual(r, {b'a': -5.0, b'c': -97.0, b'd': 4.0})
+        
     def testzpopbyrank(self):
         self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
         res = self.client.zpopbyrank('foo',0)
@@ -208,14 +226,9 @@ class ScriptingCommandsTestCase(TestCase):
         rem = self.client.zrange('foo',0,-1)
         self.assertEqual(rem,[b'e'])
         
-
-class TestForCoverage(TestCase):
-    
-    def test_bad_script_call(self):
-        self.assertRaises(redis.RedisError, self.client.script_call, 'foo', ())
         
         
-class TestStruct(TestCase):
+class TestStruct(base.TestCase):
     
     def testDouble(self):
         c = self.client

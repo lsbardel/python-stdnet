@@ -14,7 +14,7 @@ values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
     
     
 class TestSetField(test.CleanTestCase):
-    models = (Collection,Group)
+    models = (Collection, Group)
     model = Collection
     
     def setUp(self):
@@ -40,25 +40,6 @@ class TestPythonZset(test.CleanTestCase):
         data = list(s)
         self.assertEqual(data[0][1],'bla')
         self.assertEqual(data[1][1],'ciao')
-        
-    
-class TestCommands(test.CleanTestCase):
-    tag  = 'zdiffstore'
-    
-    def rpy(self):
-        return getdb().client
-        
-    def fill(self, key, *vals):
-        rpy = self.rpy()
-        vals = flatzset(zip([0]*len(vals),vals))
-        rpy.zadd(key,*vals)
-        
-    def testDiffStore(self):
-        rpy = self.rpy()
-        self.fill('s1','a','b','c','d')
-        self.fill('s2','a','b','c')
-        r = rpy.zdiffstore('s3',('s1','s2'))
-        self.assertEqual(rpy.zcard('s3'),1)
         
     
 class TestOrderedSet(test.CleanTestCase):

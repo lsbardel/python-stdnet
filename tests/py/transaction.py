@@ -53,18 +53,6 @@ class TestTransactions(test.CleanTestCase):
         self.assertRaises(self.model.DoesNotExist,
                           query.get, id=s.id)
         
-    def testDeleteDuringTransaction(self):
-        session = self.session()
-        query = session.query(self.model)
-        m = session.add(self.model(code = 'foo'))
-        # start a transaction
-        m.code = 'bla'
-        m.session.begin()
-        self.assertRaises(InvalidTransaction, m.save)
-        # force save during transaction
-        m.force_save()
-        self.assertEqual(query.get(code = 'bla').code,'bla')
-        
     def testNoTransaction(self):
         session = self.session()
         s = session.add(odm.Set())

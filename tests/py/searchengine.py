@@ -76,8 +76,7 @@ below will derive from this class.'''
         self.load_scripts()
     
     def make_engine(self):
-        return SearchEngine(metaphone = self.metaphone,
-                            stemming = self.stemming)
+        return SearchEngine(metaphone=self.metaphone, stemming=self.stemming)
         
     def make_item(self,name='python',counter=10,content=None,related=None):
         session = self.session()
@@ -89,7 +88,7 @@ below will derive from this class.'''
                                     related = related))
         return item
     
-    def make_items(self, num = 30, content = False, related = None):
+    def make_items(self, num=30, content=False, related=None):
         '''Bulk creation of Item for testing search engine. Return a set
 of words which have been included in the Items.'''
         names = populate('choice', num, choice_from=basic_english_words)

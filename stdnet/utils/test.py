@@ -133,39 +133,38 @@ to perform cleanup, registration and unregistration.
         super(CleanTestCase, self).__call__(result)
         self._post_teardown()
 
-    
-class DataSizePlugin(object):   # pragma nocover
-
-    def configure(self, cfg, *args):
-        self.enabled = True
-        self.size = cfg.size
-
-    def loadTestsFromTestCase(self, cls):
-        cls.size = self.size
-
 
 ################################################################################
 ##    PULSAR PLUGINS
 ################################################################################
-try:    # pragma nocover
+try:
     import pulsar
     from pulsar.utils import event
-    from pulsar.apps.test import TestSuite, TestOptionPlugin
-    from pulsar.apps.test.plugins import bench
+    from pulsar.apps.test import TestSuite, TestPlugin
 
-
-    class PulsarStdnetServer(TestOptionPlugin):
+    class StdnetPlugin(TestPlugin):
         name = "server"
         flags = ["-s", "--server"]
         nargs = '*'
-        desc = 'Back-end data  server where to run tests.'
+        desc = 'Back-end data server where to run tests.'
         default = [settings.DEFAULT_BACKEND]
         validator = pulsar.validate_list
+        
+        py_redis_parser = pulsar.Setting(
+                            desc='Set the redis parser to be the pure '\
+                                  'Python implementation.',
+                            action="store_true",
+                            default=False)
+        
+        size = pulsar.Setting(desc='Size of the dataset to test. '\
+                                   'Choose one between "tiny", '\
+                                   '"small", "normal", "big", "huge".',
+                              default='small')
 
         def on_start(self):
             servers = []
             names = set()
-            for s in self.value:
+            for s in self.config.server:
                 try:
                     s = getdb(s)
                     s.ping()
@@ -176,27 +175,14 @@ try:    # pragma nocover
                     if s.name not in names:
                         names.add(s.name)
                         servers.append(s.connection_string)
+            if not servers:
+                raise pulsar.HaltServer('No server available. BAILING OUT')
             settings.servers = servers
-
-
-    class PulsarRedisParser(TestOptionPlugin):
-        name = "py_redis_parser"
-        flags = ["--py-redis-parser"]
-        desc = 'Set the redis parser to be the pure Python implementation.'
-        action = "store_true"
-        default = False
-
-        def on_start(self):
-            if self.value:
+            if self.config.py_redis_parser:
                 settings.REDIS_PY_PARSER = True
-
-
-    class PulsarDataSizePlugin(DataSizePlugin, TestOptionPlugin):
-        name = "size"
-        flags = ["--size"]
-        desc = 'Size of the dataset to test. Choose one between "tiny", '\
-               '"small", "normal", "big", "huge".'
-        default = 'small'
+            
+        def loadTestsFromTestCase(self, cls):
+            cls.size = self.config.size
             
             
     class testmaker(object):
@@ -253,15 +239,6 @@ try:    # pragma nocover
                           default='',
                           help="Backend server where to run tests [{0}]"\
                                     .format(settings.DEFAULT_BACKEND))
-
-        def configure(self, options, conf):
-            self.enabled = True
-            if options.server:
-                settings.DEFAULT_BACKEND = options.server
-
-    class NoseDataSizePlugin(DataSizePlugin, plugins.Plugin):
-
-        def options(self, parser, env=os.environ):
             parser.add_option(
                           '--size',
                           dest='size',
@@ -269,7 +246,15 @@ try:    # pragma nocover
                           help='Size of the dataset to test. Choose one between\
  "tiny", "small", "normal", "big", "huge".')
 
+        def configure(self, options, conf):
+            self.enabled = True
+            self.size = cfg.size
+            if options.server:
+                settings.DEFAULT_BACKEND = options.server
+
+        def loadTestsFromTestCase(self, cls):
+            cls.size = self.size            
+
 except ImportError: # pragma nocover
     nose = None
     NoseStdnetServer = None
-    NoseDataSizePlugin = None

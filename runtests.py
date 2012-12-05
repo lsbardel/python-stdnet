@@ -56,9 +56,7 @@ def start():
         suite = TestSuite(
                 description='Stdnet Asynchronous test suite',
                     modules=('tests.py',),
-                    plugins=(test.PulsarStdnetServer(),
-                             test.PulsarDataSizePlugin(),
-                             test.PulsarRedisParser(),
+                    plugins=(test.StdnetPlugin(),
                              bench.BenchMark(),
                              profile.Profile())
                   )

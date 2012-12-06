@@ -154,6 +154,12 @@ def slowlog_callback(request, response, args, **options):
         return response == b'OK'
 
 
+class RedisMeta(type):
+    
+    def __new__(cls, name, bases, attrs):
+        pass
+    
+
 class Redis(object):
     """Implementation of the Redis protocol.
     This class provides a Python interface to all Redis commands.
@@ -171,11 +177,18 @@ class Redis(object):
             'TSEXISTS RENAMENX SADD SISMEMBER SMOVE SETEX SETNX SREM ZADD ZREM',
             lambda request, response, args, **options : bool(response)
             ),
+        # INTEGER REPLY
         string_keys_to_dict(
-            'DECRBY DEL HLEN INCRBY LLEN SCARD SDIFFSTORE SINTERSTORE '
-            'STRLEN SUNIONSTORE ZCARD ZREMRANGEBYSCORE ZREVRANK',
+            'BITCOUNT BITOP DECR DECRBY DEL GETBIT HLEN INCRBY LLEN SCARD '
+            'SDIFFSTORE SETBIT SINTERSTORE STRLEN SUNIONSTORE ZCARD '
+            'ZREMRANGEBYSCORE ZREVRANK',
             lambda request, response, args, **options : int(response)
             ),
+        # BULK FLOAT REPLAY
+        string_keys_to_dict(
+            'INCRBYFLOAT',
+            lambda request, response, args, **options : float(response)
+        ),
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
@@ -330,11 +343,6 @@ between the client and server.
         "Returns the number of keys in the current database"
         return self.execute_command('DBSIZE')
 
-    def delete(self, *names):
-        "Delete one or more keys specified by ``names``"
-        return self.execute_command('DEL', *names)
-    __delitem__ = delete
-
     def flushall(self): #pragma    nocover
         "Delete all keys in all databases on the current host"
         return self.execute_command('FLUSHALL')
@@ -396,65 +404,126 @@ instance is promoted to a master instead.
     def slowlog_reset(self):
         return self.execute_command("SLOWLOG", 'RESET')
 
-    #### BASIC KEY COMMANDS ####
-    def append(self, key, value):
-        """
-        Appends the string ``value`` to the value at ``key``. If ``key``
-        doesn't already exist, create it with a value of ``value``.
-        Returns the new length of the value at ``key``.
-        """
-        return self.execute_command('APPEND', key, value)
+    ############################################################################
+    ##    KEY COMMANDS
+    ############################################################################
+    def delete(self, *keys):
+        "Delete one or more ``keys``"
+        return self.execute_command('DEL', *keys)
+    __delitem__ = delete
+    
+    def dump(self, key):
+        '''Return a serialized version of the value stored at the
+specified ``key``.'''
+        return self.execute_command('DUMP', key)
 
-    def decr(self, name, amount=1):
-        """
-        Decrements the value of ``key`` by ``amount``.  If no key exists,
-        the value will be initialized as 0 - ``amount``
-        """
-        return self.execute_command('DECRBY', name, amount)
-
-    def exists(self, name, **options):
-        "Returns a boolean indicating whether key ``name`` exists"
-        return self.execute_command('EXISTS', name, **options)
+    def exists(self, key, **options):
+        "Returns a boolean indicating whether ``key`` exists"
+        return self.execute_command('EXISTS', key, **options)
     __contains__ = exists
 
-    def expire(self, name, time):
-        "Set an expire flag on key ``name`` for ``time`` seconds"
-        return self.execute_command('EXPIRE', name, time)
+    def expire(self, key, seconds):
+        "Set a ``key``'s time to live in ``seconds``."
+        return self.execute_command('EXPIRE', key, seconds)
 
-    def expireat(self, name, when):
-        """
-        Set an expire flag on key ``name``. ``when`` can be represented
-        as an integer indicating unix time or a Python datetime object.
-        """
+    def expireat(self, key, when):
+        """Set the expiration for a ``key`` as a UNIX timestamp or a Python
+datetime object."""
         if isinstance(when, datetime):
             when = int(time.mktime(when.timetuple()))
-        return self.execute_command('EXPIREAT', name, when)
-
-    def get(self, name):
-        """
-        Return the value at key ``name``, or None of the key doesn't exist
-        """
-        return self.execute_command('GET', name)
-    __getitem__ = get
-
-    def getset(self, name, value):
-        """
-        Set the value at key ``name`` to ``value`` if key doesn't exist
-        Return the value at key ``name`` atomically
-        """
-        return self.execute_command('GETSET', name, value)
-
-    def incr(self, name, amount=1):
-        """
-        Increments the value of ``key`` by ``amount``.  If no key exists,
-        the value will be initialized as ``amount``
-        """
-        return self.execute_command('INCRBY', name, amount)
+        return self.execute_command('EXPIREAT', key, when)
 
     def keys(self, pattern='*'):
         "Returns a list of keys matching ``pattern``"
         return self.execute_command('KEYS', pattern)
 
+    def move(self, key, db):
+        "Moves the ``key`` to a different Redis database ``db``"
+        return self.execute_command('MOVE', key, db)
+
+    def object(self, key, subcommand):
+        '''Returns the subcommand on ``key``. The subcommand
+can be one of: refcount, encoding, idletime.'''
+        return self.execute_command('OBJECT', subcommand, key)
+    
+    def randomkey(self):
+        "Returns a random key"
+        return self.execute_command('RANDOMKEY')
+
+    def rename(self, src, dst):
+        """Rename key ``src`` to ``dst``."""
+        return self.execute_command('RENAME', src, dst)
+
+    def renamenx(self, src, dst):
+        "Rename key ``src`` to ``dst`` if ``dst`` doesn't already exist"
+        return self.execute_command('RENAMENX', src, dst)
+
+    def ttl(self, key):
+        "Returns the number of seconds until the ``key`` will expire"
+        return self.execute_command('TTL', key)
+
+    def type(self, key):
+        "Returns the type of ``key``."
+        return self.execute_command('TYPE', key)
+    
+    ############################################################################
+    ##    STRING COMMANDS
+    ############################################################################
+    def append(self, key, value):
+        """Appends the string ``value`` to the value at ``key``. If ``key``
+doesn't already exist, create it with a value of ``value``. Returns the new
+length of the value at ``key``."""
+        return self.execute_command('APPEND', key, value)
+    
+    def bitcount(self, key, start=0, end=-1):
+        '''Count set bits in a string at ``key``.'''
+        return self.execute_command('BITCOUNT', key, start, end)
+    
+    def bitop(self, operation, destkey, *keys):
+        '''Perform a bitwise ``operation`` between multiple ``keys`` and store
+the result at ``destkey``. Supports four bitwise operations:
+AND, OR, XOR and NOT, thus the valid forms to call the command are:
+
+* ('AND', destkey, srckey1, srckey2, ... srckeyN)
+* ('OR', destkey, srckey1, srckey2, ... srckeyN)
+* ('XOR', destkey, srckey1, srckey2, ... srckeyN)
+* ('NOT', destkey, srckey)
+'''
+        return self.execute_command('BITOP', operation, destkey, *keys)
+    
+    def decr(self, key, amount=1):
+        """Decrements the value of ``key`` by ``amount``."""
+        return self.execute_command('DECRBY', key, amount)
+    
+    def get(self, key):
+        'Get the value of a ``key``.'
+        return self.execute_command('GET', key)
+    __getitem__ = get
+
+    def getbit(self, key, offset):
+        '''Returns the bit value at ``offset`` in the string value
+stored at ``key``.'''
+        return self.execute_command('GETBIT', key, offset)
+    
+    def getrange(self, key, start, end=-1):
+        '''Get a substring of the string stored at a ``key``, ``start`` and
+``end``  are 0-based integers specifying the portion of the string to return.'''
+        return self.execute_command('GETRANGE', key, start, end)
+
+    def getset(self, key, value):
+        '''Set the string ``value`` of a ``key`` and return its old value.'''
+        return self.execute_command('GETSET', key, value)
+    
+    def incr(self, key, amount=1):
+        """Increments the integer value of ``key`` by ``amount``.  If no key
+exists, the value will be initialized as ``amount``."""
+        return self.execute_command('INCRBY', key, amount)
+    
+    def incrfloat(self, key, amount=1):
+        """Increments the float value of ``key`` by ``amount``.  If no key
+exists, the value will be initialized as ``amount``."""
+        return self.execute_command('INCRBYFLOAT', key, amount)
+    
     def mget(self, keys, *args):
         """Returns a list of values ordered identically to ``keys``"""
         keys = list_or_args(keys, args)
@@ -472,65 +541,40 @@ instance is promoted to a master instead.
         """
         items = flat_mapping(mapping)
         return self.execute_command('MSETNX', *items)
-
-    def move(self, name, db):
-        "Moves the key ``name`` to a different Redis database ``db``"
-        return self.execute_command('MOVE', name, db)
-
-    def randomkey(self):
-        "Returns the name of a random key"
-        return self.execute_command('RANDOMKEY')
-
-    def rename(self, src, dst):
-        """
-        Rename key ``src`` to ``dst``
-        """
-        return self.execute_command('RENAME', src, dst)
-
-    def renamenx(self, src, dst):
-        "Rename key ``src`` to ``dst`` if ``dst`` doesn't already exist"
-        return self.execute_command('RENAMENX', src, dst)
-
-
-    def set(self, name, value, timeout = None):
-        """Execute the ``SET`` command to set the value at key ``name``
-to ``value``. If a ``timeout`` is available and positive,
-the ``SETEX`` command is executed instead."""
+    
+    def set(self, key, value, timeout=None):
+        '''Set the string ``value`` of a ``key``. If a ``timeout`` is available
+and positive, the ``SETEX`` command is executed instead.'''
         if timeout and timeout > 0:
-            return self.execute_command('SETEX', name, timeout, value)
+            return self.execute_command('SETEX', key, timeout, value)
         else:
-            return self.execute_command('SET', name, value)
+            return self.execute_command('SET', key, value)
     __setitem__ = set
 
-    def setnx(self, name, value):
-        "Set the value of key ``name`` to ``value`` if key doesn't exist"
-        return self.execute_command('SETNX', name, value)
+    def setbit(self, key, value):
+        'Sets or clear the bit at offset in the string *value* stored at *key*'
+        return self.execute_command('SETBIT', key, value)
+    
+    def setex(self, key, seconds, value):
+        'Set the value and expiration of a key'
+        return self.set(key, value, seconds)
+    
+    def setnx(self, key, value):
+        "Set the value of ``key`` to ``value`` if key doesn't exist"
+        return self.execute_command('SETNX', key, value)
 
-    def strlen(self, name):
-        "Return the number of bytes stored in the value of ``name``"
-        return self.execute_command('STRLEN', name)
+    def setrange(self, key, offset, value):
+        '''Overwrite part of a string at ``key`` starting at the
+specified ``offset``'''
+        return self.execute_command('SETRANGE', key, offset, value)
+    
+    def strlen(self, key):
+        "Return the number of bytes stored in the value at ``key``."
+        return self.execute_command('STRLEN', key)
 
-    def substr(self, name, start, end=-1):
-        """
-        Return a substring of the string at key ``name``. ``start`` and ``end``
-        are 0-based integers specifying the portion of the string to return.
-        """
-        return self.execute_command('SUBSTR', name, start, end)
-
-    def ttl(self, name):
-        "Returns the number of seconds until the key ``name`` will expire"
-        return self.execute_command('TTL', name)
-
-    def type(self, name):
-        "Returns the type of key ``name``"
-        return self.execute_command('TYPE', name)
-
-    def object(self, name, subcommand):
-        '''Returns the subcommand on key ``name``. The subcommand
-can be one of: refcount, encoding, idletime.'''
-        return self.execute_command('OBJECT', subcommand, name)
-
-    #### LIST COMMANDS ####
+    ############################################################################
+    ##    LIST COMMANDS
+    ############################################################################
     def blpop(self, keys, timeout=0, **options):
         """
         LPOP a value off of the first non-empty list
@@ -865,7 +909,6 @@ The first element is the score and the second is the value.'''
         return self.script_call('zdiffstore', keys, withscores, **options)
 
     # zset script commands
-
     def zpopbyrank(self, name, start, stop=None, withscores=False,
                    desc=False, **options):
         '''Pop a range by rank'''

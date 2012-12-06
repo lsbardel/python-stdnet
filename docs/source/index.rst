@@ -31,6 +31,7 @@ Contents
    overview
    examples/index
    api/index
+   backends/index
    apps/index
    changelog
    stdnetredis

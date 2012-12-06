@@ -8,8 +8,8 @@ Ver. 0.8 - Development
   a valid expression (lua for redis and javascript for mongodb).
 * :class:`stdnet.odm.AutoField` does not inherit from :class:`stdnet.odm.IntegerField` so that it
   works for different backends.
-* Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored the main test class
-  for handling tests on multiple backends at once.
+* Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
+  the main test class for handling tests on multiple backends at once.
 * **644 regression tests** with **93%** coverage.
   
 Ver. 0.7.1 - Development

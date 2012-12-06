@@ -1,14 +1,15 @@
-**A stand-alone Python 3 compatible data manager for Redis remote data structures.**
+**Object data mapper and advanced query manager for non relational databases.**
 
-The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Data Mapper (ODM). 
-The `source code`__ and documentation__ are hosted at github while Downloads__ are available via PyPi.
+The data is owned by different, configurable back-end databases and it is
+accessed using a light-weight Object Data Mapper (ODM). 
+The `source code`__ and documentation__ are hosted at github while
+Downloads__ are available via PyPi.
 
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
 :Mailing List: https://groups.google.com/group/python-stdnet
-:Keywords: server, database, cache, redis, odm
+:Keywords: server, database, cache, redis, mongo, odm
 
 
 __ http://github.com/lsbardel/python-stdnet
@@ -37,9 +38,10 @@ Features
 
 Requirements
 =================
-* Python 2.6 to Python 3.3. Single codebase.
-* You need access to a Redis_ server version 2.6 or above.
+* Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single codebase.
+* You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server. 
 * Optional Cython_ for faster redis protocol parser.
+* Optional pymongo_ for the mongo backend.
 * Optional pulsar_ only when using the asynchronous redis connection or the
   test suite.
 
@@ -234,7 +236,9 @@ file in the top distribution directory for the full license text.
 
 .. _Cython: http://cython.org/
 .. _Redis: http://redis.io/
+.. _Mongo: http://www.mongodb.org/
 .. _hiredis-py: https://github.com/pietern/hiredis-py
+.. _pymongo: http://pypi.python.org/pypi/pymongo/
 .. _Django: http://www.djangoproject.com/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _redis-py: http://github.com/andymccurdy/redis-py
@@ -251,3 +255,4 @@ file in the top distribution directory for the full license text.
 .. _DynamoDB: http://aws.amazon.com/dynamodb/
 .. _pulsar: http://pypi.python.org/pypi/pulsar
 .. _mock: http://pypi.python.org/pypi/mock
+.. _pypy: http://pypy.org/

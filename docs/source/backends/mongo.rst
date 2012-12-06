@@ -1,7 +1,7 @@
 .. _mongo-server:
 
 ===================
-Mongo DB Backend
+Mongo DB
 ===================
 
 .. automodule:: stdnet.backends.mongob 

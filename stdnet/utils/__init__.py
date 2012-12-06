@@ -52,11 +52,9 @@ def format_int(val):
         _format_int(val)
 
 def flat_mapping(mapping):
-    if isinstance(mapping,dict):
-        mapping = iteritems(mapping)
     items = []
     extend = items.extend
-    for pair in mapping:
+    for pair in iterpair(mapping):
         extend(pair)
     return items
 

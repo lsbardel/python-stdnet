@@ -13,6 +13,7 @@ __all__ = ['BackendRequest',
            'AsyncObject',
            'BackendDataServer',
            'BackendQuery',
+           'CacheServer',
            'session_result',
            'instance_session_result',
            'query_result',
@@ -218,15 +219,57 @@ queries specified by :class:`stdnet.odm.Query`.
             return ()
 
 
-class BackendDataServer(object):
-    '''\
-Generic interface for a backend database:
+class CacheServer(object):
+    '''A key-value store server for storing and retrieving values at keys.'''
+    def set(self, key, value, timeout=None):
+        '''Set ``value`` at ``key`` with ``timeout``.'''
+        raise NotImplementedError()
     
-:parameter name: name of database, such as **redis**, **couchdb**, etc..
-:parameter params: dictionary of configuration parameters
-:parameter pickler: calss for serializing and unserializing data.
+    def get(self, key, default=None):
+        '''Fetch the value at ``key``.'''
+        raise NotImplementedError()
+    
+    def __getitem__(self):
+        v = self.get(key)
+        if v is None:
+            raise KeyError(key)
+        else:
+            return v
+    
+    def __setitem__(self, key, value):
+        self.set(key, value)
+    
+    def __contains__(self, key):
+        raise NotImplementedError()
+    
+    
+class BackendDataServer(object):
+    '''Generic interface for a backend database. It should not be initialised
+directly, instead, the :func:`getdb` function should be used.
+    
+:parameter name: name of database, such as **redis**, **mongo**, etc..
+:parameter address: network address of database server.
+:parameter namespace: optional namespace for keys.
+:parameter params: dictionary of configuration parameters.
 
-It must implement the *loads* and *dumps* methods.'''
+**ATTRIBUTES**
+
+.. attribute:: name
+
+    name of database
+    
+.. attribute:: connection_string
+
+    The connection string for this backend. By calling :func:`getdb` with this
+    value, one obtain a :class:`BackendDataServer` connected to the
+    same database as this instance.
+    
+.. attribute:: Query
+
+    The :class:`BackendQuery` class for this backend.
+    
+**METHODS**
+'''
     Transaction = None
     Query = None
     structure_module = None
@@ -269,6 +312,17 @@ It must implement the *loads* and *dumps* methods.'''
         
     def issame(self, other):
         return self.client == other.client
+    
+    def basekey(self, meta, *args):
+        """Calculate the key to access model data.
+        
+:parameter meta: a :class:`stdnet.odm.Metaclass`.
+:parameter args: optional list of strings to prepend to the basekey.
+:rtype: a native string
+"""
+        key = '%s%s' % (self.namespace, meta.modelkey)
+        postfix = ':'.join((str(p) for p in args if p is not None))
+        return '%s:%s' % (key, postfix) if postfix else key
     
     def disconnect(self):
         '''Disconnect the connection.'''
@@ -328,17 +382,6 @@ from database.
         client = client if client is not None else self.client
         return struct(instance, self, client)
     
-    def basekey(self, meta, *args):
-        """Calculate the key to access model data.
-        
-:parameter meta: a :class:`stdnet.odm.Metaclass`.
-:parameter args: optional list of strings which are attached to the basekey.
-:rtype: a native string
-"""
-        key = '%s%s' % (self.namespace, meta.modelkey)
-        postfix = ':'.join((str(p) for p in args if p is not None))
-        return '%s:%s' % (key, postfix) if postfix else key
-    
     # VIRTUAL METHODS
     
     def clean(self, meta):
@@ -370,6 +413,7 @@ must return a instance of the backend handler.'''
         raise NotImplementedError()
     
     def as_cache(self):
+        '''Return a :class:`CacheServer` handle for this backend.'''
         raise NotImplementedError('This backend cannot be used as cache')
     
     def flush(self, meta=None):
@@ -378,10 +422,13 @@ must return a instance of the backend handler.'''
     
     def publish(self, channel, message):
         '''Publish a *message* to a *channel*. The backend must support pub/sub
-paradigm.'''
+paradigm. For information check the
+:ref:`Publish/Subscribe application <apps-pubsub>`.'''
         raise NotImplementedError('This backend cannot publish messages')
     
     def subscriber(self, **kwargs):
+        '''Create a ``Subscriber`` able to subscribe to channels.
+For information check the :ref:`Publish/Subscribe application <apps-pubsub>`.'''
         raise NotImplementedError()
     
 
@@ -422,7 +469,7 @@ def _getdb(scheme, host, params):
     
     
 def getdb(backend=None, **kwargs):
-    '''get a backend database'''
+    '''get a :class:`BackendDataServer`.'''
     if isinstance(backend, BackendDataServer):
         return backend
     backend = backend or settings.DEFAULT_BACKEND
@@ -434,5 +481,6 @@ def getdb(backend=None, **kwargs):
 
 
 def getcache(backend=None, **kwargs):
+    '''Similar to :func:`getdb`, it creates a :class:`CacheServer`.'''
     db = getdb(backend=backend, **kwargs)
     return db.as_cache() 

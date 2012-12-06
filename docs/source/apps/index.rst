@@ -20,3 +20,4 @@ and placed into their own installable packages.
    
    searchengine
    timeseries
+   pubsub

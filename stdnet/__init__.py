@@ -1,4 +1,4 @@
-'''Data manager and advanced queries for Redis.'''
+'''Object data mapper and advanced query manager for non relational databases.'''
 from .exceptions import *
 from .backends import *
 from .utils.version import get_version, stdnet_version

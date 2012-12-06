@@ -1,7 +1,7 @@
 .. _redis-server:
 
 ==============
-Redis Backend
+Redis
 ==============
 
 Redis_ is an advanced key-value store where each key is associated with a value.
@@ -33,7 +33,7 @@ specify the namespace for all keys associated with it::
 
     >>> from stdnet import getdb
     >>> from stdnet.apps.searchengine import Word
-    >>> rdb = getdb('redis://localhost:6379?prefix=bla.')
+    >>> rdb = getdb('redis://localhost:6379?db=7&namespace=bla.')
     >>> rdb.basekey(Word._meta)
     'bla.searchengine.word'
      
@@ -60,12 +60,8 @@ following form::
     <<basekey>>:idx:<<field name>>:<<field value>>
 
 If the model specify an :ref:`implicit ordering <implicit-sorting>` via the
-:attr:`stdnet.odm.base.Metaclass.ordering` attribute, indexes are stored
+:attr:`stdnet.odm.Metaclass.ordering` attribute, indexes are stored
 in sorted sets rather than sets.
-
-
-Indices are updated and removed via the ``update_indices`` function in the
-``section.lua`` script.
 
 
 Unique Constratins
@@ -75,9 +71,9 @@ For some models you may need to specify certain field to be unique across
 the Model. For example the following ``User`` model::
 
     class User(odm.StdModel):
-        username = odm.SymbolField(unique = True)
-        emauil = odm.SymbolField(unique = True)
-        password = odm.CharField(required = True)
+        username = odm.SymbolField(unique=True)
+        emauil = odm.SymbolField(unique=True)
+        password = odm.CharField(required=True)
 
 specifies two constrains.
 In redis these constraints are stored into two separate hash tables with

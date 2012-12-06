@@ -190,19 +190,19 @@ class ServerCommandsTestCase(TestCase):
         self.assert_(not self.client.setnx('a', '2'))
         self.assertEquals(self.client['a'], b'1')
 
-    def test_substr(self):
+    def test_getrange(self):
         # invalid key type
         self.client.rpush('a', 'a1')
-        self.assertRaises(ResponseError, self.client.substr, 'a', 0)
+        self.assertRaises(ResponseError, self.client.getrange, 'a', 0)
         del self.client['a']
         # real logic
         self.client['a'] = 'abcdefghi'
-        self.assertEquals(self.client.substr('a', 0), b'abcdefghi')
-        self.assertEquals(self.client.substr('a', 2), b'cdefghi')
-        self.assertEquals(self.client.substr('a', 3, 5), b'def')
-        self.assertEquals(self.client.substr('a', 3, -2), b'defgh')
-        self.client['a'] = 123456 # does substr work with ints?
-        self.assertEquals(self.client.substr('a', 2, -2), b'345')
+        self.assertEquals(self.client.getrange('a', 0), b'abcdefghi')
+        self.assertEquals(self.client.getrange('a', 2), b'cdefghi')
+        self.assertEquals(self.client.getrange('a', 3, 5), b'def')
+        self.assertEquals(self.client.getrange('a', 3, -2), b'defgh')
+        self.client['a'] = 123456 # does getrange work with ints?
+        self.assertEquals(self.client.getrange('a', 2, -2), b'345')
 
     def test_type(self):
         self.assertEquals(self.client.type('a'), 'none')

@@ -736,6 +736,31 @@ end''')
 
 
 ################################################################################
+##    REDIS CACHE
+################################################################################
+class CacheServer(stdnet.CacheServer):
+    
+    def __init__(self, client):
+        self.client = client
+        
+    def set(self, key, value, timeout=None):
+        return self.client.set(id, value, timeout or 0)
+    
+    def get(self, key, default=None):
+        v = self.client.get(key)
+        if v:
+            return v
+        else:
+            return default
+
+    def expire(self, key, timeout):
+        return self.client.expire(key, timeout)
+            
+    def __contains__(self, key):
+        return self.client.exists(key)
+
+
+################################################################################
 ##    REDIS BACKEND
 ################################################################################
 class BackendDataServer(stdnet.BackendDataServer):
@@ -766,38 +791,14 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.client.ping()
     
     def as_cache(self):
-        return self
-    
-    def set(self, id, value, timeout=None):
-        timeout = timeout or 0
-        value = self.pickler.dumps(value)
-        return self.client.set(id, value, timeout)
-    
-    def get(self, id, default=None):
-        v = self.client.get(id)
-        if v:
-            return self.pickler.loads(v)
+        if self.namespace:
+            c = redis.PrefixedRedis(self.client)
         else:
-            return default
+            c = self.client
+        return CacheServer(c)
         
     def disconnect(self):
         self.client.connection_pool.disconnect()
-    
-    def set_timeout(self, id, timeout):
-        if timeout:
-            self.client.execute_command('EXPIRE', id, timeout)
-    
-    def has_key(self, id):
-        return self.client.execute_command('EXISTS', id)
-    
-    def _set(self, id, value, timeout):
-        if timeout:
-            return self.client.execute_command('SETEX', id, timeout, value)
-        else:
-            return self.client.execute_command('SET', id, value)
-    
-    def _get(self, id):
-        return self.client.execute_command('GET', id)
             
     def load_scripts(self, *names):
         if not names:

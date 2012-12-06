@@ -8,7 +8,6 @@ class TestRedis(TestCase):
         c = self.backend.client
         self.assertEqual(c.prefix, '')
         self.assertTrue(c.dbsize() >= 0)
-        self.assertTrue(c.bgsave())
     
     
 class TestRedisPrefixed(TestCase):

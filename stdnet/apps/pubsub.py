@@ -1,5 +1,35 @@
-import logging
+'''A `Publish/Subscribe message paradigm`__ where (citing Wikipedia) senders
+(publishers) are not programmed to send their messages to specific receivers
+(subscribers).
+It is currently only available for :ref:`Redis backend <redis-server>`.
 
+__ http://en.wikipedia.org/wiki/Publish/subscribe
+
+API
+======
+
+The Publish/Subscribe application exposes two classes, one for publishing
+messages and one for subscribing to channels. Subscribers express interest
+in one or more channels, and only receive messages that are of interest,
+without knowledge of what (if any) publishers there are.
+This decoupling of publishers and subscribers can allow for greater
+scalability and a more dynamic network topology.
+
+Publisher
+~~~~~~~~~~~~
+
+.. autoclass:: Publisher
+   :members:
+   :member-order: bysource
+
+Subscriber
+~~~~~~~~~~~~
+
+.. autoclass:: Subscriber
+   :members:
+   :member-order: bysource
+'''
+import logging
 from inspect import isclass
 
 from stdnet import getdb, AsyncObject
@@ -22,38 +52,56 @@ class PubSub(object):
         
         
 class Publisher(PubSub):
+    '''A publisher of messages to channels.
     
+.. attribute:: server
+
+    The :class:`stdnet.BackendDataServer` which publishes messages.
+    
+'''
     def publish(self, channel, message):
+        '''Publish a new ``message`` to ``channel``.'''
         message = self.pickler.dumps(message)
         return self.server.publish(channel, message)
         
         
 class Subscriber(PubSub):
-    '''A subscriber to channels'''    
+    '''A subscriber to channels.
+    
+.. attribute:: server
+
+    :class:`stdnet.BackendDataServer` which subscribes to channels.
+    
+.. attribute:: channels
+
+    Dictionary of channels messages. this is a (potentially) nested
+    dictionary when the :class:`Subscriber` subscribes to a
+    pattern matching collection of channels. 
+'''    
     def __init__(self, server=None, pickler=None):
         super(Subscriber, self).__init__(server, pickler)
         self.channels = {}
-        self.patterns = {}
         self._subscriber = self.server.subscriber(
                                 message_callback=self.message_callback)
         
     def disconnect(self):
+        '''Stop listening for messages from :attr:`channels`.'''
         self._subscriber.disconnect()
     
     def subscription_count(self):
         return self._subscriber.subscription_count()
     
     def subscribe(self, *channels):
-        return self._subscriber.subscribe(self.channel_list(channels))
+        return self._subscriber.subscribe(self._channel_list(channels))
      
     def unsubscribe(self, *channels):
-        return self._subscriber.unsubscribe(self.channel_list(channels))
+        return self._subscriber.unsubscribe(self._channel_list(channels))
     
     def psubscribe(self, *channels):
-        return self._subscriber.psubscribe(self.channel_list(channels))
+        return self._subscriber.psubscribe(self._channel_list(channels))
     
     def punsubscribe(self, *channels):
-        return self._subscriber.punsubscribe(self.channel_list(channels))
+        return self._subscriber.punsubscribe(self._channel_list(channels))
 
     def message_callback(self, command, channel, msg=None, sub_channel=None):
         if command == 'subscribe':
@@ -92,8 +140,10 @@ class Subscriber(PubSub):
         
 :param timeout: Pool timeout in seconds'''
         return self._subscriber.pool(num_messages)
-        
-    def channel_list(self, channels):
+    
+    # PRIVATE METHODS
+    
+    def _channel_list(self, channels):
         ch = []
         for channel in channels:
             if not isinstance(channel, (list, tuple)):

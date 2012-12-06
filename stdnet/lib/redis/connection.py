@@ -202,7 +202,7 @@ handling of a single command from start to the response from the server.
     def execute(self):
         raise NotImplementedError()
     
-    def pool(self, num_messages=None):
+    def pool(self, timeout=None):
         raise NotImplementedError()
 
 

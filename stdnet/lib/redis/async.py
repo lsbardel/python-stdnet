@@ -6,6 +6,7 @@ Requires pulsar_ concurrent framework.
 '''
 from pulsar import AsyncIOStream, Deferred, make_async, async, is_async
 
+from stdnet import BackendDataServer, getdb
 from stdnet.lib.redis import connection, redis_before_send, NOT_READY
 
 
@@ -54,14 +55,12 @@ class RedisRequest(Deferred, connection.RedisRequest):
         yield response
         
     @async(max_errors=1)
-    def pool(self, num_messages=None):
+    def pool(self, timeout=None):
         if not self.pooling:
             self.pooling = True
             yield self
             while self.pooling and self.connection.sock:
                 yield self.read_response()
-                if num_messages and count >= num_messages:
-                    break
             self.pooling = False
                 
                 
@@ -90,3 +89,15 @@ class RedisConnection(connection.Connection):
         
     def connection_error(self, failure, msg):
         raise ConnectionError(msg)
+    
+    
+def async_handler(backend):
+    if backend.client.connection_pool.connection_class == RedisConnection:
+        return backend
+    else:
+        return getdb(backend.connection_string,
+                     connection_class=RedisConnection)
+
+
+# Register the asynchronous handler
+BackendDataServer.async_handlers['redis'] = async_handler 

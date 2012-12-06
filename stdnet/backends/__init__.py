@@ -275,6 +275,7 @@ directly, instead, the :func:`getdb` function should be used.
     structure_module = None
     default_port = 8000
     struct_map = {}
+    async_handlers = {}
     
     def __init__(self, name=None, address=None, charset=None, namespace='', **params):
         self.__name = name or 'dummy'
@@ -382,6 +383,17 @@ from database.
         client = client if client is not None else self.client
         return struct(instance, self, client)
     
+    def async(self):
+        '''Returns an asynchronous :class:`BackendDataServer` with same
+:attr:`connection_string`. Asynchronous hadlers must be implemented
+by users.'''
+        handler = self.async_handlers.get(self.name)
+        if handler:
+            return handler(self)
+        else:
+            raise NotImplementedError('Asynchronous handler for %s not '\
+                                      'available.' % self)
+        
     # VIRTUAL METHODS
     
     def clean(self, meta):

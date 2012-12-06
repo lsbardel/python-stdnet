@@ -42,13 +42,16 @@ JSON serialization for four additional classes:
 .. seealso:: It is the default encoder for :class:`stdnet.odm.JSONField`
 """
     def default(self, obj):
-        if isinstance(obj,datetime):
-            return {'__datetime__':totimestamp2(obj)}
+        if hasattr(obj, 'tojson'):
+            # handle the Model instances
+            return obj.tojson()
+        if isinstance(obj, datetime):
+            return {'__datetime__': totimestamp2(obj)}
         elif isinstance(obj, date):
-            return {'__date__':totimestamp(obj)}
+            return {'__date__': totimestamp(obj)}
         elif isinstance(obj, Decimal):
-            return {'__decimal__':str(obj)}
-        elif ndarray and isinstance(obj,ndarray):
+            return {'__decimal__': str(obj)}
+        elif ndarray and isinstance(obj, ndarray):
             return obj.tolist()
         else:
             return super(JSONDateDecimalEncoder,self).default(obj)

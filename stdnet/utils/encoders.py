@@ -159,12 +159,11 @@ remote data structures.'''
         
     def dumps(self, x, logger = None):
         return json.dumps(x, cls=self.json_encoder)
-        #return s.encode(self.charset, self.encoding_errors)
     
     def loads(self, x, logger = None):
-        if isinstance(x,bytes):
+        if isinstance(x, bytes):
             x = x.decode(self.charset, self.encoding_errors)
-        return json.loads(x, object_hook = self.object_hook)
+        return json.loads(x, object_hook=self.object_hook)
 
 
 class DateTimeConverter(Encoder):

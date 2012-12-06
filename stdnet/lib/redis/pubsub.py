@@ -57,8 +57,8 @@ class Subscriber(RedisProxy):
             return c.request(self, command, *channels,
                              release_connection=False).send()
     
-    def pool(self, num_messages):
-        return self.request.pool(num_messages)
+    def pool(self, timeout=None):
+        return self.request.pool(timeout=timeout)
     
     def parse_response(self, request):
         "Parse the response from a publish/subscribe command"
@@ -72,7 +72,7 @@ class Subscriber(RedisProxy):
             self._subscription_count = response[2]
         elif command in self.message_commands:
             msg = tuple(reversed([r.decode() for r in response[2:]]))
-            self.message_callback('message', channel, *msg)
+            response = self.message_callback('message', channel, *msg)
         if not self._subscription_count:
             self.disconnect()
         return response

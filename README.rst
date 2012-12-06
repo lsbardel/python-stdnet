@@ -31,14 +31,14 @@ Contents
 Features
 =================
 * Models with scalar and multi-value fields.
-* Reach query API including unions, intersections, exclusions, ranges and more.
+* Rich query API including unions, intersections, exclusions, ranges and more.
 * Full text search.
 * Multi-variate numeric timeseries application.
 * Publish/Subscribe application.
 
 Requirements
 =================
-* Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single codebase.
+* Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
 * You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server. 
 * Optional Cython_ for faster redis protocol parser.
 * Optional pymongo_ for the mongo backend.

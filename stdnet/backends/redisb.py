@@ -792,7 +792,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def as_cache(self):
         if self.namespace:
-            c = redis.PrefixedRedis(self.client)
+            c = redis.PrefixedRedis(self.client, self.namespace)
         else:
             c = self.client
         return CacheServer(c)

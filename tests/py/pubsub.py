@@ -46,12 +46,12 @@ class TestPubSub(test.TestCase):
         self.assertEqual(s.subscribe('test'), [b'subscribe', b'test', 1])
         self.assertEqual(s.subscription_count(), 1)
         self.assertEqual(p.publish('test', 'hello world!'), 1)
-        res = list(s.pool(1))
+        res = list(s.poll(1))
         self.assertEqual(len(res), 1)
         data = s.get_all()
         self.assertEqual(data['test'],['hello world!'])
         s.unsubscribe()
-        res = list(s.pool(1))
+        res = list(s.poll(1))
         self.assertFalse(s.subscription_count())
         
     def testPsubscribe(self):
@@ -60,12 +60,12 @@ class TestPubSub(test.TestCase):
         self.assertEqual(s.psubscribe('test.*'), [b'psubscribe', b'test.*', 1])
         self.assertEqual(s.subscription_count(), 1)
         self.assertEqual(p.publish('test.bla', 'hello world!'), 1)
-        res = list(s.pool(1))
+        res = list(s.poll(1))
         self.assertEqual(len(res), 1)
         data = s.get_all('test.*')
         self.assertEqual(data['test.bla'], ['hello world!'])
         s.punsubscribe()
-        res = list(s.pool(1))
+        res = list(s.poll(1))
         self.assertFalse(s.subscription_count())
         
         

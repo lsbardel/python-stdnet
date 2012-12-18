@@ -104,8 +104,7 @@ handling of a single command from start to the response from the server.
 
     The request is pooling data from redis server.
 '''
-    pooling = False
-    
+    _polling = False
     def __init__(self, client, connection, command_name, args,
                  release_connection=True, **options):
         self.client = client
@@ -143,6 +142,10 @@ handling of a single command from start to the response from the server.
     @property
     def raw_response(self):
         return b''.join(self._raw_response)
+    
+    @property
+    def polling(self):
+        return self._polling
                     
     def __repr__(self):
         if self.command_name:
@@ -202,7 +205,7 @@ handling of a single command from start to the response from the server.
     def execute(self):
         raise NotImplementedError()
     
-    def pool(self, timeout=None):
+    def poll(self, timeout=None):
         raise NotImplementedError()
 
 
@@ -237,20 +240,20 @@ class SyncRedisRequest(RedisRequest):
             response = self.parse(stream)
         return response
     
-    def pool(self, num_messages=None):
-        if not self.pooling:
-            self.pooling = True
+    def poll(self, num_messages=None, timeout=None):
+        if not self.polling:
+            self._polling = True
             count = 0
-            while self.pooling:
+            while self.polling:
                 try:
                     yield self.read_response()
                 except:
-                    self.pooling = False
+                    self._polling = False
                     raise
                 count += 1
                 if num_messages and count >= num_messages:
                     break 
-            self.pooling = False
+            self._polling = False
     
     
 class Connection(object):

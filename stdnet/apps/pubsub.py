@@ -126,13 +126,13 @@ class Subscriber(PubSub):
     def punsubscribe(self, *channels):
         return self._subscriber.punsubscribe(self._channel_list(channels))
 
-    def pool(self, timeout=None):
+    def poll(self, num_messages=None, timeout=None):
         '''Pull data from subscribed channels.
 
-:param num_messages: Number of messages to pool. If ``None`` keep on pooling
+:param num_messages: Number of messages to poll. If ``None`` keep on polling
     indefinetly or until *timeout* is reached.
 :param timeout: Pool timeout in seconds.'''
-        return self._subscriber.pool(timeout=timeout)
+        return self._subscriber.poll(num_messages=num_messages, timeout=timeout)
     
     def on_message(self, message, channel=None, sub_channel=None, **kwargs):
         '''A callback invoked every time a new message is available

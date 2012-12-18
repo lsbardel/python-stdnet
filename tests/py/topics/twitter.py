@@ -30,9 +30,8 @@ class TestTwitter(test.CleanTestCase):
         self.assertEqual(following.relmodel,User)
         self.assertEqual(followers.formodel,User)
         self.assertEqual(followers.relmodel,User)
-        through = following.through
-        self.assertEqual(through,followers.through)
-        self.assertEqual(len(through._meta.dfields),3)
+        self.assertEqual(following.model, followers.model)
+        self.assertEqual(len(following.model._meta.dfields),3)
         self.assertEqual(following.name_relmodel,'user')
         self.assertEqual(following.name_formodel,'user2')
         self.assertEqual(followers.name_relmodel,'user2')

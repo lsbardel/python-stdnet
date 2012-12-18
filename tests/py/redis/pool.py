@@ -69,7 +69,7 @@ class ConnectionPoolTestCase(TestCase):
         self.assertFalse(request.is_pipeline)
         self.assertEqual(request.num_responses, 1)
         self.assertRaises(NotImplementedError, request.execute)
-        self.assertRaises(NotImplementedError, request.pool)
+        self.assertRaises(NotImplementedError, request.poll)
         self.assertEqual(request.raw_response, b'')
         self.assertEqual(str(request), 'PING()')
     

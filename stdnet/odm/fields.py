@@ -539,8 +539,10 @@ Behind the scenes, stdnet appends "_id" to the field name to create
 its field name in the back-end data-server. In the above example,
 the database field for the ``File`` model will have a ``folder_id`` field.
 
-It accepts **related_name** as extra argument. It is the name to use for
-the relation from the related object back to self.
+.. attribute:: related_name
+
+    Optional name to use for the relation from the related object
+    back to ``self``.
 '''
     type = 'related object'
     internal_type = 'numeric'
@@ -561,8 +563,6 @@ the relation from the related object back to self.
     def register_with_related_model(self):
         # add the RelatedManager proxy to the model holding the field
         setattr(self.model, self.name, self.proxy_class(self))
-        setattr(self.model, self.get_query_attname(),
-                related.LazyForeignQuery(self))
         related.load_relmodel(self, self._set_relmodel)
 
     def _set_relmodel(self, relmodel):
@@ -585,9 +585,6 @@ the relation from the related object back to self.
 
     def get_attname(self):
         return '%s_id' % self.name
-
-    def get_query_attname(self):
-        return '%s_query' % self.name
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
@@ -773,41 +770,38 @@ registered in the model hash table, it can be used.'''
 
 
 class ManyToManyField(Field):
-    '''A many-to-many relationship. Like :class:`ForeignKey`, it accepts
-**related_name** as extra argument.
+    '''A :ref:`many-to-many <many-to-many>` relationship.
+Like :class:`ForeignKey`, it accepts **related_name** as extra argument.
 
 .. attribute:: related_name
 
     Optional name to use for the relation from the related object
     back to ``self``.
 
-.. attribute:: through
-
-    Optional :class:`StdModel` to use for creating the many-to-many
-    relationship.
-
 For example::
 
     class Group(odm.StdModel):
-        name = odm.SymbolField(unique = True)
+        name = odm.SymbolField(unique=True)
 
     class User(odm.StdModel):
-        name = odm.SymbolField(unique = True)
-        groups = odm.ManyToManyField(Group, related_name = 'users')
+        name = odm.SymbolField(unique=True)
+        groups = odm.ManyToManyField(Group, related_name='users')
 
 To use it::
 
-    >>> g = Group(name = 'developers').save()
-    >>> g.users.add(User(name = 'john').save())
-    >>> u.users.add(User(name = 'mark').save())
+    >>> g = Group(name='developers').save()
+    >>> g.users.add(User(name='john').save())
+    >>> u.users.add(User(name='mark').save())
 
 and to remove::
 
-    >>> u.following.remove(User.objects.get(name = 'john))
+    >>> u.following.remove(User.objects.get(name='john))
 
 
-Under the hood, a :class:`ManyToManyField` creates a new model *model_name*.
-If not provided, the the name will be constructed from the field name
+An optional :class:`StdModel` to use for creating the many-to-many
+relationship can be passed to the constructor, via the **through** keyword.
+If such a model is not passed, under the hood, a :class:`ManyToManyField`
+creates a new *model* with name constructed from the field name
 and the model holding the field. In the example above it would be
 *group_user*.
 This model contains two :class:`ForeignKeys`, one to model holding the

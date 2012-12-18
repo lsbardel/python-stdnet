@@ -55,13 +55,17 @@ class RedisRequest(Deferred, connection.RedisRequest):
         yield response
         
     @async(max_errors=1)
-    def pool(self, timeout=None):
-        if not self.pooling:
-            self.pooling = True
+    def poll(self, num_messages=None, timeout=None):
+        if not self.polling:
+            self._polling = True
+            count = 0
             yield self
-            while self.pooling and self.connection.sock:
+            while self.polling and self.connection.sock:
                 yield self.read_response()
-            self.pooling = False
+                count += 1
+                if num_messages and count >= num_messages:
+                    break
+            self._polling = False
                 
                 
 class RedisConnection(connection.Connection):

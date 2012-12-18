@@ -48,12 +48,12 @@ class TestRegistration(test.CleanTestCase):
 
     def testFromUuid(self):
         self.register()
-        s = SimpleModel(code = 'test').save()
+        s = SimpleModel(code='test').save()
         uuid = s.uuid
         s2  = odm.from_uuid(s.uuid)
         self.assertEqual(s,s2)
-        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid,'cdcdscscds')
-        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid,'cdcdscscds.1')
+        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid, 'ccdscscds')
+        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid, 'ccdscscds.1')
         a,b = tuple(uuid.split('.'))
         self.assertRaises(SimpleModel.DoesNotExist,
                           odm.from_uuid,'{0}.5'.format(a))
@@ -61,8 +61,3 @@ class TestRegistration(test.CleanTestCase):
     def testFailedHashModel(self):
         self.assertRaises(KeyError, odm.hashmodel, SimpleModel)
 
-    def testAlreadyRegistered(self):
-        self.register()
-        self.assertEqual(odm.register(SimpleModel), None)
-        self.assertRaises(AlreadyRegistered, odm.register, SimpleModel,
-                          ignore_duplicates = False)

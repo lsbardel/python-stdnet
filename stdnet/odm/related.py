@@ -1,6 +1,6 @@
 import stdnet
 from stdnet.utils import encoders, iteritems
-from stdnet import FieldValueError
+from stdnet import FieldValueError, QuerySetError
 
 from .session import Manager
 from . import signals
@@ -11,9 +11,7 @@ RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 pending_lookups = {}
 
 
-__all__ = ['LazyForeignQuery',
-           'LazyForeignKey',
-           'ModelFieldPickler']
+__all__ = ['LazyForeignKey', 'ModelFieldPickler']
 
 
 class ModelFieldPickler(encoders.Encoder):
@@ -98,8 +96,7 @@ def Many2ManyThroughModel(field):
                         related_manager_class=makeMany2ManyRelatedManager(
                                                     field.relmodel,
                                                     name_model,
-                                                    name_relmodel,
-                                                    through))
+                                                    name_relmodel))
     field1.register_with_model(name_model, through)
     # The second field
     field2 = ForeignKey(field.relmodel,
@@ -107,31 +104,15 @@ def Many2ManyThroughModel(field):
                         related_manager_class=makeMany2ManyRelatedManager(
                                                     field.model,
                                                     name_relmodel,
-                                                    name_model,
-                                                    through))
+                                                    name_model))
     field2.register_with_model(name_relmodel, through)
 
 
-class LazyForeignQuery(object):
+class LazyForeignKey(object):
     '''Descriptor for a :class:`ForeignKey` field.'''
     def __init__(self, field):
         self.field = field
-
-    def filter(self, instance):
-        val = getattr(instance, self.field.attname)
-        if val is not None:
-            return {self.field.relmodel._meta.pkname(): val}
-
-    def __get__(self, instance, instance_type=None):
-        if instance is None:
-            return self
-        f = self.filter(instance)
-        if f:
-            return instance.session.query(self.field.relmodel).filter(**f)
-
-
-class LazyForeignKey(LazyForeignQuery):
-
+        
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
@@ -179,12 +160,6 @@ class LazyForeignKey(LazyForeignQuery):
             setattr(instance, cache_name, value)
 
 
-def _register_container_model(field, related):
-    field.relmodel = related
-    if not field.pickler:
-        field.pickler = ModelFieldPickler(related)
-
-
 class RelatedManager(Manager):
     '''Base class for managers handling relationships between models.
 While standard :class:`Manager` are class properties of a model,
@@ -199,17 +174,20 @@ of a related model.'''
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
 
-    def session(self, transaction = None):
+    def session(self, transaction=None):
         '''Retrieve the session for this :class:`RelatedManager`.
 
 :parameter transaction: an optional session :class:`Transaction` to use.
 :rtype: a :class:`Session`.'''
         if transaction:
             return transaction.session
-        elif self.related_instance:
+        session = None
+        if self.related_instance:
             session = self.related_instance.session
-            if session is not None:
-                return session
+        else:
+            session = self.model.objects.session()
+        if session is not None:
+            return session
         raise QuerySetError('Related manager can be accessed only from\
  a loaded instance of its related model.')
 
@@ -224,10 +202,14 @@ via a simple attribute of the model.'''
     def relmodel(self):
         return self.field.relmodel
 
-    def query(self, transaction = None):
-        kwargs = {self.field.name: self.related_instance}
-        return super(RelatedManager,self).query(transaction = transaction)\
-                                         .filter(**kwargs)
+    def query(self, transaction=None):
+        # Override query method to account for related instance if available
+        query = super(RelatedManager, self).query(transaction=transaction)
+        if self.related_instance is not None:
+            kwargs = {self.field.name: self.related_instance}
+            return query.filter(**kwargs)
+        else:
+            return query
 
     def query_from_query(self, query, params=None):
         if params is None:
@@ -235,8 +217,7 @@ via a simple attribute of the model.'''
         return query.session.query(self.model, fargs={self.field.name: params})
 
 
-def makeMany2ManyRelatedManager(formodel, name_relmodel,
-                                name_formodel, through):
+def makeMany2ManyRelatedManager(formodel, name_relmodel, name_formodel):
     '''formodel is the model which the manager .'''
     class Many2ManyRelatedManager(One2ManyRelatedManager):
         '''A specialized :class:`Manager` for handling
@@ -277,10 +258,11 @@ attribute of the model.'''
         def throughquery(self, transaction=None):
             '''Return a query on the *throughmodel*, the model
 used to hold the many-to-many relationship.'''
-            return super(Many2ManyRelatedManager,self).query(
+            return super(Many2ManyRelatedManager, self).query(
                                                     transaction=transaction)
 
         def query(self, transaction=None):
+            # Return a query for the related model
             ids = self.throughquery().get_field(self.name_formodel)
             session = self.session(transaction)
             return session.query(self.formodel).filter(id__in=ids)
@@ -288,5 +270,4 @@ used to hold the many-to-many relationship.'''
     Many2ManyRelatedManager.formodel = formodel
     Many2ManyRelatedManager.name_relmodel = name_relmodel
     Many2ManyRelatedManager.name_formodel = name_formodel
-    Many2ManyRelatedManager.through = through
     return Many2ManyRelatedManager

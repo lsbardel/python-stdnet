@@ -5,7 +5,7 @@ from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement
 
     
-class TestManyToMany(test.CleanTestCase):
+class TestManyToManyBase(test.CleanTestCase):
     models = (Role, Profile)
         
     def addsome(self):
@@ -44,6 +44,9 @@ class TestManyToMany(test.CleanTestCase):
         self.assertEqual(len(r),2)
         self.assertEqual(set(r),set((role1,role2)))
         
+
+class TestManyToMany(TestManyToManyBase):
+    
     def testMeta(self):
         roles = Profile.roles
         self.assertEqual(roles.model._meta.name,'profile_role')
@@ -56,8 +59,8 @@ class TestManyToMany(test.CleanTestCase):
         self.assertEqual(profiles.formodel,Profile)
         self.assertEqual(profiles.name_relmodel,'role')
         #
-        through = roles.through
-        self.assertEqual(through,profiles.through)
+        through = roles.model
+        self.assertEqual(through, profiles.model)
         self.assertEqual(len(through._meta.dfields),3)
         
     def testMetaInstance(self):
@@ -117,7 +120,23 @@ class TestManyToMany(test.CleanTestCase):
         p1.roles.remove(role)
         profiles = role.profiles.query()
         self.assertEqual(profiles.count(),0)
-
+        
+        
+class TestRegisteredThroughModel(TestManyToManyBase):
+    
+    def setUp(self):
+        self.register()
+        
+    def testMeta(self):
+        through = Profile.roles.model
+        self.assertEqual(through.objects.backend, Profile.objects.backend)
+        
+    def testQueryOnThroughModel(self):
+        self.addsome()
+        query = Profile.roles.query()
+        self.assertEqual(query.model, Role)
+        self.assertEqual(query.count(), 2)
+        
 
 class TestManyToManyThrough(test.TestCase):
     models = (Composite, Element)

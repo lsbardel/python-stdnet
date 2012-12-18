@@ -136,6 +136,15 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
 This shouldn't really matter to you, but we point it out here for the curious.
 
 
+.. _many-to-many:
+
+Many-to-many relationships
+==================================
+
+The :class:`ManyToManyField` is used to create relationships multiple elements
+of two models.
+
+
 Using Models
 ==================
 

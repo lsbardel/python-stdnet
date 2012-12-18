@@ -59,8 +59,28 @@ It removes all keys associated with models.'''
     return flushed
 
 
-def register(model, backend=None, ignore_duplicates=True,
-             local_thread=False, **params):
+def models_from_model(model, label=None, include_related=False, exclude=None):
+    '''all model in model'''
+    exclude = exclude or set()
+    if model and model not in exclude:
+        exclude.add(model)
+        label = label or model._meta.app_label
+        if not model._meta.abstract and model._meta.app_label == label:
+            yield model
+            if include_related:
+                exclude = set(exclude or ())
+                exclude.add(model)
+                for field in model._meta.fields:
+                    if hasattr(field, 'relmodel'):
+                        for m in (field.relmodel, field.model):
+                            for m in models_from_model(
+                                            field.relmodel, label=label,
+                                            include_related=include_related,
+                                            exclude=exclude):
+                                yield m
+
+
+def register(model, backend=None, include_related=True, **params):
     '''The low level function for registering a :class:`StdModel`
 classes with a :class:`stdnet.BackendDataServer` data server.
 
@@ -73,6 +93,7 @@ classes with a :class:`stdnet.BackendDataServer` data server.
 
     Default ``settings.DEFAULT_BACKEND``.
 
+:parameter include_related: register all related models.
 :parameter params: optional parameters which can be used to override the
     connection string parameters.
 
@@ -90,17 +111,17 @@ For Redis the syntax is the following::
 ``my.host.name`` can be ``localhost`` or an ip address or a domain name,
 while ``db`` indicates the database number (very useful for separating data
 on the same redis instance).'''
-    if model in _GLOBAL_REGISTRY:
-        if not ignore_duplicates:
-            raise AlreadyRegistered(
-                    'Model {0} is already registered'.format(model._meta))
-        else:
-            return
     backend = getdb(backend=backend, **params)
-    for manager in model._managers:
-        manager.backend = backend
-    _GLOBAL_REGISTRY.add(model)
-    return model.objects.backend
+    registered = []
+    for m in models_from_model(model, include_related=include_related):
+        if m in _GLOBAL_REGISTRY:
+            continue
+        for manager in m._managers:
+            manager.backend = backend
+        _GLOBAL_REGISTRY.add(m)
+        registered.append(m)
+    if registered:
+        return registered[0].objects.backend
 
 
 def unregister(model=None):
@@ -125,9 +146,8 @@ registered models.'''
 def registered_models():
     '''An iterator over registered models'''
     return (m for m in _GLOBAL_REGISTRY)
-
-
-def model_iterator(application):
+                        
+def model_iterator(application, include_related=True):
     '''A generator of :class:`StdModel` classes found in *application*.
 
 :parameter application: A python dotted path or an iterable over python
@@ -164,12 +184,16 @@ For example::
                 mod_models = mod
             mod_name = mod.__name__
             label = getattr(mod_models, 'app_label', label)
+            models = set()
             for name in dir(mod_models):
-                model = getattr(mod_models, name)
-                meta = getattr(model, '_meta', None)
-                if isinstance(model, StdNetType) and meta:
-                    if not meta.abstract and meta.app_label == label:
-                        yield model
+                value = getattr(mod_models, name)
+                meta = getattr(value, '_meta', None)
+                if isinstance(value, StdNetType) and meta:
+                    for model in models_from_model(value, label=label,
+                                            include_related=include_related):
+                        if model not in models:
+                            models.add(model)
+                            yield model
 
 
 def all_models_sessions(models, processed=None, session=None):
@@ -233,9 +257,7 @@ For example::
             kwargs = {'backend': kwargs}
         else:
             kwargs = kwargs.copy()
-        if 'ignore_duplicates' not in kwargs:
-            kwargs['ignore_duplicates'] = True
-        if register(model, **kwargs):
+        if register(model, include_related=False, **kwargs):
             yield model
 
 

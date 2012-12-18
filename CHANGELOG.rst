@@ -10,6 +10,11 @@ Ver. 0.8 - Development
   works for different backends.
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
   the main test class for handling tests on multiple backends at once.
+* :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
+  dataset of the model which maintains the many-to-many relationship.
+  To do so, ii must be accessed via the class rather than an instance.
+  Also the `through` attribute has been removed as it was equivalent to
+  the `model` attribute. 
 * **644 regression tests** with **93%** coverage.
   
 Ver. 0.7.1 - Development

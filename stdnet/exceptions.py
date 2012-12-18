@@ -78,8 +78,8 @@ validation algorithm in :meth:`stdnet.odm.base.Metaclass.is_valid`.'''
 
 
 class QuerySetError(StdNetException):
-    '''A :class:`stdnet.StdNetException` raised during a :class:`stdnet.odm.query.QuerySet`
-evaluation.'''
+    '''A :class:`stdnet.StdNetException` raised by a
+    :class:`stdnet.odm.Query`.'''
     pass
 
 

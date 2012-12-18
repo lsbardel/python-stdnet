@@ -57,8 +57,8 @@ class Subscriber(RedisProxy):
             return c.request(self, command, *channels,
                              release_connection=False).send()
     
-    def pool(self, timeout=None):
-        return self.request.pool(timeout=timeout)
+    def poll(self, num_messages=None, timeout=None):
+        return self.request.poll(num_messages=num_messages, timeout=timeout)
     
     def parse_response(self, request):
         "Parse the response from a publish/subscribe command"

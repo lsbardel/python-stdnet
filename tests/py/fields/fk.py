@@ -5,29 +5,37 @@ from stdnet.utils import test
 from examples.models import Person, Group 
 
 
-class fkmeta(test.CleanTestCase):
+class fkmeta(test.TestCase):
     models = (Person, Group)
     
-    def setUp(self):
-        session = self.session()
+    @classmethod
+    def setUpClass(cls):
+        super(fkmeta, cls).setUpClass()
+        session = cls.session()
         with session.begin():
-            session.add(Group(name = 'bla'))
-        g = session.query(Group).get(name = 'bla')
+            session.add(Group(name='bla'))
+        g = session.query(Group).get(name='bla')
         with session.begin():
-            session.add(Person(name = 'foo', group = g))
+            session.add(Person(name='foo', group=g))
+        
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
         
     def testSimple(self):
         session = self.session()
         query = session.query(Person)
-        p = query.get(id = 1)
+        self.assertEqual(query.count(), 1)
+        p = query.get(name='foo')
         self.assertTrue(p.group_id)
         p.group = None
-        self.assertEqual(p.group_id,None)
+        self.assertEqual(p.group_id, None)
         
     def testOldRelatedNone(self):
         self.register()
-        p = Person.objects.get(id = 1)
-        self.assertTrue(p.group)
+        p = Person.objects.get(name='foo')
+        g = p.group
+        self.assertTrue(p)
         p.group = None
         self.assertEqual(p.group,None)
         self.assertEqual(p.group_id,None)

@@ -147,6 +147,90 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
         data = self.backend.build(query, meta, fields, fields_attributes)
         return self.backend.objects_from_db(meta, data)
             
+
+################################################################################
+##    MONGODB STRUCTURES
+################################################################################
+size_script = '\n'.join(('var doc = db.%s.findOne({"_id": ObjectId("%s")});',
+                         'if (doc) {',
+                         '    var field = doc.%s;',
+                         '    if (field) {',
+                         '        return field.length;',
+                         '    }',
+                         '}',
+                         'return 0;'))
+                         
+class MongoStructure(stdnet.BackendStructure):
+    
+    def selector(self):
+        if self.instance.instance is not None:
+            return {'_id': self.instance.instance.id}
+        else:
+            raise NotImplementedError('Mongodb can have structures attached to'
+                                      ' objects only')
+    
+    @property
+    def document(self):
+        return self.instance.instance
+    
+    @property
+    def collection_name(self):
+        return self.backend.basekey(self.instance.instance._meta)
+        
+    @property
+    def collection(self):
+        return getattr(self.backend.db, self.collection_name)
+        
+    def __iter__(self):
+        raise NotImplementedError()
+            
+    def delete(self):
+        return self.client.delete(self.id)
+    
+    def size(self):
+        instance = self.instance.instance
+        collection = self.collection_name
+        func = size_script % (collection, instance.pkvalue(), self.name)
+        return int(self.backend.db.eval(func))
+    
+    
+class List(MongoStructure):
+    
+    def pop_front(self):
+        selector = self.selector()
+        return self.client.lpop(self.id)
+    
+    def pop_back(self):
+        return self.client.rpop(self.id)
+    
+    def flush(self):
+        cache = self.instance.cache
+        if cache.front or cache.back:
+            selector = [self.selector()]
+            name = self.name
+            if cache.back:
+                selector.append({'$pushAll': {name: cache.back}})
+            if cache.front:
+                raise NotImplementedError('Mongodb cannot prepend values to'
+                                          ' a list field.')
+            return selector
+    
+    def __iter__(self):
+        name = self.name
+        result = self.collection.find_one(self.selector(), fields=(name,))
+        return iter(result.get(name, ()))
+    
+    
+class Set(MongoStructure):
+    
+    def flush(self):
+        if cache.front or cache.back:
+            selector = self.selector()
+            if cache.back:
+                selector.append({'$each': cache.back})
+            result = True
+        return result
+    
     
 ################################################################################
 ##    MONGODB BACKEND
@@ -154,7 +238,7 @@ documentation http://docs.mongodb.org/manual/reference/operators/.'''
 class BackendDataServer(stdnet.BackendDataServer):
     Query = MongoDbQuery
     default_port = 27017
-    _redis_clients = {}
+    struct_map = {'list': List}
         
     def setup_connection(self, address):
         if len(address) == 1:
@@ -190,7 +274,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':
-                self.flush_structure(sm)
+                self.flush_structure(sm, commands)
             elif model_type == 'object':
                 delquery = sm.get_delete_query()
                 results.extend(self.delete_query(delquery, commands))
@@ -264,5 +348,15 @@ class BackendDataServer(stdnet.BackendDataServer):
             yield meta, self.process_delete(meta, ids,
                                             backend_query.remove(commands))
         
-    def flush_structure(self, sm):
-        pass
+    def flush_structure(self, sm, commands):
+        processed = False
+        for instance in chain(sm._delete_query, sm.dirty):
+            processed = True
+            state = instance.state()
+            binstance = instance.backend_structure()
+            command = binstance.commit()
+            if command:
+                collection = self.collection(binstance.document._meta)
+                result = collection.update(*command)
+                return result
+            

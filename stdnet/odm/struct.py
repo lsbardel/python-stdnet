@@ -28,13 +28,26 @@ __all__ = ['Structure',
 
 
 ################################################################################
-##    CACHE CLASSES
+##    CACHE CLASSES FOR STRUCTURES
 ################################################################################
-
-class stringcache(object):
-    
+class structure_cache(object):
     def __init__(self):
         self.clear()
+    
+    def __str__(self):
+        if self.cache is None:
+            return ''
+        else:
+            return str(self.cache)
+        
+    def clear(self):
+        self.cache = None
+        
+    def set_cache(self, data):
+        raise NotImplementedError()
+    
+    
+class stringcache(structure_cache):
     
     def getvalue(self):
         return self.data.getvalue()
@@ -43,13 +56,11 @@ class stringcache(object):
         self.data.write(v)
         
     def clear(self):
+        self.cache = None
         self.data = BytesIO()
     
     
-class listcache(object):
-    
-    def __init__(self):
-        self.clear()
+class listcache(structure_cache):
         
     def push_front(self, value):
         self.front.append(value)
@@ -58,20 +69,17 @@ class listcache(object):
         self.back.append(value)
         
     def clear(self):
-        self.cache = []
+        self.cache = None
         self.back = []
         self.front = []
         
     def set_cache(self, data):
+        if self.cache is None:
+            self.cache = []
         self.cache.extend(data)
         
     
-class setcache(object):
-    
-    def __init__(self):
-        self.cache = set()
-        self.toadd = set()
-        self.toremove = set()
+class setcache(structure_cache):
 
     def __contains__(self, v):
         if v not in self.toremove:
@@ -89,28 +97,40 @@ class setcache(object):
             self.toremove.difference_update(values)
         
     def clear(self):
-        self.cache.clear()
-        self.toadd.clear()
-        self.toremove.clear()
+        self.cache = None
+        self.toadd = set()
+        self.toremove = set()
         
     def set_cache(self, data):
+        if self.cache is None:
+            self.cache = set()
         self.cache.update(data)
 
 
 class zsetcache(setcache):
     
-    def __init__(self):
-        self.cache = zset()
+    def clear(self):
+        self.cache = None
         self.toadd = zset()
         self.toremove = set()
+        
+    def set_cache(self, data):
+        if self.cache is None:
+            self.cache = zset()
+        self.cache.update(data)
         
     
 class hashcache(zsetcache):
     
-    def __init__(self):
-        self.cache = {}
+    def clear(self):
+        self.cache = None
         self.toadd = {}
         self.toremove = set()
+    
+    def set_cache(self, data):
+        if self.cache is None:
+            self.cache = {}
+        self.cache.update(data)
         
     def remove(self, keys, add_to_remove = True):
         d = lambda x : self.toadd.pop(x,None)
@@ -124,16 +144,20 @@ class hashcache(zsetcache):
 
 class tscache(hashcache):
     
-    def __init__(self):
-        self.cache = skiplist()
+    def clear(self):
+        self.cache = None
         self.toadd = skiplist()
         self.toremove = set()
+
+    def set_cache(self, data):
+        if self.cache is None:
+            self.cache = skiplist()
+        self.cache.update(data)
 
 
 ################################################################################
 ##    STRUCTURE CLASSES
 ################################################################################
-
 class Structure(ModelBase):
     '''A :class:`Model` which is used a base class for remote data-structures.
 Remote structures are the
@@ -169,8 +193,10 @@ can also be used as stand alone objects. For example::
     _model_type = 'structure'
     pickler = None
     value_pickler = None
-    def __init__(self, instance=None, timeout=0, value_pickler=None, **kwargs):
+    def __init__(self, instance=None, timeout=0, value_pickler=None, name='',
+                  **kwargs):
         self.instance = instance
+        self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
         self.timeout = timeout
@@ -201,26 +227,26 @@ can also be used as stand alone objects. For example::
         return self._dbdata['cache']
         
     def __repr__(self):
-        return '%s(%s) %s' % (self.__class__.__name__,self.id,self.cache)
+        return '%s(%s) %s' % (self.__class__.__name__, self.id, self.cache)
         
     def __str__(self):
         return self.__repr__()
     
     def __iter__(self):
-        cache = self.cache.cache
-        if cache:
-            return iter(cache)
-        else:
-            return iter(self._iter())
+        # Iterate through the structure
+        if self.cache.cache is None:
+            self.cache.set_cache(self._iter())
+        return iter(self.cache.cache)
         
-    @withsession
     def size(self):
         '''Number of elements in structure.'''
-        return self.backend_structure().size()
+        if self.cache.cache is None:
+            return self.backend_structure().size()
+        else:
+            return len(self.cache.cache)
     
-    @withsession
     def __contains__(self, value):
-        return self.pickler.dumps(value) in self.session.backend.structure(self)
+        return self.pickler.dumps(value) in self.backend_structure()
     
     def __len__(self):
         return self.size()

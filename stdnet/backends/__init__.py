@@ -89,10 +89,11 @@ this method should be called.'''
     
     
 class BackendStructure(AsyncObject):
-    __slots__ = ('instance', 'client', '_id')
+    __slots__ = ('instance', 'client', 'backend', '_id')
     
     def __init__(self, instance, backend, client):
         self.instance = instance
+        self.backend = backend
         self.client = client
         if not instance.id:
             raise ValueError('No id available')
@@ -100,7 +101,7 @@ class BackendStructure(AsyncObject):
         if instance.instance is not None:
             id = instance.id
         else:
-            id = backend.basekey(self.instance._meta,self.instance.id)
+            id = backend.basekey(self.instance._meta, self.instance.id)
         self._id = id
     
     def commit(self):
@@ -114,6 +115,10 @@ class BackendStructure(AsyncObject):
         return result
     
     @property
+    def name(self):
+        return self.instance.name
+    
+    @property
     def id(self):
         return self._id
     
@@ -121,7 +126,7 @@ class BackendStructure(AsyncObject):
         return self
     
     def clone(self):
-        return self.__class__(self.instance,self.client)
+        return self.__class__(self.instance, self.client)
     
     def delete(self):   # pragma: no cover
         raise NotImplementedError()
@@ -404,6 +409,10 @@ by users.'''
         '''Ping the server'''
         pass
     
+    def instance_keys(self, obj):
+        '''Return a list of database keys used by instance *obj*'''
+        return [self.basekey(obj._meta, obj.id)]
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address):
@@ -420,10 +429,6 @@ must return a instance of the backend handler.'''
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
         
-    def instance_keys(self, obj):
-        '''Return a list of database keys used by instance *obj*'''
-        raise NotImplementedError()
-    
     def as_cache(self):
         '''Return a :class:`CacheServer` handle for this backend.'''
         raise NotImplementedError('This backend cannot be used as cache')

@@ -32,7 +32,7 @@ class StructureFieldProxy(object):
                 return self
             if instance.id is None:
                 raise StructureFieldError('id for %s is not available.\
- Call save on instance before accessing %s.' % (instance._meta,self.name))
+ Call save on instance before accessing %s.' % (instance._meta, self.name))
         else:
             instance = instance_type
         cache_name = self.cache_name
@@ -61,10 +61,11 @@ class StructureFieldProxy(object):
         else:
             id = session.backend.basekey(instance._meta, 'obj', instance.id,
                                          self.name)
-        return self.factory(id = id,
-                            instance = instance,
-                            pickler = self.field.pickler,
-                            value_pickler = self.field.value_pickler,
+        return self.factory(id=id,
+                            instance=instance,
+                            name=self.name,
+                            pickler=self.field.pickler,
+                            value_pickler=self.field.value_pickler,
                             **self.field.struct_params)
 
 

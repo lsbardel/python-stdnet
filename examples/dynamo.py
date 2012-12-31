@@ -2,7 +2,7 @@ from stdnet import odm
 
 
 class Base(odm.StdModel):
-    name = odm.SymbolField(primary_key = True)
+    name = odm.SymbolField(primary_key=True)
     ccy  = odm.SymbolField()
     
     def __unicode__(self):

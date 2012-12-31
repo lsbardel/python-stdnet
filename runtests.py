@@ -28,7 +28,7 @@ except ImportError:
 from stdnet import getdb
 from stdnet.conf import settings
 from stdnet.utils import test
-from stdnet.utils.test import nose, pulsar
+from stdnet.utils.test import nose
 
 
 def noseoption(argv, *vals, **kwargs):
@@ -51,7 +51,6 @@ def start():
     if pulsar:
         from pulsar.apps.test import TestSuite
         from pulsar.apps.test.plugins import bench, profile
-        
         os.environ['stdnet_test_suite'] = 'pulsar'
         suite = TestSuite(
                 description='Stdnet Asynchronous test suite',
@@ -62,13 +61,12 @@ def start():
                   )
         suite.start()
     elif nose:
-        from stdnet.test import NoseDataSizePlugin, NoseStdnetServer
+        from stdnet.utils.test import NoseStdnetServer
         os.environ['stdnet_test_suite'] = 'nose'
         argv = list(sys.argv)
         noseoption(argv, '-w', value = 'tests/regression')
         noseoption(argv, '--all-modules')
-        nose.main(argv=argv, addplugins=[NoseStdnetServer(),
-                                         NoseDataSizePlugin()])
+        nose.main(argv=argv, addplugins=[NoseStdnetServer()])
     else:
         print('To run tests you need either pulsar or nose.')
         exit(0)

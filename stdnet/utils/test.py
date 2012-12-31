@@ -139,7 +139,7 @@ to perform cleanup, registration and unregistration.
 ################################################################################
 try:
     import pulsar
-    from pulsar.utils import event
+    from pulsar.utils import events
     from pulsar.apps.test import TestSuite, TestPlugin
 
     class StdnetPlugin(TestPlugin):
@@ -198,11 +198,11 @@ try:
             return new_test
             
         
-    def create_tests(sender=None, value=None):
+    def create_tests(sender=None, tests=None, **kwargs):
         servers = getattr(settings, 'servers', None)
         if isinstance(sender, TestSuite) and servers:
-            for tag, test in list(value):
-                value.pop(0)
+            for tag, test in list(tests):
+                tests.pop(0)
                 multipledb = getattr(test, 'multipledb', True)
                 toadd = True
                 if isinstance(multipledb, str):
@@ -214,11 +214,11 @@ try:
                         name = server.split('://')[0]
                         if multipledb == True or name in multipledb:
                             toadd = False
-                            value.append((tag, testmaker(test, name, server)))
+                            tests.append((tag, testmaker(test, name, server)))
                 if toadd:
-                    value.append((tag, test))
+                    tests.append((tag, test))
     
-    event.bind('tests', create_tests)
+    events.bind('tests', create_tests)
 
 except ImportError: # pragma nocover
     pulsar = None

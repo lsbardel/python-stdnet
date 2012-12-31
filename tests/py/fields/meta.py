@@ -3,17 +3,11 @@ import stdnet
 from stdnet import odm, FieldError
 from stdnet.utils import test
 
-from examples.models import Task, WordBook, SimpleModel
-
-
-def genid():
-    return str(uuid4())[:8]
-
 
 class TestFields(test.TestCase):
     
     def testBaseClass(self):
-        self.assertRaises(TypeError, odm.Field, kaputt = True)
+        self.assertRaises(TypeError, odm.Field, kaputt=True)
         f = odm.Field()
         self.assertEqual(f.to_python(self), self)
         f = odm.StructureField()
@@ -24,7 +18,7 @@ class TestFields(test.TestCase):
     def testDoublePK(self):
         def bad_class():
             class MyBadClass(odm.StdModel):
-                id = odm.IntegerField(primary_key = True)
-                code = odm.SymbolField(primary_key = True)
+                id = odm.IntegerField(primary_key=True)
+                code = odm.SymbolField(primary_key=True)
         self.assertRaises(FieldError, bad_class)
         

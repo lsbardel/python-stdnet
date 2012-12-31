@@ -10,5 +10,5 @@ class PrimaryKey(test.TestCase):
         self.register()
         
     def testCreate(self):
-        m = Instrument(name = 'bla', ccy = 'EUR', type = 'foo').save()
-        self.assertEqual(m.name,'bla')
+        m = Instrument(name='bla', ccy='EUR', type='foo').save()
+        self.assertEqual(m.name, 'bla')

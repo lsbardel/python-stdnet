@@ -182,7 +182,9 @@ class MongoStructure(stdnet.BackendStructure):
         return getattr(self.backend.db, self.collection_name)
         
     def __iter__(self):
-        raise NotImplementedError()
+        name = self.name
+        result = self.collection.find_one(self.selector(), fields=(name,))
+        return iter(result.get(name, ()))
             
     def delete(self):
         return self.client.delete(self.id)
@@ -197,11 +199,14 @@ class MongoStructure(stdnet.BackendStructure):
 class List(MongoStructure):
     
     def pop_front(self):
-        selector = self.selector()
-        return self.client.lpop(self.id)
+        result = self.collection.find_and_modify(query=self.selector(),
+                                                update={'$pop': {self.name: 1}})
+        return result[self.name][0]
     
     def pop_back(self):
-        return self.client.rpop(self.id)
+        result = self.collection.find_and_modify(query=self.selector(),
+                                                update={'$pop': {self.name: 1}})
+        return result[self.name][-1]
     
     def flush(self):
         cache = self.instance.cache
@@ -215,21 +220,16 @@ class List(MongoStructure):
                                           ' a list field.')
             return selector
     
-    def __iter__(self):
-        name = self.name
-        result = self.collection.find_one(self.selector(), fields=(name,))
-        return iter(result.get(name, ()))
-    
     
 class Set(MongoStructure):
     
     def flush(self):
-        if cache.front or cache.back:
-            selector = self.selector()
-            if cache.back:
-                selector.append({'$each': cache.back})
-            result = True
-        return result
+        cache = self.instance.cache
+        if cache.toadd:
+            selector = [self.selector()]
+            selector.append({'$addToSet':
+                             { self.name: {'$each': list(cache.toadd)}}})
+            return selector
     
     
 ################################################################################
@@ -238,7 +238,7 @@ class Set(MongoStructure):
 class BackendDataServer(stdnet.BackendDataServer):
     Query = MongoDbQuery
     default_port = 27017
-    struct_map = {'list': List}
+    struct_map = {'list': List, 'set': Set}
         
     def setup_connection(self, address):
         if len(address) == 1:
@@ -259,6 +259,12 @@ class BackendDataServer(stdnet.BackendDataServer):
     def model_keys(self, meta):
         return ids_from_query(self.collection(meta))
     
+    def setup_model(self, meta):
+        for index in getattr(meta, 'indices', ()):
+            self.collection(meta).ensure_index(index.name,
+                                               background=True,
+                                               unique=index.unique)
+            
     def flush(self, meta=None):
         '''Flush all model keys from the for a pattern'''
         if meta is not None:
@@ -289,16 +295,18 @@ class BackendDataServer(stdnet.BackendDataServer):
                     state = instance.state()
                     data = instance._dbdata['cleaned_data']
                     processed.append(state.iid)
+                    pkvalue = instance.pkvalue() or ''
                     if state.persistent:
-                        id = instance.pkvalue()
-                        spec = {'_id': id}
+                        spec = {'_id': pkvalue}
                         commands.append(('update', (spec, data)))
                         data = collection.update(spec, data)
                         if data['err']:
                             modified.append(Exception(data))
                         else:
-                            modified.append(id)
+                            modified.append(pkvalue)
                     else:
+                        if pkvalue:
+                            data['_id'] = pkvalue
                         instances.append(data)
                 if instances:
                     commands.append(('insert', instances))

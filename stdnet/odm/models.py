@@ -95,8 +95,8 @@ attribute set to ``True`` won't be included.
             if exclude_cache and field.as_cache:
                 continue
             name = field.attname
-            if hasattr(self,name):
-                yield field,getattr(self,name)
+            if hasattr(self, name):
+                yield field, getattr(self,name)
 
     def set_field_value(self, field, value):
         value = field.to_python(value)

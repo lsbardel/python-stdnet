@@ -27,10 +27,7 @@ class TestFinanceJSON(FinanceTest, SerializerMixin):
         all = list(odm.all_models_sessions(self.models))
         self.assertEqual(len(all), 6)
         for m, session in all:
-            if m == PortfolioView:
-                self.assertEqual(session, None)
-            else:
-                self.assertNotEqual(session, None)
+            self.assertNotEqual(session, None)
 
 
 

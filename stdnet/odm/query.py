@@ -32,21 +32,6 @@ def update_dictionary(result, extra):
     return result
 
 
-class SessionModelBase(object):
-
-    def __init__(self, meta, session):
-        self.meta = meta
-        self.session = session
-
-    def __repr__(self):
-        return self.meta.__repr__()
-    __str__ = __repr__
-
-    @property
-    def backend(self):
-        return self.session.backend
-
-
 class Q(object):
     '''Base class for :class:`Query` and :class:`QueryElement`.
 

@@ -9,7 +9,7 @@ from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
                                 InvalidTransaction, SessionNotAvailable,\
                                 CommitException
 
-from .query import Q, Query, EmptyQuery, SessionModelBase
+from .query import Q, Query, EmptyQuery
 from .signals import *
 
 
@@ -64,11 +64,13 @@ a :class:`SessionNotAvailable` exception.'''
     return _
 
 
-class SessionModel(SessionModelBase):
+class SessionModel(object):
     '''A :class:`SessionModel` is the container of all objects for a given
 :class:`Model` in a stdnet :class:`Session`.'''
     def __init__(self, meta, session):
-        super(SessionModel,self).__init__(meta,session)
+        self.meta = meta
+        self.session = session
+        self.backend.setup_model(meta)
         self._new = OrderedDict()
         self._deleted = OrderedDict()
         self._delete_query = []
@@ -79,6 +81,10 @@ class SessionModel(SessionModelBase):
         return len(self._new) + len(self._modified) + len(self._deleted) +\
                 len(self._loaded)
 
+    def __repr__(self):
+        return self.meta.__repr__()
+    __str__ = __repr__
+    
     def __iter__(self):
         """Iterate over all pending or persistent instances within this
 Session model."""
@@ -86,7 +92,11 @@ Session model."""
 
     def all(self):
         return chain(self._new,self._modified,self._loaded,self._deleted)
-
+    
+    @property
+    def backend(self):
+        return self.session.backend
+    
     @property
     def model(self):
         return self.meta.model

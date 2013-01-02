@@ -2,7 +2,7 @@ from uuid import uuid4
 from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
-                            BytesIO, iterpair
+                            BytesIO, iterpair, ispy3k
 from stdnet.lib import zset, skiplist
 from stdnet import SessionNotAvailable
 
@@ -235,7 +235,8 @@ can also be used as stand alone objects. For example::
     def __iter__(self):
         # Iterate through the structure
         if self.cache.cache is None:
-            self.cache.set_cache(self._iter())
+            data = self.load_data(self.session.structure(self))
+            self.cache.set_cache(data)
         return iter(self.cache.cache)
         
     def size(self):
@@ -251,11 +252,6 @@ can also be used as stand alone objects. For example::
     def __len__(self):
         return self.size()
     
-    def _iter(self):
-        loads = self.value_pickler.loads
-        for v in self.session.structure(self):
-            yield loads(v)
-            
     def set_cache(self, data):
         '''Set the cache for the :class:`Structure`.
 Do not override this function. Use :meth:`load_data` method instead.'''
@@ -281,19 +277,30 @@ Do not override this function. Use :meth:`load_data` method instead.'''
 ##    Mixins Structures
 ################################################################################
 class PairMixin(object):
-    '''A mixin for handling structures with which holds pairs.'''
+    '''A mixin for structures with which holds pairs. It is the parent class
+of :class:`KeyValueMixin` and it is used as base class for the ordered set
+structure :class:`Zset`.'''
     pickler = encoders.NoEncoder()
     
-    def setup(self, pickler = None, **kwargs):
+    def setup(self, pickler=None, **kwargs):
         self.pickler = pickler or self.pickler
     
     def __setitem__(self, key, value):
         self.add(key, value)
     
-    @withsession
     def items(self):
-        data = self.session.structure(self).items()
-        return self.load_data(data)
+        '''Iteratir over items (pairs) of :class:`PairMixin`.'''
+        if self.cache.cache is None:
+            data = self.session.structure(self).items()
+            self.cache.set_cache(self.load_data(data))
+        return iteritems(self.cache.cache)
+    
+    def values(self):
+        '''Iteratir over values of :class:`PairMixin`.'''
+        if self.cache.cache is None:
+            return self.load_values(self.session.structure(self).values())
+        else:
+            return self.cache.cache.values()
         
     def pair(self, pair):
         '''Add a *pair* to the structure.'''
@@ -301,7 +308,7 @@ class PairMixin(object):
             # if only one value is passed, the value must implement a
             # score function which retrieve the first value of the pair
             # (score in zset, timevalue in timeseries, field value in hashtable)
-            return (pair[0].score(),pair[0])
+            return (pair[0].score(), pair[0])
         elif len(pair) != 2:
             raise TypeError('add expected 2 arguments, got {0}'\
                             .format(len(pair)))
@@ -322,19 +329,19 @@ Equivalent to python dictionary update method.
     def dump_data(self, mapping):
         tokey = self.pickler.dumps
         dumps = self.value_pickler.dumps
-        if isinstance(mapping,dict):
+        if isinstance(mapping, dict):
             mapping = iteritems(mapping)
         p = self.pair
         for pair in mapping:
-            if not isinstance(pair,tuple):
+            if not isinstance(pair, tuple):
                 pair = pair,
-            k,v = p(pair)
-            yield tokey(k),dumps(v)
+            k, v = p(pair)
+            yield tokey(k), dumps(v)
     
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        return ((loads(k),vloads(v)) for k,v in iterpair(mapping))
+        return ((loads(k), vloads(v)) for k,v in iterpair(mapping))
     
     def load_keys(self, iterable):
         loads = self.pickler.loads
@@ -349,15 +356,21 @@ class KeyValueMixin(PairMixin):
     '''A mixin for ordered and unordered key-valued pair containers.
 A key-value pair container has the :meth:`values` and :meth:`items`
 methods, while its iterator is over keys.'''
-    def _iter(self):
-        return self.keys()
-            
+    def __iter__(self):
+        return iter(self.keys())
+    
+    def keys(self):
+        if self.cache.cache is None:
+            loads = self.pickler.loads
+            return self.load_keys(self.session.structure(self))
+        else:
+            return self.cache.cache
+    
     def __delitem__(self, key):
         '''Immediately remove an element. To remove with transactions use the
 :meth:`remove` method`.'''
         self.pop(key)
 
-    @withsession
     def __getitem__(self, key):
         dkey = self.pickler.dumps(key)
         res = self.session.backend.structure(self).get(dkey)
@@ -389,15 +402,6 @@ If the element is not available return the default value.
         '''Remove *keys* from the key-value container.'''
         dumps = self.pickler.dumps
         self.cache.remove([dumps(v) for v in keys])
-        
-    def keys(self):
-        raise NotImplementedError()
-    
-    @withsession
-    def values(self):
-        vloads = self.value_pickler.loads
-        for v in self.session.structure(self).values():
-            yield vloads(v)
     
     def load_get_data(self, value):
         return self.value_pickler.loads(value)
@@ -546,29 +550,20 @@ class Zset(OrderedMixin, PairMixin, Set):
     pickler = encoders.Double()
     cache_class = zsetcache
     
+    def __iter__(self):
+        return iter(self.values())
+    
     def rank(self, value):
         '''The rank of a given *value*. This is the position of *value*
 in the :class:`OrderedMixin` container.'''
-        value = self.pickler.dumps(value)
+        value = self.value_pickler.dumps(value)
         return self.backend_structure().rank(value)
-    
-    def _iter(self):
-        # Override the KeyValueMixin so that it iterates over values rather
-        # scores
-        loads = self.value_pickler.loads
-        for v in self.session.structure(self):
-            yield loads(v)
                     
     
 class HashTable(KeyValueMixin, Structure):
     '''A :class:`Structure` which is the networked equivalent to
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     cache_class = hashcache
-    
-    def keys(self):
-        loads = self.pickler.loads
-        for k in self.session.structure(self):
-            yield loads(k)
         
     def addnx(self, field, value, transaction = None):
         '''Set the value of a hash field only if the field
@@ -576,6 +571,13 @@ does not exist.'''
         return self._addnx(self.cursor(transaction),
                            self.pickler.dumps(key),
                            self.pickler_value.dumps(value))
+    
+    if not ispy3k:
+        def iteritems(self):
+            return self.items()
+        
+        def itervalues(self):
+            return self.values()
 
     
 class TS(OrderedMixin, KeyValueMixin, Structure):
@@ -610,7 +612,7 @@ index is not out of bound.'''
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().times(s1, s2, **kwargs)
         return self.async_handle(res, callback or self.load_keys)
-
+    
     def itimes(self, start=0, stop=-1, callback=None, **kwargs):
         '''The times between rank *start* and *stop*.'''
         res = self.backend_structure().itimes(start, stop, **kwargs)

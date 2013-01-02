@@ -1,5 +1,6 @@
 '''AutoId, CompositeId and custom Id tests.'''
 from uuid import uuid4
+from random import randint
 import time
 
 import stdnet
@@ -22,7 +23,7 @@ Use the manager for convenience.'''
         self.register()
         
     def make(self):
-        return Task(id = genid(), name = 'pluto').save()
+        return Task(id=genid(), name='pluto').save()
     
     def testCreate(self):
         t1 = self.make()
@@ -38,21 +39,21 @@ Use the manager for convenience.'''
         t1.id = genid()
         t1.save()
         self.assertEqual(t1.id, t1._dbdata['id'])
-        self.assertEqual(self.model.objects.query().count(),2)
+        self.assertEqual(self.model.objects.query().count(), 2)
         
     def test_clone(self):
         t1 = self.make()
         time.sleep(0.01)
-        t2 = t1.clone(id = genid()).save()
-        self.assertNotEqual(t1.id,t2.id)
-        self.assertEqual(t1.name,t2.name)
-        self.assertNotEqual(t1.timestamp,t2.timestamp)
-        self.assertTrue(t1.timestamp<t2.timestamp)
+        t2 = t1.clone(id=genid()).save()
+        self.assertNotEqual(t1.id, t2.id)
+        self.assertEqual(t1.name, t2.name)
+        self.assertNotEqual(t1.timestamp, t2.timestamp)
+        self.assertTrue(t1.timestamp < t2.timestamp)
         tasks = Task.objects.query()
-        self.assertEqual(len(tasks),2)
-        self.assertEqual(tasks[0].id,t2.id)
-        self.assertEqual(tasks[1].id,t1.id)
-        self.assertTrue(tasks[0].timestamp>tasks[1].timestamp)
+        self.assertEqual(len(tasks), 2)
+        self.assertEqual(tasks[0].id, t2.id)
+        self.assertEqual(tasks[1].id, t1.id)
+        self.assertTrue(tasks[0].timestamp > tasks[1].timestamp)
         
     def test_delete_and_clone(self):
         t1 = self.make()
@@ -75,6 +76,16 @@ class TestAutoId(test.CleanTestCase):
     def setUp(self):
         self.register()
         
+    def random_id(self, id=None):
+        if self.backend.name == 'mongo':
+            from bson.objectid import ObjectId
+            return ObjectId()
+        else:
+            if id:
+                return id+1
+            else:
+                return randint(1,1000)
+    
     def testMeta(self):
         pk = self.model._meta.pk
         self.assertEqual(pk.name,'id')
@@ -87,27 +98,31 @@ class TestAutoId(test.CleanTestCase):
         
     def testCreateWithValue(self):
         # create an instance with an id
-        m1 = SimpleModel(id = 675, code = 'bla').save()
-        self.assertEqual(m1.id, 675)
+        id = self.random_id()
+        m1 = SimpleModel(id=id, code='bla').save()
+        self.assertEqual(m1.id, id)
         self.assertEqual(m1.code, 'bla')
-        m2 = SimpleModel(code = 'foo').save()
-        self.assertEqual(m2.id, 676)
+        m2 = SimpleModel(code='foo').save()
+        id2 = self.random_id(id)
+        self.assertEqualId(m2, id2)
         self.assertEqual(m2.code, 'foo')
         qs = SimpleModel.objects.query()
-        self.assertEqual(qs.count(),2)
-        self.assertEqual(set(qs),set((m1,m2)))
+        self.assertEqual(qs.count(), 2)
+        self.assertEqual(set(qs), set((m1,m2)))
     
     def testCreateWithValue2(self):
-        m1 = SimpleModel(code = 'bla').save()
-        m2 = SimpleModel(id = 575, code = 'foo').save()
-        self.assertEqual(m1.id, 1)
-        self.assertEqual(m2.id, 575)
+        id = self.random_id()
+        m1 = SimpleModel(code='bla').save()
+        m2 = SimpleModel(id=id, code = 'foo').save()
+        self.assertEqualId(m1, 1)
+        self.assertEqual(m2.id, id)
         qs = SimpleModel.objects.query()
         self.assertEqual(qs.count(),2)
-        self.assertEqual(set(qs),set((m1,m2)))
+        self.assertEqual(set(qs), set((m1,m2)))
     
     
 class CompositeId(test.CleanTestCase):
+    multipledb = 'redis'
     model = WordBook
     
     def setUp(self):

@@ -11,9 +11,14 @@ class zset(object):
     def __len__(self):
         return len(self._dict)
     
-    def __iter__(self):
+    def items(self):
         return iter(self._sl)
+    __iter__ = items
     
+    def values(self):
+        for _, v in self.items():
+            yield v
+            
     def add(self, score, val):
         r = 1
         if val in self._dict:
@@ -28,8 +33,8 @@ class zset(object):
     
     def update(self, scorevals):
         add = self.add
-        for score,value in scorevals:
-            add(score,value)
+        for score, value in scorevals:
+            add(score, value)
             
     def clear(self):
         self._sl = skiplist()

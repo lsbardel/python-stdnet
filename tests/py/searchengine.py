@@ -64,6 +64,7 @@ class TestCase(test.CleanTestCase):
     '''Mixin for testing the search engine. No tests implemented here,
 just registration and some utility functions. All search-engine tests
 below will derive from this class.'''
+    multipledb = 'redis'
     metaphone = True
     stemming = True
     models = (WordItem, Item, RelatedItem)

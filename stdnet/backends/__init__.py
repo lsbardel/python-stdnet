@@ -400,7 +400,12 @@ by users.'''
                                       'available.' % self)
         
     # VIRTUAL METHODS
-    
+    def setup_model(self, meta):
+        '''Invoked when registering a model with a backend. This is a chance to
+perform model specific operation in the server. For example, mongo db ensure
+indices are created.'''
+        pass
+        
     def clean(self, meta):
         '''Remove temporary keys for a model'''
         pass

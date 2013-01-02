@@ -23,6 +23,7 @@ testdata2 = dict(alldata2)
 
 
 class TestDateTimeSeries(MultiFieldMixin, test.CleanTestCase):
+    multipledb = 'redis'
     model = TimeSeries
     mkdate = datetime
     defaults = {'ticker': 'GOOG'}

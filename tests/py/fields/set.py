@@ -9,8 +9,8 @@ from examples.models import Calendar, DateValue, Collection, Group
 
 NUM_DATES = 100
 
-dates = populate('date',NUM_DATES)
-values = populate('string', NUM_DATES, min_len = 10, max_len = 120)
+dates = populate('date', NUM_DATES)
+values = populate('string', NUM_DATES, min_len=10, max_len=120)
     
     
 class TestSetField(test.CleanTestCase):
@@ -24,11 +24,10 @@ class TestSetField(test.CleanTestCase):
         m = self.model().save()
         m.numbers.add(1)
         m.numbers.update((1,2,3,4,5))
-        m.save()
-        self.assertEqual(m.numbers.size(),5)
+        self.assertEqual(m.numbers.size(), 5)
         
 
-class TestPythonZset(test.CleanTestCase):
+class TestPythonZset(test.TestCase):
     
     def testAdd(self):
         s = zset()
@@ -43,26 +42,24 @@ class TestPythonZset(test.CleanTestCase):
         
     
 class TestOrderedSet(test.CleanTestCase):
+    multipledb = 'redis'
     model = Calendar
     models = (Calendar,DateValue)
     
     def setUp(self):
         self.register()
         
-    def fill(self, update = False):
-        ts = Calendar(name = 'MyCalendar').save()
+    def fill(self, update=False):
+        ts = Calendar(name='MyCalendar').save()
         with DateValue.objects.session().begin() as t:
-            for dt,value in zip(dates,values):
-                t.add(DateValue(dt = dt,value = value))
-        
+            for dt, value in zip(dates, values):
+                t.add(DateValue(dt=dt, value=value))
         items = DateValue.objects.query()
-        
         if update:
             ts.data.update(items)
         else:
             for value in items:
                 ts.data.add(value)
-                
         ts.save()
         return ts
     
@@ -74,12 +71,25 @@ class TestOrderedSet(test.CleanTestCase):
         
     def testOrder(self):
         self.fill()
-        ts = Calendar.objects.get(name = 'MyCalendar')
-        self.assertEqual(ts.data.size(),NUM_DATES)
+        ts = Calendar.objects.get(name='MyCalendar')
+        self.assertEqual(ts.data.size(), NUM_DATES)
         dprec = None
         for event in ts.data:
             if dprec:
                 self.assertTrue(event.dt >= dprec)
-            dprec = event.dt    
+            dprec = event.dt
+    
+    def testRank(self):
+        s = self.fill()
+        data = s.data
+        vals = list(data.values())
+        for v in vals:
+            r = data.rank(v)
+            self.assertEqual(vals.index(v), r)
+        items = data.items()
+        # this call should go get the cached values
+        nvals = list(data.values())
+        self.assertEqual(vals, nvals)
+        
                 
 

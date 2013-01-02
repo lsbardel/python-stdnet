@@ -6,6 +6,7 @@ from examples.models import SimpleModel
 
 
 class TestCase(test.TestCase):
+    multipledb = 'redis'
     models = (WordItem, SimpleModel)
     
     def setUp(self):

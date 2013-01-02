@@ -405,16 +405,7 @@ def iteretor_pipelined(f):
 ################################################################################
 ##    STRUCTURES
 ################################################################################
-    
-    
 class RedisStructure(BackendStructure):
-    
-    @iteretor_pipelined
-    def __iter__(self):
-        return self._iter()
-        
-    def _iter(self):
-        raise NotImplementedError()
         
     @property
     def pipelined(self):
@@ -438,7 +429,7 @@ class String(RedisStructure):
     def size(self):
         return self.client.strlen(self.id)
     
-    def incr(self, num = 1):
+    def incr(self, num=1):
         return self.client.incr(self.id, num)
             
     
@@ -458,7 +449,7 @@ class Set(RedisStructure):
     def size(self):
         return self.client.scard(self.id)
     
-    def _iter(self):
+    def __iter__(self):
         return self.client.smembers(self.id)
     
 
@@ -485,12 +476,19 @@ class Zset(RedisStructure):
             else:
                 return r[0]
     
-    def _iter(self):
-        return iter(self.irange(withscores=False))
+    def items(self):
+        return self.irange(withscores=True)
+    
+    def values(self):
+        return self.irange(withscores=False)
+    __iter__ = values
     
     def size(self):
         return self.client.zcard(self.id)
     
+    def rank(self, value):
+        return self.client.zrank(self.id, value)
+        
     def count(self, start, stop):
         return self.client.zcount(self.id, start, stop)
     
@@ -519,12 +517,8 @@ class Zset(RedisStructure):
                 self.client.zpopbyscore(self.id, start, stop,
                                         withscores=withscores, **options),
                 self._range, withscores)
-    
-    def items(self):
-        return self.irange()
-    
+            
     # PRIVATE
-    
     def _range(self, result, withscores):
         if withscores:
             return ((score,v) for v,score in result)
@@ -560,7 +554,7 @@ class List(RedisStructure):
     def size(self):
         return self.client.llen(self.id)
     
-    def _iter(self):
+    def __iter__(self):
         return iter(self.client.lrange(self.id, 0, -1))
 
 
@@ -598,7 +592,7 @@ class Hash(RedisStructure):
     def __contains__(self, key):
         return self.client.hexists(self.id, key)
     
-    def _iter(self):
+    def __iter__(self):
         return iter(self.client.hkeys(self.id))
     
     @iteretor_pipelined
@@ -690,7 +684,7 @@ class NumberArray(RedisStructure):
         return self.client.script_call('numberarray_getset', self.id,
                                        'set', index+1, value)
     
-    def _iter(self):
+    def __iter__(self):
         return iter(self.client.script_call('numberarray_all_raw', self.id))
     
     def resize(self, size, value = None):

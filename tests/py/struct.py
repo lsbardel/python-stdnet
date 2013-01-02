@@ -10,6 +10,7 @@ values = populate('float',len(dates),start=0,end=1000)
 
 
 class StructMixin(object):
+    multipledb = 'redis'
     structure = None
     name = None
     
@@ -210,7 +211,7 @@ class TestZset(StructMixin, test.CleanTestCase):
         '''test a very simple zset with integer'''
         l = self.planets()
         r = list(l.items())
-        self.assertEqual(r,self.result)
+        self.assertEqual(r, self.result)
 
 
 class TestList(StructMixin, test.CleanTestCase):

@@ -119,7 +119,7 @@ and lookup by rank.'''
         'Iterate over values in sorted order'
         node = self.head.next[0]
         while node is not NIL:
-            yield node.score,node.value
+            yield node.score, node.value
             node = node.next[0]
 
     def flat(self):

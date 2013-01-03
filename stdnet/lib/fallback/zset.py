@@ -1,10 +1,14 @@
+import sys
+
 from .skiplist import skiplist
+
+ispy3k = int(sys.version[0]) >= 3
 
 __all__ = ['zset']
 
  
 class zset(object):
-    
+    '''Ordered-set equivalent of redis zset.'''
     def __init__(self):
         self.clear()
                 
@@ -12,11 +16,13 @@ class zset(object):
         return len(self._dict)
     
     def items(self):
+        return self._sl
+    
+    def __iter__(self):
         return iter(self._sl)
-    __iter__ = items
     
     def values(self):
-        for _, v in self.items():
+        for _, v in self._sl:
             yield v
             
     def add(self, score, val):
@@ -47,3 +53,7 @@ class zset(object):
             
     def flat(self):
         return tuple(self._flat())
+    
+    if not ispy3k:  #pragma    nocover
+        iteritems = items
+        itervalues = values

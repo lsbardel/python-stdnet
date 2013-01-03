@@ -104,7 +104,8 @@ class ServerCommandsTestCase(TestCase):
         self.assertEquals(self.client.ttl('a'), 10)
 
     def test_expireat(self):
-        expire_at = datetime.datetime.now() + datetime.timedelta(seconds=61)
+        expire_at = datetime.datetime.now() +\
+                        datetime.timedelta(seconds=60, milliseconds=300)
         self.assertEquals(self.client.expireat('a', expire_at), False)
         self.client['a'] = 'foo'
         # expire at in unix time

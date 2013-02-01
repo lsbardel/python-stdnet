@@ -269,6 +269,10 @@ directly, instead, the :func:`getdb` function should be used.
     value, one obtain a :class:`BackendDataServer` connected to the
     same database as this instance.
     
+.. attribute:: client
+
+    The client handler for the backend database.
+    
 .. attribute:: Query
 
     The :class:`BackendQuery` class for this backend.

@@ -528,15 +528,15 @@ class Session(object):
     def __len__(self):
         return len(self._models)
 
-    def session(self):
-        '''Create a new session from this :class:`Session`'''
-        return self.__class__(self.backend,self.query_class)
-
     @property
     def dirty(self):
         '''set of all changed instances in the session'''
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
+        
+    def session(self):
+        '''Create a new session from this :class:`Session`'''
+        return self.__class__(self.backend,self.query_class)
 
     def model(self, meta):
         if hasattr(meta, '_meta'):
@@ -559,14 +559,39 @@ class Session(object):
             self._models.clear()
 
     def begin(self, **options):
-        '''Begin a new class:`Transaction`.
-If this :class:`Session` is already within a transaction, an error is raised.'''
+        '''Begin a new :class:`Transaction`.
+If this :class:`Session` is already within a transaction, an error is raised.
+It returns the :attr:`transaction` attribute. It can be used in a `with`
+construct::
+    
+    with session.begin() as t:
+        t.add(...
+        ...
+        
+which is equivalent to::
+    
+    t = session.begin()
+    t.add(...
+    ...
+    session.commit()
+    
+`options` parameter are passed to the :class:`Transaction` constructor.
+'''
         if self.transaction is not None:
             raise InvalidTransaction("A transaction is already begun.")
         else:
             self.transaction = Transaction(self, **options)
         return self.transaction
 
+    def commit(self):
+        """Commit the current :attr:`transaction`. If no transaction is in
+progress, this method open one. Rarely used directly, see the :meth:`begin`
+method for details on how to start and close a transaction using the `with`
+construct."""
+        if self.transaction is None:
+            self.begin()
+        return self.transaction.commit()
+    
     def query(self, model, query_class=None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         query_class = query_class or self.query_class
@@ -644,13 +669,6 @@ empty keys associated with the model will exists after this operation.'''
     def __contains__(self, instance):
         sm = self._models.get(instance._meta)
         return instance in sm if sm is not None else False
-
-    def commit(self):
-        """Commit the current transaction.
-If no transaction is in progress, this method open one a."""
-        if self.transaction is None:
-            self.begin()
-        return self.transaction.commit()
 
     def structure(self, instance):
         '''Return a :class:`stdnet.BackendStructure` for a given

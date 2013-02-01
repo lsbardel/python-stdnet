@@ -228,7 +228,7 @@ TS
    :member-order: bysource
 
 
-Session and Managers
+Sessions and Managers
 =========================
 
 Session

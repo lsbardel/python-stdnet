@@ -1,6 +1,6 @@
 import copy
 import logging
-from stdnet.utils import is_bytes_or_string
+from stdnet.utils import is_string
 from stdnet.utils.importer import import_module
 from stdnet import getdb, ModelNotRegistered
 
@@ -166,7 +166,7 @@ For example::
         ...
 
 '''
-    if not is_bytes_or_string(application):
+    if not is_string(application):
         for app in application:
             for m in model_iterator(app):
                 yield m

@@ -513,27 +513,11 @@ in a generative way::
     qs = myquery.load_related('rel1').load_related('rel2','field1','field2')
 
 :rtype: a new :class:`Query`.'''
-        meta = self._meta
-        if related in meta.dfields:
-            field = meta.dfields[related]
-            if not hasattr(field, 'relmodel'):
-                raise FieldError('Load related does not apply to "{0}"'\
-                                 .format(related))
-        else:
-            raise FieldError('Unknown field "{0}"'.format(related))
+        field = self._get_related_field(related)
+        if not field:
+            raise FieldError('%s is not a related field' % related)
         q = self._clone()
-        rf = unique_tuple((v for v in related_fields if v != 'id'))
-        # we need to copy the related dictionary including its values
-        if q.select_related:
-            d = dict(((k, tuple(v)) for k, v in q.select_related.items()))
-        else:
-            d = {}
-        q.data['select_related'] = d
-        if field.name in d:
-            d[field.name] = unique_tuple(d[field.name], rf)
-        else:
-            d[field.name] = rf
-        return q
+        return q._add_to_load_related(field, *related_fields)
 
     def load_only(self, *fields):
         '''This is provides a :ref:`performance boost <increase-performance>`
@@ -544,7 +528,20 @@ to the database. However, it can save you lots of bandwidth when excluding
 data intensive fields you don't need.
 '''
         q = self._clone()
-        fs = unique_tuple(q.fields, fields)
+        new_fields = []
+        for field in fields:
+            if JSPLITTER in field:
+                bits = field.split(JSPLITTER)
+                related = self._get_related_field(bits[0])
+                if related:
+                    q._add_to_load_related(related, JSPLITTER.join(bits[1:]))
+                    continue
+            new_fields.append(field)
+        if fields and not new_fields:
+            # if we added a field to the load_related list and not fields are
+            # are left we add the primary key so that other firls are not loaded.
+            new_fields.append(self._meta.pkname())
+        fs = unique_tuple(q.fields, new_fields)
         q.data['fields'] = fs if fs else None
         return q
 
@@ -776,3 +773,24 @@ of instances of models.'''
  unique results'.format(self))
         else:
             raise self.model.DoesNotExist()
+
+    def _get_related_field(self, related):
+        meta = self._meta
+        if related in meta.dfields:
+            field = meta.dfields[related]
+            if hasattr(field, 'relmodel'):
+                return field
+            
+    def _add_to_load_related(self, field, *related_fields):
+        rf = unique_tuple((v for v in related_fields if v != 'id'))
+        # we need to copy the related dictionary including its values
+        if self.select_related:
+            d = dict(((k, tuple(v)) for k, v in self.select_related.items()))
+        else:
+            d = {}
+        self.data['select_related'] = d
+        if field.name in d:
+            d[field.name] = unique_tuple(d[field.name], rf)
+        else:
+            d[field.name] = rf
+        return self

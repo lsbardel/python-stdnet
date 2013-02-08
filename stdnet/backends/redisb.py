@@ -894,8 +894,10 @@ class BackendDataServer(stdnet.BackendDataServer):
                 rel_managers.append(rmanager)
         # loop over related managers
         for rmanager in rel_managers:
-            rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
-            self.accumulate_delete(pipe, rq)
+            # IMPORTANT. delete only if field is required
+            if rmanager.field.required:
+                rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
+                self.accumulate_delete(pipe, rq)
         self.odmrun(pipe, 'delete', meta, keys, meta_info)
     
     def tempkey(self, meta, name = None):

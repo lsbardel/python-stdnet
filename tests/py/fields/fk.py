@@ -44,3 +44,4 @@ class fkmeta(test.TestCase):
     def testCoverage(self):
         self.assertRaises(FieldError, odm.ForeignKey, None)
         
+        

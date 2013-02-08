@@ -55,7 +55,9 @@ class StdModel(StdNetBase):
     @property
     def has_all_data(self):
         '''``True`` if this :class:`StdModel` instance has all backend data
-loaded. This only apply to persistent instances.'''
+loaded. This only apply to persistent instances. This property is used when
+committing changes. If all data is available, the commit will replace the
+previous object data entirely, otherwise it will only update it.'''
         return self.state().persistent and self._loadedfields is None
 
     def loadedfields(self):

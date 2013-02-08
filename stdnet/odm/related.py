@@ -124,8 +124,13 @@ class LazyForeignKey(object):
             val = getattr(instance, field.attname)
             if val is None:
                 return None
-
-            rel_obj = instance.session.query(field.relmodel).get(id = val)
+            try:
+                rel_obj = instance.session.query(field.relmodel).get(id=val)
+            except instance.DoesNotExist:
+                if field.required:
+                    raise
+                rel_obj = None
+                setattr(instance, field.attname, None)
             setattr(instance, cache_name, rel_obj)
             return rel_obj
 

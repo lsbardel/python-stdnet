@@ -195,7 +195,7 @@ Only common fields are aggregated.
             keys.intersection_update(serie[1])
         result = {}
         for key in keys:
-            key_series = tuple((weight,d[key]) for weight,d in series)
+            key_series = tuple((weight, d[key]) for weight, d in series)
             result[key] = addmul_number_dicts(*key_series)
         return result
     

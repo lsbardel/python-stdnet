@@ -130,19 +130,25 @@ loaded. The correct behavior should be to updated the field and indexes.'''
             self.assertEqual(m._loadedfields,('group',))
         
         
-class LoadOnlyRelated(test.CleanTestCase):
+class LoadOnlyRelated(test.TestCase):
     models = (Person, Group)
     
-    def setUp(self):
-        session = self.session()
+    @classmethod
+    def setUpClass(cls):
+        super(LoadOnlyRelated, cls).setUpClass()
+        session = cls.session()
         with session.begin():
-            g1 = session.add(Group(name = 'bla'))
-            g2 = session.add(Group(name = 'foo'))
+            g1 = session.add(Group(name='bla', description='bla bla'))
+            g2 = session.add(Group(name='foo', description='foo foo'))
         with session.begin():
-            session.add(Person(name = 'luca', group = g1))
-            session.add(Person(name = 'carl', group = g1))
-            session.add(Person(name = 'bob', group = g1))
-            
+            session.add(Person(name='luca', group=g1))
+            session.add(Person(name='carl', group=g1))
+            session.add(Person(name='bob', group=g1))
+    
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
+        
     def test_simple(self):
         session = self.session()
         query = session.query(Person)
@@ -157,6 +163,22 @@ class LoadOnlyRelated(test.CleanTestCase):
             g = m.group
             self.assertTrue(isinstance(g,Group))
             
+    def testLoadForeignKeyFields(self):
+        session = self.session()
+        qs = session.query(Person).load_only('group__name')
+        group = Person._meta.dfields['group']
+        for m in qs:
+            self.assertEqual(m._loadedfields, ('group',))
+            self.assertFalse(hasattr(m, 'name'))
+            self.assertTrue(hasattr(m, 'group_id'))
+            cache_name = group.get_cache_name()
+            g = getattr(m, cache_name, None)
+            self.assertTrue(g)
+            self.assertTrue(isinstance(g, group.relmodel))
+            # And now check what is loaded with g
+            self.assertEqual(g._loadedfields, ('name',))
+            self.assertFalse(hasattr(g, 'description'))
+            
 
 class TestFieldReplace(test.CleanTestCase):
     model = Statistics3
@@ -167,10 +189,10 @@ class TestFieldReplace(test.CleanTestCase):
             s.add(self.model(name = 'a',
                              data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}}))
         
-    def testLoadOnly(self):
+    def test_load_only(self):
         session = self.session()
         query = session.query(self.model)
-        s = query.load_only('name','data__pv').get(id = 1)
+        s = query.load_only('name', 'data__pv').get(id = 1)
         self.assertEqual(s.name,'a')
         self.assertEqual(s.data__pv,0.5)
         self.assertFalse(s.has_all_data)

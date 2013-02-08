@@ -136,6 +136,7 @@ class SportAtDate2(TestDateModel):
 
 class Group(odm.StdModel):
     name = odm.SymbolField()
+    description = odm.CharField()
 
 
 class Person(odm.StdModel):
@@ -246,6 +247,27 @@ class DateData(odm.StdModel):
     dt1 = odm.DateField(required = False)
     dt2 = odm.DateTimeField(default=datetime.now)
 
+
+class CrossData(odm.StdModel):
+    name = odm.SymbolField()
+    data = odm.JSONField(as_string=False)
+    
+    
+class FeedBase(odm.StdModel):
+    name = odm.SymbolField()
+    live = odm.ForeignKey(CrossData, required=False)
+    prev = odm.ForeignKey(CrossData, required=False)
+    
+    class Meta:
+        abstract = True
+        
+    
+class Feed1(FeedBase):
+    pass
+
+
+class Feed2(FeedBase):
+    pass
 
 ####################################################
 # Custom ID

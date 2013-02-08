@@ -90,7 +90,8 @@ class Metaclass(ModelMeta):
     '''An instance of :class:`Metaclass` stores all information
 which maps a :class:`StdModel` into an object in the in a remote
 :class:`stdnet.BackendDataServer`.
-An instance is initiated by the odm when a :class:`StdModel` class is created.
+An instance is initiated by the :mod:`stdnet.odm` when a :class:`StdModel`
+class is created.
 
 To override default behaviour you can specify the ``Meta`` class as an inner
 class of :class:`StdModel` in the following way::
@@ -205,6 +206,7 @@ mapper.
             self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
 
     def pkname(self):
+        '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
 
     def pk_to_python(self, id):
@@ -285,11 +287,11 @@ of fields names and a list of field attribute names.'''
                 bname = name.split(JSPLITTER)[0]
                 if bname in dfields:
                     field = dfields[bname]
-                    if field.type == 'json object':
+                    if field.type in ('json object', 'related object'):
                         processed.add(name)
                         names.append(name)
                         atts.append(name)
-        return names,atts
+        return names, atts
 
     def as_dict(self):
         '''Model metadata in a dictionary'''

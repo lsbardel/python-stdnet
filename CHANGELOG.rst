@@ -2,8 +2,7 @@
 
 Ver. 0.8 - Development
 ===============================
-* Added :ref:`mongoDB backend <mongo-server>`.
-* Increased test coverage.
+* Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
 * Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
   a valid expression (lua for redis and javascript for mongodb).
 * :class:`stdnet.odm.AutoField` does not inherit from :class:`stdnet.odm.IntegerField` so that it
@@ -15,7 +14,16 @@ Ver. 0.8 - Development
   To do so, ii must be accessed via the class rather than an instance.
   Also the `through` attribute has been removed as it was equivalent to
   the `model` attribute. 
-* **644 regression tests** with **93%** coverage.
+* The :ref:`load_only <performance-loadonly>` query method can be applied to
+  field of related models.
+* Changed the default value of :attr:`stdnet.ForeignKey.related_name` attribute
+  to accomodate for multiple foreign key with same related model in the same
+  model.
+* Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
+  set to ``False``. Previously the deletion of instances of the related
+  model caused the deletion of the instances pointing to those deleted objects. 
+* Increased test coverage.
+* **645 regression tests** with **93%** coverage.
   
 Ver. 0.7.1 - Development
 ===============================

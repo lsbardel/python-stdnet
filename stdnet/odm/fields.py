@@ -11,7 +11,7 @@ from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, to_string, is_string,\
-                         is_bytes_or_string, iteritems,\
+                         iteritems,\
                          encoders, flat_to_nested, dict_flat_generator,\
                          string_type
 
@@ -568,10 +568,10 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def _set_relmodel(self, relmodel):
         self.relmodel = relmodel
         meta  = self.relmodel._meta
-        related_name = self.related_name or '%s_set' % self.model._meta.name
-        if related_name not in meta.related and related_name\
+        if not self.related_name:
+            self.related_name = '%s_%s_set' % (self.model._meta.name, self.name)
+        if self.related_name not in meta.related and self.related_name\
                                                  not in meta.dfields:
-            self.related_name = related_name
             self._register_with_related_model()
         else:
             raise FieldError('Duplicated related name "{0}"\

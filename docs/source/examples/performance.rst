@@ -85,12 +85,29 @@ where you know you don't need those particular fields, you can tell stdnet
 to load a subset from the database by using the :meth:`Query.load_only`
 or :meth:`Query.dont_load` methods.
 
-For example I need to load all my *EUR* Funds from the :ref:`example application <tutorial-application>`
+For example I need to load all my *EUR* Funds from the
+:ref:`example application <tutorial-application>`
 but I don't need to see the *description* and *ccy*::
 
     qs = Fund.objects.filter(ccy="EUR").load_only('name')
 
-or equivantely::
+Importantly, the ``load_only`` method can also be applied to related objects
+fields. For example if I need to load ``Positions`` from
+:ref:`example application <tutorial-application>` and only the currency field
+is required from the ``instrument`` field one could issue the command::
+
+    qs = Position.objects.query().load_only('instrument__ccy')
+
+This is equivalent to the use of :meth:`Query.load_related`::
+
+    qs = Position.objects.query().load_related('instrument', 'ccy')
+
+
+Use dont_load
+================
+
+Opposite of :ref:`load_only <performance-loadonly>`, it can be used to avoid
+loading a subsets of fields::
 
     qs = Fund.objects.filter(ccy="EUR").dont_load('description', 'ccy')
 

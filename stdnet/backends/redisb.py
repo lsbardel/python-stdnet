@@ -50,7 +50,7 @@ def decode_fields(meta, iterable):
     for attname, value in iterable:
         if attname.endswith('_id'):
             decoder = field_decoder(meta, attname[:-3])
-            if decoder:
+            if decoder and value is not None:
                 value = decoder(value)
         yield attname, value
         

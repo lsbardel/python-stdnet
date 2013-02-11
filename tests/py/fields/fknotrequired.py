@@ -65,3 +65,25 @@ class NonRequiredForeignKey(test.CleanTestCase):
         self.create_feeds()
         for feed in Feed1.objects.query().load_related('live', 'id'):
             self.assertEqual(feed.live, None)
+            
+    def test_load_only_missing_related(self):
+        '''load_only on a related field which is missing.'''
+        self.create_feeds()
+        qs = Feed1.objects.query().load_only('live__pv')
+        self.assertEqual(qs.count(), 2)
+        for feed in qs:
+            self.assertEqual(feed.live, None)
+            
+    def test_load_only_some_missing_related(self):
+        '''load_only on a related field which is missing.'''
+        self.create_feeds()
+        feed = Feed1.objects.get(name='bla')
+        feed.live = CrossData(name='live', data={'pv': 30, 'delta': 40}).save()
+        feed.save()
+        qs = Feed1.objects.query().load_only('name', 'live__data__pv')
+        self.assertEqual(qs.count(), 2)
+        for feed in qs:
+            if feed.name == 'bla':
+                self.assertEqual(feed.live.data['pv'], 30)
+            else:
+                self.assertEqual(feed.live, None)

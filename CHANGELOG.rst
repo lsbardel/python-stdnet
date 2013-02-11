@@ -2,11 +2,13 @@
 
 Ver. 0.8 - Development
 ===============================
+* This version brings several bug fixes and new functionalities. 
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
+  Very much alpha at this stage.
 * Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
   a valid expression (lua for redis and javascript for mongodb).
-* :class:`stdnet.odm.AutoField` does not inherit from :class:`stdnet.odm.IntegerField` so that it
-  works for different backends.
+* :class:`stdnet.odm.AutoField` does not inherit from
+  :class:`stdnet.odm.IntegerField` so that it works for different backends.
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
   the main test class for handling tests on multiple backends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
@@ -24,7 +26,7 @@ Ver. 0.8 - Development
 * Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects. 
-* **647 regression tests** with **93%** coverage.
+* **649 regression tests** with **93%** coverage.
   
 .. _vers07:
 

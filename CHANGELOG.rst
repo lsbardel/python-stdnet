@@ -1,4 +1,4 @@
-.. _vers07:
+.. _vers08:
 
 Ver. 0.8 - Development
 ===============================
@@ -24,39 +24,14 @@ Ver. 0.8 - Development
 * Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects. 
-* Increased test coverage.
-* **646 regression tests** with **93%** coverage.
+* **647 regression tests** with **93%** coverage.
   
-Ver. 0.7.1 - Development
-===============================
-* Splicing a query in conjunction with :meth:`stdnet.odm.Q.get_field` request
-  throws a :class:`stdnet.QuerySetException`. See issue #50.
-* Travis continuous integration.
-* **634 regression tests** with **93%** coverage.
+.. _vers07:
 
 Ver. 0.7.0 - 2012 Oct 25
 ===============================
-* First official release of version 0.7.0. Requires redis_ 2.6 or above.
-* Supported python versions: 2.6, 2.7, 3.2, 3.3.
-* Several fixes in documentation.
-* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``ge``, ``lt`` and ``le``.
-* Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
-* **624 regression tests** with **92%** coverage.
-
-Ver. 0.7c6 - 2012 Sep 10
-===============================
-* **Tested with redis 2.6.0-rc6**.
-* Several fixes in the documentation.
-* Added an asynchronous connection class for Redis. It requires pulsar_ concurrent framework.
-* Lua script for univariate timeseries. This means the standard redis distribution
-  works with the :class:`stdnet.odm.TS` structure.
-* Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
-  the :func:`stdnet.odm.all_models_sessions` function (issue #48).
-* **587 regression tests** with **91%** coverage.
-
-Ver. 0.7c3 - 2012 May 02
-===============================
 * **It requires redis 2.6 or higher**.
+* Supported python versions: 2.6, 2.7, 3.2, 3.3.
 * Some backward incompatible changes in the API and database schema.
 * Tons of new features including a richer query API, improved performance via custom
   query options, more flexible transactions and lua_ scripting for redis_.
@@ -66,6 +41,8 @@ Ver. 0.7c3 - 2012 May 02
 * Redesign of :class:`stdnet.odm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.
   *This is the only backward incompatible change both in terms of API and database scema*.
+* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``ge``, ``lt`` and ``le``.
+* Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
 * Added :class:`stdnet.odm.CompositeIdField` to handle situations where each
   combination of given set of :class:`stdnet.odm.Field` must be unique.
 * If you have cython_ installed in your python path, the setup.py script will
@@ -102,8 +79,12 @@ Ver. 0.7c3 - 2012 May 02
 * Added :mod:`stdnet.utils.dates`.
 * Added :mod:`stdnet.utils.path`.
 * Added a Lua test suite for testing stand alone scripts. Requires lunatest_.
+* Serialisation works for :attr:`stdnet.odm.ManyToMany.through` models via
+  the :func:`stdnet.odm.all_models_sessions` function (issue #48).
+* Lua script for univariate timeseries. This means the standard redis distribution
+  works with the :class:`stdnet.odm.TS` structure.
 * PEP 386-compliant version number.
-* **574 regression tests** with **91%** coverage.
+* **624 regression tests** with **92%** coverage.
 
 .. _vers06:
 

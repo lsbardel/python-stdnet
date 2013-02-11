@@ -522,20 +522,22 @@ odm.Model = {
                 local rbk, processed = rel.bk, {}
                 for i, res in ipairs(result) do
                     local rid = redis.call('hget', self:object_key(res[1]), field)
-                    local val = processed[rid]
-                    if not val then
-                        if # fields == 1 and fields[1] == '' then
-                            val = {}
-                            table.insert(field_items, rid)
-                        else
-                            if # fields > 0 then
-                                val = redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))
+                    if rid then
+                        local val = processed[rid]
+                        if not val then
+                            if # fields == 1 and fields[1] == '' then
+                                val = {}
+                                table.insert(field_items, rid)
                             else
-                                val = redis.call('hgetall', rbk .. ':obj:' .. rid)
+                                if # fields > 0 then
+                                    val = redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))
+                                else
+                                    val = redis.call('hgetall', rbk .. ':obj:' .. rid)
+                                end
+                                table.insert(field_items, {rid, val})
                             end
-                            table.insert(field_items, {rid, val})
+                            processed[rid] = val
                         end
-                        processed[rid] = val
                     end
                 end
             end

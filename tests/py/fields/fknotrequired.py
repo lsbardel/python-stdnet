@@ -5,7 +5,7 @@ from stdnet.utils import test
 from examples.models import Feed1, Feed2, CrossData 
 
 
-class fkmeta(test.CleanTestCase):
+class NonRequiredForeignKey(test.CleanTestCase):
     models = (Feed1, Feed2, CrossData)
     
     def setUp(self):
@@ -60,3 +60,8 @@ class fkmeta(test.CleanTestCase):
             self.assertFalse(feed.live_id)
             self.assertFalse(feed.prev)
             self.assertFalse(feed.prev_id)
+            
+    def test_load_related(self):
+        self.create_feeds()
+        for feed in Feed1.objects.query().load_related('live', 'id'):
+            self.assertEqual(feed.live, None)

@@ -64,7 +64,7 @@ class LoadOnly(test.CleanTestCase):
     def test_idonly_delete(self):
         query = self.session().query(self.model)
         query.load_only('id').delete()
-        qs = query.filter(group = 'group1')
+        qs = query.filter(group='group1')
         self.assertEqual(qs.count(),0)
         qs = query.all()
         self.assertEqual(qs,[])

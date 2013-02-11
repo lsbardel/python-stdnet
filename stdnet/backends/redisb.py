@@ -106,7 +106,7 @@ class odmrun(redis.RedisScript):
         _ = field_decoder(meta)
         fields = tuple(fields) if fields else None
         if fields:
-            if len(fields) == 1 and fields[0] == 'id':
+            if len(fields) == 1 and fields[0] in (meta.pkname(), ''):
                 for id in response:
                     yield _(id), (), {}
             else:
@@ -126,9 +126,9 @@ class odmrun(redis.RedisScript):
             if fmeta.name in ('hashtable', 'zset'):
                 return ((native_str(id, encoding),
                          pairs_to_dict(fdata, encoding)) for \
-                        id,fdata in data)
+                        id, fdata in data)
             else:
-                return ((native_str(id, encoding),fdata) for id,fdata in data)
+                return ((native_str(id, encoding), fdata) for id, fdata in data)
         else:
             # this is data for stdmodel instances
             return self.build(data, meta, fields, fields, encoding)
@@ -385,10 +385,15 @@ elements in the query.'''
                 field = meta.dfields[rel]
                 relmodel = field.relmodel
                 bk = self.backend.basekey(relmodel._meta) if relmodel else ''
+                fields = list(related[rel])
+                if meta.pkname() in fields:
+                    fields.remove(meta.pkname())
+                    if not fields:
+                        fields.append('')
                 data = {'field': field.attname,
                         'type': field.type if field in meta.multifields else '',
                         'bk': bk,
-                        'fields': related[rel]}
+                        'fields': fields}
                 yield field.name, data
             
 

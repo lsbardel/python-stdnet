@@ -16,6 +16,8 @@ Ver. 0.8 - Development
   the `model` attribute. 
 * The :ref:`load_only <performance-loadonly>` query method can be applied to
   field of related models.
+* The :ref:`load_related <performance-loadrelated>` query method can now load only
+  the ``primary key`` of the related element.
 * Changed the default value of :attr:`stdnet.ForeignKey.related_name` attribute
   to accomodate for multiple foreign key with same related model in the same
   model.
@@ -23,7 +25,7 @@ Ver. 0.8 - Development
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects. 
 * Increased test coverage.
-* **645 regression tests** with **93%** coverage.
+* **646 regression tests** with **93%** coverage.
   
 Ver. 0.7.1 - Development
 ===============================

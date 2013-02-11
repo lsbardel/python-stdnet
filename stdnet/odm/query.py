@@ -782,7 +782,7 @@ of instances of models.'''
                 return field
             
     def _add_to_load_related(self, field, *related_fields):
-        rf = unique_tuple((v for v in related_fields if v != 'id'))
+        rf = unique_tuple((v for v in related_fields))
         # we need to copy the related dictionary including its values
         if self.select_related:
             d = dict(((k, tuple(v)) for k, v in self.select_related.items()))

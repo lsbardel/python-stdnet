@@ -71,6 +71,24 @@ class test_load_related(test.TestCase):
             self.assertTrue(val.name)
             self.assertTrue(val.ccy)
             self.assertFalse(hasattr(val,'type'))
+            
+    def test_with_id_only(self):
+        '''Test load realated when loading only the id'''
+        session = self.session()
+        query = session.query(Position)
+        pos = query.load_related('instrument', 'id')
+        inst = Position._meta.dfields['instrument']
+        pos = list(pos)
+        self.assertTrue(pos)
+        for p in pos:
+            cache = inst.get_cache_name()
+            val = getattr(p, cache, None)
+            self.assertTrue(val)
+            self.assertTrue(isinstance(val, inst.relmodel))
+            self.assertFalse(hasattr(val,'name'))
+            self.assertFalse(hasattr(val,'ccy'))
+            self.assertFalse(hasattr(val,'type'))
+            self.assertEqual(set(val._loadedfields), set())
 
     def testDouble(self):
         session = self.session()
@@ -95,9 +113,9 @@ class test_load_related(test.TestCase):
         query = session.query(Position)
         pos = self.assertRaises(FieldError, query.load_related, 'bla')
         pos = self.assertRaises(FieldError, query.load_related, 'size')
-        pos = query.load_related('instrument','id')
-        self.assertEqual(len(pos.select_related),1)
-        self.assertEqual(pos.select_related['instrument'], ())
+        pos = query.load_related('instrument', 'id')
+        self.assertEqual(len(pos.select_related), 1)
+        self.assertEqual(pos.select_related['instrument'], ('id',))
 
     def testLoadRelatedLoadOnly(self):
         session = self.session()

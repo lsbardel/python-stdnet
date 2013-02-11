@@ -200,7 +200,22 @@ attribute set to ``True`` will be excluded.'''
                                           callable(self, kwargs, **params),
                                           sender=self._meta.model)
         return self
-
+    
+    def get_model_attribute(self, name):
+        '''Extract an attribute name form this instance.'''
+        if JSPLITTER in name:
+            bits = name.split(JSPLITTER)
+            fname = bits[0] 
+            if fname in self._meta.dfields:
+                value = getattr(self, fname, None)
+                if value is not None:
+                    try:
+                        return self._meta.dfields[fname].get_attr(value,
+                                                                  bits[1:])
+                    except AttributeError:
+                        pass
+        return getattr(self, name)
+    
     # PICKLING SUPPORT
 
     def __getstate__(self):

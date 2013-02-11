@@ -264,6 +264,12 @@ function users should never call.'''
         return False
 
     ############################################################################
+    ##    NESTED ATTRIBUTES
+    ############################################################################
+    def get_attr(self, value, name):
+        raise AttributeError
+    
+    ############################################################################
     ##    FIELD CONVERTERS
     ############################################################################
 
@@ -585,6 +591,9 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
     def get_attname(self):
         return '%s_id' % self.name
+        
+    def get_attr(self, value, bits):
+        return value.get_model_attribute(JSPLITTER.join(bits))
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
@@ -732,6 +741,15 @@ behaviour and how the field is stored in the back-end server.
 
     def get_sorting(self, name, errorClass):
         pass
+    
+    def get_attr(self, value, bits):
+        try:
+            for bit in bits:
+                value = value[bit]
+            return value
+        except Exception:
+            raise AttributeError
+            
 
 
 class ModelField(SymbolField):

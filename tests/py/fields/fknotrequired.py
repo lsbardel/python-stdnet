@@ -87,3 +87,16 @@ class NonRequiredForeignKey(test.CleanTestCase):
                 self.assertEqual(feed.live.data['pv'], 30)
             else:
                 self.assertEqual(feed.live, None)
+                
+    def test_has_attribute(self):
+        self.create_feeds_with_data()
+        qs = Feed1.objects.query().load_only('name', 'live__data__pv')
+        self.assertEqual(qs.count(), 2)
+        for feed in qs:
+            name = feed.get_model_attribute('name')
+            if name == 'bla':
+                self.assertEqual(feed.get_model_attribute('live__data__pv'), 30)
+            else:
+                self.assertEqual(feed.get_model_attribute('live__data__pv'), 40)
+            self.assertRaises(AttributeError, feed.get_model_attribute, 'a__b')
+        

@@ -527,9 +527,12 @@ from its :class:`Manager`.'''
         with session.begin():
             session.delete(self)
         return self
+    
+    def get_model_attribute(self, name):
+        return getattr(self, name)
 
 
-ModelBase = ModelType('ModelBase',(Model,),{'is_base_class': True})
+ModelBase = ModelType('ModelBase', (Model,), {'is_base_class': True})
 
 
 def from_uuid(uuid, session = None):

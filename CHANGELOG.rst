@@ -28,7 +28,7 @@ Ver. 0.8 - Development
   model caused the deletion of the instances pointing to those deleted objects.
 * Added the new :meth:`stdnet.StdModel.get_model_attribute` method for
   retrieving nested attribute values using the double underscore notation.
-* **650 regression tests** with **93%** coverage.
+* **651 regression tests** with **93%** coverage.
   
 .. _vers07:
 

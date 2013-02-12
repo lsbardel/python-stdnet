@@ -524,17 +524,21 @@ odm.Model = {
                     local rid = redis.call('hget', self:object_key(res[1]), field)
                     if rid then
                         local val = processed[rid]
+                        -- The related field needs to be loaded
                         if not val then
-                            if # fields == 1 and fields[1] == '' then
-                                val = {}
-                                table.insert(field_items, rid)
-                            else
-                                if # fields > 0 then
-                                    val = redis.call('hmget', rbk .. ':obj:' .. rid, unpack(fields))
+                            local related_key = rbk .. ':obj:' .. rid
+                            val = 1
+                            if redis_type(related_key) == 'hash' then
+                                if # fields == 1 and fields[1] == '' then
+                                    table.insert(field_items, rid)
                                 else
-                                    val = redis.call('hgetall', rbk .. ':obj:' .. rid)
+                                    if # fields > 0 then
+                                        val = redis.call('hmget', related_key, unpack(fields))
+                                    else
+                                        val = redis.call('hgetall', related_key)
+                                    end
+                                    table.insert(field_items, {rid, val})
                                 end
-                                table.insert(field_items, {rid, val})
                             end
                             processed[rid] = val
                         end

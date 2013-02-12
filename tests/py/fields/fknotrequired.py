@@ -99,4 +99,23 @@ class NonRequiredForeignKey(test.CleanTestCase):
             else:
                 self.assertEqual(feed.get_model_attribute('live__data__pv'), 40)
             self.assertRaises(AttributeError, feed.get_model_attribute, 'a__b')
-        
+            
+    def test_load_related_when_deleted(self):
+        '''Use load_related on foreign key which was deleted.'''
+        self.create_feeds_with_data()
+        feed = Feed1.objects.get(name='bla')
+        self.assertTrue(feed.live)
+        self.assertEqual(feed.live.id, feed.live_id)
+        # Now we delete the feed
+        feed.live.delete()
+        # we still have a reference to it
+        self.assertTrue(feed.live_id)
+        self.assertTrue(feed.live)
+        #
+        feed = Feed1.objects.get(name='bla')
+        self.assertFalse(feed.live)
+        self.assertFalse(feed.live_id)
+        #
+        feed = Feed1.objects.query().load_related('live').get(name='bla')
+        self.assertFalse(feed.live)
+        self.assertFalse(feed.live_id)

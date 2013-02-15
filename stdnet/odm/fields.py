@@ -746,6 +746,8 @@ behaviour and how the field is stored in the back-end server.
         try:
             for bit in bits:
                 value = value[bit]
+            if isinstance(value, dict) and '' in value:
+                value = value['']
             return value
         except Exception:
             raise AttributeError

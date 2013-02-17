@@ -16,3 +16,4 @@ htmlprof
 .pydevproject
 MANIFEST
 vendor/src/hr.c
+*~

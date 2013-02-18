@@ -11,7 +11,9 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install --use-mirrors argparse unittest2; fi
   - pip install pulsar
   - python setup.py install
-before_script: sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm && pwd
+  - sudo rm -rf stdnet
+  - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
+  - ls -la
 script: python -m runtests --verbosity 2 --log-level debug
 
 branches:

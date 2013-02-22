@@ -148,9 +148,11 @@ within this :class:`Session`.'''
         elif id in self._loaded:
             return self._loaded.get(id)
 
-    def add(self, instance, modified = True, persistent = None):
-        '''Add a new instance to the session.
+    def add(self, instance, modified=True, persistent=None):
+        '''Add a new instance to this :class:`SessionModel`.
 
+:modified: Optional flag indicating if the *instance* has been modified. By
+    default its value is ``True``.
 :rtype: The instance added to the session'''
         state = instance.state()
         if state.deleted:
@@ -161,7 +163,7 @@ within this :class:`Session`.'''
         if persistent:
             instance._dbdata[pkname] = instance.pkvalue()
         else:
-            instance._dbdata.pop(pkname,None)
+            instance._dbdata.pop(pkname, None)
         state = instance.state(update=True)
         iid = state.iid
         if state.persistent:
@@ -629,8 +631,7 @@ from the **kwargs** parameters.
         '''Add an *instance* to the session.
 
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
-:parameter modified: a boolean flag indictaing if the instance was modified.
-
+:parameter modified: a boolean flag indicating if the instance was modified.
 '''
         sm = self.model(instance._meta)
         instance.session = self

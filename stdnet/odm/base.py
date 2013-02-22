@@ -449,7 +449,7 @@ unique identifier for an instance of a model.'''
 raised when trying to save an invalid instance.'''
 
     def __new__(cls, *args, **kwargs):
-        o = super(Model,cls).__new__(cls)
+        o = super(Model, cls).__new__(cls)
         pkname = cls._meta.pkname()
         setattr(o, pkname, kwargs.pop(pkname, None))
         o._dbdata = {}

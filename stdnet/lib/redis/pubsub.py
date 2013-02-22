@@ -1,7 +1,5 @@
 from collections import deque
 
-from stdnet.utils import is_string
-
 from .client import RedisProxy, RedisConnectionTimeout
     
 

@@ -1,3 +1,4 @@
+'''Sessions and transactions management'''
 from stdnet import odm, getdb
 
 from stdnet.utils import test
@@ -88,4 +89,11 @@ class TestSession(test.CleanTestCase):
         # now filter on old group
         qs = session.query(self.model).filter(group='planet')
         self.assertEqual(qs.count(), 0)
+    
+    
+class TestLongSessions(test.CleanTestCase):
+    model = SimpleModel
+    
+    def __testCreate(self):
+        session.begin()
     

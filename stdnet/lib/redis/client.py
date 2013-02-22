@@ -17,7 +17,7 @@ from uuid import uuid4
 from functools import partial
 from collections import namedtuple
 
-from stdnet.utils import zip, is_int, iteritems, is_string, flat_mapping
+from stdnet.utils import zip, is_int, iteritems, native_str, flat_mapping
 from stdnet.utils.dispatch import Signal
 
 from .connection import *
@@ -586,7 +586,8 @@ specified ``offset``'''
 
         If timeout is 0, then block indefinitely.
         """
-        if is_string(keys):
+        keys = native_str(keys)
+        if isinstance(keys, str):
             keys = [keys]
         else:
             keys = list(keys)
@@ -604,7 +605,8 @@ specified ``offset``'''
 
         If timeout is 0, then block indefinitely.
         """
-        if is_string(keys):
+        keys = native_str(keys)
+        if isinstance(keys, str):
             keys = [keys]
         else:
             keys = list(keys)

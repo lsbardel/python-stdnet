@@ -139,7 +139,7 @@ class TestRegisteredThroughModel(TestManyToManyBase):
         
 
 class TestManyToManyThrough(test.TestCase):
-    models = (Composite, Element)
+    models = (Composite, Element, CompositeElement)
     
     def testMetaComposite(self):
         meta = Composite._meta
@@ -164,3 +164,15 @@ class TestManyToManyThrough(test.TestCase):
         self.assertEqual(manager.model,CompositeElement)
         self.assertEqual(manager.relmodel,Element)
         self.assertEqual(manager.formodel,Composite)
+        
+    def testAdd(self):
+        session = self.session()
+        with session.begin():
+            c = session.add(Composite(name='test'))
+            e1 = session.add(Element(name='foo'))
+            e2 = session.add(Element(name='bla'))
+        c.elements.add(e1, weight=1.5)
+        c.elements.add(e2, weight=-1)
+        elems = c.elements.throughquery()
+        for elem in elems:
+            self.assertTrue(elem.weight)

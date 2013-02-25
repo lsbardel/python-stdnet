@@ -21,7 +21,7 @@ snippet implements two models, ``Author`` and ``Book``::
 
     from stdnet import odm
 
-    class Author(odm.StModel):
+    class Author(odm.StdModel):
         name = odm.SymbolField()
 
     class Book(odm.StdModel):

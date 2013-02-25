@@ -1,6 +1,6 @@
 import copy
 import logging
-from stdnet.utils import is_string
+from stdnet.utils import native_str
 from stdnet.utils.importer import import_module
 from stdnet import getdb, ModelNotRegistered
 
@@ -166,7 +166,8 @@ For example::
         ...
 
 '''
-    if not is_string(application):
+    application = native_str(application)
+    if not isinstance(application, str):
         for app in application:
             for m in model_iterator(app):
                 yield m

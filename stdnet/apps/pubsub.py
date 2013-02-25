@@ -33,7 +33,7 @@ import logging
 from inspect import isclass
 
 from stdnet import odm, getdb, AsyncObject
-from stdnet.utils import encoders, is_string
+from stdnet.utils import encoders
 
 
 logger = logging.getLogger('stdnet.pubsub')

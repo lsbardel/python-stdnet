@@ -21,13 +21,14 @@ Ver. 0.8 - Development
 * The :ref:`load_related <performance-loadrelated>` query method can now load only
   the ``primary key`` of the related element.
 * Changed the default value of :attr:`stdnet.ForeignKey.related_name` attribute
-  to accomodate for multiple foreign key with same related model in the same
+  to accommodate for multiple foreign keys with same related model in the same
   model.
 * Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects.
 * Added the new :meth:`stdnet.StdModel.get_model_attribute` method for
   retrieving nested attribute values using the double underscore notation.
+* :attr:`stdnet.Field.default` made read-only.
 * **651 regression tests** with **93%** coverage.
   
 .. _vers07:

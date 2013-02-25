@@ -7,7 +7,7 @@ from decimal import Decimal
 from random import random, randint, choice
 
 import stdnet
-from stdnet.utils import test, zip, is_string, to_string, unichr, ispy3k, range
+from stdnet.utils import test, zip, to_string, unichr, ispy3k, range
 from stdnet.utils import date2timestamp
 from stdnet.utils.populate import populate
 

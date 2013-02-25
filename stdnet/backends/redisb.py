@@ -833,7 +833,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''
         pipe = self.client.pipeline()
-        for sm in session:
+        for sm in session:  #loop through model sessions
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':

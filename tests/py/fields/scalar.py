@@ -191,9 +191,9 @@ class TestBoolField(test.CleanTestCase):
             self.assertEqual(func(''),0)
             self.assertEqual(func(None),0)
         
-    def testBoolValue(self):
-        d = self.model(pv = 1.).save()
-        d = self.model.objects.get(id = d.id)
+    def test_bool_value(self):
+        d = self.model(pv=1.).save()
+        d = self.model.objects.get(id=d.id)
         self.assertEqual(d.ok,False)
         d.ok = 'jasxbhjaxsbjxsb'
         self.assertRaises(FieldValueError, d.save)
@@ -228,7 +228,7 @@ class TestByteField(test.CleanTestCase):
         b = os.urandom(8)
         v = SimpleModel(code='one', somebytes=b)
         self.assertFalse(is_string(v.somebytes))
-        self.assertEqual(v.somebytes,b)
+        self.assertEqual(v.somebytes, b)
         v.save()
         v = SimpleModel.objects.get(code = 'one')
         self.assertFalse(is_string(v.somebytes))

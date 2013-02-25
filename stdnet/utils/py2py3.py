@@ -24,8 +24,6 @@ if ispy3k:      # pragma: no cover
     
     urlencode = urlparse.urlencode
     
-    is_string = lambda x : isinstance(x, str)
-    
     class UnicodeMixin(object):
         
         def __unicode__(self):
@@ -56,8 +54,6 @@ else:   # pragma: no cover
     from cStringIO import StringIO
     BytesIO = StringIO
     
-    is_string = lambda x : isinstance(x, basestring)
-    
     class UnicodeMixin(object):
         
         def __unicode__(self):
@@ -70,12 +66,13 @@ else:   # pragma: no cover
             return '%s: %s' % (self.__class__.__name__,self)
     
     def native_str(s, encoding = 'utf-8'):
-        if isinstance(s,unicode):
+        if isinstance(s, unicode):
             return s.encode(encoding)
         return s
     
 
-is_int = lambda x : isinstance(x,int_type)
+is_string = lambda x : isinstance(x, string_type)
+is_int = lambda x : isinstance(x, int_type)
 
 
 

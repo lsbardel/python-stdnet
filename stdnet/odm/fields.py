@@ -10,8 +10,7 @@ from stdnet import range_lookups
 from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, to_string, is_string,\
-                         iteritems,\
+                         UnicodeMixin, to_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator,\
                          string_type
 
@@ -151,7 +150,7 @@ Each field is specified as a :class:`StdModel` class attribute.
 
     Default ``False``.
 '''
-    default = None
+    _default = None
     type = None
     python_type = None
     index = True
@@ -185,10 +184,14 @@ Each field is specified as a :class:`StdModel` class attribute.
         self.meta = None
         self.name = None
         self.model = None
-        self.default = extras.pop('default',self.default)
+        self._default = extras.pop('default', self._default)
         self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
 
+    @property
+    def default(self):
+        return self._default
+    
     def get_encoder(self, params):
         return None
 
@@ -241,10 +244,11 @@ function users should never call.'''
 
     def get_default(self):
         "Returns the default value for this field."
-        if hasattr(self.default,'__call__'):
-            return self.default()
+        default = self._default
+        if hasattr(default, '__call__'):
+            return default()
         else:
-            return self.default
+            return default
 
     def __deepcopy__(self, memodict):
         '''Nothing to deepcopy here'''
@@ -343,7 +347,7 @@ class BooleanField(AtomField):
     type = 'bool'
     internal_type = 'numeric'
     python_type = bool
-    default = False
+    _default = False
 
     def __init__(self, required = False, **kwargs):
         super(BooleanField,self).__init__(required = required,**kwargs)
@@ -365,11 +369,10 @@ class IntegerField(AtomField):
     type = 'integer'
     internal_type = 'numeric'
     python_type = int
-    #default = 0
 
     @field_value_error
     def to_python(self, value):
-        value = super(IntegerField,self).to_python(value)
+        value = super(IntegerField, self).to_python(value)
         if value in NONE_EMPTY:
             return self.get_default()
         else:
@@ -393,7 +396,7 @@ a :class:`datetime.date` instance.'''
     internal_type = 'numeric'
     python_type = date
     ordered = True
-    default = None
+    _default = None
 
     @field_value_error
     def to_python(self, value):
@@ -448,7 +451,7 @@ or other entities. They are indexes by default.'''
     python_type = string_type
     internal_type = 'text'
     charset = 'utf-8'
-    default = ''
+    _default = ''
 
     def get_encoder(self, params):
         return encoders.Default(self.charset)
@@ -486,7 +489,7 @@ In python this is converted to `bytes`.'''
     type = 'bytes'
     internal_type = 'bytes'
     python_type = bytes
-    default = b''
+    _default = b''
 
     @field_value_error
     def to_python(self, value):
@@ -515,7 +518,7 @@ or :class:`JSONField` fields as more general alternatives.
           attribute is ``True``.
 '''
     type = 'object'
-    default = None
+    _default = None
 
     def serialize(self, value):
         if value is not None:
@@ -681,16 +684,16 @@ behaviour and how the field is stored in the back-end server.
 '''
     type = 'json object'
     internal_type = 'serialized'
-    default = None
+    _default = {}
 
     def get_encoder(self, params):
         self.as_string = params.pop('as_string',True)
-        if not self.as_string:
-            self.default = self.default if isinstance(self.default,dict) else {}
+        if not self.as_string and not isinstance(self._default, dict):
+            self._default = {}
         return encoders.Json(
                 charset = self.charset,
-                json_encoder = params.pop('encoder_class',DefaultJSONEncoder),
-                object_hook = params.pop('decoder_hook',DefaultJSONHook))
+                json_encoder = params.pop('encoder_class', DefaultJSONEncoder),
+                object_hook = params.pop('decoder_hook', DefaultJSONHook))
 
     @field_value_error
     def to_python(self, value):

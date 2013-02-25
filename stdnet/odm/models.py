@@ -41,9 +41,9 @@ class StdModel(StdNetBase):
     _loadedfields = None
 
     def __init__(self, **kwargs):
-        kwargs.pop(self._meta.pkname(),None)
+        kwargs.pop(self._meta.pkname(), None)
         for field in self._meta.scalarfields:
-            self.set_field_value(field, kwargs.pop(field.name,None))
+            self.set_field_value(field, kwargs.pop(field.name, None))
         if kwargs:
             keys = ', '.join(kwargs)
             if len(kwargs) > 1:

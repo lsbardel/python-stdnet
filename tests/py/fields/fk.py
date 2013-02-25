@@ -37,8 +37,8 @@ class fkmeta(test.TestCase):
         g = p.group
         self.assertTrue(p)
         p.group = None
-        self.assertEqual(p.group,None)
-        self.assertEqual(p.group_id,None)
+        self.assertEqual(p.group, None)
+        self.assertEqual(p.group_id, None)
         self.assertRaises(stdnet.FieldValueError,p.save)
         
     def testCoverage(self):

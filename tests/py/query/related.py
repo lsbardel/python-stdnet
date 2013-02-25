@@ -5,6 +5,7 @@ from stdnet.utils import test
 
 from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
+from examples.data import finance_data
 
 
 class TestSelfForeignKey(test.CleanTestCase):
@@ -87,10 +88,20 @@ in this test class so that we can use the manager in a parallel test suite.'''
         self.assertEqual(query[0], root)
 
 
-class TestRealtedQuery(FinanceTest):
+class TestRealtedQuery(test.TestCase):
+    data_cls = finance_data
     
+    @classmethod
+    def setUpClass(cls):
+        super(TestRealtedQuery, cls).setUpClass()
+        cls.data = cls.data_cls(size=cls.size)
+        cls.data.makePositions(cls)
+        
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
+        
     def testRelatedFilter(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         # fetch all position with EUR instruments
@@ -116,19 +127,25 @@ class TestRealtedQuery(FinanceTest):
             self.assertEqual(p.instrument.ccy,'EUR')
             
     def testRelatedExclude(self):
-        self.data.makePositions(self)
         session = self.session()
         query = session.query(Position)
         peur = query.exclude(instrument__ccy = 'EUR')
         self.assertTrue(peur.count())
         for p in peur:
             self.assertNotEqual(p.instrument.ccy,'EUR')
+            
+    def test_load_related_model(self):
+        session = self.session()
+        query = session.query(Position)
+        position = query[0]
+        self.assertTrue(position.instrument_id)
+        instrument = position.load_related_model('instrument',
+                                                 load_only=('ccy',))
+        self.assertTrue(isinstance(instrument, Instrument))
+        self.assertEqual(instrument._loadedfields, ('ccy',))
+        self.assertEqual(id(instrument), id(position.instrument))
     
-    
-class TestRelatedManager(FinanceTest):
-
-    def testSimple(self):
-        self.data.makePositions(self)
+    def test_related_manager(self):
         session = self.session()
         inst = session.query(Instrument).get(id = 1)
         fund = session.query(Fund).get(id = 1)
@@ -139,8 +156,7 @@ class TestRelatedManager(FinanceTest):
             self.assertEqual(p.fund,fund)
         self.assertEqual(set(positions1),set(positions))
                     
-    def testExclude(self):
-        self.data.makePositions(self)
+    def test_related_manager_exclude(self):
         session = self.session()
         inst = session.query(Instrument).get(id = 1)
         fund = session.query(Fund).get(id = 1)

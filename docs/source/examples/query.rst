@@ -6,17 +6,17 @@
 Query your Data
 ============================
 
-The most powerful feature of stdnet is a comprehensive API for querying your
-data in an efficient and elegant way.
+The most powerful feature of :mod:`stdnet` is a comprehensive API for querying,
+searching and sorting your data in an efficient and elegant way.
 To retrieve objects from your data server, you construct a
 :class:`Query` via a :class:`Manager` on your model class
 or via a :class:`Session`.
 A :class:`Query` represents a collection of rules to aggregate objects
 from your model.
 
-In the following tutorial, it is assumed the models are registered with a backend dataserver
-so that the default :class:`Manager` is available. Alternatively, one can use the
-:ref:`session api <model-session>`.
+In the following tutorial, it is assumed the models are registered with a
+backend dataserver so that the default :class:`Manager` is available.
+Alternatively, one can use the :ref:`session api <model-session>`.
 
 
 Retrieving all objects
@@ -31,8 +31,11 @@ To do this, use the :meth:`Manager.query` method on a Manager:
     >>> list(funds)
     [Fund: Markowitz]
 
-:class:`Query` are lazy, they are evaluated only when you iterate over them
-or explicitly call the :class:`Query.items` method.
+.. note::
+
+    :class:`Query` are lazy, they are evaluated only when you iterate over them,
+    or invoke the call the :class:`Query.all` method or slice the query like a
+    list.
 
 Filtering
 ===============================
@@ -115,16 +118,13 @@ if we need all instruments with ``ccy='EUR'`` **OR** ``type='equity'``? We use t
 
 .. _field-lookups:
 
-Field lookups
+Range lookups
 ====================
 
-Field lookups is how you refine the query methods you have learned so far.
+Range lookups is how you refine the query methods you have learned so far.
 They are specified by appending a suffix to the field name preceded by double underscore ``__``. 
-
-Numeric loopups
-~~~~~~~~~~~~~~~~~~
-
-Numeric loopus can be applied to any field which has an internal numerical representation. Such fields
+Range lookups can be applied to any :class:`Field` which has an internal
+numerical representation. Such fields
 are: :class:`IntegerField`, :class:`FloatField`, :class:`DateField`, :class:`DateTimeField` and so on.   
 
 There are four of them:
@@ -145,6 +145,12 @@ There are four of them:
     
     qs = Position.objects.filter(size__le=100)    
  
+ 
+They can be combined, for examp, this is a :class:`Query` for a ``size`` between
+10 and 100::
+
+    qs = Position.objects.filter(size__ge=10, size__le=100)
+     
 
 .. _query_where:
     
@@ -196,3 +202,23 @@ This is merely a syntactic sugar in place of this equivalent query::
 
     qi = Instrument.objects.filter(ccy='EUR')
     qs = Position.objects.filter(instrument=qi)
+    
+    
+.. _query_slice:
+
+Limit Query Size
+====================
+
+When dealing with large amount of data, a :class:`Query` can be sliced
+using Python’s array-slicing syntax. For example, this returns the first
+10 objects::
+
+    >> Instrument.objects.query()[:10]
+    
+This returns the sixth through tenth objects::
+
+    >> Instrument.objects.query()[5:10]
+    
+This returns the last 5 objects::
+
+    >> Instrument.objects.query()[-5:]

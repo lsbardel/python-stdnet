@@ -861,12 +861,9 @@ class BackendDataServer(stdnet.BackendDataServer):
                                 if v is not None:
                                     score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
-                        if state.persistent:
-                            action = 'override' if instance.has_all_data else\
-                                     'change'
-                            id = state.iid
-                        else:
-                            action = 'add'
+                        action = state.action
+                        id = state.iid
+                        if not state.persistent:
                             id = instance.pkvalue() or ''
                         data = flat_mapping(data)
                         lua_data.extend((action, id, score, len(data)))

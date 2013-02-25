@@ -54,12 +54,12 @@ class StdModel(StdNetBase):
 
     @property
     def has_all_data(self):
-        '''``True`` if this :class:`StdModel` instance has all backend data
-loaded. This only apply to persistent instances. This property is used when
+        '''``True`` if this :class:`StdModel` instance has all back-end data
+loaded. This applies to persistent instances only. This property is used when
 committing changes. If all data is available, the commit will replace the
 previous object data entirely, otherwise it will only update it.'''
         return self.state().persistent and self._loadedfields is None
-
+    
     def loadedfields(self):
         '''Generator of fields loaded from database'''
         if self._loadedfields is None:
@@ -215,6 +215,43 @@ attribute set to ``True`` will be excluded.'''
                     except AttributeError:
                         pass
         return getattr(self, name)
+    
+    def get_state_action(self):        
+        if self._loadedfields is None and not\
+                getattr(self, '_force_update', False):
+            return'override'
+        else:
+            return 'update'
+                
+    def load_related_model(self, name, load_only=None, dont_load=None):
+        field = self._meta.dfields.get(name)
+        if not field:
+            raise ValueError('Field %s not available')
+        return self._load_related_model(field, load_only, dont_load)
+        
+    def _load_related_model(self, field, load_only=None, dont_load=None):
+        cache_name = field.get_cache_name()
+        try:
+            return getattr(self, cache_name)
+        except AttributeError:
+            val = getattr(self, field.attname)
+            if val is None:
+                return None
+            pkname = field.relmodel._meta.pkname()
+            qs = self.session.query(field.relmodel)
+            if load_only:
+                qs = qs.load_only(*load_only)
+            if dont_load:
+                qs = qs.dont_load(*dont_load)
+            try:
+                rel_obj = qs.get(**{pkname: val})
+            except self.DoesNotExist:
+                if field.required:
+                    raise
+                rel_obj = None
+                setattr(self, field.attname, None)
+            setattr(self, cache_name, rel_obj)
+            return rel_obj
     
     # PICKLING SUPPORT
 

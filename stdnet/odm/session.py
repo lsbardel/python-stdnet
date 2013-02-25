@@ -23,16 +23,6 @@ __all__ = ['Session',
 def is_query(query):
     return isinstance(query,Q)
 
-def commit_element_when_no_transaction(f):
-
-    def _(self, element, modified=True):
-        r = f(self, element, modified=modified)
-        if modified and not self.transaction:
-            self.commit()
-        return r
-    _.__name__ = f.__name__
-    _.__doc__ = f.__doc__
-    return _
 
 def commit_when_no_transaction(f):
     '''Decorator for committing changes when the instance session is
@@ -91,7 +81,7 @@ Session model."""
         return iter(self.all())
 
     def all(self):
-        return chain(self._new,self._modified,self._loaded,self._deleted)
+        return chain(self._new, self._modified, self._loaded, self._deleted)
     
     @property
     def backend(self):
@@ -103,12 +93,14 @@ Session model."""
 
     @property
     def new(self):
-        "The set of all modified instances within this ``Session``"
+        ''''The set of all new instances within this ``Session``. This instances
+will be inserted in the database.'''
         return frozenset(itervalues(self._new))
 
     @property
     def modified(self):
-        "The set of all modified instances within this ``Session``"
+        '''The set of all modified instances within this ``Session``. This
+instances will'''
         return frozenset(itervalues(self._modified))
 
     @property
@@ -148,11 +140,14 @@ within this :class:`Session`.'''
         elif id in self._loaded:
             return self._loaded.get(id)
 
-    def add(self, instance, modified=True, persistent=None):
+    def add(self, instance, modified=True, persistent=None, force_update=False):
         '''Add a new instance to this :class:`SessionModel`.
 
-:modified: Optional flag indicating if the *instance* has been modified. By
+:param modified: Optional flag indicating if the *instance* has been modified. By
     default its value is ``True``.
+:param force_update: if *instance* is persistent, it forces an update of the
+    data rather than a full replacement. This is used by the
+    :meth:`insert_update_replace` method. 
 :rtype: The instance added to the session'''
         state = instance.state()
         if state.deleted:
@@ -164,6 +159,8 @@ within this :class:`Session`.'''
             instance._dbdata[pkname] = instance.pkvalue()
         else:
             instance._dbdata.pop(pkname, None)
+        if force_update:
+            instance._force_update = force_update
         state = instance.state(update=True)
         iid = state.iid
         if state.persistent:
@@ -293,7 +290,7 @@ Process results after a commit.
 class SessionStructure(SessionModel):
     '''A :class:`SessionStructure` is the container of all objects for a given
 :class:`Structure` in a stdnet :class:`Session`.'''
-    def add(self, instance, modified = True, persistent = None):
+    def add(self, instance, modified=True, **kwargs):
         state = instance.state()
         state.deleted = False
         if not modified:
@@ -313,6 +310,8 @@ or using the ``with`` context manager::
 
     with session.begin() as t:
         ...
+
+**ATTRIBUTES**
 
 .. attribute:: session
 
@@ -345,6 +344,18 @@ or using the ``with`` context manager::
 
     default ``True``.
 
+.. attribute:: deleted
+
+    Dictionary of list of ids deleted from the backend server after a commit
+    operation. This dictionary is only available once the transaction has
+    finished.
+    
+.. attribute:: saved
+
+    Dictionary of list of ids saved in the backend server after a commit
+    operation. This dictionary is only available once the transaction has
+    finished.
+    
 .. attribute:: logger
 
     Optional python logging object
@@ -355,12 +366,11 @@ or using the ``with`` context manager::
 
     def __init__(self, session, name=None,
                  signal_commit=True, signal_delete=True,
-                 signal_session=True, logger=None):
+                 logger=None):
         self.name = name or self.default_name
         self.session = session
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
-        self.signal_session = signal_session
         self.logger = logger
         self.deleted = {}
         self.saved = {}
@@ -374,9 +384,9 @@ or using the ``with`` context manager::
     def is_open(self):
         return not hasattr(self,'_result')
 
-    def add(self, instance):
+    def add(self, instance, **kwargs):
         '''A convenience proxy for :meth:`Session.add` method.'''
-        return self.session.add(instance)
+        return self.session.add(instance, **kwargs)
 
     def delete(self, instance):
         '''A convenience proxy for :meth:`Session.delete` method.'''
@@ -474,8 +484,6 @@ Results can contain errors.
         return self
 
     def close(self):
-        #if self.result and self.signal_session:
-        #    post_commit.send(Session, transaction=self)
         for sm in self.session:
             if sm._delete_query:
                 sm._delete_query = []
@@ -504,7 +512,7 @@ class Session(object):
 .. attribute:: transaction
 
     A :class:`Transaction` instance. Not ``None`` if this :class:`Session`
-    is in a transactional state.
+    is in a :ref:`transactional state <transactional-state>`
 
 .. attribute:: query_class
 
@@ -538,42 +546,23 @@ class Session(object):
         
     def session(self):
         '''Create a new session from this :class:`Session`'''
-        return self.__class__(self.backend,self.query_class)
-
-    def model(self, meta):
-        if hasattr(meta, '_meta'):
-            meta = meta._meta
-        sm = self._models.get(meta)
-        if sm is None:
-            if meta.model._model_type == 'structure':
-                sm = SessionStructure(meta, self)
-            else:
-                sm = SessionModel(meta, self)
-            self._models[meta] = sm
-        return sm
-
-    def expunge(self, instance = None):
-        if instance is not None:
-            sm = self._models.get(instance._meta)
-            if sm:
-                return sm.expunge(instance)
-        else:
-            self._models.clear()
+        return self.__class__(self.backend, self.query_class)
 
     def begin(self, **options):
-        '''Begin a new :class:`Transaction`.
-If this :class:`Session` is already within a transaction, an error is raised.
-It returns the :attr:`transaction` attribute. It can be used in a `with`
-construct::
+        '''Begin a new :class:`Transaction`. If this :class:`Session`
+is already in a :ref:`transactional state <transactional-state>`,
+an error will occur. It returns the :attr:`transaction` attribute.
+
+This method is mostly used within a ``with`` statement block::
     
     with session.begin() as t:
-        t.add(...
+        t.add(...)
         ...
         
 which is equivalent to::
     
     t = session.begin()
-    t.add(...
+    t.add(...)
     ...
     session.commit()
     
@@ -626,22 +615,32 @@ from the **kwargs** parameters.
         if sm:
             return sm.get(id)
 
-    @commit_element_when_no_transaction
-    def add(self, instance, modified=True):
-        '''Add an *instance* to the session.
+    def add(self, instance, modified=True, force_update=False):
+        '''Add an *instance* to the session. If the session is not in
+a :ref:`transactional state <transactional-state>`, this operation
+commits changes to the backend server immediately.
 
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
 :parameter modified: a boolean flag indicating if the instance was modified.
+:return: the instance.
+
+If the instance is persistent (it is already stored in the database), an updated
+will be performed, otherwise a new entry will be created once the :meth:`commit`
+method is invoked.
 '''
         sm = self.model(instance._meta)
         instance.session = self
-        return sm.add(instance, modified)
+        o = sm.add(instance, modified=modified, force_update=force_update)
+        if modified and not self.transaction:
+            self.commit()
+        return o
 
-    @commit_element_when_no_transaction
-    def delete(self, instance, **kwargs):
-        '''Add an *instance* to the session instances to be deleted.
+    def delete(self, instance):
+        '''Include *instance* to the session list of instances to be deleted.
+If the session is not in a :ref:`transactional state <transactional-state>`,
+this operation commits changes to the backend server immediately.
 
-:parameter instance: a class:`StdModel` or a :class:`Structure` instance.
+:parameter instance: a :class:`StdModel` or a :class:`Structure` instance.
 '''
         sm = self.model(instance._meta)
         # not an instance of a Model. Assume it is a query.
@@ -649,9 +648,11 @@ from the **kwargs** parameters.
             if instance.session is not self:
                 raise ValueError('Adding a query generated by another session')
             sm._delete_query.append(instance)
-            return instance
         else:
-            return sm.delete(instance, self)
+            instance = sm.delete(instance, self)
+        if not self.transaction:
+            self.commit()
+        return instance
 
     def flush(self, model):
         '''Completely flush a :class:`Model` from the database. No keys
@@ -679,6 +680,26 @@ empty keys associated with the model will exists after this operation.'''
     @classmethod
     def clearall(cls):
         pass
+    
+    def model(self, meta):
+        if hasattr(meta, '_meta'):
+            meta = meta._meta
+        sm = self._models.get(meta)
+        if sm is None:
+            if meta.model._model_type == 'structure':
+                sm = SessionStructure(meta, self)
+            else:
+                sm = SessionModel(meta, self)
+            self._models[meta] = sm
+        return sm
+
+    def expunge(self, instance = None):
+        if instance is not None:
+            sm = self._models.get(instance._meta)
+            if sm:
+                return sm.expunge(instance)
+        else:
+            self._models.clear()
 
 
 class Manager(object):

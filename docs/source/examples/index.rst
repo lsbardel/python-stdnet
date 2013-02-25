@@ -24,6 +24,7 @@ The collection of tutorials examples is available in the
    sorting
    search
    sessions
+   related
    performance
    json
    twitter

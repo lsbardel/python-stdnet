@@ -120,8 +120,7 @@ class JsonSerializer(Serializer):
             model = get_model_from_hash(model_data['hash'])
             if model:
                 logger.info('Loading model %s' % model._meta)
-                with model.objects.transaction(signal_commit=False,
-                                               signal_session=False) as t:
+                with model.objects.transaction(signal_commit=False) as t:
                     for item_data in model_data['data']:
                         t.add(model.from_base64_data(**item_data))
             else:

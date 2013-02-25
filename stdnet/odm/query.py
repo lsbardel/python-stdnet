@@ -737,8 +737,10 @@ an exception is raised.
                 for name in sorted(field_lookups)]
 
     def items(self, slic=None):
-        '''Fetch data matching theis :class:`Query` and return a list
-of instances of models.'''
+        '''This function does the actual fetching of data from the backend
+server matching this :class:`Query`. This method is usually not called directly,
+instead use the :meth:`all` method or alternatively slice the query in the same
+way you can slice a list or iterate over the query.'''
         key = None
         seq = self.cache().get(None)
         if slic:

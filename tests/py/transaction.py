@@ -71,6 +71,15 @@ class TestTransactions(test.CleanTestCase):
         self.assertEqual(l.size(),2)
         self.assertEqual(len(session.query(self.model).all()),1)
         
+    def test_force_update(self):
+        session = self.session()
+        with session.begin() as t:
+             s = session.add(self.model(code='test',
+                                        description='just a test'))
+        with session.begin() as t:
+            s = t.add(s, force_update=True)
+            self.assertEqual(s._force_update, True)
+        
         
 class TestMultiFieldTransaction(test.CleanTestCase):
     model = Dictionary

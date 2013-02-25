@@ -116,23 +116,7 @@ class LazyForeignKey(object):
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self
-        field = self.field
-        cache_name = field.get_cache_name()
-        try:
-            return getattr(instance, cache_name)
-        except AttributeError:
-            val = getattr(instance, field.attname)
-            if val is None:
-                return None
-            try:
-                rel_obj = instance.session.query(field.relmodel).get(id=val)
-            except instance.DoesNotExist:
-                if field.required:
-                    raise
-                rel_obj = None
-                setattr(instance, field.attname, None)
-            setattr(instance, cache_name, rel_obj)
-            return rel_obj
+        return instance._load_related_model(self.field)
 
     def __set__(self, instance, value):
         if instance is None:

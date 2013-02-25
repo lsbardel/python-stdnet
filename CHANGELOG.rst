@@ -28,8 +28,11 @@ Ver. 0.8 - Development
   model caused the deletion of the instances pointing to those deleted objects.
 * Added the new :meth:`stdnet.StdModel.get_model_attribute` method for
   retrieving nested attribute values using the double underscore notation.
-* :attr:`stdnet.Field.default` made read-only.
-* **651 regression tests** with **93%** coverage.
+* :attr:`stdnet.Field.default` attribute made read-only.
+* :meth:`stdnet.Session.add` accept ``force_update`` parameter which can be used to
+  force an ``update`` rather than an ``override`` when an instance is persistent and
+  fully loaded.
+* **652 regression tests** with **93%** coverage.
   
 .. _vers07:
 

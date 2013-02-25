@@ -10,6 +10,9 @@ CCYS_TYPES = ['EUR','GBP','AUD','USD','CHF','JPY']
 INSTS_TYPES = ['equity','bond','future','cash','option','bond option']
 
 
+def assertEqual(x, y):
+    assert x == y, 'no equal'
+
 class data_generator(object):
     sizes = {'tiny': 10,
              'small': 100,
@@ -115,9 +118,10 @@ class finance_data(data_generator):
         self.dates =  populate('date',num_dates,start=date(2009,6,1),
                                end=date(2010,6,6))
 
-    def create(self, test, use_transaction=True, InstrumentModel = Instrument):
+    def create(self, test, use_transaction=True, InstrumentModel=Instrument):
         session = test.session()
-        test.assertEqual(session.query(InstrumentModel).count(), 0)
+        eq = assertEqual if isinstance(test, type) else test.assertEqual 
+        eq(session.query(InstrumentModel).count(), 0)
         if use_transaction:
             with session.begin():
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
@@ -135,8 +139,8 @@ class finance_data(data_generator):
 
         self.num_insts = session.query(InstrumentModel).count()
         self.num_funds = session.query(Fund).count()
-        test.assertEqual(self.num_insts,len(self.inst_names))
-        test.assertEqual(self.num_funds,len(self.fund_names))
+        eq(self.num_insts, len(self.inst_names))
+        eq(self.num_funds, len(self.fund_names))
         return session
 
     def makePositions(self, test, use_transaction=True):

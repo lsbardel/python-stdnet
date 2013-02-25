@@ -406,9 +406,8 @@ def meta_options(abstract=False,
 
 
 class ModelState(object):
-    __slots__ = ('_persistent', 'deleted', '_iid', 'score')
     def __init__(self, instance):
-        self._persistent = False
+        self._action = 'add'
         self.deleted = False
         self.score = 0
         dbdata = instance._dbdata
@@ -418,14 +417,18 @@ class ModelState(object):
             if pkvalue != dbdata[pkname]:
                 raise ValueError('Id has changed from {0} to {1}.'\
                                  .format(pkvalue, dbdata[pkname]))
-            self._persistent = True
+            self._action = instance.get_state_action()
         elif not pkvalue:
             pkvalue = 'new.{0}'.format(id(instance))
         self._iid = pkvalue
 
     @property
+    def action(self):
+        return self._action
+    
+    @property
     def persistent(self):
-        return self._persistent
+        return self._action != 'add'
 
     @property
     def iid(self):
@@ -530,6 +533,9 @@ from its :class:`Manager`.'''
     
     def get_model_attribute(self, name):
         return getattr(self, name)
+    
+    def get_state_action(self):
+        return 'update'
 
 
 ModelBase = ModelType('ModelBase', (Model,), {'is_base_class': True})

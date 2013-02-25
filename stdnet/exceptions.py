@@ -29,7 +29,7 @@ with models registered with different backends.'''
 
 
 class ResponseError(StdNetException):
-    '''Raised when an invalid response is returned from the backebd server.'''
+    '''Raised when an invalid response is returned from the backend server.'''
     pass
     
     

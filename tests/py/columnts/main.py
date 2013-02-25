@@ -10,7 +10,7 @@ from stdnet.lib import redis
 from examples.data import tsdata
 from examples.tsmodels import ColumnTimeSeries
 
-from tests.py import struct
+from tests.py.structures.base import StructMixin
 
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
@@ -55,7 +55,7 @@ class TestCase(test.CleanTestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-class TestTimeSeries(struct.StructMixin, TestCase):
+class TestTimeSeries(StructMixin, TestCase):
     structure = ColumnTS
     name = 'columnts'
     

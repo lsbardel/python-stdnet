@@ -152,12 +152,6 @@ def slowlog_callback(request, response, args, **options):
         return response
     else:
         return response == b'OK'
-
-
-class RedisMeta(type):
-    
-    def __new__(cls, name, bases, attrs):
-        pass
     
 
 class Redis(object):

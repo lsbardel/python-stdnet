@@ -17,7 +17,8 @@ class CleanAsync(test.CleanTestCase):
         return {'connection_class': RedisConnection}
     
 
-class TestAsyncRedis(CleanAsync):
+class a:
+#class TestAsyncRedis(CleanAsync):
     
     def testMeta(self):
         from stdnet.lib.redis.async import RedisConnection
@@ -37,8 +38,9 @@ class TestAsyncRedis(CleanAsync):
         yield request
         self.assertEqual(request.result, b'ciao')
     
-    
-class TestAsyncOdm(CleanAsync):
+
+class b:    
+#class TestAsyncOdm(CleanAsync):
     model = SimpleModel
     
     def addData(self):

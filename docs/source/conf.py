@@ -24,14 +24,15 @@ version = stdnet.__version__
 release = version
 # -- General configuration -----------------------------------------------------
 
-sphinx_to_github = True
-sphinx_to_github_verbose = True
-
-
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.pngmath']
-#extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.pngmath']
+
+# Beta version is published in github pages
+if stdnet.VERSION[3] == 'beta':
+    extensions.append('sphinxtogithub')
+html_context = {'release_version': stdnet.VERSION[3] == 'final'}
+
 # The suffix of source filenames.
 source_suffix = '.rst'
 
@@ -43,7 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'python stdnet'
-copyright = '2010-2011, Luca Sbardella'
+copyright = '2010-2013, Luca Sbardella'
 
 html_theme = 'celery'
 
@@ -61,9 +62,6 @@ pygments_style = 'sphinx'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'PythonStdNetdoc'
-
-if stdnet.sphinxtogithub:
-    extensions.append('sphinxtogithub')
 
 # -- Options for LaTeX output --------------------------------------------------
 

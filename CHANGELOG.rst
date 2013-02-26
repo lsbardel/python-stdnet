@@ -26,13 +26,16 @@ Ver. 0.8 - Development
 * Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects.
+* Minor bug fix in lua ``odm`` script when sorting with respect related model
+  fields which are missing.
 * Added the new :meth:`stdnet.StdModel.get_model_attribute` method for
   retrieving nested attribute values using the double underscore notation.
 * :attr:`stdnet.Field.default` attribute made read-only.
 * :meth:`stdnet.Session.add` accept ``force_update`` parameter which can be used to
   force an ``update`` rather than an ``override`` when an instance is persistent and
   fully loaded.
-* **652 regression tests** with **93%** coverage.
+* Removed asynchronous redis connection. To be implemented by another package.
+* **650 regression tests** with **93%** coverage.
   
 .. _vers07:
 

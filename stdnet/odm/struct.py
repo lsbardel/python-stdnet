@@ -160,8 +160,8 @@ class tscache(hashcache):
 ################################################################################
 class Structure(ModelBase):
     '''A :class:`Model` which is used a base class for remote data-structures.
-Remote structures are the
-backend of :ref:`structured fields <model-field-structure>` but they
+Remote structures are the backend of
+:ref:`structured fields <model-field-structure>` but they
 can also be used as stand alone objects. For example::
 
     import stdnet

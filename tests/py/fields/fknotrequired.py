@@ -119,3 +119,10 @@ class NonRequiredForeignKey(test.CleanTestCase):
         feed = Feed1.objects.query().load_related('live').get(name='bla')
         self.assertFalse(feed.live)
         self.assertFalse(feed.live_id)
+        
+    def test_sort_by_missing_fk_data(self):
+        self.create_feeds()
+        feed1s = self.session().query(Feed1).sort_by('live').all()
+        feed2s = self.session().query(Feed1).sort_by('live__data__pv').all()
+        self.assertEqual(len(feed2s), 2)
+        

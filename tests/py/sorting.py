@@ -84,7 +84,7 @@ class ExplicitOrderingMixin(object):
         self._slicingTest('dt',True)
     
         
-class TestSortBy(TestSort,ExplicitOrderingMixin):
+class TestSortBy(TestSort, ExplicitOrderingMixin):
     '''Test the sort_by in a model without ordering meta attribute.
 Pure explicit ordering.'''
     model = TestDateModel

@@ -2,21 +2,14 @@
 
 The data is owned by different, configurable back-end databases and it is
 accessed using a light-weight Object Data Mapper (ODM). 
-The `source code`__ and documentation__ are hosted at github while
-Downloads__ are available via PyPi.
 
+:CI: |stdnet-build|_ 
 :Documentation: http://lsbardel.github.com/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
 :Mailing List: https://groups.google.com/group/python-stdnet
 :Keywords: server, database, cache, redis, mongo, odm
 
-
-__ http://github.com/lsbardel/python-stdnet
-__ http://lsbardel.github.com/python-stdnet/
-__ http://pypi.python.org/pypi/python-stdnet/
-
-|stdnet-build|_
 
 .. |stdnet-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
 .. _stdnet-build: http://travis-ci.org/lsbardel/python-stdnet

@@ -462,7 +462,7 @@ odm.Model = {
     --
     -- Perform explicit ordering via redis SORT command.
     _explicit_ordering = function (self, key, start, stop, order)
-        local tkeys, sortargs, bykey, ids = {}, {}
+        local okey, tkeys, sortargs, bykey, ids, status = key, {}, {}
         -- nested sorting for foreign key fields
         if order.nested and # order.nested > 0 then
             -- generate a temporary key where to store the hash table holding
@@ -474,7 +474,12 @@ odm.Model = {
                     if 2*math.floor(n/2) == n then
                         value = redis.call('hget', key, name)
                     else
-                        key = name .. ':obj:' .. value
+                        -- Check test_sort_by_missing_fk_data test if fknotrequired tests
+                        status, key = pcall(function() return name .. ':obj:' .. value end)
+                        if status == false then
+                             key = okey
+                             break
+                        end
                     end
                 end
                 -- store value on temporary key

@@ -85,13 +85,13 @@ class TestJsonField(test.CleanTestCase):
         self.assertEqual(a.data['mean'],mean)
         self.assertAlmostEqual(a.data['timestamp'], timestamp)
         
-    def testEmpty(self):
-        a = Statistics(dt = date.today())
-        self.assertEqual(a.data,None)
+    def test_default(self):
+        a = Statistics(dt=date.today())
+        self.assertEqual(a.data, {})
         a.save()
-        self.assertEqual(a.data,None)
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data,None)
+        self.assertEqual(a.data, {})
+        a = Statistics.objects.get(id=a.id)
+        self.assertEqual(a.data, {})
         
     def testValueError(self):
         a = Statistics(dt = date.today(),

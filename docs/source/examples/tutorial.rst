@@ -7,8 +7,17 @@ Using Models
 ============================
 
 Here we deal with model implementation and creating instances persistent
-in a backend database.
+in a backend database. A :class:`Model` is the single, definitive source of
+data about your data. There are two types of models in :mod:`stdnet`:
+the :class:`StdModel` which consists of :class:`Field` and behaviours of
+the data you’re storing and the
+:class:`Structure` the networked equivalent of data-structures such as sets,
+hash tables, lists. The goal is to define your data model in one place
+and automatically derive things from it.
 
+In this tutorial we concentrate on :class:`StdModel`, which can be thought as the
+equivalent to a table in a conventional relational database. The data structures will
+be covered in the :ref:`using data structures <tutorial-structures>` tutorial.
 
 .. _creating-models:
 
@@ -92,18 +101,18 @@ The only difference is the ``prices`` :class:`ListField`
 in the ``Instrument`` model which is
 not available in a traditional relational database.
 
-The metaclass
-~~~~~~~~~~~~~~~~~~~~~~~
-The ``Position`` models specifies a ``Meta`` class with an ``ordering``
-attribute.
-When provided, as in this case, the Meta class fields are used by the ``odm``
-to customise the build of the :class:`Metaclass` for the model. The metaclas
-is stored in the :attr:`StdModel._meta` attribute.
-
-In this case we instruct the ``odm`` to manage the ``Position`` model
-as ordered with respect to the :class:`DateField` ``dt``
-in descending order. Check the  :ref:`sorting <sorting>`
-documentation for more details or ordering and sorting.
+.. note::    **The metaclass**
+    
+    The ``Position`` models specifies a ``Meta`` class with an ``ordering``
+    attribute.
+    When provided, as in this case, the Meta class fields are used by the ``odm``
+    to customise the build of the :class:`Metaclass` for the model. The metaclas
+    is stored in the :attr:`StdModel._meta` attribute.
+    
+    In this case we instruct the ``odm`` to manage the ``Position`` model
+    as ordered with respect to the :class:`DateField` ``dt``
+    in descending order. Check the  :ref:`sorting <sorting>`
+    documentation for more details or ordering and sorting.
 
 
 Registering Models
@@ -120,23 +129,18 @@ model's :class:`Manager`::
     odm.register(Position, 'redis://my.host.name:6379/?db=1')
 
 
-Using Models
+Creating objects
 ==================
 
-Using models is equivalent to executing queries to the backend database.
-Once again, the API is very similar to executing queries in django_.
+Using models is equivalent to executing queries in the backend database.
 Once you've created your models, ``stdnet`` automatically gives you
 a data-server abstraction API that lets you create, retrieve,
 update and delete objects.
 
-Creating objects
-~~~~~~~~~~~~~~~~~~~~~
-
 An instance of a :class:`StdModel`, an object for clarity,
-is mapped to a hash table in the :class:`stdnet.BackendDataServer` backend.
-To create an object, instantiate it using keyword arguments to the
-model class, then call ``save()`` to save it to the data-server.
-Here's an example::
+is created by initialising it using keyword arguments which match
+model's :class:`Field` names and then call the :class:`Model.save` method
+to commit it changes to the data-server. Here's an example::
 
 	>>> b = Fund(name='Markowitz', ccy='EUR')
 	>>> b.save()

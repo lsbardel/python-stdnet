@@ -28,5 +28,3 @@ CLASSIFIERS = [
                'Topic :: Database',
                'Topic :: Internet'
                ]
-
-sphinxtogithub = False

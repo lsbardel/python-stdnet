@@ -794,41 +794,43 @@ registered in the model hash table, it can be used.'''
 
 class ManyToManyField(Field):
     '''A :ref:`many-to-many <many-to-many>` relationship.
-Like :class:`ForeignKey`, it accepts **related_name** as extra argument.
+Like :class:`ForeignKey`, it requires a positional argument, the class
+to which the model is related and it accepts **related_name** as extra
+argument.
 
 .. attribute:: related_name
 
     Optional name to use for the relation from the related object
-    back to ``self``.
+    back to ``self``. For example::
 
-For example::
+        class Group(odm.StdModel):
+            name = odm.SymbolField(unique=True)
+    
+        class User(odm.StdModel):
+            name = odm.SymbolField(unique=True)
+            groups = odm.ManyToManyField(Group, related_name='users')
+    
+    To use it::
 
-    class Group(odm.StdModel):
-        name = odm.SymbolField(unique=True)
+        >>> g = Group(name='developers').save()
+        >>> g.users.add(User(name='john').save())
+        >>> u.users.add(User(name='mark').save())
+    
+    and to remove::
+    
+        >>> u.following.remove(User.objects.get(name='john))
 
-    class User(odm.StdModel):
-        name = odm.SymbolField(unique=True)
-        groups = odm.ManyToManyField(Group, related_name='users')
+.. attribute:: through
 
-To use it::
-
-    >>> g = Group(name='developers').save()
-    >>> g.users.add(User(name='john').save())
-    >>> u.users.add(User(name='mark').save())
-
-and to remove::
-
-    >>> u.following.remove(User.objects.get(name='john))
-
-
-An optional :class:`StdModel` to use for creating the many-to-many
-relationship can be passed to the constructor, via the **through** keyword.
-If such a model is not passed, under the hood, a :class:`ManyToManyField`
-creates a new *model* with name constructed from the field name
-and the model holding the field. In the example above it would be
-*group_user*.
-This model contains two :class:`ForeignKeys`, one to model holding the
-:class:`ManyToManyField` and the other to the *related_model*.
+    An optional :class:`StdModel` to use for creating the many-to-many
+    relationship can be passed to the constructor, via the **through** keyword.
+    If such a model is not passed, under the hood, a :class:`ManyToManyField`
+    creates a new *model* with name constructed from the field name
+    and the model holding the field. In the example above it would be
+    *group_user*.
+    This model contains two :class:`ForeignKeys`, one to model holding the
+    :class:`ManyToManyField` and the other to the *related_model*.
+    
 '''
     def __init__(self, model, through=None, related_name=None, **kwargs):
         self.through = through

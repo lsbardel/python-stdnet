@@ -65,8 +65,33 @@ related :class:`StdModel` instance.
 Many-to-many relationships
 ==================================
 
-The :class:`ManyToManyField` is used to create relationships multiple elements
-of two models.
+The :class:`ManyToManyField` can be used to create relationships between
+multiple elements of two models. It requires a positional argument, the class
+to which the model is related.
+
+Behind the scenes, stdnet creates an intermediary model to represent
+the many-to-many relationship. We refer to this as the ``through model``.
+In most cases, the standard through model implemented by stdnet is
+all you need. However, sometimes you may need to associate data with the
+relationship between two models.
+
+For these situations, stdnet allows you to specify the model that will be used
+to govern the many-to-many relationship and pass it to the
+:class:`ManyToManyField` constructor via the ``through`` argument.
+Consider this simple example::
+
+    from stdnet import odm
+
+    class Element(odm.StdModel):
+        name = odm.SymbolField()
+    
+    class CompositeElement(odm.StdModel):
+        weight = odm.FloatField()
+    
+    class Composite(odm.StdModel):
+        name = odm.SymbolField()
+        elements = odm.ManyToManyField(Element, through=CompositeElement,
+                                       related_name='composites')
 
 
 .. _descriptors: http://users.rcn.com/python/download/Descriptor.htm

@@ -460,6 +460,7 @@ odm.Model = {
         return errors
     end,
     --
+    -- Perform explicit ordering via redis SORT command.
     _explicit_ordering = function (self, key, start, stop, order)
         local tkeys, sortargs, bykey, ids = {}, {}
         -- nested sorting for foreign key fields

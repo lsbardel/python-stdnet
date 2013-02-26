@@ -346,7 +346,7 @@ criteria and options associated with it.
 '''
     start = None
     stop = None
-    lookups = ('in','contains')
+    lookups = ('in', 'contains')
 
     def __init__(self, *args, **kwargs):
         '''A :class:`Query` is not initialized directly but via the

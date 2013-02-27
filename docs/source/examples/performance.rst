@@ -80,9 +80,9 @@ For complex models, :class:`Field` can also be used as cache.
 In these situations, your model may contain a lot of fields, some of which
 could contain a lot of data (for example, text fields), or require
 expensive processing to convert them to Python objects.
-If you are using the results of a :class:`Query` in some situation
+If you are using the results of a :class:`Query` in a situation
 where you know you don't need those particular fields, you can tell stdnet
-to load a subset from the database by using the :meth:`Query.load_only`
+to load a subset of fields from the database by using the :meth:`Query.load_only`
 or :meth:`Query.dont_load` methods.
 
 For example I need to load all my *EUR* Funds from the
@@ -91,8 +91,8 @@ but I don't need to see the *description* and *ccy*::
 
     qs = Fund.objects.filter(ccy="EUR").load_only('name')
 
-Importantly, the ``load_only`` method can also be applied to related objects
-fields. For example if I need to load ``Positions`` from
+Importantly, the ``load_only`` method can also be applied to :ref:`related objects
+<tutorial-related>` fields. For example if I need to load ``Positions`` from
 :ref:`example application <tutorial-application>` and only the currency field
 is required from the ``instrument`` field one could issue the command::
 

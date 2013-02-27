@@ -52,7 +52,7 @@ Ver. 0.7.0 - 2012 Oct 25
 * Redesign of :class:`stdnet.odm.ManyToManyField` which now uses a ``through`` model
   for building many to many relationships.
   *This is the only backward incompatible change both in terms of API and database scema*.
-* Implemented :ref:`field lookups <field-lookups>` ``gt``, ``ge``, ``lt`` and ``le``.
+* Implemented :ref:`field lookups <range-lookups>` ``gt``, ``ge``, ``lt`` and ``le``.
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
 * Added :class:`stdnet.odm.CompositeIdField` to handle situations where each
   combination of given set of :class:`stdnet.odm.Field` must be unique.

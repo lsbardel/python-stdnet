@@ -248,6 +248,9 @@ class DateData(odm.StdModel):
     dt2 = odm.DateTimeField(default=datetime.now)
 
 
+#######################################################################
+# For testing Foreign Key which is not required range lookup on
+# Foreign Keys
 class CrossData(odm.StdModel):
     name = odm.SymbolField()
     data = odm.JSONField(as_string=False)

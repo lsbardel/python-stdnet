@@ -2,7 +2,7 @@ from stdnet.utils import test
 from stdnet.utils.populate import populate
 from stdnet.utils.py2py3 import zip
 
-from examples.models import NumericData
+from examples.models import NumericData, CrossData, Feed1
 from examples.data import data_generator
 
 
@@ -133,4 +133,48 @@ class TestNumericRange(NumericTest):
         for v in qs:
             self.assertTrue(v.data__test__inner > -2)
             
+
+class TestNumericRangeForeignKey(test.TestCase):
+    multipledb = ['redis', 'mongo']
+    data_cls = NumberGenerator
+    models = (CrossData, Feed1)
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestNumericRangeForeignKey, cls).setUpClass()
+        cls.data = cls.data_cls(size=cls.size)
+        cls.register()
+        yield cls.clear_all()
+        session = cls.session()
+        da = cls.data
+        with session.begin() as t:
+            for a, b, c, d, e, f in zip(da.d1, da.d2, da.d3, da.d4, da.d5, da.d6):
+                t.add(CrossData(name='live',
+                                data={'a': a, 'b': b, 'c': c,
+                                      'd': d, 'e': e, 'f': f}))
+        cross = CrossData.objects.query()
+        found=False
+        with session.begin() as t:
+            for n, c in enumerate(cross):
+                if c.data__a > -1:
+                    found=True
+                feed = 'feed%s' % (n+1)
+                t.add(Feed1(name=feed, live=c))
+        assert found, 'not found'
     
+    @classmethod
+    def tearDownClass(cls):
+        yield cls.clear_all()
+    
+    def test_feeds(self):
+        qs = Feed1.objects.query().load_related('live')
+        self.assertTrue(qs)
+        for feed in qs:
+            self.assertTrue(feed.live)
+            self.assertTrue(isinstance(feed.live.data, dict))
+            
+    def test_gt(self):
+        qs = Feed1.objects.filter(live__data__a__gt=-1)
+        self.assertTrue(qs)
+        for feed in qs:
+            self.assertTrue(feed.live__data__a >= -1)

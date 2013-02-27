@@ -618,9 +618,9 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     json_serialize = to_python
 
     def filter(self, session, name, value):
-        fname = name.split('__')[0]
+        fname = name.split(JSPLITTER)[0]
         if fname in self.relmodel._meta.dfields:
-            return session.query(self.relmodel, fargs = {name: value})
+            return session.query(self.relmodel).filter(name=value)
 
     def get_sorting(self, name, errorClass):
         return self.relmodel._meta.get_sorting(name, errorClass)

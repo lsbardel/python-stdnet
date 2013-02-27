@@ -37,6 +37,8 @@ To do this, use the :meth:`Manager.query` method on a Manager:
     or invoke the call the :class:`Query.all` method or slice the query like a
     list.
 
+.. _tutorial-filter:
+
 Filtering
 ===============================
 This operation is somehow equivalent to a ``SELECT WHERE`` statement in
@@ -83,6 +85,8 @@ Which is equivalent to an **intersection** of two filter statement::
     qs = q1.intersect(q2)
 
 
+.. _tutorial-exclude:
+
 Exclude
 ===============================
 You can also exclude fields from lookups::
@@ -116,7 +120,7 @@ if we need all instruments with ``ccy='EUR'`` **OR** ``type='equity'``? We use t
     qs = Instrument.objects.filter(ccy='EUR').union(q1)
 
 
-.. _field-lookups:
+.. _range-lookups:
 
 Range lookups
 ====================

@@ -898,7 +898,15 @@ argument.
 class CompositeIdField(SymbolField):
     '''This field can be used when an instance of a model is uniquely
 identified by a combination of two or more :class:`Field` in the model
-itself.'''
+itself. It requires a number of positional arguments greater or equal 2.
+These arguments must be fields names in the model where the
+:class:`CompositeIdField` is defined.
+
+.. attribute:: fields
+
+    list of :class:`Field` names which are used to uniquely identify a
+    model instance
+'''
     type = 'composite'
     def __init__(self, *fields, **kwargs):
         kwargs['primary_key'] = True

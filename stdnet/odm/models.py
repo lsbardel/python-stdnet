@@ -203,7 +203,7 @@ attribute set to ``True`` will be excluded.'''
     
     def get_model_attribute(self, name):
         '''Extract an attribute name form this instance.'''
-        if JSPLITTER in name:
+        if JSPLITTER in name and not name.startswith('__'):
             bits = name.split(JSPLITTER)
             fname = bits[0] 
             if fname in self._meta.dfields:

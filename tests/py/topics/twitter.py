@@ -10,8 +10,8 @@ NUM_USERS = 50
 MIN_FOLLOWERS = 5
 MAX_FOLLOWERS = 10
 
-usernames = populate('string',NUM_USERS, min_len = 5, max_len = 20)
-passwords = populate('string',NUM_USERS, min_len = 8, max_len = 20)
+usernames = populate('string',NUM_USERS, min_len=5, max_len=20)
+passwords = populate('string',NUM_USERS, min_len=8, max_len=20)
 
 
 class TestTwitter(test.CleanTestCase):

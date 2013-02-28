@@ -254,6 +254,7 @@ class DateData(odm.StdModel):
 class CrossData(odm.StdModel):
     name = odm.SymbolField()
     data = odm.JSONField(as_string=False)
+    extra = odm.ForeignKey('self', required=False)
     
     
 class FeedBase(odm.StdModel):

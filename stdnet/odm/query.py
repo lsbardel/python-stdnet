@@ -1,10 +1,11 @@
 from copy import copy
 from inspect import isgenerator
 
-from stdnet import on_result, BackendRequest, range_lookups, lookup_value
+from stdnet import on_result, BackendRequest, range_lookups
 from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 
+from .globals import lookup_value
 from .signals import *
 
 
@@ -30,6 +31,13 @@ def update_dictionary(result, extra):
                 k = k + JSPLITTER + 'in'
         result[k] = v
     return result
+
+def get_lookups(attname, field_lookups):
+    lookups = field_lookups.get(attname)
+    if lookups is None:
+        lookups = []
+        field_lookups[attname] = lookups
+    return lookups
 
 
 class Q(object):
@@ -695,44 +703,35 @@ an exception is raised.
  Field "{1}" does not exist.'.format(meta, field_name))
             field = fields[field_name]
             attname = field.attname
+            lookup = None
             if bits:
                 bits = [n.lower() for n in bits]
                 if bits[-1] == 'in':
                     bits.pop()
-                lookup = JSPLITTER.join(bits)
-                if lookup and lookup not in range_lookups:
-                    lvalue = field.filter(self.session, lookup, value)
-                    if lvalue is not None:
-                        value = lvalue
-                        lookup = None
-                    else:
-                        if bits[-1] in range_lookups:
-                            lookup = bits.pop()
-                        else:
-                            lookup = None
-                        bits.insert(0, attname)
-                        attname = JSPLITTER.join(bits)
-            else:
-                lookup = None
-            # Get lookups on attribute name
-            lookups = field_lookups.get(attname)
-            if lookups is None:
-                lookups = []
-                field_lookups[attname] = lookups
-            if lookup not in range_lookups:
-                if not field.index:
-                    raise QuerySetError("{0} {1} is not an index.\
- Cannot query.".format(field.__class__.__name__,field_name))
-                if not iterable(value):
-                    value = (value,)
-                for v in value:
-                    if isinstance(v, Q):
-                        v = lookup_value('set', v.construct())
-                    else:
-                        v = lookup_value('value', field.dumps(v, lookup))
-                    lookups.append(v)
-            else:
-                lookups.append(lookup_value(lookup, field.dumps(value, lookup)))
+                elif bits[-1] in range_lookups:
+                    lookup = bits.pop()
+                remaining = JSPLITTER.join(bits)
+                if lookup:  # this is a range lookup
+                    attname, nested = field.get_lookup(remaining, QuerySetError)
+                    lookups = get_lookups(attname, field_lookups)
+                    lookups.append(lookup_value(lookup, (value, nested)))
+                    continue
+                elif remaining:   # Not a range lookup, must be a nested filter
+                    value = field.filter(self.session, remaining, value)
+            lookups = get_lookups(attname, field_lookups)
+            # If we are here the field must be an index
+            if not field.index:
+                raise QuerySetError("%s %s is not an index. Cannot query." %\
+                                    (field.__class__.__name__, field_name))
+            if not iterable(value):
+                value = (value,)
+            for v in value:
+                if isinstance(v, Q):
+                    v = lookup_value('set', v.construct())
+                else:
+                    v = lookup_value('value', field.dumps(v, lookup))
+                lookups.append(v)
+        #
         return [queryset(self, name=name, underlying=field_lookups[name])\
                 for name in sorted(field_lookups)]
 

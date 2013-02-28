@@ -9,8 +9,9 @@ from stdnet.utils import zip, to_string
 from stdnet.exceptions import *
 
 from . import signals
-from .globals import hashmodel, JSPLITTER, get_model_from_hash
-from .fields import Field, AutoField, orderinginfo
+from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
+                     range_lookup_info
+from .fields import Field, AutoField
 from .session import Manager, setup_managers
 
 

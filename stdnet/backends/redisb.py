@@ -203,6 +203,8 @@ class RedisQuery(stdnet.BackendQuery):
                 keys.append(be.query_key)
                 args.extend(('set', be.query_key))
             else:
+                if isinstance(value, tuple):
+                    value = self.dump_nested(*value)
                 args.extend((lookup, '' if value is None else value))
         temp_key = True
         if qs.keyword == 'set':
@@ -299,7 +301,17 @@ elements in the query.'''
                 'method': method,
                 'desc': desc,
                 'nested': nested_args}
-            
+    
+    def dump_nested(self, value, nested):
+        nested_args = []
+        if nested:
+            for name, meta in nested:
+                if meta:
+                    meta = self.backend.basekey(meta)
+                nested_args.extend((name, meta))
+        return json.dumps((value, nested_args))
+                
+                
     def _has(self, val):
         r = self.ismember(self.query_key, val)
         return self._check_member(r)

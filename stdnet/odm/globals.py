@@ -1,4 +1,5 @@
 import hashlib
+from collections import namedtuple
 
 from stdnet.utils import to_bytes, JSPLITTER
 
@@ -6,6 +7,16 @@ __all__ = ['get_model_from_hash',
            'get_hash_from_model',
            'hashmodel',
            'JSPLITTER']
+
+# Information about a lookup in a query
+lookup_value = namedtuple('lookup_value', 'lookup value')
+
+# Utilities for sorting and range lookups
+orderinginfo = namedtuple('orderinginfo','name field desc model nested auto')
+
+# attribute name, field, model where to do lookup, nested lookup_info
+range_lookup_info = namedtuple('range_lookup_info', 'name field model nested')
+
 
 class ModelDict(dict):
 

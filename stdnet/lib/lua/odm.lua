@@ -81,7 +81,7 @@ odm.Model = {
             can be one of 'set', 'value' or a range filter.
     --]]
     query = function (self, destkey, field, queries)
-        local ranges, unique, qtype, oper = {}, self.meta.indices[field]
+        local ranges, unique, qtype, oper, nested = {}, self.meta.indices[field]
         for i, value in ipairs(queries) do
             if 2*math.floor(i/2) == i then
                 if qtype == 'set' then
@@ -94,7 +94,8 @@ odm.Model = {
                     -- Range queries are processed together
                     local selector = odm.range_selectors[qtype]
                     if selector then
-                        table.insert(ranges, {selector=selector, value=value})
+                        value, nested = unpack(cjson.decode(value))
+                        table.insert(ranges, {selector=selector, value=value, nested=nested})
                     else
                         error('Cannot understand query type "' .. qtype .. '".')
                     end
@@ -323,7 +324,7 @@ odm.Model = {
     end,
     --
     _selectranges = function(self, destkey, fromkey, field, ranges)
-        local ordered, ids, scores, value = self.meta.sorted
+        local ordered, ids, scores, value, key, status = self.meta.sorted
         if ordered then
             ids, scores = {}, {}
             for i, score in ipairs(self.redis.call('zrange', fromkey, 0, -1, 'withscores')) do
@@ -337,25 +338,30 @@ odm.Model = {
             ids = redis.call('smembers', fromkey)
         end
         redis.call('del', destkey)
+        if field ~= self.meta.id_name then
+            for _, range in ipairs(ranges) do
+                table.insert(range.nested, field)
+            end
+        end
+        -- loop over ids to perform range selection
         for i, id in ipairs(ids) do
-            if field ~= self.meta.id_name then
-                value = redis.call('hget', self:object_key(id), field)
-            else
-                value = id
+            -- loop through range selectors
+            for _, range in ipairs(ranges) do
+                if # range.nested > 0 then
+                    _, value = self:_nested_field(id, range.nested)
+                else
+                    value = id
+                end
+                if not (value and range.selector(value, range.value)) then
+                    value = nil
+                    break
+                end
             end
             if value then
-                for _, range in ipairs(ranges) do
-                    if not range.selector(value, range.value) then
-                        value = nil
-                        break
-                    end
-                end
-                if value then
-                    if ordered then
-                        redis.call('zadd', destkey, scores[i], id)
-                    else
-                        redis.call('sadd', destkey, id)
-                    end
+                if ordered then
+                    redis.call('zadd', destkey, scores[i], id)
+                else
+                    redis.call('sadd', destkey, id)
                 end
             end
         end
@@ -584,6 +590,24 @@ odm.Model = {
             joiner = ','
         end
         return newid
+    end,
+    --
+    _nested_field = function (self, id, nested)
+        local key, status, value = self:object_key(id)
+        for n, field_model_name in ipairs(nested) do
+            if 2*math.floor(n/2) < n then
+                -- odd elements we get the value
+                value = redis.call('hget', key, field_model_name)
+            else    -- even we get the next key
+                status, key = pcall(function() return field_model_name .. ':obj:' .. value end)
+                if not status then
+                    key=  nil
+                    value = nil
+                    break
+                end
+            end
+        end
+        return key, value
     end
 }
 --

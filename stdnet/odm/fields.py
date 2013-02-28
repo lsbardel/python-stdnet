@@ -1,7 +1,6 @@
 import logging
 from copy import copy
 from hashlib import sha1
-from collections import namedtuple
 import time
 from datetime import date, datetime
 from base64 import b64encode
@@ -16,11 +15,6 @@ from stdnet.utils import pickle, DefaultJSONEncoder,\
 
 from . import related
 from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER
-
-# Utilities for sorting and range lookups
-orderinginfo = namedtuple('orderinginfo','name field desc model nested auto')
-# attribute name, field, model where to do lookup, nested lookup_info
-lookup_info = namedtuple('lookup_info','name field model nested')
 
 logger = logging.getLogger('stdnet.odm')
 
@@ -265,6 +259,18 @@ function users should never call.'''
 
     def get_sorting(self, name, errorClass):
         raise errorClass('Cannot use nested sorting on field {0}'.format(self))
+    
+    def get_lookup(self, remaining, errorClass=ValueError):
+        '''called by the :class:`Query` method when it needs to build
+lookup on fields with additional nested fields. This is the case of
+:class:`ForeignKey` and :class:`JSONField`.
+
+:param remaining: the :ref:`double underscored` fields if this :class:`Field`
+:param errorClass: Optional exception class to use if the *remaining* field
+    is not valid.'''
+        if remaining:
+            raise errorClass('Cannot use nested lookup on field %s' % self)
+        return (self.attname, None)
 
     def todelete(self):
         return False
@@ -626,6 +632,24 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
     def get_sorting(self, name, errorClass):
         return self.relmodel._meta.get_sorting(name, errorClass)
+    
+    def get_lookup(self, name, errorClass=ValueError):
+        if name:
+            bits = name.split(JSPLITTER)
+            fname = bits.pop(0)
+            field = self.relmodel._meta.dfields.get(fname)
+            meta = self.relmodel._meta
+            if field: # it is a field
+                nested = [(self.attname, meta)]
+                remaining = JSPLITTER.join(bits)
+                name, _nested = field.get_lookup(remaining, errorClass)
+                if _nested:
+                    nested.extend(_nested)
+                return (name, nested)
+            else:
+                raise errorClass('%s not a valid field for %s' % (fname, meta))
+        else:
+            return super(ForeignKey, self).get_lookup(name, errorClass)
 
 
 class JSONField(CharField):
@@ -746,6 +770,14 @@ behaviour and how the field is stored in the back-end server.
 
     def get_sorting(self, name, errorClass):
         pass
+    
+    def get_lookup(self, name, errorClass):
+        if self.as_string:
+            return super(JSONField, self).get_lookup(name, errorClass)
+        else:
+            if name:
+                name = JSPLITTER.join((self.attname, name))
+            return (name, None)
     
     def get_attr(self, value, bits):
         try:

@@ -19,7 +19,6 @@ __all__ = ['BackendRequest',
            'query_result',
            'on_result',
            'range_lookups',
-           'lookup_value',
            'getdb',
            'getcache']
 
@@ -31,8 +30,6 @@ query_result = namedtuple('query_result','key count')
 instance_session_result = namedtuple('instance_session_result',
                                      'iid persistent id deleted score')
 session_result = namedtuple('session_result','meta results')
-
-lookup_value = namedtuple('lookup_value', 'lookup value')
 
 pass_through = lambda x: x
 str_lower_case = lambda x: to_string(x).lower()
@@ -46,8 +43,8 @@ range_lookups = {
     'startswith': pass_through,
     'endswith': pass_through,
     'icontains': str_lower_case,
-    'icontains': str_lower_case,
-    'icontains': str_lower_case}
+    'istartswith': str_lower_case,
+    'iendswith': str_lower_case}
     
 
 def get_connection_string(scheme, address, params):

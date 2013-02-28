@@ -351,13 +351,13 @@ criteria and options associated with it.
     def __init__(self, *args, **kwargs):
         '''A :class:`Query` is not initialized directly but via the
 :meth:`Session.query` or :meth:`Manager.query` methods.'''
-        self.fargs  = kwargs.pop('fargs',None)
-        self.eargs  = kwargs.pop('eargs',None)
-        self.unions = kwargs.pop('unions',())
-        self.intersections = kwargs.pop('intersections',())
-        self.text  = kwargs.pop('text',None)
-        self.exclude_fields = kwargs.pop('exclude_fields',None)
-        super(Query,self).__init__(*args,**kwargs)
+        self.fargs  = kwargs.pop('fargs', None)
+        self.eargs  = kwargs.pop('eargs', None)
+        self.unions = kwargs.pop('unions', ())
+        self.intersections = kwargs.pop('intersections', ())
+        self.text  = kwargs.pop('text', None)
+        self.exclude_fields = kwargs.pop('exclude_fields', None)
+        super(Query,self).__init__(*args, **kwargs)
         self.clear()
 
     @property

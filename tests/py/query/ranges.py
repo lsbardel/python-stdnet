@@ -172,9 +172,20 @@ class TestNumericRangeForeignKey(test.TestCase):
         for feed in qs:
             self.assertTrue(feed.live)
             self.assertTrue(isinstance(feed.live.data, dict))
+        qs = CrossData.objects.filter(data__a__gt=-1)
+        self.assertTrue(qs)
+        for c in qs:
+            self.assertTrue(c.data__a >= -1)
+            
+    def test_gt_direct(self):
+        qs1 = CrossData.objects.filter(data__a__gt=-1)
+        qs = Feed1.objects.filter(live=qs1)
+        self.assertTrue(qs)
+        for feed in qs:
+            self.assertTrue(feed.live.data__a >= -1)
             
     def test_gt(self):
         qs = Feed1.objects.filter(live__data__a__gt=-1)
         self.assertTrue(qs)
         for feed in qs:
-            self.assertTrue(feed.live__data__a >= -1)
+            self.assertTrue(feed.live.data__a >= -1)

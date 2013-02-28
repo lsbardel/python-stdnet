@@ -119,9 +119,9 @@ class TestSortByForeignKeyField(TestSort):
         qs = self.fill()
         qs = qs.sort_by('group__name')
         ordering = qs.ordering
-        self.assertEqual(ordering.name,'group_id')
-        self.assertEqual(ordering.nested.name,'name')
-        self.assertEqual(ordering.model,qs.model)
+        self.assertEqual(ordering.name, 'group_id')
+        self.assertEqual(ordering.nested.name, 'name')
+        self.assertEqual(ordering.model, qs.model)
         self.checkOrder(qs, 'group__name')
         
 
@@ -133,9 +133,9 @@ class TestOrderingModel(TestSort):
         model = self.model
         self.assertTrue(model._meta.ordering)
         ordering = model._meta.ordering
-        self.assertEqual(ordering.name,'dt')
-        self.assertEqual(ordering.field.name,'dt')
-        self.assertEqual(ordering.desc,self.desc)
+        self.assertEqual(ordering.name, 'dt')
+        self.assertEqual(ordering.field.name, 'dt')
+        self.assertEqual(ordering.desc, self.desc)
     
     def testAdd(self):
         session = self.session()

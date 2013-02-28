@@ -17,8 +17,10 @@ from stdnet.utils import pickle, DefaultJSONEncoder,\
 from . import related
 from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER
 
-
-orderinginfo = namedtuple('orderinginfo','name field desc model nested, auto')
+# Utilities for sorting and range lookups
+orderinginfo = namedtuple('orderinginfo','name field desc model nested auto')
+# attribute name, field, model where to do lookup, nested lookup_info
+lookup_info = namedtuple('lookup_info','name field model nested')
 
 logger = logging.getLogger('stdnet.odm')
 
@@ -620,7 +622,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def filter(self, session, name, value):
         fname = name.split(JSPLITTER)[0]
         if fname in self.relmodel._meta.dfields:
-            return session.query(self.relmodel).filter(name=value)
+            return session.query(self.relmodel, fargs={name: value})
 
     def get_sorting(self, name, errorClass):
         return self.relmodel._meta.get_sorting(name, errorClass)

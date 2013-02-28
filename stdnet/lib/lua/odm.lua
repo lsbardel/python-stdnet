@@ -380,7 +380,7 @@ odm.Model = {
             table.insert(errors, 'Id not available. Cannot commit.')
         else
             local oldid, idkey, original_data, field = id, self:object_key(id), {}
-            if action ~= 'add' then  -- override or change
+            if action ~= 'add' then  -- override or update
                 original_data = odm.redis.call('hgetall', idkey)
                 self:_update_indices(false, id)
                 if action == 'override' then

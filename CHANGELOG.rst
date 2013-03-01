@@ -12,26 +12,27 @@ Ver. 0.8 - Development
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
   the main test class for handling tests on multiple backends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
-  dataset of the model which maintains the many-to-many relationship.
-  To do so, ii must be accessed via the class rather than an instance.
+  data-set of the model which maintains the
+  :ref:`many-to-many relationship <many-to-many>`.
+  To do so, the manager must be accessed via the class rather than an instance.
   Also the `through` attribute has been removed as it was equivalent to
   the `model` attribute. 
 * The :ref:`load_only <performance-loadonly>` query method can be applied to
   field of related models.
 * The :ref:`load_related <performance-loadrelated>` query method can now load only
   the ``primary key`` of the related element.
-* Changed the default value of :attr:`stdnet.ForeignKey.related_name` attribute
+* Changed the default value of :attr:`stdnet.odm.ForeignKey.related_name` attribute
   to accommodate for multiple foreign keys with same related model in the same
   model.
-* Fixed critical bug in :attr:`stdnet.ForeignKey` with attribute ``required``
+* Fixed critical bug in :attr:`stdnet.odm.ForeignKey` with attribute ``required``
   set to ``False``. Previously the deletion of instances of the related
   model caused the deletion of the instances pointing to those deleted objects.
 * Minor bug fix in lua ``odm`` script when sorting with respect related model
   fields which are missing.
-* Added the new :meth:`stdnet.StdModel.get_model_attribute` method for
+* Added the new :meth:`stdnet.odm.StdModel.get_model_attribute` method for
   retrieving nested attribute values using the double underscore notation.
-* :attr:`stdnet.Field.default` attribute made read-only.
-* :meth:`stdnet.Session.add` accept ``force_update`` parameter which can be used to
+* :attr:`stdnet.odm.Field.default` attribute made read-only.
+* :meth:`stdnet.odm.Session.add` accept ``force_update`` parameter which can be used to
   force an ``update`` rather than an ``override`` when an instance is persistent and
   fully loaded.
 * Removed asynchronous redis connection. To be implemented by another package.

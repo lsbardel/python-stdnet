@@ -10,7 +10,7 @@ Here we deal with model implementation and creating instances persistent
 in a backend database. A :class:`Model` is the single, definitive source of
 data about your data. There are two types of models in :mod:`stdnet`:
 the :class:`StdModel` which consists of :class:`Field` and behaviours of
-the data you’re storing and the
+the data you are storing and the
 :class:`Structure` the networked equivalent of data-structures such as sets,
 hash tables, lists. The goal is to define your data model in one place
 and automatically derive things from it.

@@ -13,13 +13,15 @@ be of different types:
     * Sets
     * Sorted Sets
     * Hash tables
-    * :ref:`Timeseries <redis-timeseries>` (only if you use the stdnet-redis_ branch)
     
 In other words, you can look at redis as a data structure server, the networked
 equivalent of the `standard template library in C++
 <http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html>`_.
-And that is where stdnet get its name from, *std* from the standard template library
-and *net* from networked.
+
+.. note::
+
+    stdnet get its name from, **std** from as Standard Template Library
+    and **net** from networked.
 
 Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
 since at the same time it is saved on disk, so that when the server is restarted

@@ -215,9 +215,9 @@ When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
 attribute of the model.'''
         def session_kwargs(self, value, transaction):
-            if not isinstance(value,self.formodel):
+            if not isinstance(value, self.formodel):
                 raise FieldValueError(
-                    '%s is not an instance of %s' % (value,self.formodel._meta))
+                   '%s is not an instance of %s' % (value, self.formodel._meta))
             # Get the related manager
             kwargs = {self.name_formodel: value,
                       self.name_relmodel: self.related_instance}

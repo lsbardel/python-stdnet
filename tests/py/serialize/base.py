@@ -57,7 +57,7 @@ class SerializerMixin(object):
         self.data.create(self)
         s = self.get()
         qs = self.model.objects.query().sort_by('id')
-        s.serialize(qs)
+        s.dump(qs)
         self.assertTrue(s.data)
         return s
 
@@ -92,7 +92,7 @@ class TestMeta(test.TestCase):
         s = odm.get_serializer('dummy')
         self.assertTrue('dummy' in odm.all_serializers())
         self.assertTrue(isinstance(s,DummySerializer))
-        self.assertRaises(NotImplementedError, s.serialize, None)
+        self.assertRaises(NotImplementedError, s.dump, None)
         self.assertRaises(NotImplementedError, s.write)
         self.assertRaises(NotImplementedError, s.load, None)
         self.assertTrue(odm.unregister_serializer('dummy'))

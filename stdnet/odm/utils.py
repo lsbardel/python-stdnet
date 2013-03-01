@@ -12,10 +12,11 @@ __all__ = ['get_serializer',
            'register_serializer',
            'unregister_serializer',
            'all_serializers',
-           'Serializer']
+           'Serializer',
+           'JsonSerializer']
 
 
-logger = logging.getLogger('stdnet')
+LOGGER = logging.getLogger('stdnet.odm')
 
 _serializers = {}
 
@@ -31,12 +32,12 @@ else:
 
 def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
-available an exception will raise. A common use usage pattern::
-
+available a ``ValueError`` exception will raise.
+A common usage pattern::
+    
     qs = MyModel.objects.query().sort_by('id')
     s = odm.get_serializer('json')
-    s.serialize(qs)
-
+    s.dump(qs)
 '''
     if name in _serializers:
         serializer = _serializers[name]
@@ -64,7 +65,19 @@ def all_serializers():
 
 
 class Serializer(object):
-    '''The stdnet serializer base class.'''
+    '''The stdnet serializer base class. During initialization, the *options*
+dictionary is used to override the :attr:`default_options`. These are specific
+to each :class:`Serializer` implementation.
+    
+.. attribute:: default_options
+
+    Dictionary of default options which are overwritten during initialisation.
+    By default it is an empty dictionary.
+    
+.. attribute:: options
+
+    Dictionary of options.
+'''
     default_options = {}
     arguments = ()
 
@@ -75,23 +88,35 @@ class Serializer(object):
 
     @property
     def data(self):
-        if not hasattr(self,'_data'):
+        if not hasattr(self, '_data'):
             self._data = []
         return self._data
 
-    def serialize(self, qs):
-        '''Serialize a :class:`Query` *qs*.'''
-        raise NotImplementedError()
+    def dump(self, qs):
+        '''Dump a :class:`Query` *qs* into a stream.'''
+        raise NotImplementedError
 
-    def write(self, stream = None):
-        raise NotImplementedError()
+    def write(self, stream=None):
+        '''Write the serialized data into a stream. If *stream* is not
+provided, a python ``StringIO`` is used.
+        
+:return: the stream object.'''
+        raise NotImplementedError
 
-    def load(self, stream, model = None):
-        '''Load a stream of data into the database.'''
-        raise NotImplementedError()
+    def load(self, stream, model=None):
+        '''Load a stream of data into the database.
+
+:param stream: bytes or an object with a ``read`` method returning bytes.
+:param model: Optional :class:`StdModel` we need to load. If not provided all
+    models in *stream* are loaded.
+'''
+        raise NotImplementedError
 
 
 class JsonSerializer(Serializer):
+    '''The default :class:`Serializer` of :mod:`stdnet`. It
+serialize/unserialize models into json data. It has one option given
+by the *indent* of the json string for pretty serialization.'''
     arguments = ('indent',)
 
     def get_data(self, qs):
@@ -103,10 +128,10 @@ class JsonSerializer(Serializer):
                 'hash':meta.hash,
                 'data':data}
 
-    def serialize(self, qs):
+    def dump(self, qs):
         self.data.append(self.get_data(qs))
 
-    def write(self, stream = None):
+    def write(self, stream=None):
         stream = stream or StringIO()
         line = json.dumps(self.data, stream, **self.options)
         stream.write(line)
@@ -119,21 +144,32 @@ class JsonSerializer(Serializer):
         for model_data in data:
             model = get_model_from_hash(model_data['hash'])
             if model:
-                logger.info('Loading model %s' % model._meta)
-                with model.objects.transaction(signal_commit=False) as t:
-                    for item_data in model_data['data']:
-                        t.add(model.from_base64_data(**item_data))
+                model = self.on_load_model(model, model_data)
+                if model:
+                    LOGGER.info('Loading model %s', model._meta)
+                    with model.objects.transaction(signal_commit=False) as t:
+                        for item_data in model_data['data']:
+                            t.add(model.from_base64_data(**item_data))
             else:
-                logger.error('Could not load model %s'\
-                              % model_data.get('model'))
+                LOGGER.error('Could not load model %s', model_data.get('model'))
+        self.on_finished_load()
 
+    def on_load_model(self, model, model_data):
+        '''Callback when a *model* is about to be loaded. If it returns the
+model, the model will get loaded otherwise it will skip the loading.'''
+        return model
+    
+    def on_finished_load(self):
+        '''Callback when loading of data is finished'''
+        pass
+    
 
 class CsvSerializer(Serializer):
-    '''A csv serializer for single model. It serialize a model query into
-a csv file.'''
+    '''A csv serializer for single model. It serialize/unserialize a model
+query into a csv file.'''
     default_options = {'lineterminator': '\n'}
 
-    def serialize(self, qs):
+    def dump(self, qs):
         if self.data:
             raise ValueError('Cannot serialize more than one model into CSV')
         fields = None

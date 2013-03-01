@@ -40,8 +40,8 @@ Flush Models
 Serialization
 ======================
 
-Stdnet comes with a bunch of extendible utilities for serializing model data into
-different formats.
+Stdnet comes with a bunch of extendible utilities for
+:ref:`serializing model <tutorial-serialise>` data into different formats.
 
 Get serializer
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,6 +59,14 @@ Serializer
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Serializer
+   :members:
+   :member-order: bysource
+   
+
+JsonSerializer
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: JsonSerializer
    :members:
    :member-order: bysource
    

@@ -20,7 +20,7 @@ class TestFinanceJSON(FinanceTest, SerializerMixin):
         self.assertEqual(len(s.data),1)
         d = s.data[0]
         self.assertEqual(d['model'],str(self.model._meta))
-        s.serialize(Fund.objects.query().sort_by('id'))
+        s.dump(Fund.objects.query().sort_by('id'))
         self.assertEqual(len(s.data), 2)
 
     def testModelToSerialize(self):

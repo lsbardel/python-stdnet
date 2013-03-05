@@ -283,7 +283,8 @@ directly, instead, the :func:`getdb` function should be used.
     struct_map = {}
     async_handlers = {}
     
-    def __init__(self, name=None, address=None, charset=None, namespace='', **params):
+    def __init__(self, name=None, address=None, charset=None, namespace='',
+                 **params):
         self.__name = name or 'dummy'
         address = address or ':'
         if not isinstance(address, (list, tuple)):

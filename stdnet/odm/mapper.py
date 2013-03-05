@@ -1,5 +1,7 @@
 import copy
 import logging
+from inspect import ismodule
+
 from stdnet.utils import native_str
 from stdnet.utils.importer import import_module
 from stdnet import getdb, ModelNotRegistered
@@ -167,18 +169,17 @@ For example::
 
 '''
     application = native_str(application)
-    if not isinstance(application, str):
-        for app in application:
-            for m in model_iterator(app):
-                yield m
-    else:
-        label = application.split('.')[-1]
-        try:
-            mod = import_module(application)
-        except ImportError:
-            # the module is not there
-            mod = None
+    if ismodule(application) or isinstance(application, str):
+        if ismodule(application):
+            mod, application = application, application.__name__
+        else:
+            try:
+                mod = import_module(application)
+            except ImportError:
+                # the module is not there
+                mod = None
         if mod:
+            label = application.split('.')[-1]
             try:
                 mod_models = import_module('.models', application)
             except ImportError:
@@ -195,6 +196,10 @@ For example::
                         if model not in models:
                             models.add(model)
                             yield model
+    else:
+        for app in application:
+            for m in model_iterator(app):
+                yield m
 
 
 def all_models_sessions(models, processed=None, session=None):
@@ -221,9 +226,9 @@ through models.'''
 
 
 def register_application_models(applications,
-                                models=None,
-                                app_defaults=None,
-                                default=None):
+                                    models=None,
+                                    app_defaults=None,
+                                    default=None):
     '''\
 A higher level registration functions for group of models located
 on application modules.

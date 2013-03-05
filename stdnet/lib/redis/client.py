@@ -285,32 +285,20 @@ between the client and server.
 
     def preprocess_command(self, cmnd, *args, **options):
         return args, options
-        
-    def request(self, cmnd, *args, **options):
-        '''Return a new :class:`RedisRequest`'''
-        connection = self.connection_pool.get_connection()
-        args, options = self.preprocess_command(cmnd, *args, **options)
-        return connection.request(self, cmnd, *args, **options)
     
-    def execute_command(self, *args, **options):
+    def execute_command(self, cmnd, *args, **options):
         "Execute a command and return a parsed response"
-        return self.request(*args, **options).execute()
+        args, options = self.preprocess_command(cmnd, *args, **options)
+        return self.connection_pool.request(self, cmnd, *args, **options)
 
-    def _parse_response(self, request, response, command_name, args, options):
+    def parse_response(self, request, command_name, **options):
+        response = request.read_response()
         callbacks = self.response_errbacks if isinstance(response, Exception)\
                         else self.response_callbacks
         if command_name in callbacks:
             cbk = callbacks[command_name]
-            return cbk(request, response, args, **options)
+            return cbk(request, response, request.args, **options)
         return response
-
-    def parse_response(self, request):
-        "Parses a response from the Redis server"
-        return self._parse_response(request,
-                                    request.response,
-                                    request.command_name,
-                                    request.args,
-                                    request.options)
 
     ############################################################################
     ##    SERVER INFORMATION

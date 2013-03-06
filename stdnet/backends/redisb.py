@@ -31,7 +31,7 @@ def redis_before_send(sender, request, command, **kwargs):
                                     'raw_command':command,
                                     'commands': copy(client.command_stack)})
     
-redis.redis_before_send.connect(redis_before_send)
+#redis.redis_before_send.connect(redis_before_send)
 
 def field_decoder(meta, field=None):
     if not field:
@@ -793,7 +793,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             address = address[0]
         if 'db' not in self.params:
             self.params['db'] = 0
-        rpy = redis.Redis(address=address, **self.params)
+        rpy = redis.redis_client(address=address, **self.params)
         if self.namespace:
             self.params['namespace'] = self.namespace
         return rpy

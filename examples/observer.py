@@ -37,7 +37,7 @@ class RedisUpdateZset(redisb.Zset):
         result = None
         if cache.toadd:
             flat = tuple(self.flat(cache.toadd))
-            self.client.script_call('update_observer', self.id, *flat)
+            self.client.execute_script('update_observer', self.id, *flat)
             result = True
         if cache.toremove:
             flat = tuple((el[1] for el in cache.toremove))

@@ -10,7 +10,7 @@ Usage::
 from collections import namedtuple, deque
 
 import pulsar
-from pulsar import ProtocolError
+from pulsar import ProtocolError, is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
 redis_connection = namedtuple('redis_connection', 'address db password charset')    
@@ -148,6 +148,13 @@ data-structure server.'''
     def request(self, client, command_name, *args, **options):
         request = self._new_request(client, command_name, *args, **options)
         return self.response(request)
+    
+    def request_pipeline(self, client, raise_on_error=True):
+        if client.transaction or self.explicit_transaction:
+            execute = self._execute_transaction
+        else:
+            execute = self._execute_pipeline
+        
     
     def response(self, request):
         connection = self.get_connection(request)

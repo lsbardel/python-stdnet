@@ -219,7 +219,7 @@ class RedisQuery(stdnet.BackendQuery):
         else:
             key = backend.tempkey(meta)
             p = 'z' if meta.ordering else 's'
-            pipe.script_call('move2set', keys, p,
+            pipe.execute_script('move2set', keys, p,
                              scripts_dependency=ODM_SCRIPTS)
             if qs.keyword == 'intersect':
                 command = getattr(pipe, p+'interstore')
@@ -627,7 +627,7 @@ class TS(RedisStructure):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            self.client.script_call('ts_commands', self.id, 'add',
+            self.client.execute_script('ts_commands', self.id, 'add',
                                     *cache.toadd.flat())
             result = True
         if cache.toremove:
@@ -635,50 +635,50 @@ class TS(RedisStructure):
         return result
     
     def __contains__(self, timestamp):
-        return self.client.script_call('ts_commands', self.id, 'exists',
+        return self.client.execute_script('ts_commands', self.id, 'exists',
                                        timestamp)
     
     def size(self):
-        return self.client.script_call('ts_commands', self.id, 'size')
+        return self.client.execute_script('ts_commands', self.id, 'size')
     
     def count(self, start, stop):
-        return self.client.script_call('ts_commands', self.id, 'count',
+        return self.client.execute_script('ts_commands', self.id, 'count',
                                        start, stop)
     
     def times(self, time_start, time_stop, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'times',
+        return self.client.execute_script('ts_commands', self.id, 'times',
                                        time_start, time_stop, **kwargs)
             
     def itimes(self, start=0, stop=-1, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'itimes',
+        return self.client.execute_script('ts_commands', self.id, 'itimes',
                                        start, stop, **kwargs)
     
     def get(self, dte):
-        return self.client.script_call('ts_commands', self.id, 'get', dte)
+        return self.client.execute_script('ts_commands', self.id, 'get', dte)
     
     def rank(self, dte):
-        return self.client.script_call('ts_commands', self.id, 'rank', dte)
+        return self.client.execute_script('ts_commands', self.id, 'rank', dte)
     
     def pop(self, dte):
-        return self.client.script_call('ts_commands', self.id, 'pop', dte)
+        return self.client.execute_script('ts_commands', self.id, 'pop', dte)
     
     def ipop(self, index):
-        return self.client.script_call('ts_commands', self.id, 'ipop', index)
+        return self.client.execute_script('ts_commands', self.id, 'ipop', index)
             
     def range(self, time_start, time_stop, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'range',
+        return self.client.execute_script('ts_commands', self.id, 'range',
                                        time_start, time_stop, **kwargs)
             
     def irange(self, start=0, stop=-1, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'irange',
+        return self.client.execute_script('ts_commands', self.id, 'irange',
                                        start, stop, **kwargs)
         
     def pop_range(self, time_start, time_stop, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'pop_range',
+        return self.client.execute_script('ts_commands', self.id, 'pop_range',
                                        time_start, time_stop, **kwargs)
             
     def ipop_range(self, start=0, stop=-1, **kwargs):
-        return self.client.script_call('ts_commands', self.id, 'ipop_range',
+        return self.client.execute_script('ts_commands', self.id, 'ipop_range',
                                        start, stop, **kwargs)
 
 
@@ -688,28 +688,28 @@ class NumberArray(RedisStructure):
         cache = self.instance.cache
         result = None
         if cache.back:
-            self.client.script_call('numberarray_pushback', self.id,
+            self.client.execute_script('numberarray_pushback', self.id,
                                     *cache.back)
             result = True
         return result
     
     def get(self, index):
-        return self.client.script_call('numberarray_getset', self.id,
+        return self.client.execute_script('numberarray_getset', self.id,
                                        'get', index+1)
     
     def set(self, value):
-        return self.client.script_call('numberarray_getset', self.id,
+        return self.client.execute_script('numberarray_getset', self.id,
                                        'set', index+1, value)
     
     def __iter__(self):
-        return iter(self.client.script_call('numberarray_all_raw', self.id))
+        return iter(self.client.execute_script('numberarray_all_raw', self.id))
     
     def resize(self, size, value = None):
         if value is not None:
             argv = (size,value)
         else:
             argv = (size,)
-        return self.client.script_call('numberarray_resize', self.id, *argv)
+        return self.client.execute_script('numberarray_resize', self.id, *argv)
     
     def size(self):
         return self.client.strlen(self.id)//8
@@ -832,15 +832,16 @@ class BackendDataServer(stdnet.BackendDataServer):
                         'meta': meta,
                         'script': script,
                         'script_dependency': ODM_SCRIPTS})
-        return client.script_call('odmrun', keys, script, meta_info, *args,
+        return client.execute_script('odmrun', keys, script, meta_info, *args,
                                   **options)
         
     def where_run(self, client, meta_info, keys, where, load_only):
         where = redis.read_lua_file('where', context={'where_clause': where})
-        args = [meta_info]
+        numkeys = len(keys)
+        keys.append(meta_info)
         if load_only:
             args.append(json.dumps(load_only))
-        return redis.RedisScriptBase(where).eval(client, keys, *args)
+        return client.eval(where, numkeys, keys_args)
         
     def execute_session(self, session, callback):
         '''Execute a session in redis.'''

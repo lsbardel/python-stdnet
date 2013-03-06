@@ -1,4 +1,4 @@
-from stdnet.utils import BytesIO
+from io import BytesIO
 
 
 __all__ = ['RedisReader']

@@ -199,9 +199,9 @@ class KeyQuery(object):
         c = db.client
         if self.slice:
             start, num = self.get_start_num(self.slice)
-            qs = c.script_call('keyinfo', (), self.pattern, start, num)
+            qs = c.execute_script('keyinfo', (), self.pattern, start, num)
         else:
-            qs = c.script_call('keyinfo', (), self.pattern)
+            qs = c.execute_script('keyinfo', (), self.pattern)
         for q in qs:
             q.database = db
             yield q

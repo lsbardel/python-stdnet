@@ -3,18 +3,23 @@ from hashlib import sha1
 from functools import partial
 
 from stdnet.utils import zip
-from .connection import RedisRequest
-from .exceptions import NoScriptError, ScriptError
 from .redisinfo import RedisKey
 
+try:
+    from .async import AsyncConnectionPool, is_async, 
+except ImportError:
+    AsyncConnectionPool = None
+    def is_async(result):
+        return False
 
-__all__ = ['RedisScriptBase',
-           'RedisScript',
+__all__ = ['RedisScript',
            'pairs_to_dict',
            'get_script',
            'registered_scripts',
            'script_command_callback',
-           'read_lua_file']
+           'read_lua_file',
+           'AsyncConnectionPool',
+           'is_async']
 
 
 p = os.path
@@ -79,8 +84,20 @@ def read_lua_file(dotted_module, path=None, context=None):
         data = data.format(context)
     return data
     
+
+class RedisScriptMeta(type):
     
-class RedisScriptBase(object):
+    def __new__(cls, name, bases, attrs):
+        super_new = super(RedisScriptMeta, cls).__new__
+        abstract = attrs.pop('abstract',False)
+        new_class = super_new(cls, name, bases, attrs)
+        if not abstract:
+            self = new_class(new_class.script, new_class.__name__)
+            _scripts[self.name] = self
+        return new_class
+    
+    
+class RedisScript(RedisScriptMeta('_RS', (object,), {'abstract':True})):
     ''':class:`RedisScriptBase` is a class which helps the sending and receiving
 lua scripts to redis via the ``evalsha`` command.
 
@@ -96,11 +113,18 @@ lua scripts to redis via the ``evalsha`` command.
     
 .. _SHA-1: http://en.wikipedia.org/wiki/SHA-1
 '''
-    def __init__(self, script, name=None):
+    abstract = True
+    script = None
+    required_scripts = ()
+    
+    def __init__(self, script, name):
         if isinstance(script, (list, tuple)):
             script = '\n'.join(script)
         self.__name = name
         self.script = script
+        rs = set((name,))
+        rs.update(self.required_scripts)
+        self.required_scripts = rs
         
     @property
     def name(self):
@@ -116,57 +140,27 @@ lua scripts to redis via the ``evalsha`` command.
         return self.name if self.name else self.__class__.__name__
     __str__ = __repr__
     
-    def call(self, client, command, body, keys, *args, **options):
-        if self.name:
-            options['script_name'] = self.name
-        args, options = self.preprocess_args(client, args, options)
-        return client._eval(command, body, keys, *args, **options)
+    def __call__(self, client, keys, *args):
+        loaded = client.connection_pool.loaded_scripts
+        to_load = loaded.difference(self.required_scripts)
+        if to_load:
+            # We need to make sure the script is loaded
+            async_results = []
+            for name in to_load:
+                s = get_script(name)
+                result = client.script_load(s.script)
+                if is_async(result):
+                    results.append(result)
+            if async_results:
+                # result may be asynchronous if it was executed right-away
+                # by an asynchronous connection. In this case we add a callback
+                return result.add_callback(
+                        partial(self._call, client, keys, args))
+        return self._call(client, keys, args)
+    
+    def preprocess_args(self, client, args):
+        return args
         
-    def preprocess_args(self, client, args, options):
-        '''A chance to modify the arguments before sending request to server'''
-        return args, options
-    
-    def eval(self, client, keys, *args, **options):
-        return self.call(client, 'EVAL', self.script, keys, *args, **options)
-    
-    def evalsha(self, client, keys, *args, **options):
-        return self.call(client, 'EVALSHA', self.sha1, keys, *args, **options)
-    
-    def load(self, client, keys, *args, **options):
-        '''Load this :class:`RedisScript` to redis and runs it using evalsha.
-It returns the result of the `evalsha` command.'''
-        client.script_load(self.script, script_name=self.name)
-        return self.evalsha(client, keys, *args, **options)
-        
-    def start_callback(self, request, response, args, **options):
-        if str(response) == NoScriptError.msg:
-            response = NoScriptError()
-            client = request.client
-            if not client.pipelined:
-                num_keys = args[1]
-                keys, args = args[2:2+num_keys],args[2+num_keys:]
-                pipe = client.pipeline()
-                self.load(pipe, keys, *args, **options)
-                result = pipe.execute()
-                if isinstance(result, RedisRequest):
-                    return result.add_callback(
-                        lambda r : self.load_callback(request,r,args,**options))
-                else:
-                    return self.load_callback(request, result, args, **options)
-            else:
-                return response
-        elif isinstance(response, Exception):
-            raise ScriptError('EVALSHA', self, response)
-        else:
-            return self.callback(request, response, args, **options)
-        
-    def load_callback(self, request, result, args, **options):
-        if isinstance(result[0], Exception):
-            raise result[0]
-            #raise ScriptError('Lua redis script "{0}" error. {1}'\
-            #                          .format(self,result[1]))
-        return result[1]
-    
     def callback(self, request, response, args, **options):
         '''This is the only method user should override when writing a new
 :class:`RedisScript`. By default it returns *response*.
@@ -178,87 +172,13 @@ It returns the result of the `evalsha` command.'''
 '''
         return response
     
-
-class RedisScriptMeta(type):
-    
-    def __new__(cls, name, bases, attrs):
-        super_new = super(RedisScriptMeta, cls).__new__
-        abstract = attrs.pop('abstract',False)
-        new_class = super_new(cls, name, bases, attrs)
-        if not abstract:
-            self = new_class(new_class.script, new_class.__name__)
-            _scripts[self.name] = self
-        return new_class
-    
-
-class RedisScript(RedisScriptMeta('_RS',(RedisScriptBase,),{'abstract':True})):
-    abstract = True
-    script = None
-   
-
-def load_missing_scripts(pipe, commands, results):
-    '''Load missing scripts in a pipeline. This function loops through the
-*results* list and if one or more values are instances of
-:class:`NoScriptError`, it loads the scripts and perform a new evaluation.
-Commands which have *option* ``script_dependency`` set to the name
-of a missing script, are also re-executed.'''
-    toload = False
-    for r in results:
-        if isinstance(r, NoScriptError):
-            toload = True
-            break
-    if not toload:
-        return results
-    loaded = set()
-    positions = []
-    for i, result in enumerate(zip(commands, results)):
-        command, result = result    
-        if isinstance(result, NoScriptError):
-            name = command.options.get('script_name')
-            if name:
-                script = get_script(name)
-                if script:
-                    args = command.args
-                    s = 2 # Starts from 2 as the first argument is the command
-                    num_keys = args[s-1]
-                    keys, args = args[s:s+num_keys], args[s+num_keys:]
-                    if script.name not in loaded:
-                        positions.append(-1)
-                        loaded.add(script.name)
-                        script.load(pipe, keys, *args, **command.options)
-                    else:
-                        script.evalsha(pipe, keys, *args, **command.options)
-                    positions.append(i)
-                    for c in command.callbacks:
-                        pipe.add_callback(c)
-        else:
-            sc = command.options.get('script_dependency')
-            if sc:
-                if not isinstance(sc,(list,tuple)):
-                    sc = (sc,)
-                for s in sc:
-                    if s in loaded:
-                        pipe.command_stack.append(commands[i])
-                        positions.append(i)
-                        break
-                
-    res = pipe.execute()
-    if isinstance(res,RedisRequest):
-        return res.add_callback(partial(_load_missing_scripts,
-                                        results, positions))
-    else:
-        return _load_missing_scripts(results, positions, res)
-        
-
-def _load_missing_scripts(results, positions, res):
-    for i,r in zip(positions,res):
-        if i == -1:
-            if isinstance(r, Exception):
-                raise r
-            else:
-                continue
-        results[i] = r
-    return results
+    def _call(self, client, keys, args, result=None):
+        args = self.preprocess_args(client, args)
+        client.connection_pool.loaded_scripts.add(self.name)
+        numkeys = len(keys)
+        keys_args = keys + args 
+        res = client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args)
+       
     
 ################################################################################
 ##    BATTERY INCLUDED REDIS SCRIPTS
@@ -268,10 +188,10 @@ class countpattern(RedisScript):
     script = '''\
 return # redis.call('keys', ARGV[1])
 '''
-    def preprocess_args(self, client, args, options):
+    def preprocess_args(self, client, args):
         if args and client.prefix:
             args = ['%s%s' % (client.prefix, a) for a in args]
-        return args, options
+        return args
     
 # Delete all keys from a pattern and return the total number of keys deleted
 # This fails when there are too many keys
@@ -310,12 +230,12 @@ class zdiffstore(RedisScript):
 class keyinfo(countpattern):
     script = read_lua_file('commands.keyinfo')
     
-    def preprocess_args(self, client, args, options):
+    def preprocess_args(self, client, args):
         if args and client.prefix:
             a = ['%s%s' % (client.prefix, args[0])]
             a.extend(args[1:])
             args = tuple(a)
-        return args, options
+        return args
     
     def callback(self, request, response, args, **options):
         client = request.client

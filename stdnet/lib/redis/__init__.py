@@ -1,9 +1,5 @@
 from .client import *
 from .scripts import *
-try:
-    from .async import AsyncConnectionPool
-except ImportError:
-    AsyncConnectionPool = None
 
 def redis_client(address, connection_pool=None, timeout=None, **kwargs):
     if not connection_pool:

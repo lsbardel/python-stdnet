@@ -17,25 +17,25 @@ class TestRedisPrefixed(TestCase):
     
     def setUp(self):
         self.client2 = self.get_client2()
-        self.client2.flushdb()
-        return super(TestRedisPrefixed, self).setUp()
+        yield self.client2.flushdb()
+        yield super(TestRedisPrefixed, self).setUp()
     
     def tearDown(self):
-        self.client2.flushdb()
-        return super(TestRedisPrefixed, self).tearDown()
+        yield self.client2.flushdb()
+        yield super(TestRedisPrefixed, self).tearDown()
     
     def test_delete(self):
-        self.client.set('bla', 'foo')
-        self.client2.set('bla', 'foo')
-        self.assertEqual(self.client.dbsize(), 1)
-        self.assertEqual(self.client2.dbsize(), 1)
-        self.client.flushdb()
-        self.assertEqual(self.client.dbsize(), 0)
-        self.assertEqual(self.client2.dbsize(), 1)
-        self.client2.flushdb()
-        self.assertEqual(self.client2.dbsize(), 0)
+        yield self.client.set('bla', 'foo')
+        yield self.client2.set('bla', 'foo')
+        yield self.async.assertEqual(self.client.dbsize(), 1)
+        yield self.async.assertEqual(self.client2.dbsize(), 1)
+        yield self.client.flushdb()
+        yield self.assertEqual(self.client.dbsize(), 0)
+        yield self.assertEqual(self.client2.dbsize(), 1)
+        yield self.client2.flushdb()
+        yield self.assertEqual(self.client2.dbsize(), 0)
         
-    def testError(self):
+    def test_error(self):
         self.assertRaises(NotImplementedError,
                           self.client.execute_command, 'FLUSHDB')
         self.assertRaises(NotImplementedError,

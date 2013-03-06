@@ -1,5 +1,6 @@
-from .client import *
 from .scripts import *
+from .client import *
+from .redisinfo import *
 
 def redis_client(address, connection_pool=None, timeout=None, **kwargs):
     if not connection_pool:

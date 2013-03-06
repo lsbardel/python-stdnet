@@ -1,3 +1,6 @@
+def raise_error(exception=NotImplementedError):
+    raise exception()
+
 prefix_all = lambda pfix, args: ['%s%s' % (pfix, a) for a in args]
 prefix_alternate = lambda pfix, args: [a if n//2*2==n else '%s%s' % (pfix, a)\
                                        for n, a in enumerate(args,1)]

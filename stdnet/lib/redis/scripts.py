@@ -6,7 +6,7 @@ from stdnet.utils import zip
 from .redisinfo import RedisKey
 
 try:
-    from .async import AsyncConnectionPool, is_async, 
+    from .async import AsyncConnectionPool, is_async, multi_async
 except ImportError:
     AsyncConnectionPool = None
     def is_async(result):
@@ -142,7 +142,7 @@ lua scripts to redis via the ``evalsha`` command.
     
     def __call__(self, client, keys, *args):
         loaded = client.connection_pool.loaded_scripts
-        to_load = loaded.difference(self.required_scripts)
+        to_load = self.required_scripts.difference(loaded)
         if to_load:
             # We need to make sure the script is loaded
             async_results = []
@@ -154,8 +154,8 @@ lua scripts to redis via the ``evalsha`` command.
             if async_results:
                 # result may be asynchronous if it was executed right-away
                 # by an asynchronous connection. In this case we add a callback
-                return result.add_callback(
-                        partial(self._call, client, keys, args))
+                return multi_async(async_results).add_callback(
+                                        partial(self._call, client, keys, args))
         return self._call(client, keys, args)
     
     def preprocess_args(self, client, args):
@@ -177,7 +177,7 @@ lua scripts to redis via the ``evalsha`` command.
         client.connection_pool.loaded_scripts.add(self.name)
         numkeys = len(keys)
         keys_args = keys + args 
-        res = client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args)
+        return client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args)
        
     
 ################################################################################

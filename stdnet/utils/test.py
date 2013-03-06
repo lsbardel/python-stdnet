@@ -26,6 +26,10 @@ if sys.version_info < (3,3):
 else:
     from unittest import mock
 
+import pulsar
+from pulsar.utils import events
+from pulsar.apps.test import TestSuite, TestPlugin
+
 from stdnet import odm, getdb, BackendRequest
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
@@ -65,10 +69,8 @@ some utility functions for tesing in a parallel test suite.
                            **cls.backend_params())
             cls.backend = server
             if server.name == 'redis':
-                r = server.client.script_flush()
-                if isinstance(r, BackendRequest):
-                    return r.add_callback(lambda r: cls.clear_all())
-            return cls.clear_all()
+                yield server.client.script_flush()
+            yield cls.clear_all()
         
     @classmethod
     def load_scripts(cls):
@@ -89,7 +91,7 @@ will be unregistered after the :meth:`tearDown` method.'''
         #override if you don't want to flush the database at the and of all
         #tests in this class
         if cls.backend is not None:
-            yield cls.backend.flush()
+            return cls.backend.flush()
 
     @classmethod
     def session(cls, **kwargs):
@@ -134,127 +136,80 @@ to perform cleanup, registration and unregistration.
         self._post_teardown()
 
 
-################################################################################
-##    PULSAR PLUGINS
-################################################################################
-try:
-    import pulsar
-    from pulsar.utils import events
-    from pulsar.apps.test import TestSuite, TestPlugin
-
-    class StdnetPlugin(TestPlugin):
-        name = "server"
-        flags = ["-s", "--server"]
-        nargs = '*'
-        desc = 'Back-end data server where to run tests.'
-        default = [settings.DEFAULT_BACKEND]
-        validator = pulsar.validate_list
-        
-        py_redis_parser = pulsar.Setting(
-                            desc='Set the redis parser to be the pure '\
-                                  'Python implementation.',
-                            action="store_true",
-                            default=False)
-        
-        size = pulsar.Setting(desc='Size of the dataset to test. '\
-                                   'Choose one between "tiny", '\
-                                   '"small", "normal", "big", "huge".',
-                              default='small')
-
-        def on_start(self):
-            servers = []
-            names = set()
-            for s in self.config.server:
-                try:
-                    s = getdb(s)
-                    s.ping()
-                except:
-                    logger.error('Could not obtain server %s' % s,
-                                 exc_info=True)
-                else:
-                    if s.name not in names:
-                        names.add(s.name)
-                        servers.append(s.connection_string)
-            if not servers:
-                raise pulsar.HaltServer('No server available. BAILING OUT')
-            settings.servers = servers
-            if self.config.py_redis_parser:
-                settings.REDIS_PY_PARSER = True
-            
-        def loadTestsFromTestCase(self, cls):
-            cls.size = self.config.size
-            
-            
-    class testmaker(object):
-        
-        def __init__(self, test, name, server):
-            self.test = test
-            self.cls_name = '%s_%s' % (test.__name__, name)
-            self.server = server
-            
-        def __call__(self):
-            new_test = type(self.cls_name, (self.test,), {})
-            new_test.connection_string = self.server
-            return new_test
-            
-        
-    def create_tests(sender=None, tests=None, **kwargs):
-        servers = getattr(settings, 'servers', None)
-        if isinstance(sender, TestSuite) and servers:
-            for tag, test in list(tests):
-                tests.pop(0)
-                multipledb = getattr(test, 'multipledb', True)
-                toadd = True
-                if isinstance(multipledb, str):
-                    multipledb = [multipledb]
-                if isinstance(multipledb, (list, tuple)):
-                    toadd = False
-                if multipledb:
-                    for server in servers:
-                        name = server.split('://')[0]
-                        if multipledb == True or name in multipledb:
-                            toadd = False
-                            tests.append((tag, testmaker(test, name, server)))
-                if toadd:
-                    tests.append((tag, test))
+class StdnetPlugin(TestPlugin):
+    name = "server"
+    flags = ["-s", "--server"]
+    nargs = '*'
+    desc = 'Back-end data server where to run tests.'
+    default = [settings.DEFAULT_BACKEND]
+    validator = pulsar.validate_list
     
-    events.bind('tests', create_tests)
+    py_redis_parser = pulsar.Setting(
+                        desc='Set the redis parser to be the pure '\
+                              'Python implementation.',
+                        action="store_true",
+                        default=False)
+    
+    size = pulsar.Setting(desc='Size of the dataset to test. '\
+                               'Choose one between "tiny", '\
+                               '"small", "normal", "big", "huge".',
+                          default='small')
 
-except ImportError: # pragma nocover
-    pulsar = None
+    def on_start(self):
+        servers = []
+        names = set()
+        for s in self.config.server:
+            try:
+                s = getdb(s)
+                s.ping()
+            except:
+                logger.error('Could not obtain server %s' % s,
+                             exc_info=True)
+            else:
+                if s.name not in names:
+                    names.add(s.name)
+                    servers.append(s.connection_string)
+        if not servers:
+            raise pulsar.HaltServer('No server available. BAILING OUT')
+        settings.servers = servers
+        if self.config.py_redis_parser:
+            settings.REDIS_PY_PARSER = True
+        
+    def loadTestsFromTestCase(self, cls):
+        cls.size = self.config.size
+        
+        
+class testmaker(object):
+    
+    def __init__(self, test, name, server):
+        self.test = test
+        self.cls_name = '%s_%s' % (test.__name__, name)
+        self.server = server
+        
+    def __call__(self):
+        new_test = type(self.cls_name, (self.test,), {})
+        new_test.connection_string = self.server
+        return new_test
+        
+    
+def create_tests(sender=None, tests=None, **kwargs):
+    servers = getattr(settings, 'servers', None)
+    if isinstance(sender, TestSuite) and servers:
+        for tag, test in list(tests):
+            tests.pop(0)
+            multipledb = getattr(test, 'multipledb', True)
+            toadd = True
+            if isinstance(multipledb, str):
+                multipledb = [multipledb]
+            if isinstance(multipledb, (list, tuple)):
+                toadd = False
+            if multipledb:
+                for server in servers:
+                    name = server.split('://')[0]
+                    if multipledb == True or name in multipledb:
+                        toadd = False
+                        tests.append((tag, testmaker(test, name, server)))
+            if toadd:
+                tests.append((tag, test))
 
-
-################################################################################
-##    NOSE PLUGINS
-################################################################################
-try:    # pragma nocover
-    import nose
-    from nose import plugins
-
-    class NoseStdnetServer(plugins.Plugin):
-
-        def options(self, parser, env=os.environ):
-            parser.add_option('--server',
-                          dest='server',
-                          default='',
-                          help="Backend server where to run tests [{0}]"\
-                                    .format(settings.DEFAULT_BACKEND))
-            parser.add_option(
-                          '--size',
-                          dest='size',
-                          default='small',
-                          help='Size of the dataset to test. Choose one between\
- "tiny", "small", "normal", "big", "huge".')
-
-        def configure(self, options, conf):
-            self.enabled = True
-            self.size = cfg.size
-            if options.server:
-                settings.DEFAULT_BACKEND = options.server
-
-        def loadTestsFromTestCase(self, cls):
-            cls.size = self.size            
-
-except ImportError: # pragma nocover
-    nose = None
-    NoseStdnetServer = None
+events.bind('tests', create_tests)

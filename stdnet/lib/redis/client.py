@@ -188,10 +188,10 @@ class PrefixedRedis(RedisProxy):
     def prefix(self):
         return self.__prefix
     
-    def execute_command(self, *args, **options):
+    def execute_command(self, cmnd, *args, **options):
         "Execute a command and return a parsed response"
-        args, options = self.preprocess_command(*args, **options)
-        return self.client.execute_command(*args, **options)
+        args, options = self.preprocess_command(cmnd, *args, **options)
+        return self.client.execute_command(cmnd, *args, **options)
     
     def preprocess_command(self, cmnd, *args, **options):
         if cmnd not in self.EXCLUDE_COMMANDS:

@@ -461,21 +461,14 @@ def parse_backend(backend):
 It returns a (scheme, host, params) tuple."""
     r = urlparse.urlsplit(backend)
     scheme, host = r.scheme, r.netloc
-    if scheme not in ('https', 'http'):
-        query = r.path
-        path = ''
+    path, query = r.path, r.query
+    if path and not query:
+        query, path = path, ''
         if query:
             if query.find('?'):
                 path = query
             else:
                 query = query[1:]
-    else:
-        path, query = r.path, r.query
-    
-    if path:
-        raise ImproperlyConfigured("Backend URI must not have a path.\
- Found {0}".format(path))
-        
     if query:
         params = dict(urlparse.parse_qsl(query))
     else:
@@ -501,6 +494,8 @@ def getdb(backend=None, **kwargs):
         return None
     scheme, address, params = parse_backend(backend)
     params.update(kwargs)
+    if 'timeout' in params:
+        params['timeout'] = int(params['timeout'])
     return _getdb(scheme, address, params)
 
 

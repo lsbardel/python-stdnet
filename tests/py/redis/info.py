@@ -8,19 +8,17 @@ from . import client
 class TestInfo(client.TestCase):
     
     def setUp(self):
-        super(TestInfo,self).setUp()
-        self.client.set('test', 'bla')
+        yield super(TestInfo,self).setUp()
+        yield self.client.set('test', 'bla')
         self.db = self.client.db
-        self.info = redis_info(self.client)
+        self.info = yield redis_info(self.client)
         
     def newdb(self):
         db = self.info.databases[0]
         self.assertNotEqual(db.client, self.info.client)
-        # make sure the database is clean
-        db.client.flushdb()
         return db
         
-    def testSimple(self):
+    def test_simple(self):
         info = self.info
         self.assertTrue(info.client)
         self.assertEqual(info.client.db,self.db)
@@ -30,7 +28,7 @@ class TestInfo(client.TestCase):
         self.assertEqual(info.formatter.format_bool(0),'no')
         self.assertEqual(info.formatter.format_bool('bla'),'yes')
         
-    def testKeys(self):
+    def test_keys(self):
         info = self.info
         dbs = info.databases
         self.assertTrue(dbs)

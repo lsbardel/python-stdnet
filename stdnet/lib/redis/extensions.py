@@ -1,6 +1,7 @@
 import os
 from hashlib import sha1
 from functools import partial
+from collections import namedtuple
 
 from stdnet.utils import zip, map, ispy3k
 from stdnet.utils.dispatch import Signal
@@ -19,6 +20,8 @@ __all__ = ['RedisScript',
 p = os.path
 DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
 
+redis_connection = namedtuple('redis_connection', 'address db') 
+
 ###########################################################
 #    REDIS EXECUTION SIGNALS
 redis_before_send = Signal()
@@ -36,7 +39,7 @@ def get_script(script):
     return _scripts.get(script)
 ###########################################################
 
-class ScriptManager(object):
+class RedisManager(object):
     all_loaded_scripts = {}
     
     @property
@@ -50,6 +53,18 @@ class ScriptManager(object):
             s = get_script(name)
             client.script_load(s.script)
         return callback()
+    
+    def _setup(self, address, db, reader):
+        self.connection = redis_connection(address, int(db))
+        self.redis_reader = reader
+    
+    @property
+    def address(self):
+        return self.connection.address
+    
+    @property
+    def db(self):
+        return self.connection.db
     
     
 class RedisRequest(object):

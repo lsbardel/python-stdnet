@@ -83,18 +83,20 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(N, 2)
         
     def testMove2Set(self):
-        self.client.sadd('foo', 1, 2, 3, 4, 5)
-        self.client.lpush('bla', 4, 5, 6, 7, 8)
-        r = self.client.execute_script('move2set', ('foo', 'bla'), 's')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],1)
-        self.client.sinterstore('res1','foo','bla')
-        self.client.sunionstore('res2','foo','bla')
-        m1 = sorted((int(r) for r in self.client.smembers('res1')))
-        m2 = sorted((int(r) for r in self.client.smembers('res2')))
-        self.assertEqual(m1,[4,5])
-        self.assertEqual(m2,[1,2,3,4,5,6,7,8])
+        yield test.multi((self.client.sadd('foo', 1, 2, 3, 4, 5),
+                          self.client.lpush('bla', 4, 5, 6, 7, 8)))
+        r = yield self.client.execute_script('move2set', ('foo', 'bla'), 's')
+        self.assertEqual(len(r), 2)
+        self.assertEqual(r[0], 2)
+        self.assertEqual(r[1], 1)
+        yield test.multi((self.client.sinterstore('res1', 'foo', 'bla'),
+                          self.client.sunionstore('res2', 'foo', 'bla')))
+        m1 = yield self.client.smembers('res1')
+        m2 = yield self.client.smembers('res2')
+        m1 = sorted((int(r) for r in m1))
+        m2 = sorted((int(r) for r in m2))
+        self.assertEqual(m1, [4,5])
+        self.assertEqual(m2, [1,2,3,4,5,6,7,8])
     
     def testMove2ZSet(self):
         client = self.client
@@ -112,20 +114,20 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(sorted(m2), [b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
         
     def testMoveSetSet(self):
-        self.client.sadd('foo',1,2,3,4,5)
-        self.client.sadd('bla',4,5,6,7,8)
-        r = self.client.execute_script('move2set',('foo','bla'),'s')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],0)
+        yield test.multi((self.client.sadd('foo',1,2,3,4,5),
+                          self.client.sadd('bla',4,5,6,7,8)))
+        r = yield self.client.execute_script('move2set', ('foo', 'bla'), 's')
+        self.assertEqual(len(r), 2)
+        self.assertEqual(r[0], 2)
+        self.assertEqual(r[1], 0)
         
     def testMove2List2(self):
-        self.client.lpush('foo',1,2,3,4,5)
-        self.client.lpush('bla',4,5,6,7,8)
-        r = self.client.execute_script('move2set',('foo','bla'),'s')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],2)
+        yield test.multi((self.client.lpush('foo',1,2,3,4,5),
+                          self.client.lpush('bla',4,5,6,7,8)))
+        r = yield self.client.execute_script('move2set', ('foo','bla'), 's')
+        self.assertEqual(len(r), 2)
+        self.assertEqual(r[0], 2)
+        self.assertEqual(r[1], 2)
         
     def testKeyInfo(self):
         yield self.client.set('planet', 'mars')
@@ -155,21 +157,18 @@ class TestExtraClientCommands(TestCase):
                           self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2}),
                           self.make_zset('c', {'a1': 6, 'a3': 5, 'a4': 4})))
         n = yield self.client.zdiffstore('z', ['a', 'b', 'c'])
-        r = self.assertEqual(n, 1)
-        self.assertEquals(
-            list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a2', 1)])
+        self.assertEqual(n, 1)
+        r = yield self.client.zrange('z', 0, -1, withscores=True)
+        self.assertEquals(list(r), [(b'a2', 1)])
         
     def test_zdiffstore_withscores(self):
-        self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2})
-        self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2})
-        self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})
-        n = self.client.zdiffstore('z', ['a', 'b', 'c'],
-                                   withscores=True)
-        r = self.assertEqual(n,2)
-        self.assertEquals(
-            list(self.client.zrange('z', 0, -1, withscores=True)),
-            [(b'a2', 1),(b'a1', 2)])
+        yield test.multi((self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2}),
+                          self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2}),
+                          self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})))
+        n = yield self.client.zdiffstore('z', ['a', 'b', 'c'], withscores=True)
+        self.assertEqual(n, 2)
+        r = yield self.client.zrange('z', 0, -1, withscores=True)
+        self.assertEquals(list(r), [(b'a2', 1), (b'a1', 2)])
         
     def test_zdiffstore2(self):
         c = self.get_client()
@@ -182,12 +181,12 @@ class TestExtraClientCommands(TestCase):
         
     def test_zdiffstore_withscores2(self):
         c = self.get_client()
-        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
-        c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')
-        r = c.zdiffstore('s3', ('s1', 's2'), withscores=True)
-        self.assertEqual(c.zcard('s3'), 3)
-        r = dict(c.zrange('s3', 0, -1, withscores=True))
-        self.assertEqual(r, {b'a': -5.0, b'c': -97.0, b'd': 4.0})
+        yield test.multi((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
+                          c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')))
+        r = yield c.zdiffstore('s3', ('s1', 's2'), withscores=True)
+        self.async.assertEqual(c.zcard('s3'), 3)
+        r = yield c.zrange('s3', 0, -1, withscores=True)
+        self.assertEqual(dict(r), {b'a': -5.0, b'c': -97.0, b'd': 4.0})
         
     def test_zpop_byrank(self):
         yield self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')

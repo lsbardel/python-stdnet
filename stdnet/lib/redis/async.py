@@ -7,7 +7,7 @@ Usage::
     client = RedisClient('127.0.0.1:6349')
     pong = yield client.ping()
 '''
-from collections import namedtuple, deque
+from collections import deque
 
 import redis
 
@@ -15,9 +15,7 @@ import pulsar
 from pulsar import ProtocolError, is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
-from .extensions import get_script, ScriptManager, RedisRequest
-
-redis_connection = namedtuple('redis_connection', 'address db password')    
+from .extensions import get_script, RedisManager, RedisRequest    
 
 __all__ = []
 
@@ -116,7 +114,7 @@ class RedisProtocol(pulsar.ProtocolConsumer):
                 self.finished(response)
                 
     
-class AsyncConnectionPool(pulsar.Client, ScriptManager):
+class AsyncConnectionPool(pulsar.Client, RedisManager):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
 data-structure server.'''
     connection_pools = {}
@@ -127,12 +125,8 @@ data-structure server.'''
         super(AsyncConnectionPool, self).__init__(**kwargs)
         self.encoding = encoding or 'utf-8'
         self.encoding_errors = encoding_errors or 'strict'
-        self.redis_reader = reader
-        self._connection = redis_connection(address, int(db), password)
-    
-    @property
-    def address(self):
-        return self._connection.address
+        self.password = password
+        self._setup(address, db, reader)
     
     def request(self, client, command_name, *args, **options):
         request = self._new_request(client, command_name, *args, **options)
@@ -149,9 +143,9 @@ data-structure server.'''
         consumer = self.consumer_factory(connection)
         # If this is a new connection we need to select database and login
         if not connection.processed:
-            c = self._connection
-            if c.password:
-                req = self._new_request(request.client, 'auth', c.password)
+            c = self.connection
+            if self.password:
+                req = self._new_request(request.client, 'auth', self.password)
                 consumer.chain_request(req)
             if c.db:
                 req = self._new_request(request.client, 'select', c.db)
@@ -161,11 +155,12 @@ data-structure server.'''
         return consumer.on_finished
             
     def _new_request(self, client, command, *args, **options):
-        return AsyncRedisRequest(client, self._connection, self.timeout,
+        return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,
                                  command, args, options, self.redis_reader())
         
-    def load_and_execute_script(self, client, to_load, callback):
+    def execute_script(self, client, to_load, callback):
+        # Override execute_script so that we execute after scripts have loaded
         results = []
         for name in to_load:
             s = get_script(name)

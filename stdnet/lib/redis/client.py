@@ -1,7 +1,11 @@
+import os
+from copy import copy
+
 import redis
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge
 
-from .extensions import get_script, ScriptManager, RedisRequest, script_callback
+from .extensions import get_script, RedisManager, RedisRequest,\
+                        script_callback, redis_connection
 from .prefixed import *
 
 __all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
@@ -27,28 +31,39 @@ class Connection(RedisRequest, redis.Connection):
         return response
 
 
-class ConnectionPool(redis.ConnectionPool, ScriptManager):
+class ConnectionPool(redis.ConnectionPool, RedisManager):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
-    def __init__(self, address, reader=None, **kwargs):
+    def __init__(self, address, db=0, reader=None, **kwargs):
         if isinstance(address, tuple):
             host, port = address
             kwargs['host'] = host
             kwargs['port'] = port
-            self.__address = (host, port)
+            address = (host, port)
         else:
             kwargs['path'] = address
-            self.__address = address
-        super(ConnectionPool, self).__init__(**kwargs)
-        self.redis_reader = reader
-        
-    @property
-    def address(self):
-        return self.__address
+            address = address
+        self._setup(address, db, reader)
+        super(ConnectionPool, self).__init__(db=self.db, **kwargs)
     
+    def _checkpid(self):
+        if self.pid != os.getpid():
+            self.disconnect()
+            self.pid = os.getpid()
+            self._created_connections = 0
+
     @property
     def encoding(self):
         return self.connection_kwargs.get('encoding') or 'utf-8'
-    
+
+    def clone(self, db=0):
+        if self.db != db:
+            params = self.connection_kwargs.copy()
+            params.pop('db', None)
+            return self.__class__(self.address, db=db, reader=self.redis_reader,
+                                  **params)
+        else:
+            return self
+        
     def request(self, client, *args, **options):
         command_name = args[0]
         connection = self.get_connection(command_name, **options)
@@ -84,6 +99,10 @@ class Redis(redis.StrictRedis):
     ##    Additional Methods and properties
     ############################################################################
     @property
+    def db(self):
+        return self.connection_pool.db
+    
+    @property
     def client(self):
         return self
     
@@ -94,6 +113,11 @@ class Redis(redis.StrictRedis):
     @property
     def is_pipeline(self):
         return False
+    
+    def clone(self, **kwargs):
+        c = copy(self)
+        c.connection_pool = self.connection_pool.clone(**kwargs)
+        return c
     
     def prefixed(self, prefix):
         '''Return a new :class:`PrefixedRedis` client'''
@@ -145,11 +169,16 @@ of :class:`PrefixedRedis` and :class:`Pipeline`.
     The underlying :class:`Redis` client
 '''
     def __init__(self, client):
-        self.__client = client
+        self._client = client
 
+    def clone(self, **kwargs):
+        c = copy(self)
+        c._client = c._client.clone(**kwargs)
+        return c
+    
     @property
     def client(self):
-        return self.__client
+        return self._client
     
     @property
     def connection_pool(self):
@@ -158,10 +187,6 @@ of :class:`PrefixedRedis` and :class:`Pipeline`.
     @property
     def response_callbacks(self):
         return self.client.response_callbacks
-
-    @property
-    def encoding(self):
-        return self.client.encoding
 
 
 class Pipeline(BasePipeline, RedisProxy):

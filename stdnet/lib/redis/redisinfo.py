@@ -9,13 +9,13 @@ from stdnet.utils.structures import OrderedDict
 from stdnet.utils import iteritems, format_int
 from stdnet import odm
 
-init_data = {'set':{'count':0,'size':0},
-             'zset':{'count':0,'size':0},
-             'list':{'count':0,'size':0},
-             'hash':{'count':0,'size':0},
-             'ts':{'count':0,'size':0},
-             'string':{'count':0,'size':0},
-             'unknown':{'count':0,'size':0}}
+init_data = {'set': {'count': 0, 'size': 0},
+             'zset': {'count': 0, 'size': 0},
+             'list': {'count': 0, 'size': 0},
+             'hash': {'count': 0, 'size': 0},
+             'ts': {'count': 0, 'size': 0},
+             'string': {'count': 0, 'size': 0},
+             'unknown': {'count': 0, 'size': 0}}
 
 
 __all__ = ['RedisDb',
@@ -34,37 +34,27 @@ class RediInfo(object):
     
     def __init__(self, client, info, formatter):
         self.client = client
-        self.version = info['Server']['redis_version']
+        self.version = info['redis_version']
         self.info = info
         self._panels = OrderedDict()
         self.formatter = formatter
         self.databases = RedisDb.objects.all(self)
     
-    @property
     def keyspace(self):
-        return self.info['Keyspace']
+        n = 0
+        while True:
+            key = 'db%s' % n
+            if key in self.info:
+                yield n, self.info[key]
+                n += 1
+            else:
+                break
     
     def panels(self):
         if not self._panels:
             for name in self.names:
                 self.makepanel(name)
         return self._panels
-    
-    def _dbs(self,keydata):
-        for k in keydata:
-            if k[:2] == 'db':
-                try:
-                    n = int(k[2:])
-                except:
-                    continue
-                else:
-                    yield k,n,keydata[k]
-    
-    def dbs(self,keydata):
-        return sorted(self._dbs(keydata), key = lambda x : x[1])
-            
-    def db(self,n):
-        return self.info['Keyspace']['db{0}'.format(n)]
     
     def makepanel(self, name):
         if name not in self.info:
@@ -96,19 +86,18 @@ class RedisDbManager(object):
     
     def all(self, info):
         rd = []
-        kdata = info.keyspace
-        for k, n, data in info.dbs(info.keyspace):
+        for n, data in info.keyspace():
             rdb = RedisDb(client=info.client, db=n, keys=data['keys'],
                           expires=data['expires'])
             rd.append(rdb)
         return rd
     
-    def get(self, db = None, info = None):
+    def get(self, db=None, info=None):
         if info and db is not None:
-            data = info.keyspace.get('db{0}'.format(db))
+            data = info.get('db%s' % db)
             if data:
-                return RedisDb(client = info.client, db = int(db),
-                               keys = data['keys'], expires = data['expires'])
+                return RedisDb(client=info.client, db=int(db),
+                               keys=data['keys'], expires=data['expires'])
                             
     
 class RedisDb(odm.ModelBase):
@@ -282,7 +271,7 @@ class RedisDataFormatter(object):
 def redis_info(client, formatter=None):
     '''Return a :class:`RedisInfo` handler for obtaining server information
 from redis.'''
-    info = client.info()
+    info = yield client.info()
     formatter = formatter or RedisDataFormatter()
-    return RediInfo(client, info, formatter)
+    yield RediInfo(client, info, formatter)
     

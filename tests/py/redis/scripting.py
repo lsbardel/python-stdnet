@@ -5,7 +5,7 @@ import struct
 from stdnet.conf import settings
 from stdnet.lib import redis
 
-from . import base
+from . import client
 
 
 to_charlist = lambda x: [x[c:c + 1] for c in range(len(x))]
@@ -36,7 +36,7 @@ class Receiver(object):
         return r
 
 
-class ScriptingCommandsTestCase(base.TestCase):
+class ScriptingCommandsTestCase(client.TestCase):
 
     def testEvalSimple(self):
         self.client = self.get_client()
@@ -50,36 +50,11 @@ class ScriptingCommandsTestCase(base.TestCase):
                              None)
         self.assertTrue(isinstance(r,list))
         self.assertEqual(len(r), 0)
-        
-    def testDelPattern(self):
-        c = self.get_client()
-        items = ('bla',1,
-                 'bla1','ciao',
-                 'bla2','foo',
-                 'xxxx','moon',
-                 'blaaaaaaaaaaaaaa','sun',
-                 'xyyyy','earth')
-        c.execute_command('MSET', *items)
-        N = c.delpattern('bla*')
-        self.assertEqual(N,4)
-        self.assertFalse(c.exists('bla'))
-        self.assertFalse(c.exists('bla1'))
-        self.assertFalse(c.exists('bla2'))
-        self.assertFalse(c.exists('blaaaaaaaaaaaaaa'))
-        self.assertEqual(c.get('xxxx'),b'moon')
-        N = c.delpattern('x*')
-        self.assertEqual(N,2)
     
     def testType(self):
         r = self.client.eval("""return redis.call('type',KEYS[1])['ok']""",
                              'sjdcvsd')
         self.assertEqual(r,b'none')
-        
-    def testScript(self):
-        script = redis.get_script('test_script')
-        self.assertTrue(script.script)
-        sha = sha1(script.script.encode('utf-8')).hexdigest()
-        self.assertEqual(script.sha1,sha)
         
     def testEvalSha(self):
         self.assertEqual(self.client.script_flush(), True)
@@ -118,117 +93,9 @@ class ScriptingCommandsTestCase(base.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0],{'foo':[1,2]})
     
-    def testMove2Set(self):
-        self.client.sadd('foo', 1, 2, 3, 4, 5)
-        self.client.lpush('bla', 4, 5, 6, 7, 8)
-        r = self.client.script_call('move2set', ('foo', 'bla'), 's')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],1)
-        self.client.sinterstore('res1','foo','bla')
-        self.client.sunionstore('res2','foo','bla')
-        m1 = sorted((int(r) for r in self.client.smembers('res1')))
-        m2 = sorted((int(r) for r in self.client.smembers('res2')))
-        self.assertEqual(m1,[4,5])
-        self.assertEqual(m2,[1,2,3,4,5,6,7,8])
-    
-    def testMove2ZSet(self):
-        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
-        self.client.lpush('bla','d','e','f','g')
-        r = self.client.script_call('move2set',('foo','bla'),'z')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],1)
-        self.client.zinterstore('res1','foo','bla')
-        self.client.zunionstore('res2','foo','bla')
-        m1 = sorted(self.client.zrange('res1',0,-1))
-        m2 = sorted(self.client.zrange('res2',0,-1))
-        self.assertEqual(m1,[b'd',b'e'])
-        self.assertEqual(m2,[b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
+
         
-    def testMoveSetSet(self):
-        self.client.sadd('foo',1,2,3,4,5)
-        self.client.sadd('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set',('foo','bla'),'s')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],0)
-        
-    def testMove2List2(self):
-        self.client.lpush('foo',1,2,3,4,5)
-        self.client.lpush('bla',4,5,6,7,8)
-        r = self.client.script_call('move2set',('foo','bla'),'s')
-        self.assertEqual(len(r),2)
-        self.assertEqual(r[0],2)
-        self.assertEqual(r[1],2)
-        
-    def testKeyInfo(self):
-        self.client.set('planet', 'mars')
-        self.client.lpush('foo', 1, 2, 3, 4, 5)
-        self.client.lpush('bla', 4, 5, 6, 7, 8)
-        keys = list(self.client.script_call('keyinfo', (), '*'))
-        self.assertEqual(len(keys), 3)
-        d = dict(((k.id, k) for k in keys))
-        self.assertEqual(d['planet'].length,4)
-        self.assertEqual(d['planet'].type,'string')
-        self.assertEqual(d['planet'].encoding,'raw')
-        
-    def testKeyInfo2(self):
-        self.client.set('planet','mars')
-        self.client.lpush('foo',1,2,3,4,5)
-        self.client.lpush('bla',4,5,6,7,8)
-        keys = list(self.client.script_call('keyinfo',('planet','bla')))
-        self.assertEqual(len(keys),2)
-        
-    def test_bad_script_call(self):
-        self.assertRaises(redis.RedisError, self.client.script_call, 'foo', ())
-        
-    # ZSET SCRIPTING COMMANDS
-    def testDiffStore(self):
-        c = self.get_client()
-        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
-        c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')
-        r = c.zdiffstore('s3', ('s1', 's2'))
-        self.assertEqual(c.zcard('s3'), 1)
-        r = c.zrange('s3', 0, -1)
-        self.assertEqual(r, [b'd'])
-        
-    def testDiffStoreWithScores(self):
-        c = self.get_client()
-        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
-        c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')
-        r = c.zdiffstore('s3', ('s1', 's2'), withscores=True)
-        self.assertEqual(c.zcard('s3'), 3)
-        r = dict(c.zrange('s3', 0, -1, withscores=True))
-        self.assertEqual(r, {b'a': -5.0, b'c': -97.0, b'd': 4.0})
-        
-    def testzpopbyrank(self):
-        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
-        res = self.client.zpopbyrank('foo',0)
-        rem = self.client.zrange('foo',0,-1)
-        self.assertEqual(len(rem),4)
-        self.assertEqual(rem,[b'b',b'c',b'd',b'e'])
-        self.assertEqual(res,[b'a'])
-        res = self.client.zpopbyrank('foo',0,2)
-        self.assertEqual(res,[b'b',b'c',b'd'])
-        rem = self.client.zrange('foo',0,-1)
-        self.assertEqual(rem,[b'e'])
-        
-    def testzpopbyscore(self):
-        self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
-        res = self.client.zpopbyscore('foo', 2)
-        rem = self.client.zrange('foo',0,-1)
-        self.assertEqual(len(rem),4)
-        self.assertEqual(rem,[b'a',b'c',b'd',b'e'])
-        self.assertEqual(res,[b'b'])
-        res = self.client.zpopbyscore('foo',0,4.5)
-        self.assertEqual(res,[b'a',b'c',b'd'])
-        rem = self.client.zrange('foo',0,-1)
-        self.assertEqual(rem,[b'e'])
-        
-        
-        
-class TestStruct(base.TestCase):
+class TestStruct(client.TestCase):
     
     def testDouble(self):
         c = self.client

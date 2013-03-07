@@ -1,8 +1,13 @@
 from stdnet.lib import hiredis, fallback
 
-from .scripts import *
+from .extensions import *
 from .client import *
 from .redisinfo import *
+
+try:
+    from .async import AsyncConnectionPool
+except ImportError:
+    AsyncConnectionPool = None
 
 PyRedisReader = lambda : fallback.RedisReader(InvalidResponse, ResponseError)
 

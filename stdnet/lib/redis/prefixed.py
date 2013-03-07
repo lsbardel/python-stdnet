@@ -35,3 +35,12 @@ def prefix_sort(pfix, args):
 def pop_list_result(pfix, result):
     if result:
         return (result[0][len(pfix):], result[1])
+
+def prefix_eval_keys(pfix, args):
+    n = args[1]
+    if n:
+        keys = tuple(('%s%s' % (pfix, a) for a in args[2:n+2]))
+        return args[:2] + keys + args[n+2:]
+    else:
+        return args
+        

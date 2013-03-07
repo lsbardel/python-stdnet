@@ -1,7 +1,7 @@
 import redis
-from redis.client import pairs_to_dict, BasePipeline
+from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge
 
-from .scripts import get_script
+from .extensions import get_script, ScriptManager, RedisRequest, script_callback
 from .prefixed import *
 
 __all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
@@ -12,23 +12,43 @@ ResponseError = redis.ResponseError
 RedisError = redis.RedisError
 ConnectionError = redis.ConnectionError
 
-#redis_before_send = Signal()
-#redis_after_receive = Signal()
+
+class Connection(RedisRequest, redis.Connection):
+    
+    def read_response(self):
+        try:
+            response = self._parser.read_response()
+        except:
+            self.disconnect()
+            raise
+        self.fire_response(response)
+        if isinstance(response, ResponseError):
+            raise response
+        return response
 
 
-class ConnectionPool(redis.ConnectionPool):
+class ConnectionPool(redis.ConnectionPool, ScriptManager):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
     def __init__(self, address, reader=None, **kwargs):
         if isinstance(address, tuple):
             host, port = address
             kwargs['host'] = host
             kwargs['port'] = port
+            self.__address = (host, port)
         else:
             kwargs['path'] = address
+            self.__address = address
         super(ConnectionPool, self).__init__(**kwargs)
         self.redis_reader = reader
-        self.loaded_scripts = set()
         
+    @property
+    def address(self):
+        return self.__address
+    
+    @property
+    def encoding(self):
+        return self.connection_kwargs.get('encoding') or 'utf-8'
+    
     def request(self, client, *args, **options):
         command_name = args[0]
         connection = self.get_connection(command_name, **options)
@@ -47,7 +67,12 @@ class ConnectionPool(redis.ConnectionPool):
         
 
 class Redis(redis.StrictRedis):
-    
+    # Overridden callbacks
+    RESPONSE_CALLBACKS = dict_merge(
+        redis.StrictRedis.RESPONSE_CALLBACKS,
+        {'EVALSHA': script_callback}
+    )
+
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
         return self.connection_pool.request(self, *args, **options)
@@ -65,26 +90,51 @@ class Redis(redis.StrictRedis):
     @property
     def prefix(self):
         return ''
-
+    
+    @property
+    def is_pipeline(self):
+        return False
+    
     def prefixed(self, prefix):
         '''Return a new :class:`PrefixedRedis` client'''
         return PrefixedRedis(self, prefix)
     
-    def execute_script(self, name, keys, *args):
-        '''Execute a registered lua script.'''
+    def execute_script(self, name, keys, *args, **options):
+        '''Execute a registered lua script at *name*.'''
         script = get_script(name)
         if not script:
             raise RedisError('No such script "%s"' % name)            
-        return script(self, keys, *args)
+        return script(self, keys, *args, **options)
     
     def countpattern(self, pattern):
-        "delete all keys matching *pattern*."
+        '''delete all keys matching *pattern*.'''
         return self.execute_script('countpattern', (), pattern)
 
     def delpattern(self, pattern):
-        "delete all keys matching *pattern*."
+        '''delete all keys matching *pattern*.'''
         return self.execute_script('delpattern', (), pattern)
     
+    def zdiffstore(self, dest, keys, withscores=False):
+        '''Compute the difference of multiple sorted sets specified by
+``keys`` into a new sorted set, ``dest``.'''
+        keys = (dest,) + tuple(keys)
+        wscores = 'withscores' if withscores else ''
+        return self.execute_script('zdiffstore', keys, wscores,
+                                   withscores=withscores)
+    
+    def zpopbyrank(self, name, start, stop=None, withscores=False, desc=False):
+        '''Pop a range by rank'''
+        stop = stop if stop is not None else start
+        return self.execute_script('zpop', (name,), 'rank', start,
+                                   stop, int(desc), int(withscores),
+                                   withscores=withscores)
+
+    def zpopbyscore(self, name, start, stop=None, withscores=False, desc=False):
+        '''Pop a range by score'''
+        stop = stop if stop is not None else start
+        return self.execute_script('zpop', (name,), 'score', start,
+                                   stop, int(desc), int(withscores),
+                                   withscores=withscores)
 
 class RedisProxy(Redis):
     '''A proxy to a :class:`Redis` client. It is the base class
@@ -110,10 +160,6 @@ of :class:`PrefixedRedis` and :class:`Pipeline`.
         return self.client.response_callbacks
 
     @property
-    def response_errbacks(self):
-        return self.client.response_errbacks
-
-    @property
     def encoding(self):
         return self.client.encoding
 
@@ -127,7 +173,11 @@ class Pipeline(BasePipeline, RedisProxy):
         self.watching = False
         self.connection = None
         self.reset()
-    
+
+    @property
+    def is_pipeline(self):
+        return True
+        
     def execute(self, raise_on_error=True):
         return self.connection_pool.request_pipeline(self, raise_on_error)
     
@@ -144,8 +194,7 @@ class PrefixedRedis(RedisProxy):
     
 '''    
     EXCLUDE_COMMANDS = frozenset(('BGREWRITEOF', 'BGSAVE', 'CLIENT', 'CONFIG',
-                                  'DBSIZE', 'DEBUG', 'DISCARD', 'ECHO',
-                                  'EVAL', 'EVALSHA', 'EXEC',
+                                  'DBSIZE', 'DEBUG', 'DISCARD', 'ECHO', 'EXEC',
                                   'INFO', 'LASTSAVE', 'PING',
                                   'PSUBSCRIBE', 'PUBLISH', 'PUNSUBSCRIBE',
                                   'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT',
@@ -159,6 +208,8 @@ class PrefixedRedis(RedisProxy):
         'BRPOPLPUSH': prefix_not_last,
         'RPOPLPUSH': prefix_all,
         'DEL': prefix_all,
+        'EVAL': prefix_eval_keys,
+        'EVALSHA': prefix_eval_keys,
         'FLUSHDB': lambda prefix, args: raise_error(),
         'FLUSHALL': lambda prefix, args: raise_error(),
         'MGET': prefix_all,

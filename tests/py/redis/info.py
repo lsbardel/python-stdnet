@@ -2,10 +2,10 @@ import time
 
 from stdnet.lib.redis import redis_info, RedisDb, RedisKey, RedisDataFormatter
 
-from .base import TestCase
+from . import client
 
 
-class TestInfo(TestCase):
+class TestInfo(client.TestCase):
     
     def setUp(self):
         super(TestInfo,self).setUp()

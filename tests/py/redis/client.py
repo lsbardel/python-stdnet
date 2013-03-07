@@ -1,0 +1,216 @@
+import json
+from hashlib import sha1
+
+from stdnet.lib import redis
+from stdnet import getdb
+from stdnet.utils import test, flatzset
+
+def get_version(info):
+    if 'redis_version' in info:
+        return info['redis_version']
+    else:
+        return info['Server']['redis_version']
+    
+    
+class test_script(redis.RedisScript):
+    script = (redis.read_lua_file('commands.utils'),
+              '''\
+local js = cjson.decode(ARGV[1])
+return cjson.encode(js)''')
+    
+    def callback(self, request, result, args, **options):
+        return json.loads(result.decode(request.encoding))
+
+
+class TestCase(test.CleanTestCase):
+    multipledb = 'redis'
+    
+    def get_client(self):
+        client = self.backend.client
+        return client.prefixed(self.namespace)
+        
+    def setUp(self):
+        self.client = self.get_client()
+        return self.client.flushdb()
+    
+    def tearDown(self):
+        return self.client.flushdb()
+        
+    def make_hash(self, key, d):
+        for k,v in d.items():
+            self.client.hset(key, k, v)
+
+    def make_list(self, name, l):
+        l = tuple(l)
+        self.client.rpush(name, *l)
+        self.assertEqual(self.client.llen(name), len(l))
+
+    def make_zset(self, name, d):
+        self.client.zadd(name, *flatzset(kwargs=d))
+        
+        
+class TestExtraClientCommands(TestCase):
+    
+    def test_coverage(self):
+        c = self.backend.client
+        self.assertEqual(c.prefix, '')
+        size = yield c.dbsize()
+        self.assertTrue(size >= 0)
+        
+    def test_script_meta(self):
+        script = redis.get_script('test_script')
+        self.assertTrue(script.script)
+        sha = sha1(script.script.encode('utf-8')).hexdigest()
+        self.assertEqual(script.sha1,sha)
+        
+    def test_del_pattern(self):
+        c = self.get_client()
+        items = ('bla',1,
+                 'bla1','ciao',
+                 'bla2','foo',
+                 'xxxx','moon',
+                 'blaaaaaaaaaaaaaa','sun',
+                 'xyyyy','earth')
+        yield c.execute_command('MSET', *items)
+        N = yield c.delpattern('bla*')
+        self.assertEqual(N, 4)
+        yield self.async.assertFalse(c.exists('bla'))
+        yield self.async.assertFalse(c.exists('bla1'))
+        yield self.async.assertFalse(c.exists('bla2'))
+        yield self.async.assertFalse(c.exists('blaaaaaaaaaaaaaa'))
+        yield self.async.assertEqual(c.get('xxxx'), b'moon')
+        N = yield c.delpattern('x*')
+        self.assertEqual(N, 2)
+        
+    def testMove2Set(self):
+        self.client.sadd('foo', 1, 2, 3, 4, 5)
+        self.client.lpush('bla', 4, 5, 6, 7, 8)
+        r = self.client.execute_script('move2set', ('foo', 'bla'), 's')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],1)
+        self.client.sinterstore('res1','foo','bla')
+        self.client.sunionstore('res2','foo','bla')
+        m1 = sorted((int(r) for r in self.client.smembers('res1')))
+        m2 = sorted((int(r) for r in self.client.smembers('res2')))
+        self.assertEqual(m1,[4,5])
+        self.assertEqual(m2,[1,2,3,4,5,6,7,8])
+    
+    def testMove2ZSet(self):
+        client = self.client
+        yield test.multi((client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e'),
+                          client.lpush('bla','d','e','f','g')))
+        r = yield client.execute_script('move2set', ('foo','bla'), 'z')
+        self.assertEqual(len(r), 2)
+        self.assertEqual(r[0], 2)
+        self.assertEqual(r[1], 1)
+        yield test.multi((client.zinterstore('res1', ('foo', 'bla')),
+                          client.zunionstore('res2', ('foo', 'bla'))))
+        m1 = yield client.zrange('res1', 0, -1)
+        m2 = yield client.zrange('res2', 0, -1)
+        self.assertEqual(sorted(m1), [b'd', b'e'])
+        self.assertEqual(sorted(m2), [b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
+        
+    def testMoveSetSet(self):
+        self.client.sadd('foo',1,2,3,4,5)
+        self.client.sadd('bla',4,5,6,7,8)
+        r = self.client.execute_script('move2set',('foo','bla'),'s')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],0)
+        
+    def testMove2List2(self):
+        self.client.lpush('foo',1,2,3,4,5)
+        self.client.lpush('bla',4,5,6,7,8)
+        r = self.client.execute_script('move2set',('foo','bla'),'s')
+        self.assertEqual(len(r),2)
+        self.assertEqual(r[0],2)
+        self.assertEqual(r[1],2)
+        
+    def testKeyInfo(self):
+        yield self.client.set('planet', 'mars')
+        yield self.client.lpush('foo', 1, 2, 3, 4, 5)
+        yield self.client.lpush('bla', 4, 5, 6, 7, 8)
+        keys = yield self.client.execute_script('keyinfo', (), '*')
+        self.assertEqual(len(keys), 3)
+        d = dict(((k.id, k) for k in keys))
+        self.assertEqual(d['planet'].length, 4)
+        self.assertEqual(d['planet'].type, 'string')
+        self.assertEqual(d['planet'].encoding, 'raw')
+        
+    def testKeyInfo2(self):
+        client = self.client
+        yield test.multi((client.set('planet', 'mars'),
+                          client.lpush('foo', 1, 2, 3, 4, 5),
+                          client.lpush('bla', 4, 5, 6, 7, 8)))
+        keys = yield client.execute_script('keyinfo', ('planet', 'bla'))
+        self.assertEqual(len(keys), 2)
+        
+    def test_bad_execute_script(self):
+        self.assertRaises(redis.RedisError, self.client.execute_script, 'foo', ())
+        
+    # ZSET SCRIPTING COMMANDS
+    def test_zdiffstore(self):
+        yield test.multi((self.make_zset('a', {'a1': 1, 'a2': 1, 'a3': 1}),
+                          self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2}),
+                          self.make_zset('c', {'a1': 6, 'a3': 5, 'a4': 4})))
+        n = yield self.client.zdiffstore('z', ['a', 'b', 'c'])
+        r = self.assertEqual(n, 1)
+        self.assertEquals(
+            list(self.client.zrange('z', 0, -1, withscores=True)),
+            [(b'a2', 1)])
+        
+    def test_zdiffstore_withscores(self):
+        self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2})
+        self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2})
+        self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})
+        n = self.client.zdiffstore('z', ['a', 'b', 'c'],
+                                   withscores=True)
+        r = self.assertEqual(n,2)
+        self.assertEquals(
+            list(self.client.zrange('z', 0, -1, withscores=True)),
+            [(b'a2', 1),(b'a1', 2)])
+        
+    def test_zdiffstore2(self):
+        c = self.get_client()
+        yield test.multi((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
+                          c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')))
+        r = yield c.zdiffstore('s3', ('s1', 's2'))
+        self.async.assertEqual(c.zcard('s3'), 1)
+        r = yield c.zrange('s3', 0, -1)
+        self.assertEqual(r, [b'd'])
+        
+    def test_zdiffstore_withscores2(self):
+        c = self.get_client()
+        c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd')
+        c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')
+        r = c.zdiffstore('s3', ('s1', 's2'), withscores=True)
+        self.assertEqual(c.zcard('s3'), 3)
+        r = dict(c.zrange('s3', 0, -1, withscores=True))
+        self.assertEqual(r, {b'a': -5.0, b'c': -97.0, b'd': 4.0})
+        
+    def test_zpop_byrank(self):
+        yield self.client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e')
+        res = yield self.client.zpopbyrank('foo',0)
+        rem = yield self.client.zrange('foo',0,-1)
+        self.assertEqual(len(rem),4)
+        self.assertEqual(rem,[b'b',b'c',b'd',b'e'])
+        self.assertEqual(res,[b'a'])
+        res = yield self.client.zpopbyrank('foo',0,2)
+        self.assertEqual(res,[b'b',b'c',b'd'])
+        rem = yield self.client.zrange('foo',0,-1)
+        self.assertEqual(rem,[b'e'])
+        
+    def test_zpop_byscore(self):
+        yield self.client.zadd('foo', 1, 'a', 2, 'b', 3, 'c', 4, 'd', 5, 'e')
+        res = yield self.client.zpopbyscore('foo', 2)
+        rem = yield self.client.zrange('foo', 0, -1)
+        self.assertEqual(len(rem), 4)
+        self.assertEqual(rem, [b'a', b'c', b'd', b'e'])
+        self.assertEqual(res, [b'b'])
+        res = yield self.client.zpopbyscore('foo', 0, 4.5)
+        self.assertEqual(res, [b'a', b'c', b'd'])
+        rem = yield self.client.zrange('foo', 0, -1)
+        self.assertEqual(rem, [b'e'])
+        
+        

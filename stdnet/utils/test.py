@@ -1,4 +1,4 @@
-'''Test case classes and plugins for stdnet'''
+'''Test case classes and plugins for stdnet. Requires pulsar.'''
 import os
 import sys
 import logging
@@ -27,6 +27,7 @@ else:
     from unittest import mock
 
 import pulsar
+from pulsar import multi_async as multi
 from pulsar.utils import events
 from pulsar.apps.test import TestSuite, TestPlugin
 

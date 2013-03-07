@@ -15,18 +15,22 @@ import pulsar
 from pulsar import ProtocolError, is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
-redis_connection = namedtuple('redis_connection', 'address db password charset')    
+from .extensions import get_script, ScriptManager, RedisRequest
+
+redis_connection = namedtuple('redis_connection', 'address db password')    
 
 __all__ = []
 
 
-class RedisRequest(object):
-
-    def __init__(self, client, connection, timeout,
-                 command_name, args, options, reader):
+class AsyncRedisRequest(RedisRequest):
+    
+    def __init__(self, client, connection, timeout, encoding,
+                 encoding_errors, command_name, args, options, reader):
         self.client = client
         self.connection = connection
         self.timeout = timeout
+        self.encoding = encoding
+        self.encoding_errors = encoding_errors
         self.command_name = command_name.upper()
         self.args = args
         self.options = options
@@ -77,36 +81,11 @@ class RedisRequest(object):
                 return self.close()
     
     def close(self):
+        self.fire_response(self.response)
         if isinstance(self.response, Exception):
             raise self.response
-        response = self.client.parse_response(self, self.command_name,
-                                              **self.options)
-        return response
-    
-    if ispy3k:
-        def encode(self, value):
-            return value if isinstance(value, bytes) else str(value).encode(
-                                        self.connection.charset)
-            
-    else:   #pragma    nocover
-        def encode(self, value):
-            if isinstance(value, unicode):
-                return value.encode(self.connection.charset)
-            else:
-                return str(value)
-            
-    def __pack_gen(self, args):
-        e = self.encode
-        crlf = b'\r\n'
-        yield e('*%s\r\n'%len(args))
-        for value in map(e, args):
-            yield e('$%s\r\n'%len(value))
-            yield value
-            yield crlf
-    
-    def pack_command(self, *args):
-        "Pack a series of arguments into a value Redis command"
-        return b''.join(self.__pack_gen(args))
+        return self.client.parse_response(self, self.command_name,
+                                          **self.options)
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
@@ -137,19 +116,23 @@ class RedisProtocol(pulsar.ProtocolConsumer):
                 self.finished(response)
                 
     
-class AsyncConnectionPool(pulsar.Client):
+class AsyncConnectionPool(pulsar.Client, ScriptManager):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
 data-structure server.'''
     connection_pools = {}
-    '''The charset to encode redis commands'''
     consumer_factory = RedisProtocol
     
-    def __init__(self, address, db=0, password=None, charset=None, reader=None,
-                 **kwargs):
+    def __init__(self, address, db=0, password=None, encoding=None, reader=None,
+                 encoding_errors='strict', **kwargs):
         super(AsyncConnectionPool, self).__init__(**kwargs)
-        charset = charset or 'utf-8'
+        self.encoding = encoding or 'utf-8'
+        self.encoding_errors = encoding_errors or 'strict'
         self.redis_reader = reader
-        self._connection = redis_connection(address, int(db), password, charset)
+        self._connection = redis_connection(address, int(db), password)
+    
+    @property
+    def address(self):
+        return self._connection.address
     
     def request(self, client, command_name, *args, **options):
         request = self._new_request(client, command_name, *args, **options)
@@ -178,5 +161,14 @@ data-structure server.'''
         return consumer.on_finished
             
     def _new_request(self, client, command, *args, **options):
-        return RedisRequest(client, self._connection, self.timeout,
-                            command, args, options, self.redis_reader())
+        return AsyncRedisRequest(client, self._connection, self.timeout,
+                                 self.encoding, self.encoding_errors,
+                                 command, args, options, self.redis_reader())
+        
+    def load_and_execute_script(self, client, to_load, callback):
+        results = []
+        for name in to_load:
+            s = get_script(name)
+            results.append(client.script_load(s.script))
+        return multi_async(results).add_callback(callback)
+        

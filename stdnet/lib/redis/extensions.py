@@ -2,74 +2,101 @@ import os
 from hashlib import sha1
 from functools import partial
 
-from stdnet.utils import zip
+from stdnet.utils import zip, map, ispy3k
+from stdnet.utils.dispatch import Signal
+
 from .redisinfo import RedisKey
 
-try:
-    from .async import AsyncConnectionPool, is_async, multi_async
-except ImportError:
-    AsyncConnectionPool = None
-    def is_async(result):
-        return False
-
 __all__ = ['RedisScript',
-           'pairs_to_dict',
+           'RedisRequest',
            'get_script',
            'registered_scripts',
-           'script_command_callback',
            'read_lua_file',
-           'AsyncConnectionPool',
-           'is_async']
+           'redis_before_send',
+           'redis_after_receive']
 
 
 p = os.path
 DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
 
+###########################################################
+#    REDIS EXECUTION SIGNALS
+redis_before_send = Signal()
+redis_after_receive = Signal()
+###########################################################
 
-def script_command_callback(request, response, args, command=None,
-                            script_name=None, **options):
-    if isinstance(response, Exception):
-        if script_name:
-            command = ' ' + command if command else ''
-            response = ScriptError('SCRIPT'+command, script_name, response)
-        return response
-    elif command in ('FLUSH', 'KILL'):
-        return response == b'OK'
-    elif command == 'LOAD':
-        return response.decode(request.client.encoding)
-    else:
-        return [int(r) for r in response]
-    
-
-def eval_command_callback(request, response, args, script_name=None, **options):
-    s = _scripts.get(script_name)
-    if not s:
-        return response
-    else:
-        return s.start_callback(request, response, args, **options)
-    
-
-def pairs_to_dict(response, encoding, value_encoder=0):
-    "Create a dict given a list of key/value pairs"
-    if response:
-        v1 = (r.decode(encoding) for r in response[::2])
-        v2 = response[1::2]
-        if value_encoder:
-            v2 = (value_encoder(v) for v in v2)
-        return zip(v1,v2)
-    else:
-        return ()
-
-
+###########################################################
+#    GLOBAL REGISTERED SCRIPT DICTIONARY
 _scripts = {}
-
 
 def registered_scripts():
     return tuple(_scripts)
 
- 
 def get_script(script):
     return _scripts.get(script)
+###########################################################
+
+class ScriptManager(object):
+    all_loaded_scripts = {}
+    
+    @property
+    def loaded_scripts(self):
+        if self.address not in self.all_loaded_scripts:
+            self.all_loaded_scripts[self.address] = set()
+        return self.__class__.all_loaded_scripts[self.address]
+    
+    def execute_script(self, client, to_load, callback):
+        for name in to_load:
+            s = get_script(name)
+            client.script_load(s.script)
+        return callback()
+    
+    
+class RedisRequest(object):
+    
+    if ispy3k:
+        def encode(self, value):
+            if isinstance(value, bytes):
+                return value
+            elif isinstance(value, float):
+                value = repr(value)
+            else:
+                value = str(value)
+            return value.encode(self.encoding, self.encoding_errors)
+            
+    else:   #pragma    nocover
+        def encode(self, value):
+            if isinstance(value, unicode):
+                return value.encode(self.encoding, self.encoding_errors)
+            elif isinstance(value, float):
+                return repr(value)
+            else:
+                return str(value)
+            
+    def __pack_gen(self, args):
+        e = self.encode
+        crlf = b'\r\n'
+        yield e('*%s\r\n'%len(args))
+        for value in map(e, args):
+            yield e('$%s\r\n' % len(value))
+            yield value
+            yield crlf
+    
+    def pack_command(self, *args):
+        "Pack a series of arguments into a value Redis command"
+        data = b''.join(self.__pack_gen(args))
+        redis_before_send.send_robust(RedisRequest, data=data, args=args)
+        return data
+    
+    def fire_response(self, response):
+        redis_after_receive.send_robust(RedisRequest, response=response)
+    
+
+def script_callback(response, script=None, **options):
+    if script:
+        return script.callback(response, **options)
+    else:
+        return response
 
 
 def read_lua_file(dotted_module, path=None, context=None):
@@ -140,28 +167,16 @@ lua scripts to redis via the ``evalsha`` command.
         return self.name if self.name else self.__class__.__name__
     __str__ = __repr__
     
-    def __call__(self, client, keys, *args):
+    def __call__(self, client, keys, *args, **options):
         loaded = client.connection_pool.loaded_scripts
         to_load = self.required_scripts.difference(loaded)
-        if to_load:
-            # We need to make sure the script is loaded
-            async_results = []
-            for name in to_load:
-                s = get_script(name)
-                result = client.script_load(s.script)
-                if is_async(result):
-                    results.append(result)
-            if async_results:
-                # result may be asynchronous if it was executed right-away
-                # by an asynchronous connection. In this case we add a callback
-                return multi_async(async_results).add_callback(
-                                        partial(self._call, client, keys, args))
-        return self._call(client, keys, args)
+        callback = partial(self._call, client, keys, args, options, to_load)
+        return client.connection_pool.execute_script(client, to_load, callback)
     
     def preprocess_args(self, client, args):
         return args
         
-    def callback(self, request, response, args, **options):
+    def callback(self, response, **options):
         '''This is the only method user should override when writing a new
 :class:`RedisScript`. By default it returns *response*.
 
@@ -172,12 +187,14 @@ lua scripts to redis via the ``evalsha`` command.
 '''
         return response
     
-    def _call(self, client, keys, args, result=None):
+    def _call(self, client, keys, args, options, loaded, result=None):
         args = self.preprocess_args(client, args)
-        client.connection_pool.loaded_scripts.add(self.name)
+        client.connection_pool.loaded_scripts.update(loaded)
         numkeys = len(keys)
-        keys_args = keys + args 
-        return client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args)
+        keys_args = keys + args
+        options.update({'script': self, 'redis_client': client})
+        return client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args,
+                                      **options)
        
     
 ################################################################################
@@ -190,7 +207,7 @@ return # redis.call('keys', ARGV[1])
 '''
     def preprocess_args(self, client, args):
         if args and client.prefix:
-            args = ['%s%s' % (client.prefix, a) for a in args]
+            args = tuple(('%s%s' % (client.prefix, a) for a in args))
         return args
     
 # Delete all keys from a pattern and return the total number of keys deleted
@@ -217,8 +234,8 @@ return n
 class zpop(RedisScript):
     script = read_lua_file('commands.zpop')
     
-    def callback(self, request, response, args, **options):
-        if not response or not options['withscores']:
+    def callback(self, response, withscores=False, **options):
+        if not response or not withscores:
             return response
         return zip(response[::2], map(float, response[1::2]))
     
@@ -237,19 +254,22 @@ class keyinfo(countpattern):
             args = tuple(a)
         return args
     
-    def callback(self, request, response, args, **options):
-        client = request.client
-        if client.pipelined:
+    def callback(self, response, redis_client=None, **options):
+        client = redis_client
+        if client.is_pipeline:
             client = client.client
-        encoding = request.encoding
+        encoding = client.connection_pool.encoding
+        all_keys = []
         for key, typ, length, ttl, enc, idle in response:
             key = key.decode(encoding)[len(client.prefix):]
-            yield RedisKey(id=key, client=client,
+            key = RedisKey(id=key, client=client,
                            type=typ.decode(encoding),
                            length=length,
                            ttl=ttl if ttl != -1 else False,
                            encoding=enc.decode(encoding),
                            idle=idle)
+            all_keys.append(key)
+        return all_keys
 
 
 class move2set(RedisScript):

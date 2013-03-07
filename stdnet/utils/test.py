@@ -162,7 +162,7 @@ class StdnetPlugin(TestPlugin):
             try:
                 s = getdb(s)
                 s.ping()
-            except:
+            except Exception:
                 logger.error('Could not obtain server %s' % s,
                              exc_info=True)
             else:

@@ -9,24 +9,28 @@ Usage::
 '''
 from collections import namedtuple, deque
 
+import redis
+
 import pulsar
 from pulsar import ProtocolError, is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
 redis_connection = namedtuple('redis_connection', 'address db password charset')    
 
+__all__ = []
+
 
 class RedisRequest(object):
 
     def __init__(self, client, connection, timeout,
-                 command_name, args, options):
+                 command_name, args, options, reader):
         self.client = client
         self.connection = connection
         self.timeout = timeout
         self.command_name = command_name.upper()
         self.args = args
         self.options = options
-        self.reader = RedisReader(ProtocolError, ResponseError)
+        self.reader = reader
         if command_name:
             self.response = None
             self.command = self.pack_command(command_name, *args)
@@ -73,10 +77,10 @@ class RedisRequest(object):
                 return self.close()
     
     def close(self):
+        if isinstance(self.response, Exception):
+            raise self.response
         response = self.client.parse_response(self, self.command_name,
                                               **self.options)
-        if isinstance(response, Exception):
-            raise response
         return response
     
     if ispy3k:
@@ -124,13 +128,13 @@ class RedisProtocol(pulsar.ProtocolConsumer):
         self.transport.write(self.current_request.command)
     
     def data_received(self, data):
-        result = self.current_request.feed(data)
-        if result is not None:
+        response = self.current_request.feed(data)
+        if response is not None:
             # The request has finished
             if self._requests:
                 self.new_request(self._requests.popleft())
             else:
-                self.finished(result)
+                self.finished(response)
                 
     
 class AsyncConnectionPool(pulsar.Client):
@@ -140,9 +144,11 @@ data-structure server.'''
     '''The charset to encode redis commands'''
     consumer_factory = RedisProtocol
     
-    def __init__(self, address, db=0, password=None, charset=None, **kwargs):
+    def __init__(self, address, db=0, password=None, charset=None, reader=None,
+                 **kwargs):
         super(AsyncConnectionPool, self).__init__(**kwargs)
         charset = charset or 'utf-8'
+        self.redis_reader = reader
         self._connection = redis_connection(address, int(db), password, charset)
     
     def request(self, client, command_name, *args, **options):
@@ -155,7 +161,6 @@ data-structure server.'''
         else:
             execute = self._execute_pipeline
         
-    
     def response(self, request):
         connection = self.get_connection(request)
         consumer = self.consumer_factory(connection)
@@ -174,4 +179,4 @@ data-structure server.'''
             
     def _new_request(self, client, command, *args, **options):
         return RedisRequest(client, self._connection, self.timeout,
-                            command, args, options)
+                            command, args, options, self.redis_reader())

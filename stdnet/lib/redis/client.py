@@ -4,8 +4,11 @@ from redis.client import pairs_to_dict, BasePipeline
 from .scripts import get_script
 from .prefixed import *
 
-__all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool']
+__all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
+           'InvalidResponse', 'ResponseError', 'RedisError']
 
+InvalidResponse = redis.InvalidResponse
+ResponseError = redis.ResponseError
 RedisError = redis.RedisError
 ConnectionError = redis.ConnectionError
 
@@ -15,7 +18,7 @@ ConnectionError = redis.ConnectionError
 
 class ConnectionPool(redis.ConnectionPool):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
-    def __init__(self, address, **kwargs):
+    def __init__(self, address, reader=None, **kwargs):
         if isinstance(address, tuple):
             host, port = address
             kwargs['host'] = host
@@ -23,6 +26,7 @@ class ConnectionPool(redis.ConnectionPool):
         else:
             kwargs['path'] = address
         super(ConnectionPool, self).__init__(**kwargs)
+        self.redis_reader = reader
         self.loaded_scripts = set()
         
     def request(self, client, *args, **options):

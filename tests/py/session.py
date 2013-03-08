@@ -37,8 +37,8 @@ class TestSession(test.CleanTestCase):
         with session.begin():
             session.add(SimpleModel(code='pluto',group='planet'))
             session.add(Instrument(name='bla',ccy='EUR',type='equity'))
-        self.assertEqual(session.query(SimpleModel).count(), 1)
-        self.assertEqual(session.query(Instrument).count(), 1)
+        yield self.async.assertEqual(session.query(SimpleModel).count(), 1)
+        yield self.async.assertEqual(session.query(Instrument).count(), 1)
         
     def testSimpleFilter(self):
         session = self.session()
@@ -66,7 +66,7 @@ class TestSession(test.CleanTestCase):
             session.add(SimpleModel(code='pluto', group='planet'))
         query = session.query(SimpleModel)
         qs = query.filter(group='planet')
-        self.assertEqual(qs.count(), 1)
+        yield self.async.assertEqual(qs.count(), 1)
         el = qs[0]
         id = self.assertEqualId(el, 1)
         session = self.session()

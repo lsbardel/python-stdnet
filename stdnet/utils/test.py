@@ -31,7 +31,7 @@ from pulsar import multi_async as multi
 from pulsar.utils import events
 from pulsar.apps.test import TestSuite, TestPlugin
 
-from stdnet import odm, getdb, BackendRequest
+from stdnet import odm, getdb
 from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 

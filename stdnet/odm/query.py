@@ -1,7 +1,8 @@
 from copy import copy
 from inspect import isgenerator
 
-from stdnet import on_result, BackendRequest, range_lookups
+from stdnet import range_lookups
+from stdnet.lib import on_result, is_async
 from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 
@@ -244,7 +245,7 @@ class QueryBase(Q):
 
     def __iter__(self):
         result = self.items()
-        if isinstance(result, BackendRequest):
+        if is_async(result):
             raise RuntimeError('Cannot iterate. Asynchronous result not ready.')
         else:
             return iter(result)

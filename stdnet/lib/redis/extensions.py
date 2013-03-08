@@ -147,6 +147,12 @@ lua scripts to redis via the ``evalsha`` command.
 
     The lua script to run
     
+.. attribute:: required_scripts
+
+    A list/tuple of other :class:`RedisScript` names required by this script
+    to properly execute. These scripts needs to be loaded before this script
+    can run.
+    
 .. attribute:: sha1
 
     The SHA-1_ hexadecimal representation of :attr:`script` required by the
@@ -206,7 +212,7 @@ lua scripts to redis via the ``evalsha`` command.
         args = self.preprocess_args(client, args)
         client.connection_pool.loaded_scripts.update(loaded)
         numkeys = len(keys)
-        keys_args = keys + args
+        keys_args = tuple(keys) + args
         options.update({'script': self, 'redis_client': client})
         return client.execute_command('EVALSHA', self.sha1, numkeys, *keys_args,
                                       **options)

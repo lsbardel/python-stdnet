@@ -24,15 +24,6 @@ TMP = 'tmp'     # temorary key
 ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
 ################################################################################
 
-def redis_before_send(sender, request, command, **kwargs):
-    client  = request.client
-    if hasattr(client,'request_info'):
-        client.request_info.update({'request':request,
-                                    'raw_command':command,
-                                    'commands': copy(client.command_stack)})
-    
-#redis.redis_before_send.connect(redis_before_send)
-
 def field_decoder(meta, field=None):
     if not field:
         field = meta.pk
@@ -61,9 +52,9 @@ class odmrun(redis.RedisScript):
               redis.read_lua_file('commands.timeseries'),
               redis.read_lua_file('commands.utils'),
               redis.read_lua_file('odm'))
+    required_scripts = ODM_SCRIPTS
         
-    def callback(self, request, response, args, meta=None,
-                 backend=None, script=None, **options):
+    def callback(self, response, meta=None, backend=None, script=None, **options):
         if script == 'delete':
             res = (instance_session_result(r,False,r,True,0) for r in response)
             return session_result(meta, res)
@@ -160,7 +151,7 @@ def results_and_erros(results, result_type):
 
 def redis_execution(pipe, result_type):
     pipe.request_info = {}
-    results = pipe.execute(load_script=True)
+    results = pipe.execute()
     info = pipe.__dict__.pop('request_info', None)
     return info, on_result(results, results_and_erros, result_type)
     
@@ -270,18 +261,11 @@ elements in the query.'''
                 self._check_member = self.sism
         else:
             self.ismember = None
-        self.card(self.query_key, script_dependency=ODM_SCRIPTS)
-        self.pipe.add_callback(lambda processed, result :
-                                    query_result(self.query_key, result))
-        self.commands, result = redis_execution(self.pipe, query_result)
-        return on_result(result, self._execute_query_result)
-    
-    def _execute_query_result(self, result):
-        self.query_results = result
-        for res in self.query_results:
-            if isinstance(res, Exception):
-                raise res
-        return res.count
+        self.card(self.query_key)
+        #self.pipe.add_callback(lambda processed, result :
+        #                            query_result(self.query_key, result))
+        #self.commands, result = redis_execution(self.pipe, query_result)
+        return on_result(pipe.execute(), lambda r: r[-1])
     
     def order(self, last):
         '''Perform ordering with respect model fields.'''
@@ -827,13 +811,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         data['namespace'] = self.basekey(meta)
         return data
     
-    def odmrun(self, client, script, meta, keys, meta_info, *args, **options):
-        options.update({'backend': self,
-                        'meta': meta,
-                        'script': script,
-                        'script_dependency': ODM_SCRIPTS})
+    def odmrun(self, client, command, meta, keys, meta_info, *args, **options):
+        options.update({'backend': self, 'meta': meta, 'command': command})
         return client.execute_script('odmrun', keys, script, meta_info, *args,
-                                  **options)
+                                     **options)
         
     def where_run(self, client, meta_info, keys, where, load_only):
         where = redis.read_lua_file('where', context={'where_clause': where})

@@ -4,12 +4,12 @@ from collections import namedtuple
 from stdnet.conf import settings
 from stdnet.utils.importer import import_module
 from stdnet.exceptions import *
+from stdnet.lib import on_result
 from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
                             int_or_float, to_string, urlencode, urlparse
 
 
-__all__ = ['BackendRequest',
-           'BackendStructure',
+__all__ = ['BackendStructure',
            'AsyncObject',
            'BackendDataServer',
            'BackendQuery',
@@ -52,19 +52,6 @@ def get_connection_string(scheme, address, params):
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
-
-
-class BackendRequest(object):
-    '''Signature class for Stdnet Request classes'''
-    def add_callback(self, callback, errback=None):
-        raise NotImplementedError()
-
-
-def on_result(result, callback, *args, **kwargs):
-    if isinstance(result, BackendRequest):
-        return result.add_callback(lambda res : callback(res, *args, **kwargs))
-    else:
-        return callback(result, *args, **kwargs)
        
 
 class AsyncObject(UnicodeMixin):

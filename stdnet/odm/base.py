@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 import hashlib
 import weakref
 
-from stdnet import BackendRequest, AsyncObject
+from stdnet import AsyncObject
 from stdnet.utils import zip, to_string
 from stdnet.exceptions import *
 

@@ -52,8 +52,8 @@ def get_connection_string(scheme, address, params):
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
-       
 
+    
 class AsyncObject(UnicodeMixin):
     '''A class for handling asynchronous requests. The main method here
 is :meth:`async_handle`. Avery time there is a result from the server,
@@ -334,7 +334,7 @@ from database.
 :parameter meta: instance of model :class:`stdnet.odm.Metaclass`.
 :parameter data: iterator over instances data.
 '''
-        make_object = meta.maker
+        make_object = meta.make_object
         related_data = []
         if related_fields:
             for fname, fdata in iteritems(related_fields):
@@ -349,9 +349,7 @@ from database.
                         for obj in self.make_objects(relmodel._meta, fdata)))
                 related_data.append((field, related, multi))
         for state in data:
-            instance = make_object()
-            instance.__setstate__(state)
-            instance._dbdata[instance._meta.pkname()] = instance.pkvalue()
+            instance = make_object(state, self)
             for field, rdata, multi in related_data:
                 if multi:
                     field.set_cache(instance, rdata.get(str(instance.id)))
@@ -407,6 +405,10 @@ indices are created.'''
         '''Return a list of database keys used by instance *obj*'''
         return [self.basekey(obj._meta, obj.id)]
     
+    def auto_id_to_python(self, value):
+        '''Return a proper python value for the auto id.'''
+        return value
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address):
@@ -422,7 +424,7 @@ must return a instance of the backend handler.'''
     def model_keys(self, meta):
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
-        
+    
     def as_cache(self):
         '''Return a :class:`CacheServer` handle for this backend.'''
         raise NotImplementedError('This backend cannot be used as cache')

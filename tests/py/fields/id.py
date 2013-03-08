@@ -15,7 +15,7 @@ def genid():
 
 
 class Id(test.CleanTestCase):
-    '''Test primary key when it is not an AutoField.
+    '''Test primary key when it is not an AutoIdField.
 Use the manager for convenience.'''
     model = Task
     

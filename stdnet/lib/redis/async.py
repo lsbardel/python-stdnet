@@ -8,11 +8,12 @@ Usage::
     pong = yield client.ping()
 '''
 from collections import deque
+from itertools import chain
 
 import redis
 
 import pulsar
-from pulsar import ProtocolError, is_async, multi_async
+from pulsar import is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
 from .extensions import get_script, RedisManager, RedisRequest    
@@ -23,22 +24,24 @@ __all__ = []
 class AsyncRedisRequest(RedisRequest):
     
     def __init__(self, client, connection, timeout, encoding,
-                 encoding_errors, command_name, args, options, reader):
+                 encoding_errors, command_name, args, reader,
+                 raise_on_error=True, **options):
         self.client = client
         self.connection = connection
         self.timeout = timeout
         self.encoding = encoding
         self.encoding_errors = encoding_errors
         self.command_name = command_name.upper()
-        self.args = args
-        self.options = options
+        self.raise_on_error = raise_on_error
         self.reader = reader
+        self.last_response = None
+        self.response = []
         if command_name:
-            self.response = None
             self.command = self.pack_command(command_name, *args)
-        else:
-            self.response = []
+            args = (((command_name,), options),)
+        else:   # this is a pipeline
             self.command = self.pack_pipeline(args)
+        self.args_options = deque(args)
         
     @property
     def key(self):
@@ -50,40 +53,34 @@ class AsyncRedisRequest(RedisRequest):
     
     @property
     def is_pipeline(self):
-        return isinstance(self.response, list)
+        return not bool(self.command_name)
     
     def __repr__(self):
-        if self.command_name:
-            return '%s%s' % (self.command_name, self.args)
-        else:
+        if self.is_pipeline:
             return 'PIPELINE{0}' % (self.args)
+        else:
+            return '%s%s' % (self.command_name, self.args)
     __str__ = __repr__
     
     def read_response(self):
         # For compatibility with redis-py
-        return self.response
+        return self.last_response
     
     def feed(self, data):
         self.reader.feed(data)
-        if self.is_pipeline:
-            while 1:
-                response = parser.gets()
-                if response is False:
-                    break
-                self.response.append(response)
-            if len(self.response) == self.num_responses:
-                return self.close()
-        else:
-            self.response = self.reader.gets()
-            if self.response is not False:
-                return self.close()
-    
-    def close(self):
-        self.fire_response(self.response)
-        if isinstance(self.response, Exception):
-            raise self.response
-        return self.client.parse_response(self, self.command_name,
-                                          **self.options)
+        while self.args_options:
+            self.last_response = self.reader.gets()
+            if self.last_response is False:
+                break
+            if isinstance(self.last_response, Exception) and self.raise_on_error:
+                raise self.last_response
+            args, options = self.args_options.popleft()
+            response = self.client.parse_response(self, args[0], **options)
+            self.response.append(response)
+        if self.last_response is not False:
+            response = self.response if self.is_pipeline else self.response[0] 
+            self.fire_response(response)
+            return response
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
@@ -129,14 +126,19 @@ data-structure server.'''
         self._setup(address, db, reader)
     
     def request(self, client, command_name, *args, **options):
-        request = self._new_request(client, command_name, *args, **options)
+        request = self._new_request(client, command_name, args, **options)
         return self.response(request)
     
-    def request_pipeline(self, client, raise_on_error=True):
-        if client.transaction or self.explicit_transaction:
-            execute = self._execute_transaction
-        else:
-            execute = self._execute_pipeline
+    def request_pipeline(self, pipeline, raise_on_error=True):
+        commands = pipeline.command_stack
+        if not commands:
+            return ()
+        if pipeline.transaction or pipeline.explicit_transaction:
+            commands = list(chain([(('MULTI', ), {})], commands,
+                                  [(('EXEC', ), {})]))
+        request = self._new_request(pipeline, '', commands,
+                                    raise_on_error=raise_on_error)
+        return self.response(request)
         
     def response(self, request):
         connection = self.get_connection(request)
@@ -145,19 +147,19 @@ data-structure server.'''
         if not connection.processed:
             c = self.connection
             if self.password:
-                req = self._new_request(request.client, 'auth', self.password)
+                req = self._new_request(request.client, 'auth', (self.password,))
                 consumer.chain_request(req)
             if c.db:
-                req = self._new_request(request.client, 'select', c.db)
+                req = self._new_request(request.client, 'select', (c.db,))
                 consumer.chain_request(req)
         consumer.chain_request(request)
         consumer.new_request()
         return consumer.on_finished
             
-    def _new_request(self, client, command, *args, **options):
+    def _new_request(self, client, command, args, **options):
         return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,
-                                 command, args, options, self.redis_reader())
+                                 command, args, self.redis_reader(), **options)
         
     def execute_script(self, client, to_load, callback):
         # Override execute_script so that we execute after scripts have loaded

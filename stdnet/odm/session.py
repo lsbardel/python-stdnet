@@ -2,7 +2,7 @@ import json
 from copy import copy
 from itertools import chain
 
-from stdnet import getdb
+from stdnet import getdb, session_result
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
@@ -258,7 +258,7 @@ Process results after a commit.
     items.
 :rtype: a two elements tuple containing a list of instances saved and
     a list of ids of instances deleted.'''
-        tpy = self.meta.pk_to_python
+        tpy = self.meta.pk.to_python
         instances = []
         deleted = []
         errors = []
@@ -270,7 +270,7 @@ Process results after a commit.
                 'Exception while commiting {0}. {1}'.format(self.meta, result)))
                 continue
             instance = self.pop(result.iid)
-            id = tpy(result.id)
+            id = tpy(result.id, self.backend)
             if result.deleted:
                 deleted.append(id)
             else:
@@ -355,23 +355,17 @@ or using the ``with`` context manager::
     Dictionary of list of ids saved in the backend server after a commit
     operation. This dictionary is only available once the transaction has
     finished.
-    
-.. attribute:: logger
-
-    Optional python logging object
 '''
     default_name = 'transaction'
     commands = None
-    pending = None
+    on_commit = None
 
-    def __init__(self, session, name=None,
-                 signal_commit=True, signal_delete=True,
-                 logger=None):
+    def __init__(self, session, name=None, signal_commit=True,
+                 signal_delete=True):
         self.name = name or self.default_name
         self.session = session
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
-        self.logger = logger
         self.deleted = {}
         self.saved = {}
 
@@ -382,7 +376,7 @@ or using the ``with`` context manager::
 
     @property
     def is_open(self):
-        return not hasattr(self,'_result')
+        return not hasattr(self, '_result')
 
     def add(self, instance, **kwargs):
         '''A convenience proxy for :meth:`Session.add` method.'''
@@ -403,9 +397,9 @@ or using the ``with`` context manager::
         if type is None:
             try:
                 result = self.commit()
-                # allow for asynchronous results
+                # allow for asynchronous results, i.e. the return is not self
                 if result is not self:
-                    self.pending = result
+                    self.on_commit = result
                 return result
             except:
                 self.rollback()
@@ -441,18 +435,16 @@ Results can contain errors.
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
-        self.pending = None
         self.commands = commands
-        self.result = response
+        self.result = response or []
         session = self.session
         self.close()
-        if not response:
-            return self
         signals = []
         exceptions = []
         for result in self.result:
             if isinstance(result, Exception):
                 exceptions.append(result)
+            if not isinstance(result, session_result):
                 continue
             meta, response = result
             if not response:
@@ -481,7 +473,10 @@ Results can contain errors.
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures=failures)
-        return self
+        if self.on_commit:
+            return self.on_commit.callback(self)
+        else:
+            return self
 
     def close(self):
         for sm in self.session:

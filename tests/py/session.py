@@ -31,12 +31,14 @@ class TestSession(test.CleanTestCase):
         session.commit()
         self.assertEqualId(m, 1)
         
-    def testCreate2Models(self):
+    def test_create_objects(self):
         # Tests a session with two models. This was for a bug
         session = self.session()
-        with session.begin():
-            session.add(SimpleModel(code='pluto',group='planet'))
-            session.add(Instrument(name='bla',ccy='EUR',type='equity'))
+        with session.begin() as t:
+            t.add(SimpleModel(code='pluto',group='planet'))
+            t.add(Instrument(name='bla',ccy='EUR',type='equity'))
+        # The transaction is complete when the on_commit is not asynchronous
+        yield t.on_commit
         yield self.async.assertEqual(session.query(SimpleModel).count(), 1)
         yield self.async.assertEqual(session.query(Instrument).count(), 1)
         
@@ -62,8 +64,8 @@ class TestSession(test.CleanTestCase):
         
     def testModifyIndexField(self):
         session = self.session()
-        with session.begin():
-            session.add(SimpleModel(code='pluto', group='planet'))
+        with session.begin() as t:
+            t.add(SimpleModel(code='pluto', group='planet'))
         query = session.query(SimpleModel)
         qs = query.filter(group='planet')
         yield self.async.assertEqual(qs.count(), 1)

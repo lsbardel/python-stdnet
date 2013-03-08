@@ -1,5 +1,5 @@
 from stdnet import odm, getdb, BackendDataServer, ModelNotAvailable,\
-                    SessionNotAvailable, BackendRequest, BackendStructure
+                    SessionNotAvailable, BackendStructure
 from stdnet.utils import test
 
 from examples.models import SimpleModel
@@ -40,10 +40,6 @@ class TestBackend(test.TestCase):
         b = getdb('redis://')
         self.assertEqual(b.name, 'redis')
         self.assertEqual(b.connection_string, 'redis://127.0.0.1:6379?db=0')
-        
-    def testBackendRequest(self):
-        b = BackendRequest()
-        self.assertRaises(NotImplementedError, b.add_callback, None)
         
     def testBackendStructure_error(self):
         m = SimpleModel()

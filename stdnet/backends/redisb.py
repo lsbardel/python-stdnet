@@ -14,7 +14,6 @@ from stdnet.lib import redis
 from stdnet.backends import BackendStructure, query_result, session_result,\
                             instance_session_result, on_result, range_lookups
 
-pairs_to_dict = redis.pairs_to_dict
 MIN_FLOAT =-1.e99
 
 ################################################################################
@@ -24,27 +23,10 @@ TMP = 'tmp'     # temorary key
 ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
 ################################################################################
 
-def field_decoder(meta, field=None):
-    if not field:
-        field = meta.pk
-    else:
-        field = meta.dfields.get(field)
-    if field:
-        if hasattr(field, 'relmodel'):
-            field = field.relmodel._meta.pk
-        if field.type == 'auto':
-            return int
-        else:    
-            return field.to_python
-    
-def decode_fields(meta, iterable):
-    for attname, value in iterable:
-        if attname.endswith('_id'):
-            decoder = field_decoder(meta, attname[:-3])
-            if decoder and value is not None:
-                value = decoder(value)
-        yield attname, value
-        
+def pairs_to_dict(response, encoding):
+    "Create a dict given a list of key/value pairs"
+    it = iter(response)
+    return dict(((k.decode(encoding), v) for k, v in zip(it, it)))
 
 class odmrun(redis.RedisScript):
     script = (redis.read_lua_file('tabletools'),
@@ -54,35 +36,35 @@ class odmrun(redis.RedisScript):
               redis.read_lua_file('odm'))
     required_scripts = ODM_SCRIPTS
         
-    def callback(self, response, meta=None, backend=None, script=None, **options):
-        if script == 'delete':
+    def callback(self, response, meta=None, backend=None, command=None, **opts):
+        if command == 'delete':
             res = (instance_session_result(r,False,r,True,0) for r in response)
             return session_result(meta, res)
-        elif script == 'commit':
-            res = self._wrap_commit(request, response, **options)
+        elif command == 'commit':
+            res = self._wrap_commit(response, **opts)
             return session_result(meta, res)
-        elif script == 'load':
-            return self.load_query(request, response, backend, meta, **options)
+        elif command == 'load':
+            return self.load_query(response, backend, meta, **opts)
         else:
             return response
         
-    def _wrap_commit(self, request, response, iids=None, **options):
+    def _wrap_commit(self, response, iids=None, redis_client=None, **options):
         for id, iid in zip(response, iids):
             id, flag, info = id
             if int(flag):
                 yield instance_session_result(iid, True, id, False, float(info))
             else:
-                msg = info.decode(request.encoding)
+                msg = info.decode(redis_client.encoding)
                 yield CommitException(msg)
     
-    def load_query(self, request, response, backend, meta, get=None,
-                   fields=None, fields_attributes=None, **options):
+    def load_query(self, response, backend, meta, get=None, fields=None,
+                   fields_attributes=None, redis_client=None, **options):
         if get:
-            tpy = field_decoder(meta, get)
-            return [tpy(v) for v in response]
+            tpy = meta.dfields.get(get).to_python
+            return [tpy(v, backend) for v in response]
         else:
             data, related = response
-            encoding = request.client.encoding
+            encoding = redis_client.encoding
             data = self.build(data, meta, fields, fields_attributes, encoding)
             related_fields = {}
             if related:
@@ -94,20 +76,17 @@ class odmrun(redis.RedisScript):
             return backend.objects_from_db(meta, data, related_fields)
     
     def build(self, response, meta, fields, fields_attributes, encoding):
-        _ = field_decoder(meta)
         fields = tuple(fields) if fields else None
         if fields:
             if len(fields) == 1 and fields[0] in (meta.pkname(), ''):
                 for id in response:
-                    yield _(id), (), {}
+                    yield id, (), {}
             else:
                 for id, fdata in response:
-                    yield _(id), fields, dict(decode_fields(meta,
-                                            zip(fields_attributes, fdata)))
+                    yield id, fields, dict(zip(fields_attributes, fdata))
         else:
             for id, fdata in response:
-                yield _(id), None, dict(decode_fields(meta,
-                                        pairs_to_dict(fdata, encoding)))
+                yield id, None, pairs_to_dict(fdata, encoding)
                 
     def load_related(self, meta, fname, data, fields, encoding):
         '''Parse data for related objects.'''
@@ -147,14 +126,6 @@ def results_and_erros(results, result_type):
                                       isinstance(v, result_type)]
     else:
         return ()
-                
-
-def redis_execution(pipe, result_type):
-    pipe.request_info = {}
-    results = pipe.execute()
-    info = pipe.__dict__.pop('request_info', None)
-    return info, on_result(results, results_and_erros, result_type)
-    
     
 ################################################################################
 ##    REDIS QUERY CLASS
@@ -782,6 +753,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             self.params['namespace'] = self.namespace
         return rpy
     
+    def auto_id_to_python(self, value):
+        return int(value)
+    
     def ping(self):
         return self.client.ping()
     
@@ -813,7 +787,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def odmrun(self, client, command, meta, keys, meta_info, *args, **options):
         options.update({'backend': self, 'meta': meta, 'command': command})
-        return client.execute_script('odmrun', keys, script, meta_info, *args,
+        return client.execute_script('odmrun', keys, command, meta_info, *args,
                                      **options)
         
     def where_run(self, client, meta_info, keys, where, load_only):
@@ -865,8 +839,10 @@ class BackendDataServer(stdnet.BackendDataServer):
                         processed.append(state.iid)
                     self.odmrun(pipe, 'commit', meta, (), meta_info,
                                 *lua_data, iids=processed)
-        command, result = redis_execution(pipe, session_result)
-        return on_result(result, callback, command)
+        return on_result(pipe.execute(), self._session_ready, callback)
+    
+    def _session_ready(self, result, callback):
+        return callback(result)
     
     def accumulate_delete(self, pipe, backend_query):
         # Accumulate models queries for a delete. It loops through the

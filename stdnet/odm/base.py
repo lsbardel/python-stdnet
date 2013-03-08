@@ -11,7 +11,7 @@ from stdnet.exceptions import *
 from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
                      range_lookup_info
-from .fields import Field, AutoField
+from .fields import Field, AutoIdField
 from .session import Manager, setup_managers
 
 
@@ -70,9 +70,25 @@ class ModelMeta(object):
     def pkname(self):
         return 'id'
 
-    def maker(self):
+    def make_object(self, state=None, backend=None):
+        '''Create a new instance of :attr:`model` from a *state* tuple.'''
         model = self.model
-        return model.__new__(model)
+        obj = model.__new__(model)
+        if state:
+            id, loadedfields, data = state
+            field = self.pk
+            setattr(obj, field.attname, field.to_python(id, backend))
+            if loadedfields is not None:
+                loadedfields = tuple(loadedfields)
+            obj._loadedfields = loadedfields
+            fields = self.dfields
+            for field in obj.loadedfields():
+                value = field.value_from_data(obj, data)
+                setattr(obj, field.attname, field.to_python(value, backend))
+            obj._dbdata = data.get('__dbdata__', {})
+            if backend:
+                obj._dbdata[self.pkname()] = obj.pkvalue()
+        return obj
 
     def __repr__(self):
         if self.app_label:
@@ -82,9 +98,6 @@ class ModelMeta(object):
 
     def __str__(self):
         return self.__repr__()
-
-    def pk_to_python(self, id):
-        return to_string(id)
 
 
 class Metaclass(ModelMeta):
@@ -196,7 +209,7 @@ mapper.
                 pkname = name
         if pk is None:
             # ID field not available, create one
-            pk = AutoField(primary_key=True)
+            pk = AutoIdField(primary_key=True)
         pk.register_with_model(pkname, model)
         fields.pop(pkname, None)
         self.pk = pk
@@ -209,9 +222,6 @@ mapper.
     def pkname(self):
         '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
-
-    def pk_to_python(self, id):
-        return self.pk.to_python(id)
 
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,

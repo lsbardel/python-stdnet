@@ -103,6 +103,10 @@ class Redis(redis.StrictRedis):
         return self.connection_pool.db
     
     @property
+    def encoding(self):
+        return self.connection_pool.encoding
+    
+    @property
     def client(self):
         return self
     
@@ -202,12 +206,34 @@ class Pipeline(BasePipeline, RedisProxy):
     @property
     def is_pipeline(self):
         return True
+    
+    @property
+    def has_multi(self):
+        return self.transaction or self.explicit_transaction
         
+    def immediate_execute_command(self, *args, **options):
+        raise NotImplementedError
+    
     def execute(self, raise_on_error=True):
-        return self.connection_pool.request_pipeline(self, raise_on_error)
+        return self.connection_pool.request_pipeline(self,
+                                                raise_on_error=raise_on_error)
     
     def super_execute(self, raise_on_error):
-        return super(Pipeline, self).execute(raise_on_error)
+        return super(Pipeline, self).execute(raise_on_error=raise_on_error)
+    
+    def parse_response(self, connection, command_name,
+                       raise_on_error=True, **options):
+        client = self.client
+        if self.has_multi:
+            self._parse_response(connection, '_')
+        errors = []
+        for i, _ in enumerate( self.command_stack):
+            try:
+                self._parse_response(connection, '_')
+            except ResponseError:
+                errors.append((i, sys.exc_info()[1]))
+        
+        
         
     
 class PrefixedRedis(RedisProxy):

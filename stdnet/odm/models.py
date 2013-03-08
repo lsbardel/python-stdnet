@@ -140,9 +140,7 @@ for example ``group__name``.'''
         fields.update(data)
         fields.pop(pkname,None)
         fields.pop('__dbdata__', None)
-        instance = self._meta.maker()
-        instance.__setstate__((pkvalue, None, fields))
-        return instance
+        return self._meta.make_object((pkvalue, None, fields))
 
     def is_valid(self):
         '''Kick off the validation algorithm by checking all
@@ -253,25 +251,6 @@ attribute set to ``True`` will be excluded.'''
             setattr(self, cache_name, rel_obj)
             return rel_obj
     
-    # PICKLING SUPPORT
-
-    def __getstate__(self):
-        return (self.id, self._loadedfields, self.todict())
-
-    def __setstate__(self, state):
-        id, loadedfields, data = state
-        meta = self._meta
-        field = meta.pk
-        setattr(self, field.attname, field.to_python(id))
-        if loadedfields is not None:
-            loadedfields = tuple(loadedfields)
-        self._loadedfields = loadedfields
-        fields = meta.dfields
-        for field in self.loadedfields():
-            value = field.value_from_data(self, data)
-            setattr(self,field.attname, field.to_python(value))
-        self._dbdata = data.get('__dbdata__',{})
-
     @classmethod
     def from_base64_data(cls, **kwargs):
         o = cls()
@@ -287,6 +266,15 @@ attribute set to ``True`` will be excluded.'''
             value = field.to_python(value)
             setattr(o,field.attname,value)
         return o
+    
+    # PICKLING SUPPORT
+
+    def __getstate__(self):
+        return (self.id, self._loadedfields, self.todict())
+
+    def __setstate__(self, state):
+        self._meta.make_object(state)
+
 
 
 def model_to_dict(instance, fields=None, exclude=None):

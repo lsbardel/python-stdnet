@@ -2,6 +2,7 @@ import os
 from hashlib import sha1
 from functools import partial
 from collections import namedtuple
+from itertools import starmap
 
 from stdnet.utils import zip, map, ispy3k
 from stdnet.utils.dispatch import Signal
@@ -101,6 +102,14 @@ class RedisRequest(object):
         "Pack a series of arguments into a value Redis command"
         data = b''.join(self.__pack_gen(args))
         redis_before_send.send_robust(RedisRequest, data=data, args=args)
+        return data
+    
+    def pack_pipeline(self, commands):
+        '''Internal function for packing pipeline commands into a
+command byte to be send to redis.'''
+        pack = lambda *args: b''.join(self.__pack_gen(args))
+        data = b''.join(starmap(pack, (args for args, _ in commands)))
+        redis_before_send.send_robust(RedisRequest, data=data, args=commands)
         return data
     
     def fire_response(self, response):

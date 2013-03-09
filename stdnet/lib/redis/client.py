@@ -1,11 +1,12 @@
 import os
 from copy import copy
+from itertools import chain
 
 import redis
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge
 
 from .extensions import get_script, RedisManager, RedisRequest,\
-                        script_callback, redis_connection
+                        script_callback, redis_connection, redis_after_receive
 from .prefixed import *
 
 __all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
@@ -17,21 +18,7 @@ RedisError = redis.RedisError
 ConnectionError = redis.ConnectionError
 
 
-class Connection(RedisRequest, redis.Connection):
-    
-    def read_response(self):
-        try:
-            response = self._parser.read_response()
-        except:
-            self.disconnect()
-            raise
-        self.fire_response(response)
-        if isinstance(response, ResponseError):
-            raise response
-        return response
-
-
-class ConnectionPool(redis.ConnectionPool, RedisManager):
+class ConnectionPool(redis.ConnectionPool, RedisManager, RedisRequest):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
     def __init__(self, address, db=0, reader=None, **kwargs):
         if isinstance(address, tuple):
@@ -54,6 +41,10 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
     @property
     def encoding(self):
         return self.connection_kwargs.get('encoding') or 'utf-8'
+    
+    @property
+    def encoding_errors(self):
+        return self.connection_kwargs.get('encoding_errors') or 'strict'
 
     def clone(self, db=0):
         if self.db != db:
@@ -77,8 +68,41 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
         finally:
             self.release(connection)
             
-    def request_pipeline(self, client, raise_on_error=True):
-        return client.super_execute(raise_on_error)
+    def request_pipeline(self, pipeline, raise_on_error=True):
+        if pipeline.scripts:
+            pipeline.load_scripts()
+        commands = pipeline.command_stack
+        if not commands:
+            return ()
+        if pipeline.is_transaction:
+            commands = list(chain([(('MULTI', ), {})], commands,
+                                  [(('EXEC', ), {})]))
+        conn = pipeline.connection
+        if not conn:
+            conn = self.get_connection('MULTI', pipeline.shard_hint)
+            pipeline.connection = conn
+        try:
+            all_cmds = self.pack_pipeline(commands)
+            conn.send_packed_command(all_cmds)
+            response = [pipeline.parse_response(conn, args[0], **options)
+                        for args, options in commands]
+            return pipeline.on_response(response, raise_on_error)
+        except ConnectionError:
+            conn.disconnect()
+            # if we were watching a variable, the watch is no longer valid
+            # since this connection has died. raise a WatchError, which
+            # indicates the user should retry his transaction. If this is more
+            # than a temporary failure, the WATCH that the user next issue
+            # will fail, propegating the real ConnectionError
+            if self.watching:
+                raise WatchError("A ConnectionError occured on while watching "
+                                 "one or more keys")
+            # otherwise, it's safe to retry since the transaction isn't
+            # predicated on any state
+            return execute(conn, stack, raise_on_error)
+        except:
+            pipeline.reset()
+            raise
         
 
 class Redis(redis.StrictRedis):
@@ -117,6 +141,13 @@ class Redis(redis.StrictRedis):
     @property
     def is_pipeline(self):
         return False
+
+    def on_response(self, result, raise_on_error):
+        result = result[0]
+        redis_after_receive.send_robust(Redis, result=result)
+        if isinstance(result, Exception) and raise_on_error:
+            raise result
+        return result
     
     def clone(self, **kwargs):
         c = copy(self)
@@ -208,32 +239,45 @@ class Pipeline(BasePipeline, RedisProxy):
         return True
     
     @property
-    def has_multi(self):
+    def is_transaction(self):
         return self.transaction or self.explicit_transaction
         
     def immediate_execute_command(self, *args, **options):
         raise NotImplementedError
     
     def execute(self, raise_on_error=True):
+        #return super(Pipeline, self).execute(raise_on_error=True)
         return self.connection_pool.request_pipeline(self,
                                                 raise_on_error=raise_on_error)
     
-    def super_execute(self, raise_on_error):
-        return super(Pipeline, self).execute(raise_on_error=raise_on_error)
+    def parse_response(self, connection, command_name, **options):
+        if self.is_transaction:
+            if command_name != 'EXEC':
+                command_name = '_'
+            else:
+                response = connection.read_response()
+                data = []
+                for r, cmd in zip(response, self.command_stack):
+                    if not isinstance(r, Exception):
+                        args, opt = cmd
+                        command_name = args[0]
+                        if command_name in self.response_callbacks:
+                            r = self.response_callbacks[command_name](r, **opt)
+                    data.append(r)
+                return data
+        return super(Pipeline, self).parse_response(connection, command_name,
+                                                    **options)
     
-    def parse_response(self, connection, command_name,
-                       raise_on_error=True, **options):
-        client = self.client
-        if self.has_multi:
-            self._parse_response(connection, '_')
-        errors = []
-        for i, _ in enumerate( self.command_stack):
-            try:
-                self._parse_response(connection, '_')
-            except ResponseError:
-                errors.append((i, sys.exc_info()[1]))
-        
-        
+    def on_response(self, results, raise_on_error):
+        redis_after_receive.send_robust(Redis, result=results)
+        if self.is_transaction:
+            results = results[-1]
+        try:
+            if raise_on_error:
+                self.raise_first_error(results)
+            return results
+        finally:
+            self.reset()
         
     
 class PrefixedRedis(RedisProxy):
@@ -316,7 +360,7 @@ class PrefixedRedis(RedisProxy):
     
     def flushdb(self):
         return self.client.delpattern('%s*' % self.prefix)
-            
+    
     def _parse_response(self, request, response, command_name, args, options):
         if command_name in self.RESPONSE_CALLBACKS:
             if not isinstance(response, Exception):

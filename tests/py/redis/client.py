@@ -1,6 +1,8 @@
 import json
 from hashlib import sha1
 
+from pulsar.apps.test import sequential
+
 from stdnet.lib import redis
 from stdnet import getdb
 from stdnet.utils import test, flatzset
@@ -22,6 +24,7 @@ return cjson.encode(js)''')
         return json.loads(result.decode(request.encoding))
 
 
+@sequential
 class TestCase(test.CleanTestCase):
     multipledb = 'redis'
     
@@ -71,7 +74,7 @@ class TestExtraClientCommands(TestCase):
                  'xxxx','moon',
                  'blaaaaaaaaaaaaaa','sun',
                  'xyyyy','earth')
-        yield c.execute_command('MSET', *items)
+        self.async.asserTrue(c.execute_command('MSET', *items))
         N = yield c.delpattern('bla*')
         self.assertEqual(N, 4)
         yield self.async.assertFalse(c.exists('bla'))
@@ -114,8 +117,9 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(sorted(m2), [b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
         
     def testMoveSetSet(self):
-        yield test.multi((self.client.sadd('foo',1,2,3,4,5),
-                          self.client.sadd('bla',4,5,6,7,8)))
+        r = yield test.multi((self.client.sadd('foo',1,2,3,4,5),
+                              self.client.sadd('bla',4,5,6,7,8)),
+                             raise_on_error=True)
         r = yield self.client.execute_script('move2set', ('foo', 'bla'), 's')
         self.assertEqual(len(r), 2)
         self.assertEqual(r[0], 2)

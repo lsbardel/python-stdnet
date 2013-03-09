@@ -798,7 +798,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             args.append(json.dumps(load_only))
         return client.eval(where, numkeys, keys_args)
         
-    def execute_session(self, session, callback):
+    def execute_session(self, session):
         '''Execute a session in redis.'''
         pipe = self.client.pipeline()
         for sm in session:  #loop through model sessions
@@ -839,10 +839,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                         processed.append(state.iid)
                     self.odmrun(pipe, 'commit', meta, (), meta_info,
                                 *lua_data, iids=processed)
-        return on_result(pipe.execute(), self._session_ready, callback)
-    
-    def _session_ready(self, result, callback):
-        return callback(result)
+        return pipe.execute()
     
     def accumulate_delete(self, pipe, backend_query):
         # Accumulate models queries for a delete. It loops through the

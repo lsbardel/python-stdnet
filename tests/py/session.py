@@ -1,4 +1,6 @@
 '''Sessions and transactions management'''
+from pulsar.apps.test import sequential
+
 from stdnet import odm, getdb
 
 from stdnet.utils import test
@@ -7,7 +9,7 @@ from stdnet.utils import gen_unique_id
 
 from examples.models import SimpleModel, Instrument
 
-
+@sequential
 class TestSession(test.CleanTestCase):
     model = SimpleModel
         
@@ -17,7 +19,7 @@ class TestSession(test.CleanTestCase):
         qs = session.query(SimpleModel)
         self.assertTrue(isinstance(qs, odm.Query))
     
-    def testSimpleCreate(self):
+    def test_simple_create(self):
         session = self.session()
         session.begin()
         m = SimpleModel(code='pluto', group='planet')
@@ -28,7 +30,7 @@ class TestSession(test.CleanTestCase):
         self.assertEqual(len(sm.modified), 0)
         self.assertEqual(len(sm.deleted), 0)
         self.assertTrue(m in sm.new)
-        session.commit()
+        t = yield session.commit()
         self.assertEqualId(m, 1)
         
     def test_create_objects(self):
@@ -38,59 +40,62 @@ class TestSession(test.CleanTestCase):
             t.add(SimpleModel(code='pluto',group='planet'))
             t.add(Instrument(name='bla',ccy='EUR',type='equity'))
         # The transaction is complete when the on_commit is not asynchronous
-        yield t.on_commit
+        yield t.on_result
         yield self.async.assertEqual(session.query(SimpleModel).count(), 1)
         yield self.async.assertEqual(session.query(Instrument).count(), 1)
         
-    def testSimpleFilter(self):
-        session = self.session()
-        with session.begin():
-            session.add(SimpleModel(code='pluto', group='planet'))
-            session.add(SimpleModel(code='venus', group='planet'))
-            session.add(SimpleModel(code='sun', group='star'))
-        query = session.query(SimpleModel)
-        self.assertEqual(query.count(), 3)
-        self.assertEqual(query.session, session)
-        all = query.all()
-        self.assertEqual(len(all), 3)
-        qs = query.filter(group='planet')
-        self.assertFalse(qs.executed)
-        self.assertEqual(qs.count(), 2)
-        self.assertTrue(qs.executed)
-        qs = query.filter(group='star')
-        self.assertEqual(qs.count(), 1)
-        qs = query.filter(group='bla')
-        self.assertEqual(qs.count(), 0)
-        
-    def testModifyIndexField(self):
+    def test_simple_filter(self):
         session = self.session()
         with session.begin() as t:
             t.add(SimpleModel(code='pluto', group='planet'))
+            t.add(SimpleModel(code='venus', group='planet'))
+            t.add(SimpleModel(code='sun', group='star'))
+        yield t.on_result
+        query = session.query(SimpleModel)
+        yield self.async.assertEqual(query.count(), 3)
+        self.assertEqual(query.session, session)
+        all = yield query.all()
+        self.assertEqual(len(all), 3)
+        qs = query.filter(group='planet')
+        self.assertFalse(qs.executed)
+        yield self.async.assertEqual(qs.count(), 2)
+        self.assertTrue(qs.executed)
+        qs = query.filter(group='star')
+        yield self.async.assertEqual(qs.count(), 1)
+        qs = query.filter(group='bla')
+        yield self.async.assertEqual(qs.count(), 0)
+        
+    def test_modify_index_field(self):
+        session = self.session()
+        with session.begin() as t:
+            t.add(SimpleModel(code='pluto', group='planet'))
+        yield t.on_result
         query = session.query(SimpleModel)
         qs = query.filter(group='planet')
         yield self.async.assertEqual(qs.count(), 1)
-        el = qs[0]
+        el = yield qs[0]
         id = self.assertEqualId(el, 1)
         session = self.session()
         el.group = 'smallplanet'
-        with session.begin():
-            session.add(el)
-        all = session.query(self.model).all()
-        self.assertEqual(session.query(self.model).count(), 1)
+        with session.begin() as t:
+            t.add(el)
+        yield t.on_result    
+        yield self.async.assertEqual(session.query(self.model).count(), 1)
         self.assertEqualId(el, id, True)
         # lets get it from the server
         qs = session.query(self.model).filter(id=id)
-        self.assertEqual(qs.count(), 1)
-        el = qs[0]
+        yield self.async.assertEqual(qs.count(), 1)
+        el = yield qs[0]
         self.assertEqual(el.code, 'pluto')
         self.assertEqual(el.group, 'smallplanet')
         # now filter on group
         qs = session.query(self.model).filter(group='smallplanet')
-        self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs[0].id, id)
+        yield self.async.assertEqual(qs.count(), 1)
+        el = yield qs[0]
+        self.assertEqual(el.id, id)
         # now filter on old group
         qs = session.query(self.model).filter(group='planet')
-        self.assertEqual(qs.count(), 0)
+        yield self.async.assertEqual(qs.count(), 0)
     
     
 class TestLongSessions(test.CleanTestCase):

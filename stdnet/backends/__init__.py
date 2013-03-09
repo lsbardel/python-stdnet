@@ -1,5 +1,6 @@
 import json
 from collections import namedtuple
+from functools import partial
 
 from stdnet.conf import settings
 from stdnet.utils.importer import import_module
@@ -173,7 +174,7 @@ queries specified by :class:`stdnet.odm.Query`.
         return self._has(val)
         
     def items(self, slic):
-        return on_result(self.execute_query(), self._get_items, slic)
+        return on_result(self.execute_query(), partial(self._get_items, slic))
     
     def execute_query(self):
         if not self.executed:
@@ -201,8 +202,8 @@ queries specified by :class:`stdnet.odm.Query`.
         self.__count = c
         return c
     
-    def _get_items(self, c, slic):
-        if c:
+    def _get_items(self, slic, result):
+        if result:
             return self._items(slic)
         else:
             return ()

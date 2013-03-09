@@ -1,4 +1,5 @@
 '''Object data mapper and advanced query manager for non relational databases.'''
+from .lib import *
 from .exceptions import *
 from .backends import *
 from .utils.version import get_version, stdnet_version

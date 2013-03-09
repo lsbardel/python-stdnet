@@ -2,7 +2,7 @@ import json
 from copy import copy
 from itertools import chain
 
-from stdnet import getdb, session_result
+from stdnet import getdb, session_result, on_result
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
@@ -356,14 +356,12 @@ or using the ``with`` context manager::
     operation. This dictionary is only available once the transaction has
     finished.
 '''
-    default_name = 'transaction'
-    commands = None
-    on_commit = None
-
+    _executed = False
     def __init__(self, session, name=None, signal_commit=True,
                  signal_delete=True):
-        self.name = name or self.default_name
+        self.name = name or 'transaction'
         self.session = session
+        self.on_result = None
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
         self.deleted = {}
@@ -375,8 +373,8 @@ or using the ``with`` context manager::
             return self.session.backend
 
     @property
-    def is_open(self):
-        return not hasattr(self, '_result')
+    def executed(self):
+        return self._executed
 
     def add(self, instance, **kwargs):
         '''A convenience proxy for :meth:`Session.add` method.'''
@@ -415,15 +413,21 @@ or using the ``with`` context manager::
 
     def commit(self):
         '''Close the transaction and commit session to the backend.'''
-        if not self.is_open:
+        if self.executed:
             raise InvalidTransaction('Invalid operation.\
- Transaction already closed.')
-        if self.pre_commit():
-            return self.backend.execute_session(self.session, self.post_commit)
+ Transaction already executed.')
+        if self._pre_commit():
+            result = self.backend.execute_session(self.session)
+            self.on_result = on_result(result, self._post_commit)
+            return self.on_result
         else:
-            return self.post_commit()
+            return self._post_commit(None)
 
-    def post_commit(self, response=None, commands=None):
+    def model(self, model):
+        return self.session.model(model)
+    
+    # INTERNAL FUNCTIONS
+    def _post_commit(self, response):
         '''Callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` commit has finished and results are available.
 Results can contain errors.
@@ -435,22 +439,25 @@ Results can contain errors.
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
-        self.commands = commands
-        self.result = response or []
+        response = response or []
         session = self.session
-        self.close()
+        for sm in session:
+            if sm._delete_query:
+                sm._delete_query = []
+        session.transaction = None
+        self.session = None
         signals = []
         exceptions = []
-        for result in self.result:
+        for result in response:
             if isinstance(result, Exception):
                 exceptions.append(result)
             if not isinstance(result, session_result):
                 continue
-            meta, response = result
-            if not response:
+            meta, result = result
+            if not result:
                 continue
             sm = session.model(meta)
-            saved, deleted, errors = sm.post_commit(response)
+            saved, deleted, errors = sm.post_commit(result)
             exceptions.extend(errors)
             if deleted:
                 self.deleted[meta] = deleted
@@ -473,23 +480,10 @@ Results can contain errors.
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures=failures)
-        if self.on_commit:
-            return self.on_commit.callback(self)
-        else:
-            return self
+        return self
 
-    def close(self):
-        for sm in self.session:
-            if sm._delete_query:
-                sm._delete_query = []
-        self.session.transaction = None
-        self.session = None
-
-    def model(self, model):
-        return self.session.model(model)
-
-    # INTERNAL FUNCTIONS
-    def pre_commit(self):
+    def _pre_commit(self):
+        self._executed = True
         sent = 0
         for sm in self.session:
             sent += sm.pre_commit(self)

@@ -112,9 +112,6 @@ command byte to be send to redis.'''
         redis_before_send.send_robust(RedisRequest, data=data, args=commands)
         return data
     
-    def fire_response(self, response):
-        redis_after_receive.send_robust(RedisRequest, response=response)
-    
 
 def script_callback(response, script=None, **options):
     if script:

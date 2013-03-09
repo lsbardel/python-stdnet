@@ -1,5 +1,6 @@
 from copy import copy
 from inspect import isgenerator
+from functools import partial
 
 from stdnet import range_lookups
 from stdnet.lib import on_result, is_async
@@ -392,7 +393,7 @@ criteria and options associated with it.
     def __getitem__(self, slic):
         if isinstance(slic, slice):
             return self.items(slic)
-        return self.items()[slic]
+        return on_result(self.items(), lambda r: r[slic])
 
     def filter(self, **kwargs):
         '''Create a new :class:`Query` with additional clauses corresponding to
@@ -751,9 +752,10 @@ way you can slice a list or iterate over the query.'''
         if seq is not None:
             return seq
         else:
-            return on_result(self.backend_query().items(slic), self._items, key)
+            result = self.backend_query().items(slic)
+            return on_result(result, partial(self._items, key))
         
-    def _items(self, items, key):
+    def _items(self, key, items):
         if isinstance(items, Exception):
             raise items
         session = self.session

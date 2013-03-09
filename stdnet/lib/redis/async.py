@@ -24,23 +24,24 @@ __all__ = []
 class AsyncRedisRequest(RedisRequest):
     
     def __init__(self, client, connection, timeout, encoding,
-                 encoding_errors, command_name, args, reader,
-                 raise_on_error=True, **options):
+                  encoding_errors, command_name, args, reader,
+                  raise_on_error=True, **options):
         self.client = client
         self.connection = connection
         self.timeout = timeout
         self.encoding = encoding
         self.encoding_errors = encoding_errors
         self.command_name = command_name.upper()
-        self.raise_on_error = raise_on_error
         self.reader = reader
-        self.last_response = None
+        self.raise_on_error = raise_on_error
         self.response = []
-        if command_name:
-            self.command = self.pack_command(command_name, *args)
-            args = (((command_name,), options),)
-        else:   # this is a pipeline
+        self.last_response = False
+        self.args = args
+        if client.is_pipeline:
             self.command = self.pack_pipeline(args)
+        else:
+            self.command = self.pack_command(command_name, *args)
+            args =(((command_name,), options),)
         self.args_options = deque(args)
         
     @property
@@ -57,7 +58,7 @@ class AsyncRedisRequest(RedisRequest):
     
     def __repr__(self):
         if self.is_pipeline:
-            return 'PIPELINE{0}' % (self.args)
+            return 'PIPELINE%s' % self.args
         else:
             return '%s%s' % (self.command_name, self.args)
     __str__ = __repr__
@@ -69,18 +70,15 @@ class AsyncRedisRequest(RedisRequest):
     def feed(self, data):
         self.reader.feed(data)
         while self.args_options:
-            self.last_response = self.reader.gets()
-            if self.last_response is False:
+            self.last_response = response = self.reader.gets()
+            if response is False:
                 break
-            if isinstance(self.last_response, Exception) and self.raise_on_error:
-                raise self.last_response
             args, options = self.args_options.popleft()
-            response = self.client.parse_response(self, args[0], **options)
+            if not isinstance(response, Exception):
+                response = self.client.parse_response(self, args[0], **options)
             self.response.append(response)
         if self.last_response is not False:
-            response = self.response if self.is_pipeline else self.response[0] 
-            self.fire_response(response)
-            return response
+            return self.client.on_response(self.response, self.raise_on_error)
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
@@ -133,7 +131,7 @@ data-structure server.'''
         commands = pipeline.command_stack
         if not commands:
             return ()
-        if pipeline.transaction or pipeline.explicit_transaction:
+        if pipeline.is_transaction:
             commands = list(chain([(('MULTI', ), {})], commands,
                                   [(('EXEC', ), {})]))
         request = self._new_request(pipeline, '', commands,
@@ -156,16 +154,20 @@ data-structure server.'''
         consumer.new_request()
         return consumer.on_finished
             
-    def _new_request(self, client, command, args, **options):
+    def _new_request(self, client, command_name, args, **options):
         return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,
-                                 command, args, self.redis_reader(), **options)
+                                 command_name, args, self.redis_reader(),
+                                 **options)
         
     def execute_script(self, client, to_load, callback):
         # Override execute_script so that we execute after scripts have loaded
-        results = []
-        for name in to_load:
-            s = get_script(name)
-            results.append(client.script_load(s.script))
-        return multi_async(results).add_callback(callback)
+        if to_load:
+            results = []
+            for name in to_load:
+                s = get_script(name)
+                results.append(client.script_load(s.script))
+            return multi_async(results).add_callback(callback)
+        else:
+            return callback()
         

@@ -88,10 +88,11 @@ class TestPostDeleteSignal(test.CleanTestCase):
         
     def testSignal(self):
         session = self.session()
-        with session.begin():
-            m = session.add(self.model(code='ciao'))
-            m = session.add(self.model(code='bla'))
-        session.query(self.model).delete()
+        with session.begin() as t:
+            m = t.add(self.model(code='ciao'))
+            m = t.add(self.model(code='bla'))
+        yield t.on_result
+        deleted = yield session.query(self.model).delete()
         u = self.update_model
         self.assertEqual(u.session, session)
         self.assertEqual(len(u.instances), 2)

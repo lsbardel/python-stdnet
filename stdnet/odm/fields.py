@@ -347,7 +347,9 @@ if you don't specify otherwise.'''
     
     @field_value_error
     def to_python(self, value, backend=None):
-        if backend:
+        if hasattr(value, '_meta'):
+            return value.pkvalue()
+        elif backend:
             return backend.auto_id_to_python(value)
         else:
             return value

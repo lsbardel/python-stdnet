@@ -11,7 +11,6 @@ from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
 
 
 __all__ = ['BackendStructure',
-           'AsyncObject',
            'BackendDataServer',
            'BackendQuery',
            'CacheServer',
@@ -55,25 +54,7 @@ def get_connection_string(scheme, address, params):
     return scheme + '://' + address
 
     
-class AsyncObject(UnicodeMixin):
-    '''A class for handling asynchronous requests. The main method here
-is :meth:`async_handle`. Avery time there is a result from the server,
-this method should be called.'''
-    def async_handle(self, result, callback, *args, **kwargs):
-        if isinstance(result, BackendRequest):
-            return result.add_callback(lambda res :\
-                        self.async_callback(callback, res, *args, **kwargs))
-        else:
-            return self.async_callback(callback, result, *args, **kwargs)
-        
-    def async_callback(self, callback, result, *args, **kwargs):
-        if isinstance(result, Exception):
-            raise result
-        else:
-            return callback(result, *args, **kwargs)
-    
-    
-class BackendStructure(AsyncObject):
+class BackendStructure(object):
     __slots__ = ('instance', 'client', 'backend', '_id')
     
     def __init__(self, instance, backend, client):

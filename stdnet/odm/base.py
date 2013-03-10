@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 import hashlib
 import weakref
 
-from stdnet import AsyncObject
+from stdnet import on_result
 from stdnet.utils import zip, to_string
 from stdnet.exceptions import *
 
@@ -456,7 +456,7 @@ class ModelState(object):
     __str__ = __repr__
 
 
-class Model(AsyncObject):
+class Model(object):
     '''This is the base class for both :class:`StdModel` and :class:`Structure`
 classes. It implements the :attr:`uuid` attribute which provides the universal
 unique identifier for an instance of a model.'''
@@ -537,16 +537,13 @@ If a session is not available, it tries to create one
 from its :class:`Manager`.'''
         with self.get_session(use_current_session).begin() as t:
             t.add(self)
-        if t.pending:
-            return t.pending.add_callback(lambda r: self)
-        else:
-            return self
+        return on_result(t.on_result, lambda r: self)
 
     def delete(self, use_current_session=True):
         session = self.get_session(use_current_session)
-        with session.begin():
-            session.delete(self)
-        return self
+        with session.begin() as t:
+            t.delete(self)
+        return on_result(t.on_result, lambda r: self)
     
     def get_model_attribute(self, name):
         return getattr(self, name)

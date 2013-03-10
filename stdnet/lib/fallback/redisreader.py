@@ -45,7 +45,7 @@ class redisReadTask(object):
             raise self.reader.protocolError('Protocol Error.\
  Could not decode type "{0}"'.format(rtype)) 
         
-    def gets(self, response = False, recursive = False):
+    def gets(self, response=False, recursive=False):
         gets = self.reader.gets
         read = self.reader.read
         stack = self.reader._stack
@@ -91,7 +91,13 @@ class RedisReader(object):
         self._stack = []
         self._inbuffer = BytesIO()
     
-    def read(self, length = None):
+    def on_connect(self, connection):
+        pass
+    
+    def on_disconnect(self):
+        pass
+    
+    def read(self, length=None):
         """
         Read a line from the buffer is no length is specified,
         otherwise read ``length`` bytes. Always strip away the newlines.
@@ -111,7 +117,7 @@ class RedisReader(object):
         buffer = self._inbuffer.read(-1) + buffer
         self._inbuffer = BytesIO(buffer)
         
-    def gets(self, recursive = False):
+    def gets(self, recursive=False):
         '''Called by the Parser'''
         if self._stack and not recursive:
             task = self._stack.pop()

@@ -221,7 +221,7 @@ class TestDeleteStructuredFields(test.CleanTestCase):
         self.assertTrue(data.id)
         yield d.data.update(self.data)
         self.async.assertEqual(data.size(), len(self.data))
-        return d
+        yield d
     
     def testSimpleFlush(self):
         session = self.session()

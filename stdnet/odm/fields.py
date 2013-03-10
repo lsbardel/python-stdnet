@@ -626,8 +626,10 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def to_python(self, value, backend=None):
         if isinstance(value, self.relmodel):
             return value.pkvalue()
-        else:
+        elif value:
             return self.relmodel._meta.pk.to_python(value, backend)
+        else:
+            return value
     json_serialize = to_python
 
     def filter(self, session, name, value):

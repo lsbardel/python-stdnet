@@ -1,4 +1,6 @@
 import os
+import io
+import socket
 from copy import copy
 from itertools import chain
 
@@ -19,6 +21,37 @@ RedisError = redis.RedisError
 ConnectionError = redis.ConnectionError
 
 
+class Connection(redis.Connection):
+    
+    def read_response(self):
+        "Read the response from a previously sent command"
+        try:
+            response = self._read_response()
+        except:
+            self.disconnect()
+            raise
+        if isinstance(response, ResponseError):
+            raise response
+        return response
+    
+    def _read_response(self):
+        if not self._parser:
+            raise ConnectionError("Socket closed on remote end")
+        response = self._parser.gets()
+        while response is False:
+            try:
+                buffer = self._sock.recv(4096)
+            except (socket.error, socket.timeout):
+                e = sys.exc_info()[1]
+                raise ConnectionError("Error while reading from socket: %s" %
+                                      (e.args,))
+            if not buffer:
+                raise ConnectionError("Socket closed on remote end")
+            self._parser.feed(buffer)
+            response = self._parser.gets()
+        return response
+     
+
 class ConnectionPool(redis.ConnectionPool, RedisManager):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
     def __init__(self, address, db=0, reader=None, **kwargs):
@@ -31,6 +64,8 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
             kwargs['path'] = address
             address = address
         self._setup(address, db, reader)
+        kwargs['connection_class'] = Connection
+        kwargs['parser_class'] = reader
         super(ConnectionPool, self).__init__(db=self.db, **kwargs)
     
     def _checkpid(self):

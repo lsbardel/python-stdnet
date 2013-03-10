@@ -41,7 +41,7 @@ class AsyncRedisRequest(object):
         if client.is_pipeline:
             self.command = pool.pack_pipeline(args)
         else:
-            self.command = pool.pack_command(command_name, *args)
+            self.command = pool.pack_command(self.command_name, *args)
             args =(((command_name,), options),)
         self.args_options = deque(args)
         
@@ -144,12 +144,15 @@ data-structure server.'''
         consumer = self.consumer_factory(connection)
         # If this is a new connection we need to select database and login
         if not connection.processed:
+            client = request.client
+            if client.is_pipeline:
+                client = client.client
             c = self.connection
             if self.password:
-                req = self._new_request(request.client, 'auth', (self.password,))
+                req = self._new_request(client, 'auth', (self.password,))
                 consumer.chain_request(req)
             if c.db:
-                req = self._new_request(request.client, 'select', (c.db,))
+                req = self._new_request(client, 'select', (c.db,))
                 consumer.chain_request(req)
         consumer.chain_request(request)
         consumer.new_request()

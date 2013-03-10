@@ -7,7 +7,7 @@ from functools import partial
 from collections import namedtuple
 
 import stdnet
-from stdnet import FieldValueError, CommitException, QuerySetError
+from stdnet import FieldValueError, CommitException, QuerySetError, on_result
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
 from stdnet.lib import redis
@@ -121,13 +121,6 @@ class check_structures(redis.RedisScript):
         return session_result(meta, results)
     
 
-def results_and_erros(results, result_type):
-    if results:
-        return [v for v in results if isinstance(v, Exception) or\
-                                      isinstance(v, result_type)]
-    else:
-        return ()
-    
 ################################################################################
 ##    REDIS QUERY CLASS
 ################################################################################
@@ -367,7 +360,7 @@ elements in the query.'''
 def iteretor_pipelined(f):
     
     def _(self):
-        if self.pipelined:
+        if self.is_pipeline:
             return iter(())
         else:
             return f(self)
@@ -380,8 +373,8 @@ def iteretor_pipelined(f):
 class RedisStructure(BackendStructure):
         
     @property
-    def pipelined(self):
-        return self.client.pipelined
+    def is_pipeline(self):
+        return self.client.is_pipeline
         
     def delete(self):
         return self.client.delete(self.id)
@@ -465,33 +458,33 @@ class Zset(RedisStructure):
         return self.client.zcount(self.id, start, stop)
     
     def range(self, start, end, desc=False, withscores=True, **options):
-        return self.async_handle(
+        return on_result(
                 self.client.zrangebyscore(self.id, start, end, desc=desc,
                                           withscores=withscores, **options),
-                self._range, withscores)
+                partial(self._range, withscores))
     
     def irange(self, start=0, stop=-1, desc=False, withscores=True, **options):
-        return self.async_handle(
-                    self.client.zrange(self.id, start, stop, desc = desc,
-                                       withscores = withscores, **options),
-                    self._range, withscores)
+        return on_result(
+                self.client.zrange(self.id, start, stop, desc=desc,
+                                   withscores=withscores, **options),
+                partial(self._range, withscores))
     
     def ipop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by rank (index).'''
-        return self.async_handle(
+        return on_result(
                 self.client.zpopbyrank(self.id, start, stop,
                                        withscores=withscores, **options),
-                self._range, withscores)
+                partial(self._range, withscores))
         
     def pop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by score.'''
-        return self.async_handle(
+        return on_result(
                 self.client.zpopbyscore(self.id, start, stop,
                                         withscores=withscores, **options),
-                self._range, withscores)
+                partial(self._range, withscores))
             
     # PRIVATE
-    def _range(self, result, withscores):
+    def _range(self, withscores, result):
         if withscores:
             return ((score,v) for v,score in result)
         else:
@@ -550,7 +543,7 @@ class Hash(RedisStructure):
         return self.client.hget(self.id, key)
     
     def pop(self, key):
-        pi = self.pipelined
+        pi = self.is_pipeline
         p = self.client if pi else self.client.pipeline()
         p.hget(self.id, key).hdel(self.id, key)
         if not pi:

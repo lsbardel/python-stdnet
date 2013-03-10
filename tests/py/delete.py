@@ -10,51 +10,58 @@ from examples.models import Instrument, Fund, Position, Dictionary, SimpleModel
 from examples.data import FinanceTest
 
 DICT_LEN    = 200
-dict_keys   = populate('string', DICT_LEN, min_len = 5, max_len = 20)
-dict_values = populate('string', DICT_LEN, min_len = 20, max_len = 300)
+dict_keys   = populate('string', DICT_LEN, min_len=5, max_len=20)
+dict_values = populate('string', DICT_LEN, min_len=20, max_len=300)
 
 
 class TestDeleteSimpleModel(test.CleanTestCase):
     model = SimpleModel
     
-    def testSessionDelete(self):
+    def test_session_delete(self):
         session = self.session()
         query = session.query(self.model)
-        with session.begin():
-            m = session.add(self.model(code='ciao'))
-        ids = query.get_field('id').all()
+        with session.begin() as t:
+            m = t.add(self.model(code='ciao'))
+        yield t.on_result
+        ids = yield query.get_field('id').all()
         self.assertEqual(len(ids),1)
         id = ids[0]
-        with session.begin():
-            session.delete(query.get(id = id))
-        self.assertEqual(query.all(),[])
+        elem = yield query.get(id=id)
+        with session.begin() as t:
+            t.delete(elem)
+        yield t.on_result
+        all = yield query.all()
+        self.assertEqual(all, [])
         
     def testSimpleQuery(self):
         session = self.session()
-        with session.begin():
-            session.add(self.model(code='ciao'))
-        all = session.query(self.model).all()
-        self.assertEqual(len(all),1)
-        session.query(self.model).delete()
-        all = session.query(self.model).all()
-        self.assertEqual(all,[])
+        with session.begin() as t:
+            t.add(self.model(code='ciao'))
+        yield t.on_result
+        all = yield session.query(self.model).all()
+        self.assertEqual(len(all), 1)
+        yield session.query(self.model).delete()
+        all = yield session.query(self.model).all()
+        self.assertEqual(all, [])
         
-    def testSimpleFilter(self):
+    def test_simple_filter(self):
         session = self.session()
         query = session.query(self.model)
-        with session.begin():
-            session.add(self.model(code='sun', group='star'))
-            session.add(self.model(code='vega', group='star'))
-            session.add(self.model(code='sirus', group='star'))
-            session.add(self.model(code='pluto', group='planet'))
         with session.begin() as t:
-            session.delete(query.filter(group='star'))
-        self.assertCommands(t)
-        self.assertEqual(len(query.all()), 1)
+            t.add(self.model(code='sun', group='star'))
+            t.add(self.model(code='vega', group='star'))
+            t.add(self.model(code='sirus', group='star'))
+            t.add(self.model(code='pluto', group='planet'))
+        yield t.on_result
+        with session.begin() as t:
+            t.delete(query.filter(group='star'))
+        yield t.on_result
+        yield self.async.assertEqual(query.count(), 1)
         qs = query.filter(group='star')
-        self.assertEqual(qs.count(), 0)
+        yield self.async.assertEqual(qs.count(), 0)
         qs = query.filter(group='planet')
-        self.assertEqual(qs.count(),1)
+        yield self.async.assertEqual(qs.count(),1)
+    
     
 class update_model(object):
     
@@ -95,84 +102,89 @@ class TestDeleteMethod(FinanceTest):
     def setUp(self):
         self.register()
         
-    def testDeleteAll(self):
-        session = self.data.create(self)
+    def test_delete_all(self):
+        session = yield self.data.create(self)
         instruments = Instrument.objects.query()
-        count = instruments.count()
+        count = yield instruments.count()
         self.assertTrue(count)
-        ids = instruments.delete()
+        ids = yield instruments.delete()
         self.assertTrue(ids)
-        self.assertEqual(len(ids),count)
+        self.assertEqual(len(ids), count)
         
     def testDeleteMultiQueries(self):
-        session = self.data.create(self)
+        session = yield self.data.create(self)
         query = session.query(Instrument)
         with session.begin() as t:
             t.delete(query.filter(ccy='EUR'))
             t.delete(query.filter(type=('future','bond')))
-        for inst in query.all():
+        yield t.on_result
+        all = yield query.all()
+        for inst in all:
             self.assertFalse(inst.type in ('future','bond'))
             self.assertNotEqual(inst.ccy,'EUR')
         
 
 class TestDeleteScalarFields(FinanceTest):
         
-    def testFlushSimpleModel(self):
+    def test_flush_simple_model(self):
         '''Use the class method flush to remove all instances of a
  Model including filters.'''
-        session = self.data.create(self)
-        session.query(Instrument).delete()
-        self.assertEqual(session.query(Instrument).all(),[])
-        self.assertEqual(session.query(Position).all(),[])
-        keys = list(session.keys(Instrument))
+        session = yield self.data.create(self)
+        deleted = yield session.query(Instrument).delete()
+        yield self.async.assertEqual(session.query(Instrument).all(), [])
+        yield self.async.assertEqual(session.query(Position).all(), [])
+        keys = yield session.keys(Instrument)
         if self.backend == 'redis':
-            self.assertTrue(len(keys)>0)
+            self.assertTrue(len(keys) > 0)
         
     def testFlushRelatedModel(self):
-        session = self.data.makePositions(self)
-        self.assertTrue(session.query(Position).count()>0)
-        session.query(Instrument).delete()
-        self.assertEqual(session.query(Instrument).all(), [])
-        self.assertEqual(session.query(Position).all(), [])
-        keys = list(session.keys(Instrument))
+        session = yield self.data.makePositions(self)
+        self.assertTrue(self.data.num_pos > 0)
+        yield session.query(Instrument).delete()
+        yield self.async.assertEqual(session.query(Instrument).all(), [])
+        yield self.async.assertEqual(session.query(Position).all(), [])
+        keys = yield session.keys(Instrument)
         if self.backend == 'redis':
-            self.assertTrue(len(keys)>0)
+            self.assertTrue(len(keys) > 0)
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
-        session = self.data.create(self)
-        session.query(Instrument).delete()
-        self.assertEqual(session.query(Instrument).all(),[])
+        session = yield self.data.create(self)
+        t = yield session.query(Instrument).delete()
+        all = yield session.query(Instrument).all()
+        self.assertEqual(all, [])
         # There should be only keys for indexes and auto id
         backend = session.backend
         if backend.name == 'redis':
-            keys = list(session.keys(Instrument))
-            self.assertEqual(len(keys),1)
-            self.assertEqual(keys[0],backend.basekey(Instrument._meta,'ids'))
-            session.flush(Instrument)
-            keys = list(session.keys(Instrument))
-            self.assertEqual(len(keys),0)
+            keys = yield session.keys(Instrument)
+            self.assertEqual(len(keys), 1)
+            self.assertEqual(keys[0].decode('utf-8'),
+                             backend.basekey(Instrument._meta, 'ids'))
+            yield session.flush(Instrument)
+            keys = yield session.keys(Instrument)
+            self.assertEqual(len(keys), 0)
 
     def testDeleteRelatedOneByOne(self):
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
         # Create Positions which hold foreign keys to Instruments
-        self.data.makePositions(self)
-        session = self.session()
-        with session.begin():
-            for inst in session.query(Instrument):
-                session.delete(inst)
-        self.assertEqual(session.query(Instrument).all(), [])
-        self.assertEqual(session.query(Position).all(), [])
+        session = yield self.data.makePositions(self)
+        instruments = yield session.query(Instrument).all()
+        with session.begin() as t:
+            for inst in instruments:
+                t.delete(inst)
+        yield t.on_result
+        yield self.async.assertEqual(session.query(Instrument).all(), [])
+        yield self.async.assertEqual(session.query(Position).all(), [])
                 
     def testDeleteRelated(self):
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
         # Create Positions which hold foreign keys to Instruments
-        session = self.data.makePositions(self)
-        session.query(Instrument).delete()
-        self.assertEqual(session.query(Instrument).all(),[])
-        self.assertEqual(session.query(Position).all(),[])
+        session = yield self.data.makePositions(self)
+        yield session.query(Instrument).delete()
+        yield self.async.assertEqual(session.query(Instrument).all(), [])
+        yield self.async.assertEqual(session.query(Position).all(), [])
         
     def __testDeleteRelatedCounting(self):
         '''Test delete on models with related models. This is a crucial
@@ -190,43 +202,42 @@ class TestDeleteStructuredFields(test.CleanTestCase):
     model = Dictionary
     
     def setUp(self):
-        '''Create Instruments and Funds commiting at the end for speed'''
         session = self.session()
-        with session.begin():
-            session.add(Dictionary(name='test'))
-            session.add(Dictionary(name='test2'))
-        self.assertEqual(session.query(Dictionary).count(),2)
-        self.data = dict(zip(dict_keys,dict_values))
+        with session.begin() as t:
+            t.add(Dictionary(name='test'))
+            t.add(Dictionary(name='test2'))
+        yield t.on_result
+        yield self.async.assertEqual(session.query(Dictionary).count(), 2)
+        self.data = dict(zip(dict_keys, dict_values))
     
     def fill(self, name):
         session = self.session()
-        d = session.query(Dictionary).get(name = name)
-        self.assertEqual(len(session._models),1)
+        d = yield session.query(Dictionary).get(name=name)
+        self.assertEqual(len(session._models), 1)
         data = d.data
-        self.assertEqual(len(session._models),1)
-        self.assertEqual(data.instance,d)
+        self.assertEqual(len(session._models), 1)
+        self.assertEqual(data.instance, d)
         self.assertTrue(data.id)
-        d.data.update(self.data)
-        self.assertEqual(data.size(),len(self.data))
+        yield d.data.update(self.data)
+        self.async.assertEqual(data.size(), len(self.data))
         return d
     
     def testSimpleFlush(self):
         session = self.session()
-        session.flush(Dictionary)
-        self.assertEqual(session.query(Dictionary).count(),0)
+        yield session.flush(Dictionary)
+        yield self.async.assertEqual(session.query(Dictionary).count(), 0)
         # Now we check the database if it is empty as it should
-        keys = list(session.keys(Dictionary))
+        keys = yield session.keys(Dictionary)
         self.assertEqual(len(keys), 0)
         
-    def testFlushWithData(self):
-        self.fill('test')
-        self.fill('test2')
+    def test_flush_with_data(self):
+        yield self.fill('test')
+        yield self.fill('test2')
         session = self.session()
-        session.flush(Dictionary)
-        self.assertEqual(session.query(Dictionary).count(),0)
+        yield session.flush(Dictionary)
+        yield self.async.assertEqual(session.query(Dictionary).count(), 0)
         # Now we check the database if it is empty as it should
         backend = session.backend
         if backend.name == 'redis':
-            keys = list(session.keys(Dictionary))
-            self.assertEqual(keys,[])
-    
+            keys = yield session.keys(Dictionary)
+            self.assertEqual(keys, [])

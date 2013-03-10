@@ -69,6 +69,9 @@ class ModelMeta(object):
 
     def pkname(self):
         return 'id'
+    
+    def pk_to_python(self, value, backend):
+        return value
 
     def make_object(self, state=None, backend=None):
         '''Create a new instance of :attr:`model` from a *state* tuple.'''
@@ -185,10 +188,10 @@ mapper.
 
     def __init__(self, model, fields, abstract=False, app_label='',
                  verbose_name=None, ordering=None, modelkey=None, **kwargs):
-        super(Metaclass,self).__init__(model,
-                                       app_label=app_label,
-                                       modelkey=modelkey,
-                                       abstract=abstract)
+        super(Metaclass, self).__init__(model,
+                                        app_label=app_label,
+                                        modelkey=modelkey,
+                                        abstract=abstract)
         self.fields = []
         self.scalarfields = []
         self.indices = []
@@ -223,6 +226,9 @@ mapper.
         '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
 
+    def pk_to_python(self, value, backend):
+        return self.pk.to_python(value, backend)
+    
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.

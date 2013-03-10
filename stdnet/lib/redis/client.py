@@ -3,9 +3,10 @@ from copy import copy
 from itertools import chain
 
 import redis
+from redis.exceptions import NoScriptError
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge
 
-from .extensions import get_script, RedisManager, RedisRequest,\
+from .extensions import get_script, RedisManager,\
                         script_callback, redis_connection, redis_after_receive
 from .prefixed import *
 
@@ -18,7 +19,7 @@ RedisError = redis.RedisError
 ConnectionError = redis.ConnectionError
 
 
-class ConnectionPool(redis.ConnectionPool, RedisManager, RedisRequest):
+class ConnectionPool(redis.ConnectionPool, RedisManager):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
     def __init__(self, address, db=0, reader=None, **kwargs):
         if isinstance(address, tuple):
@@ -114,10 +115,23 @@ class Redis(redis.StrictRedis):
 
     def execute_command(self, *args, **options):
         "Execute a command and return a parsed response"
-        return self.connection_pool.request(self, *args, **options)
+        try:
+            return self.connection_pool.request(self, *args, **options)
+        except NoScriptError:
+            self.connection_pool.clear_scripts()
+            raise
     
     def pipeline(self, transaction=True, shard_hint=None):
         return Pipeline(self, transaction, shard_hint)
+    
+    def parse_response(self, connection, command_name, **options):
+        "Parses a response from the Redis server"
+        response = connection.read_response()
+        if command_name == 'SCRIPT' and options['parse'] == 'FLUSH':
+            self.connection_pool.clear_scripts()
+        if command_name in self.response_callbacks:
+            return self.response_callbacks[command_name](response, **options)
+        return response
 
     ############################################################################
     ##    Additional Methods and properties
@@ -263,6 +277,8 @@ class Pipeline(BasePipeline, RedisProxy):
                         command_name = args[0]
                         if command_name in self.response_callbacks:
                             r = self.response_callbacks[command_name](r, **opt)
+                    elif isinstance(r, NoScriptError):
+                        self.connection_pool.clear_scripts()
                     data.append(r)
                 return data
         return super(Pipeline, self).parse_response(connection, command_name,

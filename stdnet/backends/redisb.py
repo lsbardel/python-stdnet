@@ -45,6 +45,8 @@ class odmrun(redis.RedisScript):
             return session_result(meta, res)
         elif command == 'load':
             return self.load_query(response, backend, meta, **opts)
+        elif command == 'structure':
+            return self.flush_structure(response, backend, meta, **opts)
         else:
             return response
         
@@ -104,21 +106,20 @@ class odmrun(redis.RedisScript):
             return self.build(data, meta, fields, fields, encoding)
     
     
-def structure_session_callback(sm, processed, response):
-    if not isinstance(response,Exception):
+class check_structures(redis.RedisScript):
+    script = redis.read_lua_file('structures')
+    
+    def callback(self, response, meta=None, instances=None, **opts):
         results = []
-        for p in chain(processed,(response,)):
-            if isinstance(p,instance_session_result):
-                if p.deleted:
-                    if p.persistent:
-                        raise InvalidTransaction('Could not delete {0}'\
-                                                 .format(p.instance))
-                results.append(p)
-        if results:
-            return session_result(sm.meta, results)
-    else:
-        return response
-        
+        for type, instance in zip(response, instances):
+            state = instance.state()
+            if state.deleted:
+                if state.persistent:
+                    raise InvalidTransaction('Could not delete %s', instance)
+            results.append(instance_session_result(
+                        state.iid, instance, instance.id, state.deleted, 0))
+        return session_result(meta, results)
+    
 
 def results_and_erros(results, result_type):
     if results:
@@ -181,8 +182,7 @@ class RedisQuery(stdnet.BackendQuery):
         else:
             key = backend.tempkey(meta)
             p = 'z' if meta.ordering else 's'
-            pipe.execute_script('move2set', keys, p,
-                             scripts_dependency=ODM_SCRIPTS)
+            pipe.execute_script('move2set', keys, p)
             if qs.keyword == 'intersect':
                 command = getattr(pipe, p+'interstore')
             elif qs.keyword == 'union':
@@ -191,7 +191,7 @@ class RedisQuery(stdnet.BackendQuery):
                 command = getattr(pipe, p+'diffstore')
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
-            command(key, keys, script_dependency='move2set')
+            command(key, keys)
         where = self.queryelem.data.get('where')
         if where:
             keys.insert(0, key)
@@ -882,8 +882,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.client.delpattern(self.tempkey(meta, '*'))
             
     def model_keys(self, meta):
-        pattern = '{0}*'.format(self.basekey(meta))
-        return self.client.keys(pattern)            
+        pattern = '%s*' % self.basekey(meta)
+        return self.client.keys(pattern)
         
     def instance_keys(self, obj):
         meta = obj._meta
@@ -894,28 +894,17 @@ class BackendDataServer(stdnet.BackendDataServer):
         return keys
     
     def flush_structure(self, sm, pipe):
-        processed = False
+        processed = []
+        keys = []
         for instance in chain(sm._delete_query, sm.dirty):
-            processed = True
             state = instance.state()
             binstance = instance.backend_structure(pipe)
-            n = len(pipe.command_stack)
             binstance.commit()
-            script_dependency = []
-            for c in pipe.command_stack[n:]:
-                script_name = c.options.get('script_name')
-                if script_name:
-                    script_dependency.append(script_name)
-            pipe.exists(binstance.id, script_dependency=script_dependency)
-            pipe.add_callback(lambda p,result:\
-                    instance_session_result(state.iid,
-                                            result,
-                                            instance.id,
-                                            state.deleted,
-                                            0))
+            keys.append(binstance.id)
+            processed.append(instance)
         if processed:
-            pipe.add_callback(
-                        partial(structure_session_callback,sm))
+            pipe.execute_script('check_structures', keys, meta=sm.meta,
+                                instances=processed)
         
     def publish(self, channel, message):
         return self.client.execute_command('PUBLISH', channel, message)

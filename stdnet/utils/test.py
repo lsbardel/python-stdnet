@@ -29,7 +29,7 @@ else:
 import pulsar
 from pulsar import multi_async as multi
 from pulsar.utils import events
-from pulsar.apps.test import TestSuite, TestPlugin
+from pulsar.apps.test import TestSuite, TestPlugin, sequential
 
 from stdnet import odm, getdb
 from stdnet.conf import settings
@@ -89,7 +89,7 @@ will be unregistered after the :meth:`tearDown` method.'''
     
     @classmethod
     def clear_all(cls):
-        #override if you don't want to flush the database at the and of all
+        #override if you don't want to flush the database at the end of all
         #tests in this class
         if cls.backend is not None:
             return cls.backend.flush()
@@ -111,13 +111,10 @@ will be unregistered after the :meth:`tearDown` method.'''
                 self.assertEqual(pk, value)
         else:
             raise NotImplementedError()
-        return pk
-    
-    def assertCommands(self, transaction):
-        self.assertTrue(transaction.commands)
-        
+        return pk        
 
 
+@sequential
 class CleanTestCase(TestCase):
     '''A test case which flush the database at every test.'''
     def _pre_setup(self):
@@ -126,15 +123,7 @@ class CleanTestCase(TestCase):
     def _post_teardown(self):
         if self.backend:
             yield self.clear_all()
-            yield odm.unregister()
-        
-    def __call__(self, result=None):
-        """Wrapper around default __call__ method
-to perform cleanup, registration and unregistration.
-        """
-        self._pre_setup()
-        super(CleanTestCase, self).__call__(result)
-        self._post_teardown()
+            odm.unregister()
 
 
 class StdnetPlugin(TestPlugin):

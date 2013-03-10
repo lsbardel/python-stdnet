@@ -194,7 +194,7 @@ within this :class:`Session`.'''
 :rtype: the :class:`Model` removed from session or ``None`` if
     it was not in the session.
 '''
-        if isinstance(instance,self.meta.model):
+        if isinstance(instance, self.meta.model):
             iid = instance.state().iid
         else:
             iid = instance
@@ -237,7 +237,7 @@ within this :class:`Session`.'''
         if d:
             self._deleted.clear()
             if self.model._model_type == 'object':
-                q = self.query().filter(id__in  = d)
+                q = self.query().filter(id=d)
                 self._delete_query.append(q)
             else:
                 self._delete_query.extend(d)
@@ -258,7 +258,7 @@ Process results after a commit.
     items.
 :rtype: a two elements tuple containing a list of instances saved and
     a list of ids of instances deleted.'''
-        tpy = self.meta.pk.to_python
+        tpy = self.meta.pk_to_python
         instances = []
         deleted = []
         errors = []

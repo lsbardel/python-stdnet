@@ -16,12 +16,12 @@ import pulsar
 from pulsar import is_async, multi_async
 from pulsar.utils.pep import ispy3k, map
 
-from .extensions import get_script, RedisManager, RedisRequest    
+from .extensions import get_script, RedisManager    
 
 __all__ = []
 
 
-class AsyncRedisRequest(RedisRequest):
+class AsyncRedisRequest(object):
     
     def __init__(self, client, connection, timeout, encoding,
                   encoding_errors, command_name, args, reader,
@@ -37,10 +37,11 @@ class AsyncRedisRequest(RedisRequest):
         self.response = []
         self.last_response = False
         self.args = args
+        pool = client.connection_pool
         if client.is_pipeline:
-            self.command = self.pack_pipeline(args)
+            self.command = pool.pack_pipeline(args)
         else:
-            self.command = self.pack_command(command_name, *args)
+            self.command = pool.pack_command(command_name, *args)
             args =(((command_name,), options),)
         self.args_options = deque(args)
         

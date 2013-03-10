@@ -120,54 +120,54 @@ class finance_data(data_generator):
 
     def create(self, test, use_transaction=True, InstrumentModel=Instrument):
         session = test.session()
-        eq = assertEqual if isinstance(test, type) else test.assertEqual 
-        eq(session.query(InstrumentModel).count(), 0)
+        eq = assertEqual if isinstance(test, type) else test.assertEqual
+        c = yield session.query(InstrumentModel).count()
+        eq(c, 0)
         if use_transaction:
-            with session.begin():
+            with session.begin() as t:
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
-                    session.add(Fund(name=name, ccy=ccy))
+                    t.add(Fund(name=name, ccy=ccy))
                 for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                         self.inst_ccys):
-                    session.add(InstrumentModel(name=name, type=typ, ccy=ccy))
+                    t.add(InstrumentModel(name=name, type=typ, ccy=ccy))
+            yield t.on_result
         else:
             test.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                     self.inst_ccys):
-                InstrumentModel(name=name, type=typ, ccy=ccy).save()
+                yield InstrumentModel(name=name, type=typ, ccy=ccy).save()
             for name,ccy in zip(self.fund_names,self.fund_ccys):
-                Fund(name=name, ccy=ccy).save()
-
-        self.num_insts = session.query(InstrumentModel).count()
-        self.num_funds = session.query(Fund).count()
+                yield Fund(name=name, ccy=ccy).save()
+        self.num_insts = yield session.query(InstrumentModel).count()
+        self.num_funds = yield session.query(Fund).count()
         eq(self.num_insts, len(self.inst_names))
         eq(self.num_funds, len(self.fund_names))
-        return session
+        yield session
 
     def makePositions(self, test, use_transaction=True):
-        session = self.create(test, use_transaction)
-        instruments = session.query(Instrument).all()
+        session = yield self.create(test, use_transaction)
+        instruments = yield session.query(Instrument).all()
+        funds = yield session.query(Fund).all()
         if use_transaction:
-            with session.begin():
-                for f in session.query(Fund):
+            with session.begin() as t:
+                for f in funds:
                     insts = populate('choice', self.pos_len,
                                      choice_from = instruments)
                     for dt in self.dates:
                         for inst in insts:
-                            session.add(Position(instrument = inst,
-                                                 dt = dt,
-                                                 fund = f,
-                                                 size = randint(-100000,
-                                                                 100000)))
+                            t.add(Position(instrument=inst, dt=dt, fund=f,
+                                           size=randint(-100000, 100000)))
+            yield t.on_result
         else:
-            for f in Fund.objects.query(Fund):
-                insts = populate('choice', self.pos_len,
-                                choice_from = instruments)
+            for f in funds:
+                insts = populate('choice', self.pos_len, choice_from=instruments)
                 for dt in self.dates:
                     for inst in insts:
-                        Position(instrument = inst, dt = dt, fund = f).save()
-
-        self.num_pos = session.query(Position).count()
-        return session
+                        yield Position(instrument=inst, dt=dt, fund=f,
+                                       size=randint(-100000, 100000)).save()
+        #
+        self.num_pos = yield session.query(Position).count()
+        yield session
 
 
 class DataTest(test.CleanTestCase):
@@ -177,8 +177,8 @@ with different sizes by passing the'''
 
     @classmethod
     def setUpClass(cls):
-        super(DataTest, cls).setUpClass()
-        cls.data = cls.data_cls(size=cls.size)
+        yield super(DataTest, cls).setUpClass()
+        cls.data = yield cls.data_cls(size=cls.size)
 
 
 class FinanceTest(DataTest):

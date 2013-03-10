@@ -10,7 +10,6 @@ from stdnet.utils.dispatch import Signal
 from .redisinfo import RedisKey
 
 __all__ = ['RedisScript',
-           'RedisRequest',
            'get_script',
            'registered_scripts',
            'read_lua_file',
@@ -55,6 +54,9 @@ class RedisManager(object):
             client.script_load(s.script)
         return callback()
     
+    def clear_scripts(self):
+        self.all_loaded_scripts[self.address] = set()
+        
     def _setup(self, address, db, reader):
         self.connection = redis_connection(address, int(db))
         self.redis_reader = reader
@@ -66,9 +68,6 @@ class RedisManager(object):
     @property
     def db(self):
         return self.connection.db
-    
-    
-class RedisRequest(object):
     
     if ispy3k:
         def encode(self, value):
@@ -101,7 +100,7 @@ class RedisRequest(object):
     def pack_command(self, *args):
         "Pack a series of arguments into a value Redis command"
         data = b''.join(self.__pack_gen(args))
-        redis_before_send.send_robust(RedisRequest, data=data, args=args)
+        redis_before_send.send_robust(RedisManager, data=data, args=args)
         return data
     
     def pack_pipeline(self, commands):
@@ -109,7 +108,7 @@ class RedisRequest(object):
 command byte to be send to redis.'''
         pack = lambda *args: b''.join(self.__pack_gen(args))
         data = b''.join(starmap(pack, (args for args, _ in commands)))
-        redis_before_send.send_robust(RedisRequest, data=data, args=commands)
+        redis_before_send.send_robust(RedisManager, data=data, args=commands)
         return data
     
 

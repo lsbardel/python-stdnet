@@ -627,7 +627,7 @@ else
             error('Script query requires 1 key for the id set')
         end
     end
-    -- MANAGE ALL COLUMNTS SCRIPTS called by stdnet
+    -- MANAGE ALL MODEL SCRIPTS called by stdnet
     local scripts = {
         -- Commit a session to redis
         commit = function(self, model, keys, num, args)
@@ -648,6 +648,10 @@ else
         -- recursively add id to a set
         aggregate = function(self, model, keys, field, args)
             return model:aggregate(first_key(keys), field)
+        end,
+        -- structure. Don nothing
+        structure = function(self, model, keys, ...)
+            return ''
         end
     }
     -- THE FIRST ARGUMENT IS THE NAME OF THE SCRIPT

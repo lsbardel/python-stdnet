@@ -899,6 +899,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             pipe.execute_script('check_structures', keys, meta=sm.meta,
                                 instances=processed)
         
+    def bind_before_send(self, callback):
+        pass
+        
     def publish(self, channel, message):
         return self.client.execute_command('PUBLISH', channel, message)
         

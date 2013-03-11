@@ -391,6 +391,9 @@ indices are created.'''
         '''Return a proper python value for the auto id.'''
         return value
     
+    def bind_before_send(self, callback):
+        pass
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address):

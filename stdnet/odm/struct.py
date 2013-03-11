@@ -4,7 +4,7 @@ from collections import namedtuple
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
                             BytesIO, iterpair, ispy3k
 from stdnet.lib import zset, skiplist
-from stdnet import SessionNotAvailable
+from stdnet import SessionNotAvailable, on_result
 
 from .base import ModelBase
 from .session import commit_when_no_transaction, withsession
@@ -374,7 +374,7 @@ methods, while its iterator is over keys.'''
     def __getitem__(self, key):
         dkey = self.pickler.dumps(key)
         res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key)
+        return on_result(res, lambda r: self._load_get_data(r, key))
     
     def get(self, key, default=None):
         '''Retrieve a single element from the structure.
@@ -384,15 +384,15 @@ If the element is not available return the default value.
 :parameter default: default value when the field is not available'''
         dkey = self.pickler.dumps(key)
         res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key, default)
+        return on_result(res, lambda r: self._load_get_data(r, key, default))
         
     def pop(self, key, *args):
         dkey = self.pickler.dumps(key)
         res = self.session.backend.structure(self).pop(dkey)
         if len(args) == 1:
-            return self.async_handle(res, self._load_get_data, key, args[0])
+            return on_result(res, lambda r: self._load_get_data(r, key, args[0]))
         elif not args:
-            return self.async_handle(res, self._load_get_data, key)
+            return on_result(res, lambda r: self._load_get_data(r, key))
         else:
             raise TypeError('pop expected at most 2 arguments, got {0}'\
                             .format(len(args)+1))
@@ -443,24 +443,24 @@ a numeric value we call score.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().range(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        return on_result(res, callback or self.load_data)
     
     def irange(self, start=0, end=-1, callback=None, **kwargs):
         '''Return the range by rank between start and end.'''
         res = self.backend_structure().irange(start, end, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        return on_result(res, callback or self.load_data)
         
     def pop_range(self, start, stop, callback=None, **kwargs):
         '''pop a range by score from the :class:`OrderedMixin`'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().pop_range(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        return on_result(res, callback or self.load_data)
 
     def ipop_range(self, start=0, stop=-1, callback=None, **kwargs):
         '''pop a range from the :class:`OrderedMixin`'''
         res = self.backend_structure().ipop_range(start, stop, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        return on_result(res, callback or self.load_data)
     
 
 class Sequence(object):
@@ -604,19 +604,19 @@ and values are objects.'''
         '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
 index is not out of bound.'''
         res = self.session.backend.structure(self).ipop(index)
-        return self.async_handle(res, self._load_get_data, index, None)
+        return on_result(res, lambda r: self._load_get_data(r, index, None))
     
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().times(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_keys)
+        return on_result(res, callback or self.load_keys)
     
     def itimes(self, start=0, stop=-1, callback=None, **kwargs):
         '''The times between rank *start* and *stop*.'''
         res = self.backend_structure().itimes(start, stop, **kwargs)
-        return self.async_handle(res, callback or self.load_keys)
+        return on_result(res, callback or self.load_keys)
     
     
 class String(Sequence, Structure):

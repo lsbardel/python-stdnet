@@ -364,6 +364,7 @@ or using the ``with`` context manager::
         self.on_result = None
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
+        self.backend.bind_before_send(self._sent_data)
         self.deleted = {}
         self.saved = {}
 
@@ -489,6 +490,9 @@ Results can contain errors.
             sent += sm.pre_commit(self)
         return sent
 
+    def _sent_data(self, sender, data=None, **kwargs):
+        self.data_sent = data
+        
 
 class Session(object):
     '''The manager of persistent operations on the backend data server for

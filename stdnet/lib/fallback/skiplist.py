@@ -91,8 +91,8 @@ and lookup by rank.'''
 
     def update(self, values):
         insert = self.insert
-        for score,value in values:
-            insert(score,value)
+        for score, value in values:
+            insert(score, value)
         
     def remove(self, score):
         # find first node on each level where node.next[levels].score >= score

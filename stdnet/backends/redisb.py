@@ -113,9 +113,6 @@ class check_structures(redis.RedisScript):
         results = []
         for type, instance in zip(response, instances):
             state = instance.state()
-            if state.deleted:
-                if state.persistent:
-                    raise InvalidTransaction('Could not delete %s', instance)
             results.append(instance_session_result(
                         state.iid, instance, instance.id, state.deleted, 0))
         return session_result(meta, results)
@@ -457,9 +454,9 @@ class Zset(RedisStructure):
     def count(self, start, stop):
         return self.client.zcount(self.id, start, stop)
     
-    def range(self, start, end, desc=False, withscores=True, **options):
+    def range(self, start, end, withscores=True, **options):
         return on_result(
-                self.client.zrangebyscore(self.id, start, end, desc=desc,
+                self.client.zrangebyscore(self.id, start, end,
                                           withscores=withscores, **options),
                 partial(self._range, withscores))
     
@@ -486,7 +483,7 @@ class Zset(RedisStructure):
     # PRIVATE
     def _range(self, withscores, result):
         if withscores:
-            return ((score,v) for v,score in result)
+            return [(score,v) for v,score in result]
         else:
             return result
         
@@ -575,59 +572,62 @@ class TS(RedisStructure):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            self.client.execute_script('ts_commands', self.id, 'add',
-                                    *cache.toadd.flat())
-            result = True
+            result = self.client.execute_script('ts_commands', (self.id,),
+                                                'add', *cache.toadd.flat())
         if cache.toremove:
             raise NotImplementedError('Cannot remove. TSDEL not implemented')
         return result
     
     def __contains__(self, timestamp):
-        return self.client.execute_script('ts_commands', self.id, 'exists',
-                                       timestamp)
+        return self.client.execute_script('ts_commands', (self.id,), 'exists',
+                                          timestamp)
     
     def size(self):
-        return self.client.execute_script('ts_commands', self.id, 'size')
+        return self.client.execute_script('ts_commands', (self.id,), 'size')
     
     def count(self, start, stop):
-        return self.client.execute_script('ts_commands', self.id, 'count',
+        return self.client.execute_script('ts_commands', (self.id,), 'count',
                                        start, stop)
     
     def times(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'times',
-                                       time_start, time_stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,), 'times',
+                                          time_start, time_stop, **kwargs)
             
     def itimes(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'itimes',
-                                       start, stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,), 'itimes',
+                                          start, stop, **kwargs)
     
     def get(self, dte):
-        return self.client.execute_script('ts_commands', self.id, 'get', dte)
+        return self.client.execute_script('ts_commands', (self.id,),
+                                          'get', dte)
     
     def rank(self, dte):
-        return self.client.execute_script('ts_commands', self.id, 'rank', dte)
+        return self.client.execute_script('ts_commands', (self.id,),
+                                          'rank', dte)
     
     def pop(self, dte):
-        return self.client.execute_script('ts_commands', self.id, 'pop', dte)
+        return self.client.execute_script('ts_commands', (self.id,),
+                                          'pop', dte)
     
     def ipop(self, index):
-        return self.client.execute_script('ts_commands', self.id, 'ipop', index)
+        return self.client.execute_script('ts_commands', (self.id,),
+                                          'ipop', index)
             
     def range(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'range',
-                                       time_start, time_stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,), 'range',
+                                          time_start, time_stop, **kwargs)
             
     def irange(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'irange',
-                                       start, stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,), 'irange',
+                                          start, stop, **kwargs)
         
     def pop_range(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'pop_range',
-                                       time_start, time_stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,), 'pop_range',
+                                          time_start, time_stop, **kwargs)
             
     def ipop_range(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', self.id, 'ipop_range',
-                                       start, stop, **kwargs)
+        return self.client.execute_script('ts_commands', (self.id,),
+                                          'ipop_range', start, stop, **kwargs)
 
 
 class NumberArray(RedisStructure):

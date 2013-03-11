@@ -30,7 +30,7 @@ class TestPermissions(test.CleanTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestPermissions, cls).setUpClass()
+        yield super(TestPermissions, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
         register_for_permissions(MyModel)
         
@@ -40,16 +40,17 @@ class TestPermissions(test.CleanTestCase):
         with User.objects.transaction() as t:
             for username, password in zip(d.usernames, d.passwords):
                 t.add(User(username=username, password=password))
+        yield t.on_result
                 
     def test_model_meta(self):
         self.assertTrue('user' in MyModel._meta.dfields)
         
     def test_user(self):
-        users = User.objects.query()
+        users = yield User.objects.query().all()
         self.assertTrue(users)
         
     def test_create_without_role(self):
-        users = User.objects.query().all()
+        users = yield User.objects.query().all()
         user1 = users[0]
         user2 = users[1]
         instance1 = MyModel(user=user1).save()
@@ -59,5 +60,4 @@ class TestPermissions(test.CleanTestCase):
         query = MyModel.objects.query()
         qs = authenticated_query(query, user1, read)
         self.assertEqual(qs.count(), 3)
-        
         

@@ -418,7 +418,7 @@ If the element is not available return the default value.
     
 class OrderedMixin(object):
     '''A mixin for a :class:`Structure` which maintains ordering with respect
-a numeric value we call score.'''
+a numeric value, the score.'''
     
     def front(self):
         '''Return the front pair of the structure'''

@@ -11,9 +11,9 @@ class test_load_related(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        super(test_load_related, cls).setUpClass()
+        yield super(test_load_related, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
-        cls.data.makePositions(cls('testMeta'))
+        yield cls.data.makePositions(cls('testMeta'))
         
     @classmethod
     def tearDownClass(cls):

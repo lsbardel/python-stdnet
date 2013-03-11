@@ -24,8 +24,8 @@ in this test class so that we can use the manager in a parallel test suite.'''
         
     def setUp(self):
         self.register()
-        root = self.model(weight = 1.0).save()
-        self.create(root, nesting = self.nesting)
+        root = yield self.model(weight = 1.0).save()
+        self.create(root, nesting=self.nesting)
             
     def testMeta(self):
         session = self.session()
@@ -93,9 +93,9 @@ class TestRealtedQuery(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        super(TestRealtedQuery, cls).setUpClass()
+        yield super(TestRealtedQuery, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
-        cls.data.makePositions(cls)
+        yield cls.data.makePositions(cls)
         
     @classmethod
     def tearDownClass(cls):

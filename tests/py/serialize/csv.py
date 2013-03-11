@@ -14,11 +14,12 @@ class TestFinanceCSV(FinanceTest, SerializerMixin):
         self.register()
         
     def testTwoModels(self):
-        s = self.testDump()
+        s = yield self.testDump()
         self.assertEqual(len(s.data), 1)
-        self.assertRaises(ValueError, s.dump, Fund.objects.query())
+        funds = yield Fund.objects.query().all()
+        self.assertRaises(ValueError, s.dump, funds)
         self.assertEqual(len(s.data), 1)
         
     def testLoadError(self):
-        s = self.testDump()
+        s = yield self.testDump()
         self.assertRaises(ValueError, s.load, 'bla')

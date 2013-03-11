@@ -24,7 +24,7 @@ class NumericTest(test.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(NumericTest, cls).setUpClass()
+        yield super(NumericTest, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
         cls.register()
         yield cls.clear_all()
@@ -35,6 +35,7 @@ class NumericTest(test.TestCase):
                 t.add(cls.model(pv=a, vega=b, delta=c, gamma=d,
                                 data={'test': {'': e,
                                                'inner': f}}))
+        yield t.on_result
     
     @classmethod
     def tearDownClass(cls):
@@ -141,7 +142,7 @@ class TestNumericRangeForeignKey(test.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestNumericRangeForeignKey, cls).setUpClass()
+        yield super(TestNumericRangeForeignKey, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
         cls.register()
         yield cls.clear_all()
@@ -152,14 +153,16 @@ class TestNumericRangeForeignKey(test.TestCase):
                 t.add(CrossData(name='live',
                                 data={'a': a, 'b': b, 'c': c,
                                       'd': d, 'e': e, 'f': f}))
-        cross = CrossData.objects.query()
-        found=False
+        yield t.on_result
+        cross = yield CrossData.objects.query().all()
+        found = False
         with session.begin() as t:
             for n, c in enumerate(cross):
                 if c.data__a > -1:
                     found=True
                 feed = 'feed%s' % (n+1)
                 t.add(Feed1(name=feed, live=c))
+        yield t.on_result
         assert found, 'not found'
     
     @classmethod

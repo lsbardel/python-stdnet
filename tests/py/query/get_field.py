@@ -1,3 +1,4 @@
+'''Test query.get_field method for obtaining a single field from a query.'''
 from stdnet.utils import test, populate, zip, is_string
 
 from examples.models import Instrument, Position, ObjectAnalytics,\
@@ -10,14 +11,15 @@ class TestInstrument(FinanceTest):
     model = Instrument
 
     def setUp(self):
-        self.data.create(self)
+        yield self.data.create(self)
 
     def testName(self):
         session = self.session()
-        qb = dict(((i.name,i) for i in session.query(self.model)))
+        all = yield session.query(self.model).all()
+        qb = dict(((i.name,i) for i in all))
         qs = session.query(self.model).get_field('name')
         self.assertEqual(qs._get_field, 'name')
-        result = qs.all()
+        result = yield qs.all()
         self.assertTrue(result)
         for r in result:
             self.assertTrue(is_string(r))
@@ -39,7 +41,7 @@ class TestRelated(FinanceTest):
     model = Position
 
     def setUp(self):
-        self.data.makePositions(self)
+        yield self.data.makePositions(self)
 
     def testInstrument(self):
         session = self.session()
@@ -105,7 +107,7 @@ class TestModelField(DataTest):
     data_cls = generator
 
     def setUp(self):
-        self.data.create(self)
+        yield self.data.create(self)
 
     def testLoad(self):
         session = self.session()
@@ -138,5 +140,3 @@ class TestModelField(DataTest):
         #
         result2 = query()
         self.assertTrue(result2)
-
-

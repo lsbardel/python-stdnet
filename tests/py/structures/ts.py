@@ -78,9 +78,10 @@ class TestTS(StructMixin, test.CleanTestCase):
         
     def test_rank_ipop(self):
         session = self.session()
-        with session.begin():
-            ts = session.add(odm.TS())
-            ts.update(zip(dates,values))
+        with session.begin() as t:
+            ts = t.add(odm.TS())
+            ts.update(zip(dates, values))
+        yield t.on_result
         dt = dates[5]
         value = ts.get(dt)
         r = ts.rank(dt)

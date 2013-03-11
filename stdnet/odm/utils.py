@@ -124,12 +124,15 @@ by the *indent* of the json string for pretty serialization.'''
         for obj in qs:
             data.append(obj.tojson())
             meta = obj._meta
-        return {'model':str(meta),
-                'hash':meta.hash,
-                'data':data}
+        if data:
+            return {'model':str(meta),
+                    'hash':meta.hash,
+                    'data':data}
 
     def dump(self, qs):
-        self.data.append(self.get_data(qs))
+        data = self.get_data(qs)
+        if data:
+            self.data.append(data)
 
     def write(self, stream=None):
         stream = stream or StringIO()

@@ -16,7 +16,7 @@ class TestFinanceJSON(FinanceTest, SerializerMixin):
         self.register()
 
     def testTwoModels(self):
-        s = self.testDump()
+        s = yield self.testDump()
         self.assertEqual(len(s.data),1)
         d = s.data[0]
         self.assertEqual(d['model'],str(self.model._meta))

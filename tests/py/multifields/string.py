@@ -6,7 +6,7 @@ from examples.models import SimpleString
 from .struct import MultiFieldMixin, elems
 
 
-class TestStringField(MultiFieldMixin, test.CleanTestCase):
+class TestStringField(test.TestCase, MultiFieldMixin):
     multipledb = 'redis'
     model = SimpleString
     

@@ -8,8 +8,8 @@ class TestSet(StructMixin, test.CleanTestCase):
     structure = odm.Set
     name = 'set'
     
-    def createOne(self, session):
-        s = session.add(odm.Set())
+    def create_one(self):
+        s = self.structure()
         s.update((1,2,3,4,5,5))
         return s
             

@@ -29,11 +29,8 @@ def commit_when_no_transaction(f):
 not in a transaction.'''
     def _(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
-        session = self.session
-        # no session available. Raise Exception
-        if session is None:
-            raise SessionNotAvailable('Session not available')
-        session.add(self)
+        if self.session is not None:
+            self.session.add(self)
         return r
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__

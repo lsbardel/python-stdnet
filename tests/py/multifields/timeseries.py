@@ -37,27 +37,28 @@ class TestDateTimeSeries(test.TestCase):
     def setUp(self):
         self.names = populate('string', size=10)
         self.name = self.names[0]
-        self.data = dict(zip(keys, values))
     
     def adddata(self, obj, data=None):
         data = data or testdata
-        obj.data.update(data)
-        self.assertEqual(obj.data.size(),len(data))
+        yield obj.data.update(data)
+        size = obj.data.size()
+        self.assertEqual(size, len(data))
         
     def make(self, name=None):
         name = name or self.name
-        return self.model(ticker=self.name).save()
+        return self.model(ticker=name).save()
     
-    def get(self, ticker = 'GOOG'):
-        return self.model.objects.get(ticker=ticker)
+    def get(self, name=None):
+        name = name or self.name
+        return self.model.objects.get(ticker=name)
         
-    def filldata(self, data = None):
-        d = yield self.make()
-        self.adddata(d, data)
-        return self.get()
+    def filldata(self, data=None, name=None):
+        d = yield self.make(name=name)
+        yield self.adddata(d, data)
+        yield self.get(name=name)
 
     def interval(self, a, b, targets, C, D):
-        ts = self.get()
+        ts = yield self.get()
         intervals = ts.intervals(a,b)
         self.assertEqual(len(intervals),len(targets))
         for interval,target in zip(intervals,targets):
@@ -71,9 +72,9 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(ts.data_end,D)
         
     def testFrontBack(self):
-        ts = self.make()
-        self.assertEqual(ts.data_start,None)
-        self.assertEqual(ts.data_end,None)
+        ts = yield self.make()
+        self.assertEqual(ts.data_start, None)
+        self.assertEqual(ts.data_end, None)
         mkdate = self.mkdate
         ts.data.update(testdata2)
         start = ts.data_start
@@ -85,7 +86,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(d,end)
         
     def testkeys(self):
-        ts = self.filldata()
+        ts = yield self.filldata()
         keyp = None
         data = testdata.copy()
         for key in ts.dates():
@@ -96,7 +97,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(len(data),0)
         
     def testitems(self):
-        ts = self.filldata()
+        ts = yield self.filldata()
         keyp = None
         data = testdata.copy()
         for key,value in ts.items():
@@ -107,7 +108,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(len(data),0)
     
     def testUpdate(self):
-        ts = self.make()
+        ts = yield self.make()
         dt1 = self.mkdate(2010,5,6)
         dt2 = self.mkdate(2010,6,6)
         ts.data[dt1] = 56
@@ -119,8 +120,8 @@ class TestDateTimeSeries(test.TestCase):
         
     def testInterval(self):
         '''Test interval handling'''
+        ts = yield self.make()
         mkdate = self.mkdate
-        ts = self.make()
         self.assertEqual(ts.data_start,None)
         self.assertEqual(ts.data_end,None)
         #
@@ -176,7 +177,7 @@ class TestDateTimeSeries(test.TestCase):
         self.interval(A6,B6,[[default_parse_interval(B5,1),B6]],A4,B6)
         
     def testSetLen(self):
-        ts = self.make()
+        ts = yield self.make()
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
         dt2 = mkdate(2010,4,1)
@@ -191,7 +192,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertFalse(mkdate(2000,4,13) in ts.data)
         
     def testGet(self):
-        ts = self.make()
+        ts = yield self.make()
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
         dt2 = mkdate(2010,4,1)
@@ -206,14 +207,14 @@ class TestDateTimeSeries(test.TestCase):
         
     def testRange(self):
         '''Test the range (by time) command'''
-        ts = self.filldata(testdata2)
+        ts = yield self.filldata(testdata2)
         d1 = date(2009,4,1)
         d2 = date(2009,11,1)
         data = list(ts.data.range(d1,d2))
         self.assertTrue(data)
         
     def testloadrelated(self):
-        self.make()
+        yield self.make()
         session = self.session()
         with session.begin():
             session.add(self.model(ticker = 'AMZN'))
@@ -229,12 +230,12 @@ class TestDateTimeSeries(test.TestCase):
             self.assertTrue(m.data.cache.cache)
         
     def testitems2(self):
-        ts = self.filldata(testdata2)
+        ts = yield self.filldata(testdata2)
         for k,v in ts.data.items():
             self.assertEqual(v,testdata2[todate(k)])
             
     def testiRange(self):
-        ts = self.filldata(testdata2)
+        ts = yield self.filldata(testdata2)
         N  = ts.data.size()
         self.assertTrue(N)
         a  = int(N/4)
@@ -277,7 +278,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(len(r3),N-b)
         
     def testRange(self):
-        ts = self.filldata(testdata2)
+        ts = yield self.filldata(testdata2)
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a
@@ -305,7 +306,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(r4[-1],r2[-1])
         
     def testCount(self):
-        ts = self.filldata(testdata2)
+        ts = yield self.filldata(testdata2)
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a

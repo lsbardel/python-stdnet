@@ -350,15 +350,15 @@ Equivalent to python dictionary update method.
     def load_data(self, mapping):
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
-        return ((loads(k), vloads(v)) for k,v in iterpair(mapping))
+        return [(loads(k), vloads(v)) for k,v in iterpair(mapping)]
     
     def load_keys(self, iterable):
         loads = self.pickler.loads
-        return (loads(k) for k in iterable)
+        return [loads(k) for k in iterable]
     
     def load_values(self, iterable):
         vloads = self.value_pickler.loads
-        return (vloads(v) for v in iterable)
+        return [vloads(v) for v in iterable]
     
 
 class KeyValueMixin(PairMixin):
@@ -447,29 +447,38 @@ a numeric value, the score.'''
         s2 = self.pickler.dumps(stop)
         return self.backend_structure().count(s1, s2)
     
-    def range(self, start, stop, callback=None, **kwargs):
+    def range(self, start, stop, callback=None, withscores=True):
         '''Return a range with scores between start and end.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().range(s1, s2, **kwargs)
-        return on_result(res, callback or self.load_data)
+        res = self.backend_structure().range(s1, s2, withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
     
-    def irange(self, start=0, end=-1, callback=None, **kwargs):
+    def irange(self, start=0, end=-1, callback=None, withscores=True):
         '''Return the range by rank between start and end.'''
-        res = self.backend_structure().irange(start, end, **kwargs)
-        return on_result(res, callback or self.load_data)
+        res = self.backend_structure().irange(start, end, withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
         
-    def pop_range(self, start, stop, callback=None, **kwargs):
+    def pop_range(self, start, stop, callback=None, withscores=True):
         '''pop a range by score from the :class:`OrderedMixin`'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().pop_range(s1, s2, **kwargs)
-        return on_result(res, callback or self.load_data)
+        res = self.backend_structure().pop_range(s1, s2, withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
 
-    def ipop_range(self, start=0, stop=-1, callback=None, **kwargs):
+    def ipop_range(self, start=0, stop=-1, callback=None, withscores=True):
         '''pop a range from the :class:`OrderedMixin`'''
-        res = self.backend_structure().ipop_range(start, stop, **kwargs)
-        return on_result(res, callback or self.load_data)
+        res = self.backend_structure().ipop_range(start, stop,
+                                                  withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
     
 
 class Sequence(object):

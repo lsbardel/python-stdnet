@@ -32,7 +32,7 @@ Subscriber
 import logging
 from inspect import isclass
 
-from stdnet import odm, getdb, AsyncObject
+from stdnet import odm, getdb
 from stdnet.utils import encoders
 
 

@@ -24,8 +24,8 @@ class TestZset(StructMixin, test.CleanTestCase):
                (95.2,'saturn'),
                (317.8,'juppiter')]
     
-    def createOne(self, session):
-        l = session.add(odm.Zset())
+    def create_one(self):
+        l = odm.Zset()
         l.add(1,'earth')
         l.add(0.06,'mercury')
         l.add(317.8,'juppiter')
@@ -35,25 +35,23 @@ class TestZset(StructMixin, test.CleanTestCase):
                   (0.11,'mars'),
                   (17.2,'neptune'),
                   (0.0022,'pluto')))
-        self.assertEqual(len(l.cache.toadd),9)
-        return l
-        
-    def planets(self):
-        session = self.session()
-        session.begin()
-        l = self.createOne(session)
-        self.assertEqual(l.size(),0)
-        session.commit()
-        self.assertTrue(l.state().persistent)
-        self.assertEqual(l.size(),9)
-        return l
-            
-    def testMeta2(self):
-        l = self.testMeta()
+        self.assertEqual(len(l.cache.toadd), 9)
         self.assertFalse(l.cache.cache)
         self.assertTrue(l.cache.toadd)
         self.assertFalse(l.cache.toremove)
-
+        return l
+        
+    def planets(self):
+        with self.session().begin() as t:
+            l = t.add(self.create_one())
+            size = yield l.size()
+            self.assertEqual(size, 0)
+        yield t.on_result
+        self.assertTrue(l.state().persistent)
+        size = yield l.size()
+        self.assertEqual(size, 9)
+        yield l
+        
     def testZsetState(self):
         '''test a very simple zset with integer'''
         session = self.session()
@@ -66,31 +64,42 @@ class TestZset(StructMixin, test.CleanTestCase):
         self.assertTrue(z.session)
         
     def test_irange(self):
-        l = self.planets()
+        l = yield self.planets()
+        # Get the whole range without the scores
+        r = yield l.irange(withscores=False)
+        self.assertEqual(r, [v[1] for v in self.result])
+        
+    def test_irange_withscores(self):
+        l = yield self.planets()
         # Get the whole range
-        r = list(l.irange())
-        self.assertEqual(r,self.result)
+        r = yield l.irange()
+        self.assertEqual(r, self.result)
         
     def test_range(self):
-        l = self.planets()
-        r = list(l.range(0.5,20))
+        l = yield self.planets()
+        r = yield l.range(0.5, 20, withscores=False)
+        self.assertEqual(r, ['venus', 'earth', 'uranus', 'neptune'])
+            
+    def test_range_withscores(self):
+        l = yield self.planets()
+        r = yield l.range(0.5,20)
         self.assertTrue(r)
         k1 = 0.5
-        for k,v in r:
+        for k, v in r:
             self.assertTrue(k>=k1)
             self.assertTrue(k<=20)
             k1 = k
         
-    def testIter(self):
+    def test_iter(self):
         '''test a very simple zset with integer'''
-        l = self.planets()
+        l = yield self.planets()
         r = list(l)
         v = [t[1] for t in self.result]
         self.assertEqual(r,v)
                 
     def testItems(self):
         '''test a very simple zset with integer'''
-        l = self.planets()
+        l = yield self.planets()
         r = list(l.items())
         self.assertEqual(r, self.result)
 

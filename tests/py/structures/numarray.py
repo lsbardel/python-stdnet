@@ -11,8 +11,8 @@ class TestNumberArray(StructMixin, test.CleanTestCase):
     structure = odm.NumberArray
     name = 'numberarray'
     
-    def createOne(self, session):
-        a = session.add(self.structure())
+    def create_one(self):
+        a = self.structure()
         a.push_back(56).push_back(-78.6)
         return a
     

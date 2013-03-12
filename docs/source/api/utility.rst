@@ -88,70 +88,10 @@ JSON utilities
 
 .. _encoders:
 
-.. module:: stdnet.utils.encoders
-
 Encoders
 =======================
 
-.. autoclass:: Encoder
-   :members:
-   :member-order: bysource
-
-
-No Encoder
-~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: NoEncoder
-   :members:
-   :member-order: bysource
-
-
-Default
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: Default
-   :members:
-   :member-order: bysource
-
-
-Bytes
-~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: Bytes
-   :members:
-   :member-order: bysource
-
-
-Json
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: Json
-   :members:
-   :member-order: bysource
-
-
-Python Pickle
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: PythonPickle
-   :members:
-   :member-order: bysource
-
-
-DateTimeConverter
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DateTimeConverter
-   :members:
-   :member-order: bysource
-   
-   
-DateConverter
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DateConverter
-   :members:
-   :member-order: bysource
+.. automodule:: stdnet.utils.encoders
 
 
 .. module:: stdnet

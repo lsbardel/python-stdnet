@@ -7,8 +7,9 @@ Ver. 0.8 - Development
   Very much alpha at this stage.
 * Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
   a valid expression (lua for redis and javascript for mongodb).
-* :class:`stdnet.odm.AutoField` does not inherit from
-  :class:`stdnet.odm.IntegerField` so that it works for different backends.
+* AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not
+  inherit from :class:`stdnet.odm.IntegerField` so that it can work dirrently
+  for different backends.
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
   the main test class for handling tests on multiple backends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
@@ -35,7 +36,8 @@ Ver. 0.8 - Development
 * :meth:`stdnet.odm.Session.add` accept ``force_update`` parameter which can be used to
   force an ``update`` rather than an ``override`` when an instance is persistent and
   fully loaded.
-* Removed asynchronous redis connection. To be implemented by another package.
+* A new asynchronous redis connection for fully asynchronous usage of the api.
+  Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information. 
 * **650 regression tests** with **93%** coverage.
   
 .. _vers07:

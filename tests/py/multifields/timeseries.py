@@ -1,3 +1,4 @@
+'''tests for odm.TimeSeriesField'''
 import os
 from datetime import date, datetime
 from random import uniform
@@ -8,7 +9,7 @@ from stdnet.utils import test, populate, todate, zip, dategenerator,\
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
 
-from tests.py.fields.struct import MultiFieldMixin
+from .struct import MultiFieldMixin
 
 NUM_DATES = 300
 
@@ -22,25 +23,36 @@ testdata  = dict(alldata)
 testdata2 = dict(alldata2)
 
 
-class TestDateTimeSeries(MultiFieldMixin, test.CleanTestCase):
+class TestDateTimeSeries(test.TestCase):
     multipledb = 'redis'
     model = TimeSeries
     mkdate = datetime
     defaults = {'ticker': 'GOOG'}
     
-    def adddata(self, obj, data = None):
+    @classmethod
+    def setUpClass(cls):
+        yield super(TestDateTimeSeries, cls).setUpClass()
+        cls.register()
+        
+    def setUp(self):
+        self.names = populate('string', size=10)
+        self.name = self.names[0]
+        self.data = dict(zip(keys, values))
+    
+    def adddata(self, obj, data=None):
         data = data or testdata
         obj.data.update(data)
         self.assertEqual(obj.data.size(),len(data))
         
-    def make(self, ticker = 'GOOG'):
-        return self.model(ticker = ticker).save()
+    def make(self, name=None):
+        name = name or self.name
+        return self.model(ticker=self.name).save()
     
     def get(self, ticker = 'GOOG'):
         return self.model.objects.get(ticker=ticker)
         
     def filldata(self, data = None):
-        d = self.make()
+        d = yield self.make()
         self.adddata(d, data)
         return self.get()
 

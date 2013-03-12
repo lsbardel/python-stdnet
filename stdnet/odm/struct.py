@@ -183,13 +183,14 @@ can also be used as stand alone objects. For example::
     
     Default ``0``.
 
-.. attribute:: pickler
+.. attribute:: value_pickler
 
     Class used for serialize and unserialize values.
-    If ``None`` the :attr:`backend` pickler will be used.
+    If ``None`` the :attr:`stdnet.utils.encoders.NumericDefault`
+    will be used.
     
     Default ``None``.
-    '''
+'''
     _model_type = 'structure'
     pickler = None
     value_pickler = None
@@ -279,7 +280,15 @@ Do not override this function. Use :meth:`load_data` method instead.'''
 class PairMixin(object):
     '''A mixin for structures with which holds pairs. It is the parent class
 of :class:`KeyValueMixin` and it is used as base class for the ordered set
-structure :class:`Zset`.'''
+structure :class:`Zset`.
+
+.. attribute:: pickler
+
+    An :ref:`encoder <encoders>` for the additional value in the pair.
+    The additional value is a field key for :class:`Hashtable`,
+    a numeric score for :class:`Zset` and a tim value for :class:`TS`. 
+    
+'''
     pickler = encoders.NoEncoder()
     
     def setup(self, pickler=None, **kwargs):
@@ -563,6 +572,7 @@ in the :class:`OrderedMixin` container.'''
 class HashTable(KeyValueMixin, Structure):
     '''A :class:`Structure` which is the networked equivalent to
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
+    pickler = encoders.Default()
     cache_class = hashcache
         
     def addnx(self, field, value, transaction = None):

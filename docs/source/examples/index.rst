@@ -38,3 +38,4 @@ The collection of tutorials examples is available in the
    performance
    underscore
    serialise
+   asynchronous

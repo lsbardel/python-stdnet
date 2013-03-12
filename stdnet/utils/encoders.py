@@ -1,4 +1,31 @@
-'''Classes used for encoding and decoding :class:`stdnet.odm.Field` values.'''
+'''Classes used for encoding and decoding :class:`stdnet.odm.Field` values.
+
+
+.. autoclass:: Encoder
+   :members:
+   :member-order: bysource
+
+
+These are all available :class:`Encoder`:
+
+.. autoclass:: NoEncoder
+
+.. autoclass:: Default
+
+.. autoclass:: NumericDefault
+
+.. autoclass:: Numeric
+
+.. autoclass:: Bytes
+
+.. autoclass:: Json
+   
+.. autoclass:: PythonPickle
+
+.. autoclass:: DateTimeConverter
+   
+.. autoclass:: DateConverter
+'''
 import json
 from datetime import datetime, date
 from struct import pack, unpack
@@ -31,10 +58,11 @@ for serializing and loading data to and from the data server.
     
         
 class Default(Encoder):
-    '''The default unicode encoder'''
+    '''The default unicode encoder. It converts bytes to unicode when loading
+data from the server. Viceversa when sending data.'''
     type = string_type
     
-    def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
+    def __init__(self, charset='utf-8', encoding_errors='strict'):
         self.charset = charset
         self.encoding_errors = encoding_errors
         
@@ -74,13 +102,16 @@ def safe_number(v):
 
 
 class NumericDefault(Default):
-    
+    '''It decodes values into unicode unless they are numeric, in which case
+they are decoded as such.'''
     def loads(self, x, logger=None):
-        x = super(NumericDefault,self).loads(x,logger)
+        x = super(NumericDefault, self).loads(x,logger)
         return safe_number(x)
         
     
 class Double(Encoder):
+    '''It decodes values into doubles. If the decoding fails it decodes the
+value into ``nan`` (not a number).'''
     type = float
     
     def loads(self, x, logger=None):
@@ -92,7 +123,7 @@ class Double(Encoder):
     
     
 class Bytes(Encoder):
-    '''The binary unicode encoder'''
+    '''The binary encoder'''
     type = bytes
     
     def __init__(self, charset = 'utf-8', encoding_errors = 'strict'):
@@ -167,7 +198,7 @@ remote data structures.'''
 
 
 class DateTimeConverter(Encoder):
-    '''Convert to and from datetime.datetime and unix timestamps'''
+    '''Convert to and from python ``datetime`` objects and unix timestamps'''
     type = datetime
     
     def dumps(self, value, logger = None):
@@ -179,7 +210,7 @@ class DateTimeConverter(Encoder):
 
 class DateConverter(DateTimeConverter):
     type = date
-    '''Convert to and from datetime.date and unix timestamps'''
+    '''Convert to and from python ``date`` objects and unix timestamps'''
     
     def loads(self, value, logger = None):
         return timestamp2date(value).date()

@@ -72,7 +72,7 @@ class StructureFieldProxy(object):
 class StructureField(Field):
     '''Virtual base class for :class:`Field` which are proxies to
 :ref:`data structures <model-structures>` such as :class:`List`,
-:class:`Set`, :class:`OrderedSet`, :class:`HashTable` and timeseries
+:class:`Set`, :class:`Zset`, :class:`HashTable` and timeseries
 :class:`TS`.
 
 Sometimes you want to structure your data model without breaking it up

@@ -640,28 +640,30 @@ class NumberArray(RedisStructure):
         cache = self.instance.cache
         result = None
         if cache.back:
-            self.client.execute_script('numberarray_pushback', self.id,
-                                    *cache.back)
+            self.client.execute_script('numberarray_pushback', (self.id,),
+                                       *cache.back)
             result = True
         return result
     
     def get(self, index):
-        return self.client.execute_script('numberarray_getset', self.id,
-                                       'get', index+1)
+        return self.client.execute_script('numberarray_getset', (self.id,),
+                                          'get', index+1)
     
     def set(self, value):
-        return self.client.execute_script('numberarray_getset', self.id,
-                                       'set', index+1, value)
+        return self.client.execute_script('numberarray_getset', (self.id,),
+                                          'set', index+1, value)
     
     def __iter__(self):
-        return iter(self.client.execute_script('numberarray_all_raw', self.id))
+        return iter(self.client.execute_script('numberarray_all_raw',
+                                               (self.id,),))
     
     def resize(self, size, value = None):
         if value is not None:
             argv = (size,value)
         else:
             argv = (size,)
-        return self.client.execute_script('numberarray_resize', self.id, *argv)
+        return self.client.execute_script('numberarray_resize', (self.id,),
+                                          *argv)
     
     def size(self):
         return self.client.strlen(self.id)//8
@@ -886,7 +888,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         meta = obj._meta
         keys = [self.basekey(meta, OBJ, obj.id)]
         for field in meta.multifields:
-            f = getattr(obj,field.attname)
+            f = getattr(obj, field.attname)
             keys.append(f.id)
         return keys
     

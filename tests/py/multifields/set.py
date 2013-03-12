@@ -1,3 +1,4 @@
+'''tests for odm.SetField'''
 from datetime import datetime
 from itertools import chain
 

@@ -424,8 +424,13 @@ or using the ``with`` context manager::
         else:
             return self._post_commit(None)
 
-    def model(self, model):
-        return self.session.model(model)
+    def model(self, meta):
+        '''Returns the :class:`SessionModel` for *meta*. It is
+a shurtcut method for :meth:`Session.model`.
+
+:param meta: a class:`Model` or a :class:`MetaClass`.
+'''
+        return self.session.model(meta)
     
     # INTERNAL FUNCTIONS
     def _post_commit(self, response):
@@ -675,6 +680,7 @@ empty keys associated with the model will exists after this operation.'''
         pass
     
     def model(self, meta):
+        '''Returns the :class:`SessionModel` for *meta*.'''
         if hasattr(meta, '_meta'):
             meta = meta._meta
         sm = self._models.get(meta)

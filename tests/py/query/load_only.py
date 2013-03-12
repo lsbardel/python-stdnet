@@ -8,13 +8,13 @@ class LoadOnly(test.CleanTestCase):
     model = SimpleModel
     
     def setUp(self):
-        s = self.session()
-        with s.begin():
-            s.add(self.model(code='a', group='group1', description='blabla'))
-            s.add(self.model(code='b', group='group2', description='blabla'))
-            s.add(self.model(code='c', group='group1', description='blabla'))
-            s.add(self.model(code='d', group='group3', description='blabla'))
-            s.add(self.model(code='e', group='group1', description='blabla'))
+        with self.session().begin() as t:
+            t.add(self.model(code='a', group='group1', description='blabla'))
+            t.add(self.model(code='b', group='group2', description='blabla'))
+            t.add(self.model(code='c', group='group1', description='blabla'))
+            t.add(self.model(code='d', group='group3', description='blabla'))
+            t.add(self.model(code='e', group='group1', description='blabla'))
+        yield t.on_result
         
     def testMeta(self):
         s = self.session()
@@ -135,15 +135,17 @@ class LoadOnlyRelated(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        super(LoadOnlyRelated, cls).setUpClass()
+        yield super(LoadOnlyRelated, cls).setUpClass()
         session = cls.session()
-        with session.begin():
-            g1 = session.add(Group(name='bla', description='bla bla'))
-            g2 = session.add(Group(name='foo', description='foo foo'))
-        with session.begin():
-            session.add(Person(name='luca', group=g1))
-            session.add(Person(name='carl', group=g1))
-            session.add(Person(name='bob', group=g1))
+        with session.begin() as t:
+            g1 = t.add(Group(name='bla', description='bla bla'))
+            g2 = t.add(Group(name='foo', description='foo foo'))
+        yield t.on_result
+        with session.begin() as t:
+            t.add(Person(name='luca', group=g1))
+            t.add(Person(name='carl', group=g1))
+            t.add(Person(name='bob', group=g1))
+        yield t.on_result
     
     @classmethod
     def tearDownClass(cls):
@@ -152,7 +154,7 @@ class LoadOnlyRelated(test.TestCase):
     def test_simple(self):
         session = self.session()
         query = session.query(Person)
-        qs = query.load_only('group')
+        qs = yield query.load_only('group').all()
         for m in qs:
             self.assertEqual(m._loadedfields,('group',))
             self.assertFalse(hasattr(m,'name'))

@@ -31,10 +31,10 @@ class TestMeta(test.CleanTestCase):
     
     def testLuaClass(self):
         session = self.session()
-        ts = session.add(ColumnTS(id = 'bla'))
+        ts = session.add(ColumnTS(id='bla'))
         c = self.backend.client
-        r = c.script_call('timeseries_test1',ts.dbid())
-        self.assertEqual(r,b'OK')
+        r = c.execute_script('timeseries_test1', (ts.dbid(),))
+        self.assertEqual(r, b'OK')
 
 
 class TestCase(test.CleanTestCase):
@@ -60,7 +60,7 @@ class TestTimeSeries(StructMixin, TestCase):
     name = 'columnts'
     
     def createOne(self, session):
-        ts = session.add(ColumnTS(id = 'goog'))
+        ts = session.add(ColumnTS(id='goog'))
         d1 = date(2012,1,23)
         data = {d1: {'open':586, 'high':588.66,
                      'low':583.16, 'close':585.52},
@@ -292,7 +292,7 @@ class TestColumnTSBase(TestCase):
         cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
         cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
         cls.ColumnTS = ColumnTS
-        super(TestColumnTSBase, cls).setUpClass()
+        yield super(TestColumnTSBase, cls).setUpClass()
     
     def create(self):
         '''Create one ColumnTS with six fields and cls.size dates'''
@@ -571,26 +571,26 @@ class TestMissingValues(TestCase):
     
     @classmethod
     def setUpClass(cls):
-        d1 = populate('float', size = 20)
-        d2 = populate('float', size = 20)
-        cls.fields = {'a':d1,'b':d2}
+        d1 = populate('float', size=20)
+        d2 = populate('float', size=20)
+        cls.fields = {'a':d1, 'b':d2}
         dates = [date(2010,1,i+1) for i in range(20)]
         d1[3] = d1[0] = d1[18] = nan
         d2[3] =  d2[9] = nan
-        cls.data = [(dt,{'a':a,'b':b}) for dt,a,b in zip(dates,d1,d2)]
+        cls.data = [(dt, {'a':a, 'b':b}) for dt, a, b in zip(dates, d1, d2)]
         cls.ColumnTS = ColumnTS
-        super(TestMissingValues, cls).setUpClass()
+        yield super(TestMissingValues, cls).setUpClass()
         
     def setUp(self):
         session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            data1 = populate
+        with session.begin() as t:
+            ts1 = t.add(self.ColumnTS())
             ts1.update(self.data)
+        yield t.on_result
         self.ts1 = ts1
     
     def testStats(self):
-        result = self.ts1.istats(0,-1)
+        result = self.ts1.istats(0, -1)
         stats = result['stats']
         self.assertEqual(len(stats),2)
         for stat in stats:

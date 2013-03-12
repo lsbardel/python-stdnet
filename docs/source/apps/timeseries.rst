@@ -1,8 +1,8 @@
 .. _apps-timeserie:
 
-=========================
-Column Time Series
-=========================
+===========================
+Multivariate Time Series
+===========================
 
 .. automodule:: stdnet.apps.columnts
 

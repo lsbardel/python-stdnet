@@ -10,9 +10,9 @@ class TestFilter(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        super(TestFilter, cls).setUpClass()
+        yield super(TestFilter, cls).setUpClass()
         cls.data = cls.data_cls(size=cls.size)
-        cls.data.create(cls('testAll'), InstrumentModel=cls.model)
+        yield cls.data.create(cls, InstrumentModel=cls.model)
         
     @classmethod
     def tearDownClass(cls):
@@ -21,12 +21,13 @@ class TestFilter(test.TestCase):
     def testAll(self):
         session = self.session()
         qs = session.query(self.model)
-        self.assertTrue(qs.count() > 0)
+        c = yield qs.count()
+        self.assertTrue(c > 0)
     
     def testSimpleFilterId_WithRedisInternal(self):
         session = self.session()
         query = session.query(self.model)
-        all = session.query(self.model).load_only('id').all()
+        all = yield session.query(self.model).load_only('id').all()
         qs = query.filter(id=all[0].id)
         # count so that we execute the query
         self.assertEqual(qs.count(), 1)
@@ -182,10 +183,11 @@ class TestFilter(test.TestCase):
         query = session.query(self.model)
         qt = query.exclude(id=(1,2,3,4)).exclude(id=(4,5,6))
         self.assertEqual(qt.eargs, {'id__in': set((1,2,3,4,5,6))})
+        qt = yield qt.all()
         res = set((q.id for q in qt))
         self.assertTrue(res)
         self.assertFalse(res.intersection(set((1,2,3,4,5,6))))
-        qt = query.exclude(id = 3).exclude(id = 4)
+        qt = query.exclude(id=3).exclude(id=4)
         self.assertEqual(qt.eargs, {'id__in': set((3,4))})
         res = set((q.id for q in qt))
         self.assertTrue(res)

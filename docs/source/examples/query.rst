@@ -34,7 +34,7 @@ To do this, use the :meth:`Manager.query` method on a Manager:
 .. note::
 
     :class:`Query` are lazy, they are evaluated only when you iterate over them,
-    or invoke the call the :class:`Query.all` method or slice the query like a
+    or invoke the the :class:`Query.all` method or slice the query like a
     list.
 
 .. _tutorial-filter:
@@ -107,7 +107,7 @@ Union
 
 :meth:`Query.filter` and :meth:`Query.exclude` methods cover most common
 situations. There is another method which can be used to combine together
-two or more :class:`Query` into a different query. The :class:`Query.union`
+two or more :class:`Query` into a different query. The :meth:`Query.union`
 method performs just that, an union of queries. Consider the following example::
 
     qs = Instrument.objects.filter(ccy='EUR', type='equity')
@@ -161,7 +161,7 @@ They can be combined, for examp, this is a :class:`Query` for a ``size`` between
 Where
 ===========
 
-Use the :meth:`query.where` method to pass a string containing a valid 
+Use the :meth:`Query.where` method to pass a string containing a valid 
 **expression** to the query system to provide greater flexibility with queries.
 Consider the following model::
 

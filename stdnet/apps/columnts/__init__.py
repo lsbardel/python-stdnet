@@ -1,4 +1,6 @@
 '''\
+**backends**: :ref:`Redis <redis-server>`.
+
 An application which implements a specialised remote
 :class:`stdnet.odm.Structure` for managing numeric multivariate
 timeseries_ and perform remote analysis on them. The main classes
@@ -26,8 +28,23 @@ For example::
         data = ColumnTSField()
         
     
-Analysis
-=============
+Statistical Analysis
+=================================
+
+istats & stats
+~~~~~~~~~~~~~~~~~
+
+These two methods execute statistical analysis on the data stored in one
+:class:`ColumnTS`. The :class:`ColumnTS.istats` method performs analysis by selecting
+time range by rank, while :class:`ColumnTS.stats` method performs analysis
+by selecting ranges by a *start* and an *end* date (or datetime).
+
+multi
+~~~~~~~
+
+
+evaluate
+~~~~~~~~~~~~~~~
 To perform analysis you write lua scripts::
 
     self:range()
@@ -55,15 +72,13 @@ ColumnTSField
 
 Redis Implementation
 ========================
-
-It provides tools for performing aggregation and statistics
-via lua scripts.
-The redis implementation uses several redis structures for a given
+The implementation uses several redis structures for a given
 :class:`ColumnTS` instance.
 
-* A zset for holding times in an ordered fashion.
-* A redis *set* for holding *fields* names.
-* A redis string for each *field* in the timeseries for holding values.
+* A *zset* for holding times in an ordered fashion.
+* A *set* for holding *fields* names, obtained via the :meth:`ColumnTS.fields`
+  method.
+* A *string* for each *field* to hold numeric values.
 
 This composite data-structure looks and feels like a redis zset.
 However, the ordered set doesn't actually store the data, it is there to

@@ -183,11 +183,15 @@ class RedisQuery(stdnet.BackendQuery):
                 raise ValueError('Could not perform %s operation' % qs.keyword)
             command(key, keys)
         where = self.queryelem.data.get('where')
+        # where query
         if where:
+            # First key is the current key
             keys.insert(0, key)
             if not temp_key:
                 temp_key = True
                 key = backend.tempkey(meta)
+            # Second key is the destination key (which can be the current
+            # key if it is temporary key)
             keys.insert(0, key)
             backend.where_run(pipe, self.meta_info, keys, *where)
         #
@@ -788,8 +792,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         numkeys = len(keys)
         keys.append(meta_info)
         if load_only:
-            args.append(json.dumps(load_only))
-        return client.eval(where, numkeys, keys_args)
+            keys.append(json.dumps(load_only))
+        return client.eval(where, numkeys, *keys)
         
     def execute_session(self, session):
         '''Execute a session in redis.'''

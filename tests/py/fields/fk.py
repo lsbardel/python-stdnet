@@ -10,13 +10,15 @@ class fkmeta(test.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        super(fkmeta, cls).setUpClass()
+        yield super(fkmeta, cls).setUpClass()
         session = cls.session()
-        with session.begin():
-            session.add(Group(name='bla'))
-        g = session.query(Group).get(name='bla')
-        with session.begin():
-            session.add(Person(name='foo', group=g))
+        with session.begin() as t:
+            t.add(Group(name='bla'))
+        yield t.on_result
+        g = yield session.query(Group).get(name='bla')
+        with session.begin() as t:
+            t.add(Person(name='foo', group=g))
+        yield t.on_result
         
     @classmethod
     def tearDownClass(cls):

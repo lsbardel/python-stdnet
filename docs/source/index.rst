@@ -4,21 +4,21 @@
 Python Stdnet
 ======================
 
-.. rubric:: A networked data structures manager design to work with Redis_
-  data-store, but implemented so that other storage systems can be supported
-  in the future.
+.. rubric:: Object data mapper and advanced query manager for non
+  relational databases. Designed to work with Redis_ data-store, it now has an
+  experimental implementation for Mongodb_.
   
   
-It is shipped with an object-data mapper which greatly facilitates the
-management and retrieval of large data-sets.
-It includes a stand-alone, ``python 3`` compatible,
-:ref:`redis client <redis-client>` which was originally forked from redis-py_.
-There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
-there are over 600 tests with a coverage over 90%.
+The object-data mapper greatly facilitates the management and retrieval of
+large data-sets. It requires ``python 2.6`` up to ``python 3.3`` single code base.
+There are over 600 tests with a coverage of about 90%.
 
 **The library is stable, used in production and continuously maintained**.
 
-**Dependencies**: None
+**Dependencies**
+
+* redis-py_ for :ref:`redis backend <redis-server>`.
+* pymongo_ for :ref:`mongo db backend <mongo-server>`.
 
 .. _contents:
 
@@ -48,4 +48,5 @@ Indices and tables
 .. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py
 .. _cython: http://cython.org/
-
+.. _Mongodb: http://www.mongodb.org/
+.. _pymongo: http://api.mongodb.org/python/current/index.html

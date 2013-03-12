@@ -46,7 +46,7 @@ master_doc = 'index'
 project = 'python stdnet'
 copyright = '2010-2013, Luca Sbardella'
 
-html_theme = 'celery'
+html_theme = 'pulsar'
 
 templates_path = ['_templates']
 html_static_path = ['_static']

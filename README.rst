@@ -88,11 +88,7 @@ while the Object Data Mapper the syntactic sugar.
 Currently the list of back-ends is limited to
 
 * Redis_.
-
-There are plans to extend it to
-
-* Local memory (planned). For testing purposes.
-* Amazon DynamoDB_.
+* Mongodb_ (experimental).
  
  
 Object Data Mapper
@@ -200,10 +196,7 @@ and to check out the coverage report::
 Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
-* redis-py_ for the Redis Python client initial implementation which has been subsequently modified.
-* hiredis-py_ for some parts of the C parser.
 * SQLAlchemy_ and Django_ for ideas and API design.
-* Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.
 
 
 .. _contributing:
@@ -249,3 +242,4 @@ file in the top distribution directory for the full license text.
 .. _pulsar: http://pypi.python.org/pypi/pulsar
 .. _mock: http://pypi.python.org/pypi/mock
 .. _pypy: http://pypy.org/
+.. _Mongodb: http://www.mongodb.org/

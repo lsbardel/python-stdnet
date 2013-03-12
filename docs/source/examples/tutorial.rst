@@ -11,7 +11,7 @@ in a backend database. A :class:`Model` is the single, definitive source of
 data about your data. There are two types of models in :mod:`stdnet`:
 the :class:`StdModel` which consists of :class:`Field` and behaviours of
 the data you are storing and the
-:class:`Structure` the networked equivalent of data-structures such as sets,
+:class:`Structure`, the networked equivalent of data-structures such as sets,
 hash tables, lists. The goal is to define your data model in one place
 and automatically derive things from it.
 
@@ -118,16 +118,23 @@ not available in a traditional relational database.
 Registering Models
 ================================
 
-Before playing with the API let's to :ref:`register the models <register-model>`
-to a backend server. Registration is not compulsory, but it is required when using
-model's :class:`Manager`::
+Before playing with the API, we :ref:`register models <register-model>`
+with a backend server. Registration is not compulsory, but it is required when
+using model's :class:`Manager`::
 
     import odm
 
-    odm.register(Fund, 'redis://my.host.name:6379/?db=1')
-    odm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-    odm.register(Position, 'redis://my.host.name:6379/?db=1')
+    odm.register(Fund, 'redis://my.host.name:6379?db=1')
+    odm.register(Instrument, 'redis://my.host.name:6379?db=1')
+    odm.register(Position, 'redis://my.host.name:6379?db=1')
 
+The above code registers the three models to a redis backend, at redis db 1.
+You can pass several parameters to the connection string, including a ``password``,
+a connection ``timeout`` and a ``namespace`` for your model keys. For example::
+
+    odm.register(Fund, 'redis://my.host.name:6379?db=3&password=pippo&namespace=xxxx.&timeout=5')
+
+includes all possible parameters for a redis backend.
 
 Creating objects
 ==================

@@ -119,10 +119,7 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
             pipeline.connection = conn
         try:
             all_cmds = self.pack_pipeline(commands)
-            conn.send_packed_command(all_cmds)
-            response = [pipeline.parse_response(conn, args[0], **options)
-                        for args, options in commands]
-            return pipeline.on_response(response, raise_on_error)
+            return pipeline.send_commands(all_cmds, commands, raise_on_error)
         except ConnectionError:
             conn.disconnect()
             # if we were watching a variable, the watch is no longer valid
@@ -130,12 +127,12 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
             # indicates the user should retry his transaction. If this is more
             # than a temporary failure, the WATCH that the user next issue
             # will fail, propegating the real ConnectionError
-            if self.watching:
+            if pipeline.watching:
                 raise WatchError("A ConnectionError occured on while watching "
                                  "one or more keys")
             # otherwise, it's safe to retry since the transaction isn't
             # predicated on any state
-            return execute(conn, stack, raise_on_error)
+            return pipeline.send_commands(all_cmds, commands, raise_on_error)
         except:
             pipeline.reset()
             raise
@@ -298,6 +295,13 @@ class Pipeline(BasePipeline, RedisProxy):
         #return super(Pipeline, self).execute(raise_on_error=True)
         return self.connection_pool.request_pipeline(self,
                                                 raise_on_error=raise_on_error)
+    
+    def send_commands(self, all_cmds, commands, raise_on_error):
+        conn = self.connection
+        conn.send_packed_command(all_cmds)
+        response = [self.parse_response(conn, args[0], **options)
+                        for args, options in commands]
+        return self.on_response(response, raise_on_error)
     
     def parse_response(self, connection, command_name, **options):
         if self.is_transaction:

@@ -1,8 +1,9 @@
 {% extends "!layout.html" %}
 
-{% block document %}
+{% block relbar1 %}
+{{ super() }}
 <div class="deck">
-
+<div class="header">
     {% if release_version %}
         <p>
         Documentation for stdnet {{ version }}. For development docs,
@@ -10,14 +11,14 @@
         </p>
     {% else %}
         <p class="developmentversion">
-        Documentation for stdnet's DEVELOPMENT version. Get the 
+        Documentation for pulsar's DEVELOPMENT version. Get the 
         <a href="http://packages.python.org/stdnet/">release docs here</a>.
         </p>
     {% endif %}
-
 </div>
-{{ super() }}
+</div>
 {% endblock %}
+{% block relbar2 %}{% endblock %}
 
 {% block footer %}
 {{ super() }}

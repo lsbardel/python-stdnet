@@ -82,17 +82,34 @@ fields, as well as the start and end date.'''
     def evaluate(self, script, *series, **params):
         res = self.backend_structure().run_script('evaluate', series,
                                                   script, **params)
-        return self.async_handle(res, self._evaluate)
+        return on_result(res, self._evaluate)
 
     def istats(self, start=0, end=-1, fields=None):
+        '''Perform a multivariate statistic calculation of this
+:class:`ColumnTS` from *start* to *end*.
+
+:param start: Optional index (rank) where to start the analysis.
+:param end: Optional index (rank) where to end the analysis.
+:param fields: Optional subset of :meth:`fields` to perform analysis on.
+    If not provided all fields are included in the analysis.
+'''
         res = self.backend_structure().istats(start, end, fields)
-        return self.async_handle(res, self._stats)
+        return on_result(res, self._stats)
 
     def stats(self, start, end, fields=None):
+        '''Perform a multivariate statistic calculation of this
+:class:`ColumnTS` from a *start*  date/datetime to an 
+*end* date/datetime.
+
+:param start: Start date for analysis.
+:param end: End date for analysis.
+:param fields: Optional subset of :meth:`fields` to perform analysis on.
+    If not provided all fields are included in the analysis.
+'''
         start = self.pickler.dumps(start)
         end = self.pickler.dumps(end)
         res = self.backend_structure().stats(start, end, fields)
-        return self.async_handle(res, self._stats)
+        return on_result(res, self._stats)
 
     def imulti_stats(self, start=0, end=-1, series=None, fields=None,
                      stats=None):
@@ -111,7 +128,7 @@ to *end*.
         stats = stats or self.default_multi_stats
         res = self.backend_structure().imulti_stats(start, end, fields, series,
                                                     stats)
-        return self.async_handle(res, self._stats)
+        return on_result(res, self._stats)
 
     def multi_stats(self, start, end,  series=None, fields=None, stats=None):
         '''Perform cross multivariate statistics calculation of
@@ -130,7 +147,7 @@ this :class:`ColumnTS` and other *series*.
         end = self.pickler.dumps(end)
         res = self.backend_structure().multi_stats(
                         start, end, fields, series, stats)
-        return self.async_handle(res, self._stats)
+        return on_result(res, self._stats)
 
     def merge(self, *series, **kwargs):
         '''Merge this :class:`ColumnTS` with several other *series*.
@@ -165,7 +182,7 @@ The result will be calculated using the formula::
         target = cls()
         target.merge(*series, **kwargs)
         res = target.backend_structure().irange_and_delete()
-        return target.async_handle(res, target.load_data)
+        return on_result(res, target.load_data)
 
     # INTERNALS
 

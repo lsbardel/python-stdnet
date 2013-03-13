@@ -187,7 +187,7 @@ class Redis(redis.StrictRedis):
     @property
     def is_pipeline(self):
         return False
-
+        
     def on_response(self, result, raise_on_error):
         result = result[0]
         redis_after_receive.send_robust(Redis, result=result)

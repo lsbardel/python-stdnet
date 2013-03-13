@@ -78,6 +78,12 @@ class RedisManager(object):
             else:
                 value = str(value)
             return value.encode(self.encoding, self.encoding_errors)
+        
+        def decode_key(self, value):
+            if isinstance(value, bytes):
+                return value.decode(self.encoding, self.encoding_errors)
+            else:
+                return value
             
     else:   #pragma    nocover
         def encode(self, value):
@@ -87,6 +93,9 @@ class RedisManager(object):
                 return repr(value)
             else:
                 return str(value)
+        
+        def decode_key(self, value):
+            return value
             
     def __pack_gen(self, args):
         e = self.encode

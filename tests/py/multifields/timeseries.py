@@ -216,17 +216,21 @@ class TestDateTimeSeries(test.TestCase):
     def testloadrelated(self):
         yield self.make()
         session = self.session()
-        with session.begin():
-            session.add(self.model(ticker = 'AMZN'))
+        with session.begin() as t:
+            t.add(self.model(ticker=self.names[1]))
+        yield t.on_result
         # we have now to instances
-        m1,m2 = session.query(self.model).all()
-        self.assertEqual(m1.session,m2.session)
-        with session.begin():
+        qm = session.query(self.model)
+        m1, m2 = yield qm.filter(ticker=self.names[:2]).all()
+        self.assertEqual(m1.session, m2.session)
+        with session.begin() as t:
             m1.data.update(testdata)
             m2.data.update(testdata2)
-        self.assertTrue(m1.size())
-        self.assertTrue(m2.size())
-        for m in session.query(self.model).load_related('data'):
+        yield t.on_result
+        yield self.async.assertTrue(m1.size())
+        yield self.async.assertTrue(m2.size())
+        qs = yield qm.filter(ticker=self.names[:2]).load_related('data').all()
+        for m in qs:
             self.assertTrue(m.data.cache.cache)
         
     def testitems2(self):

@@ -37,9 +37,9 @@ class zset(object):
         self._sl.insert(score,val)
         return r
     
-    def update(self, scorevals):
+    def update(self, score_vals):
         add = self.add
-        for score, value in scorevals:
+        for score, value in score_vals:
             add(score, value)
             
     def clear(self):

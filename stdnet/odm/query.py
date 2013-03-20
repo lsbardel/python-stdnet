@@ -50,6 +50,10 @@ class Q(object):
 .. attribute:: model
 
     the :class:`StdModel` class for this query.
+    
+.. attribute:: backend
+
+    the :class:`stdnet.BackendDataServer` class for this query.
 '''
     keyword = ''
     name = ''
@@ -134,7 +138,7 @@ fields.
         '''Build the :class:`stdnet.BackendQuery` for this instance. This
 is a virtual method with different implementation in :class:`Query`
 and :class:`QueryElement`.'''
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _clone(self):
         cls = self.__class__

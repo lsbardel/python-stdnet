@@ -507,7 +507,12 @@ class Session(object):
 
 .. attribute:: backend
 
-    the :class:`stdnet.BackendDataServer` instance
+    the :class:`stdnet.BackendDataServer` for read-only operations.
+    
+.. attribute:: write_backend
+
+    the :class:`stdnet.BackendDataServer` used for writing/deleting data.
+    If not supplied it is the same as :attr:`backend`.
 
 .. attribute:: transaction
 
@@ -519,17 +524,24 @@ class Session(object):
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, query_class=None):
+    def __init__(self, backend, write_backend=None, query_class=None):
         self.backend = getdb(backend)
+        if write_backend:
+            self.write_backend = getdb(write_backend)
+        else:
+            self.write_backend = backend
         self.transaction = None
         self._models = OrderedDict()
         self.query_class = query_class or Query
 
     def __str__(self):
-        return str(self.backend)
+        if self.backend == self.write_backend:
+            return str(self.backend)
+        else:
+            return 'read %s - write %s' % (self.backend, self.write_backend)
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__,self)
+        return '%s(%s)' % (self.__class__.__name__, self)
 
     def __iter__(self):
         for sm in self._models.values():
@@ -543,11 +555,12 @@ class Session(object):
         '''set of all changed instances in the session'''
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
-        
+    
     def session(self):
         '''Create a new session from this :class:`Session`'''
-        return self.__class__(self.backend, self.query_class)
-
+        return self.__class__(self.backend, self.write_backend,
+                              self.query_class)
+    
     def begin(self, **options):
         '''Begin a new :class:`Transaction`. If this :class:`Session`
 is already in a :ref:`transactional state <transactional-state>`,

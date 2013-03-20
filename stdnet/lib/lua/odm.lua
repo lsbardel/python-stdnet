@@ -441,6 +441,7 @@ odm.Model = {
             if unique then
                 idxkey = self:map_key(field) -- id for the hash table mapping field value to instance ids
                 if update then
+                    -- Check if the unique field is already available
                     if odm.redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
                         -- The value was already available! If the oldid is different from current id and the
                         -- index match the oldid, it is fine otherwise it is a conflict

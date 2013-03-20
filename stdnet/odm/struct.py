@@ -332,11 +332,13 @@ Equivalent to python dictionary update method.
         if isinstance(mapping, dict):
             mapping = iteritems(mapping)
         p = self.pair
+        data = []
         for pair in mapping:
             if not isinstance(pair, tuple):
                 pair = pair,
             k, v = p(pair)
-            yield tokey(k), dumps(v)
+            data.append((tokey(k), dumps(v)))
+        return data
     
     def load_data(self, mapping):
         loads = self.pickler.loads

@@ -86,7 +86,9 @@ classes with a :class:`stdnet.BackendDataServer` data server.
 
 :parameter model: a :class:`StdModel`. Must be provided.
 
-:parameter backend: a backend connection string.
+:parameter backend: a backend connection string, or a
+    :class:`stdnet.BackendDataServer` instance.
+    
     For example::
 
         redis://localhost:8080?db=6&prefix=bla.

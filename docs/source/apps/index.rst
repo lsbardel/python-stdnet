@@ -16,4 +16,3 @@ mainly as specialised use cases.
    
    searchengine
    timeseries
-   pubsub

@@ -9,23 +9,24 @@ Usage::
 '''
 from collections import deque
 from itertools import chain
+from functools import partial
 
 import redis
 
 import pulsar
-from pulsar import is_async, multi_async
+from pulsar import is_async, multi_async, get_actor
 from pulsar.utils.pep import ispy3k, map
+from pulsar.apps import pubsub
 
-from .extensions import get_script, RedisManager    
-
-__all__ = []
+from .extensions import get_script, RedisManager
 
 
 class AsyncRedisRequest(object):
     
     def __init__(self, client, connection, timeout, encoding,
                   encoding_errors, command_name, args, reader,
-                  raise_on_error=True, **options):
+                  raise_on_error=True, on_finished=None,
+                  **options):
         self.client = client
         self.connection = connection
         self.timeout = timeout
@@ -34,6 +35,7 @@ class AsyncRedisRequest(object):
         self.command_name = command_name.upper()
         self.reader = reader
         self.raise_on_error = raise_on_error
+        self.on_finished = on_finished
         self.response = []
         self.last_response = False
         self.args = args
@@ -94,7 +96,8 @@ class RedisProtocol(pulsar.ProtocolConsumer):
     def new_request(self, request=None):
         if request is None:
             self._requests = deque(self.all_requests)
-            request = self._requests.popleft()
+            if self._requests:
+                request = self._requests.popleft()
         return super(RedisProtocol, self).new_request(request)
     
     def start_request(self):
@@ -106,6 +109,8 @@ class RedisProtocol(pulsar.ProtocolConsumer):
             # The request has finished
             if self._requests:
                 self.new_request(self._requests.popleft())
+            elif self.current_request.on_finished:
+                self.current_request.on_finished(self, response)
             else:
                 self.finished(response)
                 
@@ -175,3 +180,47 @@ data-structure server.'''
         else:
             return callback()
         
+
+class Subscriber(RedisProtocol):
+    
+    def __init__(self, reader, pubsub, connection=None):
+        self.reader = reader
+        self.pubsub = pubsub
+        super(Subscriber, self).__init__(connection=connection)
+        
+    def data_received(self, data):
+        self.reader.feed(data)
+        response = self.reader.gets()
+        if response is not False:
+            self.on_response(response)
+    
+    def on_response(self, response):
+        "Parse the response from a publish/subscribe command"
+        command, channel = [r.decode('utf-8') for r in response[:2]]
+        if command == 'message':
+            if self.pubsub.channel == channel:
+                self.pubsub.broadcast(response[2])
+        
+        
+class PubSub(pubsub.PubSub):
+    '''Implements pulsar pubsub using redis PubSub commands'''
+    def __init__(self, channel, client):
+        self.channel = channel
+        self.redis = client
+        self.subscribe()
+        
+    def subscribe(self):
+        # Subscribe to redis. Don't release connection so that we can use the
+        # publish command too.
+        self.redis.execute_command('subscribe', self.channel,
+                                   on_finished=self._subscribe)
+     
+    def publish(self, message):
+        message = self.encode(message)
+        return self.redis.publish(self.channel, message)
+    
+    def _subscribe(self, protocol, response):
+        reader = protocol.current_request.reader
+        self.connection = self.redis.connection_pool.upgrade(
+                                        protocol.connection,
+                                        partial(Subscriber, reader, self))

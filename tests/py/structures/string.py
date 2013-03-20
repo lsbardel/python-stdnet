@@ -12,8 +12,8 @@ class TestString(StructMixin, test.CleanTestCase):
     structure = odm.String
     name = 'string'
     
-    def createOne(self, session):
-        a = session.add(self.structure())
+    def create_one(self):
+        a = self.structure()
         a.push_back('this is a test')
         return a
     

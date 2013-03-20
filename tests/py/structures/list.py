@@ -8,14 +8,14 @@ class TestList(StructMixin, test.CleanTestCase):
     structure = odm.List
     name = 'list'
     
-    def createOne(self, session):
-        l = session.add(odm.List())
+    def create_one(self):
+        l = odm.List()
         l.push_back(3)
         l.push_back(5.6)
         return l
     
-    def testMeta2(self):
-        l = self.testMeta()
+    def test_meta2(self):
+        l = yield self.test_meta()
         l.push_back('save')
         l.push_back({'test': 1})
         l.session.commit()

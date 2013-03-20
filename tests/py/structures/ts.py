@@ -14,16 +14,13 @@ class TestTS(StructMixin, test.CleanTestCase):
     structure = odm.TS
     name = 'ts'
     
-    def createOne(self, session):
-        ts = session.add(odm.TS())
-        ts.update(zip(dates,values))
-        return ts
-        
-    def testMeta2(self):
-        ts = self.testMeta()
+    def create_one(self):
+        ts = self.structure()
+        ts.update(zip(dates, values))
         self.assertFalse(ts.cache.cache)
         self.assertTrue(ts.cache.toadd)
         self.assertFalse(ts.cache.toremove)
+        return ts
         
     def testEmpty2(self):
         session = self.session()
@@ -36,11 +33,11 @@ class TestTS(StructMixin, test.CleanTestCase):
         
     def testData(self):
         session = self.session()
-        session.begin()
-        ts = self.createOne(session)
-        self.assertTrue(ts.cache.toadd)
-        session.commit()
-        self.assertEqual(ts.size(),len(dates))
+        with session.begin() as t:
+            ts = t.add(self.create_one())
+            self.assertTrue(ts.cache.toadd)
+        yield t.on_result
+        self.assertEqual(ts.size(), len(dates))
         front = ts.front()
         back = ts.back()
         self.assertTrue(back[0]>front[0])

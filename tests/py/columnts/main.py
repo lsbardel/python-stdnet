@@ -27,7 +27,7 @@ class timeseries_test1(redis.RedisScript):
               redis.read_lua_file('test1',this_path))
     
 
-class TestMeta(test.CleanTestCase):
+class TestMeta(test.TestCase):
     
     def testLuaClass(self):
         session = self.session()
@@ -37,7 +37,7 @@ class TestMeta(test.CleanTestCase):
         self.assertEqual(r, b'OK')
 
 
-class TestCase(test.CleanTestCase):
+class TestCase(test.TestCase):
     
     def check_stats(self, stat_field, data):
         N = len(data)
@@ -55,11 +55,11 @@ class TestCase(test.CleanTestCase):
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
         
 
-class TestTimeSeries(StructMixin, TestCase):
+class TestTimeSeries(TestCase, StructMixin):
     structure = ColumnTS
     name = 'columnts'
     
-    def createOne(self, session):
+    def create_one(self, session):
         ts = session.add(ColumnTS(id='goog'))
         d1 = date(2012,1,23)
         data = {d1: {'open':586, 'high':588.66,

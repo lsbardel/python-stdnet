@@ -882,7 +882,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             
     def model_keys(self, meta):
         pattern = '%s*' % self.basekey(meta)
-        return self.client.keys(pattern)
+        return on_result(self.client.keys(pattern), self._decode_keys)
         
     def instance_keys(self, obj):
         meta = obj._meta
@@ -913,3 +913,10 @@ class BackendDataServer(stdnet.BackendDataServer):
         
     def subscriber(self, **kwargs):
         return redis.Subscriber(self.client, **kwargs)
+    
+    def _decode_keys(self, value):
+        decode = self.client.connection_pool.decode_key
+        if isinstance(value, (list, tuple)):
+            return [decode(v) for v in value]
+        else:
+            return decode(value)

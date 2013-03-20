@@ -24,6 +24,18 @@ mod = get_module()
 # Try to import lib build
 from lib.setup import libparams, BuildFailed
 
+def read(fname):
+    return open(os.path.join(root_dir, fname)).read()
+
+def requirements():
+    req = read('requirements.txt').replace('\r','').split('\n')
+    result = []
+    for r in req:
+        r = r.replace(' ','')
+        if r:
+            result.append(r)
+    return result
+
 class osx_install_data(install_data):
 
     def finalize_options(self):
@@ -103,7 +115,8 @@ def run_setup(with_cext=False):
                    'long_description': read('README.rst'),
                    'packages': packages,
                    'package_data': {package_name: data_files},
-                   'classifiers':  mod.CLASSIFIERS})
+                   'classifiers':  mod.CLASSIFIERS,
+                   'install_requires': requirements()})
     setup(**params)
     
 def status_msgs(*msgs):

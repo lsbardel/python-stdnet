@@ -44,7 +44,6 @@ related keys (keys which are related to the instance rather than the model).'''
             # field id should be in instance keys
             self.assertTrue(field.id in keys)
             lkeys = yield backend.model_keys(self.model._meta)
-            lkeys = [l.decode('utf-8') for l in lkeys]
             # the field has no data, so there is no key in the database
             self.assertFalse(field.id in lkeys)
         #

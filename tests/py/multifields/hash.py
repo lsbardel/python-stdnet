@@ -11,7 +11,6 @@ values = populate('string', 200, min_len=20, max_len=300)
 class TestHashField(test.TestCase, MultiFieldMixin):
     multipledb = 'redis'
     model = Dictionary
-    defaults = {'name': 'test'}
     
     @classmethod
     def setUpClass(cls):
@@ -20,7 +19,8 @@ class TestHashField(test.TestCase, MultiFieldMixin):
         
     def setUp(self):
         self.names = populate('string', size=10)
-        self.name = self.names[0]
+        self.defaults = {'name': self.names[0]}
+        self.name = self.names[1]
         self.data = dict(zip(keys, values))
     
     def adddata(self, d):
@@ -29,23 +29,22 @@ class TestHashField(test.TestCase, MultiFieldMixin):
         self.assertEqual(len(self.data), size)
     
     def fill(self):
-        d = yield self.model(name='test').save()
-        data = self.data()
-        yield d.data.update(data)
-        d = yield Dictionary.objects.get(name='test')
-        yield self.adddata(d)
+        d = yield self.model(name=self.name).save()
+        yield d.data.update(self.data)
+        d = yield Dictionary.objects.get(name=self.name)
+        yield d
         
     def test_update(self):
         return self.fill()
     
     def test_add(self):
-        data = self.data()
+        data = self.data
         d = yield self.model(name='test').save()
         self.assertTrue(d.session)
         self.assertTrue(d in d.session)
         with d.session.begin() as t:
             t.add(d)
-            for k,v in iteritems(data):
+            for k, v in iteritems(data):
                 d.data.add(k, v)
             size = yield d.data.size()
             self.assertEqual(size, 0)

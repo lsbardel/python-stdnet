@@ -8,8 +8,8 @@ class TestHash(StructMixin, test.CleanTestCase):
     structure = odm.HashTable
     name = 'hashtable'
     
-    def createOne(self, session):
-        h = session.add(odm.HashTable())
+    def create_one(self):
+        h = odm.HashTable()
         h['bla'] = 'foo'
         h['pluto'] = 3
         return h

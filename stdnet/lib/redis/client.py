@@ -235,8 +235,9 @@ class Redis(object):
     _STATUS = ''
 
     def __init__(self, connection_pool=None, **connection_kwargs):
-        connection_pool = connection_pool or\
-                            ConnectionPool.create(**connection_kwargs)
+        connection_pool = connection_pool or ConnectionPool.create
+        if hasattr(connection_pool, '__call__'):
+            connection_pool = connection_pool(**connection_kwargs)
         self.connection_pool = connection_pool
         self.response_callbacks = self.RESPONSE_CALLBACKS.copy()
         self.response_errbacks = self.RESPONSE_ERRBACKS.copy()

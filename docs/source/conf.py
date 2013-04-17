@@ -22,6 +22,7 @@ sys.path.append(base_dir)
 import stdnet
 version = stdnet.__version__
 release = version
+import runtests # so that it import pulsar if available
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions

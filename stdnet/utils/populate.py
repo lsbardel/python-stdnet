@@ -81,8 +81,8 @@ Supported data-types
             data.append(converter(random_string(**kwargs)))
     return data
 
-def random_string(min_len = 3, max_len = 20, **kwargs):
-    len = randint(min_len,max_len)
+def random_string(min_len=3, max_len=20, **kwargs):
+    len = randint(min_len, max_len)
     s   = [choice(characters) for s in range(len)]
     return ''.join(s)
 

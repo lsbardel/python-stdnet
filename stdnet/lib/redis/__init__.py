@@ -5,10 +5,9 @@ from .client import *
 from .redisinfo import *
 
 try:
-    from .async import AsyncConnectionPool, PubSub
+    from .async import AsyncConnectionPool
 except ImportError:
     AsyncConnectionPool = None
-    PubSub = None
 
 PyRedisReader = lambda : fallback.RedisReader(InvalidResponse, ResponseError)
 

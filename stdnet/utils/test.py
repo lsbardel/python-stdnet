@@ -135,15 +135,11 @@ class StdnetPlugin(TestPlugin):
     validator = pulsar.validate_list
     
     py_redis_parser = pulsar.Setting(
+                        flags=['--py-redis-server'],
                         desc='Set the redis parser to be the pure '\
                               'Python implementation.',
                         action="store_true",
                         default=False)
-    
-    size = pulsar.Setting(desc='Size of the dataset to test. '\
-                               'Choose one between "tiny", '\
-                               '"small", "normal", "big", "huge".',
-                          default='small')
 
     def on_start(self):
         servers = []

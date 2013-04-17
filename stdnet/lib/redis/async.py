@@ -1,6 +1,6 @@
-'''Asynchronous connector for redis-py. It requires pulsar_
-asynchronous framework. To use this connector, add ``timeout=0``
-to redis :ref:`connection string <connection-string>`::
+'''The :mod:`stdnet.lib.redis.async` implements an asynchronous connector
+for redis-py. It uses pulsar_ asynchronous framework. To use this connector,
+add ``timeout=0`` to redis :ref:`connection string <connection-string>`::
 
     'redis://127.0.0.1:6378?password=bla&timeout=0'
 
@@ -20,14 +20,14 @@ from functools import partial
 import redis
 
 import pulsar
-from pulsar import is_async, multi_async, get_actor
+from pulsar import is_async, multi_async, get_actor, Deferred
 from pulsar.utils.pep import ispy3k, map
 
 from .extensions import get_script, RedisManager
 
 
 class AsyncRedisRequest(object):
-    
+    '''Asynchronous Request for redis.'''
     def __init__(self, client, connection, timeout, encoding,
                   encoding_errors, command_name, args, reader,
                   raise_on_error=True, on_finished=None,
@@ -90,37 +90,32 @@ class AsyncRedisRequest(object):
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
-    
-    def __init__(self, connection=None):
-        super(RedisProtocol, self).__init__(connection=connection)
-        self.all_requests = []
-        
-    def chain_request(self, request):
-        self.all_requests.append(request)
-        
-    def new_request(self, request=None):
-        if request is None:
-            self._requests = deque(self.all_requests)
-            if self._requests:
-                request = self._requests.popleft()
-        return super(RedisProtocol, self).new_request(request)
-    
+    '''An asynchronous pulsar protocol for redis.'''
+    reader = None
     def start_request(self):
+        self.reader = self.current_request.reader
         self.transport.write(self.current_request.command)
     
     def data_received(self, data):
-        response = self.current_request.feed(data)
-        if response is not None:
-            if self._requests:
-                # More requests to consume
-                self.new_request(self._requests.popleft())
-            elif self.current_request.on_finished:
-                # The current request has an on_finished callaback
-                self.current_request.on_finished(self, response)
+        finished = False
+        req = self.current_request
+        if req:
+            response = req.feed(data)
+            if response is not None and req.on_finished:
+                self._current_request = None
+                req.on_finished.callback((self, response))
             else:
-                # Done with this Consumer
+                finished = True
+        else:
+            self.reader.feed(data)
+            response = self.reader.gets()
+        if response is not None:
+            self.fire_event('on_message', response)
+            if finished:
                 self.finished(response)
                 
+    def on_response(self, response):
+        pass
     
 class AsyncConnectionPool(pulsar.Client, RedisManager):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
@@ -153,33 +148,39 @@ data-structure server.'''
         return self.response(request)
         
     def response(self, request, consumer=None):
+        first_request = request
         if not consumer:
             connection = self.get_connection(request)
             consumer = self.consumer_factory(connection)
             # If this is a new connection we need to select database and login
             if not connection.processed:
+                reqs = []
                 client = request.client
                 if client.is_pipeline:
                     client = client.client
                 c = self.connection
                 if self.password:
-                    req = self._new_request(client, 'auth', (self.password,))
-                    consumer.chain_request(req)
+                    reqs.append(self._new_request(client,
+                            'auth', (self.password,), on_finished=Deferred()))
                 if c.db:
-                    req = self._new_request(client, 'select', (c.db,))
-                    consumer.chain_request(req)
-            consumer.chain_request(request)
-            consumer.new_request()
-            return consumer.on_finished
-        else: # a consumer is already available
-            connection = consumer.connection
-            consumer.new_request(request)
+                    reqs.append(self._new_request(client,
+                            'select', (c.db,), on_finished=Deferred()))
+                reqs.append(request)
+                for req, next in zip(reqs, reqs[1:]):
+                    req.on_finished.add_callback(
+                                    partial(self._next, consumer, next))
+                first_request = reqs[0]
+        consumer.new_request(first_request)
+        return request.on_finished or consumer.on_finished
             
     def _new_request(self, client, command_name, args, **options):
         return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,
                                  command_name, args, self.redis_reader(),
                                  **options)
+    
+    def _next(self, consumer, next_request, result):
+        consumer.new_request(next_request)
         
     def execute_script(self, client, to_load, callback):
         # Override execute_script so that we execute after scripts have loaded

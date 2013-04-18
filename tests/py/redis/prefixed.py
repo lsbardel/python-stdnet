@@ -1,43 +1,48 @@
-from . import client
+from stdnet.utils import test
+from stdnet.utils import gen_unique_id
 
     
-class TestRedisPrefixed(client.TestCase):
+class TestRedisPrefixed(test.TestCase):
+    multipledb = 'redis'
     
-    def get_client2(self, prefix='xxx'):
-        return self.backend.client.prefixed(prefix + self.namespace)
+    def get_client(self, prefix=None):
+        prefix = prefix or gen_unique_id()
+        c = self.backend.client.prefixed(prefix + self.namespace)
+        if c.prefix not in self.clients:
+            self.clients[c.prefix] = c
+        return self.clients[c.prefix]
     
     def setUp(self):
-        self.client2 = self.get_client2()
-        yield self.client2.flushdb()
-        yield super(TestRedisPrefixed, self).setUp()
+        self.clients = {}
     
     def tearDown(self):
-        yield self.client2.flushdb()
-        yield super(TestRedisPrefixed, self).tearDown()
+        for c in self.clients.values():
+            yield c.flushdb()
     
     def test_meta(self):
-        c = self.get_client2('yyy')
+        c = self.get_client('yyy')
         self.assertTrue(c.prefix)
         self.assertTrue(c.prefix.startswith('yyy'))
         self.assertTrue(c.client)
         self.assertFalse(c.client.prefix)
         
     def test_delete(self):
-        yield self.client.set('bla', 'foo')
-        yield self.client2.set('bla', 'foo')
-        yield self.async.assertEqual(self.client.dbsize(), 1)
-        yield self.async.assertEqual(self.client2.dbsize(), 1)
-        yield self.client.flushdb()
-        yield self.async.assertEqual(self.client.dbsize(), 0)
-        yield self.async.assertEqual(self.client2.dbsize(), 1)
-        yield self.client2.flushdb()
-        yield self.async.assertEqual(self.client2.dbsize(), 0)
+        c1 = self.get_client()
+        c2 = self.get_client()
+        yield c1.set('bla', 'foo')
+        yield c2.set('bla', 'foo')
+        yield self.async.assertEqual(c1.dbsize(), 1)
+        yield self.async.assertEqual(c2.dbsize(), 1)
+        yield c1.flushdb()
+        yield self.async.assertEqual(c1.dbsize(), 0)
+        yield self.async.assertEqual(c2.dbsize(), 1)
+        yield c2.flushdb()
+        yield self.async.assertEqual(c2.dbsize(), 0)
         
     def test_error(self):
-        self.assertRaises(NotImplementedError,
-                          self.client.execute_command, 'FLUSHDB')
-        self.assertRaises(NotImplementedError,
-                          self.client.execute_command, 'FLUSHALL')
+        c = self.get_client()
+        self.assertRaises(NotImplementedError, c.execute_command, 'FLUSHDB')
+        self.assertRaises(NotImplementedError, c.execute_command, 'FLUSHALL')
         
         
     

@@ -57,9 +57,9 @@ class RedisManager(object):
     def clear_scripts(self):
         self.all_loaded_scripts[self.address] = set()
         
-    def _setup(self, address, db, reader):
+    def _setup(self, address, db, parser):
         self.connection = redis_connection(address, int(db))
-        self.redis_reader = reader
+        self.redis_parser = parser
     
     @property
     def address(self):

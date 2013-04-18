@@ -6,7 +6,8 @@ from itertools import chain
 
 import redis
 from redis.exceptions import NoScriptError
-from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge
+from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge,\
+                            PubSub
 
 from .extensions import get_script, RedisManager,\
                         script_callback, redis_connection, redis_after_receive
@@ -54,7 +55,7 @@ class Connection(redis.Connection):
 
 class ConnectionPool(redis.ConnectionPool, RedisManager):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
-    def __init__(self, address, db=0, reader=None, **kwargs):
+    def __init__(self, address, db=0, parser=None, **kwargs):
         if isinstance(address, tuple):
             host, port = address
             kwargs['host'] = host
@@ -63,9 +64,9 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
         else:
             kwargs['path'] = address
             address = address
-        self._setup(address, db, reader)
+        self._setup(address, db, parser)
         kwargs['connection_class'] = Connection
-        kwargs['parser_class'] = reader
+        kwargs['parser_class'] = parser
         super(ConnectionPool, self).__init__(db=self.db, **kwargs)
     
     def _checkpid(self):
@@ -82,11 +83,14 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
     def encoding_errors(self):
         return self.connection_kwargs.get('encoding_errors') or 'strict'
 
+    def pubsub(self, shard_hint=None):
+        return PubSub(self, shard_hint)
+    
     def clone(self, db=0):
         if self.db != db:
             params = self.connection_kwargs.copy()
             params.pop('db', None)
-            return self.__class__(self.address, db=db, reader=self.redis_reader,
+            return self.__class__(self.address, db=db, parser=self.redis_parser,
                                   **params)
         else:
             return self
@@ -165,6 +169,9 @@ class Redis(redis.StrictRedis):
             return self.response_callbacks[command_name](response, **options)
         return response
 
+    def pubsub(self, shard_hint=None):
+        return self.connection_pool.pubsub(shard_hint)
+    
     ############################################################################
     ##    Additional Methods and properties
     ############################################################################
@@ -190,7 +197,6 @@ class Redis(redis.StrictRedis):
         
     def on_response(self, result, raise_on_error):
         result = result[0]
-        redis_after_receive.send_robust(Redis, result=result)
         if isinstance(result, Exception) and raise_on_error:
             raise result
         return result

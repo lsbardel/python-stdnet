@@ -16,11 +16,13 @@ Usage::
 from collections import deque
 from itertools import chain
 from functools import partial
+from uuid import uuid4
 
 import redis
+from redis.exceptions import NoScriptError
 
 import pulsar
-from pulsar import is_async, multi_async, get_actor, Deferred
+from pulsar import multi_async, async, Deferred
 from pulsar.utils.pep import ispy3k, map
 
 from .extensions import get_script, RedisManager
@@ -28,26 +30,29 @@ from .extensions import get_script, RedisManager
 
 class AsyncRedisRequest(object):
     '''Asynchronous Request for redis.'''
+    pubsub_commands = frozenset(('SUBSCRIBE', 'UNSUBSCRIBE',
+                                 'PSUBSCRIBE', 'PUNSUBSCRIBE'))
     def __init__(self, client, connection, timeout, encoding,
-                  encoding_errors, command_name, args, reader,
+                  encoding_errors, command_name, args, parser,
                   raise_on_error=True, on_finished=None,
-                  **options):
+                  release_connection=True, **options):
         self.client = client
         self.connection = connection
         self.timeout = timeout
         self.encoding = encoding
         self.encoding_errors = encoding_errors
         self.command_name = command_name.upper()
-        self.reader = reader
+        self.parser = parser
         self.raise_on_error = raise_on_error
         self.on_finished = on_finished
+        self.release_connection = release_connection
         self.response = []
         self.last_response = False
         self.args = args
         pool = client.connection_pool
         if client.is_pipeline:
             self.command = pool.pack_pipeline(args)
-        else:
+        elif self.command_name:
             self.command = pool.pack_command(self.command_name, *args)
             args =(((command_name,), options),)
         self.args_options = deque(args)
@@ -76,46 +81,39 @@ class AsyncRedisRequest(object):
         return self.last_response
     
     def feed(self, data):
-        self.reader.feed(data)
-        while self.args_options:
-            self.last_response = response = self.reader.gets()
-            if response is False:
-                break
-            args, options = self.args_options.popleft()
+        self.parser.feed(data)
+        response = self.parser.gets()
+        while response is not False:
+            self.last_response = response
+            if self.args_options:
+                args, options = self.args_options.popleft()
+            else:
+                args, options = (self.command_name,), {}
             if not isinstance(response, Exception):
                 response = self.client.parse_response(self, args[0], **options)
             self.response.append(response)
-        if self.last_response is not False:
+            response = self.parser.gets()
+        if not self.args_options:
             return self.client.on_response(self.response, self.raise_on_error)
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
     '''An asynchronous pulsar protocol for redis.'''
-    reader = None
+    parser = None
+    release_connection = True
+    
     def start_request(self):
-        self.reader = self.current_request.reader
         self.transport.write(self.current_request.command)
     
     def data_received(self, data):
-        finished = False
-        req = self.current_request
-        if req:
-            response = req.feed(data)
-            if response is not None and req.on_finished:
-                self._current_request = None
-                req.on_finished.callback((self, response))
-            else:
-                finished = True
-        else:
-            self.reader.feed(data)
-            response = self.reader.gets()
+        response = self.current_request.feed(data)
         if response is not None:
-            self.fire_event('on_message', response)
-            if finished:
+            on_finished = self.current_request.on_finished
+            if on_finished and not on_finished.done():
+                on_finished.callback(response)
+            elif self.release_connection:
                 self.finished(response)
-                
-    def on_response(self, response):
-        pass
+    
     
 class AsyncConnectionPool(pulsar.Client, RedisManager):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
@@ -123,13 +121,16 @@ data-structure server.'''
     connection_pools = {}
     consumer_factory = RedisProtocol
     
-    def __init__(self, address, db=0, password=None, encoding=None, reader=None,
+    def __init__(self, address, db=0, password=None, encoding=None, parser=None,
                  encoding_errors='strict', **kwargs):
         super(AsyncConnectionPool, self).__init__(**kwargs)
         self.encoding = encoding or 'utf-8'
         self.encoding_errors = encoding_errors or 'strict'
         self.password = password
-        self._setup(address, db, reader)
+        self._setup(address, db, parser)
+    
+    def pubsub(self, shard_hint=None):
+        return PubSub(self, shard_hint)
     
     def request(self, client, command_name, *args, **options):
         consumer = options.pop('consumer', None)
@@ -150,33 +151,32 @@ data-structure server.'''
     def response(self, request, consumer=None):
         first_request = request
         if not consumer:
-            connection = self.get_connection(request)
-            consumer = self.consumer_factory(connection)
-            # If this is a new connection we need to select database and login
-            if not connection.processed:
-                reqs = []
-                client = request.client
-                if client.is_pipeline:
-                    client = client.client
-                c = self.connection
-                if self.password:
-                    reqs.append(self._new_request(client,
-                            'auth', (self.password,), on_finished=Deferred()))
-                if c.db:
-                    reqs.append(self._new_request(client,
-                            'select', (c.db,), on_finished=Deferred()))
-                reqs.append(request)
-                for req, next in zip(reqs, reqs[1:]):
-                    req.on_finished.add_callback(
-                                    partial(self._next, consumer, next))
-                first_request = reqs[0]
+            consumer = self.consumer_factory(self.get_connection(request))
+        # If this is a new connection we need to select database and login
+        if consumer.connection.processed <= 1 and not consumer.request_processed:
+            reqs = []
+            client = request.client
+            if client.is_pipeline:
+                client = client.client
+            c = self.connection
+            if self.password:
+                reqs.append(self._new_request(client,
+                        'auth', (self.password,), on_finished=Deferred()))
+            if c.db:
+                reqs.append(self._new_request(client,
+                        'select', (c.db,), on_finished=Deferred()))
+            reqs.append(request)
+            for req, next in zip(reqs, reqs[1:]):
+                req.on_finished.add_callback(
+                                partial(self._next, consumer, next))
+            first_request = reqs[0]
         consumer.new_request(first_request)
-        return request.on_finished or consumer.on_finished
+        return consumer.on_finished
             
     def _new_request(self, client, command_name, args, **options):
         return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,
-                                 command_name, args, self.redis_reader(),
+                                 command_name, args, self.redis_parser(),
                                  **options)
     
     def _next(self, consumer, next_request, result):
@@ -192,4 +192,118 @@ data-structure server.'''
             return multi_async(results).add_callback(callback)
         else:
             return callback()
+        
+        
+class PubSub(pulsar.EventHandler):
+    '''Implements :class:`PubSub` using a redis backend. To listen for
+messages you can bind to the ``on_message`` event::
+
+    from stdnet import getdb
+    
+    def handle_messages(channel_message):
+        ...
+        
+    redis = getdb('redis://122.0.0.1:6379?timeout=0').client
+    pubsub = redis.pubsub()
+    pubsub.bind_event('on_message', handle_messages)
+'''
+    dummy_channel = str(uuid4())
+    MANY_TIMES_EVENTS = ('on_message',)
+    
+    def __init__(self, connection_pool, shard_hint):
+        super(PubSub, self).__init__()
+        self.connection_pool = connection_pool
+        self.shard_hint = shard_hint
+        self.consumer = None
+    
+    @property
+    def is_pipeline(self):
+        return False
+    
+    def publish(self, channel, message):
+        return self.execute_command('PUBLISH', channel, message)
+    
+    @async()
+    def subscribe(self, *channels):
+        channels, patterns = self._channel_patterns(channels)        
+        if channels:
+            yield self._execute('subscribe', *channels)
+        if patterns:
+            yield self._execute('psubscribe', *patterns)
+        yield self._count_channels() 
+    
+    @async()
+    def unsubscribe(self, *channels):
+        channels, patterns = self._channel_patterns(channels)
+        c1 = c2 = 0
+        if not channels and not patterns:
+            yield self._execute('unsubscribe')
+            yield self._execute('punsubscribe')
+        else:
+            if channels:
+                yield self._execute('unsubscribe', *channels)
+            if patterns:
+                yield self._execute('punsubscribe', *patterns)
+        yield self._count_channels()
+            
+    @async()
+    def close(self):
+        result = yield self.unsubscribe()
+        if self.consumer:
+            self.consumer.connection.close()
+            self.consumer = None
+        yield result
+    
+    def parse_response(self, connection, command_name):
+        return connection.read_response()
+        
+    def on_response(self, result, raise_on_error):
+        for response in result:
+            if isinstance(response, Exception) and raise_on_error:
+                raise response
+            elif isinstance(response, list):
+                command = response[0]
+                if command == b'message':
+                    response = response[1:3]
+                    self.fire_event('on_message', response)
+                elif command == b'pmessage':
+                    response = response[2:4]
+                    self.fire_event('on_message', response)
+                elif command == b'unsubscribe' or command == b'punsubscribe':
+                    response = response[2]
+        return response
+    
+    def execute_command(self, *args, **options):
+        "Execute a command and return a parsed response"
+        try:
+            return self.connection_pool.request(self, *args, **options)
+        except NoScriptError:
+            self.connection_pool.clear_scripts()
+            raise
+        
+    def _channel_patterns(self, channels):
+        patterns = []
+        simples = []
+        for c in channels:
+            if '*' in c:
+                if c != '*':
+                    patterns.append(c)
+            else:
+                simples.append(c)
+        return simples, patterns
+    
+    def _count_channels(self):
+        return self._execute('unsubscribe', self.dummy_channel)
+        
+    def _execute(self, command, *args):
+        if not self.consumer:
+            # dummy request so we can obtain a connection
+            req = self.connection_pool._new_request(self, '', ())
+            connection = self.connection_pool.get_connection(req)
+            self.consumer = self.connection_pool.consumer_factory(connection)
+            self.consumer.release_connection = False
+        on_finished = Deferred()
+        self.execute_command(command, *args, consumer=self.consumer,
+                             on_finished=on_finished)
+        return on_finished
         

@@ -1,7 +1,7 @@
 from io import BytesIO
 
 
-__all__ = ['RedisReader']
+__all__ = ['RedisParser']
 
 
 REPLAY_TYPE = frozenset((b'$',  # REDIS_REPLY_STRING,
@@ -83,8 +83,9 @@ class redisReadTask(object):
         return self.response
                              
     
-class RedisReader(object):
-
+class RedisParser(object):
+    '''A python paraser for redis.'''
+    
     def __init__(self, protocolError, responseError):
         self.protocolError = protocolError
         self.responseError = responseError
@@ -114,6 +115,7 @@ class RedisReader(object):
         return False
     
     def feed(self, buffer):
+        '''Feed new data into the buffer'''
         buffer = self._inbuffer.read(-1) + buffer
         self._inbuffer = BytesIO(buffer)
         

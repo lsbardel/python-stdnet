@@ -39,7 +39,8 @@ skipUnless = unittest.skipUnless
 logger = logging.getLogger('stdnet.test')
 
 class TestCase(unittest.TestCase):
-    '''A :class:`unittest.TestCase` subclass for testing stdnet. It contains
+    '''A :class:`unittest.TestCase` subclass for testing stdnet with
+synchronous and asynchronous connections. It contains
 some utility functions for tesing in a parallel test suite.
 
 .. attribute:: backend
@@ -69,9 +70,16 @@ some utility functions for tesing in a parallel test suite.
             server = getdb(cls.connection_string, namespace=cls.namespace,
                            **cls.backend_params())
             cls.backend = server
-            if server.name == 'redis':
-                yield server.client.script_flush()
             yield cls.clear_all()
+        yield cls.after_setup()
+        
+    @classmethod
+    def after_setup(cls):
+        pass
+    
+    @classmethod
+    def tearDownClass(cls):
+        return cls.clear_all()
         
     @classmethod
     def load_scripts(cls):

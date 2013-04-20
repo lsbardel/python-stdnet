@@ -3,8 +3,7 @@ from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
                             BytesIO, iterpair, ispy3k
-from stdnet.lib import zset, skiplist
-from stdnet import SessionNotAvailable, on_result
+from stdnet import SessionNotAvailable, on_result, async, zset, skiplist
 
 from .base import ModelBase
 from .session import commit_when_no_transaction, withsession
@@ -297,19 +296,22 @@ structure :class:`Zset`.
     def __setitem__(self, key, value):
         self.add(key, value)
     
+    @async()
     def items(self):
-        '''Iteratir over items (pairs) of :class:`PairMixin`.'''
+        '''Iterator over items (pairs) of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            data = self.session.structure(self).items()
+            data = yield self.session.structure(self).items()
             self.cache.set_cache(self.load_data(data))
-        return iteritems(self.cache.cache)
+        yield iteritems(self.cache.cache)
     
+    @async()
     def values(self):
         '''Iteratir over values of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            return self.load_values(self.session.structure(self).values())
+            data = yield self.session.structure(self).values()
+            yield self.load_values(self.session.structure(self).values())
         else:
-            return self.cache.cache.values()
+            yield self.cache.cache.values()
         
     def pair(self, pair):
         '''Add a *pair* to the structure.'''
@@ -359,6 +361,11 @@ Equivalent to python dictionary update method.
     def load_values(self, iterable):
         vloads = self.value_pickler.loads
         return [vloads(v) for v in iterable]
+    
+    def _on_items(self, data):
+        self.cache.set_cache(self.load_data(data))
+        return self.items()
+        
     
 
 class KeyValueMixin(PairMixin):

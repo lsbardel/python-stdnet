@@ -561,13 +561,11 @@ class Hash(RedisStructure):
     def __iter__(self):
         return iter(self.client.hkeys(self.id))
     
-    @iteretor_pipelined
     def values(self):
-        return iter(self.client.hvals(self.id))
+        return self.client.hvals(self.id)
     
-    @iteretor_pipelined        
     def items(self):
-        return iter(self.client.hgetall(self.id))
+        return self.client.hgetall(self.id)
     
     
 class TS(RedisStructure):

@@ -1,3 +1,4 @@
+'''Test unique fields'''
 from random import randint
 
 from stdnet import odm
@@ -24,22 +25,23 @@ def randomcode(num = 1):
         return a
 
 
-class TestUniqueFilter(test.CleanTestCase):
+class TestUniqueFilter(test.TestCase):
     model = SimpleModel
     
-    def setUp(self):
-        session = self.session()
-        with session.begin():
+    @classmethod
+    def after_setup(cls):
+        with cls.session().begin() as t:
             for n,g in zip(codes,groups):
-                session.add(self.model(code = n, group = g))
+                t.add(cls.model(code=n, group=g))
+        return t.on_result
     
     def testFilterId(self):
         session = self.session()
         query = session.query(self.model)
-        obj = query.get(id = 2)
+        obj = yield query.get(id=2)
         self.assertEqual(obj.id, 2)
         self.assertTrue(obj.code)
-        obj2 = query.get(code = obj.code)
+        obj2 = yield query.get(code=obj.code)
         self.assertEqual(obj, obj2)
     
     def testBadId(self):
@@ -106,3 +108,42 @@ class TestUniqueFilter(test.CleanTestCase):
         self.assertRaises(ValueError,
                     query.test_unique,'code',m.code,m2,ValueError)
 
+
+
+class TestUniqueCreate(test.TestCase):
+    model = SimpleModel
+    
+    def setUp(self):
+        self.register()
+        
+    def testAddNew(self):
+        session = self.session()
+        m = session.add(self.model(code='me', group='bla'))
+        self.assertEqual(m.id, 1)
+        # Try to create another one
+        s = self.model(code='me', group='foo')
+        self.assertRaises(CommitException, s.save)
+        query = session.query(self.model)
+        self.assertEqual(query.count(), 1)
+        m = query.get(code='me')
+        self.assertEqual(m.id, 1)
+        self.assertEqual(m.group, 'bla')
+        m = session.add(self.model(code='me2', group='bla'))
+        self.assertEqual(m.id, 2)
+        query = session.query(self.model)
+        self.assertEqual(query.count(), 2)
+    
+    def testChangeValue(self):
+        session = self.session()
+        query = session.query(self.model)
+        m = session.add(self.model(code = 'me'))
+        self.assertEqual(m.id,1)
+        m = query.get(code = 'me')
+        self.assertEqual(m.id,1)
+        # Save with different code
+        m.code = 'foo'
+        m.save()
+        m = query.get(code = 'foo')
+        self.assertEqual(m.id,1)
+        self.assertRaises(self.model.DoesNotExist, query.get, code = 'me')
+        self.assertEqual(query.count(),1)

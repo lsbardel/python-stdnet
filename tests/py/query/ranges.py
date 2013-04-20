@@ -23,76 +23,70 @@ class NumericTest(test.TestCase):
     models = (NumericData,)
 
     @classmethod
-    def setUpClass(cls):
-        yield super(NumericTest, cls).setUpClass()
+    def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
         cls.register()
-        yield cls.clear_all()
-        session = cls.session()
         d = cls.data
-        with session.begin() as t:
+        with cls.session().begin() as t:
             for a, b, c, d, e, f in zip(d.d1, d.d2, d.d3, d.d4, d.d5, d.d6):
                 t.add(cls.model(pv=a, vega=b, delta=c, gamma=d,
                                 data={'test': {'': e,
                                                'inner': f}}))
         yield t.on_result
     
-    @classmethod
-    def tearDownClass(cls):
-        yield cls.clear_all()
-        
 
 class TestNumericRange(NumericTest):
                 
     def testGT(self):
         session = self.session()
         qs = session.query(NumericData).filter(pv__gt=1)
+        qs = yield qs.all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv > 1)
-        qs = session.query(NumericData).filter(pv__gt=-2)
+        qs = yield session.query(NumericData).filter(pv__gt=-2).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv > -2)
     
     def testGE(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__ge=-2)
+        qs = yield session.query(NumericData).filter(pv__ge=-2).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv >= -2)
-        qs = session.query(NumericData).filter(pv__ge=0)
+        qs = yield session.query(NumericData).filter(pv__ge=0).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv >= 0)
             
     def testLT(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__lt=2)
+        qs = yield session.query(NumericData).filter(pv__lt=2).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv < 2)
-        qs = session.query(NumericData).filter(pv__lt=-1)
+        qs = yield session.query(NumericData).filter(pv__lt=-1).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv < -1)
             
     def testLE(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__le=1)
+        qs = yield session.query(NumericData).filter(pv__le=1).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv <= 1)
-        qs = session.query(NumericData).filter(pv__le=-1)
+        qs = yield session.query(NumericData).filter(pv__le=-1).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv <= -1)
             
     def testMix(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__gt=1, pv__lt=0)
+        qs = yield session.query(NumericData).filter(pv__gt=1, pv__lt=0).all()
         self.assertFalse(qs)
-        qs = session.query(NumericData).filter(pv__ge=-2, pv__lt=3)
+        qs = yield session.query(NumericData).filter(pv__ge=-2, pv__lt=3).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv < 3)
@@ -100,8 +94,8 @@ class TestNumericRange(NumericTest):
         
     def testMoreThanOne(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__ge=-2, pv__lt=3)\
-                                       .filter(vega__gt=0)
+        qs = yield session.query(NumericData).filter(pv__ge=-2, pv__lt=3)\
+                                             .filter(vega__gt=0).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv < 3)
@@ -110,26 +104,26 @@ class TestNumericRange(NumericTest):
     
     def testWithString(self):
         session = self.session()
-        qs = session.query(NumericData).filter(pv__ge='-2')
+        qs = yield session.query(NumericData).filter(pv__ge='-2').all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.pv >= -2)
         
     def testJson(self):
         session = self.session()
-        qs = session.query(NumericData).filter(data__test__gt=1)
+        qs = yield session.query(NumericData).filter(data__test__gt=1).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.data__test > 1)
-        qs = session.query(NumericData).filter(data__test__gt='-2')
+        qs = yield session.query(NumericData).filter(data__test__gt='-2').all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.data__test > -2)
-        qs = session.query(NumericData).filter(data__test__inner__gt='1')
+        qs = yield session.query(NumericData).filter(data__test__inner__gt='1').all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.data__test__inner > 1)
-        qs = session.query(NumericData).filter(data__test__inner__gt=-2)
+        qs = yield session.query(NumericData).filter(data__test__inner__gt=-2).all()
         self.assertTrue(qs)
         for v in qs:
             self.assertTrue(v.data__test__inner > -2)
@@ -141,8 +135,7 @@ class TestNumericRangeForeignKey(test.TestCase):
     models = (CrossData, Feed1)
 
     @classmethod
-    def setUpClass(cls):
-        yield super(TestNumericRangeForeignKey, cls).setUpClass()
+    def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
         cls.register()
         yield cls.clear_all()
@@ -165,30 +158,26 @@ class TestNumericRangeForeignKey(test.TestCase):
         yield t.on_result
         assert found, 'not found'
     
-    @classmethod
-    def tearDownClass(cls):
-        yield cls.clear_all()
-    
     def test_feeds(self):
-        qs = Feed1.objects.query().load_related('live')
+        qs = yield Feed1.objects.query().load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live)
             self.assertTrue(isinstance(feed.live.data, dict))
-        qs = CrossData.objects.filter(data__a__gt=-1)
+        qs = yield CrossData.objects.filter(data__a__gt=-1).all()
         self.assertTrue(qs)
         for c in qs:
             self.assertTrue(c.data__a >= -1)
             
     def test_gt_direct(self):
         qs1 = CrossData.objects.filter(data__a__gt=-1)
-        qs = Feed1.objects.filter(live=qs1)
+        qs = yield Feed1.objects.filter(live=qs1).load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live.data__a >= -1)
             
     def test_gt(self):
-        qs = Feed1.objects.filter(live__data__a__gt=-1)
+        qs = yield Feed1.objects.filter(live__data__a__gt=-1).load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live.data__a >= -1)

@@ -18,6 +18,7 @@ class SimpleModel(odm.StdModel):
     object = odm.PickleObjectField(required=False)
     cached_data = odm.ByteField(as_cache=True)
     timestamp = odm.DateTimeField(as_cache=True)
+    number = odm.FloatField(required=False)
 
     objects = CustomManager()
 

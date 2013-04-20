@@ -1,6 +1,6 @@
 import stdnet
 from stdnet.utils import encoders, iteritems
-from stdnet import FieldValueError, QuerySetError
+from stdnet import FieldValueError, QuerySetError, async
 
 from .session import Manager
 from . import signals
@@ -223,19 +223,22 @@ attribute of the model.'''
                       self.name_relmodel: self.related_instance}
             return self.session(transaction), kwargs
 
+        @async()
         def add(self, value, transaction=None, **kwargs):
             '''Add *value*, an instance of ``self.formodel``,
-            to the throw model.'''
+            to the through model.'''
             session, kw = self.session_kwargs(value, transaction)
-            try:
-                m = session.query(self.model).get(**kw)
+            query = session.query(self.model).filter(**kw)
+            data = yield query.all()
+            if data:
+                instance = query._get(data)
                 if not kwargs:
-                    return m
-            except self.model.DoesNotExist:
-                m = self.model(**kw)
-            for k,v in iteritems(kwargs):
-                setattr(m, k, v)
-            return session.add(m)
+                    yield instance
+            else:
+                instance = self.model(**kw)
+            for k, v in iteritems(kwargs):
+                setattr(instance, k, v)
+            yield session.add(instance)
 
         def remove(self, value, transaction=None):
             '''Remove *value*, an instance of ``self.model`` from the set of

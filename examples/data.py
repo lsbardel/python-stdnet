@@ -170,15 +170,10 @@ class finance_data(data_generator):
         yield session
 
 
-class DataTest(test.CleanTestCase):
+class DataTest(test.TestCase):
     '''A class for testing the Finance application example. It can be run
 with different sizes by passing the'''
     data_cls = data_generator
-
-    @classmethod
-    def setUpClass(cls):
-        yield super(DataTest, cls).setUpClass()
-        cls.data = yield cls.data_cls(size=cls.size)
 
 
 class FinanceTest(DataTest):

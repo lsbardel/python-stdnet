@@ -150,11 +150,34 @@ There are four of them:
     qs = Position.objects.filter(size__le=100)    
  
  
-They can be combined, for examp, this is a :class:`Query` for a ``size`` between
+They can be combined, for example, this is a :class:`Query` for a ``size`` between
 10 and 100::
 
     qs = Position.objects.filter(size__ge=10, size__le=100)
      
+
+.. _text-lookups:
+
+Text lookups
+====================
+
+Text lookups is the :ref:`range lookup <range-lookups>` for text fields
+such as :class:`SymbolField`, :class:`CharField` and :class:`JSONField`.
+
+There are four of them:
+
+ * ``contains``, check if a text field contains the text. For example::
+    
+    qs = Fund.objects.filter(description__contains='technology')
+    
+ * ``startswith``, check if a text field starts with the given text. For example::
+    
+    qs = Fund.objects.filter(description__starts='The')
+    
+ * ``endswith``, check if a text field ends with the given text. For example::
+    
+    qs = Fund.objects.filter(description__endswith='The')
+    
 
 .. _query_where:
     
@@ -214,7 +237,7 @@ Limit Query Size
 ====================
 
 When dealing with large amount of data, a :class:`Query` can be sliced
-using Python’s array-slicing syntax. For example, this returns the first
+using Pythonï¿½s array-slicing syntax. For example, this returns the first
 10 objects::
 
     >> Instrument.objects.query()[:10]

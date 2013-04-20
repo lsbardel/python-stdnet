@@ -1,8 +1,9 @@
 import json
 from copy import copy
 from itertools import chain
+from functools import partial
 
-from stdnet import getdb, session_result, on_result
+from stdnet import getdb, session_result, on_result, async
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
@@ -586,6 +587,7 @@ construct."""
     def empty(self, model):
         return EmptyQuery(model._meta, self)
 
+    @async()
     def get_or_create(self, model, **kwargs):
         '''Get an instance of *model* from the internal cache (only if the
 dictionary *kwargs* is of length 1 and has key given by ``id``) or from the
@@ -597,13 +599,13 @@ from the **kwargs** parameters.
 :rtype: an instance of  two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
-        try:
-            res = self.query(model).get(**kwargs)
-            created = False
-        except model.DoesNotExist:
-            res = self.add(model(**kwargs))
-            created = True
-        return res,created
+        query = self.query(model)
+        items = yield query.filter(**kwargs).all()
+        if items:
+            yield query._get(items), False
+        else:
+            item = yield self.add(model(**kwargs))
+            yield item, True
 
     def get(self, model, id):
         sm = self._models.get(model._meta)
@@ -800,10 +802,7 @@ if their managers have the same backend database.'''
         return self.session().keys(self.model)
 
     def get_or_create(self, **kwargs):
-        session = self.session()
-        with session.begin():
-            el,created = session.get_or_create(self.model, **kwargs)
-        return el,created
+        return self.session().get_or_create(self.model, **kwargs)
 
     def __copy__(self):
         cls = self.__class__

@@ -10,8 +10,10 @@ from examples.data import FinanceTest, DataTest, data_generator, INSTS_TYPES,\
 class TestInstrument(FinanceTest):
     model = Instrument
 
-    def setUp(self):
-        yield self.data.create(self)
+    @classmethod
+    def after_setup(cls):
+        cls.data = yield cls.data_cls(size=cls.size)
+        yield cls.data.create(cls)
 
     def testName(self):
         session = self.session()
@@ -28,36 +30,37 @@ class TestInstrument(FinanceTest):
 
     def testId(self):
         session = self.session()
-        qb = session.query(self.model).all()
         qs = session.query(self.model).get_field('id')
         self.assertEqual(qs._get_field, 'id')
-        result = qs.all()
+        result = yield qs.all()
         self.assertTrue(result)
         for r in result:
-            self.assertTrue(isinstance(r,int))
+            self.assertTrue(isinstance(r, int))
 
 
 class TestRelated(FinanceTest):
     model = Position
 
-    def setUp(self):
-        yield self.data.makePositions(self)
+    @classmethod
+    def after_setup(cls):
+        cls.data = yield cls.data_cls(size=cls.size)
+        yield cls.data.makePositions(cls)
 
     def testInstrument(self):
         session = self.session()
         qs = session.query(self.model).get_field('instrument')
-        self.assertEqual(qs._get_field,'instrument')
-        result = qs.all()
+        self.assertEqual(qs._get_field, 'instrument')
+        result = yield qs.all()
         self.assertTrue(result)
         for r in result:
-            self.assertTrue(type(r),int)
+            self.assertTrue(type(r), int)
 
     def testFilter(self):
         session = self.session()
         qs = session.query(self.model).get_field('instrument')
         qi = session.query(Instrument).filter(id=qs)
-        inst = qi.all()
-        ids = qs.all()
+        inst = yield qi.all()
+        ids = yield qs.all()
         self.assertTrue(inst)
         self.assertTrue(len(ids) >= len(inst))
         idset = set(ids)
@@ -88,17 +91,24 @@ class generator(data_generator):
                 t.add(Group(name=name))
             for name, ccy in zip(self.inames, self.iccys):
                 t.add(Fund(name=name, ccy=ccy))
+        yield t.on_result
+        iall = yield test.session().query(Instrument).load_only('id').all()
+        fall = yield test.session().query(Fund).load_only('id').all()
         with session.begin() as t:
-            for i in test.session().query(Instrument).load_only('id'):
+            for i in iall:
                 t.add(ObjectAnalytics(model_type=Instrument, object_id=i.id))
-            for i in test.session().query(Fund).load_only('id'):
+            for i in fall:
                 t.add(ObjectAnalytics(model_type=Fund, object_id=i.id))
+        yield t.on_result
         obj_len = self.size[1]
-        groups = populate('choice', obj_len, choice_from=session.query(Group))
-        objs = populate('choice', obj_len, choice_from=session.query(ObjectAnalytics))
+        groups = yield session.query(Group).all()
+        objs = yield session.query(ObjectAnalytics).all()
+        groups = populate('choice', obj_len, choice_from=groups)
+        objs = populate('choice', obj_len, choice_from=objs)
         with test.session().begin() as t:
             for g, o in zip(groups, objs):
                 t.add(AnalyticData(group=g, object=o))
+        yield t.on_result
 
 
 class TestModelField(DataTest):
@@ -106,15 +116,17 @@ class TestModelField(DataTest):
     models = (ObjectAnalytics, AnalyticData, Group, Instrument, Fund)
     data_cls = generator
 
-    def setUp(self):
-        yield self.data.create(self)
+    @classmethod
+    def after_setup(cls):
+        cls.data = yield cls.data_cls(size=cls.size)
+        yield cls.data.create(cls)
 
     def testLoad(self):
         session = self.session()
         q = session.query(ObjectAnalytics)\
                    .filter(model_type=Instrument).get_field('id')
         i = session.query(Instrument).filter(id=q)
-        self.assertEqual(i.count(), session.query(Instrument).count())
+        yield self.async.assertEqual(i.count(), session.query(Instrument).count())
 
     def testLoadMissing(self):
         session = self.session()

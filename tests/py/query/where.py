@@ -7,7 +7,8 @@ class TestWhere(ranges.NumericTest):
     def testWhere(self):
         session = self.session()
         qs = session.query(self.model).where('this.vega > this.delta')
-        self.assertTrue(qs.count())
+        qs = yield qs.all()
+        self.assertTrue(qs)
         for m in qs:
             self.assertTrue(m.vega > m.delta)
         
@@ -15,7 +16,8 @@ class TestWhere(ranges.NumericTest):
         session = self.session()
         qs = session.query(self.model)
         qs = qs.filter(pv__gt=0).where('this.vega > this.delta')
-        self.assertTrue(qs.count())
+        qs = yield qs.all()
+        self.assertTrue(qs)
         for m in qs:
             self.assertTrue(m.pv > 0)
             self.assertTrue(m.vega > m.delta)
@@ -25,6 +27,7 @@ class TestWhere(ranges.NumericTest):
         session = self.session()
         qs = session.query(self.model).where('this.vega > this.delta',
                                              load_only=('vega','foo','delta'))
-        self.assertTrue(qs.count())
+        qs = yield qs.all()
+        self.assertTrue(qs)
         for m in qs:
             self.assertTrue(m.vega > m.delta)

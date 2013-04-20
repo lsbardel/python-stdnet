@@ -36,7 +36,8 @@ from stdnet.conf import settings
 from stdnet.utils import gen_unique_id
 
 skipUnless = unittest.skipUnless
-logger = logging.getLogger('stdnet.test')
+LOGGER = logging.getLogger('stdnet.test')
+
 
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet with
@@ -119,19 +120,10 @@ will be unregistered after the :meth:`tearDown` method.'''
                 self.assertEqual(pk, value)
         else:
             raise NotImplementedError()
-        return pk        
+        return pk
 
 
-@sequential
-class CleanTestCase(TestCase):
-    '''A test case which flush the database at every test.'''
-    def _pre_setup(self):
-        return self.clear_all()
-        
-    def _post_teardown(self):
-        if self.backend:
-            yield self.clear_all()
-            odm.unregister()
+CleanTestCase = TestCase
 
 
 class StdnetPlugin(TestPlugin):
@@ -157,7 +149,7 @@ class StdnetPlugin(TestPlugin):
                 s = getdb(s)
                 s.ping()
             except Exception:
-                logger.error('Could not obtain server %s' % s,
+                LOGGER.error('Could not obtain server %s' % s,
                              exc_info=True)
             else:
                 if s.name not in names:

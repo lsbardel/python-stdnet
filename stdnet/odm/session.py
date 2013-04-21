@@ -31,7 +31,7 @@ not in a transaction.'''
     def _(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
         if self.session is not None:
-            self.session.add(self)
+            return self.session.add(self)
         return r
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
@@ -615,7 +615,9 @@ from the **kwargs** parameters.
     def add(self, instance, modified=True, force_update=False):
         '''Add an *instance* to the session. If the session is not in
 a :ref:`transactional state <transactional-state>`, this operation
-commits changes to the backend server immediately.
+commits changes to the back-end server immediately and return
+what is return by :meth:`Transaction.commit`. Otherwise it return the
+input ``instance``.
 
 :parameter instance: a class:`StdModel` or a :class:`Structure` instance.
 :parameter modified: a boolean flag indicating if the instance was modified.
@@ -629,8 +631,9 @@ method is invoked.
         instance.session = self
         o = sm.add(instance, modified=modified, force_update=force_update)
         if modified and not self.transaction:
-            self.commit()
-        return o
+            return on_result(self.commit(), lambda r: o)
+        else:
+            return o
 
     def delete(self, instance):
         '''Include *instance* to the session list of instances to be deleted.

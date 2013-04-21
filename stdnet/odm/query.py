@@ -3,7 +3,7 @@ from inspect import isgenerator
 from functools import partial
 
 from stdnet import range_lookups
-from stdnet.lib import on_result, is_async
+from stdnet.lib import on_result, is_async, async
 from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 
@@ -620,7 +620,8 @@ result stored for future retrieval.'''
         q = self.construct()
         return q if isinstance(q, EmptyQuery) else q.backend_query(**kwargs)
 
-    def test_unique(self, fieldname, value, instance = None, exception = None):
+    @async()
+    def test_unique(self, fieldname, value, instance=None, exception=None):
         '''Test if a given field *fieldname* has a unique *value*
 in :attr:`model`. The field must be an index of the model.
 If the field value is not unique and the *instance* is not the same
@@ -633,17 +634,17 @@ an exception is raised.
     Default: :attr:`ModelMixin.DoesNotValidate`.
 :return: *value*
 '''
-        try:
-            r = self.get(**{fieldname:value})
-        except self.model.DoesNotExist:
-            return value
-
-        if instance and r.id == instance.id:
-            return value
+        qs = yield self.filter(**{fieldname:value}).all()
+        if qs:
+            r = self._get(qs)
+            if instance and r.id == instance.id:
+                yield value
+            else:
+                exception = exception or self.model.DoesNotValidate
+                raise exception('An instance with %s %s is already available'\
+                                % (fieldname, value))
         else:
-            exception = exception or self.model.DoesNotValidate
-            raise exception('An instance with {0} {1} is already available'\
-                            .format(fieldname,value))
+            yield value
 
     def map_reduce(self, map_script, reduce_script, **kwargs):
         '''Perform a map/reduce operation on this query.'''

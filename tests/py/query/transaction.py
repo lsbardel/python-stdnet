@@ -17,7 +17,7 @@ class TransactionReceiver(object):
         self.transactions.append((sender, instances))
         
 
-class TestTransactions(test.CleanTestCase):
+class TestTransactions(test.TestCase):
     model = SimpleModel
     
     def testCreate(self):
@@ -26,14 +26,14 @@ class TestTransactions(test.CleanTestCase):
         receiver = TransactionReceiver()
         odm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
-            self.assertEqual(t.backend,session.backend)
+            self.assertEqual(t.backend, session.backend)
             s = session.add(self.model(code = 'test',
                                        description = 'just a test'))
             self.assertFalse(s.id)
             s2 = session.add(self.model(code = 'test2',
                                    description = 'just a test'))
-            
-        all = query.all()
+        yield t.on_result
+        all = yield query.filter(code=('test','test2')).all()
         self.assertEqual(len(all), 2)
         self.assertTrue(len(receiver.transactions), 1)
         sender, instances = receiver.transactions[0]
@@ -44,68 +44,69 @@ class TestTransactions(test.CleanTestCase):
     def testDelete(self):
         session = self.session()
         query = session.query(self.model)
-        with session.begin():
-            s = session.add(self.model(code = 'test',
-                                       description = 'just a test'))
-        self.assertEqual(query.count(),1)
-        self.assertEqual(query.get(id = s.id),s)
-        s.delete()
-        self.assertRaises(self.model.DoesNotExist,
-                          query.get, id=s.id)
+        with session.begin() as t:
+            s = session.add(self.model(code='bla',
+                                       description='just a test'))
+        yield t.on_result
+        yield self.async.assertEqual(query.get(id = s.id), s)
+        yield s.delete()
+        yield self.async.assertRaises(self.model.DoesNotExist,
+                                      query.get, id=s.id)
         
     def testNoTransaction(self):
         session = self.session()
         s = session.add(odm.Set())
         l = session.add(odm.List())
         h = session.add(odm.HashTable())
-        self.assertEqual(l.size(), 0)
-        m = session.add(self.model(code='test', description='just a test'))
+        yield self.async.assertEqual(l.size(), 0)
+        m = yield session.add(self.model(code='xxxxx', description='just a test'))
         # add an entry to the hashtable
-        h.add('test', 'bla')
-        l.push_back(5)
-        l.push_back(8)
-        s.update((2,3,4,5,6,7))
+        yield h.add('test', 'bla')
+        yield l.push_back(5)
+        yield l.push_back(8)
+        yield s.update((2,3,4,5,6,7))
         self.assertTrue(m.state().persistent)
         self.assertEqual(s.size(),6)
         self.assertEqual(h.size(),1)
         self.assertEqual(l.size(),2)
-        self.assertEqual(len(session.query(self.model).all()),1)
+        m1 = yield session.query(self.model).get(code='xxxxx')
+        self.assertEqual(m1, m)
         
     def test_force_update(self):
         session = self.session()
         with session.begin() as t:
-             s = session.add(self.model(code='test',
+             s = session.add(self.model(code='test10',
                                         description='just a test'))
+        yield t.on_result
         with session.begin() as t:
             s = t.add(s, force_update=True)
             self.assertEqual(s._force_update, True)
+        yield t.on_result
         
         
-class TestMultiFieldTransaction(test.CleanTestCase):
+class TestMultiFieldTransaction(test.TestCase):
     model = Dictionary
     
     def make(self):
-        with self.session().begin(name = 'create models') as t:
+        with self.session().begin(name='create models') as t:
             self.assertEqual(t.name, 'create models')
             for name in names:
                 t.add(self.model(name = name))
-    
-    def testSaveSimple(self):
-        self.make()
+        return t.on_result
         
     def testHashField(self):
-        self.make()
+        yield self.make()
         session = self.session()
         query = session.query(self.model)
-        d1,d2 = tuple(query.filter(id__in = (1,2)))
-        with session.begin():
+        d1, d2 = yield query.filter(id__in=(1,2)).all()
+        with session.begin() as t:
             d1.data.add('ciao','hello in Italian')
             d1.data.add('bla',10000)
             d2.data.add('wine','drink to enjoy with or without food')
             d2.data.add('foo',98)
             self.assertTrue(d1.data.cache.toadd)
             self.assertTrue(d2.data.cache.toadd)
-                
+        yield t.on_result
         self.assertFalse(d1.data.cache.toadd)
         self.assertFalse(d2.data.cache.toadd)
         d1,d2 = tuple(query.sort_by('id'))[:2]

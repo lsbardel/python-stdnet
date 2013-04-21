@@ -327,7 +327,7 @@ structure :class:`Zset`.
             return pair
         
     def add(self, *pair):
-        self.update((pair,))
+        return self.update((pair,))
         
     @commit_when_no_transaction
     def update(self, mapping):

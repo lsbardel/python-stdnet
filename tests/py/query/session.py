@@ -10,7 +10,7 @@ from stdnet.utils import gen_unique_id
 from examples.models import SimpleModel, Instrument
 
 @sequential
-class TestSession(test.CleanTestCase):
+class TestSession(test.TestCase):
     model = SimpleModel
         
     def testQueryMeta(self):
@@ -98,7 +98,7 @@ class TestSession(test.CleanTestCase):
         yield self.async.assertEqual(qs.count(), 0)
     
     
-class TestLongSessions(test.CleanTestCase):
+class TestLongSessions(test.TestCase):
     model = SimpleModel
     
     def __testCreate(self):

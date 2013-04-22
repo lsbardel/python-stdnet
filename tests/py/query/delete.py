@@ -2,6 +2,8 @@
 import datetime
 from random import randint
 
+from pulsar.apps.test import sequential
+
 from stdnet import odm
 from stdnet.utils import test, populate, zip
 from stdnet.exceptions import QuerySetError
@@ -14,7 +16,7 @@ dict_keys   = populate('string', DICT_LEN, min_len=5, max_len=20)
 dict_values = populate('string', DICT_LEN, min_len=20, max_len=300)
 
 
-class TestDeleteSimpleModel(test.CleanTestCase):
+class TestDeleteSimpleModel(test.TestCase):
     model = SimpleModel
     
     def test_session_delete(self):
@@ -23,25 +25,24 @@ class TestDeleteSimpleModel(test.CleanTestCase):
         with session.begin() as t:
             m = t.add(self.model(code='ciao'))
         yield t.on_result
-        ids = yield query.get_field('id').all()
-        self.assertEqual(len(ids),1)
-        id = ids[0]
-        elem = yield query.get(id=id)
+        elem = yield query.get(id=m.id)
         with session.begin() as t:
             t.delete(elem)
         yield t.on_result
-        all = yield query.all()
+        all = yield query.filter(id=m.id).all()
         self.assertEqual(all, [])
         
     def testSimpleQuery(self):
         session = self.session()
         with session.begin() as t:
-            t.add(self.model(code='ciao'))
+            t.add(self.model(code='hello'))
+            t.add(self.model(code='hello2'))
         yield t.on_result
-        all = yield session.query(self.model).all()
-        self.assertEqual(len(all), 1)
-        yield session.query(self.model).delete()
-        all = yield session.query(self.model).all()
+        query = session.query(self.model).filter(code=('hello','hello2'))
+        yield self.async.assertEqual(query.count(), 2)
+        yield query.delete()
+        query = session.query(self.model).filter(code=('hello','hello2'))
+        all = yield query.all()
         self.assertEqual(all, [])
         
     def test_simple_filter(self):
@@ -56,11 +57,11 @@ class TestDeleteSimpleModel(test.CleanTestCase):
         with session.begin() as t:
             t.delete(query.filter(group='star'))
         yield t.on_result
-        yield self.async.assertEqual(query.count(), 1)
-        qs = query.filter(group='star')
-        yield self.async.assertEqual(qs.count(), 0)
+        yield self.async.assertEqual(query.filter(group='star').count(), 0)
+        rest = query.exclude(group='star').count()
+        self.assertTrue(rest)
         qs = query.filter(group='planet')
-        yield self.async.assertEqual(qs.count(),1)
+        yield self.async.assertEqual(qs.count(), 1)
     
     
 class update_model(object):
@@ -76,7 +77,7 @@ class update_model(object):
         self.transaction = transaction
         
         
-class TestPostDeleteSignal(test.CleanTestCase):
+class TestPostDeleteSignal(test.TestCase):
     model = SimpleModel
             
     def setUp(self):
@@ -98,10 +99,18 @@ class TestPostDeleteSignal(test.CleanTestCase):
         self.assertEqual(len(u.instances), 2)
         
 
+@sequential
 class TestDeleteMethod(FinanceTest):
     '''Test the delete method in models and in queries.'''
+    @classmethod
+    def after_setup(cls):
+        cls.data = cls.data_cls(size=cls.size)
+    
     def setUp(self):
         self.register()
+        
+    def tearDown(self):
+        self.clear_all()
         
     def test_delete_all(self):
         session = yield self.data.create(self)
@@ -124,8 +133,19 @@ class TestDeleteMethod(FinanceTest):
             self.assertFalse(inst.type in ('future','bond'))
             self.assertNotEqual(inst.ccy,'EUR')
         
-
+        
+@sequential
 class TestDeleteScalarFields(FinanceTest):
+    
+    @classmethod
+    def after_setup(cls):
+        cls.data = cls.data_cls(size=cls.size)
+    
+    def setUp(self):
+        self.register()
+        
+    def tearDown(self):
+        self.clear_all()
         
     def test_flush_simple_model(self):
         '''Use the class method flush to remove all instances of a
@@ -159,8 +179,7 @@ class TestDeleteScalarFields(FinanceTest):
         if backend.name == 'redis':
             keys = yield session.keys(Instrument)
             self.assertEqual(len(keys), 1)
-            self.assertEqual(keys[0].decode('utf-8'),
-                             backend.basekey(Instrument._meta, 'ids'))
+            self.assertEqual(keys[0], backend.basekey(Instrument._meta, 'ids'))
             yield session.flush(Instrument)
             keys = yield session.keys(Instrument)
             self.assertEqual(len(keys), 0)
@@ -198,11 +217,13 @@ test as it involves lots of operations and consistency checks.'''
         self.assertEqual(Instrument.objects.all().count(),0)
         self.assertEqual(Position.objects.all().count(),0)
         
-
-class TestDeleteStructuredFields(test.CleanTestCase):
+        
+@sequential
+class TestDeleteStructuredFields(test.TestCase):
     model = Dictionary
     
     def setUp(self):
+        self.clear_all()
         session = self.session()
         with session.begin() as t:
             t.add(Dictionary(name='test'))
@@ -210,6 +231,9 @@ class TestDeleteStructuredFields(test.CleanTestCase):
         yield t.on_result
         yield self.async.assertEqual(session.query(Dictionary).count(), 2)
         self.data = dict(zip(dict_keys, dict_values))
+    
+    def tearDown(self):
+        self.clear_all()
     
     def fill(self, name):
         session = self.session()

@@ -14,7 +14,7 @@ dates = populate('date', NUM_DATES)
 values = populate('string', NUM_DATES, min_len=10, max_len=120)
     
     
-class TestSetField(test.CleanTestCase):
+class TestSetField(test.TestCase):
     models = (Collection, Group)
     model = Collection
     
@@ -42,7 +42,7 @@ class TestPythonZset(test.TestCase):
         self.assertEqual(data[1][1],'ciao')
         
     
-class TestOrderedSet(test.CleanTestCase):
+class TestOrderedSet(test.TestCase):
     multipledb = 'redis'
     model = Calendar
     models = (Calendar,DateValue)

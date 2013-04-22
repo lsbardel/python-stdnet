@@ -7,7 +7,7 @@ from stdnet.utils import test
 from examples.observer import Observer, Observable
 
 
-class ObserverTest(test.CleanTestCase):
+class ObserverTest(test.TestCase):
     models = (Observer,Observable)
     
     def setUp(self):

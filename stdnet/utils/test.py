@@ -123,9 +123,6 @@ will be unregistered after the :meth:`tearDown` method.'''
         return pk
 
 
-CleanTestCase = TestCase
-
-
 class StdnetPlugin(TestPlugin):
     name = "server"
     flags = ["-s", "--server"]

@@ -24,8 +24,7 @@ return cjson.encode(js)''')
         return json.loads(result.decode(request.encoding))
 
 
-@sequential
-class TestCase(test.CleanTestCase):
+class TestCase(test.TestCase):
     multipledb = 'redis'
     
     def get_client(self):

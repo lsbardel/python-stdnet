@@ -75,7 +75,7 @@ class TestInspectionAndComparison(FinanceTest):
                           foo = 'pippo')
 
 
-class PickleSupport(test.CleanTestCase):
+class PickleSupport(test.TestCase):
     model = Instrument
     
     def setUp(self):
@@ -100,7 +100,7 @@ class PickleSupport(test.CleanTestCase):
         self.assertTrue('cleaned_data' in inst._dbdata)
         
 
-class TestRegistration(test.CleanTestCase):
+class TestRegistration(test.TestCase):
     
     def testModelIterator(self):
         g = model_iterator('examples')
@@ -112,7 +112,7 @@ class TestRegistration(test.CleanTestCase):
             self.assertTrue(isinstance(m,StdNetType))
 
 
-class TestStdModelMethods(test.CleanTestCase):
+class TestStdModelMethods(test.TestCase):
     model = SimpleModel
     
     def setUp(self):
@@ -141,7 +141,7 @@ class TestStdModelMethods(test.CleanTestCase):
         self.assertEqual(m.timestamp,None)
         
 
-class TestComplexModel(test.CleanTestCase):
+class TestComplexModel(test.TestCase):
     model = ComplexModel
     
     def setUp(self):

@@ -24,7 +24,7 @@ class namesGenerator(data_generator):
         self.groups = populate('string', group_size, min_len=5, max_len=10)
 
 
-class TestPermissions(test.CleanTestCase):
+class TestPermissions(test.TestCase):
     models = (User, Group, Role, InstanceRole, MyModel)
     data_cls = namesGenerator
 

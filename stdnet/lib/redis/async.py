@@ -16,7 +16,6 @@ Usage::
 from collections import deque
 from itertools import chain
 from functools import partial
-from uuid import uuid4
 
 import redis
 from redis.exceptions import NoScriptError
@@ -210,7 +209,6 @@ messages you can bind to the ``on_message`` event::
     pubsub = redis.pubsub()
     pubsub.bind_event('on_message', handle_messages)
 '''
-    dummy_channel = str(uuid4())
     MANY_TIMES_EVENTS = ('on_message',)
     
     def __init__(self, connection_pool, shard_hint):
@@ -218,6 +216,8 @@ messages you can bind to the ``on_message`` event::
         self.connection_pool = connection_pool
         self.shard_hint = shard_hint
         self.consumer = None
+        self._channels = set()
+        self._patterns = set()
     
     @property
     def is_pipeline(self):
@@ -231,22 +231,31 @@ messages you can bind to the ``on_message`` event::
         channels, patterns = self._channel_patterns(channels)        
         if channels:
             yield self._execute('subscribe', *channels)
+            self._channels.update(channels)
         if patterns:
             yield self._execute('psubscribe', *patterns)
+            self._patterns.update(patterns)
         yield self._count_channels() 
     
     @async()
     def unsubscribe(self, *channels):
         channels, patterns = self._channel_patterns(channels)
-        c1 = c2 = 0
         if not channels and not patterns:
-            yield self._execute('unsubscribe')
-            yield self._execute('punsubscribe')
+            if self._channels:
+                yield self._execute('unsubscribe')
+                self._channels = set()
+            if self._patterns:
+                yield self._execute('punsubscribe')
+                self._patterns = set()
         else:
+            channels = self._channels.intersection(channels)
+            patterns = self._patterns.intersection(patterns)
             if channels:
                 yield self._execute('unsubscribe', *channels)
+                self._channels.difference_update(channels)
             if patterns:
                 yield self._execute('punsubscribe', *patterns)
+                self._patterns.difference_update(patterns)
         yield self._count_channels()
             
     @async()
@@ -296,7 +305,7 @@ messages you can bind to the ``on_message`` event::
         return simples, patterns
     
     def _count_channels(self):
-        return self._execute('unsubscribe', self.dummy_channel)
+        return len(self._channels) + len(self._patterns)
         
     def _execute(self, command, *args):
         if not self.consumer:

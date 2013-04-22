@@ -4,7 +4,7 @@ from stdnet.utils import test
 from .base import StructMixin
 
 
-class TestSet(StructMixin, test.CleanTestCase):
+class TestSet(StructMixin, test.TestCase):
     structure = odm.Set
     name = 'set'
     

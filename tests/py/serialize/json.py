@@ -1,33 +1,30 @@
 '''Test the JSON serializer'''
 from stdnet import odm
-from stdnet.utils import test
 
-from examples.data import FinanceTest, DataTest
-from examples.models import Instrument, Fund, Position, Folder, PortfolioView
+from examples.data import FinanceTest, Fund
 
-from .base import SerializerMixin
+from . import base
 
 
-class TestFinanceJSON(FinanceTest, SerializerMixin):
+class TestFinanceJSON(base.SerializerMixin, FinanceTest):
     serializer = 'json'
-    models = (Instrument, Fund, Position, Folder)
-
-    def setUp(self):
-        self.register()
 
     def testTwoModels(self):
-        s = yield self.testDump()
-        self.assertEqual(len(s.data),1)
+        s = yield self.dump()
         d = s.data[0]
-        self.assertEqual(d['model'],str(self.model._meta))
-        s.dump(Fund.objects.query().sort_by('id'))
+        self.assertEqual(d['model'], str(self.model._meta))
+        all = yield Fund.objects.query().sort_by('id').all()
+        s.dump(all)
         self.assertEqual(len(s.data), 2)
 
     def testModelToSerialize(self):
         all = list(odm.all_models_sessions(self.models))
-        self.assertEqual(len(all), 6)
+        self.assertEqual(len(all), 3)
         for m, session in all:
             self.assertNotEqual(session, None)
 
+
+class TestLoadFinanceJSON(base.LoadSerializerMixin, FinanceTest):
+    serializer = 'json'
 
 

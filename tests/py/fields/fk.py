@@ -9,9 +9,9 @@ class fkmeta(test.TestCase):
     models = (Person, Group)
     
     @classmethod
-    def setUpClass(cls):
-        yield super(fkmeta, cls).setUpClass()
+    def after_setup(cls):
         session = cls.session()
+        cls.register()
         with session.begin() as t:
             t.add(Group(name='bla'))
         yield t.on_result
@@ -20,28 +20,24 @@ class fkmeta(test.TestCase):
             t.add(Person(name='foo', group=g))
         yield t.on_result
         
-    @classmethod
-    def tearDownClass(cls):
-        yield cls.clear_all()
-        
     def testSimple(self):
         session = self.session()
         query = session.query(Person)
-        self.assertEqual(query.count(), 1)
-        p = query.get(name='foo')
+        yield self.async.assertEqual(query.count(), 1)
+        p = yield query.get(name='foo')
         self.assertTrue(p.group_id)
         p.group = None
         self.assertEqual(p.group_id, None)
         
     def testOldRelatedNone(self):
-        self.register()
-        p = Person.objects.get(name='foo')
-        g = p.group
-        self.assertTrue(p)
+        p = yield Person.objects.get(name='foo')
+        g = yield p.group
+        self.assertTrue(g)
+        self.assertEqual(g, p.group)
+        self.assertEqual(g.id, p.group_id)
         p.group = None
-        self.assertEqual(p.group, None)
         self.assertEqual(p.group_id, None)
-        self.assertRaises(stdnet.FieldValueError,p.save)
+        self.assertRaises(stdnet.FieldValueError, p.save)
         
     def testCoverage(self):
         self.assertRaises(FieldError, odm.ForeignKey, None)

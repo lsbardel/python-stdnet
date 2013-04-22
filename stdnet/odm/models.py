@@ -1,6 +1,7 @@
 import copy
 import json
 
+from stdnet import async
 from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 
@@ -12,7 +13,7 @@ from . import signals
 __all__ = ['StdModel', 'model_to_dict']
 
 
-StdNetBase = StdNetType('StdNetBase',(Model,),{})
+StdNetBase = StdNetType('StdNetBase', (Model,), {})
 
 
 class StdModel(StdNetBase):
@@ -227,29 +228,33 @@ attribute set to ``True`` will be excluded.'''
             raise ValueError('Field %s not available')
         return self._load_related_model(field, load_only, dont_load)
         
+    @async()
     def _load_related_model(self, field, load_only=None, dont_load=None):
         cache_name = field.get_cache_name()
         try:
-            return getattr(self, cache_name)
+            yield getattr(self, cache_name)
         except AttributeError:
             val = getattr(self, field.attname)
             if val is None:
-                return None
-            pkname = field.relmodel._meta.pkname()
-            qs = self.session.query(field.relmodel)
-            if load_only:
-                qs = qs.load_only(*load_only)
-            if dont_load:
-                qs = qs.dont_load(*dont_load)
-            try:
-                rel_obj = qs.get(**{pkname: val})
-            except self.DoesNotExist:
-                if field.required:
-                    raise
                 rel_obj = None
-                setattr(self, field.attname, None)
+            else:
+                pkname = field.relmodel._meta.pkname()
+                qs = self.session.query(field.relmodel)
+                if load_only:
+                    qs = qs.load_only(*load_only)
+                if dont_load:
+                    qs = qs.dont_load(*dont_load) 
+                all = yield qs.filter(**{pkname: val}).all()
+                if all:
+                    rel_obj = qs._get(all)
+                else:
+                    if field.required:
+                        raise self.DoesNotExist
+                    else:
+                        rel_obj = None
+                    setattr(self, field.attname, None)
             setattr(self, cache_name, rel_obj)
-            return rel_obj
+            yield rel_obj
     
     @classmethod
     def from_base64_data(cls, **kwargs):

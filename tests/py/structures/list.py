@@ -4,7 +4,7 @@ from stdnet.utils import test, encoders
 from .base import StructMixin
 
 
-class TestList(StructMixin, test.CleanTestCase):
+class TestList(StructMixin, test.TestCase):
     structure = odm.List
     name = 'list'
     
@@ -16,12 +16,14 @@ class TestList(StructMixin, test.CleanTestCase):
     
     def test_meta2(self):
         l = yield self.test_meta()
-        l.push_back('save')
-        l.push_back({'test': 1})
-        l.session.commit()
+        self.assertTrue(l.session)
+        self.assertFalse(l.session.transaction)
+        yield l.push_back('save')
+        yield l.push_back({'test': 1})
         self.asserGroups(l)
-        self.assertEqual(l.size(),4)
-        self.assertEqual(list(l),[3,5.6,'save',"{'test': 1}"])
+        yield self.async.assertEqual(l.size(), 4)
+        result = [3,5.6,'save',"{'test': 1}"]
+        yield self.async.assertEqual(l.items(), result)
         
     def testJsonList(self):
         with self.session().begin() as t:
@@ -31,6 +33,8 @@ class TestList(StructMixin, test.CleanTestCase):
             l.push_back('save')
             l.push_back({'test': 1})
             l.push_back({'test': 2})
-        self.assertEqual(l.size(),5)
-        self.assertEqual(list(l),[3,5.6,'save',{'test': 1},{'test': 2}])
-    
+        yield t.on_result
+        yield self.async.assertEqual(l.size(), 5)
+        result = [3,5.6,'save',{'test': 1},{'test': 2}]
+        yield self.async.assertEqual(l.items(), result)
+        self.assertEqual(list(l), result)

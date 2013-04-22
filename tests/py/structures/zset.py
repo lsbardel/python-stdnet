@@ -11,7 +11,7 @@ dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
 values = populate('float',len(dates),start=0,end=1000)
 
 
-class TestZset(StructMixin, test.CleanTestCase):
+class TestZset(StructMixin, test.TestCase):
     structure = odm.Zset
     name = 'zset'
     result =  [(0.0022,'pluto'),

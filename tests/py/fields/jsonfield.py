@@ -42,11 +42,12 @@ class make_random(object):
                 yield key,v
     
     
-class TestJsonField(test.CleanTestCase):
+class TestJsonField(test.TestCase):
     model = Statistics
     
-    def setUp(self):
-        self.register()
+    @classmethod
+    def after_setup(cls):
+        cls.register()
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
@@ -58,15 +59,15 @@ class TestJsonField(test.CleanTestCase):
         mean = Decimal('56.4')
         started = date(2010,1,1)
         timestamp = datetime.now()
-        a = self.model(dt=date.today(), data={'mean': mean,
+        a = yield self.model(dt=date.today(), data={'mean': mean,
                                               'std': 5.78,
                                               'started': started,
                                               'timestamp':timestamp}).save()
-        self.assertEqual(a.data['mean'],mean)
-        a = self.model.objects.get(id=a.id)
-        self.assertEqual(len(a.data),4)
-        self.assertEqual(a.data['mean'],mean)
-        self.assertEqual(a.data['started'],started)
+        self.assertEqual(a.data['mean'], mean)
+        a = yield self.model.objects.get(id=a.id)
+        self.assertEqual(len(a.data), 4)
+        self.assertEqual(a.data['mean'], mean)
+        self.assertEqual(a.data['started'], started)
         self.assertAlmostEqual(date2timestamp(a.data['timestamp']),
                                date2timestamp(timestamp), 5)
         
@@ -77,10 +78,10 @@ class TestJsonField(test.CleanTestCase):
                 'std': 5.78,
                 'timestamp': timestamp}
         datas = json.dumps(data)
-        a = Statistics(dt=date.today(), data=datas).save()
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data['mean'],mean)
-        a = Statistics.objects.get(id = a.id)
+        a = yield Statistics(dt=date.today(), data=datas).save()
+        a = yield Statistics.objects.get(id=a.id)
+        self.assertEqual(a.data['mean'], mean)
+        a = yield Statistics.objects.get(id=a.id)
         self.assertEqual(len(a.data),3)
         self.assertEqual(a.data['mean'],mean)
         self.assertAlmostEqual(a.data['timestamp'], timestamp)
@@ -88,9 +89,9 @@ class TestJsonField(test.CleanTestCase):
     def test_default(self):
         a = Statistics(dt=date.today())
         self.assertEqual(a.data, {})
-        a.save()
+        yield a.save()
         self.assertEqual(a.data, {})
-        a = Statistics.objects.get(id=a.id)
+        a = yield Statistics.objects.get(id=a.id)
         self.assertEqual(a.data, {})
         
     def testValueError(self):
@@ -124,12 +125,13 @@ The `as_string` atttribute is set to ``False``.'''
                         'std': {'1y':4.0,'2y':5.1}},
                 'dt': datetime.now()}
     
-    def setUp(self):
-        self.register()
+    @classmethod
+    def after_setup(cls):
+        cls.register()
         
-    def make(self, data = None):
+    def make(self, data=None):
         data = data or self.def_data
-        return self.model(name = 'bla', data = data)
+        return self.model(name='bla', data=data)
         
     def testMeta(self):
         field = self.model._meta.dfields['data']
@@ -140,19 +142,19 @@ The `as_string` atttribute is set to ``False``.'''
         self.assertTrue(m.is_valid())
         data = m._dbdata['cleaned_data']
         data.pop('data')
-        self.assertEqual(len(data),6)
-        self.assertEqual(float(data['data__mean']),1.0)
-        self.assertEqual(float(data['data__std']),5.78)
-        self.assertEqual(float(data['data__pv']),3.2)
+        self.assertEqual(len(data), 6)
+        self.assertEqual(float(data['data__mean']), 1.0)
+        self.assertEqual(float(data['data__std']), 5.78)
+        self.assertEqual(float(data['data__pv']), 3.2)
         
     def testGet(self):
-        m = self.make().save()
-        m = self.model.objects.get(id = m.id)
-        self.assertEqual(m.data['mean'],1.0)
-        self.assertEqual(m.data['std'],5.78)
-        self.assertEqual(m.data['pv'],3.2)
-        self.assertEqual(m.data['dt'],date.today())
-        self.assertEqual(m.data['name'],'bla')
+        m = yield self.make().save()
+        m = yield self.model.objects.get(id=m.id)
+        self.assertEqual(m.data['mean'], 1.0)
+        self.assertEqual(m.data['std'], 5.78)
+        self.assertEqual(m.data['pv'], 3.2)
+        self.assertEqual(m.data['dt'], date.today())
+        self.assertEqual(m.data['name'], 'bla')
         
     def testmakeEmptyError(self):
         '''Here we test when we have a key which is empty.'''
@@ -167,18 +169,18 @@ The `as_string` atttribute is set to ``False``.'''
         self.assertEqual(len(cdata),10)
         self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqual(obj.data['dt'].date(),date.today())
-        self.assertEqual(obj.data__dt.date(),date.today())
-        self.assertEqual(obj.data['pv']['mean']['1y'],1.0)
-        self.assertEqual(obj.data__pv__mean__1y,1.0)
-        self.assertEqual(obj.data__dt.date(),date.today())
+        obj = yield m.save()
+        obj = yield self.model.objects.get(id=obj.id)
+        self.assertEqual(obj.data['dt'].date(), date.today())
+        self.assertEqual(obj.data__dt.date(), date.today())
+        self.assertEqual(obj.data['pv']['mean']['1y'], 1.0)
+        self.assertEqual(obj.data__pv__mean__1y, 1.0)
+        self.assertEqual(obj.data__dt.date(), date.today())
         
     def testmakeEmpty2(self):
         m = self.make({'ts':[1,2,3,4]})
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
+        obj = yield m.save()
+        obj = yield self.model.objects.get(id=obj.id)
         self.assertEqual(obj.data,{'ts':[1,2,3,4]})
     
     def testFuzzySmall(self):
@@ -191,9 +193,9 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqualDict(data,obj.data)
+        obj = yield m.save()
+        obj = yield self.model.objects.get(id=obj.id)
+        self.assertEqualDict(data, obj.data)
         
     def testFuzzyMedium(self):
         r = make_random()
@@ -205,8 +207,8 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
+        obj = yield m.save()
+        #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testFuzzy(self):
@@ -219,25 +221,25 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
+        obj = yield m.save()
+        #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testEmptyDict(self):
-        r = self.model(name = 'bla', data = {'bla':'ciao'}).save()
+        r = yield self.model(name='bla', data = {'bla':'ciao'}).save()
         self.assertEqual(r.data, {'bla':'ciao'})
         r.data = None
-        r.save()
-        r = self.model.objects.get(id = r.id)
+        yield r.save()
+        r = yield self.model.objects.get(id=r.id)
         self.assertEqual(r.data, {})
         
     def testFromEmpty(self):
         '''Test the change of a data jsonfield from empty to populated.'''
-        r = self.model(name = 'bla').save()
+        r = yield self.model(name = 'bla').save()
         self.assertEqual(r.data, {})
         r.data = {'bla':'ciao'}
-        r.save()
-        r = self.model.objects.get(id = r.id)
+        yield r.save()
+        r = yield self.model.objects.get(id=r.id)
         self.assertEqual(r.data, {'bla':'ciao'})
     
     def assertEqualDict(self,data1,data2):

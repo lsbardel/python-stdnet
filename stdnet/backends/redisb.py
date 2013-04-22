@@ -520,8 +520,8 @@ class List(RedisStructure):
     def size(self):
         return self.client.llen(self.id)
     
-    def __iter__(self):
-        return iter(self.client.lrange(self.id, 0, -1))
+    def range(self, start=0, end=-1):
+        return self.client.lrange(self.id, start, end)
 
 
 class Hash(RedisStructure):
@@ -550,8 +550,7 @@ class Hash(RedisStructure):
         p.hget(self.id, key).hdel(self.id, key)
         if not pi:
             result = yield p.execute()
-            if result[1]:
-                return result[0]
+            yield result[0]
     
     def remove(self, *fields):
         return self.client.hdel(self.id, *fields)

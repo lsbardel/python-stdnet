@@ -4,6 +4,7 @@ import tempfile
 from stdnet import odm
 from stdnet.utils import test, BytesIO, to_bytes
 
+
 class Tempfile(object):
 
     def __init__(self, data, text = True):
@@ -38,9 +39,14 @@ class Tempfile(object):
         os.remove(self.path)
 
 
-class SerializerMixin(object):
-    '''A mixin for testing serializers.'''
+class BaseSerializerMixin(object):
     serializer = 'json'
+    
+    @classmethod
+    def after_setup(cls):
+        cls.data = yield cls.data_cls(size=cls.size)
+        cls.register()
+        yield cls.data.create(cls)
 
     def get(self, **options):
         s = odm.get_serializer(self.serializer)
@@ -49,30 +55,40 @@ class SerializerMixin(object):
         self.assertFalse(s.data)
         self.assertTrue(s)
         return s
-
-    def testMeta(self):
-        self.get()
-
-    def testDump(self):
-        yield self.data.create(self)
+    
+    def dump(self):
         s = self.get()
         qs = yield self.model.objects.query().sort_by('id').all()
         s.dump(qs)
         self.assertTrue(s.data)
+        self.assertEqual(len(s.data), 1)
         yield s
+    
+    
+class SerializerMixin(BaseSerializerMixin):
+    
+    def testMeta(self):
+        self.get()
 
-    def testWrite(self):
-        s = yield self.testDump()
+    def test_dump(self):
+        return self.dump()
+
+    def test_write(self):
+        s = yield self.dump()
         data = s.write()
         self.assertTrue(data)
 
+
+class LoadSerializerMixin(BaseSerializerMixin):
+    
     def testLoad(self):
-        s = yield self.testDump()
+        s = yield self.dump()
         qs = yield self.model.objects.query().sort_by('id').all()
+        self.assertTrue(qs)
         data = s.write().getvalue()
         with Tempfile(data) as tmp:
-            self.model.objects.flush()
-            s.load(tmp.open(), self.model)
+            yield self.model.objects.flush()
+            yield s.load(tmp.open(), self.model)
         qs2 = yield self.model.objects.query().sort_by('id').all()
         self.assertEqual(qs, qs2)
 

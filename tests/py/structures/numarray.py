@@ -7,7 +7,7 @@ from stdnet.utils.populate import populate
 
 from .base import StructMixin
     
-class TestNumberArray(StructMixin, test.CleanTestCase):
+class TestNumberArray(StructMixin, test.TestCase):
     structure = odm.NumberArray
     name = 'numberarray'
     

@@ -125,9 +125,9 @@ by the *indent* of the json string for pretty serialization.'''
             data.append(obj.tojson())
             meta = obj._meta
         if data:
-            return {'model':str(meta),
-                    'hash':meta.hash,
-                    'data':data}
+            return {'model': str(meta),
+                    'hash': meta.hash,
+                    'data': data}
 
     def dump(self, qs):
         data = self.get_data(qs)
@@ -205,13 +205,14 @@ query into a csv file.'''
                     w.writerow(row)
         return stream
 
-    def load(self, stream, model = None):
+    def load(self, stream, model=None):
         if not model:
             raise ValueError('Model is required when loading from csv file')
         r = csv.DictReader(stream, **self.options)
         with model.objects.transaction() as t:
             for item_data in r:
                 t.add(model.from_base64_data(**item_data))
+        return t.on_result
 
 
 register_serializer('json', JsonSerializer)

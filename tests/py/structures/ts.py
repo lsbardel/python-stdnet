@@ -10,7 +10,7 @@ values = populate('float',len(dates),start=0,end=1000)
 
 from .base import StructMixin
 
-class TestTS(StructMixin, test.CleanTestCase):
+class TestTS(StructMixin, test.TestCase):
     structure = odm.TS
     name = 'ts'
     

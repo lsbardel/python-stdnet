@@ -8,7 +8,7 @@ from stdnet.utils.populate import populate
 from .base import StructMixin
         
 
-class TestString(StructMixin, test.CleanTestCase):
+class TestString(StructMixin, test.TestCase):
     structure = odm.String
     name = 'string'
     

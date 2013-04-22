@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
                             BytesIO, iterpair, ispy3k
-from stdnet import SessionNotAvailable, on_result, async, zset, skiplist
+from stdnet import SessionNotAvailable, on_result, async, is_async, zset, skiplist
 
 from .base import ModelBase
 from .session import commit_when_no_transaction, withsession
@@ -234,10 +234,11 @@ can also be used as stand alone objects. For example::
     
     def __iter__(self):
         # Iterate through the structure
-        if self.cache.cache is None:
-            data = self.load_data(self.session.structure(self))
-            self.cache.set_cache(data)
-        return iter(self.cache.cache)
+        res = self.items()
+        if is_async(res):
+            raise RuntimeError('Cannot iterate on asynchronous result.')
+        else:
+            return iter(res)
         
     def size(self):
         '''Number of elements in structure.'''
@@ -251,6 +252,10 @@ can also be used as stand alone objects. For example::
     
     def __len__(self):
         return self.size()
+    
+    def items(self):
+        '''All items of this :class:`Structure`. Implemented by subclasses.'''
+        raise NotImplementedError
     
     def set_cache(self, data):
         '''Set the cache for the :class:`Structure`.
@@ -491,6 +496,14 @@ class Sequence(object):
 container. The elements in a sequence container are ordered following a linear
 sequence.'''
     cache_class = listcache
+    
+    @async()
+    def items(self):
+        if self.cache.cache is None:
+            data = yield self.session.structure(self).range()
+            data = self.load_data(data)
+            self.cache.set_cache(data)
+        yield self.cache.cache
     
     @commit_when_no_transaction
     def push_back(self, value):

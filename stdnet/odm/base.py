@@ -5,7 +5,7 @@ import hashlib
 import weakref
 
 from stdnet import on_result
-from stdnet.utils import zip, to_string
+from stdnet.utils import zip, to_string, UnicodeMixin
 from stdnet.exceptions import *
 
 from . import signals
@@ -456,7 +456,7 @@ class ModelState(object):
     __str__ = __repr__
 
 
-class Model(object):
+class Model(UnicodeMixin):
     '''This is the base class for both :class:`StdModel` and :class:`Structure`
 classes. It implements the :attr:`uuid` attribute which provides the universal
 unique identifier for an instance of a model.'''

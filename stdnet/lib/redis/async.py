@@ -95,6 +95,8 @@ class AsyncRedisRequest(object):
             response = self.parser.gets()
         if not self.args_options:
             return self.client.on_response(self.response, self.raise_on_error)
+        else:
+            return False
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
@@ -107,12 +109,13 @@ class RedisProtocol(pulsar.ProtocolConsumer):
     
     def data_received(self, data):
         response = self.current_request.feed(data)
-        if response is not None:
+        if response is not False:
             on_finished = self.current_request.on_finished
             if on_finished and not on_finished.done():
                 on_finished.callback(response)
             elif self.release_connection:
                 self.finished(response)
+        
     
     
 class AsyncConnectionPool(pulsar.Client, RedisManager):

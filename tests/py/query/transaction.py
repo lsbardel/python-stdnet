@@ -55,9 +55,9 @@ class TestTransactions(test.TestCase):
         
     def testNoTransaction(self):
         session = self.session()
-        s = session.add(odm.Set())
-        l = session.add(odm.List())
-        h = session.add(odm.HashTable())
+        s = yield session.add(odm.Set())
+        l = yield session.add(odm.List())
+        h = yield session.add(odm.HashTable())
         yield self.async.assertEqual(l.size(), 0)
         m = yield session.add(self.model(code='xxxxx', description='just a test'))
         # add an entry to the hashtable
@@ -66,9 +66,9 @@ class TestTransactions(test.TestCase):
         yield l.push_back(8)
         yield s.update((2,3,4,5,6,7))
         self.assertTrue(m.state().persistent)
-        self.assertEqual(s.size(),6)
-        self.assertEqual(h.size(),1)
-        self.assertEqual(l.size(),2)
+        yield self.async.assertEqual(s.size(), 6)
+        yield self.async.assertEqual(h.size(), 1)
+        yield self.async.assertEqual(l.size(), 2)
         m1 = yield session.query(self.model).get(code='xxxxx')
         self.assertEqual(m1, m)
         
@@ -91,7 +91,7 @@ class TestMultiFieldTransaction(test.TestCase):
         with self.session().begin(name='create models') as t:
             self.assertEqual(t.name, 'create models')
             for name in names:
-                t.add(self.model(name = name))
+                t.add(self.model(name=name))
         return t.on_result
         
     def testHashField(self):
@@ -109,7 +109,7 @@ class TestMultiFieldTransaction(test.TestCase):
         yield t.on_result
         self.assertFalse(d1.data.cache.toadd)
         self.assertFalse(d2.data.cache.toadd)
-        d1,d2 = tuple(query.sort_by('id'))[:2]
+        d1, d2 = yield query.filter(id__in=(1,2)).sort_by('id').load_related('data').all()
         self.assertEqual(d1.data['ciao'],'hello in Italian')
         self.assertEqual(d2.data['wine'],'drink to enjoy with or without food')
     

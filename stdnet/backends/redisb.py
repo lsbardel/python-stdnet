@@ -7,12 +7,12 @@ from functools import partial
 from collections import namedtuple
 
 import stdnet
-from stdnet import FieldValueError, CommitException, QuerySetError, on_result
+from stdnet import FieldValueError, CommitException, QuerySetError, on_result, async
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
 from stdnet.lib import redis
 from stdnet.backends import BackendStructure, query_result, session_result,\
-                            instance_session_result, on_result, range_lookups
+                            instance_session_result, range_lookups
 
 MIN_FLOAT =-1.e99
 
@@ -543,12 +543,13 @@ class Hash(RedisStructure):
     def get(self, key):
         return self.client.hget(self.id, key)
     
+    @async()
     def pop(self, key):
         pi = self.is_pipeline
         p = self.client if pi else self.client.pipeline()
         p.hget(self.id, key).hdel(self.id, key)
         if not pi:
-            result = p.execute()
+            result = yield p.execute()
             if result[1]:
                 return result[0]
     

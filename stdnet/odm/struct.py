@@ -403,12 +403,10 @@ If the element is not available return the default value.
         return on_result(res, lambda r: self._load_get_data(r, key, default))
         
     def pop(self, key, *args):
-        dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).pop(dkey)
-        if len(args) == 1:
-            return on_result(res, lambda r: self._load_get_data(r, key, args[0]))
-        elif not args:
-            return on_result(res, lambda r: self._load_get_data(r, key))
+        if len(args) <= 1:
+            dkey = self.pickler.dumps(key)
+            res = self.session.backend.structure(self).pop(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key, *args))
         else:
             raise TypeError('pop expected at most 2 arguments, got {0}'\
                             .format(len(args)+1))

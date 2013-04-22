@@ -69,10 +69,10 @@ of the :attr:`structure`.'''
             s = t.add(self.create_one())
         yield t.on_result
         self.asserGroups(s)
-        self.assertTrue(s.size())
-        s.delete()
-        self.assertEqual(s.size(),0)
-        self.assertNotEqual(s.session,None)
+        yield self.async.assertTrue(s.size())
+        yield s.delete()
+        yield self.async.assertEqual(s.size(),0)
+        self.assertNotEqual(s.session, None)
         self.assertFalse(s in session)
         
     def test_empty(self):
@@ -82,7 +82,7 @@ of the :attr:`structure`.'''
             l = t.add(self.structure())
         yield t.on_result
         self.asserGroups(l)
-        self.assertEqual(l.size(),0)
-        self.assertEqual(l.session,session)
+        yield self.async.assertEqual(l.size(), 0)
+        self.assertEqual(l.session, session)
         self.asserGroups(l)
         self.assertFalse(l.state().deleted)

@@ -21,8 +21,20 @@ class StdModel(StdNetBase):
 
 .. attribute:: _meta
 
-    Instance of :class:`Metaclass`, it containes all the information needed
-    by a :class:`stdnet.backendServer`.
+    A class attribute which is an instance of :class:`Metaclass`, it
+    containes all the information needed by a :class:`stdnet.backendServer`.
+    
+.. attribute:: objects
+
+    A class attribute available when this model is
+    :ref:`registered with a backend server <register-model>`. it is
+    a :class:`Manager` for obtaining :class:`Session` and :class:`Query`.
+    
+.. attribute:: searchengine
+
+    A class attribute available when this model is registered and installed
+    with a :class:`SearchEngine` for full text search. Check the
+    :meth:`SearchEngine.register` documentation for more information. 
 
 .. attribute:: id
 
@@ -38,6 +50,7 @@ class StdModel(StdNetBase):
     when the instance is loaded from the data server).
 '''
     _model_type = 'object'
+    searchengine = None
     is_base_class = True
     _loadedfields = None
 
@@ -231,9 +244,9 @@ attribute set to ``True`` will be excluded.'''
     @async()
     def _load_related_model(self, field, load_only=None, dont_load=None):
         cache_name = field.get_cache_name()
-        try:
+        if hasattr(self, cache_name):
             yield getattr(self, cache_name)
-        except AttributeError:
+        else:
             val = getattr(self, field.attname)
             if val is None:
                 rel_obj = None

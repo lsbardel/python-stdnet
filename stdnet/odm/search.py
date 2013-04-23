@@ -1,8 +1,10 @@
 import logging
 
 from itertools import chain
-from inspect import isgenerator
+from inspect import isgenerator, isclass
 from datetime import datetime
+
+from stdnet import async
 
 from .models import StdModel
 from .fields import DateTimeField, CharField
@@ -45,28 +47,49 @@ The main methods to be implemented are :meth:`add_item`,
 
         se.add_word_middleware(stopwords('and','or','this','that',...))
 """
-    REGISTERED_MODELS = {}
-    ITEM_PROCESSORS = []
-    last_indexed = 'last_indexed'
-
-    def __init__(self):
+    def __init__(self, backend=None):
+        self._backend = backend
+        self.REGISTERED_MODELS = {}
+        self.ITEM_PROCESSORS = []
+        self.last_indexed = 'last_indexed'
         self.word_middleware = []
-        self.add_processor(stdnet_processor())
+        self.add_processor(stdnet_processor(self))
 
-    def register(self, model, related=None):
-        '''Register a :class:`StdModel` to the search engine.
+    @property
+    def backend(self):
+        '''Backend for this search engine.'''
+        return self._backend
+    
+    def register(self, model, related=None, install=False):
+        '''Register a :class:`StdModel` with this search :class:`SearchEngine`.
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.
 
 :parameter model: a :class:`StdModel` class.
 :parameter related: a list of related fields to include in the index.
+:parameter install: a flag indicating if to install this :class:`SearchEngine`
+    as the default search engine for ``model``. If this flag is ``True``
+    (default is ``False``), this search engine instance is available in
+    as :attr:`StdModel.searchengine` class attribute.
+
+Insalling the engine at class level, means you can use the engine via the
+:class:`Manager` api without explicitly passing the :class:`SearchEngine`
+instance::
+
+    MyModel.objects.query().search(...)
 '''
-        model._meta.searchengine = self
-        model._index_related = related or ()
-        update_model = UpdateSE(self)
+        if install:
+            model.searchengine = self
+        update_model = UpdateSE(self, related)
         self.REGISTERED_MODELS[model] = update_model
-        post_commit.connect(update_model, sender = model)
-        post_delete.connect(update_model, sender = model)
+        post_commit.connect(update_model, sender=model)
+        post_delete.connect(update_model, sender=model)
+        
+    def get_related_fields(self, item):
+        if not isclass(item):
+            item = item.__class__
+        registered = self.REGISTERED_MODELS.get(item)
+        return registered.related if registered else ()
 
     def words_from_text(self, text, for_search=False):
         '''Generator of indexable words in *text*.
@@ -87,17 +110,13 @@ return a *list* of cleaned words.
 '''
         if not text:
             return []
-
         word_gen = self.split_text(text)
-
         for middleware,fors in self.word_middleware:
             if for_search and not fors:
                 continue
             word_gen = middleware(word_gen)
-
         if isgenerator(word_gen):
             word_gen = list(word_gen)
-
         return word_gen
 
     def split_text(self, text):
@@ -135,7 +154,7 @@ add it to the index.
 
 :parameter items: an iterable over instances of of a :class:`stdnet.odm.StdModel`.
 :parameter model: The *model* of all *items*.
-:parameter transaction: A transaction for updauing indexes.
+:parameter transaction: A transaction for updating indexes.
 """
         ids = []
         wft = self.words_from_text
@@ -147,36 +166,45 @@ add it to the index.
         if ids:
             self.remove_item(model, transaction, ids)
 
+    def query(self, model):
+        '''Return a query for model when indexing is to be performed.'''
+        session = self.session(model)
+        fields = tuple((f.name for f in model._meta.scalarfields\
+                         if f.type=='text'))
+        qs = session.query(model).load_only(*fields)
+        for related in self.get_related_fields(model):
+            qs = qs.load_related(related)
+        return qs
+        
+    @async()
     def reindex(self):
-        '''Re-index models by removing items in
-:class:`stdnet.contrib.searchengine.WordItem` and rebuilding them by iterating
-through all the instances of model provided.
-If models are not provided, it reindex all models registered
-with the search engine.'''
-        self.flush()
+        '''Re-index models by removing indexes and rebuilding them by iterating
+through all the instances of :attr:`REGISTERED_MODELS`.'''
+        yield self.flush()
         n = 0
         # Loop over models
         for model in self.REGISTERED_MODELS:
             # get all fiels to index
             fields = tuple((f.name for f in model._meta.scalarfields\
-                            if f.type == 'text'))
-            session = self.session()
-            with session.begin():
-                for obj in model.objects.query().load_only(*fields):
-                    n += 1
-                    self.index_item(obj, session)
-        return n
+                            if f.type=='text'))
+            all = yield self.query(model).all()
+            if all:
+                with self.session(model).begin() as t:
+                    self.index_items_from_model(all, model, t)
+                yield t.on_result
+                n += len(all)
+        yield n
 
     # INTERNALS
     #################################################################
 
     def item_field_iterator(self, item):
-        for processor in self.ITEM_PROCESSORS:
-            result = processor(item)
-            if result is not None:
-                return result
-        raise ValueError(
-                'Cound not iterate through item {0} fields'.format(item))
+        if item:
+            for processor in self.ITEM_PROCESSORS:
+                result = processor(item)
+                if result is not None:
+                    return result
+        raise ValueError('Cound not iterate through "%s" fields' % item)
         
     def _item_data(self, items):
         fi = self.item_field_iterator
@@ -185,32 +213,39 @@ with the search engine.'''
             if data:
                 yield item, data
         
-
     # ABSTRACT FUNCTIONS
     ################################################################
-
-    def session(self):
+    def session(self, *models):
         '''Create a session for the search engine'''
-        return None
+        raise NotImplementedError
 
     def remove_item(self, item_or_model, session, ids=None):
         '''Remove an item from the search indices'''
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def add_item(self, item, words, session):
-        '''Create indices for *item* and each word in *words*.
+    def add_item(self, item, words, transaction):
+        '''Create indices for *item* and each word in *words*. Must be
+implemented by subclasses.
 
 :parameter item: a *model* instance to be indexed. It does not need to be
     a :class:`stdnet.odm.StdModel`.
-:parameter words: iterable over words. This iterable has been obtained from the
+:parameter words: iterable over words. It has been obtained from the
     text in *item* via the :attr:`word_middleware`.
+:param transaction: The :class:`Transaction` used.
 '''
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def search(self, text, include = None, exclude = None, lookup = None):
-        raise NotImplementedError()
+    def search(self, text, include=None, exclude=None, lookup=None):
+        '''Full text search. Must be implemented by subclasses.
 
-    def search_model(self, query, text, lookup = None):
+:param test: text to search
+:param include: optional list of models to include in the search. If not
+    provided all :attr:`REGISTERED_MODELS` will be used.
+:param exclude: optional list of models to exclude for the search.
+:param lookup: currently not used.'''
+        raise NotImplementedError
+
+    def search_model(self, query, text, lookup=None):
         '''Search *text* in *model* instances. This is the functions
 needing implementation by custom serach engines.
 
@@ -218,55 +253,56 @@ needing implementation by custom serach engines.
 :parameter text: text to search
 :parameter lookup: Optional lookup, one of ``contains`` or ``in``.
 :rtype: An updated :class:`Query`.'''
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def flush(self, full = False):
+    def flush(self, full=False):
         '''Clean the search engine'''
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UpdateSE(object):
 
-    def __init__(self, se):
+    def __init__(self, se, related=None):
         self.se = se
+        self.related = related or ()
 
-    def __call__(self, instances, session=None, signal=None, sender=None,
+    def __call__(self, instances, signal=None, sender=None, session=None,
                  **kwargs):
-        '''An update on instances has occured. Propagate it to the search
+        '''An update on instances has occurred. Propagate it to the search
 engine index models.'''
-        if session is None:
-            raise ValueError('No session available. Cannot updated indexes.')
         if sender:
-            if signal == post_delete:
-                self.remove(instances, session, sender)
-            else:
-                self.index(instances, session, sender)
+            se_session = self.se.session(sender)
+            if se_session.backend == session.backend:
+                if signal == post_delete:
+                    return self.remove(instances, sender, se_session)
+                else:
+                    return self.index(instances, sender, se_session)
 
-    def index(self, instances, session, sender):
-        # The session is not in a transaction since this is a callback
+    def index(self, instances, sender, session):
         logger.debug('indexing %s instances of %s',
                      len(instances), sender._meta)
         with session.begin(name='Index search engine') as t:
             self.se.index_items_from_model(instances, sender, t)
+        return t.on_result
 
-    def remove(self, instances, session, sender):
+    def remove(self, instances, sender, session):
         logger.debug('Removing from search index %s instances of %s',
                      len(instances), sender._meta)
         remove_item = self.se.remove_item
         with session.begin(name='Remove search indexes') as t:
             remove_item(sender, t, instances)
+        return t.on_result
 
 
 class stdnet_processor(object):
     '''A search engine processor for stdnet models.
 An engine processor is a callable
 which return an iterable over text.'''
+    def __init__(self, se):
+        self.se = se
+        
     def __call__(self, item):
-        if isinstance(item, StdModel):
-            return self.field_iterator(item)
-
-    def field_iterator(self, item):
-        related = getattr(item, '_index_related', ())
+        related = self.se.get_related_fields(item)
         data = []
         for field in item._meta.fields:
             if field.hidden:
@@ -279,5 +315,5 @@ which return an iterable over text.'''
             elif field.name in related:
                 value = getattr(item, field.name, None)
                 if value:
-                    data.extend(self.field_iterator(value))
+                    data.extend(self.se.item_field_iterator(value))
         return data

@@ -1,44 +1,59 @@
 '''\
-This is a pure python implementation of the :class:`stdnet.odm.SearchEngine`
-interface.
+Stdnet provides a redis-based implementation for the
+:class:`stdnet.odm.SearchEngine` so that you can have your models stored
+and indexed in redis and if you like in the same redis instance.
 
-This is not intended to be the most full-featured text search available, but
-it does the job. For that, look into Sphinx_, Solr, or other alternatives.
+Installing the search engine is as easy as
 
-Usage
-===========
-
-Somewhere in your application create the search engine singletone::
+* Create the search engine singletone::
 
     from stdnet.apps.searchengine import SearchEngine
-     
-    engine = SearchEngine(...)
- 
-The engine works by registering models to it via the
-:meth:`stdnet.odm.SearchEngine.register` method.
-For example::
-
-    engine.register(MyModel)
-
-From now on, every time and instance of ``MyModel`` is created,
-the search engine will updated its indexes.
-
-To search, you use the :class:`stdnet.odm.Query` API::
-
-    query = self.session().query(MyModel)
-    search_result = query.search(sometext)
     
-If you would like to limit the search to some specified models::
+    engine = SearchEngine(backend, ...)
+    
+  where backend is either a instance of a :class:`stdnet.BackendDataServer`
+  or a valid :ref:`connection string <connection-string>` such as::
+  
+      redis://127.0.0.1:6379?db=4
+      
+  This is the back-end server where the text indices :class:`WordItem`
+  are stored, and not the back-end server of your models to index.
+  They can be the same.
 
-    search_result = engine.search(sometext, include = (model1,model2,...))
-    
-    
-.. _Sphinx: http://sphinxsearch.com/
+* Register models you want to index to the search engine signletone::
+
+    engine.register(MyModel, install=True)
+
+Check the :meth:`stdnet.odm.SearchEngine.register` documentation for more
+information.
+
+Searching model instances for text can be achieved using the
+:class:`Query.search` method::
+
+    MyModel.objects.query().search('bla foo...') 
+
+API
+==========
+
+SearchEngine
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: SearchEngine
+   :members:
+   :member-order: bysource
+   
+   
+WordItem
+~~~~~~~~~~~~~~~~~~~~~~
+   
+ .. autoclass:: WordItem
+   :members:
+   :member-order: bysource
 '''
 import re
 from inspect import isclass
 
-from stdnet import odm
+from stdnet import odm, async, getdb
 from stdnet.utils import to_string, iteritems
 
 from .models import WordItem
@@ -79,10 +94,9 @@ driver.
     REGISTERED_MODELS = {}
     ITEM_PROCESSORS = []
     
-    def __init__(self, min_word_length = 3, stop_words = None,
-                 metaphone = True, stemming = True,
-                 splitters = None):
-        super(SearchEngine,self).__init__()
+    def __init__(self, backend=None, min_word_length=3, stop_words=None,
+                 metaphone=True, stemming=True, splitters=None, **kwargs):
+        super(SearchEngine, self).__init__(backend=getdb(backend), **kwargs)
         self.MIN_WORD_LENGTH = min_word_length
         splitters = splitters if splitters is not None else\
                     processors.PUNCTUATION_CHARS
@@ -107,11 +121,14 @@ driver.
                 word = word.lower()
                 yield word
     
-    def session(self):
-        return WordItem.objects.session()
+    def session(self, *models):
+        if self.backend:
+            return odm.Session(self.backend)
+        else:
+            return WordItem.objects.session(*models)
     
     def flush(self):
-        WordItem.objects.flush()
+        return self.session(WordItem).flush(WordItem)
         
     def add_item(self, item, words, transaction):
         for word in words:
@@ -120,11 +137,6 @@ driver.
                                      object_id=item.id))
     
     def remove_item(self, item_or_model, transaction, ids=None):
-        '''
-Remove indexes for *item_or_model*.
-
-:parameter item: an instance of a :class:`stdnet.odm.StdModel`.        
-'''
         query = transaction.query(WordItem)
         if isclass(item_or_model):
             wi = query.filter(model_type=item_or_model)
@@ -135,12 +147,11 @@ Remove indexes for *item_or_model*.
                               object_id=item_or_model.id)
         transaction.delete(wi)
     
-    def search(self, text, include = None, exclude = None, lookup = None):
-        '''Full text search. Return a list of queries to intersect.'''
+    def search(self, text, include=None, exclude=None, lookup=None):
         words = self.words_from_text(text, for_search=True)
         return self._search(words, include, exclude, lookup)
     
-    def search_model(self, q, text, lookup = None):
+    def search_model(self, q, text, lookup=None):
         '''Implements :meth:`stdnet.odm.SearchEngine.search_model`.
 It return a new :class:`stdnet.odm.QueryElem` instance from
 the input :class:`Query` and the *text* to search.'''
@@ -151,24 +162,34 @@ the input :class:`Query` and the *text* to search.'''
         qs = tuple((q.get_field('object_id') for q in qs))
         return odm.intersect((q,)+qs)
     
-    def _search(self, words, include = None, exclude = None, lookup = None):
+    def worditems(self, model=None):
+        q = self.session(WordItem).query(WordItem)
+        if model:
+            if not isclass(model):
+                return q.filter(model_type=model.__class__, object_id=model.id)
+            else:
+                return q.filter(model_type=model)
+        else:
+            return q
+    
+    def _search(self, words, include=None, exclude=None, lookup=None):
         '''Full text search. Return a list of queries to intersect.'''
         lookup = lookup or 'contains'
-        query = WordItem.objects.query()
+        query = self.session(WordItem).query(WordItem)
         if include:
-            query = query.filter(model_type__in = include)
+            query = query.filter(model_type__in=include)
         if exclude:
-            query = query.exclude(model_type__in = include)
+            query = query.exclude(model_type__in=include)
         if not words:
             return [query]
         qs = []
         if lookup == 'in':
             # we are looking for items with at least one word in it
-            qs.append(query.filter(word__in = words))
+            qs.append(query.filter(word__in=words))
         elif lookup == 'contains':
             #we want to match every single words
             for word in words:
-                qs.append(query.filter(word = word))
+                qs.append(query.filter(word=word))
         else:
             raise ValueError('Unknown lookup "{0}"'.format(lookup))
         return qs    

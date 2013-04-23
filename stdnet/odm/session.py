@@ -3,7 +3,8 @@ from copy import copy
 from itertools import chain
 from functools import partial
 
-from stdnet import getdb, session_result, on_result, async
+from stdnet import getdb, session_result, on_result, async, multi_async,\
+                    maybe_async
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
@@ -346,15 +347,16 @@ or using the ``with`` context manager::
 
     Dictionary of list of ids deleted from the backend server after a commit
     operation. This dictionary is only available once the transaction has
-    finished.
+    :attr:`finished`.
     
 .. attribute:: saved
 
     Dictionary of list of ids saved in the backend server after a commit
     operation. This dictionary is only available once the transaction has
-    finished.
+    :attr:`finished`.
 '''
     _executed = False
+    _finished = False
     def __init__(self, session, name=None, signal_commit=True,
                  signal_delete=True):
         self.name = name or 'transaction'
@@ -373,7 +375,16 @@ or using the ``with`` context manager::
 
     @property
     def executed(self):
+        '''``True`` when this transaction has been executed. A transaction
+can be executed once only via the :meth:`commit` method. An executed transaction
+if :attr:`finished` once a response from the backend server has been
+processed.'''
         return self._executed
+    
+    @property
+    def finished(self):
+        '''``True`` when this transaction is done.'''
+        return self._finished
 
     def add(self, instance, **kwargs):
         '''A convenience proxy for :meth:`Session.add` method.'''
@@ -393,11 +404,7 @@ or using the ``with`` context manager::
     def __exit__(self, type, value, traceback):
         if type is None:
             try:
-                result = self.commit()
-                # allow for asynchronous results, i.e. the return is not self
-                if result is not self:
-                    self.on_commit = result
-                return result
+                return self.commit()
             except:
                 self.rollback()
                 raise
@@ -413,11 +420,11 @@ or using the ``with`` context manager::
     def commit(self):
         '''Close the transaction and commit session to the backend.'''
         if self.executed:
-            raise InvalidTransaction('Invalid operation.\
- Transaction already executed.')
+            raise InvalidTransaction('Invalid operation. '\
+                                     'Transaction already executed.')
         if self._pre_commit():
             result = self.backend.execute_session(self.session)
-            self.on_result = on_result(result, self._post_commit)
+            self.on_result = maybe_async(on_result(result, self._post_commit))
             return self.on_result
         else:
             return self._post_commit(None)
@@ -470,11 +477,18 @@ Results can contain errors.
             if saved:
                 self.saved[meta] = saved
                 if self.signal_commit:
-                    signals.append((post_commit.send, sm, saved))
+                    signals.append((post_commit.send_robust, sm, saved))
         # Once finished we send signals
+        results = []
         for send, sm, instances in signals:
-            send(sm.model, instances=instances, session=session,
-                 transaction=self)
+            for _, result in send(sm.model, instances=instances,
+                                  session=session, transaction=self):
+                results.append(result)
+        results = multi_async(results, raise_on_error=True)
+        return on_result(results, partial(self._after_signals, exceptions))
+    
+    def _after_signals(self, exceptions, results):
+        self._finished = True
         if exceptions:
             failures = len(exceptions)
             if failures > 1:
@@ -745,39 +759,40 @@ for a given :class:`StdModel`::
                                                self.model,
                                                self.backend)
             else:
-                return '{0}({1})'.format(self.__class__.__name__,self.model)
+                return '{0}({1})'.format(self.__class__.__name__, self.model)
         else:
             return self.__class__.__name__
     __repr__ = __str__
 
-    def session(self, transaction=None):
+    def session(self, *models):
         '''Returns a new :class:`Session`.'''
-        if transaction:
-            return transaction.session
-        elif not self.backend:
-            raise ModelNotRegistered("Model '{0}' is not registered with a\
- backend database. Cannot use manager.".format(self.model._meta))
-        return Session(self.backend)
-
-    def transaction(self, *models, **kwargs):
-        '''Return a :class:`Transaction`. If models are specified, it check
-if their managers have the same backend database.'''
+        if not self.backend:
+            raise ModelNotRegistered("Model '%s' is not registered with a "\
+                                     "backend database. Cannot use manager." %\
+                                     self.model._meta)
         backend = self.backend
         for model in models:
             c = model.objects.backend
             if not c:
-                raise ModelNotRegistered("Model '{0}' is not registered with a\
-     backend database. Cannot start a transaction.".format(model))
+                raise ModelNotRegistered("Model '%s' is not registered with a "\
+                                         "backend database. Cannot start a "\
+                                         "transaction." % model._meta)
             if backend and backend != c:
-                raise InvalidTransaction("Models {0} are registered\
-     with a different databases. Cannot create transaction"\
-                .format(', '.join(('{0}'.format(m) for m in models))))
-        return self.session().begin(**kwargs)
+                models = ', '.join(('%s' % m._meta for m in models))
+                raise InvalidTransaction("Models %s are registered with "\
+                                         "different databases. Cannot create "
+                                         "transaction." % models)
+        return Session(backend)
+
+    def transaction(self, *models, **kwargs):
+        '''Return a :class:`Transaction`. If models are specified, it check
+if their managers have the same backend database.'''
+        return self.session(*models).begin(**kwargs)
 
     # SESSION Proxy methods
-    def query(self, transaction=None):
+    def query(self):
         '''Returns a new :class:`Query` for the :attr:`Manager.model`.'''
-        return self.session(transaction=transaction).query(self.model)
+        return self.session().query(self.model)
 
     def empty(self):
         '''Returns an empty :class;`Query`'''
@@ -789,8 +804,8 @@ if their managers have the same backend database.'''
     def exclude(self, **kwargs):
         return self.query().exclude(**kwargs)
 
-    def search(self, text, lookup = None):
-        return self.query().search(text, lookup = lookup)
+    def search(self, text, lookup=None):
+        return self.query().search(text, lookup=lookup)
 
     def get(self, **kwargs):
         return self.query().get(**kwargs)

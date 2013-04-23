@@ -15,10 +15,14 @@ There are over 600 tests with a coverage of about 90%.
 
 **The library is stable, used in production and continuously maintained**.
 
-**Dependencies**
+.. _requirements:
 
-* redis-py_ for :ref:`redis backend <redis-server>`.
-* pymongo_ for :ref:`mongo db backend <mongo-server>`.
+Requirements
+================
+
+* redis-py_ for :ref:`redis backend <redis-server>`. Redis 2.6 or above.
+* Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (alpha).
+* Optional pulsar_ for :ref:`asynchronous database connection <asynchronous>`.
 
 .. _contents:
 
@@ -29,10 +33,10 @@ Contents
    :maxdepth: 1
    
    overview
+   faq
    examples/index
    api/index
    backends/index
-   apps/index
    changelog
    stdnetredis
    
@@ -50,3 +54,4 @@ Indices and tables
 .. _cython: http://cython.org/
 .. _Mongodb: http://www.mongodb.org/
 .. _pymongo: http://api.mongodb.org/python/current/index.html
+.. _pulsar: https://pypi.python.org/pypi/pulsar

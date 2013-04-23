@@ -183,7 +183,6 @@ mapper.
 
     The :class:`Field` representing the primary key.
 '''
-    searchengine = None
     connection_string = None
 
     def __init__(self, model, fields, abstract=False, app_label='',

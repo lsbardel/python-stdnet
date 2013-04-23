@@ -1,9 +1,16 @@
+'''Asynchronous binding for stdnet.'''
 from inspect import isgeneratorfunction
 try:
-    from pulsar import is_async, async
+    from pulsar import is_async, async, multi_async, maybe_async
 except ImportError:
     def is_async(result):
         return False
+    
+    def multi_async(data, **kwargs):
+        return data
+    
+    def maybe_async(data):
+        return data
     
     class async:
         
@@ -16,7 +23,8 @@ except ImportError:
                     
     
     
-__all__ = ['is_async', 'on_result', 'on_error', 'async']
+__all__ = ['is_async', 'on_result', 'on_error', 'async',
+           'multi_async', 'maybe_async']
 
 
 def on_result(result, callback, errback=None):

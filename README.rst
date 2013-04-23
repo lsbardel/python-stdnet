@@ -1,7 +1,11 @@
 **Object data mapper and advanced query manager for non relational databases.**
 
 The data is owned by different, configurable back-end databases and it is
-accessed using a light-weight Object Data Mapper (ODM). 
+accessed using a light-weight Object Data Mapper (ODM). The ODM presents a
+method of associating user-defined Python classes with database **collections**,
+and instances of those classes with **items** in their corresponding collections.
+Collections and items are different for different backend databases but
+are treated in the same way in the python language domain.
 
 :CI: |stdnet-build|_ 
 :Documentation: http://lsbardel.github.com/python-stdnet/
@@ -25,16 +29,21 @@ Features
 =================
 * Models with scalar and multi-value fields.
 * Rich query API including unions, intersections, exclusions, ranges and more.
+* Minimal server round-trips via backend scripting (lua for redis).
 * Full text search.
+* Signals handling to allow decoupled applications to get notified on changes.
+* Synchronous and asynchronous database connection.
 * Multi-variate numeric timeseries application.
-* Publish/Subscribe application.
+* Asynchronous Publish/Subscribe application.
+* 90% Test coverage.
+* Fully documented.
 
 Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
 * redis-py_ for :ref:`redis backend <redis-server>`.
 * Optional pymongo_ for the mongo backend.
-* Optional pulsar_ when using the asynchronous redis connection or the test suite.
+* Optional pulsar_ when using the asynchronous connections or the test suite.
 * You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.
 
 
@@ -75,19 +84,18 @@ To know which version you have installed::
 
 	>>> import stdnet
 	>>> stdnet.__version__
-	'0.7c2'
+	'0.8.0'
 	>>> stdnet.VERSION
-	stdnet_version(major=0, minor=7, micro=0, releaselevel='rc', serial=2)
+	stdnet_version(major=0, minor=8, micro=0, releaselevel='final', serial=1)
 
 
 Backends
 ====================
-Backend data-stores provide the backbone of the library,
-while the Object Data Mapper the syntactic sugar.
-Currently the list of back-ends is limited to
+Backend data-stores are the backbone of the library.
+Currently the list is limited to
 
-* Redis_.
-* Mongodb_ (experimental).
+* Redis_ 2.6 or above.
+* Mongodb_ (alpha).
  
  
 Object Data Mapper
@@ -161,10 +169,7 @@ __ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
 
 Requirements for running tests:
 
-* unittest2_ for python 2.6 only.
-* argparse_ for python 2.6, 3 and 3.1 only.
-* mock_ for python 2.6 to python 3.2 only.
-* nose_ or pulsar_.
+* pulsar_.
 
 Note, these requirements are only needed if you are planning to run tests.
 To run tests open a shell and launch Redis. On another shell,
@@ -227,7 +232,6 @@ file in the top distribution directory for the full license text.
 .. _pymongo: http://pypi.python.org/pypi/pymongo/
 .. _Django: http://www.djangoproject.com/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
-.. _redis-py: http://github.com/andymccurdy/redis-py
 .. _ORM: http://en.wikipedia.org/wiki/Object-relational_mapping
 .. _CouchDB: http://couchdb.apache.org/
 .. _couchdb-python: http://code.google.com/p/couchdb-python/

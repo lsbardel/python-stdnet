@@ -364,6 +364,7 @@ criteria and options associated with it.
         self.fargs  = kwargs.pop('fargs', None)
         self.eargs  = kwargs.pop('eargs', None)
         self.unions = kwargs.pop('unions', ())
+        self.searchengine = kwargs.pop('searchengine', None)
         self.intersections = kwargs.pop('intersections', ())
         self.text  = kwargs.pop('text', None)
         self.exclude_fields = kwargs.pop('exclude_fields', None)
@@ -474,20 +475,18 @@ the :meth:`union` method.'''
         q.data['ordering'] = ordering
         return q
 
-    def search(self, text, lookup = None):
+    def search(self, text, lookup=None, engine=None):
         '''Search *text* in model. A search engine needs to be installed
 for this function to be available.
 
 :parameter text: a string to search.
 :return type: a new :class:`Query` instance.
-'''
-        if self._meta.searchengine:
-            q = self._clone()
-            q.text = (text,lookup)
-            return q
-        else:
-            raise QuerySetError('Search not implemented for {0} model'\
-                                .format(self.model))
+''' 
+        q = self._clone()
+        q.text = (text, lookup)
+        if engine:
+            q.searchengine = engine
+        return q
 
     def where(self, code, load_only=None):
         '''For :ref:`backend <db-index>` supporting scripting, it is possible
@@ -513,7 +512,11 @@ each element in the query. The *coe* should reference an instance of
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            return self._meta.searchengine.search_model(q, *self.text)
+            self.searchengine = self.searchengine or self.model.searchengine
+            if self.searchengine:
+                return self.searchengine.search_model(q, *self.text)
+            else:
+                raise QuerySetError('Search not available for %s' % self._meta)
         else:
             return q
 
@@ -537,7 +540,8 @@ in a generative way::
 :rtype: a new :class:`Query`.'''
         field = self._get_related_field(related)
         if not field:
-            raise FieldError('%s is not a related field' % related)
+            raise FieldError('"%s" is not a related field for "%s"' %\
+                              (related, self._meta))
         q = self._clone()
         return q._add_to_load_related(field, *related_fields)
 

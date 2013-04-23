@@ -27,6 +27,24 @@ Redis loads and mantains the whole dataset into memory, but the dataset is persi
 since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.
 
+.. _redis-connection-string:
+
+Connection String
+====================
+
+The :ref:`connection string <connection-string>` is a way to specify
+the various parameters of the backend to use. Redis supports the following
+parameters:
+
+* ``db``, the database number.
+* ``namespace``, the namespace for all the keys used by the backend.
+* ``password``, database password.
+* ``timeout``, connection timeout (0 is an asynchronous connection).
+
+A full connection string could be::
+
+    redis://127.0.0.1:6379?db=3&password=bla&namespace=test.&timeout=5
+
 
 Model data
 ==================

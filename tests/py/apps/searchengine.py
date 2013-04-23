@@ -2,6 +2,8 @@
 from random import randint
 from datetime import date
 
+from pulsar.apps.test import sequential
+
 from stdnet import odm, QuerySetError
 from stdnet.utils import test, to_string, range, populate
 from stdnet.odm.search import UpdateSE
@@ -69,17 +71,18 @@ below will derive from this class.'''
     stemming = True
     models = (WordItem, Item, RelatedItem)
     
-    def setUp(self):
-        self.register()
-        self.engine = self.make_engine()
-        self.engine.register(Item,('related',))
-        self.engine.register(RelatedItem,('related',))
-        self.load_scripts()
+    @classmethod
+    def after_setup(cls):
+        cls.register()
+        cls.engine = cls.make_engine()
+        cls.engine.register(Item, ('related',))
+        cls.engine.register(RelatedItem, ('related',))
     
-    def make_engine(self):
-        return SearchEngine(metaphone=self.metaphone, stemming=self.stemming)
+    @classmethod
+    def make_engine(cls):
+        return SearchEngine(metaphone=cls.metaphone, stemming=cls.stemming)
         
-    def make_item(self,name='python',counter=10,content=None,related=None):
+    def make_item(self, name='python', counter=10, content=None, related=None):
         session = self.session()
         content = content if content is not None else python_content
         with session.begin():
@@ -89,33 +92,32 @@ below will derive from this class.'''
                                     related = related))
         return item
     
-    def make_items(self, num=30, content=False, related=None):
+    @classmethod
+    def make_items(cls, num=30, content=False, related=None):
         '''Bulk creation of Item for testing search engine. Return a set
 of words which have been included in the Items.'''
         names = populate('choice', num, choice_from=basic_english_words)
-        session = self.session()
+        session = cls.session()
         words = set()
         if content:
             contents = WORDS_GROUPS(num)
         else:
             contents = ['']*num
-        with session.begin():
-            for name, content in zip(names,contents):
+        with session.begin() as t:
+            for name, content in zip(names, contents):
                 if len(name) > 3:
                     words.add(name)
                     if content:
                         words.update(content.split())
-                    session.add(Item(name=name,
-                                     counter=randint(0,10),
-                                     content=content,
-                                     related=related))
-        wis = WordItem.objects.for_model(Item)
-        self.assertTrue(wis.count())
-        return words
+                    t.add(Item(name=name, counter=randint(0,10),
+                               content=content, related=related))
+        yield t.on_result
+        cls.words = words
+        yield cls.words
     
     def simpleadd(self, name='python', counter=10, content=None, related=None):
         item = self.make_item(name, counter, content, related)
-        wis = WordItem.objects.for_model(item).all()
+        wis = yield WordItem.objects.for_model(item).all()
         self.assertTrue(wis)
         for wi in wis:
             self.assertEqual(wi.object, item)
@@ -133,7 +135,7 @@ of words which have been included in the Items.'''
 class TestMeta(TestCase):
     '''Test internal functions, not the API.'''
     def testSplitting(self):
-        eg = SearchEngine(metaphone = False, stemming = False)
+        eg = SearchEngine(metaphone=False, stemming=False)
         self.assertEqual(list(eg.words_from_text('bla-ciao+pippo')),\
                          ['bla','ciao','pippo'])
         self.assertEqual(list(eg.words_from_text('bla.-ciao:;pippo')),\
@@ -175,12 +177,16 @@ class TestMeta(TestCase):
         wi = wi[0]
         self.assertEqual(str(wi.word),'20y')
         
-        
+
+@sequential
 class TestSearchEngine(TestCase):
     
+    def tearDown(self):
+        self.clear_all()
+        
     def testSimpleAdd(self):
         self.simpleadd()
-        
+    
     def testDoubleEntries(self):
         '''Test an item indexed twice'''
         engine = self.engine
@@ -189,7 +195,7 @@ class TestSearchEngine(TestCase):
         item.save()
         wi2 = set((w.word for w in WordItem.objects.for_model(item)))
         # Lets get the words for item
-        self.assertEqual(wi,wi2)
+        self.assertEqual(wi,wi2)    
         
     def testSearchWords(self):
         self.simpleadd()
@@ -229,30 +235,6 @@ class TestSearchEngine(TestCase):
         self.assertEqual(len(qc),2)
         self.assertEqual(qc.keyword,'intersect')
         self.assertEqual(qs.count(),1)
-        
-    def testBigSearch(self):
-        words = self.make_items(num = 30, content = True)
-        sw = ' '.join(populate('choice', 1, choice_from = words))
-        qs = Item.objects.query().search(sw)
-        self.assertTrue(qs)
-        items = qs.all()
-        
-    def testInSearch(self):
-        words = self.make_items(num = 30, content = True)
-        sw = ' '.join(populate('choice', 5, choice_from = words))
-        res1 = Item.objects.search(sw)
-        res2 = Item.objects.search(sw, lookup = 'in')
-        self.assertTrue(res2)
-        self.assertTrue(res1.count() < res2.count())
-        
-    def testEmptySearch(self):
-        words = self.make_items(num = 30, content = True)
-        qs = set(self.engine.search('')[0].all())
-        qs2 = set(WordItem.objects.query().all())
-        self.assertTrue(qs)
-        self.assertEqual(qs,qs2)
-        self.assertRaises(ValueError, self.engine.search,
-                          'first second ', lookup = 'foo')
         
     def testFlush(self):
         self.make_items()
@@ -295,10 +277,44 @@ class TestSearchEngine(TestCase):
         self.assertEqual(wis, wis2)
         
 
+class TestBigSearch(TestCase):
+    
+    @classmethod
+    def after_setup(cls):
+        super(TestBigSearch, cls).after_setup()
+        return cls.make_items(num=30, content=True)
+        
+    def test_items(self):
+        wis = WordItem.objects.for_model(Item)
+        yield self.async.assertTrue(wis.count())
+        
+    def testBigSearch(self):
+        sw = ' '.join(populate('choice', 1, choice_from=self.words))
+        qs = Item.objects.query().search(sw)
+        self.assertTrue(qs)
+        items = qs.all()
+        
+    def testInSearch(self):
+        sw = ' '.join(populate('choice', 5, choice_from=self.words))
+        res1 = Item.objects.search(sw)
+        res2 = Item.objects.search(sw, lookup = 'in')
+        self.assertTrue(res2)
+        self.assertTrue(res1.count() < res2.count())
+        
+    def testEmptySearch(self):
+        qs = set(self.engine.search('')[0].all())
+        qs2 = set(WordItem.objects.query().all())
+        self.assertTrue(qs)
+        self.assertEqual(qs,qs2)
+        self.assertRaises(ValueError, self.engine.search,
+                          'first second ', lookup='foo')
+    
+    
 class TestCoverage(TestCase):
     
-    def make_engine(self):
-        eg = SearchEngine(metaphone = False)
+    @classmethod
+    def make_engine(cls):
+        eg = SearchEngine(metaphone=False)
         eg.add_word_middleware(processors.metaphone_processor)
         return eg
         

@@ -12,6 +12,12 @@ from examples.models import SimpleModel, Instrument
 @sequential
 class TestSession(test.TestCase):
     model = SimpleModel
+    
+    def setUp(self):
+        self.register()
+        
+    def tearDown(self):
+        self.clear_all()
         
     def testQueryMeta(self):
         session = self.session()
@@ -22,6 +28,7 @@ class TestSession(test.TestCase):
     def test_simple_create(self):
         session = self.session()
         session.begin()
+        self.assertTrue(session.transaction)
         m = SimpleModel(code='pluto', group='planet')
         session.add(m)
         self.assertTrue(m in session)
@@ -97,10 +104,4 @@ class TestSession(test.TestCase):
         qs = session.query(self.model).filter(group='planet')
         yield self.async.assertEqual(qs.count(), 0)
     
-    
-class TestLongSessions(test.TestCase):
-    model = SimpleModel
-    
-    def __testCreate(self):
-        session.begin()
     

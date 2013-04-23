@@ -12,7 +12,7 @@ class test_load_related(test.TestCase):
     @classmethod
     def after_setup(cls):
         cls.data = yield cls.data_cls(size=cls.size)
-        yield cls.data.makePositions(cls('testMeta'))
+        yield cls.data.makePositions(cls)
         
     def testMeta(self):
         session = self.session()

@@ -1,12 +1,15 @@
 from random import randint
 from time import time
 
+from pulsar.apps.test import sequential
+
 from stdnet import odm
 from stdnet.utils import test
 
 from examples.observer import Observer, Observable
 
 
+@sequential
 class ObserverTest(test.TestCase):
     models = (Observer,Observable)
     
@@ -22,6 +25,9 @@ class ObserverTest(test.TestCase):
                 observer.underlyings.add(obs[i])
             self.assertEqual(observer.underlyings.query().count(),N)
     
+    def tearDown(self):
+        self.clear_all()
+        
     def testMeta(self):
         s = Observer.updates
         self.assertEqual(s.penalty,5)

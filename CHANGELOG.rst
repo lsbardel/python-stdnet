@@ -37,7 +37,8 @@ Ver. 0.8 - Development
   force an ``update`` rather than an ``override`` when an instance is persistent and
   fully loaded.
 * A new asynchronous redis connection for fully asynchronous usage of the api.
-  Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information. 
+  Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information.
+* Refactored test suite to handle asynchronous and synchronous connections.
 * **650 regression tests** with **93%** coverage.
   
 .. _vers07:

@@ -12,7 +12,7 @@ class TestInstrument(FinanceTest):
 
     @classmethod
     def after_setup(cls):
-        cls.data = yield cls.data_cls(size=cls.size)
+        cls.data = cls.data_cls(size=cls.size)
         yield cls.data.create(cls)
 
     def testName(self):

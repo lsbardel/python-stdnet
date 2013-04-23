@@ -1,3 +1,5 @@
+from pulsar.apps.test import sequential
+
 from examples.permissions import User, Group, Role, InstanceRole,\
                                  register_for_permissions, authenticated_query
 from examples.data import data_generator
@@ -23,17 +25,19 @@ class namesGenerator(data_generator):
         self.passwords = populate('string', self.size, min_len=7, max_len=20)
         self.groups = populate('string', group_size, min_len=5, max_len=10)
 
-
+@sequential
 class TestPermissions(test.TestCase):
     models = (User, Group, Role, InstanceRole, MyModel)
     data_cls = namesGenerator
-
+    
     @classmethod
-    def setUpClass(cls):
-        yield super(TestPermissions, cls).setUpClass()
+    def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
         register_for_permissions(MyModel)
         
+    def tearDown(self):
+        self.clear_all()
+                
     def setUp(self):
         self.register()
         d = self.data

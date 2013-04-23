@@ -9,8 +9,10 @@ from examples.data import FinanceTest
 class TestFilter(FinanceTest):
     model = Instrument
     
-    def setUp(self):
-        yield self.data.create(self)
+    @classmethod
+    def after_setup(cls):
+        cls.data = yield cls.data_cls(size=cls.size)
+        yield cls.data.create(cls)
         
     def testAll(self):
         session = self.session()

@@ -1,3 +1,5 @@
+from pulsar.apps.test import sequential
+
 from datetime import datetime
 from random import randint
 
@@ -13,7 +15,7 @@ MAX_FOLLOWERS = 10
 usernames = populate('string',NUM_USERS, min_len=5, max_len=20)
 passwords = populate('string',NUM_USERS, min_len=8, max_len=20)
 
-
+@sequential
 class TestTwitter(test.TestCase):
     models = (User, Post)
 
@@ -21,8 +23,11 @@ class TestTwitter(test.TestCase):
         self.register()
         with User.objects.transaction() as t:
             for username,password in zip(usernames,passwords):
-                t.add(User(username = username, password = password))
-                
+                t.add(User(username=username, password=password))
+    
+    def tearDown(self):
+        self.clear_all()
+        
     def testMeta(self):
         following = User.following
         followers = User.followers

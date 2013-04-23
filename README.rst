@@ -32,11 +32,10 @@ Features
 Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
-* You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server. 
-* Optional Cython_ for faster redis protocol parser.
+* redis-py_ for :ref:`redis backend <redis-server>`.
 * Optional pymongo_ for the mongo backend.
-* Optional pulsar_ only when using the asynchronous redis connection or the
-  test suite.
+* Optional pulsar_ when using the asynchronous redis connection or the test suite.
+* You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.
 
 
 Philosophy
@@ -221,6 +220,7 @@ This software is licensed under the New BSD_ License. See the LICENSE
 file in the top distribution directory for the full license text.
 
 .. _Cython: http://cython.org/
+.. _redis-py: https://github.com/andymccurdy/redis-py
 .. _Redis: http://redis.io/
 .. _Mongo: http://www.mongodb.org/
 .. _hiredis-py: https://github.com/pietern/hiredis-py

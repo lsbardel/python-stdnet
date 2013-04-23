@@ -82,10 +82,10 @@ class TestPostDeleteSignal(test.TestCase):
             
     def setUp(self):
         self.update_model = update_model(self)
-        odm.post_delete.connect(self.update_model, sender = self.model)
+        odm.post_delete.connect(self.update_model, sender=self.model)
         
     def tearDown(self):
-        odm.post_delete.disconnect(self.update_model, sender = self.model)
+        odm.post_delete.disconnect(self.update_model, sender=self.model)
         
     def testSignal(self):
         session = self.session()

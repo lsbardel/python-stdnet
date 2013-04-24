@@ -17,15 +17,17 @@ class MultiFieldMixin(object):
         params.update(kwargs)
         m = self.model(**params)
         if save:
-            yield m.save()
+            with self.session().begin() as t:
+                t.add(m)
+            yield t.on_result
         yield m, getattr(m, self.attrname)
     
     def adddata(self, obj):
         raise NotImplementedError
     
-    def testRaiseStructFieldError(self):
-        self.async.assertRaises(StructureFieldError, self.get_object_and_field,
-                                False)
+    def test_RaiseStructFieldError(self):
+        yield self.async.assertRaises(StructureFieldError,
+                                      self.get_object_and_field, False)
     
     def test_multiFieldId(self):
         '''Here we check for multifield specific stuff like the instance

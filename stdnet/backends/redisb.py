@@ -827,11 +827,10 @@ class BackendDataServer(stdnet.BackendDataServer):
                                     score = meta.ordering.field.scorefun(v)
                         data = instance._dbdata['cleaned_data']
                         action = state.action
-                        id = state.iid
-                        if not state.persistent:
-                            id = instance.pkvalue() or ''
+                        prev_id = state.iid if state.persistent else ''
+                        id = instance.pkvalue() or ''
                         data = flat_mapping(data)
-                        lua_data.extend((action, id, score, len(data)))
+                        lua_data.extend((action, prev_id, id, score, len(data)))
                         lua_data.extend(data)
                         processed.append(state.iid)
                     self.odmrun(pipe, 'commit', meta, (), meta_info,

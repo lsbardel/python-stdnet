@@ -167,14 +167,6 @@ can also be used as stand alone objects. For example::
     db = stdnet.getdb(...)
     mylist = db.list('bla')
 
-.. attribute:: instance
-
-    An optional :class:`StdModel` instance to which the structure belongs
-    to via a :ref:`structured field <model-field-structure>`. This attribute
-    is initialised by the :mod:`odm`.
-    
-    Default ``None``.
-    
 .. attribute:: timeout
 
     Expiry timeout. If different from zero it represents the number of seconds
@@ -193,32 +185,31 @@ can also be used as stand alone objects. For example::
     _model_type = 'structure'
     pickler = None
     value_pickler = None
-    def __init__(self, instance=None, timeout=0, value_pickler=None, name='',
-                  **kwargs):
-        self.instance = instance
+    def __init__(self, timeout=0, value_pickler=None, name='', is_field=False,
+                 **kwargs):
+        self._is_field = is_field
         self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
         self.timeout = timeout
         self.setup(**kwargs)
-        if self.instance is not None:
-            if not self.id:
-                raise ValueError('Structure has instance but not id')
-        elif not self.id:
+        if not self.id:
             self.id = self.makeid()
         self._dbdata['id'] = self.id
         
     def obtain_session(self):
         if self.session is not None:
             return self.session.session()
-        elif self.instance is not None:
-            return self.instance.obtain_session()
         
     def makeid(self):
         return str(uuid4())[:8]
         
     def setup(self, **kwargs):
         pass
+    
+    @property
+    def is_field(self):
+        return self._is_field
     
     @property
     def cache(self):
@@ -307,7 +298,7 @@ structure :class:`Zset`.
         if self.cache.cache is None:
             data = yield self.session.structure(self).items()
             self.cache.set_cache(self.load_data(data))
-        yield iteritems(self.cache.cache)
+        yield self.cache.cache
     
     @async()
     def values(self):

@@ -152,15 +152,16 @@ within this :class:`Session`.'''
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
         self.pop(state.iid)
-        persistent = persistent if persistent is not None else state.persistent
+        pers = persistent if persistent is not None else state.persistent
         pkname = instance._meta.pkname()
-        if persistent:
+        if not pers:
+            instance._dbdata.pop(pkname, None)  # to make sure it is add action
+            state = instance.state(iid=None)
+        elif persistent:
             instance._dbdata[pkname] = instance.pkvalue()
+            state = instance.state(iid=instance.pkvalue())
         else:
-            instance._dbdata.pop(pkname, None)
-        if force_update:
-            instance._force_update = force_update
-        state = instance.state(update=True)
+            state = instance.state(force_update=force_update, iid=state.iid)
         iid = state.iid
         if state.persistent:
             if modified:
@@ -791,20 +792,26 @@ if their managers have the same backend database.'''
 
     # SESSION Proxy methods
     def query(self):
-        '''Returns a new :class:`Query` for the :attr:`Manager.model`.'''
+        '''Returns a new :class:`Query` for :attr:`Manager.model`.'''
         return self.session().query(self.model)
 
     def empty(self):
-        '''Returns an empty :class;`Query`'''
+        '''Returns an empty :class:`Query` for :attr:`Manager.model`.'''
         return self.session().empty(self.model)
 
     def filter(self, **kwargs):
+        '''Returns a new :class:`Query` for :attr:`Manager.model` with
+a filter.'''
         return self.query().filter(**kwargs)
 
     def exclude(self, **kwargs):
+        '''Returns a new :class:`Query` for :attr:`Manager.model` with
+a exclude filter.'''
         return self.query().exclude(**kwargs)
 
     def search(self, text, lookup=None):
+        '''Returns a new :class:`Query` for :attr:`Manager.model` with
+a full text search value.'''
         return self.query().search(text, lookup=lookup)
 
     def get(self, **kwargs):

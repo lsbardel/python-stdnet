@@ -62,7 +62,7 @@ class StructureFieldProxy(object):
             id = session.backend.basekey(instance._meta, 'obj', instance.id,
                                          self.name)
         return self.factory(id=id,
-                            instance=instance,
+                            is_field=True,
                             name=self.name,
                             pickler=self.field.pickler,
                             value_pickler=self.field.value_pickler,

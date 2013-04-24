@@ -127,10 +127,10 @@ for information regarding fields which are considered cache.'''
                 setattr(self,field.name,None)
 
     def get_attr_value(self, attr):
-        '''Retrive the *value* for a *attr* name. The attr can be nested,
-for example ``group__name``.'''
-        if hasattr(self,attr):
-            return getattr(self,attr)
+        '''Retrive the ``value`` for an ``attr`` name. The ``attr`` can
+be nested, for example ``group__name``.'''
+        if attr in self._meta.fields:
+            return self._meta.fields[attr].get_value(self)
         # no atribute, try to check for nested values
         bits = tuple((a for a in attr.split(JSPLITTER) if a))
         if len(bits) > 1:
@@ -148,13 +148,15 @@ for example ``group__name``.'''
 :rtype: a new instance of this class.
 '''
         meta = self._meta
+        session = self.session
         pkname = meta.pkname()
         pkvalue = data.pop(pkname, None)
         fields = self.todict(exclude_cache=True)
         fields.update(data)
-        fields.pop(pkname,None)
         fields.pop('__dbdata__', None)
-        return self._meta.make_object((pkvalue, None, fields))
+        obj = self._meta.make_object((pkvalue, None, fields))
+        obj.session = session
+        return obj
 
     def is_valid(self):
         '''Kick off the validation algorithm by checking all
@@ -228,12 +230,8 @@ attribute set to ``True`` will be excluded.'''
                         pass
         return getattr(self, name)
     
-    def get_state_action(self):        
-        if self._loadedfields is None and not\
-                getattr(self, '_force_update', False):
-            return'override'
-        else:
-            return 'update'
+    def get_state_action(self):
+        return 'override' if self._loadedfields is None else 'update'
                 
     def load_related_model(self, name, load_only=None, dont_load=None):
         field = self._meta.dfields.get(name)
@@ -284,6 +282,16 @@ attribute set to ``True`` will be excluded.'''
             value = field.to_python(value)
             setattr(o,field.attname,value)
         return o
+    
+    @classmethod
+    def pk(cls):
+        '''Return the primary key :class:`Field` for this model. This is a
+proxy for the :attr:`Metaclass.pk` attribute::
+
+        MyModel.pk() == MyModel._meta.pk
+        
+'''
+        return cls._meta.pk
     
     # PICKLING SUPPORT
 

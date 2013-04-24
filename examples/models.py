@@ -195,7 +195,7 @@ class User(odm.StdModel):
 
 ##############################################
 class Role(odm.StdModel):
-    name = odm.SymbolField()
+    name = odm.SymbolField(unique=True)
 
     def __unicode__(self):
         return self.name
@@ -297,7 +297,7 @@ class WordBook(odm.StdModel):
     book = odm.SymbolField()
 
     def __unicode__(self):
-        return self.id
+        return '%s:%s' % (self.word, self.book)
 
 
 ################################################################################

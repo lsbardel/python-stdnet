@@ -63,12 +63,12 @@ odm.Model = {
     commit = function (self, num, args)
         local count, p, results = 0, 0, {}
         while count < num do
-            local action, id, score, idx0 = args[p+1], args[p+2], args[p+3], p+4
+            local action, prev_id, id, score, idx0 = args[p+1], args[p+2], args[p+3], args[p+4], p+5
             local length_data = args[idx0] + 0
             local data = tabletools.slice(args, idx0+1, idx0+length_data)
             count = count + 1
             p = idx0 + length_data
-            results[count] = self:_commit_instance(action, id, score, data)
+            results[count] = self:_commit_instance(action, prev_id, id, score, data)
         end
         return results
     end,
@@ -367,9 +367,9 @@ odm.Model = {
         end
     end,
     --
-    _commit_instance = function (self, action, id, score, data)
+    _commit_instance = function (self, action, prev_id, id, score, data)
         -- Commit one instance and update indices
-        local created_id, composite_id, errors = false, self.meta.id_type == COMPOSITE_ID, {}
+        local created_id, errors = false, {}
         if self.meta.id_type == AUTO_ID then
             if id == '' then
                 created_id = true
@@ -382,24 +382,29 @@ odm.Model = {
                 end
             end
         end
-        if id == '' and not composite_id then
+        if id == '' then
             table.insert(errors, 'Id not available. Cannot commit.')
         else
-            local oldid, idkey, original_data, field = id, self:object_key(id), {}
+        	-- If no previous ID force the action to be add
+        	if prev_id == '' then
+        		prev_id = id
+        		action = 'add'
+        	end
+            local idkey, original_data, field = self:object_key(prev_id), {}
             if action ~= 'add' then  -- override or update
                 original_data = odm.redis.call('hgetall', idkey)
-                self:_update_indices(false, id)
-                if action == 'override' then
+                -- remove indices
+                self:_update_indices(false, prev_id)
+                -- when overriding, remove all data from previous hash table
+                -- only if the previous id is the same as the current one
+                if action == 'override' and prev_id == id then
                     odm.redis.call('del', idkey)
                 end
             end
-            -- Composite ID. Calculate new ID and data
-            if composite_id then
-                id = self:_update_composite_id(original_data, data)
-                idkey = self:object_key(id)
-            end
-            if id ~= oldid and oldid ~= '' then
-                self:remove_from_set(self.idset, oldid)
+            -- remove previous id from the set of ids
+            if id ~= prev_id then
+            	idkey = self:object_key(id)
+                self:remove_from_set(self.idset, prev_id)
             end
             -- Add id to the idset
             score = self:setadd(self.idset, score, id, self.meta.autoincr)
@@ -407,7 +412,7 @@ odm.Model = {
             if # data > 0 then
                 odm.redis.call('hmset', idkey, unpack(data))
             end
-            errors = self:_update_indices(true, id, oldid, score)
+            errors = self:_update_indices(true, id, prev_id, score)
             -- An error has occurred. Rollback changes.
             if # errors > 0 then
                 -- Remove indices
@@ -419,10 +424,10 @@ odm.Model = {
                         id = ''
                     end
                 elseif # original_data > 0 then
-                    id = oldid
+                    id = prev_id
                     idkey = self:object_key(id)
                     odm.redis.call('hmset', idkey, unpack(original_data))
-                    self:_update_indices(true, id, oldid, score)
+                    self:_update_indices(true, id, prev_id, score)
                 end
             end
         end
@@ -569,27 +574,6 @@ odm.Model = {
                 self:_aggregate(destkey, rid, field, processed)
             end
         end
-    end,
-    --
-    -- Update a composite ID. Composite IDs are formed by two or more fields
-    -- in an unique way.
-    _update_composite_id = function (self, original_values, data)
-        local fields, j = {}, 0
-        while j < # original_values do
-            fields[original_values[j+1]] = original_values[j+2]
-            j = j + 2
-        end
-        j = 0
-        while j < # data do
-            fields[data[j+1]] = data[j+2]
-            j = j + 2
-        end
-        local newid, joiner = '', ''
-        for _, name in ipairs(self.meta.id_fields) do
-            newid = newid .. joiner .. name .. ':' .. fields[name]
-            joiner = ','
-        end
-        return newid
     end,
     --
     _nested_field = function (self, id, nested)

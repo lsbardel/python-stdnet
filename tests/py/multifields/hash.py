@@ -8,15 +8,11 @@ from .struct import MultiFieldMixin
 keys = populate('string', 200)
 values = populate('string', 200, min_len=20, max_len=300)
 
+
 class TestHashField(test.TestCase, MultiFieldMixin):
     multipledb = 'redis'
     model = Dictionary
     
-    @classmethod
-    def setUpClass(cls):
-        yield super(TestHashField, cls).setUpClass()
-        cls.register()
-        
     def setUp(self):
         self.names = populate('string', size=10)
         self.defaults = {'name': self.names[0]}
@@ -28,30 +24,38 @@ class TestHashField(test.TestCase, MultiFieldMixin):
         size = yield d.data.size()
         self.assertEqual(len(self.data), size)
     
-    def fill(self):
-        d = yield self.model(name=self.name).save()
-        yield d.data.update(self.data)
-        d = yield Dictionary.objects.get(name=self.name)
+    def create(self, fill=False):
+        with self.session().begin() as t:
+            d = t.add(self.model(name=self.name))
+        yield t.on_result
+        if fill:
+            yield d.data.update(self.data)
         yield d
         
     def test_update(self):
-        return self.fill()
+        d = yield self.create(True)
+        data = d.data
+        self.assertTrue(data.is_field)
+        self.assertEqual(data.session, d.session)
+        self.assertEqual(data.cache.cache, None)
+        items = yield data.items()
+        self.assertTrue(data.cache.cache)
+        self.assertEqual(data.cache.cache, items)
     
     def test_add(self):
-        data = self.data
-        d = yield self.model(name='test').save()
+        d = yield self.create()
         self.assertTrue(d.session)
         self.assertTrue(d in d.session)
         with d.session.begin() as t:
             t.add(d)
-            for k, v in iteritems(data):
+            for k, v in iteritems(self.data):
                 d.data.add(k, v)
             size = yield d.data.size()
             self.assertEqual(size, 0)
         yield t.on_result
         size = yield d.data.size()
-        self.assertEqual(len(data), size)
-        
+        self.assertEqual(len(self.data), size)
+
     def testKeys(self):
         d = yield self.fill()
         for k in d.data:

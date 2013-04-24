@@ -20,31 +20,29 @@ class Id(test.TestCase):
 Use the manager for convenience.'''
     model = Task
     
-    @classmethod
-    def after_setup(cls):
-        cls.register()
-        
     def make(self, name='pluto'):
-        return Task(id=genid(), name=name).save()
+        return self.session().add(Task(id=genid(), name=name))
     
-    def testCreate(self):
+    def test_create(self):
         t1 = yield self.make()
         yield pulsar.async_sleep(0.5)
         t2 = yield self.make()
         self.assertNotEqual(t1.id, t2.id)
         self.assertTrue(t1.timestamp < t2.timestamp)
         
-    def testFailSave(self):
+    def test_change_id(self):
         t1 = yield self.make()
         id1 = t1.id
         self.assertEqual(id1, t1._dbdata['id'])
         self.assertTrue(t1.state().persistent)
-        t1.id = genid()
+        id2 = genid()
+        t1.id = id2
+        self.assertEqual(id1, t1._dbdata['id'])
+        self.assertNotEqual(id2, t1._dbdata['id'])
         yield t1.save()
-        id2 = t1.id
+        self.assertEqual(id2, t1.id)
         self.assertEqual(id2, t1._dbdata['id'])
-        yield self.async.assertEqual(
-                    self.model.objects.query().filter(id=(id1,id2)).count(), 2)
+        yield self.async.assertEqual(self.query().filter(id=(id1, id2)).count(), 1)
         
     def test_clone(self):
         t1 = yield self.make()
@@ -54,7 +52,7 @@ Use the manager for convenience.'''
         self.assertEqual(t1.name, t2.name)
         self.assertNotEqual(t1.timestamp, t2.timestamp)
         self.assertTrue(t1.timestamp < t2.timestamp)
-        tasks = yield Task.objects.query().filter(id=(t1.id, t2.id)).all()
+        tasks = yield self.query().filter(id=(t1.id, t2.id)).all()
         self.assertEqual(len(tasks), 2)
         self.assertEqual(tasks[0].id, t2.id)
         self.assertEqual(tasks[1].id, t1.id)
@@ -66,11 +64,11 @@ Use the manager for convenience.'''
         t2 = yield t1.clone(id=genid()).save()
         self.assertNotEqual(t1.id, t2.id)
         self.assertEqual(t1.name, t2.name)
-        tasks = yield Task.objects.query().filter(id=(t1.id,t2.id)).all()
+        tasks = yield self.query().filter(id=(t1.id,t2.id)).all()
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0].id, t2.id)
         
-    def testFail(self):
+    def test_fail(self):
         t = Task(name='pluto')
         yield self.async.assertRaises(Exception, t.save)
 
@@ -128,34 +126,53 @@ class TestAutoId(test.TestCase):
     
     
 class CompositeId(test.TestCase):
-    multipledb = 'redis'
     model = WordBook
     
-    @classmethod
-    def after_setup(cls):
-        cls.register()
+    def create(self, word, book):
+        session = self.session()
+        with session.begin() as t:
+            m = t.add(self.model(word=word, book=book))
+        yield t.on_result
+        self.assertEqual(m.pkvalue(), m.id)
+        id = m.id
+        m = yield session.query(self.model).get(word=word, book=book)
+        self.assertEqual(m.word, word)
+        self.assertEqual(m.book, book)
+        self.assertEqual(m.id, id)
+        yield m
         
     def testMeta(self):
         id = self.model._meta.pk
-        self.assertEqual(id.type,'composite')
-        self.assertEqual(id.fields,('word','book'))
+        self.assertEqual(id.type, 'composite')
+        fields = id.fields
+        self.assertEqual(len(fields), 2)
+        self.assertEqual(fields[0], self.model._meta.dfields['word'])
+        self.assertEqual(fields[1], self.model._meta.dfields['book'])
     
-    def testCreate(self):
-        m = yield self.model(word='hello',book='world').save()
-        self.assertEqual(m.id, 'word:hello,book:world')
-        all = yield self.model.objects.query().all()
-        self.assertEqual(len(all),1)
-        m = all[0]
-        self.assertEqual(m.word,'hello')
-        self.assertEqual(m.book,'world')
-        #
+    def test_value(self):
+        m = self.model(book='world', word='hello')
+        self.assertFalse(m.id)
+        value = m.pkvalue()
+        self.assertTrue(value)
+        self.assertEqual(value, hash(('hello', 'world')))
+        m = self.model(book='hello', word='world')
+        self.assertNotEqual(value, m.pkvalue())
+        
+    def test_create(self):
+        return self.create('hello', 'world')
+        
+    def test_change(self):
+        m = yield self.create('ciao', 'libro')
+        id = m.id
         m.word = 'beautiful'
+        self.assertNotEqual(m.pkvalue(), id)
         yield m.save()
-        self.assertEqual(m.id,'word:beautiful,book:world')
-        yield self.async.assertEqual(self.model.objects.query().count(), 1)
-        all = yield self.model.objects.query().all()
-        self.assertEqual(len(all), 1)
-        m = all[0]
-        self.assertEqual(m.word,'beautiful')
-        self.assertEqual(m.book,'world')
+        self.assertNotEqual(m.id, id)
+        self.assertEqual(m.word, 'beautiful') 
+        query = self.query()
+        yield self.async.assertEqual(query.filter(id=id).count(), 0)
+        yield self.async.assertEqual(query.filter(id=m.id).count(), 1)
+        yield self.async.assertEqual(query.filter(word='ciao', book='libro').count(), 0)
+        m2 = yield query.get(word='beautiful', book='libro')
+        self.assertEqual(m, m2)
         

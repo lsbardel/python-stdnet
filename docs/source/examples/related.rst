@@ -86,6 +86,11 @@ is an instance of A many-to-may :class:`stdnet.odm.related.One2ManyRelatedManage
 Accessing the manager via the model class or an instance has different outcomes.
 
 
+.. _through-model:
+
+The through model
+~~~~~~~~~~~~~~~~~~~~~~~
+
 Custom through model
 ~~~~~~~~~~~~~~~~~~~~~~
 

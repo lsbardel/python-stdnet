@@ -23,28 +23,25 @@ dates = populate('date', NUM_DATES, start=date(2010,5,1), end=date(2010,6,1))
 class TestDateModel2(TestDateModel):
     pass
 
+
 @sequential
 class TestAtomFields(test.TestCase):
     model = TestDateModel
-    
-    @classmethod
-    def after_setup(cls):
-        cls.register()
+        
+    def setUp(self):
+        return self.create()
         
     def tearDown(self):
         return self.clear_all()
         
     def create(self):
-        session = self.session()
-        with session.begin() as t:
+        with self.session().begin() as t:
             for na,dt in zip(names, dates):
                 t.add(self.model(person=na, name=na, dt=dt))
-        yield t.on_result
-        yield session
+        return t.on_result
             
     def testFilter(self):
-        session = yield self.create()
-        query = session.query(self.model)
+        query = self.query()
         all = yield query.all()
         self.assertEqual(len(dates), len(all))
         N = 0
@@ -60,30 +57,35 @@ class TestAtomFields(test.TestCase):
                 self.assertEqual(elem.dt, dt)
         self.assertEqual(len(all), N)
         
-    def testDelete(self):
-        self.create()
+    def test_delete(self):
         N = 0
-        done_dates = set()
+        query = self.query()
+        done_dates = {}
         for dt in dates:
             if dt not in done_dates:
-                done_dates.add(dt)
-                objs = TestDateModel.objects.filter(dt=dt)
-                N += yield objs.count()
-                yield objs.delete()
-        all = TestDateModel.objects.query()
-        self.assertEqual(len(all),0)
-        
-        done_dates = set()
+                done_dates[dt] = query.filter(dt=dt).count()
+        done_dates = yield multi_async(done_dates)
+        N = yield query.count()
+        for d in done_dates.values():
+            N -= d
+        self.assertFalse(N)
+        yield query.delete()
+        query = self.query()
+        all = yield query.all()
+        self.assertFalse(all)
+        done_dates = {}
         for dt in dates:
             if dt not in done_dates:
-                done_dates.add(dt)
-                objs = TestDateModel.objects.filter(dt=dt)
-                self.assertEqual(objs.count(),0)
-                
+                done_dates[dt] = query.filter(dt=dt).count()
+        done_dates = yield multi_async(done_dates)
+        for d in done_dates.values():
+            self.assertEqual(d, 0)
+            
         # The only key remaining is the ids key for the AutoIdField
-        TestDateModel.objects.clean()
-        keys = list(TestDateModel.objects.keys())
-        self.assertEqual(len(keys),1)
+        session = self.session()
+        yield session.clean(self.model)
+        keys = session.keys(self.model)
+        self.assertEqual(len(keys), 1)
         
 
 class TestCharFields(test.TestCase):

@@ -20,7 +20,7 @@ class ModelFieldPickler(encoders.Encoder):
         self.model = model
 
     def loads(self, s):
-        return self.model.objects.get(id = s)
+        return self.model.objects.get(id=s)
 
     def dumps(self, obj):
         return obj.id
@@ -75,8 +75,9 @@ class ProxyManager(Manager):
 
 
 def Many2ManyThroughModel(field):
-    '''Create a Many2Many through model with two foreign key fields'''
-    from stdnet.odm import StdNetType, StdModel, ForeignKey
+    '''Create a Many2Many through model with two foreign key fields and a
+CompositeFieldId depending on the two foreign keys.'''
+    from stdnet.odm import StdNetType, StdModel, ForeignKey, CompositeIdField
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
     # The two models are the same.
@@ -106,6 +107,8 @@ def Many2ManyThroughModel(field):
                                                     name_relmodel,
                                                     name_model))
     field2.register_with_model(name_relmodel, through)
+    pk = CompositeIdField(name_model, name_relmodel)
+    pk.register_with_model('id', through)
 
 
 class LazyForeignKey(object):
@@ -219,33 +222,39 @@ many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
 attribute of the model.'''
-    def session_kwargs(self, value, transaction):
-        if not isinstance(value, self.formodel):
-            raise FieldValueError(
+    def session_instance(self, name, value, transaction, **kwargs):
+        if self.related_instance is None:
+            raise ManyToManyError('Cannot use "%s" method from class' % name)
+        elif not self.related_instance.pkvalue():
+            raise ManyToManyError('Cannot use "%s" method on a non persistent '
+                                  'instance.' % name)
+        elif not isinstance(value, self.formodel):
+            raise ManyToManyError(
                '%s is not an instance of %s' % (value, self.formodel._meta))
-        # Get the related manager
-        kwargs = {self.name_formodel: value,
-                  self.name_relmodel: self.related_instance}
-        return self.session(transaction), kwargs
+        elif not value.pkvalue():
+            raise ManyToManyError('Cannot use "%s" a non persistent instance.'\
+                                  % name)
+        kwargs.update({self.name_formodel: value,
+                       self.name_relmodel: self.related_instance})
+        return self.session(transaction), self.model(**kwargs)
 
     def add(self, value, transaction=None, **kwargs):
         '''Add ``value``, an instance of :attr:`formodel` to the
 :attr:`through` model. This method can only be accessed by an instance of the
 model for which this related manager is an attribute.'''
-        if self.related_instance is None:
-            raise ManyToManyError('Cannot use "add" method form class')
-        return self._add_remove(value, transaction, **kwargs)
+        s, instance = self.session_instance('add', value, transaction, **kwargs)
+        return s.add(instance)
 
     def remove(self, value, transaction=None):
         '''Remove *value*, an instance of ``self.model`` from the set of
 elements contained by the field.'''
-        if self.related_instance is None:
-            raise ManyToManyError('Cannot use "remove" method form class')
-        return self._add_remove(value, transaction, False)
+        s, instance = self.session_instance('remove', value, transaction)
+        instance.state(iid=instance.pkvalue())
+        return s.delete(instance)
 
     def throughquery(self, transaction=None):
-        '''Return a query on the *throughmodel*, the model
-used to hold the many-to-many relationship.'''
+        '''Return a :class:`Query` on the ``throughmodel``, the model
+used to hold the :ref:`many-to-many relationship <many-to-many>`.'''
         return super(Many2ManyRelatedManager, self).query(
                                                 transaction=transaction)
 
@@ -255,30 +264,6 @@ used to hold the many-to-many relationship.'''
         session = self.session(transaction)
         return session.query(self.formodel).filter(id__in=ids)
     
-    @async()
-    def _add_remove(self, value, transaction, _add=True, **kwargs):
-        session, kw = self.session_kwargs(value, transaction)
-        # fetch the instance of the through model with
-        # related_instance and value
-        query = session.query(self.model).filter(**kw)
-        data = yield query.all()
-        add2session = _add
-        if data:
-            instance = query._get(data)
-            if _add:
-                if not kwargs:
-                    yield instance
-                else:
-                    add2session = False
-            else:
-                yield session.delete(instance)
-        elif _add:
-            instance = self.model(**kw)
-        if add2session:
-            for k, v in iteritems(kwargs):
-                setattr(instance, k, v)
-            yield session.add(instance)
-        
         
 def makeMany2ManyRelatedManager(formodel, name_relmodel, name_formodel):
     '''formodel is the model which the manager .'''

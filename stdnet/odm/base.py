@@ -212,11 +212,10 @@ mapper.
         if pk is None:
             # ID field not available, create one
             pk = AutoIdField(primary_key=True)
-        pk.register_with_model(pkname, model)
         fields.pop(pkname, None)
-        self.pk = pk
-        for name,field in fields.items():
+        for name, field in fields.items():
             field.register_with_model(name, model)
+        pk.register_with_model(pkname, model)
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
@@ -316,12 +315,8 @@ of fields names and a list of field attribute names.'''
         id_fields = None
         if pk.type == 'auto':
             id_type = 1
-        elif pk.type == 'composite':
-            id_type = 2
-            id_fields = pk.fields
         return {'id_name': pk.name,
                 'id_type': id_type,
-                'id_fields': id_fields,
                 'sorted': bool(self.ordering),
                 'autoincr': self.ordering and self.ordering.auto,
                 'multi_fields': [field.name for field in self.multifields],
@@ -422,18 +417,18 @@ def meta_options(abstract=False,
 
 
 class ModelState(object):
-    def __init__(self, instance):
+    def __init__(self, instance, force_update=False, iid=None):
         self._action = 'add'
         self.deleted = False
         self.score = 0
         dbdata = instance._dbdata
         pkname = instance._meta.pkname()
-        pkvalue = getattr(instance, pkname)
+        pkvalue = iid or getattr(instance, pkname, None)
         if pkvalue and pkname in dbdata:
-            if pkvalue != dbdata[pkname]:
-                raise ValueError('Id has changed from {0} to {1}.'\
-                                 .format(pkvalue, dbdata[pkname]))
-            self._action = instance.get_state_action()
+            if force_update:
+                self._action = 'update'
+            else:
+                self._action = instance.get_state_action()
         elif not pkvalue:
             pkvalue = 'new.{0}'.format(id(instance))
         self._iid = pkvalue
@@ -486,14 +481,14 @@ raised when trying to save an invalid instance.'''
     def __hash__(self):
         return hash(self.get_uuid(self.state().iid))
 
-    def state(self, update=False):
-        if 'state' not in self._dbdata or update:
-            self._dbdata['state'] = ModelState(self)
+    def state(self, **kwargs):
+        if 'state' not in self._dbdata or kwargs:
+            self._dbdata['state'] = ModelState(self, **kwargs)
         return self._dbdata['state']
 
     def pkvalue(self):
         '''Value of primary key'''
-        return getattr(self, self._meta.pkname())
+        return self._meta.pk.get_value(self)
 
     @classmethod
     def get_uuid(cls, id):

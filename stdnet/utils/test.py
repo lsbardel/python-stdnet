@@ -108,6 +108,11 @@ will be unregistered after the :meth:`tearDown` method.'''
         '''Create a new :class:`stdnet.odm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
         return odm.Session(cls.backend, **kwargs)
+    
+    @classmethod
+    def query(cls, model=None):
+        '''Shortcut function to create a query for a model.'''
+        return cls.session().query(model or cls.model)
 
     def assertEqualId(self, instance, value, exact=False):
         pk = instance.pkvalue()

@@ -1,3 +1,6 @@
+from pulsar import multi_async
+from pulsar.apps.test import sequential
+
 from stdnet import odm, ManyToManyError
 from stdnet.utils import test
 
@@ -12,10 +15,12 @@ class Profile2(Profile):
     roles = odm.ManyToManyField(model=Role2, related_name="profiles")
 
     
-class TestManyToManyBase(test.TestCase):
+class TestManyToManyBase(object):
     models = (Role, Profile)
         
     def addsome(self, role1='admin', role2='coder'):
+        Role = self.models[0]
+        Profile = self.models[1]
         with self.session().begin() as t:
             profile = t.add(Profile())
             profile2 = t.add(Profile())
@@ -24,9 +29,11 @@ class TestManyToManyBase(test.TestCase):
             role2 = t.add(Role(name=role2))
         yield t.on_result
         with self.session().begin() as t:
-            profile.roles.add(role1)
-            profile.roles.add(role2)
+            pr1 = profile.roles.add(role1, transaction=t)
+            pr2 = profile.roles.add(role2, transaction=t)
         yield t.on_result
+        self.assertEqual(len(t.saved), 1)
+        self.assertEqual(len(list(t.saved.values())[0]), 2)
         # Check role    
         t1 = yield role1.profiles.throughquery().all()
         t2 = yield role2.profiles.throughquery().all()
@@ -54,9 +61,9 @@ class TestManyToManyBase(test.TestCase):
         yield role1, role2
         
 
-class TestManyToMany(TestManyToManyBase):
+class TestManyToMany(TestManyToManyBase, test.TestCase):
     
-    def testMeta(self):
+    def test_meta(self):
         roles = Profile.roles
         self.assertEqual(roles.model._meta.name,'profile_role')
         self.assertEqual(roles.relmodel,Profile)
@@ -76,21 +83,52 @@ class TestManyToMany(TestManyToManyBase):
         p = Profile()
         self.assertEqual(p.roles.formodel, Role)
         self.assertEqual(p.roles.related_instance, p)
-        yield self.addsome()
-        role = yield Role.objects.get(name='admin')
+        yield self.addsome('admin', 'coder')
+        role = yield self.query(Role).get(name='admin')
         self.assertEqual(role.profiles.formodel, Profile)
         self.assertEqual(role.profiles.related_instance, role)
+        
+    def testQuery(self):
+        yield self.addsome('bla', 'foo')
+        role = yield self.query(Role).get(name='bla')
+        profiles = role.profiles.query()
+        self.assertEqual(profiles.model, Profile)
+        self.assertEqual(profiles.session, role.session)
+        
+    def test_throughquery(self):
+        yield self.addsome('bla2', 'foo2')
+        role = yield self.query(Role).get(name='bla2')
+        query = role.profiles.throughquery()
+        self.assertEqual(query.model, role.profiles.model)
+        self.assertEqual(query.session, role.session)
+        
+    def test_multiple_add(self):
+        yield self.addsome('bla3', 'foo3')
+        role = yield self.query(Role).get(name='bla3')
+        profiles = yield role.profiles.query().all()
+        self.assertEqual(len(profiles), 1)
+        # lets add it again
+        profile = profiles[0]
+        yield role.profiles.add(profile)
+        profiles = yield role.profiles.query().all()
+        self.assertEqual(len(profiles), 1)
+        self.assertEqual(profile, profiles[0])
+        
      
      
-class TestManyToManyAddDelete(TestManyToManyBase):
+@sequential
+class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
        
+    def tearDown(self):
+        return self.clear_all()
+    
     def testAdd(self):
-        yield self.addsome()
+        return self.addsome()
         
     def testDelete1(self):
         role1, role2 = yield self.addsome('bla', 'foo')
         session = self.session()
-        profiles = yield role1.profiles.query.all()
+        profiles = yield role1.profiles.query().all()
         self.assertEqual(len(profiles), 1)
         profile = profiles[0]
         yield self.async.assertEqual(profile.roles.query().count(), 2)
@@ -100,7 +138,7 @@ class TestManyToManyAddDelete(TestManyToManyBase):
         yield self.async.assertEqual(role2.profiles.query().count(), 0)
         
     def testDelete2(self):
-        self.addsome()
+        yield self.addsome()
         session = self.session()
         roles = session.query(Role)
         self.assertEqual(roles.count(),2)
@@ -130,10 +168,10 @@ class TestManyToManyAddDelete(TestManyToManyBase):
         self.assertEqual(profiles.count(),1)
         p1.roles.remove(role)
         profiles = role.profiles.query()
-        self.assertEqual(profiles.count(),0)
+        self.assertEqual(profiles.count(), 0)
         
         
-class TestRegisteredThroughModel(TestManyToManyBase):
+class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
     models = (Role2, Profile2)
     
     @classmethod
@@ -148,16 +186,24 @@ class TestRegisteredThroughModel(TestManyToManyBase):
         self.assertEqual(through.objects.backend, Role2.objects.backend)
         self.assertEqual(through.role2.field.model, through)
         self.assertEqual(through.profile2.field.model, through)
+        pk = through.pk()
+        self.assertTrue(isinstance(pk, odm.CompositeIdField))
+        self.assertEqual(pk.fields[0].relmodel, Profile2)
+        self.assertEqual(pk.fields[1].relmodel, Role2)
         
     def test_class_add(self):
         self.assertRaises(ManyToManyError, Profile2.roles.add, Role2(name='foo'))
         self.assertRaises(ManyToManyError, Role2.profiles.add, Profile2())
     
-    def testQueryOnThroughModel(self):
-        yield self.addsome()
-        query = Profile.roles.query()
-        self.assertEqual(query.model, Role)
-        yield self.async.assertEqual(query.count(), 2)
+    def test_through_query(self):
+        p1, p2, p3 = yield multi_async((Profile2().save(), Profile2().save(),
+                                        Profile2().save()))
+        r1, r2 = yield multi_async((Role2(name='bla').save(),
+                                    Role2(name='foo').save()))
+        # Add a role to a profile
+        pr1, pr2 = yield multi_async((p1.roles.add(r1), p2.roles.add(r1)))
+        self.assertEqual(pr1.role2, r1)
+        self.assertEqual(pr2.role2, r1)
         
 
 class TestManyToManyThrough(test.TestCase):

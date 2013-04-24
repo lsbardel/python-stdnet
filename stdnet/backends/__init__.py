@@ -64,7 +64,7 @@ class BackendStructure(object):
         if not instance.id:
             raise ValueError('No id available')
         # if structure has no instance create the database id
-        if instance.instance is not None:
+        if instance.is_field:
             id = instance.id
         else:
             id = backend.basekey(self.instance._meta, self.instance.id)

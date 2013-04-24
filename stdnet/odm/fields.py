@@ -163,6 +163,7 @@ Each field is specified as a :class:`StdModel` class attribute.
             self.required = True
             self.index = True
             self.as_cache = False
+            extras['default'] = None
         else:
             self.unique = unique
             self.required = required
@@ -218,6 +219,8 @@ function users should never call.'''
         meta.fields.append(self)
         if not self.primary_key:
             self.add_to_fields()
+        else:
+            model._meta.pk = self
 
     def add_to_fields(self):
         meta = self.model._meta
@@ -280,9 +283,14 @@ lookup on fields with additional nested fields. This is the case of
         raise AttributeError
     
     ############################################################################
-    ##    FIELD CONVERTERS
+    ##    FIELD VALUES
     ############################################################################
 
+    def get_value(self, instance):
+        '''Retrieve the value :class:`Field` from a
+:class:`StdModel` ``instance``.'''
+        return getattr(instance, self.attname)
+    
     def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
 data type, raising :class:`stdnet.FieldValueError` if the data
@@ -344,6 +352,10 @@ You usually won't need to use this directly; a ``primary_key`` field
 of this type, named ``id``, will automatically be added to your model
 if you don't specify otherwise.'''
     type = 'auto'
+    
+    def __init__(self, *args, **kwargs):
+        kwargs['primary_key'] = True
+        super(AutoIdField, self).__init__(*args, **kwargs)
     
     @field_value_error
     def to_python(self, value, backend=None):
@@ -902,7 +914,7 @@ argument.
         self.meta.dfields.pop(self.name)
 
 
-class CompositeIdField(SymbolField):
+class CompositeIdField(AutoIdField):
     '''This field can be used when an instance of a model is uniquely
 identified by a combination of two or more :class:`Field` in the model
 itself. It requires a number of positional arguments greater or equal 2.
@@ -913,10 +925,32 @@ These arguments must be fields names in the model where the
 
     list of :class:`Field` names which are used to uniquely identify a
     model instance
+    
+Check the :ref:`composite id tutorial <tutorial-compositeid>` for more
+information and tips on how to use it.
 '''
     type = 'composite'
     def __init__(self, *fields, **kwargs):
-        kwargs['primary_key'] = True
-        super(CompositeIdField,self).__init__(**kwargs)
+        super(CompositeIdField, self).__init__(**kwargs)
         self.fields = fields
+        if len(self.fields) < 2:
+            raise FieldError('At least tow fields are required by composite '\
+                             'CompositeIdField')
 
+    def get_value(self, instance):
+        values = tuple((f.get_value(instance) for f in self.fields))
+        return hash(values)
+    
+    def register_with_model(self, name, model):
+        fields = []
+        for field in self.fields:
+            if field not in model._meta.dfields:
+                raise FieldError('Composite id field "%s" in in "%s" model.' %\
+                                 (field, model._meta))
+            field = model._meta.dfields[field]
+            if field.internal_type not in ('text', 'numeric'):
+                raise FieldError('Composite id field "%s" not valid type.' %\
+                                 field)
+            fields.append(field)
+        self.fields = tuple(fields)
+        return super(CompositeIdField, self).register_with_model(name, model)

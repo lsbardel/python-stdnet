@@ -18,11 +18,11 @@ class TestNumberArray(StructMixin, test.TestCase):
     
     def testSizeResize(self):
         session = self.session()
-        a = session.add(self.structure())
+        a = yield session.add(self.structure())
         a.push_back(56).push_back(-78.6)
-        self.assertEqual(a.size(),2)
-        self.assertEqual(len(a),2)
-        self.assertEqual(a.resize(10),10)
+        self.assertEqual(a.size(), 2)
+        self.assertEqual(len(a), 2)
+        self.assertEqual(a.resize(10), 10)
         data = list(a)
         self.assertEqual(len(data),10)
         self.assertAlmostEqual(data[0],56.0)

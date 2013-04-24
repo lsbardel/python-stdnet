@@ -1,8 +1,15 @@
-from stdnet import odm
+from stdnet import odm, ManyToManyError
 from stdnet.utils import test
 
 from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement
+
+
+class Role2(Role):
+    pass
+
+class Profile2(Profile):
+    roles = odm.ManyToManyField(model=Role2, related_name="profiles")
 
     
 class TestManyToManyBase(test.TestCase):
@@ -92,7 +99,6 @@ class TestManyToManyAddDelete(TestManyToManyBase):
         yield self.async.assertEqual(role1.profiles.query().count(), 0)
         yield self.async.assertEqual(role2.profiles.query().count(), 0)
         
-    
     def testDelete2(self):
         self.addsome()
         session = self.session()
@@ -128,14 +134,25 @@ class TestManyToManyAddDelete(TestManyToManyBase):
         
         
 class TestRegisteredThroughModel(TestManyToManyBase):
+    models = (Role2, Profile2)
     
-    def setUp(self):
-        self.register()
+    @classmethod
+    def after_setup(cls):
+        cls.register()
         
     def testMeta(self):
-        through = Profile.roles.model
-        self.assertEqual(through.objects.backend, Profile.objects.backend)
+        through = Profile2.roles.model
+        name = through.__name__
+        self.assertEqual(name, 'profile2_role2')
+        self.assertEqual(through.objects.backend, Profile2.objects.backend)
+        self.assertEqual(through.objects.backend, Role2.objects.backend)
+        self.assertEqual(through.role2.field.model, through)
+        self.assertEqual(through.profile2.field.model, through)
         
+    def test_class_add(self):
+        self.assertRaises(ManyToManyError, Profile2.roles.add, Role2(name='foo'))
+        self.assertRaises(ManyToManyError, Role2.profiles.add, Profile2())
+    
     def testQueryOnThroughModel(self):
         yield self.addsome()
         query = Profile.roles.query()

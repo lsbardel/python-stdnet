@@ -22,7 +22,7 @@ Requirements
 
 * redis-py_ for :ref:`redis backend <redis-server>`. Redis 2.6 or above.
 * Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (alpha).
-* Optional pulsar_ for :ref:`asynchronous database connection <asynchronous>`.
+* Optional pulsar_ for :ref:`asynchronous database connection <tutorial-asynchronous>`.
 
 .. _contents:
 

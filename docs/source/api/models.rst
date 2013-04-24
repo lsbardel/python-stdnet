@@ -274,6 +274,14 @@ One2ManyRelatedManager
    :member-order: bysource
    
    
+Many2ManyRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.odm.related.Many2ManyRelatedManager
+   :members:
+   :member-order: bysource
+
+  
 .. _register-model:
 
 

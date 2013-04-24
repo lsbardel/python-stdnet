@@ -10,7 +10,7 @@ if the backend connection class is asynchronous.
 The :ref:`redis backend <redis-server>` is shipped with an asychronous client
 written using pulsar_.
 
-When using stadnet in asynchronous mode, a user writes generator method
+When using stdnet in asynchronous mode, a user writes generator method
 which pulsar_ treats as asynchronous coroutines. In this way adding instances
 of Found model in :ref:`our tutorial application <tutorial-application>`
 becomes::

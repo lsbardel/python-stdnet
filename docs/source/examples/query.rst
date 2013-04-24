@@ -198,7 +198,8 @@ The following is a query which works for both mongo and redis::
 
     qs = Data.objects.query().where('this.a > this.b')
 
-The where method can be chained in the same way as filter and exclude::
+The where method can be chained in the same way as
+:ref:`filter <tutorial-filter>` and :ref:`exclude <tutorial-exclude>`::
 
     s = Data.objects.filter(flag='foo', a__lt=4).where('this.a > this.b')
 

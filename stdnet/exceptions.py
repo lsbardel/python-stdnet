@@ -83,6 +83,9 @@ class QuerySetError(StdNetException):
     pass
 
 
+class ManyToManyError(QuerySetError):
+    pass
+
 class ObjectNotFound(QuerySetError):
     '''A :class:`QuerySetError` raised when an object is not found.'''
     pass

@@ -71,6 +71,24 @@ to which the model is related.
 
 Behind the scenes, stdnet creates an intermediary model to represent
 the many-to-many relationship. We refer to this as the ``through model``.
+
+Let's consider the following example::
+
+    class Group(odm.StdModel):
+        name = odm.SymbolField(unique=True)
+
+    class User(odm.StdModel):
+        name = odm.SymbolField(unique=True)
+        groups = odm.ManyToManyField(Group, related_name='users')
+
+Both the ``User`` class and instances of if have the ``groups`` attribute which
+is an instance of A many-to-may :class:`stdnet.odm.related.One2ManyRelatedManager`.
+Accessing the manager via the model class or an instance has different outcomes.
+
+
+Custom through model
+~~~~~~~~~~~~~~~~~~~~~~
+
 In most cases, the standard through model implemented by stdnet is
 all you need. However, sometimes you may need to associate data with the
 relationship between two models.

@@ -6,12 +6,12 @@ Ver. 0.8 - Development
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
   Very much alpha at this stage.
 * Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
-  a valid expression (lua for redis and javascript for mongodb).
+  a valid expression (lua_ for redis_ and javascript for mongodb_).
 * AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not
-  inherit from :class:`stdnet.odm.IntegerField` so that it can work dirrently
+  inherit from :class:`stdnet.odm.IntegerField` so that it can work
   for different backends.
 * Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
-  the main test class for handling tests on multiple backends at once.
+  the main test class for handling tests on multiple back-ends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
   data-set of the model which maintains the
   :ref:`many-to-many relationship <many-to-many>`.
@@ -344,3 +344,4 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _lua: http://www.lua.org/
 .. _lunatest: https://github.com/silentbicycle/lunatest
+.. _mongodb: http://www.mongodb.org/

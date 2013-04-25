@@ -47,7 +47,7 @@ class TestZset(StructMixin, test.TestCase):
             size = yield l.size()
             self.assertEqual(size, 0)
         yield t.on_result
-        self.assertTrue(l.state().persistent)
+        self.assertTrue(l.get_state().persistent)
         size = yield l.size()
         self.assertEqual(size, 9)
         yield l
@@ -56,7 +56,7 @@ class TestZset(StructMixin, test.TestCase):
         '''test a very simple zset with integer'''
         session = self.session()
         z = session.add(odm.Zset())
-        self.assertTrue(z.state().persistent)
+        self.assertTrue(z.get_state().persistent)
         self.assertTrue(z in session)
         self.assertEqual(z.session, session)
         session.delete(z)

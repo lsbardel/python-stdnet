@@ -10,7 +10,7 @@ Ver. 0.8 - Development
 * AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not
   inherit from :class:`stdnet.odm.IntegerField` so that it can work
   for different backends.
-* Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
+* Moved ``test`` module into the :mod:`stdnet.utils.test` module and refactored
   the main test class for handling tests on multiple back-ends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
   data-set of the model which maintains the
@@ -30,8 +30,9 @@ Ver. 0.8 - Development
   model caused the deletion of the instances pointing to those deleted objects.
 * Minor bug fix in lua ``odm`` script when sorting with respect related model
   fields which are missing.
-* Added the new :meth:`stdnet.odm.StdModel.get_model_attribute` method for
-  retrieving nested attribute values using the double underscore notation.
+* Added the new :meth:`stdnet.odm.StdModel.get_attr_value` method for
+  retrieving nested attribute values using the (optional)
+  :ref:`double underscore notation <tutorial-underscore>`.
 * :attr:`stdnet.odm.Field.default` attribute made read-only.
 * :meth:`stdnet.odm.Session.add` accept ``force_update`` parameter which can be used to
   force an ``update`` rather than an ``override`` when an instance is persistent and

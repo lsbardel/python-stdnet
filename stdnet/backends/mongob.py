@@ -292,7 +292,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                     if not instance.is_valid():
                         raise FieldValueError(
                                     json.dumps(instance._dbdata['errors']))
-                    state = instance.state()
+                    state = instance.get_state()
                     data = instance._dbdata['cleaned_data']
                     processed.append(state.iid)
                     pkvalue = instance.pkvalue() or ''
@@ -360,7 +360,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         processed = False
         for instance in chain(sm._delete_query, sm.dirty):
             processed = True
-            state = instance.state()
+            state = instance.get_state()
             binstance = instance.backend_structure()
             command = binstance.commit()
             if command:

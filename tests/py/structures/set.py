@@ -25,7 +25,7 @@ class TestSet(StructMixin, test.TestCase):
         # this add and commit to the backend server
         s.add(8)
         self.assertEqual(s.size(),1)
-        self.assertTrue(s.state().persistent)
+        self.assertTrue(s.get_state().persistent)
         s.update((1,2,3,4,5,5))
         self.assertEqual(s.size(),6)
         

@@ -14,8 +14,6 @@ These are all available :class:`Encoder`:
 
 .. autoclass:: NumericDefault
 
-.. autoclass:: Numeric
-
 .. autoclass:: Bytes
 
 .. autoclass:: Json

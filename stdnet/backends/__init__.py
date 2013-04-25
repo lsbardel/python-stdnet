@@ -2,9 +2,9 @@ import json
 from collections import namedtuple
 from functools import partial
 
-from stdnet.conf import settings
+from stdnet.utils.conf import settings
 from stdnet.utils.importer import import_module
-from stdnet.exceptions import *
+from stdnet.utils.exceptions import *
 from stdnet.lib import on_result
 from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
                             int_or_float, to_string, urlencode, urlparse
@@ -73,7 +73,7 @@ class BackendStructure(object):
     def commit(self):
         '''Commit to backend server.'''
         instance = self.instance
-        if instance.state().deleted:
+        if instance.get_state().deleted:
             result = self.delete()
         else:
             result = self.flush()

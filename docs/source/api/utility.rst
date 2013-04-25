@@ -9,7 +9,7 @@ Internals and Utilities
 Default Settings
 =========================
 
-.. automodule:: stdnet.conf
+.. automodule:: stdnet.utils.conf
 
 
 .. module:: stdnet.odm
@@ -159,11 +159,9 @@ Populate
 .. autofunction:: stdnet.utils.populate
 
 
-.. module:: stdnet.test
+.. _api-testing:
 
-TestCase
-~~~~~~~~~~~~~~~
+Testing
+======================
 
-.. autoclass:: TestCase
-   :members:
-   :member-order: bysource
+.. automodule:: stdnet.utils.test

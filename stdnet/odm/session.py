@@ -7,9 +7,7 @@ from stdnet import getdb, session_result, on_result, async, multi_async,\
                     maybe_async
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
-from stdnet.exceptions import ModelNotRegistered, FieldValueError, \
-                                InvalidTransaction, SessionNotAvailable,\
-                                CommitException
+from stdnet.utils.exceptions import *
 
 from .query import Q, Query, EmptyQuery
 from .signals import *
@@ -125,7 +123,7 @@ within this :class:`Session`.'''
         return iter(chain(itervalues(self._new), itervalues(self._modified)))
 
     def __contains__(self, instance):
-        iid = instance.state().iid
+        iid = instance.get_state().iid
         return iid in self._new or\
                iid in self._modified or\
                iid in self._deleted or\
@@ -148,7 +146,7 @@ within this :class:`Session`.'''
     data rather than a full replacement. This is used by the
     :meth:`insert_update_replace` method. 
 :rtype: The instance added to the session'''
-        state = instance.state()
+        state = instance.get_state()
         if state.deleted:
             raise ValueError('State is deleted. Cannot add.')
         self.pop(state.iid)
@@ -156,12 +154,13 @@ within this :class:`Session`.'''
         pkname = instance._meta.pkname()
         if not pers:
             instance._dbdata.pop(pkname, None)  # to make sure it is add action
-            state = instance.state(iid=None)
+            state = instance.get_state(iid=None)
         elif persistent:
             instance._dbdata[pkname] = instance.pkvalue()
-            state = instance.state(iid=instance.pkvalue())
+            state = instance.get_state(iid=instance.pkvalue())
         else:
-            state = instance.state(force_update=force_update, iid=state.iid)
+            action = 'update' if force_update else None
+            state = instance.get_state(action=action, iid=state.iid)
         iid = state.iid
         if state.persistent:
             if modified:
@@ -177,7 +176,7 @@ within this :class:`Session`.'''
         inst = self.pop(instance)
         instance = inst if inst is not None else instance
         if instance is not None:
-            state = instance.state()
+            state = instance.get_state()
             if state.persistent:
                 state.deleted = True
                 self._deleted[state.iid] = instance
@@ -195,7 +194,7 @@ within this :class:`Session`.'''
     it was not in the session.
 '''
         if isinstance(instance, self.meta.model):
-            iid = instance.state().iid
+            iid = instance.get_state().iid
         else:
             iid = instance
         instance = None
@@ -281,8 +280,8 @@ Process results after a commit.
                 instance = self.add(instance,
                                     modified=False,
                                     persistent=result.persistent)
-                instance.state().score = result.score
-                if instance.state().persistent:
+                instance.get_state().score = result.score
+                if instance.get_state().persistent:
                     instances.append(instance)
         return instances, deleted, errors
 
@@ -291,7 +290,7 @@ class SessionStructure(SessionModel):
     '''A :class:`SessionStructure` is the container of all objects for a given
 :class:`Structure` in a stdnet :class:`Session`.'''
     def add(self, instance, modified=True, **kwargs):
-        state = instance.state()
+        state = instance.get_state()
         state.deleted = False
         if not modified:
             self.pop(instance)

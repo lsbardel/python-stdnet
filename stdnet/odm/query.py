@@ -4,8 +4,8 @@ from functools import partial
 
 from stdnet import range_lookups
 from stdnet.lib import on_result, is_async, async
-from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
+from stdnet.utils.exceptions import *
 
 from .globals import lookup_value
 from .signals import *

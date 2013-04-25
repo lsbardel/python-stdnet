@@ -112,7 +112,7 @@ class check_structures(redis.RedisScript):
     def callback(self, response, meta=None, instances=None, **opts):
         results = []
         for type, instance in zip(response, instances):
-            state = instance.state()
+            state = instance.get_state()
             results.append(instance_session_result(
                         state.iid, instance, instance.id, state.deleted, 0))
         return session_result(meta, results)
@@ -813,7 +813,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                     lua_data = [N]
                     processed = []
                     for instance in dirty:
-                        state = instance.state()
+                        state = instance.get_state()
                         if not instance.is_valid():
                             raise FieldValueError(
                                         json.dumps(instance._dbdata['errors']))
@@ -893,7 +893,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         processed = []
         keys = []
         for instance in chain(sm._delete_query, sm.dirty):
-            state = instance.state()
+            state = instance.get_state()
             binstance = instance.backend_structure(pipe)
             binstance.commit()
             keys.append(binstance.id)

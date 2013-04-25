@@ -6,7 +6,7 @@ import weakref
 
 from stdnet import on_result
 from stdnet.utils import zip, to_string, UnicodeMixin
-from stdnet.exceptions import *
+from stdnet.utils.exceptions import *
 
 from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
@@ -18,6 +18,7 @@ from .session import Manager, setup_managers
 __all__ = ['Metaclass',
            'Model',
            'ModelBase',
+           'ModelState',
            'autoincrement',
            'ModelType', # Metaclass for all stdnet ModelBase classes
            'StdNetType', # derived from ModelType, metaclass fro StdModel
@@ -417,19 +418,19 @@ def meta_options(abstract=False,
 
 
 class ModelState(object):
-    def __init__(self, instance, force_update=False, iid=None):
-        self._action = 'add'
+    '''The database state of a :class:`Model`.'''
+    def __init__(self, instance, iid=None, action=None):
+        self._action = action or 'add'
         self.deleted = False
         self.score = 0
         dbdata = instance._dbdata
         pkname = instance._meta.pkname()
         pkvalue = iid or getattr(instance, pkname, None)
         if pkvalue and pkname in dbdata:
-            if force_update:
-                self._action = 'update'
-            else:
+            if self._action == 'add':
                 self._action = instance.get_state_action()
         elif not pkvalue:
+            self._action = 'add'
             pkvalue = 'new.{0}'.format(id(instance))
         self._iid = pkvalue
 
@@ -479,9 +480,12 @@ raised when trying to save an invalid instance.'''
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(self.get_uuid(self.state().iid))
+        return hash(self.get_uuid(self.get_state().iid))
 
-    def state(self, **kwargs):
+    def get_state(self, **kwargs):
+        '''Return the current :class:`ModelState` for this :class:`Model`.
+If ``kwargs`` parameters are passed a new :class:`ModelState` is created,
+otherwise it returns the cached value.'''
         if 'state' not in self._dbdata or kwargs:
             self._dbdata['state'] = ModelState(self, **kwargs)
         return self._dbdata['state']

@@ -6,12 +6,12 @@ from datetime import date, datetime
 from base64 import b64encode
 
 from stdnet import range_lookups
-from stdnet.exceptions import *
 from stdnet.utils import pickle, DefaultJSONEncoder,\
                          DefaultJSONHook, timestamp2date, date2timestamp,\
                          UnicodeMixin, to_string, iteritems,\
                          encoders, flat_to_nested, dict_flat_generator,\
                          string_type
+from stdnet.utils.exceptions import *
 
 from . import related
 from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER

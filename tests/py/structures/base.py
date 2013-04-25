@@ -17,7 +17,7 @@ of the :attr:`structure`.'''
         sm = l.session.model(l._meta)
         self.assertEqual(len(sm),1)
         self.assertTrue(l.session)
-        self.assertTrue(l.state().persistent)
+        self.assertTrue(l.get_state().persistent)
         self.assertFalse(l in sm.new)
         self.assertTrue(l in sm.dirty)
         self.assertTrue(l in sm.modified)
@@ -34,7 +34,7 @@ of the :attr:`structure`.'''
             self.assertEqual(l._meta.name, self.name)
             self.assertEqual(l._meta.model._model_type, 'structure')
             #Structure have always the persistent flag set to True
-            self.assertTrue(l.state().persistent)
+            self.assertTrue(l.get_state().persistent)
             self.assertTrue(l in session)
             size = yield l.size()
             self.assertEqual(size, 0)
@@ -44,7 +44,7 @@ of the :attr:`structure`.'''
     
     def test_commit(self):
         l = yield self.test_meta()
-        self.assertTrue(l.state().persistent)
+        self.assertTrue(l.get_state().persistent)
         self.assertTrue(l.size())
         self.assertTrue(l in l.session)
         self.asserGroups(l)
@@ -57,11 +57,11 @@ of the :attr:`structure`.'''
             self.assertRaises(InvalidTransaction, l.save)
             # Same for delete
             self.assertRaises(InvalidTransaction, l.delete)
-            self.assertTrue(l.state().persistent)
+            self.assertTrue(l.get_state().persistent)
             self.asserGroups(l)
         yield t.on_result
         self.assertTrue(l.size())
-        self.assertTrue(l.state().persistent)
+        self.assertTrue(l.get_state().persistent)
         
     def test_delete(self):
         session = self.session()
@@ -85,4 +85,4 @@ of the :attr:`structure`.'''
         yield self.async.assertEqual(l.size(), 0)
         self.assertEqual(l.session, session)
         self.asserGroups(l)
-        self.assertFalse(l.state().deleted)
+        self.assertFalse(l.get_state().deleted)

@@ -1,8 +1,11 @@
-from stdnet import FieldError
+from stdnet import odm, FieldError
 from stdnet.utils import test
 
-from examples.models import Dictionary
+from examples.models import Dictionary, Profile
 from examples.data import finance_data, Position, Instrument, Fund
+
+class Role(odm.StdModel):
+    profile = odm.ForeignKey(Profile)
 
 
 class test_load_related(test.TestCase):
@@ -50,7 +53,7 @@ class test_load_related(test.TestCase):
             val = getattr(p,cache,None)
             self.assertFalse(val)
 
-    def testSingle_withFields(self):
+    def test_single_with_fields(self):
         session = self.session()
         query = session.query(Position)
         pos = query.load_related('instrument', 'name', 'ccy')
@@ -61,7 +64,7 @@ class test_load_related(test.TestCase):
             cache = inst.get_cache_name()
             val = getattr(p, cache, None)
             self.assertTrue(val)
-            self.assertTrue(isinstance(val,inst.relmodel))
+            self.assertTrue(isinstance(val, inst.relmodel))
             self.assertEqual(set(val._loadedfields),set(('name','ccy')))
             self.assertTrue(val.name)
             self.assertTrue(val.ccy)
@@ -145,14 +148,33 @@ class test_load_related(test.TestCase):
 
 
 class test_load_related_empty(test.TestCase):
-    models = (Instrument, Fund, Position)
+    model = Role
     
+    @classmethod
+    def after_setup(cls):
+        with cls.session().begin() as t:
+            p1 = t.add(Profile())
+            p2 = t.add(Profile())
+            p3 = t.add(Profile())
+        yield t.on_result
+        with cls.session().begin() as t:
+            t.add(Role(profile=p1))
+            t.add(Role(profile=p1))
+            t.add(Role(profile=p3))
+        yield t.on_result
+        
     def testEmpty(self):
         session = self.session()
         instruments = yield session.query(Position).load_related('instrument').all()
         self.assertEqual(instruments, [])
         
-        
+    def test_related_no_fields(self):
+        qs = self.query().load_related('profile')
+        query = yield qs.all()
+        profiles = set((role.profile for role in query))
+        self.assertEqual(len(profiles), 2)
+    
+ 
 class load_related_structure(test.TestCase):
 
     @classmethod

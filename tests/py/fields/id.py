@@ -34,7 +34,7 @@ Use the manager for convenience.'''
         t1 = yield self.make()
         id1 = t1.id
         self.assertEqual(id1, t1._dbdata['id'])
-        self.assertTrue(t1.state().persistent)
+        self.assertTrue(t1.get_state().persistent)
         id2 = genid()
         t1.id = id2
         self.assertEqual(id1, t1._dbdata['id'])

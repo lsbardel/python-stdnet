@@ -556,6 +556,10 @@ odm.Model = {
                                     end
                                     table.insert(field_items, {rid, val})
                                 end
+                            elseif # fields == 0 then
+                            	-- There are no fields for this related model. A corner case for which there is a test.
+                            	val = {}
+                            	table.insert(field_items, {rid, val})
                             end
                             processed[rid] = val
                         end

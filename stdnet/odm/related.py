@@ -249,7 +249,8 @@ model for which this related manager is an attribute.'''
         '''Remove *value*, an instance of ``self.model`` from the set of
 elements contained by the field.'''
         s, instance = self.session_instance('remove', value, transaction)
-        instance.state(iid=instance.pkvalue())
+        # update state so that the instance does look persistent
+        instance.get_state(iid=instance.pkvalue(), action='update')
         return s.delete(instance)
 
     def throughquery(self, transaction=None):

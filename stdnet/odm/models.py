@@ -2,8 +2,8 @@ import copy
 import json
 
 from stdnet import async
-from stdnet.exceptions import *
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
+from stdnet.utils.exceptions import *
 
 from .base import StdNetType, Model
 from .session import Session, Manager
@@ -72,7 +72,7 @@ class StdModel(StdNetBase):
 loaded. This applies to persistent instances only. This property is used when
 committing changes. If all data is available, the commit will replace the
 previous object data entirely, otherwise it will only update it.'''
-        return self.state().persistent and self._loadedfields is None
+        return self.get_state().persistent and self._loadedfields is None
     
     def loadedfields(self):
         '''Generator of fields loaded from database'''

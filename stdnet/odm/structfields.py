@@ -1,5 +1,5 @@
-from stdnet.exceptions import *
 from stdnet.utils import encoders
+from stdnet.utils.exceptions import *
 
 from .fields import Field
 from . import related

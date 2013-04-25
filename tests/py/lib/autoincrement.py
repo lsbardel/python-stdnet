@@ -34,8 +34,8 @@ class TestCase(test.TestCase):
         w = WordItem(word='ciao', model_type = SimpleModel,
                      object_id = m.id).save()
         self.assertEqual(WordItem.objects.query().count(),1)
-        self.assertEqual(w.state().score,2)
+        self.assertEqual(w.get_state().score, 2)
         w = WordItem(word='ciao', model_type = SimpleModel,
                      object_id = m.id).save()
         self.assertEqual(WordItem.objects.query().count(),1)
-        self.assertEqual(w.state().score,3)
+        self.assertEqual(w.get_state().score, 3)

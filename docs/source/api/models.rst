@@ -51,6 +51,14 @@ Model
    :member-order: bysource
 
 
+Model State
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ModelState
+   :members:
+   :member-order: bysource
+   
+   
 autoincrement
 ~~~~~~~~~~~~~~~~~~
 

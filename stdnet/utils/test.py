@@ -1,4 +1,16 @@
-'''Test case classes and plugins for stdnet. Requires pulsar.'''
+'''Test case classes and plugins for stdnet testing. Requires pulsar_.
+
+
+TestCase
+=================
+
+.. autoclass:: TestCase
+   :members:
+   :member-order: bysource
+
+
+.. _pulsar: https://pypi.python.org/pypi/pulsar
+'''
 import os
 import sys
 import logging
@@ -31,8 +43,7 @@ from pulsar import multi_async
 from pulsar.utils import events
 from pulsar.apps.test import TestSuite, TestPlugin, sequential
 
-from stdnet import odm, getdb
-from stdnet.conf import settings
+from stdnet import odm, getdb, settings
 from stdnet.utils import gen_unique_id
 
 skipUnless = unittest.skipUnless
@@ -42,13 +53,14 @@ LOGGER = logging.getLogger('stdnet.test')
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet with
 synchronous and asynchronous connections. It contains
-some utility functions for tesing in a parallel test suite.
+several class methods for testing in a parallel test suite.
 
 .. attribute:: backend
 
-    A :class:`stdnet.BackendDataServer` for the :class:`TestCase`.
-    It is different for each instance and it is created just before
-    :meth:`setUp` method is called.
+    A :class:`stdnet.BackendDataServer` for this
+    :class:`TestCase` class. It is a class attribute which is different
+    for each :class:`TestCase` class and it is created my the
+    :meth:`setUpClass` method.
 '''
     models = ()
     model = None
@@ -57,11 +69,13 @@ some utility functions for tesing in a parallel test suite.
 
     @classmethod
     def backend_params(cls):
-        '''Optional backend parameters for tests in this class'''
+        '''Optional :attr:`backend` parameters for tests in this
+:class:`TestCase` class.'''
         return {}
     
     @classmethod
     def setUpClass(cls):
+        '''Set up this :class:`TestCase` before test methods are run.'''
         if not cls.models and cls.model:
             cls.models = (cls.model,)
         if not cls.model and cls.models:
@@ -98,8 +112,8 @@ will be unregistered after the :meth:`tearDown` method.'''
     
     @classmethod
     def clear_all(cls):
-        #override if you don't want to flush the database at the end of all
-        #tests in this class
+        '''Invokes :meth:`stdnet.BackendDataServer.flush` method on
+the :attr:`backend` attribute.'''
         if cls.backend is not None:
             return cls.backend.flush()
 

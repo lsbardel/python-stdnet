@@ -35,8 +35,8 @@ class TestManyToManyBase(object):
         self.assertEqual(len(t.saved), 1)
         self.assertEqual(len(list(t.saved.values())[0]), 2)
         # Check role    
-        t1 = yield role1.profiles.throughquery().all()
-        t2 = yield role2.profiles.throughquery().all()
+        t1 = yield role1.profiles.throughquery().load_related('role').all()
+        t2 = yield role2.profiles.throughquery().load_related('role').all()
         self.assertEqual(len(t1), 1)
         self.assertEqual(len(t2), 1)
         self.assertEqual(t1[0].role, role1)
@@ -51,13 +51,20 @@ class TestManyToManyBase(object):
         #
         # Check profile
         t1 = yield profile.roles.throughquery().all()
-        self.assertEqual(len(t1),2)
+        self.assertEqual(len(t1), 2)
+        p1, p2 = yield test.multi_async((t1[0].profile, t1[1].profile))
+        self.assertEqual(p1, profile)
+        self.assertEqual(p2, profile)
+        #
+        # Check with load_only
+        t1 = yield profile.roles.throughquery().load_related('profile').all()
+        self.assertEqual(len(t1), 2)
         self.assertEqual(t1[0].profile, profile)
         self.assertEqual(t1[1].profile, profile)
         #
         r = yield profile.roles.query().all()
-        self.assertEqual(len(r),2)
-        self.assertEqual(set(r),set((role1,role2)))
+        self.assertEqual(len(r), 2)
+        self.assertEqual(set(r), set((role1,role2)))
         yield role1, role2
         
 
@@ -65,15 +72,15 @@ class TestManyToMany(TestManyToManyBase, test.TestCase):
     
     def test_meta(self):
         roles = Profile.roles
-        self.assertEqual(roles.model._meta.name,'profile_role')
+        self.assertEqual(roles.model._meta.name, 'profile_role')
         self.assertEqual(roles.relmodel,Profile)
-        self.assertEqual(roles.name_relmodel,'profile')
+        self.assertEqual(roles.name_relmodel, 'profile')
         self.assertEqual(roles.formodel,Role)
         profiles = Role.profiles
-        self.assertEqual(profiles.model._meta.name,'profile_role')
+        self.assertEqual(profiles.model._meta.name, 'profile_role')
         self.assertEqual(profiles.relmodel,Role)
         self.assertEqual(profiles.formodel,Profile)
-        self.assertEqual(profiles.name_relmodel,'role')
+        self.assertEqual(profiles.name_relmodel, 'role')
         #
         through = roles.model
         self.assertEqual(through, profiles.model)
@@ -148,22 +155,30 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
         self.assertEqual(profile.roles.query().count(),0)
         profile.delete()
         
-    def testRemove(self):
+    def test_remove(self):
         session = self.session()
         with session.begin() as t:
             p1 = t.add(Profile())
             p2 = t.add(Profile())
         yield t.on_result
         role, created = yield session.get_or_create(Role, name='gino')
+        self.assertTrue(created)
+        role, created = yield session.get_or_create(Role, name='gino')
+        self.assertFalse(created)
         self.assertTrue(role.id)
-        p1.roles.add(role)
+        with p1.session.begin() as t:
+            p1.roles.add(role)
+            p2.roles.add(role)
+            self.assertEqual(len(t.session.dirty), 2)
+        yield t.on_result
+        profiles = role.profiles.query()
+        yield self.async.assertEqual(profiles.count(), 2)
+        # add again, this shouldn't do anything
         p2.roles.add(role)
         profiles = role.profiles.query()
         yield self.async.assertEqual(profiles.count(), 2)
-        p2.roles.add(role)
-        profiles = role.profiles.query()
-        self.assertEqual(profiles.count(),2)
-        p2.roles.remove(role)
+        # Now remove the role
+        yield p2.roles.remove(role)
         profiles = role.profiles.query()
         self.assertEqual(profiles.count(),1)
         p1.roles.remove(role)

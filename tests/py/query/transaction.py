@@ -65,7 +65,7 @@ class TestTransactions(test.TestCase):
         yield l.push_back(5)
         yield l.push_back(8)
         yield s.update((2,3,4,5,6,7))
-        self.assertTrue(m.state().persistent)
+        self.assertTrue(m.get_state().persistent)
         yield self.async.assertEqual(s.size(), 6)
         yield self.async.assertEqual(h.size(), 1)
         yield self.async.assertEqual(l.size(), 2)

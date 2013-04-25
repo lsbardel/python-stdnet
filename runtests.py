@@ -27,8 +27,6 @@ except ImportError:
         except ImportError:
             pass
 
-from stdnet import getdb
-from stdnet.conf import settings
 from stdnet.utils import test
 
 

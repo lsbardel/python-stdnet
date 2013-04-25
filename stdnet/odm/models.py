@@ -129,8 +129,8 @@ for information regarding fields which are considered cache.'''
     def get_attr_value(self, attr):
         '''Retrive the ``value`` for an ``attr`` name. The ``attr`` can
 be nested, for example ``group__name``.'''
-        if attr in self._meta.fields:
-            return self._meta.fields[attr].get_value(self)
+        if attr in self._meta.dfields:
+            return self._meta.dfields[attr].get_value(self)
         # no atribute, try to check for nested values
         bits = tuple((a for a in attr.split(JSPLITTER) if a))
         if len(bits) > 1:

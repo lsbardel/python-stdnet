@@ -91,7 +91,7 @@ ather users via the Role through model'''
     
 class Role(odm.StdModel):
     '''A role is a permission level which can be assigned'''
-    id = odm.CompositeIdField('name', 'model')
+    id = odm.CompositeIdField('name', 'model_type')
     name = odm.SymbolField()
     model_type = odm.ModelField()
     level = odm.IntegerField(default=0)

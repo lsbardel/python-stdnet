@@ -752,6 +752,7 @@ for a given :class:`StdModel`::
         '''Register the Manager with a model and a backend database.'''
         self.backend = backend
         self.model = model
+        return self
 
     def __str__(self):
         if self.model:

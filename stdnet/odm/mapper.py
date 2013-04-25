@@ -13,7 +13,8 @@ from .session import Manager, Session
 logger = logging.getLogger('stdnet.mapper')
 
 
-__all__ = ['clearall',
+__all__ = ['Router',
+           'clearall',
            'flush_models',
            'register',
            'unregister',
@@ -22,6 +23,98 @@ __all__ = ['clearall',
            'all_models_sessions',
            'register_applications',
            'register_application_models']
+
+
+class Managers(object):
+    
+    def __init__(self, model):
+        self.model
+        
+        
+class Router(object):
+    '''A router of models to their managers::
+    
+    a = Router()
+    a.register(MyModel)
+    
+    a[MyModel].objects.query()
+    '''
+    def __init__(self, default_backend=None):
+        self._registered_models = set()
+        self._data_stores = {}
+        self._default_backend = getdb(default_backend)
+        
+    @property
+    def default_backend(self):
+        return self._default_backend
+    
+    def clear(self, exclude=None):
+        exclude = exclude or []
+        for model in self._registered_models:
+            if not model._meta.name in exclude:
+                model.objects.flush()
+        Session.clearall()
+        
+    def register(self, model, backend=None, include_related=True, **params):
+        if backend:
+            backend = getdb(backend=backend, **params)
+        registered = []
+        for model in models_from_model(model, include_related=include_related):
+            if model in self._registered_models:
+                continue
+            self._registered_models[model] = m = Managers(model)
+            for manager in model._managers:
+                manager.backend = backend
+            _GLOBAL_REGISTRY.add(m)
+            registered.append(m)
+        if registered:
+            return registered[0].objects.backend
+        
+    def register_applications(self, applications, **kwargs):
+        '''A simple convenience wrapper around the
+:func:`stdnet.odm.register_application_models` generator.
+
+It return s a list of registered models.'''
+        return list(self.register_application_models(applications, **kwargs))
+    
+    def register_application_models(self, applications, models=None,
+                                        app_defaults=None, default=None):
+        '''A higher level registration functions for group of models located
+on application modules.
+It uses the :func:`model_iterator` function to iterate
+through all :class:`StdModel` models available in ``applications``
+and register them using the :func:`register` low level function.
+
+:parameter applications: A String or a list of strings which represent
+    python dotted paths where models are implemented.
+:parameter models: Optional list of models to include. If not provided
+    all models found in *applications* will be included.
+:parameter app_defaults: optional dictionary which specify a model and/or
+    application backend connection string.
+:parameter default: The default connection string.
+:rtype: A generator over registered :class:`StdModel`.
+
+For example::
+
+    register_application_models('mylib.myapp')
+
+'''
+        app_defaults = app_defaults or {}
+        for model in model_iterator(applications):
+            meta = model._meta
+            name = str(model._meta)
+            if models and name not in models:
+                continue
+            if name not in app_defaults:
+                name = model._meta.app_label
+            kwargs = app_defaults.get(name, default)
+            if not isinstance(kwargs, dict):
+                kwargs = {'backend': kwargs}
+            else:
+                kwargs = kwargs.copy()
+            if register(model, include_related=False, **kwargs):
+                yield model
+            
 
 
 def clearall(exclude=None):

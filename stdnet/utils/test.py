@@ -27,7 +27,7 @@ else:
     from unittest import mock
 
 import pulsar
-from pulsar import multi_async as multi
+from pulsar import multi_async
 from pulsar.utils import events
 from pulsar.apps.test import TestSuite, TestPlugin, sequential
 

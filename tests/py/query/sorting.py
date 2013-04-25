@@ -40,9 +40,6 @@ class TestSort(test.TestCase):
                 t.add(cls.model(person=p, name=n, dt=d))
         return t.on_result
     
-    def qs(self):
-        return self.session().query(self.model)
-    
     def checkOrder(self, qs, attr, desc=None):
         if hasattr(qs, 'all'):
             all = yield qs.all()
@@ -50,7 +47,7 @@ class TestSort(test.TestCase):
             all = qs
         self.assertTrue(all)
         desc = desc if desc is not None else self.desc
-        at0 = qs[0].get_attr_value(attr)
+        at0 = all[0].get_attr_value(attr)
         for obj in all[1:]:
             at1 = obj.get_attr_value(attr)
             if desc:
@@ -63,34 +60,34 @@ class TestSort(test.TestCase):
 class ExplicitOrderingMixin(object):
     
     def test_size(self):
-        qs = self.qs()
+        qs = self.query()
         yield self.async.assertEqual(qs.count(), len(self.data.dates))
         
     def testDateSortBy(self):
-        return self.checkOrder(self.qs().sort_by('dt'), 'dt')
+        return self.checkOrder(self.query().sort_by('dt'), 'dt')
         
     def testDateSortByReversed(self):
-        return self.checkOrder(self.qs().sort_by('-dt'),'dt',True)
+        return self.checkOrder(self.query().sort_by('-dt'),'dt',True)
         
     def testNameSortBy(self):
-        return self.checkOrder(self.qs().sort_by('name'),'name')
+        return self.checkOrder(self.query().sort_by('name'),'name')
         
     def testNameSortByReversed(self):
-        return self.checkOrder(self.qs().sort_by('-name'),'name',True)
+        return self.checkOrder(self.query().sort_by('-name'),'name',True)
         
     def testSimpleSortError(self):
-        qs = self.qs()
+        qs = self.query()
         self.assertRaises(QuerySetError, qs.sort_by, 'whaaaa')
         
     def testFilter(self):
-        qs = self.qs().filter(name='rugby').sort_by('dt')
+        qs = self.query().filter(name='rugby').sort_by('dt')
         yield self.checkOrder(qs, 'dt')
         for v in qs:
             self.assertEqual(v.name, 'rugby')
 
     def _slicingTest(self, attr, desc, start=0, stop=10, expected_len=10):
         p = '-' if desc else ''
-        qs = self.qs().sort_by(p+attr)
+        qs = self.query().sort_by(p+attr)
         qs1 = yield qs[start:stop]
         self.assertEqual(len(qs1), expected_len)
         self.checkOrder(qs1, attr, desc)
@@ -128,17 +125,17 @@ class TestSortByForeignKeyField(TestSort):
         yield t.on_result
     
     def test_size(self):
-        qs = self.qs()
+        qs = self.query()
         return self.async.assertEqual(qs.count(), len(self.data.dates))
         
     def testNameSortBy(self):
-        return self.checkOrder(self.qs().sort_by('name'),'name')
+        return self.checkOrder(self.query().sort_by('name'),'name')
         
     def testNameSortByReversed(self):
-        return self.checkOrder(self.qs().sort_by('-name'),'name',True)
+        return self.checkOrder(self.query().sort_by('-name'),'name',True)
         
     def testSortByFK(self):
-        qs = self.qs()
+        qs = self.query()
         qs = qs.sort_by('group__name')
         ordering = qs.ordering
         self.assertEqual(ordering.name, 'group_id')
@@ -160,14 +157,14 @@ class TestOrderingModel(TestSort):
         self.assertEqual(ordering.desc, self.desc)
         
     def testSimple(self):
-        yield self.checkOrder(self.qs(),'dt')
+        yield self.checkOrder(self.query(), 'dt')
         
     def testFilter(self):
-        qs = self.qs().filter(name=('football','rugby'))
+        qs = self.query().filter(name=('football','rugby'))
         return self.checkOrder(qs,'dt')
         
     def testExclude(self):
-        qs = self.qs().exclude(name='rugby')
+        qs = self.query().exclude(name='rugby')
         return self.checkOrder(qs, 'dt')
         
         

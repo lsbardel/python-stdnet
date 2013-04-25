@@ -1,5 +1,5 @@
 import datetime
-import random
+from random import randint, uniform
 
 from stdnet.utils import test
 
@@ -8,83 +8,100 @@ from examples.data import FinanceTest, Position, Instrument, Fund
 from examples.data import finance_data
 
 
-class TestSelfForeignKey(test.TestCase):
+class NodeBase(object):
+    model = Node
+    nesting = 2
+        
+    @classmethod
+    def create(cls, root=None, nesting=None):
+        if root is None:
+            with cls.session().begin() as t:
+                root = t.add(cls.model(weight=1.0))
+            yield t.on_result
+            yield cls.create(root, nesting=cls.nesting)
+        elif nesting:
+            N = randint(2,9)
+            with cls.session().begin() as t:
+                for n in range(N):
+                    node = t.add(cls.model(parent=root, weight=uniform(0,1)))
+            yield t.on_result
+            yield test.multi_async((cls.create(node, nesting-1) for node in t.saved[node._meta]))
+    
+
+class TestSelfForeignKey(NodeBase, test.TestCase):
     '''The Node model is used only in this test class and should be used only
 in this test class so that we can use the manager in a parallel test suite.'''
     model = Node
     nesting = 2
         
-    def create(self, root, nesting):
-        if nesting:
-            N = random.randint(2,9)
-            for n in range(N):
-                node = self.model(parent = root,
-                                  weight = random.uniform(0,1)).save()
-                self.create(node, nesting-1)
-        
-    def setUp(self):
-        self.register()
-        root = yield self.model(weight = 1.0).save()
-        self.create(root, nesting=self.nesting)
+    @classmethod
+    def after_setup(cls):
+        return cls.create()
             
-    def testMeta(self):
-        session = self.session()
-        for n in session.query(Node):
-            if n.parent_id:
-                self.assertTrue(isinstance(n.parent,self.model))
+    def test_meta(self):
+        all = yield self.query().load_related('parent').all()
+        for n in all:
+            if n.parent:
+                self.assertTrue(isinstance(n.parent, self.model))
     
-    def testRelatedCache(self):
-        session = self.session()
-        for n in session.query(Node):
-            pcache = n._meta.dfields['parent'].get_cache_name()
-            self.assertFalse(hasattr(n,pcache))
-            p = n.parent
-            if p:
-                self.assertEqual(getattr(n,pcache),p)
+    def test_related_cache(self):
+        all = yield self.query().all()
+        pcache = self.model._meta.dfields['parent'].get_cache_name()
+        for n in all:
+            self.assertFalse(hasattr(n, pcache))
+        yield test.multi_async((n.parent for n in all))
+        for n in all:
+            self.assertTrue(hasattr(n, pcache))
+            self.assertEqual(getattr(n, pcache), n.parent)
                 
-    def testSelfRelated(self):
-        session = self.session()
-        query = session.query(Node)
-        root = query.filter(parent = None)
-        self.assertEqual(len(root),1)
-        root = root[0]
-        children = root.children.query()
+    def test_self_related(self):
+        query = self.query()
+        root = yield query.get(parent=None)
+        children = yield root.children.query().load_related('parent').all()
         self.assertTrue(children)
         for child in children:
-            self.assertEqual(child.parent,root)
-            children2 = child.children.query()
+            self.assertEqual(child.parent, root)
+            children2 = yield child.children.query().load_related('parent').all()
             self.assertTrue(children2)
             for child2 in children2:
-                self.assertEqual(child2.parent,child)
+                self.assertEqual(child2.parent, child)
                 
-    def testSelfRelatedFilterOnSelf(self):
-        session = self.session()
-        query = session.query(Node)
+    def test_self_related_filter_on_self(self):
+        query = self.query()
         # We should get the nodes just after the root
-        root = query.get(parent = None)
-        qs = query.filter(parent__parent = None)
-        self.assertTrue(qs.count())
+        root = yield query.get(parent=None)
+        qs = yield query.filter(parent__parent=None).load_related('parent').all()
+        self.assertTrue(qs)
         for node in qs:
             self.assertEqual(node.parent, root)
 
+
+@test.sequential
+class TestDeleteSelfRelated(NodeBase, test.TestCase):
+    
+    def setUp(self):
+        return self.create()
+    
+    def tear_down(self):
+        return self.clear_all()
+    
     def testSelfRelatedDelete(self):
-        session = self.session()
-        session.query(Node).delete()
-        self.assertEqual(session.query(Node).count(),0)
+        yield self.query().delete()
+        yield self.async.assertEqual(self.query().count(), 0)
         
     def testSelfRelatedRootDelete(self):
-        session = self.session()
-        qs = session.query(Node).filter(parent = None)
-        qs.delete()
-        self.assertEqual(session.query(Node).count(),0)
+        qs = self.query().filter(parent=None)
+        yield qs.delete()
+        yield self.async.assertEqual(self.query().count(), 0)
         
     def testSelfRelatedFilterDelete(self):
-        session = self.session()
-        query = session.query(Node)
-        root = query.get(parent=None)
+        query = self.query()
+        root = yield query.get(parent=None)
         qs = query.filter(parent=root)
-        qs.delete()
-        self.assertEqual(query.count(), 1)
+        yield qs.delete()
+        query = self.query()
+        yield self.async.assertEqual(query.count(), 1)
+        qs = yield query.all()
         self.assertEqual(query[0], root)
 
 
@@ -92,24 +109,18 @@ class TestRealtedQuery(test.TestCase):
     data_cls = finance_data
     
     @classmethod
-    def setUpClass(cls):
-        yield super(TestRealtedQuery, cls).setUpClass()
+    def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
         yield cls.data.makePositions(cls)
         
-    @classmethod
-    def tearDownClass(cls):
-        yield cls.clear_all()
-        
     def testRelatedFilter(self):
-        session = self.session()
-        query = session.query(Position)
+        query = self.query(Position)
         # fetch all position with EUR instruments
-        instruments = session.query(Instrument).filter(ccy = 'EUR')
-        self.assertTrue(instruments.count())
+        instruments = yield self.query(Instrument).filter(ccy='EUR').all()
+        self.assertTrue(instruments)
         ids = set()
         for i in instruments:
-            self.assertEqual(i.ccy,'EUR')
+            self.assertEqual(i.ccy, 'EUR')
             ids.add(i.id)
         peur1 = query.filter(instrument__in = ids)
         self.assertTrue(peur1.count())

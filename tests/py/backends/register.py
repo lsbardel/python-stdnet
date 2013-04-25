@@ -7,9 +7,11 @@ from examples.models import SimpleModel
 class TestRegistration(test.TestCase):
 
     def register(self):
-        apps = odm.register_applications('examples', default=self.backend)
-        self.assertTrue(apps)
-        return apps
+        router = odm.Router(self.backend)
+        self.assertEqual(router.default_backend, self.backend)
+        router.register_applications('examples')
+        self.assertTrue(router)
+        return router
 
     def testRegisterApplications(self):
         for model in self.register():

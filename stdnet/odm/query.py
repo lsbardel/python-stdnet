@@ -522,14 +522,14 @@ each element in the query. The *coe* should reference an instance of
 
     def load_related(self, related, *related_fields):
         '''It returns a new :class:`Query` that automatically
-follows the foreign-key relationship *related*.
+follows the foreign-key relationship ``related``.
 
 :parameter related: A field name corresponding to a :class:`ForeignKey`
     in :attr:`Query.model`.
-:parameter fields: optional :class:`Field` names for the *related*
+:parameter related_fields: optional :class:`Field` names for the ``related``
     model to load. If not provided, all fields will be loaded.
 
-This function is :ref:`performance boost <increase-performance>` when
+This function is :ref:`performance boost <performance-loadrelated>` when
 accessing the related fields of all (most) objects in your query.
 
 If Your model contains more than one foreign key, you can use this function

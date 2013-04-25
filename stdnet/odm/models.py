@@ -126,20 +126,22 @@ for information regarding fields which are considered cache.'''
             if field.as_cache:
                 setattr(self,field.name,None)
 
-    def get_attr_value(self, attr):
-        '''Retrive the ``value`` for an ``attr`` name. The ``attr`` can
-be nested, for example ``group__name``.'''
-        if attr in self._meta.dfields:
-            return self._meta.dfields[attr].get_value(self)
-        # no atribute, try to check for nested values
-        bits = tuple((a for a in attr.split(JSPLITTER) if a))
-        if len(bits) > 1:
-            instance = self
-            for name in bits:
-                instance = getattr(instance, name, None)
-                if instance is None:
-                    return instance
-            return instance
+    def get_attr_value(self, name):
+        '''Retrieve the ``value`` for the attribute ``name``. The ``name``
+can be nested following the :ref:`double underscore <tutorial-underscore>`
+notation, for example ``group__name``. If the attribute is not available it
+raises :class:`AttributeError`.'''
+        if name in self._meta.dfields:
+            return self._meta.dfields[name].get_value(self)
+        elif not name.startswith('__') and JSPLITTER in name:
+            bits = name.split(JSPLITTER)
+            fname = bits[0]
+            if fname in self._meta.dfields:
+                return self._meta.dfields[fname].get_value(self, bits[1:])
+            else:
+                return getattr(self, name)
+        else:
+            return getattr(self, name)
 
     def clone(self, **data):
         '''Utility method for cloning the instance as a new object.
@@ -215,28 +217,25 @@ attribute set to ``True`` will be excluded.'''
                                           sender=self._meta.model)
         return self
     
-    def get_model_attribute(self, name):
-        '''Extract an attribute name form this instance.'''
-        if JSPLITTER in name and not name.startswith('__'):
-            bits = name.split(JSPLITTER)
-            fname = bits[0] 
-            if fname in self._meta.dfields:
-                value = getattr(self, fname, None)
-                if value is not None:
-                    try:
-                        return self._meta.dfields[fname].get_attr(value,
-                                                                  bits[1:])
-                    except AttributeError:
-                        pass
-        return getattr(self, name)
-    
     def get_state_action(self):
         return 'override' if self._loadedfields is None else 'update'
                 
     def load_related_model(self, name, load_only=None, dont_load=None):
+        '''Load a the :class:`ForeignKey` field ``name`` if this is part of the
+fields of this model and if the related object is not already loaded.
+It is used by the lazy loading mechanism of :ref:`one-to-many <one-to-many>`
+relationships.
+
+:parameter name: the :attr:`Field.name` of the :class:`ForeignKey` to load.
+:parameter load_only: Optional parameters which specify the fields to load.
+:parameter dont_load: Optional parameters which specify the fields not to load.
+:return: the related :class:`StdModel` instance.
+'''
         field = self._meta.dfields.get(name)
         if not field:
-            raise ValueError('Field %s not available')
+            raise ValueError('Field "%s" not available' % name)
+        elif not field.type == 'related object':
+            raise ValueError('Field "%s" not a foreign key' % name)
         return self._load_related_model(field, load_only, dont_load)
         
     @async()
@@ -268,6 +267,12 @@ attribute set to ``True`` will be excluded.'''
             yield rel_obj
     
     @classmethod
+    def get_field(cls, name):
+        '''Returns the :class:`Field` instance at ``name`` if available,
+otherwise it returns ``None``.'''
+        return cls._meta.dfields.get(name)
+    
+    @classmethod
     def from_base64_data(cls, **kwargs):
         o = cls()
         meta = cls._meta
@@ -287,9 +292,9 @@ attribute set to ``True`` will be excluded.'''
     def pk(cls):
         '''Return the primary key :class:`Field` for this model. This is a
 proxy for the :attr:`Metaclass.pk` attribute::
-
-        MyModel.pk() == MyModel._meta.pk
-        
+    
+    MyModel.pk() == MyModel._meta.pk
+    
 '''
         return cls._meta.pk
     

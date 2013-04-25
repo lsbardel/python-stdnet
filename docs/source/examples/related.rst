@@ -47,11 +47,20 @@ related :class:`StdModel` instance.
   The second statement is equivalent to::
   
         Instrument.objects.query().get(id=p.instrument_id)
-        
-  The loading of the related object is done, once only, the first time the attribute
-  is accessed. Behind the scenes, this functionality is implemented by Python
+  
+  .. note::      
+  
+    The loading of the related object is done, **once only**, the first time
+    the attribute is accessed. This means, the first time you access a related
+    field on a model instance, there will be a roundtrip to the backend server.
+  
+  Behind the scenes, this functionality is implemented by Python
   descriptors_. This shouldn't really matter to you, but we point it out here
   for the curious.
+  
+* Depending on your application, sometimes it makes a lot of sense to use the
+  :ref:`load_related query method <performance-loadrelated>` to boost
+  performance when accessing many related fields.
   
 * When the object referenced by a :class:`ForeignKey` is deleted, stdnet also
   deletes the object containing the :class:`ForeignKey` unless the

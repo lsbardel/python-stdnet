@@ -1,8 +1,6 @@
 '''Test unique fields'''
 from random import randint
 
-from pulsar import multi_async
-
 from stdnet import odm, CommitException
 from stdnet.utils import test, populate, zip, range
 
@@ -14,7 +12,7 @@ sports = ['football','rugby','swimming','running','cycling']
 
 codes = set(populate('string',SIZE, min_len = 5, max_len = 20))
 SIZE = len(codes)
-groups = populate('choice',SIZE,choice_from=sports)
+groups = populate('choice', SIZE, choice_from=sports)
 codes = list(codes)
 
 def randomcode(num = 1):
@@ -64,7 +62,7 @@ class TestUniqueFilter(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         all = yield session.query(self.model).all()
-        all2 = yield multi_async((query.get(code=m.code) for m in all))
+        all2 = yield test.multi_async((query.get(code=m.code) for m in all))
         self.assertEqual(all, all2)
             
     def testExcludeSimple(self):

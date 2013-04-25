@@ -5,7 +5,6 @@ from stdnet.utils import test
 
 from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
-from examples.data import finance_data
 
 
 class NodeBase(object):
@@ -105,75 +104,65 @@ class TestDeleteSelfRelated(NodeBase, test.TestCase):
         self.assertEqual(query[0], root)
 
 
-class TestRealtedQuery(test.TestCase):
-    data_cls = finance_data
+class TestRealtedQuery(FinanceTest):
     
     @classmethod
     def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
         yield cls.data.makePositions(cls)
         
-    def testRelatedFilter(self):
+    def test_related_filter(self):
         query = self.query(Position)
         # fetch all position with EUR instruments
-        instruments = yield self.query(Instrument).filter(ccy='EUR').all()
-        self.assertTrue(instruments)
-        ids = set()
-        for i in instruments:
-            self.assertEqual(i.ccy, 'EUR')
-            ids.add(i.id)
-        peur1 = query.filter(instrument__in = ids)
-        self.assertTrue(peur1.count())
+        instruments = self.query(Instrument).filter(ccy='EUR')
+        peur1 = yield self.query(Position).filter(instrument=instruments)\
+                                          .load_related('instrument').all()
+        self.assertTrue(peur1)
         for p in peur1:
-            self.assertTrue(p.instrument.id in ids)
             self.assertEqual(p.instrument.ccy,'EUR')
-            
-        peur = query.filter(instrument__ccy = 'EUR')
+        peur = self.query(Position).filter(instrument__ccy='EUR')
         qe = peur.construct()
-        self.assertEqual(qe._get_field,None)
+        self.assertEqual(qe._get_field, None)
         self.assertEqual(len(qe),1)
-        self.assertEqual(qe.keyword,'set')
-        self.assertTrue(peur.count())
-        for p in peur:
-            self.assertEqual(p.instrument.ccy,'EUR')
+        self.assertEqual(qe.keyword, 'set')
+        peur = yield peur.all()
+        self.assertEqual(set(peur), set(peur1))
             
-    def testRelatedExclude(self):
-        session = self.session()
-        query = session.query(Position)
-        peur = query.exclude(instrument__ccy = 'EUR')
-        self.assertTrue(peur.count())
+    def test_related_exclude(self):
+        query = self.query(Position)
+        peur = yield query.exclude(instrument__ccy='EUR').load_related('instrument').all()
+        self.assertTrue(peur)
         for p in peur:
-            self.assertNotEqual(p.instrument.ccy,'EUR')
+            self.assertNotEqual(p.instrument.ccy, 'EUR')
             
     def test_load_related_model(self):
-        session = self.session()
-        query = session.query(Position)
-        position = query[0]
+        position = yield self.query(Position).get(id=1)
         self.assertTrue(position.instrument_id)
-        instrument = position.load_related_model('instrument',
-                                                 load_only=('ccy',))
+        cache = position.get_field('instrument').get_cache_name()
+        self.assertFalse(hasattr(position, cache))
+        instrument = yield position.load_related_model('instrument',
+                                                       load_only=('ccy',))
         self.assertTrue(isinstance(instrument, Instrument))
         self.assertEqual(instrument._loadedfields, ('ccy',))
         self.assertEqual(id(instrument), id(position.instrument))
     
     def test_related_manager(self):
         session = self.session()
-        inst = session.query(Instrument).get(id = 1)
-        fund = session.query(Fund).get(id = 1)
-        positions1 = session.query(Position).filter(fund = fund)
-        positions = fund.positions.query()
+        fund = yield session.query(Fund).get(id=1)
+        positions1 = yield session.query(Position).filter(fund=fund).all()
+        positions = yield fund.positions.query().load_related('fund').all()
         self.assertTrue(positions)
         for p in positions:
-            self.assertEqual(p.fund,fund)
-        self.assertEqual(set(positions1),set(positions))
+            self.assertEqual(p.fund, fund)
+        self.assertEqual(set(positions1), set(positions))
                     
     def test_related_manager_exclude(self):
-        session = self.session()
-        inst = session.query(Instrument).get(id = 1)
-        fund = session.query(Fund).get(id = 1)
-        pos = fund.positions.exclude(instrument = inst)
+        inst = yield self.query().get(id=1)
+        fund = yield self.query(Fund).get(id=1)
+        pos = yield fund.positions.exclude(instrument=inst).load_related('instrument')\
+                                                           .load_related('fund').all() 
         for p in pos:
-            self.assertFalse(p.instrument == inst)
-            self.assertEqual(p.fund,fund)
+            self.assertNotEqual(p.instrument, inst)
+            self.assertEqual(p.fund, fund)
         
 

@@ -275,21 +275,27 @@ lookup on fields with additional nested fields. This is the case of
 
     def todelete(self):
         return False
-
-    ############################################################################
-    ##    NESTED ATTRIBUTES
-    ############################################################################
-    def get_attr(self, value, name):
-        raise AttributeError
     
     ############################################################################
     ##    FIELD VALUES
     ############################################################################
-
-    def get_value(self, instance):
+    def get_value(self, instance, *bits):
         '''Retrieve the value :class:`Field` from a
-:class:`StdModel` ``instance``.'''
-        return getattr(instance, self.attname)
+:class:`StdModel` ``instance``.
+
+:param instance: The :class:`StdModel` ``instance`` invoking this function.
+:param bits: Additional information for nested fields which derives from
+    the :ref:`double underscore <tutorial-underscore>` notation.
+:return: the value of this :class:`Field` in the ``instance``. can raise
+    :class:`AttributeError`.
+    
+This method is used by the :meth:`StdModel.get_attr_value` method when
+retrieving values form a :class:`StdModel` instance.
+'''
+        if bits:
+            raise AttributeError
+        else:
+            return getattr(instance, self.attname)
     
     def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
@@ -620,8 +626,9 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def get_attname(self):
         return '%s_id' % self.name
         
-    def get_attr(self, value, bits):
-        return value.get_model_attribute(JSPLITTER.join(bits))
+    def get_value(self, instance, *bits):
+        related = getattr(instance, self.name)
+        return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
@@ -798,7 +805,8 @@ behaviour and how the field is stored in the back-end server.
                 name = JSPLITTER.join((self.attname, name))
             return (name, None)
     
-    def get_attr(self, value, bits):
+    def get_value(self, instance, *bits):
+        value = getattr(instance, self.name)
         try:
             for bit in bits:
                 value = value[bit]
@@ -937,7 +945,9 @@ information and tips on how to use it.
             raise FieldError('At least tow fields are required by composite '\
                              'CompositeIdField')
 
-    def get_value(self, instance):
+    def get_value(self, instance, *bits):
+        if bits:
+            raise AttributeError
         values = tuple((f.get_value(instance) for f in self.fields))
         return hash(values)
     

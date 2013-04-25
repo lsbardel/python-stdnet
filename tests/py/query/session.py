@@ -1,15 +1,11 @@
 '''Sessions and transactions management'''
-from pulsar.apps.test import sequential
-
 from stdnet import odm, getdb
-
-from stdnet.utils import test
+from stdnet.utils import test, gen_unique_id
 from stdnet.conf import settings
-from stdnet.utils import gen_unique_id
 
 from examples.models import SimpleModel, Instrument
 
-@sequential
+@test.sequential
 class TestSession(test.TestCase):
     model = SimpleModel
     

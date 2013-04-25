@@ -539,7 +539,7 @@ from its :class:`Manager`.'''
             t.delete(self)
         return on_result(t.on_result, lambda r: self)
     
-    def get_model_attribute(self, name):
+    def get_attr_value(self, name):
         return getattr(self, name)
     
     def get_state_action(self):

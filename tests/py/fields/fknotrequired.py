@@ -100,10 +100,10 @@ class NonRequiredForeignKey(test.TestCase):
                                 .load_only('name', 'live__data__pv').all()
         self.assertEqual(len(qs), 2)
         for feed in qs:
-            name = feed.get_model_attribute('name')
+            name = feed.get_attr_value('name')
             self.assertTrue(name.startswith('bbb'))
-            self.assertEqual(feed.get_model_attribute('live__data__pv'), 30)
-            self.assertRaises(AttributeError, feed.get_model_attribute, 'a__b')
+            self.assertEqual(feed.get_attr_value('live__data__pv'), 30)
+            self.assertRaises(AttributeError, feed.get_attr_value, 'a__b')
                  
     def test_load_related_when_deleted(self):
         '''Use load_related on foreign key which was deleted.'''

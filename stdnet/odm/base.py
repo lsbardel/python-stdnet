@@ -436,14 +436,18 @@ class ModelState(object):
 
     @property
     def action(self):
+        '''Action to be performed by the backend server when committing
+changes to the instance of :class:`Model` for which this is a state.'''
         return self._action
     
     @property
     def persistent(self):
+        '''``True`` if the instance is persistent in the backend server.'''
         return self._action != 'add'
 
     @property
     def iid(self):
+        '''Instance primary key or a temporary key if not yet available.'''
         return self._iid
 
     def __repr__(self):

@@ -13,41 +13,41 @@ class TestMeta(FinanceTest):
         cls.register()
         
     def testEmpty(self):
-        empty = Instrument.objects.empty()
+        empty = self.session().empty(Instrument)
         self.assertEqual(empty.meta, Instrument._meta)
         self.assertEqual(len(empty), 0)
         self.assertEqual(empty.count(), 0)
-        self.assertEqual(list(empty),[])
+        self.assertEqual(list(empty), [])
         self.assertEqual(empty.executed, True)
         self.assertEqual(empty.construct(), empty)
         self.assertEqual(empty.items(), [])
         self.assertEqual(empty.all(), [])
-        self.assertEqual(empty.intersect(Instrument.objects.query()),empty)
-        all = Instrument.objects.query()
+        self.assertEqual(empty.intersect(self.query()), empty)
+        all = self.query()
         all2 = empty.union(all)
         all = yield all.all()
         all2 = yield all2.all()
-        self.assertEqual(set(all),set(all2))
-        q = Instrument.objects.filter(ccy__in = ())
+        self.assertEqual(set(all), set(all2))
+        q = self.query().filter(ccy__in=())
         yield self.async.assertEqual(q.count(), 0)
                 
     def testProperties(self):
-        query = Instrument.objects.query()
+        query = self.query()
         self.assertFalse(query.executed)
         
     def test_getfield(self):
-        query = Instrument.objects.query()
+        query = self.query()
         self.assertRaises(QuerySetError, query.get_field, 'waaaaaaa')
         query = query.get_field('id')
         query2 = query.get_field('id')
         self.assertEqual(query, query2)
         
     def testFilterError(self):
-        query = Instrument.objects.filter(whoaaaaa='foo')
+        query = self.query().filter(whoaaaaa='foo')
         self.assertRaises(QuerySetError, query.all)
         
     def testEmptyParameters(self):
-        query = Instrument.objects.filter(ccy='USD')
+        query = self.query().filter(ccy='USD')
         self.assertEqual(query, query.filter())
         self.assertEqual(query, query.exclude())
         
@@ -57,12 +57,11 @@ class TestMetaRepr(FinanceTest):
     @classmethod
     def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
-        cls.register()
         yield cls.data.create(cls)
         
     def testRepr(self):
-        query = Instrument.objects.filter(ccy='EUR')\
-                                  .exclude(type=('equity','bond'))
+        query = self.query().filter(ccy='EUR')\
+                            .exclude(type=('equity', 'bond'))
         self.assertTrue(str(query))
         # The query is still lazy
         self.assertFalse(query.cache())

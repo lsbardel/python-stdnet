@@ -80,7 +80,9 @@ class TestTransactions(test.TestCase):
         yield t.on_result
         with session.begin() as t:
             s = t.add(s, force_update=True)
-            self.assertEqual(s._force_update, True)
+            state = s.get_state()
+            self.assertEqual(state.action, 'update')
+            self.assertTrue(state.persistent)
         yield t.on_result
         
         

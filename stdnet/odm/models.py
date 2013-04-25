@@ -290,12 +290,8 @@ otherwise it returns ``None``.'''
     
     @classmethod
     def pk(cls):
-        '''Return the primary key :class:`Field` for this model. This is a
-proxy for the :attr:`Metaclass.pk` attribute::
-    
-    MyModel.pk() == MyModel._meta.pk
-    
-'''
+        '''Returns the primary key :class:`Field` for this model. This is a
+proxy for the :attr:`Metaclass.pk` attribute.'''
         return cls._meta.pk
     
     # PICKLING SUPPORT

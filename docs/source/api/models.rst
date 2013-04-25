@@ -191,6 +191,10 @@ Base Class and Mixins
    :members:
    :member-order: bysource
 
+.. autoclass:: StructureCache
+   :members:
+   :member-order: bysource
+
 
 List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

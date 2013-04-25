@@ -1,35 +1,38 @@
 '''tests for odm.HashField'''
-from stdnet.utils import test, populate, zip, iteritems, to_string
+from stdnet.utils import test, zip, iteritems, to_string
 
 from examples.models import Dictionary
 
 from .struct import MultiFieldMixin
         
-keys = populate('string', 200)
-values = populate('string', 200, min_len=20, max_len=300)
+
+class HashData(test.DataGenerator):
+    
+    def generate(self):
+        self.keys = self.populate()
+        self.values = self.populate(min_len=20, max_len=300)
+        self.data = dict(zip(self.keys, self.values))
 
 
-class TestHashField(test.TestCase, MultiFieldMixin):
+class TestHashField(MultiFieldMixin, test.TestCase):
     multipledb = 'redis'
     model = Dictionary
+    data_cls = HashData
     
-    def setUp(self):
-        self.names = populate('string', size=10)
-        self.defaults = {'name': self.names[0]}
-        self.name = self.names[1]
-        self.data = dict(zip(keys, values))
+    def defaults(self):
+        return {'name': self.name}
     
     def adddata(self, d):
-        yield d.data.update(self.data)
+        yield d.data.update(self.data.data)
         size = yield d.data.size()
-        self.assertEqual(len(self.data), size)
+        self.assertEqual(len(self.data.data), size)
     
     def create(self, fill=False):
         with self.session().begin() as t:
             d = t.add(self.model(name=self.name))
         yield t.on_result
         if fill:
-            yield d.data.update(self.data)
+            yield d.data.update(self.data.data)
         yield d
         
     def test_update(self):
@@ -48,41 +51,43 @@ class TestHashField(test.TestCase, MultiFieldMixin):
         self.assertTrue(d in d.session)
         with d.session.begin() as t:
             t.add(d)
-            for k, v in iteritems(self.data):
+            for k, v in iteritems(self.data.data):
                 d.data.add(k, v)
             size = yield d.data.size()
             self.assertEqual(size, 0)
         yield t.on_result
         size = yield d.data.size()
-        self.assertEqual(len(self.data), size)
+        self.assertEqual(len(self.data.data), size)
 
     def testKeys(self):
-        d = yield self.fill()
+        d = yield self.create(True)
+        data = self.data.data.copy()
         for k in d.data:
-            self.data.pop(k)
-        self.assertEqual(len(self.data),0)
+            data.pop(k)
+        self.assertEqual(len(data), 0)
     
     def testItems(self):
-        d = yield self.fill()
-        data = self.data.copy()
+        d = yield self.create(True)
+        data = self.data.data.copy()
         items = d.data.items()
         for k, v in items:
             self.assertEqual(v, data.pop(k))
         self.assertEqual(len(data), 0)
         
     def testValues(self):
-        d = yield self.fill()
+        d = yield self.create(True)
         values = list(d.data.values())
-        self.assertEqual(len(self.data),len(values))
+        self.assertEqual(len(self.data.data),len(values))
         
     def createN(self):
-        with self.model.objects.session().begin() as t:
+        with self.session().begin() as t:
             for name in self.names:
                 t.add(self.model(name=name))
         yield t.on_result
         # Add some data to dictionaries
-        qs = yield self.model.objects.query().all()
-        with self.model.objects.session().begin() as t:
+        qs = yield self.query().all()
+        self.assertTrue(qs)
+        with self.session().begin() as t:
             for m in qs:
                 t.add(m.data)
                 m.data['ciao'] = 'bla'
@@ -96,13 +101,16 @@ class TestHashField(test.TestCase, MultiFieldMixin):
  has been loaded.'''
         yield self.createN()
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.query():
-            data = getattr(m,cache,None)
+        qs = yield self.query().all()
+        self.assertTrue(qs)
+        for m in qs:
+            data = getattr(m, cache, None)
             self.assertFalse(data)
         
     def test_load_related(self):
         '''Use load_selected to load stastructure data'''
         yield self.createN()
         cache = self.model._meta.dfields['data'].get_cache_name()
-        for m in self.model.objects.query().load_related('data'):
+        all = yield self.query().load_related('data').all()
+        for m in all:
             self.assertTrue(m.data.cache.cache)

@@ -609,7 +609,7 @@ list of ids deleted.'''
         session = self.session
         with session.begin() as t:
             t.delete(self)
-        return on_result(t.on_result, lambda t: t.deleted.get(self._meta))
+        return on_result(t.on_result, lambda _: t.deleted.get(self._meta))
 
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''

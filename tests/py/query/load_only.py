@@ -215,31 +215,40 @@ class TestFieldReplace(test.TestCase):
     @classmethod
     def after_setup(cls):
         with cls.session().begin() as t:
-            t.add(cls.model(name = 'a',
-                            data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}}))
+            t.add(cls.model(name='a',
+                            data={'pv': {'': 0.5, 'mean': 1, 'std': 3.5}}))
         return t.on_result
         
     def test_load_only(self):
         session = self.session()
         query = session.query(self.model)
-        s = yield query.load_only('name', 'data__pv').get(id=1)
-        self.assertEqual(s.name,'a')
+        s = yield query.load_only('name', 'data__pv').get(name='a')
+        self.assertEqual(s.name, 'a')
         self.assertEqual(s.data__pv, 0.5)
         self.assertFalse(s.has_all_data)
+        self.assertEqual(s.get_state().action, 'update')
+        # Now set extra data
         s.data = {'pv': {'mean': 2}}
         with session.begin() as t:
             t.add(s)
+        yield t.on_result
         # remove s from session so that we reloaded it
-        self.assertEqual(session.expunge(s),s)
-        s = yield query.get(id=1)
+        self.assertEqual(session.expunge(s), s)
+        s = yield query.get(name='a')
         self.assertTrue(s.has_all_data)
         self.assertEqual(s.data, {'pv': {'': 0.5, 'mean': 2, 'std': 3.5}})
+        
+    def test_replace(self):
+        session = self.session()
+        query = session.query(self.model)
+        s = yield query.get(name='a')
+        self.assertTrue(s.has_all_data)
+        self.assertEqual(s.get_state().action, 'override')
         s.data = {'bla': {'foo': -1}}
         with session.begin() as t:
             t.add(s)
-        # remove s from session so that we reloaded it
-        self.assertEqual(session.expunge(s),s)
-        s = yield query.get(id=1)
+        yield t.on_result
+        s = yield self.query().get(name='a')
         self.assertTrue(s.has_all_data)
         self.assertEqual(s.data, {'bla': {'foo': -1}})
         

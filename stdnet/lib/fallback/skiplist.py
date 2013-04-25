@@ -1,10 +1,15 @@
-# Original from
+# Modified version of skiplist
 # http://code.activestate.com/recipes/576930-efficient-running-median-using-an-indexable-skipli/
 #
+import sys
 from random import random
-from math import log, ceil
-from collections import deque
-from itertools import islice
+from math import log
+
+ispy3k = int(sys.version[0]) >= 3
+
+if not ispy3k:
+    range = xrange
+
 
 __all__ = ['skiplist']
 
@@ -14,33 +19,28 @@ class Node(object):
         self.score, self.value, self.next, self.width =\
                          score, value, next, width
 
-class End(object):
-    'Sentinel object that always compares greater than another object'
-    def __cmp__(self, other):
-        return 1
-    def __ge__(self, other):
-        return 1
-    def __gt__(self, other):
-        return 1
-    def __lt__(self, other):
-        return 0
-    def __eq__(self, other):
-        return 0
-    def __le__(self, other):
-        return 0
 
-# Singleton terminator node
-NIL = Node(End(), None, [], [])
+SKIPLIST_MAXLEVEL = 32     # Should be enough for 2^32 elements
 
 
 class skiplist(object):
-    '''Sorted collection supporting O(log n) insertion, removal,
-and lookup by rank.'''
+    '''Sorted collection supporting O(lg n) insertion,
+removal, and lookup by rank.'''
 
-    def __init__(self, expected_size=1000000):
-        self.maxlevels = int(1 + log(expected_size, 2))
+    def __init__(self, data=None, unique=False):
+        self.unique = unique
         self.clear()
-        
+        if data is not None:
+            self.extend(data)
+    
+    def clear(self):
+        self.__size = 0
+        self.__level = 1
+        self.__head = Node('HEAD',
+                           None,
+                           [None]*SKIPLIST_MAXLEVEL,
+                           [1]*SKIPLIST_MAXLEVEL)
+
     def __repr__(self):
         return list(self).__repr__()
     
@@ -48,83 +48,119 @@ and lookup by rank.'''
         return self.__repr__()
     
     def __len__(self):
-        return self.size
+        return self.__size
 
-    def __getitem__(self, i):
-        node = self.head
-        i += 1
-        for level in reversed(range(self.maxlevels)):
-            while node.width[level] <= i:
-                i -= node.width[level]
-                node = node.next[level]
-        return node.value
-
-    def clear(self):
-        self.size = 0
-        self.head = Node('HEAD', None, [NIL]*self.maxlevels, [1]*self.maxlevels)
+    def __getitem__(self, index):
+        node = self.__head
+        traversed = 0
+        index += 1
+        for i in range(self.__level-1,-1,-1):
+            while node.next[i] and (traversed + node.width[i]) <= index:
+                traversed += node.width[i]
+                node = node.next[i]
+            if traversed == index:
+                return node.value
+        raise IndexError('skiplist index out of range')
+    
+    def extend(self, iterable):
+        i = self.insert
+        for score_values in iterable:
+            i(*score_values)
+    update = extend
+            
+    def rank(self, score):
+        '''Return the 0-based index (rank) of ``score``. If the score is not
+available it returns a negative integer which absolute score is the
+left most closest index with score less than *score*.'''
+        node = self.__head
+        rank = 0
+        for i in range(self.__level-1, -1, -1):
+            while node.next[i] and node.next[i].score <= score:
+                rank += node.width[i]
+                node = node.next[i]
+        if node.score == score:
+            return rank - 1
+        else:
+            return -1 - rank
         
     def insert(self, score, value):
         # find first node on each level where node.next[levels].score > score
-        chain = [None] * self.maxlevels
-        steps_at_level = [0] * self.maxlevels
-        node = self.head
-        for level in reversed(range(self.maxlevels)):
-            while node.next[level].score <= score:
-                steps_at_level[level] += node.width[level]
-                node = node.next[level]
-            chain[level] = node
-
+        if score != score:
+            raise ValueError('Cannot insert score {0}'.format(score))
+        chain = [None] * SKIPLIST_MAXLEVEL
+        rank = [0] * SKIPLIST_MAXLEVEL
+        node = self.__head
+        for i in range(self.__level-1,-1,-1):
+            #store rank that is crossed to reach the insert position
+            rank[i] = 0 if i == self.__level-1 else rank[i+1]
+            while node.next[i] and node.next[i].score <= score:
+                rank[i] += node.width[i]
+                node = node.next[i]
+            chain[i] = node
+        # the score already exist
+        if chain[0].score == score and self.unique:
+            return
         # insert a link to the newnode at each level
-        d = min(self.maxlevels, 1 - int(log(random(), 2.0)))
-        newnode = Node(score, value, [None]*d, [None]*d)
-        steps = 0
-        for level in range(d):
-            prevnode = chain[level]
-            newnode.next[level] = prevnode.next[level]
-            prevnode.next[level] = newnode
-            newnode.width[level] = prevnode.width[level] - steps
-            prevnode.width[level] = steps + 1
-            steps += steps_at_level[level]
-        for level in range(d, self.maxlevels):
-            chain[level].width[level] += 1
-        self.size += 1
-
-    def update(self, values):
-        insert = self.insert
-        for score, value in values:
-            insert(score, value)
+        level = min(SKIPLIST_MAXLEVEL, 1 - int(log(random(), 2.0)))
+        if level > self.__level:
+            for i in range(self.__level,level):
+                rank[i] = 0
+                chain[i] = self.__head
+                chain[i].width[i] = self.__size
+            self.__level = level
         
+        # create the new node
+        node = Node(score, value, [None]*level, [None]*level)
+        for i in range(level):
+            prevnode = chain[i]
+            steps = rank[0] - rank[i]
+            node.next[i] = prevnode.next[i]
+            node.width[i] = prevnode.width[i] - steps
+            prevnode.next[i] = node
+            prevnode.width[i] = steps + 1
+
+        # increment width for untouched levels
+        for i in range(level,self.__level):
+            chain[i].width[i] += 1
+            
+        self.__size += 1
+        return node
+
     def remove(self, score):
         # find first node on each level where node.next[levels].score >= score
-        chain = [None] * self.maxlevels
-        node = self.head
-        for level in reversed(range(self.maxlevels)):
-            while node.next[level].score < score:
-                node = node.next[level]
-            chain[level] = node
-        if score != chain[0].next[0].score:
+        chain = [None] * SKIPLIST_MAXLEVEL
+        node = self.__head
+        for i in range(self.__level-1,-1,-1):
+            while node.next[i] and node.next[i].score < score:
+                node = node.next[i]
+            chain[i] = node
+            
+        node = node.next[0]
+        if score != node.score:
             raise KeyError('Not Found')
 
-        # remove one link at each level
-        d = len(chain[0].next[0].next)
-        for level in range(d):
-            prevnode = chain[level]
-            prevnode.width[level] += prevnode.next[level].width[level] - 1
-            prevnode.next[level] = prevnode.next[level].next[level]
-        for level in range(d, self.maxlevels):
-            chain[level].width[level] -= 1
-        self.size -= 1
+        for i in range(self.__level):
+            if chain[i].next[i] == node:
+                chain[i].width[i] += node.width[i] - 1
+                chain[i].next[i] = node.next[i]
+            else:
+                chain[i].width[i] -= 1
+        
+        self.__size -= 1
 
     def __iter__(self):
         'Iterate over values in sorted order'
-        node = self.head.next[0]
-        while node is not NIL:
+        node = self.__head.next[0]
+        while node:
             yield node.score, node.value
             node = node.next[0]
 
     def flat(self):
-        node = self.head.next[0]
-        while node is not NIL:
+        return tuple(self._flat())
+    
+    def _flat(self):
+        node = self.__head.next[0]
+        while node:
             yield node.score
             yield node.value
             node = node.next[0]

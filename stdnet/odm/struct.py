@@ -10,6 +10,7 @@ from .session import commit_when_no_transaction, withsession
 
 
 __all__ = ['Structure',
+           'StructureCache',
            'Sequence',
            'OrderedMixin',
            'KeyValueMixin',
@@ -29,7 +30,8 @@ __all__ = ['Structure',
 ################################################################################
 ##    CACHE CLASSES FOR STRUCTURES
 ################################################################################
-class structure_cache(object):
+class StructureCache(object):
+    '''Interface for all :attr:`Structure.cache` classes.'''
     def __init__(self):
         self.clear()
     
@@ -40,13 +42,14 @@ class structure_cache(object):
             return str(self.cache)
         
     def clear(self):
+        '''Clear the cache for data'''
         self.cache = None
         
     def set_cache(self, data):
         raise NotImplementedError()
     
     
-class stringcache(structure_cache):
+class stringcache(StructureCache):
     
     def getvalue(self):
         return self.data.getvalue()
@@ -59,7 +62,7 @@ class stringcache(structure_cache):
         self.data = BytesIO()
     
     
-class listcache(structure_cache):
+class listcache(StructureCache):
         
     def push_front(self, value):
         self.front.append(value)
@@ -78,7 +81,7 @@ class listcache(structure_cache):
         self.cache.extend(data)
         
     
-class setcache(structure_cache):
+class setcache(StructureCache):
 
     def __contains__(self, v):
         if v not in self.toremove:
@@ -167,12 +170,12 @@ can also be used as stand alone objects. For example::
     db = stdnet.getdb(...)
     mylist = db.list('bla')
 
-.. attribute:: timeout
+.. attribute:: cache
 
-    Expiry timeout. If different from zero it represents the number of seconds
-    after which the structure is deleted from the data server.
-    
-    Default ``0``.
+    A python :class:`StructureCache` for this :class:`Structure`.
+    The :attr:`cache` is used when adding or removing data via
+    :class:`Transaction` as well as
+    for storing the results obtained form a call to :meth:`items`.
 
 .. attribute:: value_pickler
 
@@ -185,13 +188,11 @@ can also be used as stand alone objects. For example::
     _model_type = 'structure'
     pickler = None
     value_pickler = None
-    def __init__(self, timeout=0, value_pickler=None, name='', is_field=False,
-                 **kwargs):
+    def __init__(self, value_pickler=None, name='', is_field=False, **kwargs):
         self._is_field = is_field
         self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
-        self.timeout = timeout
         self.setup(**kwargs)
         if not self.id:
             self.id = self.makeid()
@@ -232,7 +233,7 @@ can also be used as stand alone objects. For example::
             return iter(res)
         
     def size(self):
-        '''Number of elements in structure.'''
+        '''Number of elements in the :class:`Structure`.'''
         if self.cache.cache is None:
             return self.backend_structure().size()
         else:
@@ -255,9 +256,8 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         self.cache.set_cache(self.load_data(data))
         
     def load_data(self, data):
-        '''Load data from the :class:`stdnet.BackendDataServer`.'''
-        loads = self.value_pickler.loads
-        return (loads(v) for v in data)
+        '''Load ``data`` from the :class:`stdnet.BackendDataServer`.'''
+        return self.value_pickler.load_iterable(data, self.session)
     
     def dbid(self):
         return self.backend_structure().id
@@ -347,8 +347,17 @@ Equivalent to python dictionary update method.
     
     def load_data(self, mapping):
         loads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        return [(loads(k), vloads(v)) for k,v in iterpair(mapping)]
+        if self.value_pickler.require_session():
+            data1 = []
+            def _iterable():
+                for k, v in iterpair(mapping):
+                    data1.append(loads(k))
+                    yield v
+            res = self.value_pickler.load_iterable(_iterable(), self.session)
+            return on_result(res, lambda data2: zip(data1, data2))
+        else:
+            vloads = self.value_pickler.loads
+            return [(loads(k), vloads(v)) for k,v in iterpair(mapping)]
     
     def load_keys(self, iterable):
         loads = self.pickler.loads
@@ -363,7 +372,6 @@ Equivalent to python dictionary update method.
         return self.items()
         
     
-
 class KeyValueMixin(PairMixin):
     '''A mixin for ordered and unordered key-valued pair containers.
 A key-value pair container has the :meth:`values` and :meth:`items`

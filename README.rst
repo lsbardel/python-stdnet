@@ -162,10 +162,7 @@ Running Tests
 At the moment, only redis back-end is available and therefore to run tests you
 need to install Redis_. If you are using linux, it can be achieved simply
 by downloading, uncompressing and running ``make``, if you are using
-windows and want to save yourself a headache you can download precompiled
-binaries at servicestack__.
-
-__ http://code.google.com/p/servicestack/wiki/RedisWindowsDownload
+windows you can find sources from MSOpenTech_.
 
 Requirements for running tests:
 
@@ -247,3 +244,4 @@ file in the top distribution directory for the full license text.
 .. _mock: http://pypi.python.org/pypi/mock
 .. _pypy: http://pypy.org/
 .. _Mongodb: http://www.mongodb.org/
+.. _MSOpenTech: https://github.com/MSOpenTech/redis

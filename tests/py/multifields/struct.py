@@ -2,18 +2,33 @@ __test__ = False
 from time import sleep
 
 from stdnet import StructureFieldError
-from stdnet.utils import test, populate, zip, to_string, iteritems
+from stdnet.utils import test, populate, zip, to_string
 
-elems = populate('string', 100)
 
+class StringData(test.DataGenerator):
+    
+    def generate(self):
+        self.names = self.populate()
+        
 
 class MultiFieldMixin(object):
     '''Test class which add a couple of tests for multi fields.'''
     attrname = 'data'
-    defaults = {}
+    data_cls = StringData
+    
+    @classmethod
+    def after_setup(cls):
+        cls.data = cls.data_cls(cls.size)
+        
+    def setUp(self):
+        self.names = test.populate('string', size=10)
+        self.name = self.names[0]
+        
+    def defaults(self):
+        return {}
         
     def get_object_and_field(self, save=True, **kwargs):
-        params = self.defaults.copy()
+        params = self.defaults()
         params.update(kwargs)
         m = self.model(**params)
         if save:

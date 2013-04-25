@@ -1,6 +1,8 @@
+from functools import partial
+
 import stdnet
 from stdnet.utils import encoders, iteritems
-from stdnet import FieldValueError, QuerySetError, ManyToManyError, async
+from stdnet import FieldValueError, QuerySetError, ManyToManyError, on_result
 
 from .session import Manager
 from . import signals
@@ -19,11 +21,23 @@ class ModelFieldPickler(encoders.Encoder):
     def __init__(self, model):
         self.model = model
 
-    def loads(self, s):
-        return self.model.objects.get(id=s)
-
     def dumps(self, obj):
-        return obj.id
+        return obj.pkvalue()
+    
+    def require_session(self):
+        return True
+    
+    def load_iterable(self, iterable, session):
+        ids = []
+        tpy = self.model.pk().to_python
+        backend = session.backend
+        ids = [tpy(id, backend) for id in iterable]
+        result = session.query(self.model).filter(id=ids).all()
+        return on_result(result, partial(self._sort, ids))
+    
+    def _sort(self, ids, results):
+        results = dict(((r.id, r) for r in results))
+        return [results.get(id) for id in ids]
 
 
 def load_relmodel(field, callback):

@@ -4,53 +4,48 @@ from datetime import date, datetime
 from random import uniform
 
 from stdnet import odm
-from stdnet.utils import test, populate, todate, zip, dategenerator,\
+from stdnet.utils import test, todate, zip, dategenerator,\
                              default_parse_interval
 
 from examples.tsmodels import TimeSeries, DateTimeSeries
 
 from .struct import MultiFieldMixin
 
-NUM_DATES = 300
 
-dates     = populate('date',NUM_DATES)
-dates2    = populate('date',NUM_DATES,start=date(2009,1,1),end=date(2010,1,1))
-values    = populate('float',NUM_DATES, start = 10, end = 400)
-big_strings = populate('string',NUM_DATES,min_len=300, max_len=1000)
-alldata   = list(zip(dates,values))
-alldata2  = list(zip(dates2,values))
-testdata  = dict(alldata)
-testdata2 = dict(alldata2)
+class TsData(test.DataGenerator):
+    
+    def generate(self):
+        self.dates = self.populate('date')
+        self.values = self.populate('float', start=10, end=400)
+        self.dates2 = self.populate('date', start=date(2009,1,1),
+                                            end=date(2010,1,1))
+        self.big_strings = self.populate(min_len=300, max_len=1000)
+        self.alldata   = list(zip(self.dates, self.values))
+        self.alldata2  = list(zip(self.dates2, self.values))
+        self.testdata  = dict(self.alldata)
+        self.testdata2 = dict(self.alldata2)
 
 
-class TestDateTimeSeries(test.TestCase):
+class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
     multipledb = 'redis'
     model = TimeSeries
     mkdate = datetime
-    defaults = {'ticker': 'GOOG'}
+    data_cls = TsData
     
-    @classmethod
-    def setUpClass(cls):
-        yield super(TestDateTimeSeries, cls).setUpClass()
-        cls.register()
-        
-    def setUp(self):
-        self.names = populate('string', size=10)
-        self.name = self.names[0]
+    def defaults(self):
+        return {'ticker', self.name}
     
     def adddata(self, obj, data=None):
-        data = data or testdata
+        data = data or self.data.testdata
         yield obj.data.update(data)
-        size = obj.data.size()
-        self.assertEqual(size, len(data))
+        yield self.async.assertEqual(obj.data.size(), len(data))
         
     def make(self, name=None):
-        name = name or self.name
-        return self.model(ticker=name).save()
+        return self.session().add(self.model(ticker=name or self.name))
     
     def get(self, name=None):
         name = name or self.name
-        return self.model.objects.get(ticker=name)
+        return self.query().get(ticker=name)
         
     def filldata(self, data=None, name=None):
         d = yield self.make(name=name)
@@ -64,8 +59,8 @@ class TestDateTimeSeries(test.TestCase):
         for interval,target in zip(intervals,targets):
             x = interval[0]
             y = interval[1]
-            self.assertEqual(x,target[0])
-            self.assertEqual(y,target[1])
+            self.assertEqual(x, target[0])
+            self.assertEqual(y, target[1])
             for dt in dategenerator(x,y):
                 ts.data.add(dt,uniform(0,1))
         self.assertEqual(ts.data_start,C)
@@ -76,7 +71,7 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(ts.data_start, None)
         self.assertEqual(ts.data_end, None)
         mkdate = self.mkdate
-        ts.data.update(testdata2)
+        ts.data.update(self.data.testdata2)
         start = ts.data_start
         end   = ts.data_end
         p = start
@@ -88,7 +83,7 @@ class TestDateTimeSeries(test.TestCase):
     def testkeys(self):
         ts = yield self.filldata()
         keyp = None
-        data = testdata.copy()
+        data = self.data.testdata.copy()
         for key in ts.dates():
             if keyp:
                 self.assertTrue(key,keyp)
@@ -99,7 +94,7 @@ class TestDateTimeSeries(test.TestCase):
     def testitems(self):
         ts = yield self.filldata()
         keyp = None
-        data = testdata.copy()
+        data = self.data.testdata.copy()
         for key,value in ts.items():
             if keyp:
                 self.assertTrue(key,keyp)
@@ -224,8 +219,8 @@ class TestDateTimeSeries(test.TestCase):
         m1, m2 = yield qm.filter(ticker=self.names[:2]).all()
         self.assertEqual(m1.session, m2.session)
         with session.begin() as t:
-            m1.data.update(testdata)
-            m2.data.update(testdata2)
+            m1.data.update(self.data.testdata)
+            m2.data.update(self.data.testdata2)
         yield t.on_result
         yield self.async.assertTrue(m1.size())
         yield self.async.assertTrue(m2.size())
@@ -234,12 +229,12 @@ class TestDateTimeSeries(test.TestCase):
             self.assertTrue(m.data.cache.cache)
         
     def testitems2(self):
-        ts = yield self.filldata(testdata2)
+        ts = yield self.filldata(self.data.testdata2)
         for k,v in ts.data.items():
-            self.assertEqual(v,testdata2[todate(k)])
+            self.assertEqual(v, self.data.testdata2[todate(k)])
             
     def testiRange(self):
-        ts = yield self.filldata(testdata2)
+        ts = yield self.filldata(self.data.testdata2)
         N  = ts.data.size()
         self.assertTrue(N)
         a  = int(N/4)
@@ -258,12 +253,12 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(len(r3),N-b)
         
     def __testiRangeTransaction(self):
-        ts = self.filldata(testdata2)
+        ts = self.filldata(self.data.testdata2)
         N  = ts.data.size()
         self.assertTrue(N)
         a  = int(N/4)
         b  = 3*a
-        with self.model.objects.transaction() as t:
+        with self.session().begin() as t:
             ts.data.irange(0,a,t)
             ts.data.irange(a,b,t)
             ts.data.irange(b,-1,t)
@@ -282,35 +277,35 @@ class TestDateTimeSeries(test.TestCase):
         self.assertEqual(len(r3),N-b)
         
     def testRange(self):
-        ts = yield self.filldata(testdata2)
+        ts = yield self.filldata(self.data.testdata2)
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a
-        r1 = list(ts.data.irange(0,a))
-        r2 = list(ts.data.irange(a,b))
-        r3 = list(ts.data.irange(b,-1))
-        r4 = list(ts.data.range(r2[0][0],r2[-1][0]))
-        self.assertEqual(r4[0],r2[0])
-        self.assertEqual(r4[-1],r2[-1])
+        r1 = list(ts.data.irange(0, a))
+        r2 = list(ts.data.irange(a, b))
+        r3 = list(ts.data.irange(b, -1))
+        r4 = list(ts.data.range(r2[0][0], r2[-1][0]))
+        self.assertEqual(r4[0], r2[0])
+        self.assertEqual(r4[-1], r2[-1])
         
     def __testRangeTransaction(self):
-        ts = self.filldata(testdata2)
+        ts = self.filldata(self.data.testdata2)
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a
-        with self.model.objects.transaction() as t:
+        with self.session().begin() as t:
             ts.data.irange(0, a, t)
             ts.data.irange(a, b, t)
             ts.data.irange(b, -1, t)
         r1,r2,r3 = [list(r) for r in t.get_result()]
-        with self.model.objects.transaction() as t:
+        with self.session().begin() as t:
             ts.data.range(r2[0][0],r2[-1][0],t)
         r4 = [list(r) for r in t.get_result()][0]
         self.assertEqual(r4[0],r2[0])
         self.assertEqual(r4[-1],r2[-1])
         
     def testCount(self):
-        ts = yield self.filldata(testdata2)
+        ts = yield self.filldata(self.data.testdata2)
         N  = ts.data.size()
         a  = int(N/4)
         b  = 3*a

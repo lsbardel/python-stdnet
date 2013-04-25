@@ -9,6 +9,14 @@ TestCase
    :member-order: bysource
 
 
+DataGenerator
+===================
+
+.. autoclass:: DataGenerator
+   :members:
+   :member-order: bysource
+   
+
 .. _pulsar: https://pypi.python.org/pypi/pulsar
 '''
 import os
@@ -46,10 +54,61 @@ from pulsar.apps.test import TestSuite, TestPlugin, sequential
 from stdnet import odm, getdb, settings
 from stdnet.utils import gen_unique_id
 
+from .populate import populate
+
 skipUnless = unittest.skipUnless
 LOGGER = logging.getLogger('stdnet.test')
 
 
+class DataGenerator(object):
+    '''A generator of data. It must be initialised with the :attr:`size`
+parameter obtained from the command line which is avaiable as a class
+attribute in :class:`TestCase`.
+
+.. attribute:: sizes
+
+    A dictionary of sizes for this generator. It is a class attribute with
+    the following entries: ``tiny``, ``small``, ``normal``, ``big``
+    and ``huge``.
+    
+.. attribute:: size
+
+    The actual size of the data to be generated. Obtained from the :attr:`sizes`
+    and the input ``size`` code during initialisation.
+'''
+    sizes = {'tiny': 10,
+             'small': 100,
+             'normal': 1000,
+             'big': 10000,
+             'huge': 1000000}
+
+    def __init__(self, size, sizes=None, **kwargs):
+        self.sizes = sizes or self.sizes
+        self.size_code = size
+        self.size = self.sizes[size]
+        self.generate(**kwargs)
+
+    def generate(self, **kwargs):
+        '''Called during initialisation to generate the data. ``kwargs``
+are additional key-valued parameter passed during initialisation. Must
+be implemented by subclasses.'''
+        raise NotImplementedError
+
+    def create(self, test, use_transaction=True):
+        raise NotImplementedError
+
+    def populate(self, datatype='string', size=None, **kwargs):
+        '''A shortcut for the :func:`stdnet.utils.populate` function.
+If ``size`` is not given, the :attr:`size` is used.'''
+        size = size or self.size
+        return populate(datatype, size, **kwargs)
+    
+    def random_string(self, min_length=5, max_length=30):
+        '''Return a random string'''
+        return populate('string', 1, min_length=min_length,
+                        max_length=max_length)[0]
+    
+    
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet with
 synchronous and asynchronous connections. It contains
@@ -61,11 +120,16 @@ several class methods for testing in a parallel test suite.
     :class:`TestCase` class. It is a class attribute which is different
     for each :class:`TestCase` class and it is created my the
     :meth:`setUpClass` method.
+    
+.. attribute:: data_cls
+
+    A :class:`DataGenerator` class for creating data.
 '''
     models = ()
     model = None
     connection_string = None
     backend = None
+    data_cls = None
 
     @classmethod
     def backend_params(cls):
@@ -129,6 +193,13 @@ the :attr:`backend` attribute.'''
         return cls.session().query(model or cls.model)
 
     def assertEqualId(self, instance, value, exact=False):
+        '''Assert the value of a primary key in a backend agnostic way.
+        
+:param instance: the :class:`StdModel` to check the primary key ``value``.
+:param value: the value of the id to check against.
+:param exact: if ``True`` the exact value must be matched. For redis backend
+    this parameter is not used.
+'''
         pk = instance.pkvalue()
         if exact or self.backend.name == 'redis':
             self.assertEqual(pk, value)
@@ -138,7 +209,7 @@ the :attr:`backend` attribute.'''
             else:
                 self.assertEqual(pk, value)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
         return pk
 
 

@@ -1,50 +1,46 @@
 '''tests for odm.ListField'''
 from stdnet import StructureFieldError
-from stdnet.utils import test, populate, zip, iteritems, to_string
+from stdnet.utils import test, zip, to_string
 
 from examples.models import SimpleList
 
-from .struct import MultiFieldMixin, elems
+from .struct import MultiFieldMixin
 
         
-class TestListField(test.TestCase, MultiFieldMixin):
+class TestListField(MultiFieldMixin, test.TestCase):
     model = SimpleList
     attrname = 'names'
-    
-    @classmethod
-    def setUpClass(cls):
-        yield super(TestListField, cls).setUpClass()
-        cls.register()
         
     def adddata(self, li):
         '''Add elements to a list without using transactions.'''
         with li.session.begin():
             names = li.names
-            for elem in elems:
+            for elem in self.data.names:
                 names.push_back(elem)
-        self.assertEqual(li.names.size(), len(elems))
+        self.assertEqual(li.names.size(), len(self.data.names))
         
     def test_push_back_pop_back(self):
         li = SimpleList()
         self.assertEqual(li.id, None)
-        yield li.save()
+        li = yield self.session().add(li)
         names = li.names
-        for elem in elems:
+        for elem in self.data.names:
             names.push_back(elem)
-        self.assertEqual(li.names.size(), len(elems))
-        for elem in reversed(elems):
+        self.assertEqual(li.names.size(), len(self.data.names))
+        for elem in reversed(self.data.names):
             self.assertEqual(li.names.pop_back(), elem)
         self.assertEqual(li.names.size(), 0)
         
     def testPushBack(self):
-        li = SimpleList().save()
-        with li.session.begin():
+        li = yield self.session().add(SimpleList())
+        with li.session.begin() as t:
             names = li.names
-            for elem in elems:
+            for elem in self.data.names:
                 names.push_back(elem)
-        for el, ne in zip(elems, names):
+        yield t.on_result
+        for el, ne in zip(self.data.names, names):
             self.assertEqual(el, ne)
-        self.assertEqual(li.names.size(), len(elems))
+        self.assertEqual(li.names.size(), len(self.data.names))
         
     def testPushNoSave(self):
         '''Push a new value to a list field should rise an error if the object
@@ -56,23 +52,23 @@ is not saved on databse.'''
         self.assertRaises(StructureFieldError, push_front)
         
     def testPushFront(self):
-        li = SimpleList().save()
+        li = yield self.session().add(SimpleList())
         if li.session.backend.name == 'redis':
             names = li.names
-            for elem in reversed(elems):
+            for elem in reversed(self.data.names):
                 names.push_front(elem)
             li.save()
-            for el,ne in zip(elems,names):
-                self.assertEqual(el,ne)
+            for el, ne in zip(self.data.names, names):
+                self.assertEqual(el, ne)
         
     def testPushFrontPopFront(self):
-        li = SimpleList().save()
+        li = yield self.session().add(SimpleList())
         if li.session.backend.name == 'redis':
             names = li.names
-            for elem in reversed(elems):
+            for elem in reversed(self.data.names):
                 names.push_front(elem)
             li.save()
-            self.assertEqual(li.names.size(),len(elems))
-            for elem in elems:
-                self.assertEqual(li.names.pop_front(),elem)
-            self.assertEqual(li.names.size(),0)
+            self.assertEqual(li.names.size(),len(self.data.names))
+            for elem in self.data.names:
+                self.assertEqual(li.names.pop_front(), elem)
+            self.assertEqual(li.names.size(), 0)

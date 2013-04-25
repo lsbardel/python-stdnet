@@ -422,12 +422,8 @@ processed.'''
         if self.executed:
             raise InvalidTransaction('Invalid operation. '\
                                      'Transaction already executed.')
-        if self._pre_commit():
-            result = self.backend.execute_session(self.session)
-            self.on_result = maybe_async(on_result(result, self._post_commit))
-            return self.on_result
-        else:
-            return self._post_commit(None)
+        self.on_result = self._commit()
+        return self.on_result
 
     def model(self, meta):
         '''Returns the :class:`SessionModel` for *meta*. It is
@@ -438,6 +434,7 @@ a shurtcut method for :meth:`Session.model`.
         return self.session.model(meta)
     
     # INTERNAL FUNCTIONS
+    @async()
     def _post_commit(self, response):
         '''Callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` commit has finished and results are available.
@@ -484,10 +481,7 @@ Results can contain errors.
             for _, result in send(sm.model, instances=instances,
                                   session=session, transaction=self):
                 results.append(result)
-        results = multi_async(results, raise_on_error=True)
-        return on_result(results, partial(self._after_signals, exceptions))
-    
-    def _after_signals(self, exceptions, results):
+        results = yield multi_async(results, raise_on_error=True)
         self._finished = True
         if exceptions:
             failures = len(exceptions)
@@ -498,7 +492,6 @@ Results can contain errors.
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures=failures)
-        return self
 
     def _pre_commit(self):
         self._executed = True
@@ -506,6 +499,15 @@ Results can contain errors.
         for sm in self.session:
             sent += sm.pre_commit(self)
         return sent
+    
+    @async()
+    def _commit(self):
+        if self._pre_commit():
+            result = yield self.backend.execute_session(self.session)
+        else:
+            result = None
+        yield self._post_commit(result)
+        yield self.finished
 
     def _sent_data(self, sender, data=None, **kwargs):
         self.data_sent = data
@@ -599,6 +601,7 @@ construct."""
         return query_class(model._meta, self, **kwargs)
 
     def empty(self, model):
+        '''Returns an empty :class:`Query` for ``model``.'''
         return EmptyQuery(model._meta, self)
 
     @async()
@@ -708,7 +711,9 @@ empty keys associated with the model will exists after this operation.'''
             self._models[meta] = sm
         return sm
 
-    def expunge(self, instance = None):
+    def expunge(self, instance=None):
+        '''Remove ``instance`` from this :class:`Session`. If ``instance``
+is not given, it removes all instances from this :class:`Session`.'''
         if instance is not None:
             sm = self._models.get(instance._meta)
             if sm:

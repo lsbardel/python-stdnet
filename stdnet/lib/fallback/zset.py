@@ -11,19 +11,23 @@ class zset(object):
     '''Ordered-set equivalent of redis zset.'''
     def __init__(self):
         self.clear()
-                
+    
+    def __repr__(self):
+        return repr(self._sl)
+    
+    def __str__(self):
+        return str(self._sl)
+    
     def __len__(self):
         return len(self._dict)
     
-    def items(self):
-        return self._sl
-    
     def __iter__(self):
+        for _, value in self._sl:
+            yield value
+            
+    def items(self):
+        '''Iterable over ordered score, value pairs of this :class:`zset`'''
         return iter(self._sl)
-    
-    def values(self):
-        for _, v in self._sl:
-            yield v
             
     def add(self, score, val):
         r = 1
@@ -34,26 +38,34 @@ class zset(object):
             self._sl.remove(sc)
             r = 0
         self._dict[val] = score
-        self._sl.insert(score,val)
+        self._sl.insert(score, val)
         return r
     
-    def update(self, scorevals):
+    def update(self, score_vals):
+        '''Update the :class:`zset` with an iterable over pairs of
+scores and values.'''
         add = self.add
-        for score, value in scorevals:
+        for score, value in score_vals:
             add(score, value)
             
+    def remove(self, item):
+        '''Remove ``item`` for the :class:`zset` it it exists.
+If found it returns the score of the item removed.'''
+        score = self._dict.pop(item, None)
+        if score is not None:
+            self._sl.remove(score)
+            return score
+        
     def clear(self):
+        '''Clear this :class:`zset`.'''
         self._sl = skiplist()
         self._dict = {}
-        
-    def _flat(self):
-        for el in self:
-            yield el[0]
-            yield el[1]
+    
+    def rank(self, item):
+        '''Return the rank (index) of ``item`` in this :class:`zset`.'''
+        score = self._dict.get(item)
+        if score is not None:
+            return self._sl.rank(score)
             
     def flat(self):
-        return tuple(self._flat())
-    
-    if not ispy3k:  #pragma    nocover
-        iteritems = items
-        itervalues = values
+        return self._sl.flat()

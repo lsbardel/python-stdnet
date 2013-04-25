@@ -103,9 +103,11 @@ class TestUniqueFilter(test.TestCase):
     def testTestUnique(self):
         session = self.session()
         query = session.query(self.model)
-        yield self.async.assertEqual(query.test_unique('code', 'xxxxxxxxxx'), 'xxxxxxxxxx')
+        yield self.async.assertEqual(query.test_unique('code', 'xxxxxxxxxx'),
+                                     'xxxxxxxxxx')
         m = yield query.get(id=1)
-        yield self.async.assertEqual(query.test_unique('code', m.code, m), m.code)
+        yield self.async.assertEqual(
+                            query.test_unique('code', m.code, m), m.code)
         m2 = yield query.get(id = 2)
         yield self.async.assertRaises(ValueError,
                     query.test_unique, 'code', m.code, m2, ValueError)
@@ -117,18 +119,19 @@ class TestUniqueCreate(test.TestCase):
     def testAddNew(self):
         session = self.session()
         m = yield session.add(self.model(code='me', group='bla'))
-        self.assertEqual(m.id, 1)
+        self.assertEqualId(m, 1)
         self.assertEqual(m.code, 'me')
         # Try to create another one
-        s = self.model(code='me', group='foo')
-        yield self.async.assertRaises(CommitException, s.save)
+        m2 = self.model(code='me', group='foo')
+        yield self.async.assertRaises(CommitException, session.add, m2)
         query = session.query(self.model)
         yield self.async.assertEqual(query.count(), 1)
         m = yield query.get(code='me')
-        self.assertEqual(m.id, 1)
+        self.assertEqualId(m, 1)
         self.assertEqual(m.group, 'bla')
+        session.expunge()
         m = yield session.add(self.model(code='me2', group='bla'))
-        self.assertEqual(m.id, 2)
+        self.assertEqualId(m, 2)
         query = session.query(self.model)
         yield self.async.assertEqual(query.count(), 2)
     
@@ -136,9 +139,6 @@ class TestUniqueCreate(test.TestCase):
 class TestUniqueChange(test.TestCase):
     model = SimpleModel
     
-    def setUp(self):
-        self.register()
-        
     def testChangeValue(self):
         session = self.session()
         query = session.query(self.model)

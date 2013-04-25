@@ -13,26 +13,8 @@ INSTS_TYPES = ['equity','bond','future','cash','option','bond option']
 def assertEqual(x, y):
     assert x == y, 'no equal'
 
-class data_generator(object):
-    sizes = {'tiny': 10,
-             'small': 100,
-             'normal': 1000,
-             'big': 10000,
-             'huge': 1000000}
 
-    def __init__(self, size, sizes=None, **kwargs):
-        self.sizes = sizes or self.sizes
-        self.size = self.sizes[size]
-        self.generate(**kwargs)
-
-    def generate(self, **kwargs):
-        raise NotImplementedError('data generation not implemented')
-
-    def create(self, test, use_transaction=True):
-        raise NotImplementedError()
-
-
-class key_data(data_generator):
+class key_data(test.DataGenerator):
 
     def generate(self, min_len=10, max_len=20, **kwargs):
         self.keys = populate('string', self.size, min_len=min_len,
@@ -98,7 +80,7 @@ class hash_data(key_data):
         return zip(self.fields,self.data)
 
 
-class finance_data(data_generator):
+class finance_data(test.DataGenerator):
     sizes = {'tiny': (20,3,10,1), # positions = 20*100*3 = 30
              'small': (100,10,30,2), # positions = 20*100*3 = 600
              'normal': (500,20,100,3), # positions = 20*100*3 = 6,000
@@ -170,13 +152,7 @@ class finance_data(data_generator):
         yield session
 
 
-class DataTest(test.TestCase):
-    '''A class for testing the Finance application example. It can be run
-with different sizes by passing the'''
-    data_cls = data_generator
-
-
-class FinanceTest(DataTest):
+class FinanceTest(test.TestCase):
     '''A class for testing the Finance application example. It can be run
 with different sizes by passing the'''
     data_cls = finance_data

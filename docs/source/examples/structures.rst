@@ -67,8 +67,9 @@ The following api methods are available for a :class:`Set` and :class:`SetField`
 * :meth:`Structure.size`
 * :meth:`Set.add` add a new element to the set.
 * :meth:`Set.update` add a collection of elements to the set.
-* :meth:`Set.discard` remove an element from the set if it is a memeber.
-* :meth:`Set.discard` remove an element from the set.
+* :meth:`Set.discard` remove an element from the set if it is a member.
+* :meth:`Set.remove` remove an element from the set. Raises an :class:`KeyError`
+  if not available.
 * :meth:`Set.difference_update` remove a collection of elements from the set.
 
 

@@ -16,7 +16,7 @@ logger = logging.getLogger('stdnet.search')
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
 expose the base functionalities for full text-search on model instances.
-Stdnet also provides a :ref:`python implementation <apps-searchengine>`
+Stdnet also provides a :ref:`python implementation <tutorial-search>`
 of this interface.
 
 The main methods to be implemented are :meth:`add_item`,

@@ -7,10 +7,6 @@ from examples.data import FinanceTest
 
 
 class TestMeta(FinanceTest):
-    
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
     def testEmpty(self):
         empty = self.session().empty(Instrument)

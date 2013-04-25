@@ -1,18 +1,15 @@
 '''Test query.get_field method for obtaining a single field from a query.'''
-from stdnet.utils import test, populate, zip, is_string
+from stdnet.utils import test, zip, is_string
 
 from examples.models import Instrument, Position, ObjectAnalytics,\
                              AnalyticData, Group, Fund
-from examples.data import FinanceTest, DataTest, data_generator, INSTS_TYPES,\
-                            CCYS_TYPES
+from examples.data import FinanceTest, INSTS_TYPES, CCYS_TYPES
 
 
 class TestInstrument(FinanceTest):
-    model = Instrument
 
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
         yield cls.data.create(cls)
 
     def testName(self):
@@ -68,7 +65,7 @@ class TestRelated(FinanceTest):
         self.assertEqual(idset, set((i.id for i in inst)))
 
 
-class generator(data_generator):
+class generator(test.DataGenerator):
     sizes = {'tiny': (2,10),
              'small': (5,30),
              'normal': (10,50),
@@ -77,10 +74,10 @@ class generator(data_generator):
 
     def generate(self):
         group_len, obj_len = self.size
-        self.inames = populate('string', obj_len, min_len=5, max_len=20)
-        self.itypes = populate('choice', obj_len, choice_from=INSTS_TYPES)
-        self.iccys = populate('choice', obj_len, choice_from=CCYS_TYPES)
-        self.gnames = populate('string', group_len, min_len=5, max_len=20)
+        self.inames = self.populate('string', obj_len, min_len=5, max_len=20)
+        self.itypes = self.populate('choice', obj_len, choice_from=INSTS_TYPES)
+        self.iccys = self.populate('choice', obj_len, choice_from=CCYS_TYPES)
+        self.gnames = self.populate('string', group_len, min_len=5, max_len=20)
 
     def create(self, test):
         session = test.session()
@@ -103,15 +100,15 @@ class generator(data_generator):
         obj_len = self.size[1]
         groups = yield session.query(Group).all()
         objs = yield session.query(ObjectAnalytics).all()
-        groups = populate('choice', obj_len, choice_from=groups)
-        objs = populate('choice', obj_len, choice_from=objs)
+        groups = self.populate('choice', obj_len, choice_from=groups)
+        objs = self.populate('choice', obj_len, choice_from=objs)
         with test.session().begin() as t:
             for g, o in zip(groups, objs):
                 t.add(AnalyticData(group=g, object=o))
         yield t.on_result
 
 
-class TestModelField(DataTest):
+class TestModelField(test.TestCase):
     '''Test the get_field method when applied to ModelField'''
     models = (ObjectAnalytics, AnalyticData, Group, Instrument, Fund)
     data_cls = generator

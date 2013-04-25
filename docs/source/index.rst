@@ -21,7 +21,7 @@ Requirements
 ================
 
 * redis-py_ for :ref:`redis backend <redis-server>`. Redis 2.6 or above.
-* Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (alpha).
+* Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (pre-alpha).
 * Optional pulsar_ for :ref:`asynchronous database connection <tutorial-asynchronous>`.
 
 .. _contents:
@@ -38,7 +38,6 @@ Contents
    api/index
    backends/index
    changelog
-   stdnetredis
    
 
 Indices and tables
@@ -48,6 +47,13 @@ Indices and tables
 * :ref:`modindex`
 
 
+Legacy
+============
+
+.. toctree::
+   :maxdepth: 1
+   
+   stdnetredis
 
 .. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py

@@ -303,9 +303,8 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
         self._meta.make_object(state)
 
 
-
 def model_to_dict(instance, fields=None, exclude=None):
-    if isinstance(instance,StdModel):
+    if isinstance(instance, StdModel):
         return instance.todict()
     else:
         d = {}

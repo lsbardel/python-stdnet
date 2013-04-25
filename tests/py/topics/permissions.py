@@ -2,10 +2,9 @@ from pulsar.apps.test import sequential
 
 from examples.permissions import User, Group, Role, InstanceRole,\
                                  register_for_permissions, authenticated_query
-from examples.data import data_generator
 
 from stdnet import odm
-from stdnet.utils import test, populate, zip
+from stdnet.utils import test, zip
 
 read = 10
 comment = 15
@@ -17,22 +16,21 @@ class MyModel(odm.StdModel):
     pass
 
 
-class namesGenerator(data_generator):
+class NamesGenerator(test.DataGenerator):
     
-    def generate(self, **kwargs):
+    def generate(self):
         group_size = self.size // 2
-        self.usernames = populate('string', self.size, min_len=5, max_len=20)
-        self.passwords = populate('string', self.size, min_len=7, max_len=20)
-        self.groups = populate('string', group_size, min_len=5, max_len=10)
+        self.usernames = self.populate(min_len=5, max_len=20)
+        self.passwords = self.populate(min_len=7, max_len=20)
+        self.groups = self.populate(size=group_size, min_len=5, max_len=10)
 
 @sequential
 class TestPermissions(test.TestCase):
     models = (User, Group, Role, InstanceRole, MyModel)
-    data_cls = namesGenerator
+    data_cls = NamesGenerator
     
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
         register_for_permissions(MyModel)
         
     def tearDown(self):

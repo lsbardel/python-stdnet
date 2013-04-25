@@ -1,5 +1,5 @@
 from stdnet.utils import test
-from stdnet.conf import settings
+from stdnet import settings
 from stdnet.lib import redis
 import stdnet as me
 
@@ -11,7 +11,7 @@ class TestInitFile(test.TestCase):
         self.assertTrue(len(me.VERSION), 5)
         version = me.__version__
         self.assertTrue(version)
-        self.assertEqual(me.__version__,me.get_version(me.VERSION))
+        self.assertEqual(me.__version__, me.get_version(me.VERSION))
         
     def testStdnetVersion(self):
         self.assertRaises(TypeError, me.stdnet_version, 1, 2, 3, 4, 5)

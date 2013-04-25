@@ -2,19 +2,16 @@ from stdnet import odm, FieldError
 from stdnet.utils import test
 
 from examples.models import Dictionary, Profile
-from examples.data import finance_data, Position, Instrument, Fund
+from examples.data import FinanceTest, Position, Instrument, Fund
 
 class Role(odm.StdModel):
     profile = odm.ForeignKey(Profile)
 
 
-class test_load_related(test.TestCase):
-    data_cls = finance_data
-    models = (Instrument, Fund, Position)
+class test_load_related(FinanceTest):
     
     @classmethod
     def after_setup(cls):
-        cls.data = yield cls.data_cls(size=cls.size)
         yield cls.data.makePositions(cls)
         
     def testMeta(self):

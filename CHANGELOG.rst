@@ -2,10 +2,11 @@
 
 Ver. 0.8 - Development
 ===============================
-* This version brings several bug fixes and new functionalities. 
+* This version brings several new functionalities, bug fixes, asynchronous
+  connections and a departure from the global registration of models.
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
-  Very much alpha at this stage.
-* Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
+  Pre-alpha at this stage.
+* Added :ref:`where <query_where>` selector for ad-hoc queries. The argument is
   a valid expression (lua_ for redis_ and javascript for mongodb_).
 * AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not
   inherit from :class:`stdnet.odm.IntegerField` so that it can work
@@ -40,7 +41,7 @@ Ver. 0.8 - Development
 * A new asynchronous redis connection for fully asynchronous usage of the api.
   Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information.
 * Refactored test suite to handle asynchronous and synchronous connections.
-* **650 regression tests** with **93%** coverage.
+* **538 regression tests** with **93%** coverage.
   
 .. _vers07:
 

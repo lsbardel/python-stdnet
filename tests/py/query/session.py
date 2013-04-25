@@ -1,16 +1,12 @@
 '''Sessions and transactions management'''
 from stdnet import odm, getdb
 from stdnet.utils import test, gen_unique_id
-from stdnet.conf import settings
 
 from examples.models import SimpleModel, Instrument
 
 @test.sequential
 class TestSession(test.TestCase):
     model = SimpleModel
-    
-    def setUp(self):
-        self.register()
         
     def tearDown(self):
         self.clear_all()

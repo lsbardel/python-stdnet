@@ -3,29 +3,26 @@ from stdnet.utils.populate import populate
 from stdnet.utils.py2py3 import zip
 
 from examples.models import NumericData, CrossData, Feed1
-from examples.data import data_generator
 
 
-class NumberGenerator(data_generator):
+class NumberGenerator(test.DataGenerator):
     
-    def generate(self, **kwargs):
-        self.d1 = populate('integer', self.size, start=-5, end=5)
-        self.d2 = populate('float', self.size, start=-10, end=10)
-        self.d3 = populate('float', self.size, start=-10, end=10)
-        self.d4 = populate('float', self.size, start=-10, end=10)
-        self.d5 = populate('integer', self.size, start=-5, end=5)
-        self.d6 = populate('integer', self.size, start=-5, end=5)
+    def generate(self):
+        self.d1 = populate('integer', start=-5, end=5)
+        self.d2 = populate('float', start=-10, end=10)
+        self.d3 = populate('float', start=-10, end=10)
+        self.d4 = populate('float', start=-10, end=10)
+        self.d5 = populate('integer', start=-5, end=5)
+        self.d6 = populate('integer', start=-5, end=5)
         
         
 class NumericTest(test.TestCase):
     multipledb = ['redis', 'mongo']
     data_cls = NumberGenerator
-    models = (NumericData,)
+    model = NumericData
 
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        cls.register()
         d = cls.data
         with cls.session().begin() as t:
             for a, b, c, d, e, f in zip(d.d1, d.d2, d.d3, d.d4, d.d5, d.d6):
@@ -136,9 +133,6 @@ class TestNumericRangeForeignKey(test.TestCase):
 
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        cls.register()
-        yield cls.clear_all()
         session = cls.session()
         da = cls.data
         with session.begin() as t:
@@ -147,7 +141,7 @@ class TestNumericRangeForeignKey(test.TestCase):
                                 data={'a': a, 'b': b, 'c': c,
                                       'd': d, 'e': e, 'f': f}))
         yield t.on_result
-        cross = yield CrossData.objects.query().all()
+        cross = yield cls.query().all()
         found = False
         with session.begin() as t:
             for n, c in enumerate(cross):
@@ -159,25 +153,25 @@ class TestNumericRangeForeignKey(test.TestCase):
         assert found, 'not found'
     
     def test_feeds(self):
-        qs = yield Feed1.objects.query().load_related('live').all()
+        qs = yield self.query(Feed1).load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live)
             self.assertTrue(isinstance(feed.live.data, dict))
-        qs = yield CrossData.objects.filter(data__a__gt=-1).all()
+        qs = yield self.query().filter(data__a__gt=-1).all()
         self.assertTrue(qs)
         for c in qs:
             self.assertTrue(c.data__a >= -1)
             
     def test_gt_direct(self):
-        qs1 = CrossData.objects.filter(data__a__gt=-1)
-        qs = yield Feed1.objects.filter(live=qs1).load_related('live').all()
+        qs1 = self.query().filter(data__a__gt=-1)
+        qs = yield self.query(Feed1).filter(live=qs1).load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live.data__a >= -1)
             
     def test_gt(self):
-        qs = yield Feed1.objects.filter(live__data__a__gt=-1).load_related('live').all()
+        qs = yield self.query(Feed1).filter(live__data__a__gt=-1).load_related('live').all()
         self.assertTrue(qs)
         for feed in qs:
             self.assertTrue(feed.live.data__a >= -1)

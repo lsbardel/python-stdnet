@@ -11,7 +11,6 @@ class TestFilter(test.TestCase):
     
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
         return cls.data.create(cls, InstrumentModel=cls.model)
         
     def testAll(self):

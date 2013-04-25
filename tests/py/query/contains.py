@@ -1,33 +1,31 @@
 from stdnet.utils import test
-from stdnet.utils.populate import populate
 from stdnet.utils.py2py3 import zip
 
 from examples.models import SimpleModel
-from examples.data import data_generator
 from examples.wordsearch.basicwords import basic_english_words
 
-class TextGenerator(data_generator):
+class TextGenerator(test.DataGenerator):
     sizes = {'tiny': (20, 5),
              'small': (100, 20),
              'normal': (500, 50),
              'big': (2000, 100),
              'huge': (10000, 200)}
     
-    def generate(self, **kwargs):
+    def generate(self):
         size, words = self.size
         self.descriptions = []
-        self.names = populate('string', size, min_len=10, max_len=30)
+        self.names = self.populate('string', size, min_len=10, max_len=30)
         for s in range(size):
-            d = ' '.join(populate('choice', words, choice_from=basic_english_words))
+            d = ' '.join(self.populate('choice', words, choice_from=basic_english_words))
             self.descriptions.append(d)
             
         
 class TestFieldSerach(test.TestCase):
     model = SimpleModel
+    data_cls = TextGenerator
     
     @classmethod
     def after_setup(cls):
-        cls.data = TextGenerator(cls.size)
         with cls.session().begin() as t:
             for name, des in zip(cls.data.names, cls.data.descriptions):
                 t.add(cls.model(code=name, description=des))

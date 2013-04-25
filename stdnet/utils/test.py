@@ -82,20 +82,20 @@ attribute in :class:`TestCase`.
              'big': 10000,
              'huge': 1000000}
 
-    def __init__(self, size, sizes=None, **kwargs):
+    def __init__(self, size, sizes=None):
         self.sizes = sizes or self.sizes
         self.size_code = size
         self.size = self.sizes[size]
-        self.generate(**kwargs)
+        self.generate()
 
-    def generate(self, **kwargs):
+    def generate(self):
         '''Called during initialisation to generate the data. ``kwargs``
 are additional key-valued parameter passed during initialisation. Must
 be implemented by subclasses.'''
-        raise NotImplementedError
+        pass
 
     def create(self, test, use_transaction=True):
-        raise NotImplementedError
+        pass
 
     def populate(self, datatype='string', size=None, **kwargs):
         '''A shortcut for the :func:`stdnet.utils.populate` function.
@@ -123,13 +123,15 @@ several class methods for testing in a parallel test suite.
     
 .. attribute:: data_cls
 
-    A :class:`DataGenerator` class for creating data.
+    A :class:`DataGenerator` class for creating data. The data is created
+    during the :meth:`setUpClass` class method.
 '''
     models = ()
     model = None
     connection_string = None
     backend = None
-    data_cls = None
+    sizes = None
+    data_cls = DataGenerator
 
     @classmethod
     def backend_params(cls):
@@ -150,6 +152,7 @@ several class methods for testing in a parallel test suite.
                            **cls.backend_params())
             cls.backend = server
             yield cls.clear_all()
+        cls.data = cls.data_cls(cls.size, cls.sizes)
         yield cls.after_setup()
         
     @classmethod

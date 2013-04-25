@@ -67,6 +67,13 @@ This filter statement is equivalent to an union of two filters statements::
     qs = q1.union(q2)
 
 
+.. note::
+
+    Filter and :ref:`exclude <tutorial-exclude>` lookups can only be done on
+    :class:`Field` which are indices, i.e. thier :class:`Field.index`
+    attribute is set to `True`.
+    
+    
 Concatenating filters
 ========================
 

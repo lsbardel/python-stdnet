@@ -1,40 +1,31 @@
 from datetime import date, datetime
 
 from stdnet import QuerySetError, odm
-from stdnet.utils import test, populate, zip, range
+from stdnet.utils import test, zip, range
 
-from examples.data import data_generator
 from examples.models import SportAtDate, SportAtDate2, Person,\
                              TestDateModel, Group
 
-NUM_DATES = 200
 
-
-class SortGenerator(data_generator):
-    sizes = {'tiny': 20,
-             'small': 100,
-             'normal': 500,
-             'big': 5000,
-             'huge': 100000}
+class SortGenerator(test.DataGenerator):
     
     def generate(self, **kwargs):
-        self.dates = populate('date', self.size, start=date(2005,6,1),
-                              end=date(2012,6,6))
-        
-        self.groups = populate('choice', self.size,
+        self.dates = self.populate('date', start=date(2005,6,1), end=date(2012,6,6))
+        self.groups = self.populate('choice',
                 choice_from=['football', 'rugby', 'swimming', 'running', 'cycling'])
-        self.persons = populate('choice', self.size,
-                    choice_from=['pippo', 'pluto', 'saturn', 'luca', 'josh', 'carl',
-                                 'paul'])
+        self.persons = self.populate('choice',
+                choice_from=['pippo', 'pluto', 'saturn', 'luca', 'josh', 'carl',
+                             'paul'])
  
     
 class TestSort(test.TestCase):
     '''Base class for sorting'''
     desc = False
+    data_cls = SortGenerator
     
     @classmethod
     def after_setup(cls):
-        cls.data = d = SortGenerator(cls.size)
+        d = cls.data
         with cls.session().begin() as t:
             for p, n, d in zip(d.persons, d.groups, d.dates):
                 t.add(cls.model(person=p, name=n, dt=d))
@@ -118,7 +109,7 @@ class TestSortByForeignKeyField(TestSort):
                 t.add(Group(name=g))
         yield t.on_result
         groups = yield session.query(Group).all()
-        gps = populate('choice', d.size, choice_from=groups)
+        gps = test.populate('choice', d.size, choice_from=groups)
         with session.begin() as t:
             for p, g in zip(d.persons, gps):
                 t.add(cls.model(name=p, group=g))

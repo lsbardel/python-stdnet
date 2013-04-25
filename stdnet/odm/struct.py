@@ -210,6 +210,8 @@ can also be used as stand alone objects. For example::
     
     @property
     def is_field(self):
+        '''``True`` if this :class:`Structure` is proxy for a
+:class:`StructureField`.'''
         return self._is_field
     
     @property

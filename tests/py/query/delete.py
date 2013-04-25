@@ -5,19 +5,23 @@ from random import randint
 from pulsar.apps.test import sequential
 
 from stdnet import odm
-from stdnet.utils import test, populate, zip
-from stdnet.exceptions import QuerySetError
+from stdnet.utils import test, zip
 
 from examples.models import Instrument, Fund, Position, Dictionary, SimpleModel
 from examples.data import FinanceTest
 
-DICT_LEN    = 200
-dict_keys   = populate('string', DICT_LEN, min_len=5, max_len=20)
-dict_values = populate('string', DICT_LEN, min_len=20, max_len=300)
+
+class DictData(test.DataGenerator):
+    
+    def generate(self):
+        self.keys   = self.populate(min_len=5, max_len=20)
+        self.values = self.populate(min_len=20, max_len=300)
+        self.data = dict(zip(self.keys, self.values))
 
 
 class TestDeleteSimpleModel(test.TestCase):
     model = SimpleModel
+    data_cls = DictData
     
     def test_session_delete(self):
         session = self.session()
@@ -102,19 +106,12 @@ class TestPostDeleteSignal(test.TestCase):
 @sequential
 class TestDeleteMethod(FinanceTest):
     '''Test the delete method in models and in queries.'''
-    @classmethod
-    def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-    
-    def setUp(self):
-        self.register()
-        
     def tearDown(self):
         self.clear_all()
         
     def test_delete_all(self):
         session = yield self.data.create(self)
-        instruments = Instrument.objects.query()
+        instruments = self.query()
         count = yield instruments.count()
         self.assertTrue(count)
         ids = yield instruments.delete()
@@ -221,6 +218,7 @@ test as it involves lots of operations and consistency checks.'''
 @sequential
 class TestDeleteStructuredFields(test.TestCase):
     model = Dictionary
+    data_cls = DictData
     
     def setUp(self):
         self.clear_all()
@@ -230,7 +228,6 @@ class TestDeleteStructuredFields(test.TestCase):
             t.add(Dictionary(name='test2'))
         yield t.on_result
         yield self.async.assertEqual(session.query(Dictionary).count(), 2)
-        self.data = dict(zip(dict_keys, dict_values))
     
     def tearDown(self):
         self.clear_all()
@@ -241,10 +238,10 @@ class TestDeleteStructuredFields(test.TestCase):
         self.assertEqual(len(session._models), 1)
         data = d.data
         self.assertEqual(len(session._models), 1)
-        self.assertEqual(data.instance, d)
+        self.assertTrue(data.is_field)
         self.assertTrue(data.id)
-        yield d.data.update(self.data)
-        self.async.assertEqual(data.size(), len(self.data))
+        yield d.data.update(self.data.data)
+        self.async.assertEqual(data.size(), len(self.data.data))
         yield d
     
     def testSimpleFlush(self):

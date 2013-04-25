@@ -1,7 +1,7 @@
 import random
 
 import stdnet
-from stdnet.utils import test, populate
+from stdnet.utils import test
 
 from examples.models import SimpleModel
 
@@ -12,7 +12,7 @@ class TestManager(test.TestCase):
     @classmethod
     def after_setup(cls):
         cls.register()
-        names = populate('string', 100, min_len=6, max_len=20)
+        names = test.populate('string', 100, min_len=6, max_len=20)
         with cls.model.objects.session().begin() as t:
             for name in names:
                 t.add(SimpleModel(code=name))

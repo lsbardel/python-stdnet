@@ -3,6 +3,7 @@ import logging
 from inspect import ismodule
 
 from stdnet.utils import native_str
+from stdnet.lib import multi_async
 from stdnet.utils.importer import import_module
 from stdnet import getdb, ModelNotRegistered
 
@@ -14,41 +15,36 @@ logger = logging.getLogger('stdnet.mapper')
 
 
 __all__ = ['Router',
-           'clearall',
            'flush_models',
            'register',
            'unregister',
            'registered_models',
            'model_iterator',
            'all_models_sessions',
-           'register_applications',
-           'register_application_models']
-
-
-class Managers(object):
-    
-    def __init__(self, model):
-        self.model
+           'register_applications']
         
         
 class Router(object):
-    '''A router of models to their managers::
+    '''A router of models to their manager::
     
-    a = Router()
-    a.register(MyModel)
+    mapper = Router()
+    mapper.register(MyModel, ...)
     
-    a[MyModel].objects.query()
+    query = mapper[MyModel].query()
     '''
-    def __init__(self, default_backend=None):
-        self._registered_models = set()
-        self._data_stores = {}
+    def __init__(self, default_backend=None, install_global=False):
+        self._registered_models = {}
         self._default_backend = getdb(default_backend)
+        self._install_global = install_global
         
     @property
     def default_backend(self):
         return self._default_backend
     
-    def clear(self, exclude=None):
+    def __getitem__(self, model):
+        return self._registered_models[model]
+    
+    def flush(self, exclude=None):
         exclude = exclude or []
         for model in self._registered_models:
             if not model._meta.name in exclude:
@@ -58,18 +54,43 @@ class Router(object):
     def register(self, model, backend=None, include_related=True, **params):
         if backend:
             backend = getdb(backend=backend, **params)
-        registered = []
+        registered = 0
         for model in models_from_model(model, include_related=include_related):
             if model in self._registered_models:
                 continue
-            self._registered_models[model] = m = Managers(model)
-            for manager in model._managers:
-                manager.backend = backend
-            _GLOBAL_REGISTRY.add(m)
-            registered.append(m)
+            registered += 1
+            manager = copy.copy(model.objects)
+            self._registered_models[model] = manager.register(model, backend)
+            if self._install_global:
+                model.objects = manager
         if registered:
-            return registered[0].objects.backend
+            return backend
         
+    def unregister(model=None):
+        '''Unregister a ``model`` if provided, otherwise it unregister all
+registered models.'''
+        if model is not None:
+            try:
+                self._registered_models.pop(model)
+            except KeyError:
+                return 0
+            return 1
+        else:
+            n = len(self._registered_models)
+            self._registered_models.clear()
+            return n
+    
+    def clearall(exclude=None):
+        exclude = exclude or []
+        results = []
+        for manager in self._registered_models.values():
+            if not mmanager.model._meta.name in exclude:
+                results.append(model.objects.flush())
+        return multi_async(results)
+    
+    def registered_models(self):
+        return list(self._registered_models)
+    
     def register_applications(self, applications, **kwargs):
         '''A simple convenience wrapper around the
 :func:`stdnet.odm.register_application_models` generator.
@@ -112,46 +133,18 @@ For example::
                 kwargs = {'backend': kwargs}
             else:
                 kwargs = kwargs.copy()
-            if register(model, include_related=False, **kwargs):
+            if self.register(model, include_related=False, **kwargs):
                 yield model
             
 
+#Provided for backward compatibility
+global_router = Router(install_global=True)
+register = global_router.register
+unregister = global_router.unregister
+registered_models = global_router.registered_models
+register_applications = global_router.register_applications
+flush_models = global_router.flush
 
-def clearall(exclude=None):
-    global _GLOBAL_REGISTRY
-    exclude = exclude or []
-    for model in _GLOBAL_REGISTRY:
-        if not model._meta.name in exclude:
-            model.objects.flush()
-    Session.clearall()
-
-
-def models_from_names(names):
-    global _GLOBAL_REGISTRY
-    s = set(names)
-    for m in _GLOBAL_REGISTRY:
-        if str(m._meta) in s:
-            yield m
-
-
-def flush_models(includes=None, excludes=None):
-    '''Utility for flushing models data.
-It removes all keys associated with models.'''
-    global _GLOBAL_REGISTRY
-    if includes:
-        includes = list(models_from_names(includes))
-    else:
-        includes = _GLOBAL_REGISTRY
-    if excludes:
-        excludes = set(models_from_names(excludes))
-    else:
-        excludes = set()
-    flushed = []
-    for model in includes:
-        if model not in excludes:
-            model.objects.flush()
-            flushed.append(str(model._meta))
-    return flushed
 
 
 def models_from_model(model, label=None, include_related=False, exclude=None):
@@ -174,73 +167,6 @@ def models_from_model(model, label=None, include_related=False, exclude=None):
                                             exclude=exclude):
                                 yield m
 
-
-def register(model, backend=None, include_related=True, **params):
-    '''The low level function for registering a :class:`StdModel`
-classes with a :class:`stdnet.BackendDataServer` data server.
-
-:parameter model: a :class:`StdModel`. Must be provided.
-
-:parameter backend: a backend connection string.
-    For example::
-
-        redis://localhost:8080?db=6&prefix=bla.
-
-    Default ``settings.DEFAULT_BACKEND``.
-
-:parameter include_related: register all related models.
-:parameter params: optional parameters which can be used to override the
-    connection string parameters.
-
-**Usage**
-
-For Redis the syntax is the following::
-
-    import odm
-
-    odm.register(Author, 'redis://my.host.name:6379/?db=1')
-    odm.register(Book, 'redis://my.host.name:6379/?db=2')
-    odm.register(MyOtherModel,
-                'redis://my.host.name:6379/?db=2&keyprefix=differentprefix.')
-
-``my.host.name`` can be ``localhost`` or an ip address or a domain name,
-while ``db`` indicates the database number (very useful for separating data
-on the same redis instance).'''
-    backend = getdb(backend=backend, **params)
-    registered = []
-    for m in models_from_model(model, include_related=include_related):
-        if m in _GLOBAL_REGISTRY:
-            continue
-        for manager in m._managers:
-            manager.backend = backend
-        _GLOBAL_REGISTRY.add(m)
-        registered.append(m)
-    if registered:
-        return registered[0].objects.backend
-
-
-def unregister(model=None):
-    '''Unregister a *model* if provided, otherwise it unregister all
-registered models.'''
-    global _GLOBAL_REGISTRY
-    if model is not None:
-        try:
-            _GLOBAL_REGISTRY.remove(model)
-        except KeyError:
-            return 0
-        for manager in model._managers:
-            manager.backend = None
-        return 1
-    else:
-        n = 0
-        for model in list(_GLOBAL_REGISTRY):
-            n += unregister(model)
-        return n
-
-
-def registered_models():
-    '''An iterator over registered models'''
-    return (m for m in _GLOBAL_REGISTRY)
                         
 def model_iterator(application, include_related=True):
     '''A generator of :class:`StdModel` classes found in *application*.
@@ -316,57 +242,4 @@ through models.'''
                     for m in all_models_sessions((field.through,), processed,
                                                  model_session):
                         yield m
-
-
-def register_application_models(applications,
-                                    models=None,
-                                    app_defaults=None,
-                                    default=None):
-    '''\
-A higher level registration functions for group of models located
-on application modules.
-It uses the :func:`model_iterator` function to iterate
-through all :class:`StdModel` models available in ``applications``
-and register them using the :func:`register` low level function.
-
-:parameter applications: A String or a list of strings which represent
-    python dotted paths where models are implemented.
-:parameter models: Optional list of models to include. If not provided
-    all models found in *applications* will be included.
-:parameter app_defaults: optional dictionary which specify a model and/or
-    application backend connection string.
-:parameter default: The default connection string.
-:rtype: A generator over registered :class:`StdModel`.
-
-For example::
-
-    register_application_models('mylib.myapp')
-
-'''
-    app_defaults = app_defaults or {}
-    for model in model_iterator(applications):
-        meta = model._meta
-        name = str(model._meta)
-        if models and name not in models:
-            continue
-        if name not in app_defaults:
-            name = model._meta.app_label
-        kwargs = app_defaults.get(name, default)
-        if not isinstance(kwargs, dict):
-            kwargs = {'backend': kwargs}
-        else:
-            kwargs = kwargs.copy()
-        if register(model, include_related=False, **kwargs):
-            yield model
-
-
-def register_applications(applications, **kwargs):
-    '''A simple convenience wrapper around the
-:func:`stdnet.odm.register_application_models` generator.
-
-It return s a list of registered models.'''
-    return list(register_application_models(applications, **kwargs))
-
-
-_GLOBAL_REGISTRY = set()
 

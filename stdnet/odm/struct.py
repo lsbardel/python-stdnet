@@ -3,7 +3,10 @@ from collections import namedtuple
 
 from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
                             BytesIO, iterpair, ispy3k
-from stdnet import SessionNotAvailable, on_result, async, is_async, zset, skiplist
+from stdnet.utils.zset import zset
+from stdnet.utils.skiplist import skiplist
+from stdnet import SessionNotAvailable
+from stdnet.utils.async import on_result, async, is_async
 
 from .base import ModelBase
 from .session import commit_when_no_transaction, withsession

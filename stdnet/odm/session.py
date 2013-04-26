@@ -843,26 +843,8 @@ a full text search value.'''
         return obj
 
 
-def new_manager(model, name, manager):
+def setup_managers(model):
+    manager = getattr(model,'objects', None)
     if manager is None:
         manager = Manager()
-    else:
-        manager = copy(manager)
-    manager.register(model)
-    setattr(model, name, manager)
-    return manager
-
-
-def setup_managers(model):
-    managers = []
-    # the default manager is handled first
-    objects = getattr(model,'objects',None)
-    managers.append(new_manager(model,'objects',objects))
-    for name in dir(model):
-        try:
-            value = getattr(model,name)
-        except ModelNotRegistered:
-            continue
-        if name != 'objects' and isinstance(value,Manager):
-            managers.append(new_manager(model,name,value))
-    model._managers = managers
+    model.objects = manager

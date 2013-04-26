@@ -10,9 +10,10 @@ import stdnet
 from stdnet import FieldValueError, CommitException, QuerySetError, on_result, async
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
-from stdnet.lib import redis
 from stdnet.backends import BackendStructure, query_result, session_result,\
                             instance_session_result, range_lookups
+
+from . import redis
 
 MIN_FLOAT =-1.e99
 

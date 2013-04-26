@@ -1,4 +1,8 @@
-from stdnet.lib import hiredis, fallback
+try:
+    import hiredis
+except:
+    hiredis = None
+hiredis = None
 
 from .extensions import *
 from .client import *

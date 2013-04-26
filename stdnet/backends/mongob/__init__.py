@@ -11,8 +11,8 @@ except ImportError:
 
 import stdnet
 from stdnet import FieldValueError, QuerySetError
-from stdnet.utils import unique_tuple
-from stdnet.backends import on_result, instance_session_result
+from stdnet.utils import async, unique_tuple
+from stdnet.backends import instance_session_result
 
 
 def extend_dict(iterable):
@@ -32,7 +32,8 @@ def extend_dict(iterable):
 def ids_from_query(query):
     return [v['_id'] for v in query.find(fields=['_id'])]
     
-class MongoDbQuery(stdnet.BackendQuery):
+    
+class MongoDbQuery(async.BackendQuery):
     '''Backend query implementation for MongoDB.
 For detail information about mongo query selectors check the online
 documentation http://docs.mongodb.org/manual/reference/operators/.'''
@@ -315,7 +316,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 else:
                     result = self.process_result(modified, processed)
                 results.append((meta, result))
-        return on_result(results, callback, commands)
+        return async.on_result(results, callback, commands)
     
     def process_result(self, result, iids):
         for id, iid in zip(result, iids):

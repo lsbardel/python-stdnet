@@ -3,7 +3,6 @@ from inspect import isgenerator
 from functools import partial
 
 from stdnet import range_lookups
-from stdnet.lib import on_result, is_async, async
 from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 from stdnet.utils.exceptions import *
 
@@ -132,11 +131,11 @@ fields.
     def clear(self):
         pass
 
-    def backend_query(self, **kwargs):
+    def backend_query(self):
         '''Build the :class:`stdnet.BackendQuery` for this instance. This
 is a virtual method with different implementation in :class:`Query`
 and :class:`QueryElement`.'''
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _clone(self):
         cls = self.__class__
@@ -245,11 +244,7 @@ def queryset(qs, **kwargs):
 class QueryBase(Q):
 
     def __iter__(self):
-        result = self.items()
-        if is_async(result):
-            raise RuntimeError('Cannot iterate. Asynchronous result not ready.')
-        else:
-            return iter(result)
+        return iter(self.items())
 
     def __len__(self):
         return self.count()
@@ -390,11 +385,6 @@ criteria and options associated with it.
         else:
             return str(seq)
     __str__ = __repr__
-
-    def __getitem__(self, slic):
-        if isinstance(slic, slice):
-            return self.items(slic)
-        return on_result(self.items(), lambda r: r[slic])
 
     def filter(self, **kwargs):
         '''Create a new :class:`Query` with additional clauses corresponding to
@@ -581,6 +571,15 @@ to load all fields except a subset specified by *fields*.
         q.exclude_fields = fs if fs else None
         return q
 
+    ##        METHODS FOR RETRIEVING DATA
+    
+    def __getitem__(self, slic):
+        return self.backend_query()[slic]
+    
+    def items(self, callback=None):
+        '''Retrieve all items for this :class:`Query`.'''
+        return self.backend_query().items(callback=callback)
+    
     def get(self, **kwargs):
         '''Return an instance of a model matching the query. A special case is
 the query on ``id`` which provides a direct access to the :attr:`session`
@@ -593,7 +592,8 @@ is returned directly without performing any query.'''
             if el is not None:
                 return el
         # not there, perform the database query
-        return on_result(self.filter(**kwargs).items(), self._get)
+        return self.filter(**kwargs).items(
+                                    callback=self.model.get_unique_instance)
 
     def count(self):
         '''Return the number of objects in ``self``.
@@ -606,10 +606,7 @@ objects on the server side.'''
     def delete(self):
         '''Delete all matched elements of the :class:`Query`. It returns the
 list of ids deleted.'''
-        session = self.session
-        with session.begin() as t:
-            t.delete(self)
-        return on_result(t.on_result, lambda _: t.deleted.get(self._meta))
+        return self.backend_query().delete()
 
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''
@@ -617,14 +614,13 @@ list of ids deleted.'''
             self.__construct = self._construct()
         return self.__construct
 
-    def backend_query(self, **kwargs):
+    def backend_query(self):
         '''Build and return the :class:`stdnet.BackendQuery`.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         q = self.construct()
-        return q if isinstance(q, EmptyQuery) else q.backend_query(**kwargs)
+        return q if isinstance(q, EmptyQuery) else q.backend_query()
 
-    @async()
     def test_unique(self, fieldname, value, instance=None, exception=None):
         '''Test if a given field *fieldname* has a unique *value*
 in :attr:`model`. The field must be an index of the model.
@@ -638,17 +634,9 @@ an exception is raised.
     Default: :attr:`ModelMixin.DoesNotValidate`.
 :return: *value*
 '''
-        qs = yield self.filter(**{fieldname:value}).all()
-        if qs:
-            r = self._get(qs)
-            if instance and r.id == instance.id:
-                yield value
-            else:
-                exception = exception or self.model.DoesNotValidate
-                raise exception('An instance with %s %s is already available'\
-                                % (fieldname, value))
-        else:
-            yield value
+        qs = self.filter(**{fieldname:value})
+        callback = partial(self._test_unique, fieldname, value, exception)
+        return qs.backend_query().items(callback=callback)
 
     def map_reduce(self, map_script, reduce_script, **kwargs):
         '''Perform a map/reduce operation on this query.'''
@@ -659,12 +647,6 @@ an exception is raised.
     ############################################################################
     def clear(self):
         self.__construct = None
-        self.__slice_cache = None
-
-    def cache(self):
-        if not self.__slice_cache:
-            self.__slice_cache = {}
-        return self.__slice_cache
 
     def _construct(self):
         if self.fargs:
@@ -753,47 +735,18 @@ an exception is raised.
         #
         return [queryset(self, name=name, underlying=field_lookups[name])\
                 for name in sorted(field_lookups)]
-
-    def items(self, slic=None):
-        '''This function does the actual fetching of data from the backend
-server matching this :class:`Query`. This method is usually not called directly,
-instead use the :meth:`all` method or alternatively slice the query in the same
-way you can slice a list or iterate over the query.'''
-        key = None
-        seq = self.cache().get(None)
-        if slic:
-            if seq is not None:
-                return seq[slic]
-            else:
-                key = (slic.start, slic.step, slic.stop)
-        if seq is not None:
-            return seq
-        else:
-            result = self.backend_query().items(slic)
-            return on_result(result, partial(self._items, key))
         
-    def _items(self, key, items):
-        if isinstance(items, Exception):
-            raise items
-        session = self.session
-        seq = []
-        model = self.model
-        for el in items:
-            if isinstance(el, model):
-                session.add(el, modified=False)
-            seq.append(el)
-        self.cache()[key] = seq
-        return seq
-
-    def _get(self, items):
+    def _test_unique(self, fieldname, value, exception, items):
         if items:
-            if len(items) == 1:
-                return items[0]
+            r = self.model.get_unique_instance(items)
+            if instance and r.id == instance.id:
+                return value
             else:
-                raise QuerySetError('Get query {0} yielded non\
- unique results'.format(self))
+                exception = exception or self.model.DoesNotValidate
+                raise exception('An instance with %s %s is already available'\
+                                % (fieldname, value))
         else:
-            raise self.model.DoesNotExist()
+            return value
 
     def _get_related_field(self, related):
         meta = self._meta

@@ -1,6 +1,6 @@
 import time
 
-from stdnet.lib.redis import redis_info, RedisDb, RedisKey, RedisDataFormatter
+from stdnet.backends.redisb import redis_info, RedisDb, RedisKey, RedisDataFormatter
 
 from . import client
 

@@ -4,7 +4,7 @@ from itertools import chain
 from inspect import isgenerator, isclass
 from datetime import datetime
 
-from stdnet import async
+from stdnet.utils.async import async
 
 from .models import StdModel
 from .fields import DateTimeField, CharField

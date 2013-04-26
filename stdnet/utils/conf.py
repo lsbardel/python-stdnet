@@ -55,6 +55,7 @@ class Settings(object):
         self.REDIS_PY_PARSER = False
         self.MAX_CONNECTIONS = 2**31
         self.RedisConnectionClass = None
+        self.ASYNC_BINDINGS = True
         
         
 settings = Settings()

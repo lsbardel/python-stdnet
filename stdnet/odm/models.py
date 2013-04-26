@@ -1,7 +1,7 @@
 import copy
 import json
+from functools import partial
 
-from stdnet import async
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 from stdnet.utils.exceptions import *
 
@@ -236,36 +236,8 @@ relationships.
             raise ValueError('Field "%s" not available' % name)
         elif not field.type == 'related object':
             raise ValueError('Field "%s" not a foreign key' % name)
-        return self._load_related_model(field, load_only, dont_load)
+        return self.__load_related_model(field, load_only, dont_load)
         
-    @async()
-    def _load_related_model(self, field, load_only=None, dont_load=None):
-        cache_name = field.get_cache_name()
-        if hasattr(self, cache_name):
-            yield getattr(self, cache_name)
-        else:
-            val = getattr(self, field.attname)
-            if val is None:
-                rel_obj = None
-            else:
-                pkname = field.relmodel._meta.pkname()
-                qs = self.session.query(field.relmodel)
-                if load_only:
-                    qs = qs.load_only(*load_only)
-                if dont_load:
-                    qs = qs.dont_load(*dont_load) 
-                all = yield qs.filter(**{pkname: val}).all()
-                if all:
-                    rel_obj = qs._get(all)
-                else:
-                    if field.required:
-                        raise self.DoesNotExist
-                    else:
-                        rel_obj = None
-                    setattr(self, field.attname, None)
-            setattr(self, cache_name, rel_obj)
-            yield rel_obj
-    
     @classmethod
     def get_field(cls, name):
         '''Returns the :class:`Field` instance at ``name`` if available,
@@ -294,6 +266,16 @@ otherwise it returns ``None``.'''
 proxy for the :attr:`Metaclass.pk` attribute.'''
         return cls._meta.pk
     
+    @classmethod
+    def get_unique_instance(cls, items):
+        if items:
+            if len(items) == 1:
+                return items[0]
+            else:
+                raise QuerySetError('Non unique results')
+        else:
+            raise cls.DoesNotExist()
+    
     # PICKLING SUPPORT
 
     def __getstate__(self):
@@ -301,7 +283,39 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
 
     def __setstate__(self, state):
         self._meta.make_object(state)
-
+        
+    # INTERNALS
+    
+    def __load_related_model(self, field, load_only=None, dont_load=None):
+        cache_name = field.get_cache_name()
+        if hasattr(self, cache_name):
+            return getattr(self, cache_name)
+        else:
+            val = getattr(self, field.attname)
+            if val is None:
+                return self.__set_related_value(field)
+            else:
+                pkname = field.relmodel._meta.pkname()
+                qs = self.session.query(field.relmodel)
+                if load_only:
+                    qs = qs.load_only(*load_only)
+                if dont_load:
+                    qs = qs.dont_load(*dont_load)
+                callback = partial(self._set_related_value, field)
+                return qs.filter(**{pkname: val}).items(callback=callback)
+            
+    def __set_related_value(self, field, items=None):
+        try:
+            rel_obj = self.get_unique_instance(items)
+        except self.DoesNotExist:
+            if field.required:
+                raise
+            else:
+                rel_obj = None
+            setattr(self, field.attname, None)
+        setattr(self, field.get_cache_name(), rel_obj)
+        return rel_obj
+    
 
 def model_to_dict(instance, fields=None, exclude=None):
     if isinstance(instance, StdModel):

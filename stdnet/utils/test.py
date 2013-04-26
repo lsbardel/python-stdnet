@@ -22,36 +22,12 @@ DataGenerator
 import os
 import sys
 import logging
-from inspect import isclass
-from datetime import timedelta
-
-import sys
-
-if sys.version_info >= (2,7):
-    import unittest
-else:   # pragma nocover
-    try:
-        import unittest2 as unittest
-    except ImportError:
-        print('To run tests in python 2.6 you need to install '\
-              'the unittest2 package')
-        exit(0)
-
-if sys.version_info < (3,3):
-    try:
-        import mock
-    except ImportError:
-        print('The mock library is required to run tests.')
-        exit(0)
-else:
-    from unittest import mock
 
 import pulsar
-from pulsar import multi_async
 from pulsar.utils import events
-from pulsar.apps.test import TestSuite, TestPlugin, sequential
+from pulsar.apps.test import unittest, mock, TestSuite, TestPlugin, sequential
 
-from stdnet import odm, getdb, settings
+from stdnet import getdb, settings
 from stdnet.utils import gen_unique_id
 
 from .populate import populate
@@ -125,6 +101,15 @@ several class methods for testing in a parallel test suite.
 
     A :class:`DataGenerator` class for creating data. The data is created
     during the :meth:`setUpClass` class method.
+    
+.. attribute:: model
+
+    The default :class:`StdModel` for this test. A class attribute.
+    
+.. attribute:: models
+
+    A tuple of models which can be registered by this test. The :attr:`model`
+    is always the model at index 0 in :attr:`models`.
 '''
     models = ()
     model = None
@@ -169,13 +154,14 @@ several class methods for testing in a parallel test suite.
             cls.backend.load_scripts()
     
     @classmethod
-    def register(cls):
-        '''Utility for registering the managers to the current backend.
-This should be used with care in parallel testing. All registered models
-will be unregistered after the :meth:`tearDown` method.'''
-        if cls.backend:
-            for model in cls.models:
-                odm.register(model, cls.backend)
+    def mapper(cls):
+        '''Utility for creating a :class:`stdnet.odm.Router`
+for the :attr:`models` in this :class:`TestCase`.'''
+        from stdnet import odm
+        mapper = odm.Router(cls.backend)
+        for model in cls.models:
+            mapper.register(model)
+        return mapper
     
     @classmethod
     def clear_all(cls):
@@ -188,6 +174,7 @@ the :attr:`backend` attribute.'''
     def session(cls, **kwargs):
         '''Create a new :class:`stdnet.odm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
+        from stdnet import odm
         return odm.Session(cls.backend, **kwargs)
     
     @classmethod
@@ -195,6 +182,12 @@ the :attr:`backend` attribute.'''
         '''Shortcut function to create a query for a model.'''
         return cls.session().query(model or cls.model)
 
+    @classmethod
+    def multi_async(cls, iterable, **kwargs):
+        '''Treat ``iterable`` as a container of asynchronous results.'''
+        from pulsar.utils import async
+        return async.multi_async(iterable, **kwargs)
+    
     def assertEqualId(self, instance, value, exact=False):
         '''Assert the value of a primary key in a backend agnostic way.
         
@@ -230,6 +223,11 @@ class StdnetPlugin(TestPlugin):
                               'Python implementation.',
                         action="store_true",
                         default=False)
+    
+    sync = pulsar.Setting(flags=['--sync'],
+                          desc='Switch off asynchronous bindings',
+                          action="store_true",
+                          default=False)
 
     def on_start(self):
         servers = []
@@ -250,6 +248,8 @@ class StdnetPlugin(TestPlugin):
         settings.servers = servers
         if self.config.py_redis_parser:
             settings.REDIS_PY_PARSER = True
+        if self.config.sync:
+            settings.ASYNC_BINDINGS = False
         
     def loadTestsFromTestCase(self, cls):
         cls.size = self.config.size

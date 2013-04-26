@@ -1,6 +1,5 @@
 import logging
 from copy import copy
-from hashlib import sha1
 import time
 from datetime import date, datetime
 from base64 import b64encode

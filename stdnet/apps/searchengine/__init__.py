@@ -53,8 +53,7 @@ WordItem
 import re
 from inspect import isclass
 
-from stdnet import odm, async, getdb
-from stdnet.utils import to_string, iteritems
+from stdnet import odm, getdb
 
 from .models import WordItem
 from . import processors

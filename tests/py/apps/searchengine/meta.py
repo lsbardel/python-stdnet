@@ -1,6 +1,6 @@
 from random import randint
 
-from stdnet import odm, QuerySetError, multi_async
+from stdnet import odm, QuerySetError
 from stdnet.utils import test
 from stdnet.odm.search import UpdateSE
 from stdnet.utils import test, to_string, range, populate
@@ -118,7 +118,7 @@ of words which have been included in the Items.'''
         wis = yield self.engine.worditems(item).all()
         self.assertTrue(wis)
         session = self.session()
-        objets = yield multi_async((wi.object(session) for wi in wis))
+        objets = yield self.multi_async((wi.object(session) for wi in wis))
         for object in objets:
             self.assertEqual(object, item)
         yield item, wis

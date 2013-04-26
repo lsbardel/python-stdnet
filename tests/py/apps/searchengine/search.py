@@ -1,5 +1,5 @@
 '''Search engine application in `apps.searchengine`.'''
-from stdnet import odm, QuerySetError, multi_async
+from stdnet import odm
 from stdnet.utils import test, populate
 
 from examples.wordsearch.models import Item, RelatedItem

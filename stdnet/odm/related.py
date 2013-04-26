@@ -2,7 +2,8 @@ from functools import partial
 
 import stdnet
 from stdnet.utils import encoders, iteritems
-from stdnet import FieldValueError, QuerySetError, ManyToManyError, on_result
+from stdnet.utils.async import on_result
+from stdnet import FieldValueError, QuerySetError, ManyToManyError
 
 from .session import Manager
 from . import signals

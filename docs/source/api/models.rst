@@ -305,37 +305,20 @@ the model :class:`Manager` can be used to create instance and query the database
 If a model is not registered, the only way to operate on it is via the
 :class:`Session` API.
 
-Stdnet provides two registration functions, a low level and a higher level one
-which can be used to register several models at once.
+Registration is obtained via a :class:`Router`. The :class:`Router`
+has two methods for registering models, The first one is the :meth:`Router.register`
+method which is used to register a model and, possibly, all its related
+models. In addition it exposes the :meth:`Router.register_applications` method
+for registering all :class:`Model` from a list of python dotted paths or
+python modules. 
 
-Register
+Router
 ~~~~~~~~~~~~~~~~
 
-.. autofunction:: register
+.. autoclass:: stdnet.odm.Router
+   :members:
+   :member-order: bysource
 
-
-Register application models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: register_application_models
-
-
-Register applications
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: register_applications
-
-
-Registered models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: registered_models
-
-
-Unregister model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: unregister
 
 
 .. _standard template library: http://www.sgi.com/tech/stl/

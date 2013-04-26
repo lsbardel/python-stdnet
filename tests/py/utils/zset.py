@@ -1,6 +1,6 @@
 from random import randint
 from stdnet.utils import test
-from stdnet.lib import zset
+from stdnet.utils.zset import zset
 
 class TestPythonZset(test.TestCase):
     

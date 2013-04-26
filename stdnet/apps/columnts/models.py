@@ -1,6 +1,7 @@
 '''Multivariate numeric timeseries interface.'''
-from stdnet import odm, SessionNotAvailable, on_result
-from stdnet.lib import skiplist
+from stdnet import odm, SessionNotAvailable
+from stdnet.utils.skiplist import skiplist
+from stdnet.utils.async import on_result
 from stdnet.utils import encoders, iteritems, zip, iterpair
 
 

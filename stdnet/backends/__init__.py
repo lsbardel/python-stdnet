@@ -1,23 +1,17 @@
-import json
 from collections import namedtuple
-from functools import partial
 
+from stdnet.utils.exceptions import *
 from stdnet.utils.conf import settings
 from stdnet.utils.importer import import_module
-from stdnet.utils.exceptions import *
-from stdnet.lib import on_result
-from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
-                            int_or_float, to_string, urlencode, urlparse
+from stdnet.utils import iteritems, int_or_float, to_string, urlencode, urlparse
 
 
 __all__ = ['BackendStructure',
            'BackendDataServer',
-           'BackendQuery',
            'CacheServer',
            'session_result',
            'instance_session_result',
            'query_result',
-           'on_result',
            'range_lookups',
            'getdb',
            'getcache']
@@ -95,110 +89,24 @@ class BackendStructure(object):
         return self.__class__(self.instance, self.client)
     
     def delete(self):   # pragma: no cover
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def flush(self):    # pragma: no cover
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def size(self):     # pragma: no cover
-        raise NotImplementedError()
+        raise NotImplementedError
     
     
-class BackendQuery(object):
-    '''Backend queryset class which implements the database
-queries specified by :class:`stdnet.odm.Query`.
-
-.. attribute:: queryelem
-
-    The :class:`stdnet.odm.QueryElement` to process.
-    
-.. attribute:: executed
-
-    flag indicating if the query has been executed in the backend server
-    
-'''
-    def __init__(self, queryelem, timeout=0, **kwargs):
-        '''Initialize the query for the backend database.'''
-        self.queryelem = queryelem
-        self.expire = max(timeout,10)
-        self.timeout = timeout
-        self.__count = None
-        # build the queryset without performing any database communication
-        self._build(**kwargs)
-
-    def __repr__(self):
-        return self.queryelem.__repr__()
-    
-    def __str__(self):
-        return str(self.queryelem)
-    
-    @property
-    def backend(self):
-        return self.queryelem.backend
-    
-    @property
-    def meta(self):
-        return self.queryelem.meta
-    
-    @property
-    def executed(self):
-        return self.__count is not None
-    
-    def __len__(self):
-        return self.execute_query()
-    
-    def count(self):
-        return self.execute_query()
-
-    def __contains__(self, val):
-        self.execute_query()
-        return self._has(val)
-        
-    def items(self, slic):
-        return on_result(self.execute_query(), partial(self._get_items, slic))
-    
-    def execute_query(self):
-        if not self.executed:
-            return on_result(self._execute_query(), self._got_count)
-        return self.__count
-    
-    # VIRTUAL FUNCTIONS
-    
-    def _has(self, val):    # pragma: no cover
-        raise NotImplementedError()
-    
-    def _items(self, slic):     # pragma: no cover
-        raise NotImplementedError()
-    
-    def _build(self, **kwargs):     # pragma: no cover
-        raise NotImplementedError()
-    
-    def _execute_query(self):       # pragma: no cover
-        '''Execute the query without fetching data from server. Must
- be implemented by data-server backends.'''
-        raise NotImplementedError()
-    
-    # PRIVATE
-    def _got_count(self, c):
-        self.__count = c
-        return c
-    
-    def _get_items(self, slic, result):
-        if result:
-            return self._items(slic)
-        else:
-            return ()
-
-
 class CacheServer(object):
     '''A key-value store server for storing and retrieving values at keys.'''
     def set(self, key, value, timeout=None):
         '''Set ``value`` at ``key`` with ``timeout``.'''
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def get(self, key, default=None):
         '''Fetch the value at ``key``.'''
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def __getitem__(self):
         v = self.get(key)
@@ -211,7 +119,7 @@ class CacheServer(object):
         self.set(key, value)
     
     def __contains__(self, key):
-        raise NotImplementedError()
+        raise NotImplementedError
     
     
 class BackendDataServer(object):

@@ -4,7 +4,7 @@ one for linking other objects to Words.
 '''
 from inspect import isclass
 
-from stdnet import odm, async
+from stdnet import odm
 
 
 class WordItemManager(odm.Manager):
@@ -35,20 +35,18 @@ class WordItem(odm.StdModel):
 
     def object(self, session=None):
         '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
-        if not hasattr(self,'_object'):
-            return self._get_object(session)
+        if not hasattr(self, '_object'):
+            if session is None:
+                session = self.model_type.session()
+            query = session.query(self.model_type)
+            return query.items(callback=self.__set_object)
         else:
             return self._object
 
-    @async()
-    def _get_object(self, session):
-        if session is None:
-            session = self.model_type.session()
-        query = session.query(self.model_type)
-        objs = yield query.filter(id=self.object_id).all()
-        if objs:
-            self._object = query._get(objs)
-        else:
+    def __set_object(self, items):
+        try:
+            self._object = self.get_unique_instance(items)
+        except self.DoesNotExist:
             self._object = None
-        yield self._object
+        return self._object
         

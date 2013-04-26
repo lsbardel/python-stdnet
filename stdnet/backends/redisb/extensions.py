@@ -7,7 +7,7 @@ from itertools import starmap
 from stdnet.utils import zip, map, ispy3k
 from stdnet.utils.dispatch import Signal
 
-from .redisinfo import RedisKey
+from .info import RedisKey
 
 __all__ = ['RedisScript',
            'get_script',
@@ -18,7 +18,7 @@ __all__ = ['RedisScript',
 
 
 p = os.path
-DEFAULT_LUA_PATH = p.join(p.dirname(p.dirname(p.abspath(__file__))),'lua')
+DEFAULT_LUA_PATH = p.join(p.dirname(p.abspath(__file__)), 'lua')
 
 redis_connection = namedtuple('redis_connection', 'address db') 
 

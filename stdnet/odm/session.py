@@ -3,8 +3,8 @@ from copy import copy
 from itertools import chain
 from functools import partial
 
-from stdnet import getdb, session_result, on_result, async, multi_async,\
-                    maybe_async
+from stdnet import getdb, session_result
+from stdnet.utils.async import on_result, async, multi_async
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *

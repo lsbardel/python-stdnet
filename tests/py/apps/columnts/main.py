@@ -5,7 +5,7 @@ from struct import unpack
 from stdnet import SessionNotAvailable, CommitException
 from stdnet.utils import test, encoders, populate, ispy3k
 from stdnet.apps.columnts import ColumnTS
-from stdnet.lib import redis
+from stdnet.backends import redisb
 
 from examples.data import tsdata
 from examples.tsmodels import ColumnTimeSeries
@@ -21,10 +21,10 @@ if ispy3k:  #pragma nocover
 else:   #pragma nocover
     bitflag = ord
     
-class timeseries_test1(redis.RedisScript):
-    script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('columnts.columnts'),
-              redis.read_lua_file('test1',this_path))
+class timeseries_test1(redisb.RedisScript):
+    script = (redisb.read_lua_file('tabletools'),
+              redisb.read_lua_file('columnts.columnts'),
+              redisb.read_lua_file('test1',this_path))
     
 
 class TestMeta(test.TestCase):
@@ -246,10 +246,10 @@ class TestTimeSeries(TestCase, StructMixin):
         client.rpush(id, 'bla')
         client.rpush(id, 'foo')
         self.assertEqual(client.llen(id), 2)
-        self.assertRaises(redis.ScriptError, ts.add,
+        self.assertRaises(redisb.ScriptError, ts.add,
                           date(2012,1,23), {'open':586})
-        self.assertRaises(redis.ScriptError, ts.irange)
-        self.assertRaises(redis.RedisInvalidResponse, ts.size)
+        self.assertRaises(redisb.ScriptError, ts.irange)
+        self.assertRaises(redisb.RedisInvalidResponse, ts.size)
         
     def testGet(self):
         ts = self.makeGoogle()

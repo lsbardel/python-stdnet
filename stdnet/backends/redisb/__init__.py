@@ -6,14 +6,15 @@ from itertools import chain
 from functools import partial
 from collections import namedtuple
 
+from .base import *
+
 import stdnet
-from stdnet import FieldValueError, CommitException, QuerySetError, on_result, async
+from stdnet import FieldValueError, CommitException, QuerySetError
+from stdnet.utils import async
 from stdnet.utils import to_string, map, gen_unique_id, zip,\
                              native_str, flat_mapping, unique_tuple
 from stdnet.backends import BackendStructure, query_result, session_result,\
                             instance_session_result, range_lookups
-
-from . import redis
 
 MIN_FLOAT =-1.e99
 
@@ -29,12 +30,12 @@ def pairs_to_dict(response, encoding):
     it = iter(response)
     return dict(((k.decode(encoding), v) for k, v in zip(it, it)))
 
-class odmrun(redis.RedisScript):
-    script = (redis.read_lua_file('tabletools'),
+class odmrun(RedisScript):
+    script = (read_lua_file('tabletools'),
               # timeseries must be included before utils
-              redis.read_lua_file('commands.timeseries'),
-              redis.read_lua_file('commands.utils'),
-              redis.read_lua_file('odm'))
+              read_lua_file('commands.timeseries'),
+              read_lua_file('commands.utils'),
+              read_lua_file('odm'))
     required_scripts = ODM_SCRIPTS
         
     def callback(self, response, meta=None, backend=None, command=None, **opts):
@@ -107,8 +108,8 @@ class odmrun(redis.RedisScript):
             return self.build(data, meta, fields, fields, encoding)
     
     
-class check_structures(redis.RedisScript):
-    script = redis.read_lua_file('structures')
+class check_structures(RedisScript):
+    script = read_lua_file('structures')
     
     def callback(self, response, meta=None, instances=None, **opts):
         results = []
@@ -122,7 +123,7 @@ class check_structures(redis.RedisScript):
 ################################################################################
 ##    REDIS QUERY CLASS
 ################################################################################
-class RedisQuery(stdnet.BackendQuery):
+class RedisQuery(async.BackendQuery):
     card = None
     _meta_info = None
     script_dep = {'script_dependency': ('build_query','move2set')}
@@ -231,7 +232,7 @@ elements in the query.'''
         #self.pipe.add_callback(lambda processed, result :
         #                            query_result(self.query_key, result))
         #self.commands, result = redis_execution(self.pipe, query_result)
-        return on_result(pipe.execute(), lambda r: r[-1])
+        return async.on_result(pipe.execute(), lambda r: r[-1])
     
     def order(self, last):
         '''Perform ordering with respect model fields.'''
@@ -460,27 +461,27 @@ class Zset(RedisStructure):
         return self.client.zcount(self.id, start, stop)
     
     def range(self, start, end, withscores=True, **options):
-        return on_result(
+        return async.on_result(
                 self.client.zrangebyscore(self.id, start, end,
                                           withscores=withscores, **options),
                 partial(self._range, withscores))
     
     def irange(self, start=0, stop=-1, desc=False, withscores=True, **options):
-        return on_result(
+        return async.on_result(
                 self.client.zrange(self.id, start, stop, desc=desc,
                                    withscores=withscores, **options),
                 partial(self._range, withscores))
     
     def ipop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by rank (index).'''
-        return on_result(
+        return async.on_result(
                 self.client.zpopbyrank(self.id, start, stop,
                                        withscores=withscores, **options),
                 partial(self._range, withscores))
         
     def pop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by score.'''
-        return on_result(
+        return async.on_result(
                 self.client.zpopbyscore(self.id, start, stop,
                                         withscores=withscores, **options),
                 partial(self._range, withscores))
@@ -544,7 +545,7 @@ class Hash(RedisStructure):
     def get(self, key):
         return self.client.hget(self.id, key)
     
-    @async()
+    @async.async()
     def pop(self, key):
         pi = self.is_pipeline
         p = self.client if pi else self.client.pipeline()
@@ -668,22 +669,22 @@ class NumberArray(RedisStructure):
         return self.client.strlen(self.id)//8
     
 
-class ts_commands(redis.RedisScript):
-    script = (redis.read_lua_file('commands.timeseries'),
-              redis.read_lua_file('tabletools'),
-              redis.read_lua_file('ts'))
+class ts_commands(RedisScript):
+    script = (read_lua_file('commands.timeseries'),
+              read_lua_file('tabletools'),
+              read_lua_file('ts'))
     
     
-class numberarray_resize(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray'),
+class numberarray_resize(RedisScript):
+    script = (read_lua_file('numberarray'),
               '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
     
-class numberarray_all_raw(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray'),
+class numberarray_all_raw(RedisScript):
+    script = (read_lua_file('numberarray'),
               '''return array:new(KEYS[1]):all_raw()''')
     
-class numberarray_getset(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray'),
+class numberarray_getset(RedisScript):
+    script = (read_lua_file('numberarray'),
               '''local a = array:new(KEYS[1])
 if ARGV[1] == 'get' then
     return a:get(ARGV[2],true)
@@ -691,8 +692,8 @@ else
     a:set(ARGV[2],ARGV[3],true)
 end''')
     
-class numberarray_pushback(redis.RedisScript):
-    script = (redis.read_lua_file('numberarray'),
+class numberarray_pushback(RedisScript):
+    script = (read_lua_file('numberarray'),
               '''local a = array:new(KEYS[1])
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)
@@ -746,7 +747,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             address = address[0]
         if 'db' not in self.params:
             self.params['db'] = 0
-        rpy = redis.redis_client(address=address, **self.params)
+        rpy = redis_client(address=address, **self.params)
         if self.namespace:
             self.params['namespace'] = self.namespace
         return rpy
@@ -759,7 +760,7 @@ class BackendDataServer(stdnet.BackendDataServer):
     
     def as_cache(self):
         if self.namespace:
-            c = redis.PrefixedRedis(self.client, self.namespace)
+            c = PrefixedRedis(self.client, self.namespace)
         else:
             c = self.client
         return CacheServer(c)
@@ -769,10 +770,10 @@ class BackendDataServer(stdnet.BackendDataServer):
             
     def load_scripts(self, *names):
         if not names:
-            names = redis.registered_scripts()
+            names = registered_scripts()
         pipe = self.client.pipeline()
         for name in names:
-            script = redis.get_script(name)
+            script = get_script(name)
             if script:
                 pipe.script_load(script.script)
         return pipe.execute()
@@ -789,7 +790,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                                      **options)
         
     def where_run(self, client, meta_info, keys, where, load_only):
-        where = redis.read_lua_file('where', context={'where_clause': where})
+        where = read_lua_file('where', context={'where_clause': where})
         numkeys = len(keys)
         keys.append(meta_info)
         if load_only:
@@ -880,7 +881,7 @@ class BackendDataServer(stdnet.BackendDataServer):
             
     def model_keys(self, meta):
         pattern = '%s*' % self.basekey(meta)
-        return on_result(self.client.keys(pattern), self._decode_keys)
+        return async.on_result(self.client.keys(pattern), self._decode_keys)
         
     def instance_keys(self, obj):
         meta = obj._meta
@@ -910,7 +911,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         return self.client.execute_command('PUBLISH', channel, message)
         
     def subscriber(self, **kwargs):
-        return redis.Subscriber(self.client, **kwargs)
+        return Subscriber(self.client, **kwargs)
     
     def _decode_keys(self, value):
         decode = self.client.connection_pool.decode_key

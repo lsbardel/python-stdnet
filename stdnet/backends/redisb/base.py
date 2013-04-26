@@ -6,7 +6,7 @@ hiredis = None
 
 from .extensions import *
 from .client import *
-from .redisinfo import *
+from .info import *
 from . import parser 
 
 try:

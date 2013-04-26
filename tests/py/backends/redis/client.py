@@ -3,8 +3,8 @@ from hashlib import sha1
 
 from pulsar.apps.test import sequential
 
-from stdnet.lib import redis
 from stdnet import getdb
+from stdnet.backends import redisb
 from stdnet.utils import test, flatzset
 
 def get_version(info):
@@ -14,8 +14,8 @@ def get_version(info):
         return info['Server']['redis_version']
     
     
-class test_script(redis.RedisScript):
-    script = (redis.read_lua_file('commands.utils'),
+class test_script(redisb.RedisScript):
+    script = (redisb.read_lua_file('commands.utils'),
               '''\
 local js = cjson.decode(ARGV[1])
 return cjson.encode(js)''')
@@ -60,7 +60,7 @@ class TestExtraClientCommands(TestCase):
         self.assertTrue(size >= 0)
         
     def test_script_meta(self):
-        script = redis.get_script('test_script')
+        script = redisb.get_script('test_script')
         self.assertTrue(script.script)
         sha = sha1(script.script.encode('utf-8')).hexdigest()
         self.assertEqual(script.sha1,sha)
@@ -152,7 +152,7 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(len(keys), 2)
         
     def test_bad_execute_script(self):
-        self.assertRaises(redis.RedisError, self.client.execute_script, 'foo', ())
+        self.assertRaises(redisb.RedisError, self.client.execute_script, 'foo', ())
         
     # ZSET SCRIPTING COMMANDS
     def test_zdiffstore(self):

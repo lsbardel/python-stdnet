@@ -4,9 +4,9 @@ from copy import copy, deepcopy
 import hashlib
 import weakref
 
-from stdnet import on_result
-from stdnet.utils import zip, to_string, UnicodeMixin
 from stdnet.utils.exceptions import *
+from stdnet.utils import zip, to_string, UnicodeMixin
+from stdnet.utils.async import on_result
 
 from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\

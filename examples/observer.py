@@ -5,10 +5,9 @@ observing.
 from time import time
 from stdnet import odm
 from stdnet.odm import struct
-from stdnet.lib import redis
 from stdnet.backends import redisb
 
-class update_observer(redis.RedisScript):
+class update_observer(redisb.RedisScript):
     '''Script for adding/updating an observer. The ARGV contains, the member
 value, the initial score (usually a timestamp) and the increment for
 subsequent additions.'''

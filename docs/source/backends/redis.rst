@@ -152,7 +152,7 @@ The list of arguments passed to the :mod:`stdnet.lib.lua.load_query` script:
 Asynchronous Connection
 ===========================
 
-.. automodule:: stdnet.lib.redis.async  
+.. automodule:: stdnet.backends.redisb.async  
    
    
 .. _Redis: http://redis.io/

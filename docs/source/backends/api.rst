@@ -6,6 +6,9 @@
 API
 ===========
 
+High Level Functions
+========================
+
 getdb
 ~~~~~~~~~~~~~~~~
 
@@ -18,18 +21,13 @@ getcache
 .. autofunction:: getcache
 
 
+Interfaces
+========================
+
 Backend data server
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: BackendDataServer
-   :members:
-   :member-order: bysource
-   
-   
-Backend Query
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: BackendQuery
    :members:
    :member-order: bysource
 
@@ -40,6 +38,12 @@ Cache Server
 .. autoclass:: CacheServer
    :members:
    :member-order: bysource
+
+
+Asynchronous Components
+===============================
+
+.. automodule:: stdnet.utils.async
 
 
 .. _JSON: http://www.json.org/

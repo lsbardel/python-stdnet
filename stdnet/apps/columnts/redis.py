@@ -4,7 +4,6 @@ import json
 
 from stdnet.backends import redisb
 from stdnet.utils.encoders import safe_number
-from stdnet.lib import redis
 
 
 class RedisColumnTS(redisb.RedisStructure):
@@ -201,11 +200,11 @@ redisb.BackendDataServer.struct_map['columnts'] = RedisColumnTS
 
 
 ##############################################################    SCRIPT
-class timeseries_run(redis.RedisScript):
-    script = (redis.read_lua_file('tabletools'),
-              redis.read_lua_file('columnts.columnts'),
-              redis.read_lua_file('columnts.stats'),
-              redis.read_lua_file('columnts.runts'))
+class timeseries_run(redisb.RedisScript):
+    script = (redisb.read_lua_file('tabletools'),
+              redisb.read_lua_file('columnts.columnts'),
+              redisb.read_lua_file('columnts.stats'),
+              redisb.read_lua_file('columnts.runts'))
 
     def callback(self, response, redis_client=None, return_type=None, **opts):
         if return_type and response:

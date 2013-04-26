@@ -1,6 +1,5 @@
 from stdnet.utils import test
 from stdnet import settings
-from stdnet.lib import redis
 import stdnet as me
 
 

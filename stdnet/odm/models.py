@@ -236,7 +236,7 @@ relationships.
             raise ValueError('Field "%s" not available' % name)
         elif not field.type == 'related object':
             raise ValueError('Field "%s" not a foreign key' % name)
-        return self.__load_related_model(field, load_only, dont_load)
+        return self._load_related_model(field, load_only, dont_load)
         
     @classmethod
     def get_field(cls, name):
@@ -286,7 +286,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
         
     # INTERNALS
     
-    def __load_related_model(self, field, load_only=None, dont_load=None):
+    def _load_related_model(self, field, load_only=None, dont_load=None):
         cache_name = field.get_cache_name()
         if hasattr(self, cache_name):
             return getattr(self, cache_name)
@@ -301,7 +301,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
                     qs = qs.load_only(*load_only)
                 if dont_load:
                     qs = qs.dont_load(*dont_load)
-                callback = partial(self._set_related_value, field)
+                callback = partial(self.__set_related_value, field)
                 return qs.filter(**{pkname: val}).items(callback=callback)
             
     def __set_related_value(self, field, items=None):

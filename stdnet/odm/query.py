@@ -131,9 +131,9 @@ fields.
     def clear(self):
         pass
 
-    def backend_query(self):
-        '''Build the :class:`stdnet.BackendQuery` for this instance. This
-is a virtual method with different implementation in :class:`Query`
+    def backend_query(self, **kwargs):
+        '''Build the :class:`stdnet.utils.async.BackendQuery` for this instance.
+This is a virtual method with different implementation in :class:`Query`
 and :class:`QueryElement`.'''
         raise NotImplementedError
 
@@ -374,16 +374,16 @@ criteria and options associated with it.
             return False
 
     def __repr__(self):
-        seq = self.cache().get(None)
+        seq = self.backend_query().cache.get(None) if self.executed else None
         if seq is None:
             s = self.__class__.__name__
             if self.fargs:
-                s = '%s.filter(%s)' % (s,self.fargs)
+                s = '%s.filter(%s)' % (s, self.fargs)
             if self.eargs:
-                s = '%s.exclude(%s)' % (s,self.eargs)
+                s = '%s.exclude(%s)' % (s, self.eargs)
             return s
         else:
-            return str(seq)
+            return repr(seq)
     __str__ = __repr__
 
     def filter(self, **kwargs):
@@ -606,7 +606,7 @@ objects on the server side.'''
     def delete(self):
         '''Delete all matched elements of the :class:`Query`. It returns the
 list of ids deleted.'''
-        return self.backend_query().delete()
+        return self.backend_query().delete(self)
 
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''
@@ -614,12 +614,12 @@ list of ids deleted.'''
             self.__construct = self._construct()
         return self.__construct
 
-    def backend_query(self):
-        '''Build and return the :class:`stdnet.BackendQuery`.
+    def backend_query(self, **kwargs):
+        '''Build and return the :class:`stdnet.utils.async.BackendQuery`.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         q = self.construct()
-        return q if isinstance(q, EmptyQuery) else q.backend_query()
+        return q if isinstance(q, EmptyQuery) else q.backend_query(**kwargs)
 
     def test_unique(self, fieldname, value, instance=None, exception=None):
         '''Test if a given field *fieldname* has a unique *value*
@@ -635,7 +635,8 @@ an exception is raised.
 :return: *value*
 '''
         qs = self.filter(**{fieldname:value})
-        callback = partial(self._test_unique, fieldname, value, exception)
+        callback = partial(self._test_unique, fieldname, value,
+                           instance, exception)
         return qs.backend_query().items(callback=callback)
 
     def map_reduce(self, map_script, reduce_script, **kwargs):
@@ -736,7 +737,7 @@ an exception is raised.
         return [queryset(self, name=name, underlying=field_lookups[name])\
                 for name in sorted(field_lookups)]
         
-    def _test_unique(self, fieldname, value, exception, items):
+    def _test_unique(self, fieldname, value, instance, exception, items):
         if items:
             r = self.model.get_unique_instance(items)
             if instance and r.id == instance.id:

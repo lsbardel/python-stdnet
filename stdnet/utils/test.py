@@ -185,7 +185,7 @@ the :attr:`backend` attribute.'''
     @classmethod
     def multi_async(cls, iterable, **kwargs):
         '''Treat ``iterable`` as a container of asynchronous results.'''
-        from pulsar.utils import async
+        from stdnet.utils import async
         return async.multi_async(iterable, **kwargs)
     
     def assertEqualId(self, instance, value, exact=False):

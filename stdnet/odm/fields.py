@@ -920,7 +920,9 @@ argument.
     def add_to_fields(self):
         #A many to many field is a dummy field. All it does it provides a proxy
         #for the through model. Remove it from the fields dictionary
+        #and addit to the list of many_to_many
         self.meta.dfields.pop(self.name)
+        self.meta.manytomany.append(self.name)
 
 
 class CompositeIdField(AutoIdField):

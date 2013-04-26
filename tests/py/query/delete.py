@@ -137,9 +137,6 @@ class TestDeleteScalarFields(FinanceTest):
     @classmethod
     def after_setup(cls):
         cls.data = cls.data_cls(size=cls.size)
-    
-    def setUp(self):
-        self.register()
         
     def tearDown(self):
         self.clear_all()

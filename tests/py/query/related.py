@@ -24,7 +24,8 @@ class NodeBase(object):
                 for n in range(N):
                     node = t.add(cls.model(parent=root, weight=uniform(0,1)))
             yield t.on_result
-            yield test.multi_async((cls.create(node, nesting-1) for node in t.saved[node._meta]))
+            yield cls.multi_async((cls.create(node, nesting-1) for node\
+                                    in t.saved[node._meta]))
     
 
 class TestSelfForeignKey(NodeBase, test.TestCase):

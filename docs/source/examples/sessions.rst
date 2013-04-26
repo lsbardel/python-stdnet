@@ -28,9 +28,14 @@ a :class:`stdnet.BackendDataServer`::
     
     
 Alternatively, if a model ``MyModel`` has been :ref:`registered <register-model>`,
-one can obtain a session, from the model manager::
+with a :class:`Router` instance ``router``, one can obtain a session,
+from the model manager::
  
-    session = myModel.objects.session()
+    session = router[myModel].session()
+    
+or using dotted notation::
+
+    session = router.mymodel.session()
      
     
 Query a model

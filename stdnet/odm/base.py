@@ -12,7 +12,6 @@ from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
                      range_lookup_info
 from .fields import Field, AutoIdField
-from .session import Manager, setup_managers
 
 
 __all__ = ['Metaclass',
@@ -61,7 +60,7 @@ class ModelMeta(object):
         self.name = model.__name__.lower()
         if not modelkey:
             if self.app_label:
-                modelkey = '{0}.{1}'.format(self.app_label,self.name)
+                modelkey = '{0}.{1}'.format(self.app_label, self.name)
             else:
                 modelkey = self.name
         self.modelkey = modelkey
@@ -146,6 +145,11 @@ mapper.
 
     Unless specified it is the name of the directory or file
     (if at top level) containing the :class:`StdModel` definition.
+    
+.. attribute:: name
+
+    The name of the :attr:`model`, usually it is the model class name
+    in lower-case, but it can be customised.
 
 .. attribute:: model
 
@@ -159,11 +163,12 @@ mapper.
     specified field. It can also be a :class:`autoincrement` instance.
     Check the :ref:`sorting <sorting>` documentation for more details.
 
-    Default: ``None``.
+    Default: ``None``.ma
 
 .. attribute:: dfields
 
-    dictionary of :class:`Field` instances.
+    dictionary of :class:`Field` instances. It does not include
+    :class:`StructureField`.
 
 .. attribute:: fields
 
@@ -183,6 +188,16 @@ mapper.
 .. attribute:: pk
 
     The :class:`Field` representing the primary key.
+    
+.. attribute:: related
+
+    Dictionary of :class:`RelatedManager` for the :attr:`model`. It is
+    created at runtime by the object data mapper.
+    
+.. attribute:: manytomany
+
+    List of :class:`ManyToManyField` names for the :attr:`model`. This
+    information is useful during registration.
 '''
     connection_string = None
 
@@ -199,6 +214,7 @@ mapper.
         self.dfields = {}
         self.timeout = 0
         self.related = {}
+        self.manytomany = []
         self.verbose_name = verbose_name or self.name
         # Check if PK field exists
         pk = None
@@ -397,7 +413,6 @@ class StdNetType(ModelType):
         fields = get_fields(bases, attrs)
         # create the new class
         new_class = type.__new__(cls, name, bases, attrs)
-        setup_managers(new_class)
         app_label = kwargs.pop('app_label')
         Metaclass(new_class, fields, app_label=app_label, **kwargs)
         signals.class_prepared.send(sender=new_class)

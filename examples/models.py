@@ -6,6 +6,9 @@ from stdnet import odm
 
 class CustomManager(odm.Manager):
 
+    def small_query(self, **kwargs):
+        return self.query(**kwargs).load_only('code', 'group')
+    
     def something(self):
         return "I'm a custom manager"
 
@@ -20,7 +23,7 @@ class SimpleModel(odm.StdModel):
     timestamp = odm.DateTimeField(as_cache=True)
     number = odm.FloatField(required=False)
 
-    objects = CustomManager()
+    manager_class = CustomManager
 
     def __unicode__(self):
         return self.code

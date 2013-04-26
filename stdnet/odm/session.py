@@ -616,11 +616,10 @@ from the **kwargs** parameters.
 :rtype: an instance of  two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
-        query = self.query(model)
-        items = yield query.filter(**kwargs).all()
-        if items:
-            yield query._get(items), False
-        else:
+        items = yield self.query(model).filter(**kwargs).all()
+        try:
+            yield model.get_unique_instance(items), False
+        except model.DoesNotExist:
             item = yield self.add(model(**kwargs))
             yield item, True
 
@@ -724,50 +723,71 @@ is not given, it removes all instances from this :class:`Session`.'''
 
 class Manager(object):
     '''A manager class for models. Each :class:`StdModel`
-contains at least one manager which can be accessed via the ``objects``
-class attribute::
+is associated with one :class:`Manager` class.
+A manager for a model is accessed via a :class:`Router` which has
+registered the model itself::
 
     class MyModel(odm.StdModel):
         group = odm.SymbolField()
         flag = odm.BooleanField()
 
-    MyModel.objects
+    router = odm.Router()
+    router.register(MyModel)
+    
+    manager = router[MyModel]
 
 Managers are used as :class:`Session` and :class:`Query` factories
-for a given :class:`StdModel`::
+for a given :class:`StdModel`, but they can be customized::
 
-    session = MyModel.objects.session()
-    query = MyModel.objects.query()
+    session = router[MyModel].session()
+    query = router[MyModel].query()
+    
+To customize a manager for a given model, one creates a subclass and add
+additional method::
+
+    class MyModelManager(odm.Manager):
+    
+        def special_query(self, **kwargs):
+            ...
+            
+At this point we need to tell the model about the custom manager, and we do
+so by setting the ``manager_class`` attribute in the :class:`StdModel`::
+
+    class MyModel(odm.StdModel):
+        ...
+        
+        manager_class = MyModelManager
+        
 
 .. attribute:: model
 
     The :class:`StdModel` for this :class:`Manager`. This attribute is
-    assigned by the Object relational mapper at runtime.
+    assigned by the Object data mapper at runtime.
 
 .. attribute:: backend
 
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
 '''
-    def __init__(self, model=None, backend=None):
-        self.register(model, backend)
-
-    def register(self, model, backend=None):
-        '''Register the Manager with a model and a backend database.'''
-        self.backend = backend
+    def __init__(self, model, backend=None):
         self.model = model
-        return self
+        self._backend = backend
 
+    @property
+    def _meta(self):
+        return self.model._meta
+    
+    @property
+    def backend(self):
+        return self._backend
+    
     def __str__(self):
-        if self.model:
-            if self.backend:
-                return '{0}({1} - {2})'.format(self.__class__.__name__,
-                                               self.model,
-                                               self.backend)
-            else:
-                return '{0}({1})'.format(self.__class__.__name__, self.model)
+        if self.backend:
+            return '{0}({1} - {2})'.format(self.__class__.__name__,
+                                           self.model,
+                                           self.backend)
         else:
-            return self.__class__.__name__
+            return '{0}({1})'.format(self.__class__.__name__, self.model)
     __repr__ = __str__
 
     def session(self, *models):
@@ -789,6 +809,14 @@ for a given :class:`StdModel`::
                                          "different databases. Cannot create "
                                          "transaction." % models)
         return Session(backend)
+    
+    def new(self, *args, **kwargs):
+        '''Create a new instance of :attr:`model` and commit it to the backend
+server. This a shortcut method for the more verbose::
+    
+    instance = manager.session().add(MyModel(**kwargs))
+'''
+        return self.session().add(self.model(*args, **kwargs))
 
     def transaction(self, *models, **kwargs):
         '''Return a :class:`Transaction`. If models are specified, it check
@@ -841,10 +869,3 @@ a full text search value.'''
         d.update({'model': None, '_session': None})
         obj.__dict__ = d
         return obj
-
-
-def setup_managers(model):
-    manager = getattr(model,'objects', None)
-    if manager is None:
-        manager = Manager()
-    model.objects = manager

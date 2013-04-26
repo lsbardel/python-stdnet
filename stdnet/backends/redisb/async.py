@@ -1,5 +1,5 @@
-'''The :mod:`stdnet.lib.redis.async` implements an asynchronous connector
-for redis-py. It uses pulsar_ asynchronous framework. To use this connector,
+'''The :mod:`stdnet.backends.redisb.async` implements an asynchronous connector
+for redis-py_. It uses pulsar_ asynchronous framework. To use this connector,
 add ``timeout=0`` to redis :ref:`connection string <connection-string>`::
 
     'redis://127.0.0.1:6378?password=bla&timeout=0'
@@ -10,8 +10,6 @@ Usage::
     
     db = getdb('redis://127.0.0.1:6378?password=bla&timeout=0')
     
-    
-.. _pulsar: https://pypi.python.org/pypi/pulsar
 '''
 from collections import deque
 from itertools import chain

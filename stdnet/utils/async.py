@@ -106,7 +106,9 @@ queries specified by :class:`stdnet.odm.Query`.
     def executed(self):
         return self.__count is not None
     
+    @property
     def cache(self):
+        '''Cached results.'''
         return self.__slice_cache
     
     def __len__(self):
@@ -136,7 +138,7 @@ server matching this :class:`Query`. This method is usually not called directly,
 instead use the :meth:`all` method or alternatively slice the query in the same
 way you can slice a list or iterate over the query.'''
         key = None
-        seq = self.cache().get(None)
+        seq = self.__slice_cache.get(None)
         if slic:
             if seq is not None: # we have the whole query cached already
                 yield seq[slic]
@@ -146,14 +148,14 @@ way you can slice a list or iterate over the query.'''
             yield seq
         else:
             result = yield self.execute_query()
+            items = None
             if result:
                 items = yield self._items(slic)
-            items = items or ()
-            yield self._store_items(key, callback, items)
+            yield self._store_items(key, callback, items or ())
         
-    def delete(self):
+    def delete(self, qs):
         with self.session.begin() as t:
-            t.delete(self)
+            t.delete(qs)
         return on_result(t.on_result, lambda _: t.deleted.get(self.meta))
     
     # VIRTUAL METHODS - MUST BE IMPLEMENTED BY BACKENDS

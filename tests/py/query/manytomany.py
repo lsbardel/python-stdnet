@@ -1,18 +1,8 @@
-from pulsar import multi_async
-from pulsar.apps.test import sequential
-
 from stdnet import odm, ManyToManyError
 from stdnet.utils import test
 
 from examples.models import Role, Profile
 from examples.m2m import Composite, Element, CompositeElement
-
-
-class Role2(Role):
-    pass
-
-class Profile2(Profile):
-    roles = odm.ManyToManyField(model=Role2, related_name="profiles")
 
     
 class TestManyToManyBase(object):
@@ -52,7 +42,7 @@ class TestManyToManyBase(object):
         # Check profile
         t1 = yield profile.roles.throughquery().all()
         self.assertEqual(len(t1), 2)
-        p1, p2 = yield test.multi_async((t1[0].profile, t1[1].profile))
+        p1, p2 = yield self.multi_async((t1[0].profile, t1[1].profile))
         self.assertEqual(p1, profile)
         self.assertEqual(p2, profile)
         #
@@ -71,22 +61,23 @@ class TestManyToManyBase(object):
 class TestManyToMany(TestManyToManyBase, test.TestCase):
     
     def test_meta(self):
+        self.assertEqual(Profile._meta.manytomany, ['roles'])
         roles = Profile.roles
         self.assertEqual(roles.model._meta.name, 'profile_role')
-        self.assertEqual(roles.relmodel,Profile)
+        self.assertEqual(roles.relmodel, Profile)
         self.assertEqual(roles.name_relmodel, 'profile')
-        self.assertEqual(roles.formodel,Role)
+        self.assertEqual(roles.formodel, Role)
         profiles = Role.profiles
         self.assertEqual(profiles.model._meta.name, 'profile_role')
-        self.assertEqual(profiles.relmodel,Role)
-        self.assertEqual(profiles.formodel,Profile)
+        self.assertEqual(profiles.relmodel, Role)
+        self.assertEqual(profiles.formodel, Profile)
         self.assertEqual(profiles.name_relmodel, 'role')
         #
         through = roles.model
         self.assertEqual(through, profiles.model)
-        self.assertEqual(len(through._meta.dfields),3)
+        self.assertEqual(len(through._meta.dfields), 3)
         
-    def testMetaInstance(self):
+    def test_meta_instance(self):
         p = Profile()
         self.assertEqual(p.roles.formodel, Role)
         self.assertEqual(p.roles.related_instance, p)
@@ -123,7 +114,7 @@ class TestManyToMany(TestManyToManyBase, test.TestCase):
         
      
      
-@sequential
+@test.sequential
 class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
        
     def tearDown(self):
@@ -187,38 +178,43 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
         
         
 class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
-    models = (Role2, Profile2)
+    models = (Role, Profile)
     
     @classmethod
     def after_setup(cls):
-        cls.register()
+        cls.m = cls.mapper()
         
     def testMeta(self):
-        through = Profile2.roles.model
+        m = self.m
+        through = Profile.roles.model
+        self.assertTrue(through in m)
+        objects = m[through]
         name = through.__name__
-        self.assertEqual(name, 'profile2_role2')
-        self.assertEqual(through.objects.backend, Profile2.objects.backend)
-        self.assertEqual(through.objects.backend, Role2.objects.backend)
-        self.assertEqual(through.role2.field.model, through)
-        self.assertEqual(through.profile2.field.model, through)
+        self.assertEqual(name, 'profile_role')
+        self.assertEqual(objects.backend, m[Profile].backend)
+        self.assertEqual(objects.backend, m[Role].backend)
+        self.assertEqual(through.role.field.model, through)
+        self.assertEqual(through.profile.field.model, through)
         pk = through.pk()
         self.assertTrue(isinstance(pk, odm.CompositeIdField))
-        self.assertEqual(pk.fields[0].relmodel, Profile2)
-        self.assertEqual(pk.fields[1].relmodel, Role2)
+        self.assertEqual(pk.fields[0].relmodel, Profile)
+        self.assertEqual(pk.fields[1].relmodel, Role)
         
     def test_class_add(self):
-        self.assertRaises(ManyToManyError, Profile2.roles.add, Role2(name='foo'))
-        self.assertRaises(ManyToManyError, Role2.profiles.add, Profile2())
+        self.assertRaises(ManyToManyError, Profile.roles.add, Role(name='foo'))
+        self.assertRaises(ManyToManyError, Role.profiles.add, Profile())
     
     def test_through_query(self):
-        p1, p2, p3 = yield multi_async((Profile2().save(), Profile2().save(),
-                                        Profile2().save()))
-        r1, r2 = yield multi_async((Role2(name='bla').save(),
-                                    Role2(name='foo').save()))
+        m = self.m
+        p1, p2, p3 = yield self.multi_async((m.profile.new(),
+                                             m.profile.new(),
+                                             m.profile.new()))
+        r1, r2 = yield self.multi_async((m.role.new(name='bla'),
+                                         m.role.new(name='foo')))
         # Add a role to a profile
-        pr1, pr2 = yield multi_async((p1.roles.add(r1), p2.roles.add(r1)))
-        self.assertEqual(pr1.role2, r1)
-        self.assertEqual(pr2.role2, r1)
+        pr1, pr2 = yield self.multi_async((p1.roles.add(r1), p2.roles.add(r1)))
+        self.assertEqual(pr1.role, r1)
+        self.assertEqual(pr2.role, r1)
         
 
 class TestManyToManyThrough(test.TestCase):
@@ -250,10 +246,11 @@ class TestManyToManyThrough(test.TestCase):
         
     def testAdd(self):
         session = self.session()
-        with session.begin():
-            c = session.add(Composite(name='test'))
-            e1 = session.add(Element(name='foo'))
-            e2 = session.add(Element(name='bla'))
+        with session.begin() as t:
+            c = t.add(Composite(name='test'))
+            e1 = t.add(Element(name='foo'))
+            e2 = t.add(Element(name='bla'))
+        yield t.on_result
         c.elements.add(e1, weight=1.5)
         c.elements.add(e2, weight=-1)
         elems = c.elements.throughquery()

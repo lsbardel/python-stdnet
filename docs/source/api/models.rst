@@ -310,7 +310,10 @@ has two methods for registering models, The first one is the :meth:`Router.regis
 method which is used to register a model and, possibly, all its related
 models. In addition it exposes the :meth:`Router.register_applications` method
 for registering all :class:`Model` from a list of python dotted paths or
-python modules. 
+python modules.
+
+Check the :ref:`registering models tutorial <tutorial-registration>`
+for further explanation and examples.
 
 Router
 ~~~~~~~~~~~~~~~~

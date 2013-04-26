@@ -115,26 +115,33 @@ not available in a traditional relational database.
     documentation for more details or ordering and sorting.
 
 
+.. _tutorial-registration:
+
 Registering Models
 ================================
 
 Before playing with the API, we :ref:`register models <register-model>`
-with a backend server. Registration is not compulsory, but it is required when
-using model's :class:`Manager`::
+with a back-end server. Registration is not compulsory, but it can be
+quite useful since it provides a placeholder for models and their backend
+server. The placeholder is given by the :class:`Router` which is
+a mapping from a :class:`Model` and a :class:`Manager`.
+It also allows the use of custom :class:`Manager`::
 
     import odm
 
-    odm.register(Fund, 'redis://my.host.name:6379?db=1')
-    odm.register(Instrument, 'redis://my.host.name:6379?db=1')
-    odm.register(Position, 'redis://my.host.name:6379?db=1')
+    router = odm.Router('redis://my.host.name:6379?db=1')
+    
+    router.register(Fund)
+    router.register(Instrument)
+    router.register(Position)
 
 The above code registers the three models to a redis backend, at redis db 1.
 You can pass several parameters to the connection string, including a ``password``,
 a connection ``timeout`` and a ``namespace`` for your model keys. For example::
 
-    odm.register(Fund, 'redis://my.host.name:6379?db=3&password=pippo&namespace=xxxx.&timeout=5')
+    router.register(Fund, 'redis://my.host.name:6379?db=3&password=pippo&namespace=xxxx.&timeout=5')
 
-includes all possible parameters for a redis backend.
+includes all possible parameters for a :ref:`redis connection string <redis-connection-string>`.
 
 Creating objects
 ==================
@@ -149,8 +156,8 @@ is created by initialising it using keyword arguments which match
 model's :class:`Field` names and then call the :class:`Model.save` method
 to commit it changes to the data-server. Here's an example::
 
-	>>> b = Fund(name='Markowitz', ccy='EUR')
-	>>> b.save()
+	>>> b = router[Fund].new(name='Markowitz', ccy='EUR')
+	>>> b
 	Fund: Markowitz
 	>>> b.id
 	1
@@ -161,5 +168,20 @@ to commit it changes to the data-server. Here's an example::
 	>>> b.description
 	''
 
+Alternatively, one can use the :class:`Router` dot notation::
 
+    >>> b = router.fund.new(name='Markowitz', ccy='EUR')
+    >>> b
+    Fund: Markowitz
+    
+For bulk updates it is better to use the :ref:`session api <model-session>`
+which in this example would look like::
+
+    >>> with router.fund.session().begin() as transaction:
+    >>>     transaction.add(Fund(name='Markowitz', ccy='EUR'))
+    >>>     transaction.add(Fund(name='Pluto', ccy='USD'))
+    >>>     ...
+    >>>
+    
+    
 .. _django: https://www.djangoproject.com/

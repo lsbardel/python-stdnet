@@ -35,6 +35,7 @@ one wishes to do so.
 '''
     def __init__(self, default_backend=None, install_global=False):
         self._registered_models = {}
+        self._registered_names = {}
         self._default_backend = default_backend
         self._install_global = install_global
         
@@ -49,8 +50,17 @@ calling the :meth:`register` method without explicitly passing a backend.'''
         '''List of registered :class:`Model`.'''
         return list(self._registered_models)
     
+    def __contains__(self, model):
+        return model in self._registered_models
+    
     def __getitem__(self, model):
         return self._registered_models[model]
+    
+    def __getattr__(self, name):
+        if name in self._registered_names:
+            return self._registered_names[name]
+        else:
+            return super(Router, self).__getattr__(name)
     
     def register(self, model, backend=None, include_related=True, **params):
         '''Register a :class:`Model` with this :class:`Router`. If the
@@ -71,8 +81,12 @@ model was already registered it does nothing.
             if model in self._registered_models:
                 continue
             registered += 1
-            manager = copy.copy(model.objects)
-            self._registered_models[model] = manager.register(model, backend)
+            manager_class = getattr(model, 'manager_class', Manager)
+            manager = manager_class(model, backend)
+            self._registered_models[model] = manager
+            attr_name = model._meta.name
+            if attr_name not in self._registered_names:
+                self._registered_names[attr_name] = manager
             if self._install_global:
                 model.objects = manager
         if registered:
@@ -84,23 +98,25 @@ in ``exclude`` (if provided).'''
         exclude = exclude or []
         results = []
         for manager in self._registered_models.values():
-            if not mmanager.model._meta.name in exclude:
-                results.append(model.objects.flush())
+            if not manager.model._meta.name in exclude:
+                results.append(manager.flush())
         return multi_async(results)
         
     def unregister(model=None):
         '''Unregister a ``model`` if provided, otherwise it unregister all
-registered models.'''
+registered models. Return a list of unregistered model managers.'''
         if model is not None:
             try:
-                self._registered_models.pop(model)
+                manager = self._registered_models.pop(model)
             except KeyError:
-                return 0
-            return 1
+                return
+            if self._registered_names.get(manager._meta.name) == manager:
+                self._registered_names.pop(manager._meta.name)
+            return [manager]
         else:
-            n = len(self._registered_models)
+            managers = list(self._registered_models.values())
             self._registered_models.clear()
-            return n
+            return managers
     
     def register_applications(self, applications, models=None, backends=None):
         '''A higher level registration functions for group of models located
@@ -156,13 +172,12 @@ flush_models = global_router.flush
 
 
 
-def models_from_model(model, label=None, include_related=False, exclude=None):
-    '''all model in model'''
+def models_from_model(model, include_related=False, exclude=None):
+    '''Generator of all model in model.'''
     exclude = exclude or set()
     if model and model not in exclude:
         exclude.add(model)
-        label = label or model._meta.app_label
-        if not model._meta.abstract and model._meta.app_label == label:
+        if not model._meta.abstract:
             yield model
             if include_related:
                 exclude = set(exclude or ())
@@ -171,10 +186,16 @@ def models_from_model(model, label=None, include_related=False, exclude=None):
                     if hasattr(field, 'relmodel'):
                         for m in (field.relmodel, field.model):
                             for m in models_from_model(
-                                            field.relmodel, label=label,
+                                            field.relmodel,
                                             include_related=include_related,
                                             exclude=exclude):
                                 yield m
+                for manytomany in model._meta.manytomany:
+                    related = getattr(model, manytomany)
+                    for m in models_from_model(related.model,
+                                               include_related=include_related,
+                                               exclude=exclude):
+                        yield m
 
                         
 def model_iterator(application, include_related=True):

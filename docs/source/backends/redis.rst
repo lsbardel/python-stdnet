@@ -27,6 +27,14 @@ Redis loads and mantains the whole dataset into memory, but the dataset is persi
 since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.
 
+
+Requirements
+==================
+
+* redis-py_, provides the standard redis client.
+* pulsar_ optional, only required if the :ref:`asynchronous connection <redis-async>`
+  is used.
+
 .. _redis-connection-string:
 
 Connection String
@@ -148,6 +156,7 @@ The list of arguments passed to the :mod:`stdnet.lib.lua.load_query` script:
 * List of related model to load as ``[num_rel_models, rel_models1, ...]``.
 
 
+.. _redis-async:
 
 Asynchronous Connection
 ===========================
@@ -159,3 +168,5 @@ Asynchronous Connection
 .. _stdnet-redis: https://github.com/lsbardel/redis
 .. _cython: http://cython.org/
 .. _hiredis: https://github.com/antirez/hiredis
+.. _redis-py: https://github.com/andymccurdy/redis-py
+.. _pulsar: https://pypi.python.org/pypi/pulsar

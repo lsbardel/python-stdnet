@@ -28,7 +28,7 @@ class WordItem(odm.StdModel):
     def __unicode__(self):
         return self.word
 
-    objects = WordItemManager()
+    manager_class = WordItemManager
 
     class Meta:
         ordering = -odm.autoincrement()

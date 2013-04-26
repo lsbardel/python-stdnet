@@ -39,14 +39,15 @@ related :class:`StdModel` instance.
          'dt': ...}
        
 * The attribute of a :class:`ForeignKey` can be used to access the related
-  object::
+  object. Using the :ref:`router we created during registration <tutorial-registration>`
+  we get a position instance::
   
-        p = Position.objects.get(id=1)
+        p = router.position.get(id=1)
         p.instrument    # an instance of Instrument
   
   The second statement is equivalent to::
   
-        Instrument.objects.query().get(id=p.instrument_id)
+        router.instrument.query().get(id=p.instrument_id)
   
   .. note::      
   

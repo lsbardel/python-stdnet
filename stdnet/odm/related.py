@@ -175,9 +175,9 @@ of a related model.'''
     def __init__(self, field, model=None, instance=None):
         self.field = field
         model = model or field.model
-        super(RelatedManager,self).__init__(model)
-        self.related_instance = instance
-
+        super(RelatedManager, self).__init__(model)
+        self.related_instance = instance            
+            
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
 
@@ -200,10 +200,7 @@ of a related model.'''
         
     def query(self, transaction=None):
         '''Returns a new :class:`Query` for the :attr:`RelatedManager.model`.'''
-        if transaction:
-            return transaction.session.query(self.model)
-        else:
-            return self.session().query(self.model)
+        return self.session(transaction).query(self.model)
 
 
 class One2ManyRelatedManager(RelatedManager):

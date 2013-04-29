@@ -62,8 +62,7 @@ calling the :meth:`register` method without explicitly passing a backend.'''
     def __getattr__(self, name):
         if name in self._registered_names:
             return self._registered_names[name]
-        else:
-            return super(Router, self).__getattr__(name)
+        raise AttributeError('No model named "%s"' % name)
     
     def register(self, model, backend=None, include_related=True, **params):
         '''Register a :class:`Model` with this :class:`Router`. If the
@@ -176,15 +175,15 @@ method for::
     # PRIVATE METHODS
     
     def _register_applications(self, applications, models, backends):
-        app_defaults = app_defaults or {}
+        backends = backends or {}
         for model in model_iterator(applications):
             meta = model._meta
             name = str(model._meta)
             if models and name not in models:
                 continue
-            if name not in app_defaults:
+            if name not in backends:
                 name = model._meta.app_label
-            kwargs = app_defaults.get(name, default)
+            kwargs = backends.get(name, self._default_backend)
             if not isinstance(kwargs, dict):
                 kwargs = {'backend': kwargs}
             else:
@@ -261,9 +260,10 @@ For example::
                 value = getattr(mod_models, name)
                 meta = getattr(value, '_meta', None)
                 if isinstance(value, StdNetType) and meta:
-                    for model in models_from_model(value, label=label,
+                    for model in models_from_model(value, 
                                             include_related=include_related):
-                        if model not in models:
+                        if model._meta.app_label == label\
+                            and model not in models:
                             models.add(model)
                             yield model
     else:

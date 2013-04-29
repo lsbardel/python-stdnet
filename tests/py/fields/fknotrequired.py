@@ -9,26 +9,24 @@ from examples.models import Feed1, Feed2, CrossData
 
 class NonRequiredForeignKey(test.TestCase):
     models = (Feed1, Feed2, CrossData)
-    
-    def setUp(self):
-        self.register()
         
     def create_feeds(self, *names):
         session = self.session()
-        with self.session().begin() as t:
+        with self.mapper.session().begin() as t:
             for name in names:
                 t.add(Feed1(name=name))
         return t.on_result
             
     def create_feeds_with_data(self, *names, **kwargs):
+        models = self.mapper
         yield self.create_feeds(*names)
-        all = yield Feed1.objects.filter(name=names).all()
+        all = yield models.feed1.filter(name=names).all()
         params = {'pv': 30, 'delta': 40, 'name': 'live'}
         params.update(kwargs)
         name = params.pop('name')
-        with self.session().begin() as t:
+        with models.session().begin() as t:
             for feed in all:
-                feed.live = yield CrossData(name=name, data=params).save()
+                feed.live = yield models.crossdata.new(name=name, data=params)
                 t.add(feed)
         yield t.on_result
         
@@ -72,14 +70,16 @@ class NonRequiredForeignKey(test.TestCase):
             self.assertFalse(feed.prev_id)
             
     def test_load_related(self):
+        models = self.mapper
         yield self.create_feeds('jkjkjk')
-        feed = yield Feed1.objects.query().load_related('live', 'id').get(name='jkjkjk')
+        feed = yield models.feed1.query().load_related('live', 'id').get(name='jkjkjk')
         self.assertEqual(feed.live, None)
 
     def test_load_only_missing_related(self):
         '''load_only on a related field which is missing.'''
+        models = self.mapper
         yield self.create_feeds('ooo', 'ooo2')
-        qs = yield Feed1.objects.query().load_only('live__pv').filter(name__startswith='ooo')
+        qs = yield models.feed1.query().load_only('live__pv').filter(name__startswith='ooo')
         yield self.async.assertEqual(qs.count(), 2)
         qs = yield qs.all()
         for feed in qs:

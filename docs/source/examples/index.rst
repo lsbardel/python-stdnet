@@ -36,6 +36,7 @@ The collection of tutorials examples is available in the
 .. toctree::
    :maxdepth: 1
    
+   registration
    primary
    performance
    underscore

@@ -60,7 +60,7 @@ class TestMetaRepr(FinanceTest):
                             .exclude(type=('equity', 'bond'))
         self.assertTrue(str(query))
         # The query is still lazy
-        self.assertFalse(query.cache())
+        self.assertFalse(query.executed)
         v = yield query.all()
         self.assertTrue(v)
         self.assertEqual(str(query), str(v))

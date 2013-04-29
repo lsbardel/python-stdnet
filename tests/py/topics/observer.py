@@ -1,58 +1,99 @@
 from random import randint
 from time import time
 
-from pulsar.apps.test import sequential
-
-from stdnet import odm
 from stdnet.utils import test
 
 from examples.observer import Observer, Observable
 
 
-@sequential
-class ObserverTest(test.TestCase):
-    models = (Observer,Observable)
+class ObserverData(test.DataGenerator):
+    sizes = {'tiny': (2, 5),   # observable, observers
+             'small': (5, 20),
+             'normal': (10, 80),
+             'big': (50, 500),
+             'huge': (100, 10000)}
     
+    def generate(self):
+        self.observables, self.observers = self.size
+
+
+@test.sequential
+class ObserverTest(test.TestCase):
+    multipledb = 'redis'
+    models = (Observer,Observable)
+    data_cls = ObserverData
+        
     def setUp(self):
-        self.register()
-        for i in range(5):
-            Observable().save()
-        obs = Observable.objects.query().sort_by('id').all()
-        for i in range(20):
-            observer = Observer().save()
-            N = randint(1,5)
-            for i in range(N):
-                observer.underlyings.add(obs[i])
-            self.assertEqual(observer.underlyings.query().count(),N)
+        models = self.mapper
+        # Create the observables and the observers
+        session = models.session()
+        with session.begin() as t:
+            for i in range(self.data.observables):
+                t.add(models.observable())
+            for i in range(self.data.observers):
+                t.add(models.observer())
+        yield t.on_result
+        observables = t.saved[models.observable]
+        observers = t.saved[models.observer]
+        N = len(observables)
+        self.created = {}
+        #
+        with session.begin() as t:
+            for observer in observers:
+                # pick a random number of observables to track
+                self.created[observer.id] = created = set()
+                # The first observervable is observed by all observers
+                created.add(observables[0])
+                observer.underlyings.add(observables[0])
+                for i in range(randint(1, N-1)):
+                    o = observables[randint(0, N-1)]
+                    created.add(o)
+                    observer.underlyings.add(o)
+        yield t.on_result
+        # We should have added several observer_observalbles through instances
+        self.assertEqual(len(t.saved), 1)
     
     def tearDown(self):
-        self.clear_all()
+        return self.clear_all()
         
-    def testMeta(self):
-        s = Observer.updates
-        self.assertEqual(s.penalty,5)
+    def test_meta(self):
+        models = self.mapper
+        s = models.observer.updates
+        self.assertEqual(s.penalty, 5)
+        self.assertTrue(s.session is not None)
+        self.assertTrue(s.is_field)
+        
+    def test_created(self):
+        observers = yield self.models.observer.query().all()
+        self.assertEqual(len(observers), self.data.observers)
+        for o in observers:
+            created = self.created[o.id]
+            observables = yield o.underlyings.all()
+            self.assertEqual(created, set(observables))
             
-    def testSimpleSave(self):
-        obs = Observable.objects.query().sort_by('id').all()
-        obs1 = obs[0]
+    def test_simple_save(self):
+        models = self.mapper
+        obs = yield models.observable.query().get(id=1)
         now = time()
-        self.assertEqual(Observer.updates.size(), 0)
-        obs1.save()
+        yield self.async.assertEqual(models.observer.updates.size(), 0)
+        yield obs.save()
         # The first observable is connected with all observers
-        self.assertEqual(Observer.updates.size(), 20)
+        updates = yield models.observer.updates.size()
+        self.assertEqual(updates, self.data.observers)
         data = list(Observer.updates.irange(0,-1))
         self.assertEqual(len(data), 20)
         for n,sv in enumerate(data,1):
             score, id = sv
             self.assertTrue(score > now)
             
-    def testSave(self):
-        obs = Observable.objects.query().sort_by('id').all()
+    def test_save(self):
+        models = self.mapper
+        obs = yield models.observable.query().sort_by('id').all()
         for o in obs:
             o.save()
         now = time()
         # The first observable is connected with all observers
-        self.assertEqual(Observer.updates.size(), 20)
+        self.assertEqual(models.observer.updates.size(), 20)
         data = list(Observer.updates.irange(0,-1))
         self.assertEqual(len(data), 20)
         penalty = Observer.updates.penalty

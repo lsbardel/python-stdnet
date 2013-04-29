@@ -51,7 +51,17 @@ def make_app_label(new_class, app_label = None):
 
 
 class ModelMeta(object):
-    '''A class for storing meta data of a :class:`Model` class.'''
+    '''A class for storing meta data of a :class:`Model` class. It is the
+base class of :class:`Metaclass`.
+
+.. attribute:: model
+
+    :class:`Model` for which this class is the database metadata container.
+    
+.. attribute:: name
+
+    The name of the :class:`Model`, used to construct the model collection name
+'''
     def __init__(self, model, app_label=None, modelkey=None, abstract=False):
         self.abstract = abstract
         self.model = model
@@ -67,6 +77,11 @@ class ModelMeta(object):
         if not abstract:
             hashmodel(model)
 
+    @property
+    def type(self):
+        '''Model type, either ``structure`` or ``object``.'''
+        return self.model._model_type
+    
     def pkname(self):
         return 'id'
     
@@ -236,7 +251,7 @@ mapper.
         self.ordering = None
         if ordering:
             self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
-
+    
     def pkname(self):
         '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
@@ -475,7 +490,6 @@ class Model(UnicodeMixin):
 classes. It implements the :attr:`uuid` attribute which provides the universal
 unique identifier for an instance of a model.'''
     _model_type = None
-    objects = None
     DoesNotExist = ObjectNotFound
     '''Exception raised when an instance of a model does not exist.'''
     DoesNotValidate = ObjectNotValidated
@@ -531,34 +545,23 @@ otherwise it returns the cached value.'''
         self._dbdata['session'] = session
     session = property(__get_session, __set_session)
 
-    def get_session(self, use_current_session=True):
-        if use_current_session:
-            session = self.session
-            if session is None:
-                session = self.obtain_session()
-        else:
-            session = self.obtain_session()
-        if session is None:
-            raise SessionNotAvailable('No session available')
-        return session
-
-    def obtain_session(self):
-        pass
-
-    def save(self, use_current_session=True):
+    def save(self):
         '''A direct method for saving an object. This method is provided for
 convenience and should not be used when using a :class:`Transaction`.
 This method always commit changes immediately and if the :class:`Session`
 has already started a :class:`Transaction` an error will occur.
 If a session is not available, it tries to create one
 from its :class:`Manager`.'''
-        with self.get_session(use_current_session).begin() as t:
+        if not self.session:
+            raise SessionNotAvailable('No session available')
+        with self.session.begin() as t:
             t.add(self)
         return on_result(t.on_result, lambda r: self)
 
-    def delete(self, use_current_session=True):
-        session = self.get_session(use_current_session)
-        with session.begin() as t:
+    def delete(self):
+        if not self.session:
+            raise SessionNotAvailable('No session available')
+        with self.session.begin() as t:
             t.delete(self)
         return on_result(t.on_result, lambda r: self)
     

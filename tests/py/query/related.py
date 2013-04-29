@@ -49,7 +49,7 @@ in this test class so that we can use the manager in a parallel test suite.'''
         pcache = self.model._meta.dfields['parent'].get_cache_name()
         for n in all:
             self.assertFalse(hasattr(n, pcache))
-        yield test.multi_async((n.parent for n in all))
+        yield self.multi_async((n.parent for n in all))
         for n in all:
             self.assertTrue(hasattr(n, pcache))
             self.assertEqual(getattr(n, pcache), n.parent)
@@ -82,14 +82,21 @@ class TestDeleteSelfRelated(NodeBase, test.TestCase):
     def setUp(self):
         return self.create()
     
-    def tear_down(self):
+    def tearDown(self):
         return self.clear_all()
     
-    def testSelfRelatedDelete(self):
-        yield self.query().delete()
+    def test_related_delete_all(self):
+        all = yield self.query().all()
+        self.assertTrue(all)
+        root = 0
+        for a in all:
+            if a.parent is None:
+                root += 1
+        self.assertEqual(root, 1)
+        yield  self.query().delete()
         yield self.async.assertEqual(self.query().count(), 0)
         
-    def testSelfRelatedRootDelete(self):
+    def test_related_root_delete(self):
         qs = self.query().filter(parent=None)
         yield qs.delete()
         yield self.async.assertEqual(self.query().count(), 0)

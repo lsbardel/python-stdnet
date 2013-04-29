@@ -10,8 +10,7 @@ class fkmeta(test.TestCase):
     
     @classmethod
     def after_setup(cls):
-        session = cls.session()
-        cls.register()
+        session = cls.mapper.session()
         with session.begin() as t:
             t.add(Group(name='bla'))
         yield t.on_result
@@ -30,7 +29,8 @@ class fkmeta(test.TestCase):
         self.assertEqual(p.group_id, None)
         
     def testOldRelatedNone(self):
-        p = yield Person.objects.get(name='foo')
+        models = self.mapper
+        p = yield models.person.get(name='foo')
         g = yield p.group
         self.assertTrue(g)
         self.assertEqual(g, p.group)

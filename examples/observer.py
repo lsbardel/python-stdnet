@@ -35,7 +35,7 @@ class RedisUpdateZset(redisb.Zset):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            flat = tuple(self.flat(cache.toadd))
+            flat = tuple(self.flat(cache.toadd.items()))
             self.client.execute_script('update_observer', self.id, *flat)
             result = True
         if cache.toremove:
@@ -45,7 +45,7 @@ class RedisUpdateZset(redisb.Zset):
         return result
     
     def flat(self, zs):
-        for s,el in zs:
+        for s, el in zs:
             yield s
             yield el[0]
             yield el[1]
@@ -57,13 +57,12 @@ class UpdateZset(odm.Zset):
     def __init__(self, *args, **kwargs):
         self.penalty = kwargs.pop('penalty',self.penalty)
         super(UpdateZset,self).__init__(*args, **kwargs)
-    
-    def add(self, instance):
-        self.update((instance,))
         
     def dump_data(self, instances):
         for instance in instances:
-            yield time(),(self.penalty,instance.id)
+            if hasattr(instance, 'pkvalue'):
+                instance = instance.pkvalue()
+            yield time(), (self.penalty, instance)
 
 # Register the new structure with redis backend
 redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
@@ -79,19 +78,25 @@ class Observable(odm.StdModel):
 
 
 class Observer(odm.StdModel):
-    underlyings = odm.ManyToManyField(Observable, related_name = 'observers')
+    # Underlyings are the Obsarvable this Observer is tracking for updates
+    underlyings = odm.ManyToManyField(Observable, related_name='observers')
     
     # field with a 5 seconds penalty
-    updates = UpdatesField(class_field = True,
-                           penalty = 5)
+    updates = UpdatesField(class_field=True, penalty=5)
     
     
-def update_observers(sender, instances, **kwargs):
+def update_observers(sender, instances, session=None, **kwargs):
+    # Instances of observable got an update. Loop through the updated observables
+    # and push to the observer class updates all the observers of the observable.
+    observers_to_notify = set()
     for observable in instances:
-        Observer.updates.update(observable.observers.query())
+        to_notify = observable.observers.query().get_field('id').all()
+        observers_to_notify.update(to_notify)
+    if observers_to_notify:
+        return session[Observer].updates.update(observers_to_notify)
 
 # Register event
-odm.post_commit.connect(update_observers, sender = Observable)
+odm.post_commit.connect(update_observers, sender=Observable)
             
     
     

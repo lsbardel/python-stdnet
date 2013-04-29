@@ -92,7 +92,7 @@ class setcache(StructureCache):
         
     def update(self, values):
         self.toadd.update(values)
-        self.toremove.difference_update(values)
+        self.toremove.difference_update(self.toadd)
         
     def remove(self, values, add_to_remove = True):
         self.toadd.difference_update(values)

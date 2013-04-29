@@ -16,12 +16,13 @@ from .signals import *
 __all__ = ['Session',
            'SessionModel',
            'Manager',
+           'LazyProxy',
            'Transaction',
            'commit_when_no_transaction',
            'withsession']
 
 def is_query(query):
-    return isinstance(query,Q)
+    return isinstance(query, Q)
 
 
 def commit_when_no_transaction(f):
@@ -51,6 +52,27 @@ a :class:`SessionNotAvailable` exception.'''
     return _
 
 
+class ModelDictionary(dict):
+    
+    def __contains__(self, model):
+        return super(ModelDictionary, self).__contains__(self.meta(model))
+    
+    def __getitem__(self, model):
+        return super(ModelDictionary, self).__getitem__(self.meta(model))
+    
+    def __setitem__(self, model, value):
+        super(ModelDictionary, self).__setitem__(self.meta(model), value)
+        
+    def get(self, model, default=None):
+        return super(ModelDictionary, self).get(self.meta(model), default)
+    
+    def pop(self, model, *args):
+        return super(ModelDictionary, self).pop(self.meta(model), *args)
+    
+    def meta(self, model):
+        return getattr(model, '_meta', model)
+        
+    
 class SessionModel(object):
     '''A :class:`SessionModel` is the container of all objects for a given
 :class:`Model` in a stdnet :class:`Session`.'''
@@ -365,8 +387,8 @@ or using the ``with`` context manager::
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
         self.backend.bind_before_send(self._sent_data)
-        self.deleted = {}
-        self.saved = {}
+        self.deleted = ModelDictionary()
+        self.saved = ModelDictionary()
 
     @property
     def backend(self):
@@ -526,15 +548,22 @@ class Session(object):
     A :class:`Transaction` instance. Not ``None`` if this :class:`Session`
     is in a :ref:`transactional state <transactional-state>`
 
+.. attribute:: router
+
+    An optional instance of a :class:`Router`. If available, any operation
+    on a model is carried out only if that model is in the :attr:`router`
+    and it has the same :attr:`backend` as this session.
+
 .. attribute:: query_class
 
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, query_class=None):
+    def __init__(self, backend, query_class=None, router=None):
         self.backend = getdb(backend)
         self.transaction = None
         self._models = OrderedDict()
+        self._router = router
         self.query_class = query_class or Query
 
     def __str__(self):
@@ -549,16 +578,38 @@ class Session(object):
 
     def __len__(self):
         return len(self._models)
+    
+    def __getitem__(self, model):
+        meta = self.check_model(model)
+        if self._router:
+            return self._router[meta.model]
+        else:
+            return Manager(meta.model, self.backend)
 
+    @property
+    def router(self):
+        return self._router
+    
     @property
     def dirty(self):
         '''set of all changed instances in the session'''
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
         
-    def session(self):
-        '''Create a new session from this :class:`Session`'''
-        return self.__class__(self.backend, self.query_class)
+    def session(self, model=None):
+        '''Create a new session from this :class:`Session` if no ``model``
+is passed, otherwise check if this is a valid session for ``model`` and
+return ``self`` if it is or a new one if it isn't.
+
+:param session: optional :class:`Model` for which the :class:`Session` is
+    required.
+        '''
+        if not model:
+            return self.__class__(self.backend, self.query_class, self._router)
+        elif self._router:
+            return self[model].session(self)
+        else:
+            return self
 
     def begin(self, **options):
         '''Begin a new :class:`Transaction`. If this :class:`Session`
@@ -578,7 +629,7 @@ which is equivalent to::
     ...
     session.commit()
     
-`options` parameter are passed to the :class:`Transaction` constructor.
+``options`` parameters are passed to the :class:`Transaction` constructor.
 '''
         if self.transaction is not None:
             raise InvalidTransaction("A transaction is already begun.")
@@ -598,11 +649,11 @@ construct."""
     def query(self, model, query_class=None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         query_class = query_class or self.query_class
-        return query_class(model._meta, self, **kwargs)
+        return query_class(self.check_model(model), self, **kwargs)
 
     def empty(self, model):
         '''Returns an empty :class:`Query` for ``model``.'''
-        return EmptyQuery(model._meta, self)
+        return EmptyQuery(self.check_model(model), self)
 
     @async()
     def get_or_create(self, model, **kwargs):
@@ -616,6 +667,7 @@ from the **kwargs** parameters.
 :rtype: an instance of  two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
+        self.check_model(model)
         items = yield self.query(model).filter(**kwargs).all()
         try:
             yield model.get_unique_instance(items), False
@@ -643,7 +695,7 @@ If the instance is persistent (it is already stored in the database), an updated
 will be performed, otherwise a new entry will be created once the :meth:`commit`
 method is invoked.
 '''
-        sm = self.model(instance._meta)
+        sm = self.model(self.check_model(instance))
         instance.session = self
         o = sm.add(instance, modified=modified, force_update=force_update)
         if modified and not self.transaction:
@@ -658,7 +710,7 @@ this operation commits changes to the backend server immediately.
 
 :parameter instance: a :class:`StdModel` or a :class:`Structure` instance.
 '''
-        sm = self.model(instance._meta)
+        sm = self.model(self.check_model(instance))
         # not an instance of a Model. Assume it is a query.
         if is_query(instance):
             if instance.session is not self:
@@ -673,16 +725,16 @@ this operation commits changes to the backend server immediately.
     def flush(self, model):
         '''Completely flush a :class:`Model` from the database. No keys
 associated with the model will exists after this operation.'''
-        return self.backend.flush(model._meta)
+        return self.backend.flush(self.check_model(model))
 
     def clean(self, model):
         '''Remove empty keys for a :class:`Model` from the database. No
 empty keys associated with the model will exists after this operation.'''
-        return self.backend.clean(model._meta)
+        return self.backend.clean(self.check_model(model))
 
     def keys(self, model):
         '''Retrieve all keys for a *model*.'''
-        return self.backend.model_keys(model._meta)
+        return self.backend.model_keys(self.check_model(model))
 
     def __contains__(self, instance):
         sm = self._models.get(instance._meta)
@@ -719,8 +771,37 @@ is not given, it removes all instances from this :class:`Session`.'''
                 return sm.expunge(instance)
         else:
             self._models.clear()
+            
+    def check_model(self, model):
+        meta = getattr(model, '_meta', None)
+        if not meta:
+            raise TypeError('"%s" is not a valid model' % model)
+        if meta.type == 'object' and self._router and meta not in self._router:
+            raise InvalidTransaction('Model "%s" not in session router' % meta)
+        return meta
 
 
+class LazyProxy(object):
+    
+    def __init__(self, field):
+        self.field = field
+    
+    @property
+    def name(self):
+        return self.field.name
+    
+    def load(self, instance, session=None, backend=None):
+        raise NotImplementedError
+    
+    def __get__(self, instance, instance_type=None):
+        if not self.field.class_field:
+            if instance is None:
+                return self
+            return self.load(instance, instance.session)
+        else:
+            return self
+    
+    
 class Manager(object):
     '''A manager class for models. Each :class:`StdModel`
 is associated with one :class:`Manager` class.
@@ -769,9 +850,10 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
 '''
-    def __init__(self, model, backend=None):
+    def __init__(self, model, backend=None, router=None):
         self.model = model
         self._backend = backend
+        self._router = router
 
     @property
     def _meta(self):
@@ -781,34 +863,35 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     def backend(self):
         return self._backend
     
+    def __getattr__(self, attrname):
+        result = getattr(self.model, attrname)
+        if isinstance(result, LazyProxy):
+            result = result.load(self, backend=self.backend)
+            if result.session is None:
+                result.session = self.session()
+        return result
+    
     def __str__(self):
         if self.backend:
             return '{0}({1} - {2})'.format(self.__class__.__name__,
-                                           self.model,
+                                           self._meta,
                                            self.backend)
         else:
-            return '{0}({1})'.format(self.__class__.__name__, self.model)
+            return '{0}({1})'.format(self.__class__.__name__, self._meta)
     __repr__ = __str__
 
-    def session(self, *models):
+    def session(self, session=None):
         '''Returns a new :class:`Session`.'''
-        if not self.backend:
-            raise ModelNotRegistered("Model '%s' is not registered with a "\
-                                     "backend database. Cannot use manager." %\
-                                     self.model._meta)
-        backend = self.backend
-        for model in models:
-            c = model.objects.backend
-            if not c:
-                raise ModelNotRegistered("Model '%s' is not registered with a "\
-                                         "backend database. Cannot start a "\
-                                         "transaction." % model._meta)
-            if backend and backend != c:
-                models = ', '.join(('%s' % m._meta for m in models))
-                raise InvalidTransaction("Models %s are registered with "\
-                                         "different databases. Cannot create "
-                                         "transaction." % models)
-        return Session(backend)
+        if self.backend:
+            if session and session.backend == self.backend:
+                return session
+            else:
+                return Session(self.backend, router=self._router)
+    
+    def __call__(self, *args, **kwargs):
+        # The callable method is equivalent of doing self.model() it is just
+        # a shurtcut for a better API
+        return self.model(*args, **kwargs)
     
     def new(self, *args, **kwargs):
         '''Create a new instance of :attr:`model` and commit it to the backend
@@ -818,15 +901,18 @@ server. This a shortcut method for the more verbose::
 '''
         return self.session().add(self.model(*args, **kwargs))
 
-    def transaction(self, *models, **kwargs):
-        '''Return a :class:`Transaction`. If models are specified, it check
-if their managers have the same backend database.'''
-        return self.session(*models).begin(**kwargs)
+    def all(self):
+        '''Return all instances for this manager.
+Equivalent to::
 
+    self.query().all()
+    '''
+        return self.query().all()
+    
     # SESSION Proxy methods
-    def query(self):
+    def query(self, session=None):
         '''Returns a new :class:`Query` for :attr:`Manager.model`.'''
-        return self.session().query(self.model)
+        return self.session(session).query(self.model)
 
     def empty(self):
         '''Returns an empty :class:`Query` for :attr:`Manager.model`.'''
@@ -862,10 +948,5 @@ a full text search value.'''
     def get_or_create(self, **kwargs):
         return self.session().get_or_create(self.model, **kwargs)
 
-    def __copy__(self):
-        cls = self.__class__
-        obj = cls.__new__(cls)
-        d = self.__dict__.copy()
-        d.update({'model': None, '_session': None})
-        obj.__dict__ = d
-        return obj
+    def __hash__(self):
+        return hash(self.model._meta)

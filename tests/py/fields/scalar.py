@@ -35,8 +35,9 @@ class TestAtomFields(test.TestCase):
         return self.clear_all()
         
     def create(self):
-        with self.session().begin() as t:
-            for na,dt in zip(names, dates):
+        models = self.mapper
+        with models.session().begin() as t:
+            for na, dt in zip(names, dates):
                 t.add(self.model(person=na, name=na, dt=dt))
         return t.on_result
             
@@ -90,15 +91,12 @@ class TestAtomFields(test.TestCase):
 
 class TestCharFields(test.TestCase):
     model = SimpleModel
-
-    @classmethod
-    def after_setup(cls):
-        cls.register()
             
     def testUnicode(self):
+        models = self.mapper
         unicode_string=unichr(500) + to_string('ciao') + unichr(300)
-        m = yield self.model(code=unicode_string).save()
-        m = yield self.model.objects.get(id=m.id)
+        m = yield models.simplemodel.new(code=unicode_string)
+        m = yield models.simplemodel.get(id=m.id)
         self.assertEqual(m.code, unicode_string)
         if ispy3k:
             self.assertEqual(str(m), unicode_string)
@@ -110,52 +108,51 @@ class TestCharFields(test.TestCase):
 class TestNumericData(test.TestCase):
     model = NumericData
 
-    @classmethod
-    def after_setup(cls):
-        cls.register()
-            
     def testDefaultValue(self):
-        d = yield NumericData(pv = 1.).save()
+        models = self.mapper
+        d = yield models.numericdata.new(pv=1.)
         self.assertAlmostEqual(d.pv, 1.)
         self.assertAlmostEqual(d.vega, 0.)
         self.assertAlmostEqual(d.delta, 1.)
         self.assertEqual(d.gamma, None)
         
     def testDefaultValue2(self):
-        d = yield NumericData(pv=0., delta=0.).save()
+        models = self.mapper
+        d = yield models.numericdata.new(pv=0., delta=0.)
         self.assertAlmostEqual(d.pv, 0.)
         self.assertAlmostEqual(d.vega, 0.)
         self.assertAlmostEqual(d.delta, 0.)
         self.assertEqual(d.gamma, None)
         
     def testFieldError(self):
-        yield self.async.assertRaises(stdnet.FieldValueError, NumericData().save)
+        models = self.mapper
+        yield self.async.assertRaises(stdnet.FieldValueError,
+                                      models.numericdata.new)
                 
         
 class TestIntegerField(test.TestCase):
     model = Page
-
-    @classmethod
-    def after_setup(cls):
-        cls.register()
             
     def testDefaultValue(self):
+        models = self.mapper
         p = Page()
         self.assertEqual(p.in_navigation, 1)
         p = Page(in_navigation='4')
         self.assertEqual(p.in_navigation, 4)
         self.assertRaises(FieldValueError, p=Page, in_navigation='foo')
-        yield p.save()
+        yield self.session().add(p)
         self.assertEqual(p.in_navigation, 4)
-        p = yield Page.objects.get(id=p.id)
+        p = yield models.page.get(id=p.id)
         self.assertEqual(p.in_navigation, 4)
         
     def testNotValidated(self):
-        p = yield Page().save()
+        models = self.mapper
+        p = yield models.page.new()
         self.assertRaises(FieldValueError, Page, in_navigation='bla')
         
     def testZeroValue(self):
-        p = Page(in_navigation=0)
+        models = self.mapper
+        p = models.page(in_navigation=0)
         self.assertEqual(p.in_navigation, 0)
         yield p.save()
         self.assertEqual(p.in_navigation, 0)
@@ -165,19 +162,17 @@ class TestIntegerField(test.TestCase):
 
 class TestDateData(test.TestCase):
     model = DateData
-
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
     def testDateindateTime(self):
-        v = yield DateData(dt2 = date.today()).save()
-        v = yield DateData.objects.get(id=v.id)
+        models = self.mapper
+        v = yield models.datedata.new(dt2=date.today())
+        v = yield models.datedata.get(id=v.id)
         self.assertEqual(v.dt1, None)
         self.assertEqual(v.dt2.date(), date.today())
         
     def testDefaultdate(self):
-        v = yield DateData().save()
+        models = self.mapper
+        v = yield models.datedata.new()
         self.assertEqual(v.dt1, None)
         self.assertEqual(v.dt2.date(), date.today())
         v.dt2 = None
@@ -187,10 +182,6 @@ class TestDateData(test.TestCase):
 
 class TestBoolField(test.TestCase):
     model = NumericData
-
-    @classmethod
-    def after_setup(cls):
-        cls.register()
          
     def testMeta(self):
         self.assertEqual(len(self.model._meta.indices),1)
@@ -226,10 +217,6 @@ class TestBoolField(test.TestCase):
     
 class TestByteField(test.TestCase):
     model = SimpleModel
-
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
     def testMetaData(self):
         field = SimpleModel._meta.dfields['somebytes']
@@ -240,19 +227,22 @@ class TestByteField(test.TestCase):
         return field
         
     def testValue(self):
-        v = SimpleModel(code='cgfgcgf', somebytes=to_string('hello'))
+        models = self.mapper
+        v = models.simplemodel(code='cgfgcgf', somebytes=to_string('hello'))
         self.assertEqual(v.somebytes, b'hello')
-        yield v.save()
-        v = yield SimpleModel.objects.get(id=v.id)
+        self.assertFalse(v.id)
+        yield models.session().add(v)
+        v = yield models.simplemodel.get(id=v.id)
         self.assertEqual(v.somebytes, b'hello')
         
     def testValueByte(self):
+        models = self.mapper
         b = os.urandom(8)
         v = SimpleModel(code='sdcscdsc', somebytes=b)
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes, b)
-        yield v.save()
-        v = yield SimpleModel.objects.get(id=v.id)
+        yield models.session().add(v)
+        v = yield models.simplemodel.get(id=v.id)
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes, b)
 
@@ -260,10 +250,6 @@ class TestByteField(test.TestCase):
 class TestPickleObjectField(test.TestCase):
     model = Environment
     
-    @classmethod
-    def after_setup(cls):
-        cls.register()
-        
     def testMetaData(self):
         field = self.model._meta.dfields['data']
         self.assertEqual(field.type,'object')
@@ -293,9 +279,9 @@ class TestPickleObjectField(test.TestCase):
 
 class TestErrorAtomFields(test.TestCase):
 
-    def testNotRegistered(self):
+    def testSessionNotAvailable(self):
         m = TestDateModel2(name=names[1], dt=dates[0], person='sdcbsc')
-        self.assertRaises(stdnet.ModelNotRegistered, m.save)
+        self.assertRaises(stdnet.SessionNotAvailable, m.save)
     
     def testNotSaved(self):
         m = TestDateModel2(name=names[1], dt=dates[0])

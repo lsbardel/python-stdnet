@@ -4,37 +4,34 @@ from inspect import ismodule
 from stdnet.utils import native_str
 from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
-from stdnet import getdb, ModelNotRegistered
+from stdnet import getdb, InvalidTransaction
 
 from .base import StdNetType, AlreadyRegistered
-from .session import Manager, Session
+from .session import Manager, Session, ModelDictionary
 
-__all__ = ['Router',
-           'flush_models',
-           'register',
-           'unregister',
-           'registered_models',
-           'model_iterator',
-           'all_models_sessions',
-           'register_applications']
+__all__ = ['Router', 'model_iterator', 'all_models_sessions']
         
         
 class Router(object):
-    '''A router is a mapping of :class:`Model` to a registered
+    '''A router is a mapping of :class:`Model` to the registered
 :class:`Manager` of that model::
     
     from stdnet import odm
     
-    mapper = odm.Router()
-    mapper.register(MyModel, ...)
+    models = odm.Router()
+    models.register(MyModel, ...)
     
-    query = mapper[MyModel].query()
+    # dictionary Notation
+    query = models[MyModel].query()
     
-The ``mapper`` instance in the above snipped can be set globally if
+    # or dotted notation (lowercase)
+    query = models.mymodel.query()
+    
+The ``models`` instance in the above snipped can be set globally if
 one wishes to do so.
 '''
     def __init__(self, default_backend=None, install_global=False):
-        self._registered_models = {}
+        self._registered_models = ModelDictionary()
         self._registered_names = {}
         self._default_backend = default_backend
         self._install_global = install_global
@@ -49,6 +46,12 @@ calling the :meth:`register` method without explicitly passing a backend.'''
     def registered_models(self):
         '''List of registered :class:`Model`.'''
         return list(self._registered_models)
+    
+    def __repr__(self):
+        return '%s %s' % (self.__class__.__name.__, self._registered_models)
+    
+    def __str__(self):
+        return str(self._registered_models)
     
     def __contains__(self, model):
         return model in self._registered_models
@@ -82,7 +85,7 @@ model was already registered it does nothing.
                 continue
             registered += 1
             manager_class = getattr(model, 'manager_class', Manager)
-            manager = manager_class(model, backend)
+            manager = manager_class(model, backend, self)
             self._registered_models[model] = manager
             attr_name = model._meta.name
             if attr_name not in self._registered_names:
@@ -144,6 +147,34 @@ For example::
 '''
         return list(self._register_applications(applications, models, backends))
     
+    def session(self, *models):
+        '''Obatain a :class:`Session` for ``models``, if given, otherwise a
+session for all :attr:`registered_models``, provided they have the same backend.
+If the models don't share the same backend an :class:`InvalidTransaction`
+error is raised.'''
+        models = models or self._registered_models
+        session = None
+        for model in models:
+            if model in self:
+                if session is None:
+                    session = self[model].session()
+                else:
+                    if session.backend != self[model].backend:
+                        raise InvalidTransaction("Models are registered with "\
+                                                 "different databases. Cannot "\
+                                                 "create transaction.")
+        return session
+        
+    def add(self, instance):
+        '''Add an ``instance`` to its backend database. This is a shurtcut
+method for::
+
+    self.session().add(instance)
+'''
+        return self.session().add(instance)
+    
+    # PRIVATE METHODS
+    
     def _register_applications(self, applications, models, backends):
         app_defaults = app_defaults or {}
         for model in model_iterator(applications):
@@ -160,16 +191,6 @@ For example::
                 kwargs = kwargs.copy()
             if self.register(model, include_related=False, **kwargs):
                 yield model
-            
-
-#Provided for backward compatibility
-global_router = Router(install_global=True)
-register = global_router.register
-unregister = global_router.unregister
-registered_models = lambda : global_router.registered_models
-register_applications = global_router.register_applications
-flush_models = global_router.flush
-
 
 
 def models_from_model(model, include_related=False, exclude=None):

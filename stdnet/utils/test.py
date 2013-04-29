@@ -127,17 +127,21 @@ several class methods for testing in a parallel test suite.
     @classmethod
     def setUpClass(cls):
         '''Set up this :class:`TestCase` before test methods are run.'''
+        from stdnet import odm
         if not cls.models and cls.model:
             cls.models = (cls.model,)
         if not cls.model and cls.models:
             cls.model = cls.models[0]
-        cls.namespace = 'stdnet-test-%s.' % gen_unique_id()
+        cls.namespace = 'stdnet-test-%s:' % gen_unique_id()
         if cls.connection_string:
             server = getdb(cls.connection_string, namespace=cls.namespace,
                            **cls.backend_params())
             cls.backend = server
             yield cls.clear_all()
         cls.data = cls.data_cls(cls.size, cls.sizes)
+        cls.mapper = odm.Router(cls.backend)
+        for model in cls.models:
+            cls.mapper.register(model)
         yield cls.after_setup()
         
     @classmethod
@@ -152,16 +156,6 @@ several class methods for testing in a parallel test suite.
     def load_scripts(cls):
         if cls.backend and cls.backend.name == 'redis':
             cls.backend.load_scripts()
-    
-    @classmethod
-    def mapper(cls):
-        '''Utility for creating a :class:`stdnet.odm.Router`
-for the :attr:`models` in this :class:`TestCase`.'''
-        from stdnet import odm
-        mapper = odm.Router(cls.backend)
-        for model in cls.models:
-            mapper.register(model)
-        return mapper
     
     @classmethod
     def clear_all(cls):

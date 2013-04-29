@@ -186,6 +186,10 @@ Each field is specified as a :class:`StdModel` class attribute.
     def default(self):
         return self._default
     
+    @property
+    def class_field(self):
+        return False
+    
     def get_encoder(self, params):
         return None
 

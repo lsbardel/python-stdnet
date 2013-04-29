@@ -1,4 +1,4 @@
-from stdnet import odm, ModelNotRegistered, AlreadyRegistered
+from stdnet import odm, AlreadyRegistered
 from stdnet.utils import test
 
 from examples.models import SimpleModel
@@ -31,7 +31,7 @@ class TestRegistration(test.TestCase):
         for model in apps:
             manager = model.objects
             self.assertFalse(manager.backend)
-            self.assertEqual(manager.model,model)
+            self.assertEqual(manager.model, model)
             self.assertRaises(ModelNotRegistered, manager.session)
 
     def testFlushModel(self):

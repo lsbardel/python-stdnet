@@ -1,0 +1,76 @@
+
+.. _tutorial-registration:
+
+
+.. module:: stdnet.odm
+
+================================
+Registration
+================================
+
+Registration consists in associating a :class:`StdModel` to a :class:`Manager`
+via a :class:`Router`. In this way one can have a group of models associated
+with their managers pointing at their, possibly different, backend servers.
+Registration is straightforward and as shown in the
+:ref:`tutorial application <tutorial>` it is acheived simply by::
+
+    from stdnet import odm
+    
+    models = odm.Router('redis://1270.0.0.1:6379?db=7&password=bla')
+    
+    models.register(Instrument)
+    models.register(Fund)
+    models.register(Position)
+
+The :ref:`connection string <connection-string>` passed as first argument when
+initialising a :class:`Router`, is the default backend of that :class:`Router`.
+It is possible to register models to a different backend by passing a connection
+string to the :meth:`Router.register` method::
+
+    models.register(MyModel, 'redis://1270.0.0.1:6379?db=8&password=bla')
+    
+
+Accessing managers
+=======================
+Given a ``models`` :class:`Router` there are two ways one can access a
+model :class:`Manager` to perform database queries.
+
+Dictionary interface
+~~~~~~~~~~~~~~~~~~~~~~~~
+The most straightforward and intuitive way, for accessing managers, is to use
+the :class:`Router` as a dictionary of :class:`Manager`::
+
+
+    # Crate a Query for Instrument
+    query = models[Instrument].query()
+    #
+    # Create a new Instrument and save it to the backend server
+    inst = models[Instrument].new(...)
+
+.. _router-dotted:
+
+Dotted notation
+~~~~~~~~~~~~~~~~~~~~~~~~
+An alternative to the dictionary interface is the dotted notation, where
+a manager can be access as an attribute of the :class:`Router`, the attribute
+name is given by the :class:`StdModel` metaclass name (usually the clas name of the
+model in lower case)::
+
+    query = models.instrument.query()
+    #
+    inst = models.instrument.new(...)
+    
+
+Utilities
+============================
+
+Instance form UUID
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: from_uuid
+
+
+Model Iterator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: model_iterator

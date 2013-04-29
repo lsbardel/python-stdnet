@@ -44,10 +44,6 @@ class make_random(object):
     
 class TestJsonField(test.TestCase):
     model = Statistics
-    
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
@@ -56,15 +52,17 @@ class TestJsonField(test.TestCase):
         self.assertEqual(field.as_string,True)
         
     def testCreate(self):
+        models = self.mapper
         mean = Decimal('56.4')
         started = date(2010,1,1)
         timestamp = datetime.now()
-        a = yield self.model(dt=date.today(), data={'mean': mean,
+        a = yield models.statistics.new(dt=date.today(),
+                                        data={'mean': mean,
                                               'std': 5.78,
                                               'started': started,
-                                              'timestamp':timestamp}).save()
+                                              'timestamp':timestamp})
         self.assertEqual(a.data['mean'], mean)
-        a = yield self.model.objects.get(id=a.id)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(len(a.data), 4)
         self.assertEqual(a.data['mean'], mean)
         self.assertEqual(a.data['started'], started)
@@ -87,17 +85,17 @@ class TestJsonField(test.TestCase):
         self.assertAlmostEqual(a.data['timestamp'], timestamp)
         
     def test_default(self):
+        models = self.mapper
         a = Statistics(dt=date.today())
         self.assertEqual(a.data, {})
-        yield a.save()
+        yield models.add(a)
         self.assertEqual(a.data, {})
-        a = yield Statistics.objects.get(id=a.id)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(a.data, {})
         
     def testValueError(self):
-        a = Statistics(dt = date.today(),
-                       data = {'mean': self})
-        self.assertRaises(stdnet.FieldValueError,a.save)
+        a = Statistics(dt=date.today(), data={'mean': self})
+        self.assertRaises(stdnet.FieldValueError, a.save)
         self.assertTrue('data' in a._dbdata['errors'])
         
 
@@ -124,14 +122,11 @@ The `as_string` atttribute is set to ``False``.'''
                         'mean': {'1y':1.0,'2y':1.1},
                         'std': {'1y':4.0,'2y':5.1}},
                 'dt': datetime.now()}
-    
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
-    def make(self, data=None):
+    def make(self, data=None, name=None):
         data = data or self.def_data
-        return self.model(name='bla', data=data)
+        name = name or self.data.random_string()
+        return self.model(name=name, data=data)
         
     def testMeta(self):
         field = self.model._meta.dfields['data']
@@ -178,10 +173,11 @@ The `as_string` atttribute is set to ``False``.'''
         self.assertEqual(obj.data__dt.date(), date.today())
         
     def testmakeEmpty2(self):
-        m = self.make({'ts':[1,2,3,4]})
-        obj = yield m.save()
-        obj = yield self.model.objects.get(id=obj.id)
-        self.assertEqual(obj.data,{'ts':[1,2,3,4]})
+        models = self.mapper
+        m = self.make({'ts': [1,2,3,4]})
+        obj = yield models.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
+        self.assertEqual(obj.data, {'ts': [1, 2, 3, 4]})
     
     def testFuzzySmall(self):
         r = make_random()

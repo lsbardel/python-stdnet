@@ -11,16 +11,17 @@ class TestManyToManyBase(object):
     def addsome(self, role1='admin', role2='coder'):
         Role = self.models[0]
         Profile = self.models[1]
-        with self.session().begin() as t:
+        session = self.session()
+        with session.begin() as t:
             profile = t.add(Profile())
             profile2 = t.add(Profile())
             profile3 = t.add(Profile())
             role1 = t.add(Role(name=role1))
             role2 = t.add(Role(name=role2))
         yield t.on_result
-        with self.session().begin() as t:
-            pr1 = profile.roles.add(role1, transaction=t)
-            pr2 = profile.roles.add(role2, transaction=t)
+        with session.begin() as t:
+            pr1 = profile.roles.add(role1)
+            pr2 = profile.roles.add(role2)
         yield t.on_result
         self.assertEqual(len(t.saved), 1)
         self.assertEqual(len(list(t.saved.values())[0]), 2)

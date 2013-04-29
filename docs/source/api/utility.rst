@@ -14,26 +14,6 @@ Default Settings
 
 .. module:: stdnet.odm
 
-Model Utilities
-============================
-
-Instance form UUID
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: from_uuid
-
-
-Model Iterator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: model_iterator
-
-
-Flush Models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: stdnet.odm.flush_models
-
 
 .. _serialize-models:
 
@@ -105,12 +85,7 @@ Exceptions
    
 .. autoclass:: ImproperlyConfigured
    :members:
-   :member-order: bysource
-   
-.. autoclass:: ModelNotRegistered
-   :members:
-   :member-order: bysource
-   
+   :member-order: bysource   
    
 .. autoclass:: QuerySetError
    :members:

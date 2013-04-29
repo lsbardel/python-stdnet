@@ -167,12 +167,6 @@ raises :class:`AttributeError`.'''
 :rtype: Boolean indicating if the model validates.'''
         return self._meta.is_valid(self)
 
-    def obtain_session(self):
-        if self.session is not None:
-            return self.session.session()
-        else:
-            return self.__class__.objects.session()
-
     def todict(self, exclude_cache=False):
         '''Return a dictionary of serialised scalar field for pickling.
 If the *exclude_cache* flag is ``True``, fields with :attr:`Field.as_cache`
@@ -203,9 +197,11 @@ attribute set to ``True`` will be excluded.'''
     def load_fields(self, *fields):
         '''Load extra fields to this :class:`StdModel`.'''
         if self._loadedfields is not None:
+            if self.session is None:
+                raise SessionNotAvailable('No session available')
             meta = self._meta
             kwargs = {meta.pkname(): self.pkvalue()}
-            obj = self.__class__.objects.query().load_only(fields).get(**kwargs)
+            obj = session.query(self).load_only(fields).get(**kwargs)
             for name in fields:
                 field = meta.dfields.get(name)
                 if field is not None:

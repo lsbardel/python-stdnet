@@ -21,7 +21,7 @@ Use the manager for convenience.'''
     model = Task
     
     def make(self, name='pluto'):
-        return self.session().add(Task(id=genid(), name=name))
+        return self.mapper.task.new(id=genid(), name=name)
     
     def test_create(self):
         t1 = yield self.make()
@@ -75,10 +75,6 @@ Use the manager for convenience.'''
 
 class TestAutoId(test.TestCase):
     models = (SimpleModel, Instrument)
-    
-    @classmethod
-    def after_setup(cls):
-        cls.register()
         
     def random_id(self, id=None):
         if self.backend.name == 'mongo':
@@ -102,25 +98,27 @@ class TestAutoId(test.TestCase):
         
     def testCreateWithValue(self):
         # create an instance with an id
+        models = self.mapper
         id = self.random_id()
-        m1 = yield SimpleModel(id=id, code='bla').save()
+        m1 = yield models.simplemodel.new(id=id, code='bla')
         self.assertEqual(m1.id, id)
         self.assertEqual(m1.code, 'bla')
-        m2 = yield SimpleModel(code='foo').save()
+        m2 = yield models.simplemodel.new(code='foo')
         id2 = self.random_id(id)
         self.assertEqualId(m2, id2)
         self.assertEqual(m2.code, 'foo')
-        qs = yield SimpleModel.objects.query().all()
+        qs = yield models.simplemodel.query().all()
         self.assertEqual(len(qs), 2)
         self.assertEqual(set(qs), set((m1, m2)))
     
     def testCreateWithValue2(self):
+        models = self.mapper
         id = self.random_id()
-        m1 = yield Instrument(name='test1', type='bla', ccy='eur').save()
-        m2 = yield Instrument(id=id, name='test2', type='foo', ccy='eur').save()
+        m1 = yield models[Instrument].new(name='test1', type='bla', ccy='eur')
+        m2 = yield models.instrument.new(id=id, name='test2', type='foo', ccy='eur')
         self.assertEqualId(m1, 1)
         self.assertEqual(m2.id, id)
-        qs = yield Instrument.objects.query().all()
+        qs = yield models.instrument.query().all()
         self.assertEqual(len(qs), 2)
         self.assertEqual(set(qs), set((m1,m2)))
     

@@ -16,12 +16,6 @@ class ModelNotAvailable(StdNetException):
     pass
 
 
-class ModelNotRegistered(SessionNotAvailable):
-    '''A :class:`StdNetException` raised when trying to save an instance of a :class:`stdnet.odm.StdModel` not yet
-registered with a :class:`stdnet.backends.BackendDataServer`. Check :func:`stdnet.odm.register` for details.'''
-    pass
-
-
 class InvalidTransaction(StdNetException):
     '''A :class:`StdNetException` raised when trying to create a transaction
 with models registered with different backends.'''

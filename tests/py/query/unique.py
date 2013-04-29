@@ -62,7 +62,7 @@ class TestUniqueFilter(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         all = yield session.query(self.model).all()
-        all2 = yield test.multi_async((query.get(code=m.code) for m in all))
+        all2 = yield self.multi_async((query.get(code=m.code) for m in all))
         self.assertEqual(all, all2)
             
     def testExcludeSimple(self):

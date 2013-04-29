@@ -5,7 +5,7 @@ from stdnet.utils import encoders, iteritems
 from stdnet.utils.async import on_result
 from stdnet import FieldValueError, QuerySetError, ManyToManyError
 
-from .session import Manager
+from .session import Manager, LazyProxy
 from . import signals
 
 
@@ -124,18 +124,13 @@ CompositeFieldId depending on the two foreign keys.'''
     field2.register_with_model(name_relmodel, through)
     pk = CompositeIdField(name_model, name_relmodel)
     pk.register_with_model('id', through)
-
-
-class LazyForeignKey(object):
+    
+    
+class LazyForeignKey(LazyProxy):
     '''Descriptor for a :class:`ForeignKey` field.'''
-    def __init__(self, field):
-        self.field = field
-        
-    def __get__(self, instance, instance_type=None):
-        if instance is None:
-            return self
+    def load(self, instance, session=None, backend=None):
         return instance._load_related_model(self.field)
-
+    
     def __set__(self, instance, value):
         if instance is None:
             raise AttributeError("%s must be accessed via instance"\
@@ -171,36 +166,35 @@ class RelatedManager(Manager):
     '''Base class for managers handling relationships between models.
 While standard :class:`Manager` are class properties of a model,
 related managers are accessed by instances to easily retrieve instances
-of a related model.'''
+of a related model.
+
+.. attribute:: relmodel
+
+    The :class:`StdModel` this related manager relates to.
+    
+.. attribute:: related_instance
+
+    An instance of the :attr:`relmodel`.
+'''
     def __init__(self, field, model=None, instance=None):
         self.field = field
         model = model or field.model
         super(RelatedManager, self).__init__(model)
-        self.related_instance = instance            
+        self.related_instance = instance
             
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
 
-    def session(self, transaction=None):
-        '''Retrieve the session for this :class:`RelatedManager`.
-
-:parameter transaction: an optional session :class:`Transaction` to use.
-:rtype: a :class:`Session`.'''
-        if transaction:
-            return transaction.session
-        session = None
+    def session(self, session=None):
+        '''Override :meth:`Manager.session` so that this :class:`RelatedManager`
+can retrieve the session from the :attr:`related_instance` if available.'''
         if self.related_instance:
             session = self.related_instance.session
-        else:
-            session = self.model.objects.session()
+        # we have a session, we either create a new one return the same session
         if session is not None:
-            return session
+            return session.session(self.model)
         raise QuerySetError('Related manager can be accessed only from\
  a loaded instance of its related model.')
-        
-    def query(self, transaction=None):
-        '''Returns a new :class:`Query` for the :attr:`RelatedManager.model`.'''
-        return self.session(transaction).query(self.model)
 
 
 class One2ManyRelatedManager(RelatedManager):
@@ -213,9 +207,9 @@ via a simple attribute of the model.'''
     def relmodel(self):
         return self.field.relmodel
 
-    def query(self, transaction=None):
+    def query(self, session=None):
         # Override query method to account for related instance if available
-        query = super(One2ManyRelatedManager, self).query(transaction)
+        query = super(One2ManyRelatedManager, self).query(session)
         if self.related_instance is not None:
             kwargs = {self.field.name: self.related_instance}
             return query.filter(**kwargs)
@@ -234,7 +228,7 @@ many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
 attribute of the model.'''
-    def session_instance(self, name, value, transaction, **kwargs):
+    def session_instance(self, name, value, session, **kwargs):
         if self.related_instance is None:
             raise ManyToManyError('Cannot use "%s" method from class' % name)
         elif not self.related_instance.pkvalue():
@@ -248,34 +242,32 @@ attribute of the model.'''
                                   % name)
         kwargs.update({self.name_formodel: value,
                        self.name_relmodel: self.related_instance})
-        return self.session(transaction), self.model(**kwargs)
+        return self.session(session), self.model(**kwargs)
 
-    def add(self, value, transaction=None, **kwargs):
+    def add(self, value, session=None, **kwargs):
         '''Add ``value``, an instance of :attr:`formodel` to the
 :attr:`through` model. This method can only be accessed by an instance of the
 model for which this related manager is an attribute.'''
-        s, instance = self.session_instance('add', value, transaction, **kwargs)
+        s, instance = self.session_instance('add', value, session, **kwargs)
         return s.add(instance)
 
-    def remove(self, value, transaction=None):
+    def remove(self, value, session=None):
         '''Remove *value*, an instance of ``self.model`` from the set of
 elements contained by the field.'''
-        s, instance = self.session_instance('remove', value, transaction)
+        s, instance = self.session_instance('remove', value, session)
         # update state so that the instance does look persistent
         instance.get_state(iid=instance.pkvalue(), action='update')
         return s.delete(instance)
 
-    def throughquery(self, transaction=None):
+    def throughquery(self, session=None):
         '''Return a :class:`Query` on the ``throughmodel``, the model
 used to hold the :ref:`many-to-many relationship <many-to-many>`.'''
-        return super(Many2ManyRelatedManager, self).query(
-                                                transaction=transaction)
+        return super(Many2ManyRelatedManager, self).query(session)
 
-    def query(self, transaction=None):
+    def query(self, session=None):
         # Return a query for the related model
-        ids = self.throughquery().get_field(self.name_formodel)
-        session = self.session(transaction)
-        return session.query(self.formodel).filter(id__in=ids)
+        ids = self.throughquery(session).get_field(self.name_formodel)
+        return self.session(session).query(self.formodel).filter(id=ids)
     
         
 def makeMany2ManyRelatedManager(formodel, name_relmodel, name_formodel):

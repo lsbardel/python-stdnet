@@ -2,6 +2,7 @@ from stdnet.utils import encoders
 from stdnet.utils.exceptions import *
 
 from .fields import Field
+from .session import LazyProxy
 from . import related
 from .struct import *
 
@@ -15,52 +16,48 @@ __all__ = ['StructureField',
            'TimeSeriesField']
 
 
-class StructureFieldProxy(object):
+class StructureFieldProxy(LazyProxy):
     '''A descriptor for a :class:`StructureField`.'''
     def __init__(self, field, factory):
-        self.field = field
+        super(StructureFieldProxy, self).__init__(field)
         self.factory = factory
-        self.cache_name = field.get_cache_name()
         
-    @property
-    def name(self):
-        return self.field.name
-        
-    def __get__(self, instance, instance_type=None):
-        if not self.field.class_field:
-            if instance is None:
-                return self
-            if instance.id is None:
-                raise StructureFieldError('id for %s is not available.\
- Call save on instance before accessing %s.' % (instance._meta, self.name))
-        else:
-            instance = instance_type
-        cache_name = self.cache_name
-        cache_val = None
+    def load(self, instance, session=None, backend=None):
         if self.field.class_field:
-            session = instance.objects.session()
-        else:
-            session = instance.session
+            # don't cache when this is a class field
+            if not backend and session:
+                backend = session.backend
+            return self.get_structure(instance, backend)
+        #
+        cache_name = self.field.get_cache_name()
+        cache_val = None
         try:
             cache_val = getattr(instance, cache_name)
             if not isinstance(cache_val, Structure):
-                raise AttributeError()
+                raise AttributeError
             structure = cache_val 
         except AttributeError:
-            structure = self.get_structure(instance, session)
+            if not backend and session:
+                backend = session.backend
+            structure = self.get_structure(instance, backend)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
                 structure.set_cache(cache_val)
-        structure.session = session
+        if session: # override session only if a new session is given
+            structure.session = session
         return structure
         
-    def get_structure(self, instance, session):
+    def get_structure(self, instance, backend):
+        if not backend:
+            raise StructureFieldError('No backend available')
         if self.field.class_field:
-            id = session.backend.basekey(instance._meta, 'struct', self.name)
-            instance = None
+            id = backend.basekey(instance._meta, 'struct', self.name)
         else:
-            id = session.backend.basekey(instance._meta, 'obj', instance.id,
-                                         self.name)
+            pk = instance.pkvalue()
+            if pk is None:
+                raise StructureFieldError('id for %s is not available. Call'\
+'save on instance before accessing %s.' % (instance._meta, self.name))
+            id = backend.basekey(instance._meta, 'obj', pk, self.name)
         return self.factory(id=id,
                             is_field=True,
                             name=self.name,
@@ -147,9 +144,13 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
         self.index = False
         self.unique = False
         self.primary_key = False
-        self.class_field = class_field
+        self._class_field = class_field
         self.pickler = pickler
         self.value_pickler = value_pickler
+    
+    @property
+    def class_field(self):
+        return self._class_field
     
     def _handle_extras(self, **extras):
         self.struct_params = extras

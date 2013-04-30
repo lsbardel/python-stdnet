@@ -948,5 +948,9 @@ a full text search value.'''
     def get_or_create(self, **kwargs):
         return self.session().get_or_create(self.model, **kwargs)
 
+    def pkvalue(self, instance):
+        '''Return the primary key value for ``instance``.'''
+        return instance.pkvalue()
+    
     def __hash__(self):
         return hash(self.model._meta)

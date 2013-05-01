@@ -850,6 +850,8 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
 '''
+    session_factory = Session
+    
     def __init__(self, model, backend=None, router=None):
         self.model = model
         self._backend = backend
@@ -886,7 +888,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
             if session and session.backend == self.backend:
                 return session
             else:
-                return Session(self.backend, router=self._router)
+                return self.session_factory(self.backend, router=self._router)
     
     def __call__(self, *args, **kwargs):
         # The callable method is equivalent of doing self.model() it is just
@@ -908,6 +910,11 @@ Equivalent to::
     self.query().all()
     '''
         return self.query().all()
+    
+    def create_all(self):
+        '''A method which can implement table creation. For sql models. Does
+nothing for redis or mongo.'''
+        pass        
     
     # SESSION Proxy methods
     def query(self, session=None):

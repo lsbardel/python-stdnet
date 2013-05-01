@@ -42,7 +42,10 @@ range_lookups = {
     
 
 def get_connection_string(scheme, address, params):
-    address = ':'.join((str(b) for b in address))
+    if address:
+        address = ':'.join((str(b) for b in address))
+    else:
+        address = ''
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
@@ -151,11 +154,16 @@ directly, instead, the :func:`getdb` function should be used.
 
     The :class:`BackendQuery` class for this backend.
     
-**METHODS**
+.. attribute:: default_manager
+
+    The default model Manager for this backend. If not
+    provided, the :class:`stdnet.odm.Manager` is used.
+    Default ``None``.
+    
 '''
-    Transaction = None
     Query = None
     structure_module = None
+    default_manager = None
     default_port = 8000
     struct_map = {}
     async_handlers = {}
@@ -363,7 +371,7 @@ def _getdb(scheme, host, params):
     try:
         module = import_module('stdnet.backends.%sb' % scheme)
     except ImportError:
-        module = import_module(scheme)
+        module = import_module('stdnet.backends.sql')
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
     
     

@@ -423,7 +423,6 @@ class StdNetType(ModelType):
             kwargs = meta_options(**meta.__dict__)
         else:
             kwargs = meta_options()
-
         # remove and build field list
         fields = get_fields(bases, attrs)
         # create the new class

@@ -1,12 +1,12 @@
 import copy
-from inspect import ismodule
+from inspect import ismodule, isclass
 
 from stdnet.utils import native_str
 from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
 from stdnet import getdb, InvalidTransaction
 
-from .base import StdNetType, AlreadyRegistered
+from .base import StdNetType, AlreadyRegistered, ModelType
 from .session import Manager, Session, ModelDictionary
 
 __all__ = ['Router', 'model_iterator', 'all_models_sessions']
@@ -83,10 +83,14 @@ model was already registered it does nothing.
             if model in self._registered_models:
                 continue
             registered += 1
-            manager_class = getattr(model, 'manager_class', Manager)
+            default_manager = backend.default_manager or Manager
+            manager_class = getattr(model, 'manager_class', default_manager)
             manager = manager_class(model, backend, self)
             self._registered_models[model] = manager
-            attr_name = model._meta.name
+            if isinstance(model, ModelType):
+                attr_name = model._meta.name
+            else:
+                attr_name = model.__name__.lower()
             if attr_name not in self._registered_names:
                 self._registered_names[attr_name] = manager
             if self._install_global:
@@ -164,6 +168,12 @@ error is raised.'''
                                                  "create transaction.")
         return session
         
+    def create_all(self):
+        '''Loop though :attr:`registered_models` and issue the
+:meth:`Manager.create_all` method.'''
+        for manager in self._registered_models.values():
+            manager.create_all()
+        
     def add(self, instance):
         '''Add an ``instance`` to its backend database. This is a shurtcut
 method for::
@@ -197,7 +207,7 @@ def models_from_model(model, include_related=False, exclude=None):
     exclude = exclude or set()
     if model and model not in exclude:
         exclude.add(model)
-        if not model._meta.abstract:
+        if isinstance(model, ModelType) and not model._meta.abstract:
             yield model
             if include_related:
                 exclude = set(exclude or ())
@@ -216,6 +226,9 @@ def models_from_model(model, include_related=False, exclude=None):
                                                include_related=include_related,
                                                exclude=exclude):
                         yield m
+        elif not isinstance(model, ModelType) and isclass(model):
+            # This is a class which is not o ModelType
+            yield model
 
                         
 def model_iterator(application, include_related=True):

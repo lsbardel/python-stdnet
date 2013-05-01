@@ -6,6 +6,8 @@ Ver. 0.8 - Development
   connections and a departure from the global registration of models.
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
   Pre-alpha at this stage.
+* Added preliminary support for :ref:`Sql backend <sql-server>`.
+  Pre-alpha at this stage.
 * Added the :class:`stdnet.odm.Router` class for registering models in one
   placeholder. With a router one can access managers of the registered models.
   Check the :ref:`registration tutorial <tutorial-registration>` for more

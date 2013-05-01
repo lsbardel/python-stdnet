@@ -94,7 +94,7 @@ several class methods for testing in a parallel test suite.
 
     A :class:`stdnet.BackendDataServer` for this
     :class:`TestCase` class. It is a class attribute which is different
-    for each :class:`TestCase` class and it is created my the
+    for each :class:`TestCase` class and it is created by the
     :meth:`setUpClass` method.
     
 .. attribute:: data_cls
@@ -110,6 +110,11 @@ several class methods for testing in a parallel test suite.
 
     A tuple of models which can be registered by this test. The :attr:`model`
     is always the model at index 0 in :attr:`models`.
+    
+.. attribute:: mapper
+
+    A :class:`stdnet.odm.Router` with all :attr:`models` registered with
+    :attr:`backend`.
 '''
     models = ()
     model = None
@@ -126,7 +131,12 @@ several class methods for testing in a parallel test suite.
     
     @classmethod
     def setUpClass(cls):
-        '''Set up this :class:`TestCase` before test methods are run.'''
+        '''Set up this :class:`TestCase` before test methods are run. here
+is where a :attr:`backend` server instance is created and it is unique for this
+:class:`TestCase` class. It create the :attr:`mapper`,
+a :class:`stdnet.odm.Router` with all :attr:`models` registered.
+There shouldn't be any reason to override this method, use :meth:`after_setup`
+class method instead.'''
         from stdnet import odm
         if not cls.models and cls.model:
             cls.models = (cls.model,)
@@ -146,6 +156,8 @@ several class methods for testing in a parallel test suite.
         
     @classmethod
     def after_setup(cls):
+        '''This class method can be used to setup this :class:`TestCase` class
+after the :meth:`setUpClass` was called. By default it does nothing.'''
         pass
     
     @classmethod

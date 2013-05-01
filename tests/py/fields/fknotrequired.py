@@ -40,26 +40,30 @@ class NonRequiredForeignKey(test.TestCase):
             self.assertFalse(prev)
     
     def test_width_data(self):
+        models = self.mapper
         yield self.create_feeds_with_data('test1')
-        feed = yield Feed1.objects.get(name='test1')
+        feed = yield models.feed1.get(name='test1')
         live = yield feed.live
         self.assertEqual(live.data__pv, 30)
         
     def test_load_only(self):
+        models = self.mapper
         yield self.create_feeds_with_data('test2')
-        feed = yield Feed1.objects.query().load_only('live__data__pv').get(name='test2')
+        feed = yield models.feed1.query().load_only('live__data__pv').get(name='test2')
         self.assertFalse(feed.live.has_all_data)
         self.assertEqual(feed.live.data, {'pv': 30})
       
     def test_filter(self):
+        models = self.mapper
         yield self.create_feeds_with_data('test3', pv=400)
-        feeds = Feed1.objects.filter(live__data__pv__gt=300)
+        feeds = models.feed1.filter(live__data__pv__gt=300)
         yield self.async.assertEqual(feeds.count(), 1)
         
     def test_delete(self):
+        models = self.mapper
         yield self.create_feeds_with_data('test4', 'test5', name='pippo')
-        yield CrossData.objects.filter(name='pippo').delete()
-        feeds = yield Feed1.objects.query().filter(name=('test4', 'test5')).all()
+        yield models.crossdata.filter(name='pippo').delete()
+        feeds = yield models.feed1.query().filter(name=('test4', 'test5')).all()
         self.assertEqual(len(feeds), 2)
         for feed in feeds:
             live = yield feed.live
@@ -87,16 +91,18 @@ class NonRequiredForeignKey(test.TestCase):
        
     def test_load_only_some_missing_related(self):
         '''load_only on a related field which is missing.'''
+        models = self.mapper
         yield self.create_feeds_with_data('aaa1', 'aaa2', name='palo')
-        qs = yield Feed1.objects.query().filter(name__startswith='aaa')\
-                                        .load_only('name', 'live__data__pv').all()
+        qs = yield models.feed1.query().filter(name__startswith='aaa')\
+                                    .load_only('name', 'live__data__pv').all()
         self.assertEqual(len(qs), 2)
         for feed in qs:
             self.assertEqual(feed.live.data, {'pv': 30})
 
     def test_has_attribute(self):
+        models = self.mapper
         yield self.create_feeds_with_data('bbba', 'bbbc')
-        qs = yield Feed1.objects.query().filter(name__startswith='bbb')\
+        qs = yield models.feed1.query().filter(name__startswith='bbb')\
                                 .load_only('name', 'live__data__pv').all()
         self.assertEqual(len(qs), 2)
         for feed in qs:
@@ -107,8 +113,9 @@ class NonRequiredForeignKey(test.TestCase):
                  
     def test_load_related_when_deleted(self):
         '''Use load_related on foreign key which was deleted.'''
+        models = self.mapper
         yield self.create_feeds_with_data('ccc1')
-        feed = yield Feed1.objects.get(name='ccc1')
+        feed = yield models.feed1.get(name='ccc1')
         live = yield feed.live
         self.assertTrue(feed.live)
         self.assertEqual(feed.live.id, feed.live_id)
@@ -118,12 +125,12 @@ class NonRequiredForeignKey(test.TestCase):
         self.assertTrue(feed.live_id)
         self.assertTrue(feed.live)
         #
-        feed = yield Feed1.objects.get(name='ccc1')
+        feed = yield models.feed1.get(name='ccc1')
         live = yield feed.live
         self.assertFalse(feed.live)
         self.assertFalse(feed.live_id)
         #
-        feed = yield Feed1.objects.query().load_related('live').get(name='ccc1')
+        feed = yield models.feed1.query().load_related('live').get(name='ccc1')
         self.assertFalse(feed.live)
         self.assertFalse(feed.live_id)
         

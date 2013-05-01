@@ -101,9 +101,10 @@ class TestDeleteSelfRelated(NodeBase, test.TestCase):
         yield qs.delete()
         yield self.async.assertEqual(self.query().count(), 0)
         
-    def testSelfRelatedFilterDelete(self):
+    def test_related_filter_delete(self):
         query = self.query()
         root = yield query.get(parent=None)
+        self.assertFalse(root.parent)
         qs = query.filter(parent=root)
         yield qs.delete()
         query = self.query()

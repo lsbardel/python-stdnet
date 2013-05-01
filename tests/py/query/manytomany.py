@@ -9,15 +9,14 @@ class TestManyToManyBase(object):
     models = (Role, Profile)
         
     def addsome(self, role1='admin', role2='coder'):
-        Role = self.models[0]
-        Profile = self.models[1]
-        session = self.session()
+        models = self.mapper
+        session = models.session()
         with session.begin() as t:
-            profile = t.add(Profile())
-            profile2 = t.add(Profile())
-            profile3 = t.add(Profile())
-            role1 = t.add(Role(name=role1))
-            role2 = t.add(Role(name=role2))
+            profile = t.add(models.profile())
+            profile2 = t.add(models.profile())
+            profile3 = t.add(models.profile())
+            role1 = t.add(models.role(name=role1))
+            role2 = t.add(models.role(name=role2))
         yield t.on_result
         with session.begin() as t:
             pr1 = profile.roles.add(role1)
@@ -179,21 +178,16 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
         
         
 class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
-    models = (Role, Profile)
-    
-    @classmethod
-    def after_setup(cls):
-        cls.m = cls.mapper()
         
     def testMeta(self):
-        m = self.m
+        models = self.mapper
         through = Profile.roles.model
-        self.assertTrue(through in m)
-        objects = m[through]
+        self.assertTrue(through in models)
+        objects = models[through]
         name = through.__name__
         self.assertEqual(name, 'profile_role')
-        self.assertEqual(objects.backend, m[Profile].backend)
-        self.assertEqual(objects.backend, m[Role].backend)
+        self.assertEqual(objects.backend, models[Profile].backend)
+        self.assertEqual(objects.backend, models[Role].backend)
         self.assertEqual(through.role.field.model, through)
         self.assertEqual(through.profile.field.model, through)
         pk = through.pk()
@@ -206,7 +200,7 @@ class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
         self.assertRaises(ManyToManyError, Role.profiles.add, Profile())
     
     def test_through_query(self):
-        m = self.m
+        m = self.mapper
         p1, p2, p3 = yield self.multi_async((m.profile.new(),
                                              m.profile.new(),
                                              m.profile.new()))
@@ -252,8 +246,8 @@ class TestManyToManyThrough(test.TestCase):
             e1 = t.add(Element(name='foo'))
             e2 = t.add(Element(name='bla'))
         yield t.on_result
-        c.elements.add(e1, weight=1.5)
-        c.elements.add(e2, weight=-1)
-        elems = c.elements.throughquery()
+        yield c.elements.add(e1, weight=1.5)
+        yield c.elements.add(e2, weight=-1)
+        elems = yield c.elements.throughquery().all()
         for elem in elems:
             self.assertTrue(elem.weight)

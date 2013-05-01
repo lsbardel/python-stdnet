@@ -6,17 +6,12 @@ from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 from stdnet.utils.exceptions import *
 
 from .base import StdNetType, Model
-from .session import Session, Manager
-from . import signals
 
 
 __all__ = ['StdModel', 'model_to_dict']
 
 
-StdNetBase = StdNetType('StdNetBase', (Model,), {})
-
-
-class StdModel(StdNetBase):
+class StdModel(StdNetType('StdNetBase', (Model,), {})):
     '''A :class:`Model` which contains data in :class:`Field`.
 
 .. attribute:: _meta
@@ -206,12 +201,6 @@ attribute set to ``True`` will be excluded.'''
                 field = meta.dfields.get(name)
                 if field is not None:
                     setattr(self,field.attname,getattr(obj,field.attname,None))
-
-    def post_commit(self, callable, **params):
-        signals.post_commit.add_callback(lambda *args, **kwargs:\
-                                          callable(self, kwargs, **params),
-                                          sender=self._meta.model)
-        return self
     
     def get_state_action(self):
         return 'override' if self._loadedfields is None else 'update'

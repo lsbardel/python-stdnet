@@ -11,19 +11,20 @@ class TestManager(test.TestCase):
     
     @classmethod
     def after_setup(cls):
-        cls.m = cls.mapper()
+        manager = cls.mapper.simplemodel
         names = test.populate('string', 100, min_len=6, max_len=20)
-        with cls.m[cls.model].session().begin() as t:
+        with manager.session().begin() as t:
             for name in names:
-                t.add(SimpleModel(code=name))
+                t.add(manager(code=name))
         yield t.on_result
         
     def test_manager(self):
-        m = self.m
-        self.assertEqual(m[SimpleModel], m.simplemodel)
+        models = self.mapper
+        self.assertEqual(models[SimpleModel], models.simplemodel)
+        self.assertEqual(models.simplemodel.model, self.model)
     
     def testGetOrCreate(self):
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         v,  created = yield objects.get_or_create(code='test')
         self.assertTrue(created)
         self.assertEqual(v.code,'test')
@@ -32,7 +33,7 @@ class TestManager(test.TestCase):
         self.assertEqual(v,v2)
         
     def testGet(self):
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         v, created = yield objects.get_or_create(code='test2')
         self.assertTrue(created)
         v1 = yield objects.get(code='test2')
@@ -40,27 +41,27 @@ class TestManager(test.TestCase):
         
     def testGetError(self):
         '''Test for a ObjectNotFound exception.'''
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         yield self.async.assertRaises(SimpleModel.DoesNotExist,
                                 lambda: objects.get(code='test3'))
         yield self.async.assertRaises(SimpleModel.DoesNotExist,
                                 lambda: objects.get(id=400))
         
     def testEmptyIDFilter(self):
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         yield self.async.assertEqual(objects.filter(id=400).count(), 0)
         yield self.async.assertEqual(objects.filter(id=1).count(), 1)
         yield self.async.assertEqual(objects.filter(id=2).count(), 1)
         
     def testUniqueFilter(self):
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         yield self.async.assertEqual(objects.filter(code='test4').count(), 0)
         yield objects.get_or_create(code='test4')
         yield self.async.assertEqual(objects.filter(code='test4').count(), 1)
         yield self.async.assertEqual(objects.filter(code='foo').count(), 0)
         
     def testIndexFilter(self):
-        objects = self.m.simplemodel
+        objects = self.mapper.simplemodel
         yield self.async.assertEqual(objects.filter(group='g1').count(), 0)
         v, created = yield objects.get_or_create(code='test5', group='g2')
         yield self.async.assertEqual(objects.filter(group='g1').count(), 0)
@@ -75,13 +76,13 @@ class TestManager(test.TestCase):
                                       objects.get, group='g2')
         
     def testNoFilter(self):
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         filter1 = lambda : objects.filter(description = 'bo').count()
         yield self.async.assertRaises(stdnet.QuerySetError, filter1)
         
     def testContainsAll(self):
         '''Test filter when performing a all request'''
-        objects = self.m[SimpleModel]
+        objects = self.mapper[SimpleModel]
         qs = objects.query()
         all = yield qs.all()
         self.assertTrue(all)
@@ -90,4 +91,9 @@ class TestManager(test.TestCase):
         be = qs.backend_query()
         self.assertEqual(be.cache[None], all)
         
-        
+    def test_pkvalue(self):
+        models = self.mapper
+        all = yield models.simplemodel.all()
+        self.assertTrue(all)
+        for o in all:
+            self.assertEqual(models.simplemodel.pkvalue(o), o.pkvalue())

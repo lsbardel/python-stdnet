@@ -41,6 +41,9 @@ class TestSqlManager(test.TestCase):
         self.assertTrue(user.id)
         self.assertEqual(user.fullname, 'Pippo')
         self.assertEqual(user.email, 'pippo@pippo.com')
-        
     
+    def test_query(self):
+        models = self.mapper
+        query = models.user.query()
+        self.assertEqual(query.model, User)
     

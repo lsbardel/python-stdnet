@@ -5,7 +5,7 @@ from functools import partial
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 from stdnet.utils.exceptions import *
 
-from .base import StdNetType, Model
+from .base import StdNetType, Model, raise_kwargs
 
 
 __all__ = ['StdModel', 'model_to_dict']
@@ -53,13 +53,7 @@ class StdModel(StdNetType('StdNetBase', (Model,), {})):
         kwargs.pop(self._meta.pkname(), None)
         for field in self._meta.scalarfields:
             self.set_field_value(field, kwargs.pop(field.name, None))
-        if kwargs:
-            keys = ', '.join(kwargs)
-            if len(kwargs) > 1:
-                keys += ' are'
-            else:
-                keys += ' is an'
-            raise ValueError("%s invalid keyword for %s." % (keys, self._meta))
+        raise_kwargs(self, kwargs)
 
     @property
     def has_all_data(self):

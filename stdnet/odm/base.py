@@ -5,7 +5,7 @@ import hashlib
 import weakref
 
 from stdnet.utils.exceptions import *
-from stdnet.utils import zip, to_string, UnicodeMixin
+from stdnet.utils import zip, to_string, UnicodeMixin, unique_tuple
 from stdnet.utils.async import on_result
 
 from . import signals
@@ -18,6 +18,7 @@ __all__ = ['Metaclass',
            'Model',
            'ModelBase',
            'ModelState',
+           'create_model',
            'autoincrement',
            'ModelType', # Metaclass for all stdnet ModelBase classes
            'StdNetType', # derived from ModelType, metaclass fro StdModel
@@ -62,7 +63,8 @@ base class of :class:`Metaclass`.
 
     The name of the :class:`Model`, used to construct the model collection name
 '''
-    def __init__(self, model, app_label=None, modelkey=None, abstract=False):
+    def __init__(self, model, app_label=None, modelkey=None, abstract=False,
+                 register=True):
         self.abstract = abstract
         self.model = model
         self.model._meta = self
@@ -74,7 +76,7 @@ base class of :class:`Metaclass`.
             else:
                 modelkey = self.name
         self.modelkey = modelkey
-        if not abstract:
+        if not abstract and register:
             hashmodel(model)
 
     @property
@@ -400,23 +402,25 @@ an id already available, the score of that word is incremented by the
 
 
 class ModelType(type):
-    '''StdModel python metaclass'''
-    is_base_class = True
+    '''Model metaclass'''
     def __new__(cls, name, bases, attrs):
-        parents = [b for b in bases if isinstance(b, ModelType)]
-        if not parents or attrs.pop('is_base_class', False):
+        if attrs.pop('is_base_class', False):
             return super(ModelType, cls).__new__(cls, name, bases, attrs)
         return cls.make(name, bases, attrs, attrs.pop('Meta', None))
 
     @classmethod
     def make(cls, name, bases, attrs, meta):
+        register = attrs.pop('register', True)
+        attributes = attrs.pop('attributes', None)
         new_class = type.__new__(cls, name, bases, attrs)
-        ModelMeta(new_class)
+        ModelMeta(new_class, register=register)
+        if attributes is not None:
+            new_class._meta.attributes = attributes 
         return new_class
 
 
 class StdNetType(ModelType):
-    is_base_class = True
+    '''metaclass for StdModel'''
     @classmethod
     def make(cls, name, bases, attrs, meta):
         if meta:
@@ -574,7 +578,39 @@ from its :class:`Manager`.'''
 ModelBase = ModelType('ModelBase', (Model,), {'is_base_class': True})
 
 
-def from_uuid(uuid, session = None):
+def raise_kwargs(model, kwargs):
+    if kwargs:
+        keys = ', '.join(kwargs)
+        if len(kwargs) > 1:
+            keys += ' are'
+        else:
+            keys += ' is an'
+        raise ValueError("%s invalid keyword for %s." % (keys, model._meta))
+
+
+class LocalModelBase(Model):
+    def __init__(self, *args, **kwargs):
+        attributes = self._meta.attributes
+        if args:
+            N = len(args)
+            if N > len(attributes):
+                raise ValueError('Too many attributes')
+            attrs, attributes = attributes[:N], attributes[N:]
+            for name, value in zip(attrs, args):
+                setattr(self, name, value)
+        for name in attributes:
+            setattr(self, name, kwargs.pop(name, None))
+        raise_kwargs(self, kwargs)
+        
+
+def create_model(name, *attributes, **params):
+    '''Create a local model class'''
+    params['attributes'] = unique_tuple(attributes)
+    params['register'] = False
+    return ModelType(name, (LocalModelBase,), params)
+
+
+def from_uuid(uuid, session=None):
     '''Retrieve a :class:`Model` from its universally unique identifier
 *uuid*. If the *uuid* does not match any instance an exception will raise.'''
     elems = uuid.split('.')

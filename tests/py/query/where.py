@@ -2,7 +2,7 @@ from . import ranges
 
 
 class TestWhere(ranges.NumericTest):
-    multipledb = True
+    multipledb = ('redis', 'mongo')
     
     def testWhere(self):
         session = self.session()

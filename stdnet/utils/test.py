@@ -90,6 +90,18 @@ class TestCase(unittest.TestCase):
 synchronous and asynchronous connections. It contains
 several class methods for testing in a parallel test suite.
 
+.. attribute:: multipledb
+
+    class attribute which indicates which backend can run the test. There are
+    several options:
+    
+    * ``multipledb = False`` The test case does not require a backend and
+      only one :class:`TestCase` class is added to the test-suite regardless
+      of which backend has been tested.
+    * ``multipledb = True``, the default falue. Create as many :class:`TestCase`
+      classes as the number of backend tested, each backend will run the tests.
+    * ``multipledb = string, list, tuple``, Only those backend will run tests.
+      
 .. attribute:: backend
 
     A :class:`stdnet.BackendDataServer` for this

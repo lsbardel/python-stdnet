@@ -628,7 +628,7 @@ from the **kwargs** parameters.
         if sm:
             return sm.get(id)
 
-    def add(self, instance, modified=True, force_update=False):
+    def add(self, instance, modified=True, **kwargs):
         '''Add an *instance* to the session. If the session is not in
 a :ref:`transactional state <transactional-state>`, this operation
 commits changes to the backend server immediately.
@@ -643,7 +643,7 @@ method is invoked.
 '''
         sm = self.model(instance._meta)
         instance.session = self
-        o = sm.add(instance, modified=modified, force_update=force_update)
+        o = sm.add(instance, modified=modified, **kwargs)
         if modified and not self.transaction:
             self.commit()
         return o

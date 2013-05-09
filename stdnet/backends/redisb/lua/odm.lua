@@ -256,6 +256,15 @@ odm.Model = {
         end
     end,
     --
+    -- Check if an id is available in the setid
+    has_id = function(self, id)
+        if self.meta.sorted then
+            return odm.redis.call('zscore', self.idset, id)
+        else
+            return odm.redis.call('sismember', self.idset, id) + 0 == 1
+        end
+    end,
+    --
     _queryset = function(self, destkey, field, unique, key)
         if field == self.meta.id_name then
             self:_add_to_dest(destkey, field, key)
@@ -449,11 +458,17 @@ odm.Model = {
                     if odm.redis.call('hsetnx', idxkey, value, id) + 0 == 0 then
                         -- The value was already available! If the oldid is different from current id and the
                         -- index match the oldid, it is fine otherwise it is a conflict
-                        if oldid == id or not odm.redis.call('hget', idxkey, value) == oldid then
-                            -- remove the field from the instance hashtable so that
-                            -- the next call to _update_indices won't delete the index. Important!
-                            odm.redis.call('hdel', idkey, field)
-                            table.insert(errors, 'Unique constraint "' .. field .. '" violated: "' .. value .. '" is already in database.')
+                        local stored_id = odm.redis.call('hget', idxkey, value)
+                        if oldid == id or not stored_id == oldid then
+                        	-- check that the stored_id actually exists!
+                            if self:has_id(stored_id) then
+	                            -- remove the field from the instance hashtable so that
+	                            -- the next call to _update_indices won't delete the index. Important!
+	                            odm.redis.call('hdel', idkey, field)
+	                            table.insert(errors, 'Unique constraint "' .. field .. '" violated: "' .. value .. '" is already in database.')
+	                        else
+                                odm.redis.call('hset', idxkey, value, id)
+                            end
                         end
                     end
                 elseif value then

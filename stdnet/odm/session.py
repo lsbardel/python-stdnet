@@ -416,10 +416,18 @@ processed.'''
         '''A convenience proxy for :meth:`Session.delete` method.'''
         return self.session.delete(instance)
     
+    def expunge(self, instance=None):
+        '''A convenience proxy for :meth:`Session.expunge` method.'''
+        return self.session.expunge(instance)
+    
     def query(self, model, **kwargs):
         '''A convenience proxy for :meth:`Session.query` method.'''
         return self.session.query(model, **kwargs)
 
+    def model(self, meta):
+        '''A convenience proxy for :meth:`Session.model` method.'''
+        return self.session.model(meta)
+    
     def __enter__(self):
         return self
 
@@ -446,14 +454,6 @@ processed.'''
                                      'Transaction already executed.')
         self.on_result = self._commit()
         return self.on_result
-
-    def model(self, meta):
-        '''Returns the :class:`SessionModel` for *meta*. It is
-a shurtcut method for :meth:`Session.model`.
-
-:param meta: a class:`Model` or a :class:`MetaClass`.
-'''
-        return self.session.model(meta)
     
     # INTERNAL FUNCTIONS
     @async()
@@ -750,7 +750,8 @@ empty keys associated with the model will exists after this operation.'''
         pass
     
     def model(self, meta):
-        '''Returns the :class:`SessionModel` for *meta*.'''
+        '''Returns the :class:`SessionModel` for ``meta``, a class:`Model`
+or a :class:`MetaClass`.'''
         if hasattr(meta, '_meta'):
             meta = meta._meta
         sm = self._models.get(meta)

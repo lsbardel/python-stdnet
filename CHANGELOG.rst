@@ -47,6 +47,7 @@ Ver. 0.8 - Development
 * A new asynchronous redis connection for fully asynchronous usage of the api.
   Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information.
 * Refactored test suite to handle asynchronous and synchronous connections.
+* Redis ``odm`` script is able to fix unique-keys/ids conflicts.
 * **538 regression tests** with **93%** coverage.
   
 .. _vers07:

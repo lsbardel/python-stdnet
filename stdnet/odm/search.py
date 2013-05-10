@@ -166,9 +166,10 @@ with the search engine.'''
             if all:
                 LOGGER.info('Indexing %s objects from %s model.',
                             len(all), model._meta)
-                session = self.session()
-                for group in grouper(1000, all):
-                    with session.begin():
+                for group in grouper(200, all):
+                    LOGGER.info('Indexing %s objects from %s model.',
+                                len(group), model._meta)
+                    with self.session().begin():
                         for obj in group:
                             if obj is None:
                                 break

@@ -169,12 +169,12 @@ with the search engine.'''
                 for group in grouper(200, all):
                     LOGGER.info('Indexing %s objects from %s model.',
                                 len(group), model._meta)
-                    with self.session().begin():
+                    with self.session().begin() as t:
                         for obj in group:
                             if obj is None:
                                 break
                             total += 1
-                            self.index_item(obj, session)
+                            self.index_item(obj, t.session)
         return total
 
     # INTERNALS

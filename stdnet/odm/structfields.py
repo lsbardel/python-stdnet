@@ -22,7 +22,7 @@ class StructureFieldProxy(LazyProxy):
         super(StructureFieldProxy, self).__init__(field)
         self.factory = factory
         
-    def load(self, instance, session=None, backend=None):
+    def load(self, instance, session):
         if self.field.class_field:
             # don't cache when this is a class field
             if not backend and session:
@@ -37,9 +37,7 @@ class StructureFieldProxy(LazyProxy):
                 raise AttributeError
             structure = cache_val 
         except AttributeError:
-            if not backend and session:
-                backend = session.backend
-            structure = self.get_structure(instance, backend)
+            structure = self.get_structure(instance, session)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
                 structure.set_cache(cache_val)
@@ -47,9 +45,16 @@ class StructureFieldProxy(LazyProxy):
             structure.session = session
         return structure
         
-    def get_structure(self, instance, backend):
-        if not backend:
-            raise StructureFieldError('No backend available')
+    def get_structure(self, instance, session):
+        if session is None:
+            raise StructureFieldError('No session available, Cannot access.')
+        return self.factory(session=session,
+                            field=self,
+                            pickler=self.field.pickler,
+                            value_pickler=self.field.value_pickler,
+                            **self.field.struct_params)
+    
+    def get_id(self):
         if self.field.class_field:
             id = backend.basekey(instance._meta, 'struct', self.name)
         else:
@@ -58,12 +63,6 @@ class StructureFieldProxy(LazyProxy):
                 raise StructureFieldError('id for %s is not available. Call'\
 'save on instance before accessing %s.' % (instance._meta, self.name))
             id = backend.basekey(instance._meta, 'obj', pk, self.name)
-        return self.factory(id=id,
-                            is_field=True,
-                            name=self.name,
-                            pickler=self.field.pickler,
-                            value_pickler=self.field.value_pickler,
-                            **self.field.struct_params)
 
 
 class StructureField(Field):

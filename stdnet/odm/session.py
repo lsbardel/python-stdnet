@@ -3,7 +3,7 @@ from copy import copy
 from itertools import chain
 from functools import partial
 
-from stdnet import getdb, session_result
+from stdnet import getdb, session_result, session_data
 from stdnet.utils.async import on_result, async, multi_async
 from stdnet.utils import itervalues, zip
 from stdnet.utils.structures import OrderedDict
@@ -76,22 +76,19 @@ class ModelDictionary(dict):
 class SessionModel(object):
     '''A :class:`SessionModel` is the container of all objects for a given
 :class:`Model` in a stdnet :class:`Session`.'''
-    def __init__(self, meta, session):
-        self.meta = meta
-        self.session = session
-        self.backend.setup_model(meta)
+    def __init__(self, manager):
+        self.manager = manager
         self._new = OrderedDict()
         self._deleted = OrderedDict()
         self._delete_query = []
         self._modified = OrderedDict()
-        self._loaded = {}
+        self._queries = []
 
     def __len__(self):
-        return len(self._new) + len(self._modified) + len(self._deleted) +\
-                len(self._loaded)
+        return len(self._new) + len(self._modified) + len(self._deleted)
 
     def __repr__(self):
-        return self.meta.__repr__()
+        return self._meta.__repr__()
     __str__ = __repr__
     
     def __iter__(self):
@@ -100,45 +97,51 @@ Session model."""
         return iter(self.all())
 
     def all(self):
-        return chain(self._new, self._modified, self._loaded, self._deleted)
+        return chain(self._new, self._modified, self._deleted)
     
     @property
     def backend(self):
-        return self.session.backend
+        '''The backend for this :class:`SessionModel`.'''
+        return self.manager.backend
+    
+    @property
+    def read_backend(self):
+        '''The read-only backend for this :class:`SessionModel`.'''
+        return self.manager.read_backend
     
     @property
     def model(self):
-        return self.meta.model
+        '''The :class:`Model` for this :class:`SessionModel`.'''
+        return self.manager.model
+    
+    @property
+    def _meta(self):
+        '''The :class:`Metaclass` for this :class:`SessionModel`.'''
+        return self.manager._meta
 
     @property
     def new(self):
         ''''The set of all new instances within this ``Session``. This instances
 will be inserted in the database.'''
-        return frozenset(itervalues(self._new))
+        return tuple(itervalues(self._new))
 
     @property
     def modified(self):
         '''The set of all modified instances within this ``Session``. This
 instances will'''
-        return frozenset(itervalues(self._modified))
-
-    @property
-    def loaded(self):
-        '''The set of all unmodified, but not deleted, instances within this
-:class:`Session`.'''
-        return frozenset(itervalues(self._loaded))
+        return tuple(itervalues(self._modified))
 
     @property
     def deleted(self):
         '''The set of all instances marked as 'deleted' within this
 :class:`Session`.'''
-        return frozenset(itervalues(self._deleted))
+        return tuple(itervalues(self._deleted))
 
     @property
     def dirty(self):
         '''The set of all instances which have changed, but not deleted,
 within this :class:`Session`.'''
-        return frozenset(self.iterdirty())
+        return tuple(self.iterdirty())
 
     def iterdirty(self):
         '''Ordered iterator over dirty elements.'''
@@ -148,23 +151,20 @@ within this :class:`Session`.'''
         iid = instance.get_state().iid
         return iid in self._new or\
                iid in self._modified or\
-               iid in self._deleted or\
-               iid in self._loaded
+               iid in self._deleted
 
     def get(self, id):
         if id in self._modified:
             return self._modified.get(id)
         elif id in self._deleted:
             return self._deleted.get(id)
-        elif id in self._loaded:
-            return self._loaded.get(id)
 
     def add(self, instance, modified=True, persistent=None, force_update=False):
         '''Add a new instance to this :class:`SessionModel`.
 
-:param modified: Optional flag indicating if the *instance* has been modified. By
-    default its value is ``True``.
-:param force_update: if *instance* is persistent, it forces an update of the
+:param modified: Optional flag indicating if the ``instance`` has been
+    modified. By default its value is ``True``.
+:param force_update: if ``instance`` is persistent, it forces an update of the
     data rather than a full replacement. This is used by the
     :meth:`insert_update_replace` method. 
 :rtype: The instance added to the session'''
@@ -187,8 +187,6 @@ within this :class:`Session`.'''
         if state.persistent:
             if modified:
                 self._modified[iid] = instance
-            else:
-                self._loaded[iid] = instance
         else:
             self._new[iid] = instance
         return instance
@@ -208,26 +206,25 @@ within this :class:`Session`.'''
             return instance
 
     def pop(self, instance):
-        '''Remove *instance* from the :class:`Session`. Instance could be a
-:class:`Model` or an id.
+        '''Remove ``instance`` from the :class:`SessionModel`. Instance
+could be a :class:`Model` or an id.
 
-:parameter instance: a :class:`Model` or an *id*
+:parameter instance: a :class:`Model` or an ``id``.
 :rtype: the :class:`Model` removed from session or ``None`` if
     it was not in the session.
 '''
-        if isinstance(instance, self.meta.model):
+        if isinstance(instance, self.model):
             iid = instance.get_state().iid
         else:
             iid = instance
         instance = None
-        for d in (self._new, self._modified, self._loaded, self._deleted):
+        for d in (self._new, self._modified, self._deleted):
             if iid in d:
                 inst = d.pop(iid)
                 if instance is None:
                     instance = inst
                 elif inst is not instance:
-                    raise ValueError(\
-                    'Critical error. Instance {0} is duplicated'.format(iid))
+                    raise ValueError('Critical error: %s is duplicated' % iid)
         return instance
 
     def expunge(self, instance):
@@ -242,34 +239,8 @@ within this :class:`Session`.'''
         instance.session = None
         return instance
 
-    def get_delete_query(self, **kwargs):
-        queries = self._delete_query
-        if queries:
-            q = queries[0]
-            if len(queries) > 1:
-                q = q.union(*queries[1:])
-            return q.backend_query(**kwargs)
-
     def query(self):
-        return self.session.query(self.model)
-
-    def pre_commit(self, transaction):
-        d = self.deleted
-        if d:
-            self._deleted.clear()
-            if self.model._model_type == 'object':
-                q = self.query().filter(id=d)
-                self._delete_query.append(q)
-            else:
-                self._delete_query.extend(d)
-            if transaction.signal_delete:
-                pre_delete.send(self.model, instances=self._delete_query,
-                                transaction=transaction)
-        dirty = tuple(self.iterdirty())
-        if dirty and transaction.signal_commit:
-            pre_commit.send(self.model, instances=dirty,
-                            transaction=transaction)
-        return len(self._delete_query) + len(dirty)
+        return self.manager.query(self.model)
 
     def post_commit(self, results):
         '''\
@@ -279,7 +250,7 @@ Process results after a commit.
     items.
 :rtype: a two elements tuple containing a list of instances saved and
     a list of ids of instances deleted.'''
-        tpy = self.meta.pk_to_python
+        tpy = self._meta.pk_to_python
         instances = []
         deleted = []
         errors = []
@@ -307,6 +278,62 @@ Process results after a commit.
                     instances.append(instance)
         return instances, deleted, errors
 
+    def flush(self, model):
+        '''Completely flush :attr:`model` from the database. No keys
+associated with the model will exists after this operation.'''
+        return self.backend.flush(self.model)
+
+    def clean(self, model):
+        '''Remove empty keys for a :attr:`model` from the database. No
+empty keys associated with the model will exists after this operation.'''
+        return self.backend.clean(self.model)
+        
+    def keys(self):
+        '''Retrieve all keys for a :attr:`model`. Uses the
+:attr:`Manager.read_backend`.'''
+        return self.read_backend.model_keys(self.model)
+    
+    ## INTERNALS
+    def get_delete_query(self):
+        queries = self._delete_query
+        deleted = self.deleted
+        if deleted:
+            self._deleted.clear()
+            if self.model._model_type == 'object':
+                q = self.query().filter(id=deleted)
+                queries.append(q)
+            else:
+                queries.extend(deleted)
+        if queries:
+            self._delete_query = []
+            q = queries[0]
+            if len(queries) > 1:
+                q = q.union(*queries[1:])
+            return q
+        
+    def backends_data(self, transaction):
+        be = self.backend
+        rbe = self.read_backend
+        model= self.model
+        meta = model._meta
+        dirty = self.dirty
+        deletes = self.get_delete_query()
+        queries = self._queries
+        if dirty or deletes or queries:
+            if transaction.signal_delete and deletes:
+                pre_delete.send(model, instances=deletes,
+                                transaction=transaction)
+            if dirty and transaction.signal_commit:
+                pre_commit.send(model, instances=dirty,
+                                transaction=transaction)
+            if be == rbe:
+                yield be, session_data(meta, dirty, deletes, queries)
+            else:
+                if dirty or deletes:
+                    yield be, session_data(meta, dirty, deletes, ())
+                if queries:
+                    yield rbe, session_data(meta, (), (), queries)
+            
 
 class SessionStructure(SessionModel):
     '''A :class:`SessionStructure` is the container of all objects for a given
@@ -377,7 +404,6 @@ or using the ``with`` context manager::
     operation. This dictionary is only available once the transaction has
     :attr:`finished`.
 '''
-    _executed = False
     _finished = False
     def __init__(self, session, name=None, signal_commit=True,
                  signal_delete=True):
@@ -386,14 +412,8 @@ or using the ``with`` context manager::
         self.on_result = None
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
-        self.backend.bind_before_send(self._sent_data)
         self.deleted = ModelDictionary()
         self.saved = ModelDictionary()
-
-    @property
-    def backend(self):
-        if self.session is not None:
-            return self.session.backend
 
     @property
     def executed(self):
@@ -401,7 +421,7 @@ or using the ``with`` context manager::
 can be executed once only via the :meth:`commit` method. An executed transaction
 if :attr:`finished` once a response from the backend server has been
 processed.'''
-        return self._executed
+        return self.session is None
     
     @property
     def finished(self):
@@ -424,9 +444,9 @@ processed.'''
         '''A convenience proxy for :meth:`Session.query` method.'''
         return self.session.query(model, **kwargs)
 
-    def model(self, meta):
+    def model(self, model):
         '''A convenience proxy for :meth:`Session.model` method.'''
-        return self.session.model(meta)
+        return self.session.model(model)
     
     def __enter__(self):
         return self
@@ -457,7 +477,20 @@ processed.'''
     
     # INTERNAL FUNCTIONS
     @async()
-    def _post_commit(self, response):
+    def _commit(self):
+        session = self.session
+        self.session = None
+        multi = []
+        for backend, data in session.backends_data(self):
+            multi.append(backend.execute_session(data))
+        resp = yield multi_async(multi)
+        if resp:
+            yield multi_async((self._post_commit(session, r) for r in resp))
+        session.transaction = None
+        yield self.finished
+        
+    @async()
+    def _post_commit(self, session, response):
         '''Callback from the :class:`stdnet.BackendDataServer` once the
 :attr:`session` commit has finished and results are available.
 Results can contain errors.
@@ -469,16 +502,9 @@ Results can contain errors.
 :parameter commands: The commands executed by the
     :class:`stdnet.BackendDataServer` and stored in this :class:`Transaction`
     for information.'''
-        response = response or []
-        session = self.session
-        for sm in session:
-            if sm._delete_query:
-                sm._delete_query = []
-        session.transaction = None
-        self.session = None
         signals = []
         exceptions = []
-        for result in response:
+        for result in response or ():
             if isinstance(result, Exception):
                 exceptions.append(result)
             if not isinstance(result, session_result):
@@ -514,25 +540,6 @@ Results can contain errors.
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures=failures)
-
-    def _pre_commit(self):
-        self._executed = True
-        sent = 0
-        for sm in self.session:
-            sent += sm.pre_commit(self)
-        return sent
-    
-    @async()
-    def _commit(self):
-        if self._pre_commit():
-            result = yield self.backend.execute_session(self.session)
-        else:
-            result = None
-        yield self._post_commit(result)
-        yield self.finished
-
-    def _sent_data(self, sender, data=None, **kwargs):
-        self.data_sent = data
         
 
 class Session(object):
@@ -559,18 +566,17 @@ class Session(object):
     class for querying. Default is :class:`Query`.
 '''
     _structures = {}
-    def __init__(self, backend, query_class=None, router=None):
-        self.backend = getdb(backend)
+    def __init__(self, router, query_class=None):
         self.transaction = None
         self._models = OrderedDict()
         self._router = router
         self.query_class = query_class or Query
 
     def __str__(self):
-        return str(self.backend)
+        return str(self._router)
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__,self)
+        return '%s: %s' % (self.__class__.__name__, self._router)
 
     def __iter__(self):
         for sm in self._models.values():
@@ -596,21 +602,6 @@ class Session(object):
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
         
-    def session(self, model=None):
-        '''Create a new session from this :class:`Session` if no ``model``
-is passed, otherwise check if this is a valid session for ``model`` and
-return ``self`` if it is or a new one if it isn't.
-
-:param session: optional :class:`Model` for which the :class:`Session` is
-    required.
-        '''
-        if not model:
-            return self.__class__(self.backend, self.query_class, self._router)
-        elif self._router:
-            return self[model].session(self)
-        else:
-            return self
-
     def begin(self, **options):
         '''Begin a new :class:`Transaction`. If this :class:`Session`
 is already in a :ref:`transactional state <transactional-state>`,
@@ -649,11 +640,12 @@ construct."""
     def query(self, model, query_class=None, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
         query_class = query_class or self.query_class
-        return query_class(self.check_model(model), self, **kwargs)
+        sm = self.model(model)
+        return query_class(sm._meta, sm, **kwargs)
 
     def empty(self, model):
         '''Returns an empty :class:`Query` for ``model``.'''
-        return EmptyQuery(self.check_model(model), self)
+        return EmptyQuery(self.manager(model).model, self)
 
     @async()
     def get_or_create(self, model, **kwargs):
@@ -667,8 +659,9 @@ from the **kwargs** parameters.
 :rtype: an instance of  two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
-        self.check_model(model)
-        items = yield self.query(model).filter(**kwargs).all()
+        query = self.query(model)
+        model = query.model
+        items = yield query.filter(**kwargs).all()
         try:
             yield model.get_unique_instance(items), False
         except model.DoesNotExist:
@@ -680,7 +673,7 @@ from the **kwargs** parameters.
         if sm:
             return sm.get(id)
 
-    def add(self, instance, modified=True, force_update=False):
+    def add(self, instance, modified=True, **params):
         '''Add an *instance* to the session. If the session is not in
 a :ref:`transactional state <transactional-state>`, this operation
 commits changes to the back-end server immediately and return
@@ -695,9 +688,9 @@ If the instance is persistent (it is already stored in the database), an updated
 will be performed, otherwise a new entry will be created once the :meth:`commit`
 method is invoked.
 '''
-        sm = self.model(self.check_model(instance))
+        sm = self.model(instance)
         instance.session = self
-        o = sm.add(instance, modified=modified, force_update=force_update)
+        o = sm.add(instance, modified=modified, **params)
         if modified and not self.transaction:
             return on_result(self.commit(), lambda r: o)
         else:
@@ -710,7 +703,7 @@ this operation commits changes to the backend server immediately.
 
 :parameter instance: a :class:`StdModel` or a :class:`Structure` instance.
 '''
-        sm = self.model(self.check_model(instance))
+        sm = self.model(instance)
         # not an instance of a Model. Assume it is a query.
         if is_query(instance):
             if instance.session is not self:
@@ -725,19 +718,21 @@ this operation commits changes to the backend server immediately.
     def flush(self, model):
         '''Completely flush a :class:`Model` from the database. No keys
 associated with the model will exists after this operation.'''
+        return self.model(model).flush()
         return self.backend.flush(self.check_model(model))
 
     def clean(self, model):
         '''Remove empty keys for a :class:`Model` from the database. No
 empty keys associated with the model will exists after this operation.'''
+        return self.model(model).clean()
         return self.backend.clean(self.check_model(model))
 
     def keys(self, model):
         '''Retrieve all keys for a *model*.'''
-        return self.backend.model_keys(self.check_model(model))
+        return self.model(model).keys()
 
     def __contains__(self, instance):
-        sm = self._models.get(instance._meta)
+        sm = self.model(instance, False)
         return instance in sm if sm is not None else False
 
     def structure(self, instance):
@@ -745,22 +740,17 @@ empty keys associated with the model will exists after this operation.'''
 :class:`Structure` *instance*.'''
         return self.backend.structure(instance)
 
-    @classmethod
-    def clearall(cls):
-        pass
-    
-    def model(self, meta):
+    def model(self, model, create=True):
         '''Returns the :class:`SessionModel` for ``meta``, a class:`Model`
 or a :class:`MetaClass`.'''
-        if hasattr(meta, '_meta'):
-            meta = meta._meta
-        sm = self._models.get(meta)
-        if sm is None:
-            if meta.model._model_type == 'structure':
-                sm = SessionStructure(meta, self)
+        manager = self.manager(model) 
+        sm = self._models.get(manager)
+        if sm is None and create:
+            if manager.model._model_type == 'structure':
+                sm = SessionStructure(manager)
             else:
-                sm = SessionModel(meta, self)
-            self._models[meta] = sm
+                sm = SessionModel(manager)
+            self._models[manager] = sm
         return sm
 
     def expunge(self, instance=None):
@@ -773,15 +763,24 @@ is not given, it removes all instances from this :class:`Session`.'''
         else:
             self._models.clear()
             
-    def check_model(self, model):
-        meta = getattr(model, '_meta', None)
-        if not meta:
-            raise TypeError('"%s" is not a valid model' % model)
-        if meta.type == 'object' and self._router and meta not in self._router:
-            raise InvalidTransaction('Model "%s" not in session router' % meta)
-        return meta
+    def manager(self, model):
+        try:
+            return self.router[model]
+        except KeyError:
+            meta = getattr(model, '_meta', model)
+            raise InvalidTransaction('"%s" not session mapper' % meta)
 
-
+    def backends_data(self, transaction):
+        backends = {}
+        for sm in self:
+            for backend, data in sm.backends_data(transaction):
+                be = backends.get(backend)
+                if be is None:
+                    backends[backend] = be = []
+                be.append(data)
+        return backends.items()
+            
+      
 class LazyProxy(object):
     
     def __init__(self, field):
@@ -850,12 +849,17 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
+.. attribute:: read_backend
+
+    A :class:`stdnet.BackendDataServer` for read-only operations (Queries).
+
 '''
     session_factory = Session
     
-    def __init__(self, model, backend=None, router=None):
+    def __init__(self, model, backend=None, read_backend=None, router=None):
         self.model = model
         self._backend = backend
+        self._read_backend = read_backend
         self._router = router
 
     @property
@@ -865,6 +869,10 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     @property
     def backend(self):
         return self._backend
+    
+    @property
+    def read_backend(self):
+        return self._read_backend or self._backend
     
     def __getattr__(self, attrname):
         result = getattr(self.model, attrname)
@@ -884,12 +892,9 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     __repr__ = __str__
 
     def session(self, session=None):
-        '''Returns a new :class:`Session`.'''
-        if self.backend:
-            if session and session.backend == self.backend:
-                return session
-            else:
-                return self.session_factory(self.backend, router=self._router)
+        '''Returns a new :class:`Session`. This is a shortcut for the
+:meth:`Router.session` method.'''
+        return self._router.session()
     
     def __call__(self, *args, **kwargs):
         # The callable method is equivalent of doing self.model() it is just
@@ -917,10 +922,11 @@ Equivalent to::
 nothing for redis or mongo.'''
         pass        
     
-    # SESSION Proxy methods
     def query(self, session=None):
         '''Returns a new :class:`Query` for :attr:`Manager.model`.'''
-        return self.session(session).query(self.model)
+        if session is None:
+            session = self.session()
+        return session.query(self.model)
 
     def empty(self):
         '''Returns an empty :class:`Query` for :attr:`Manager.model`.'''

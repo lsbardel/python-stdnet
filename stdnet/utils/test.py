@@ -85,6 +85,19 @@ If ``size`` is not given, the :attr:`size` is used.'''
                         max_length=max_length)[0]
     
     
+def create_backend(self):
+    from stdnet import odm
+    self.namespace = 'stdnet-test-%s:' % gen_unique_id()
+    if self.connection_string:
+        server = getdb(self.connection_string, namespace=self.namespace,
+                       **self.backend_params())
+        self.backend = server
+        yield server.flush()
+        self.mapper = odm.Router(self.backend)
+        for model in self.models:
+            self.mapper.register(model)
+    
+        
 class TestCase(unittest.TestCase):
     '''A :class:`unittest.TestCase` subclass for testing stdnet with
 synchronous and asynchronous connections. It contains
@@ -142,6 +155,14 @@ several class methods for testing in a parallel test suite.
         return {}
     
     @classmethod
+    def setup_models(cls):
+        if not cls.models and cls.model:
+            cls.models = (cls.model,)
+        if not cls.model and cls.models:
+            cls.model = cls.models[0]
+        cls.data = cls.data_cls(cls.size, cls.sizes)
+    
+    @classmethod
     def setUpClass(cls):
         '''Set up this :class:`TestCase` before test methods are run. here
 is where a :attr:`backend` server instance is created and it is unique for this
@@ -149,21 +170,8 @@ is where a :attr:`backend` server instance is created and it is unique for this
 a :class:`stdnet.odm.Router` with all :attr:`models` registered.
 There shouldn't be any reason to override this method, use :meth:`after_setup`
 class method instead.'''
-        from stdnet import odm
-        if not cls.models and cls.model:
-            cls.models = (cls.model,)
-        if not cls.model and cls.models:
-            cls.model = cls.models[0]
-        cls.namespace = 'stdnet-test-%s:' % gen_unique_id()
-        if cls.connection_string:
-            server = getdb(cls.connection_string, namespace=cls.namespace,
-                           **cls.backend_params())
-            cls.backend = server
-            yield cls.clear_all()
-        cls.data = cls.data_cls(cls.size, cls.sizes)
-        cls.mapper = odm.Router(cls.backend)
-        for model in cls.models:
-            cls.mapper.register(model)
+        cls.setup_models()
+        yield create_backend(cls)
         yield cls.after_setup()
         
     @classmethod
@@ -174,17 +182,6 @@ after the :meth:`setUpClass` was called. By default it does nothing.'''
     
     @classmethod
     def tearDownClass(cls):
-        return cls.clear_all()
-        
-    @classmethod
-    def load_scripts(cls):
-        if cls.backend and cls.backend.name == 'redis':
-            cls.backend.load_scripts()
-    
-    @classmethod
-    def clear_all(cls):
-        '''Invokes :meth:`stdnet.BackendDataServer.flush` method on
-the :attr:`backend` attribute.'''
         if cls.backend is not None:
             return cls.backend.flush()
 
@@ -226,6 +223,26 @@ the :attr:`backend` attribute.'''
             raise NotImplementedError
         return pk
 
+
+class TestWrite(TestCase):
+    '''A variant of :class:`TestCase` which clean the backend at each
+test function. Useful when testing write operations.'''
+    @classmethod
+    def setUpClass(cls):
+        cls.setup_models()
+        return cls.after_setup()
+    
+    @classmethod
+    def tearDownClass(cls):
+        pass
+    
+    def _pre_setup(self):
+        return create_backend(self)
+    
+    def _post_teardown(self):
+        if self.backend is not None:
+            return self.backend.flush()
+        
 
 class StdnetPlugin(TestPlugin):
     name = "server"

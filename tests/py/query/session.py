@@ -4,47 +4,43 @@ from stdnet.utils import test, gen_unique_id
 
 from examples.models import SimpleModel, Instrument
 
-@test.sequential
-class TestSession(test.TestCase):
-    model = SimpleModel
-        
-    def tearDown(self):
-        self.clear_all()
-        
-    def testQueryMeta(self):
-        session = self.session()
-        self.assertEqual(len(session._models), 0)
-        qs = session.query(SimpleModel)
-        self.assertTrue(isinstance(qs, odm.Query))
+
+class TestSession(test.TestWrite):
+    models = (SimpleModel, Instrument)
     
     def test_simple_create(self):
-        session = self.session()
+        models = self.mapper
+        session = models.session()
+        self.assertFalse(session.transaction)
         session.begin()
         self.assertTrue(session.transaction)
-        m = SimpleModel(code='pluto', group='planet')
-        session.add(m)
+        m = models.simplemodel(code='pluto', group='planet')
+        self.assertEqual(m, session.add(m))
         self.assertTrue(m in session)
-        sm = session.model(m._meta)
+        sm = session.model(m)
         self.assertEqual(len(sm.new), 1)
         self.assertEqual(len(sm.modified), 0)
         self.assertEqual(len(sm.deleted), 0)
         self.assertTrue(m in sm.new)
         t = yield session.commit()
+        self.assertTrue(t)
         self.assertEqualId(m, 1)
+        self.assertFalse(session.dirty)
         
     def test_create_objects(self):
         # Tests a session with two models. This was for a bug
-        session = self.session()
-        with session.begin() as t:
-            t.add(SimpleModel(code='pluto',group='planet'))
-            t.add(Instrument(name='bla',ccy='EUR',type='equity'))
+        models = self.mapper
+        with models.session().begin() as t:
+            t.add(models.simplemodel(code='pluto',group='planet'))
+            t.add(models.instrument(name='bla',ccy='EUR',type='equity'))
         # The transaction is complete when the on_commit is not asynchronous
         yield t.on_result
-        yield self.async.assertEqual(session.query(SimpleModel).count(), 1)
-        yield self.async.assertEqual(session.query(Instrument).count(), 1)
+        yield self.async.assertEqual(models.simplemodel.query().count(), 1)
+        yield self.async.assertEqual(models.instrument.query().count(), 1)
         
     def test_simple_filter(self):
-        session = self.session()
+        models = self.mapper
+        session = models.session()
         with session.begin() as t:
             t.add(SimpleModel(code='pluto', group='planet'))
             t.add(SimpleModel(code='venus', group='planet'))
@@ -52,7 +48,7 @@ class TestSession(test.TestCase):
         yield t.on_result
         query = session.query(SimpleModel)
         yield self.async.assertEqual(query.count(), 3)
-        self.assertEqual(query.session, session)
+        self.assertEqual(query.session, session.model(SimpleModel))
         all = yield query.all()
         self.assertEqual(len(all), 3)
         qs = query.filter(group='planet')

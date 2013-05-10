@@ -797,24 +797,23 @@ class BackendDataServer(stdnet.BackendDataServer):
             keys.append(json.dumps(load_only))
         return client.eval(where, numkeys, *keys)
         
-    def execute_session(self, session):
+    def execute_session(self, session_data):
         '''Execute a session in redis.'''
         pipe = self.client.pipeline()
-        for sm in session:  #loop through model sessions
+        for sm in session_data:  #loop through model sessions
             meta = sm.meta
             model_type = meta.model._model_type
             if model_type == 'structure':
                 self.flush_structure(sm, pipe)
             elif model_type == 'object':
                 meta_info = json.dumps(self.meta(meta))
-                delquery = sm.get_delete_query(pipe=pipe)
+                delquery = sm.deletes.backend_query(pipe=pipe) if sm.deletes\
+                             else None
                 self.accumulate_delete(pipe, delquery)
-                dirty = tuple(sm.iterdirty())
-                N = len(dirty)
-                if N:
-                    lua_data = [N]
+                if sm.dirty:
+                    lua_data = [len(sm.dirty)]
                     processed = []
-                    for instance in dirty:
+                    for instance in sm.dirty:
                         state = instance.get_state()
                         if not instance.is_valid():
                             raise FieldValueError(

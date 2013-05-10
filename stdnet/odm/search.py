@@ -4,6 +4,7 @@ from itertools import chain
 from inspect import isgenerator, isclass
 from datetime import datetime
 
+from stdnet.utils import grouper
 from stdnet.utils.async import async
 
 from .models import StdModel
@@ -11,7 +12,7 @@ from .fields import DateTimeField, CharField
 from .signals import post_commit, post_delete
 
 
-logger = logging.getLogger('stdnet.search')
+LOGGER = logging.getLogger('stdnet.search')
 
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
@@ -46,14 +47,21 @@ The main methods to be implemented are :meth:`add_item`,
                         yield word
 
         se.add_word_middleware(stopwords('and','or','this','that',...))
+        
+.. attribute:: max_in_session
+
+    Maximum number of instances to be reindexed in one session.
+    Default ``1000``.
 """
-    def __init__(self, backend=None):
+    def __init__(self, backend=None, logger=None, max_in_session=None):
         self._backend = backend
         self.REGISTERED_MODELS = {}
         self.ITEM_PROCESSORS = []
         self.last_indexed = 'last_indexed'
         self.word_middleware = []
         self.add_processor(stdnet_processor(self))
+        self.logger = logger or LOGGER
+        self.max_in_session = max_in_session or 1000
 
     @property
     def backend(self):
@@ -139,15 +147,16 @@ for preprocessing words to be indexed.
         if hasattr(middleware,'__call__'):
             self.word_middleware.append((middleware,for_search))
 
-    def index_item(self, item, transaction):
+    def index_item(self, item):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
 :parameter item: an instance of a :class:`stdnet.odm.StdModel`.
 """
-        self.index_items_from_model((item,), item.__class__, transaction)
+        self.index_items_from_model((item,), item.__class__)
             
-    def index_items_from_model(self, items, model, transaction):
+    @async()
+    def index_items_from_model(self, items, model):
         """This is the main function for indexing items.
 It extracts content from a list of *items* belonging to *model* and
 add it to the index.
@@ -156,15 +165,24 @@ add it to the index.
 :parameter model: The *model* of all *items*.
 :parameter transaction: A transaction for updating indexes.
 """
-        ids = []
+        self.logger.debug('Indexing %s objects of %s model.',
+                          len(all), model._meta)
+        session = self.session(model)
         wft = self.words_from_text
         add = self.add_item
-        for item, data in self._item_data(items):
-            ids.append(item.id)
-            words = chain(*[wft(value) for value in data])
-            add(item, words, transaction)
-        if ids:
-            self.remove_item(model, transaction, ids)
+        total = 0
+        for group in grouper(self.max_in_session, items):
+            with session.begin() as transaction:
+                ids = []
+                for item, data in self._item_data(group):
+                    ids.append(item.id)
+                    words = chain(*[wft(value) for value in data])
+                    add(item, words, transaction)
+                if ids:
+                    total += len(ids)
+                    self.remove_item(model, transaction, ids)
+            yield transaction.on_result
+        yield total
 
     def query(self, model):
         '''Return a query for model when indexing is to be performed.'''
@@ -181,7 +199,7 @@ add it to the index.
         '''Re-index models by removing indexes and rebuilding them by iterating
 through all the instances of :attr:`REGISTERED_MODELS`.'''
         yield self.flush()
-        n = 0
+        total = 0
         # Loop over models
         for model in self.REGISTERED_MODELS:
             # get all fiels to index
@@ -189,11 +207,9 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
                             if f.type=='text'))
             all = yield self.query(model).all()
             if all:
-                with self.session(model).begin() as t:
-                    self.index_items_from_model(all, model, t)
-                yield t.on_result
-                n += len(all)
-        yield n
+                n = yield self.index_items_from_model(group, model)
+                total += n
+        yield total
 
     # INTERNALS
     #################################################################
@@ -209,6 +225,8 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
     def _item_data(self, items):
         fi = self.item_field_iterator
         for item in items:
+            if item is None:    # stop if we get a None
+                break
             data = fi(item)
             if data:
                 yield item, data
@@ -279,15 +297,11 @@ engine index models.'''
                     return self.index(instances, sender, se_session)
 
     def index(self, instances, sender, session):
-        logger.debug('indexing %s instances of %s',
-                     len(instances), sender._meta)
-        with session.begin(name='Index search engine') as t:
-            self.se.index_items_from_model(instances, sender, t)
-        return t.on_result
+        return self.se.index_items_from_model(instances, sender)
 
     def remove(self, instances, sender, session):
-        logger.debug('Removing from search index %s instances of %s',
-                     len(instances), sender._meta)
+        self.logger.debug('Removing from search index %s instances of %s',
+                          len(instances), sender._meta)
         remove_item = self.se.remove_item
         with session.begin(name='Remove search indexes') as t:
             remove_item(sender, t, instances)

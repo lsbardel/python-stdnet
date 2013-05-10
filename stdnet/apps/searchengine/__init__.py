@@ -58,7 +58,7 @@ from stdnet import odm, getdb
 from .models import WordItem
 from . import processors
 
-    
+
 class SearchEngine(odm.SearchEngine):
     """A python implementation for the :class:`stdnet.odm.SearchEngine`
 driver.

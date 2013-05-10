@@ -32,7 +32,8 @@ class TestListField(MultiFieldMixin, test.TestCase):
         self.assertEqual(li.names.size(), 0)
         
     def testPushBack(self):
-        li = yield self.session().add(SimpleList())
+        models = self.mapper
+        li = yield models.simplelist.new()
         with li.session.begin() as t:
             names = li.names
             for elem in self.data.names:

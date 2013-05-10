@@ -10,6 +10,7 @@ __all__ = ['BackendStructure',
            'BackendDataServer',
            'CacheServer',
            'session_result',
+           'session_data',
            'instance_session_result',
            'query_result',
            'range_lookups',
@@ -23,6 +24,7 @@ query_result = namedtuple('query_result','key count')
 # if the instance is persistent on the backend, bid is the id in the backend.
 instance_session_result = namedtuple('instance_session_result',
                                      'iid persistent id deleted score')
+session_data = namedtuple('session_data', 'meta dirty deletes queries')
 session_result = namedtuple('session_result','meta results')
 
 pass_through = lambda x: x
@@ -202,7 +204,10 @@ directly, instead, the :func:`getdb` function should be used.
             return self.issame(other)
         else:
             return False
-        
+    
+    def __hash__(self):
+        return id(self)
+            
     def issame(self, other):
         return self.client == other.client
     

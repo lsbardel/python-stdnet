@@ -7,6 +7,18 @@ from examples.data import FinanceTest
 
 
 class TestMeta(FinanceTest):
+    
+    def test_session_meta(self):
+        models = self.mapper
+        session = models.session()
+        self.assertEqual(session.router, models)
+        self.assertEqual(session.transaction, None)
+        
+    def testQueryMeta(self):
+        models = self.mapper
+        qs = models.instrument.query()
+        self.assertIsInstance(qs, odm.Query)
+        self.assertEqual(qs.model, models.instrument.model)
         
     def testEmpty(self):
         empty = self.session().empty(Instrument)

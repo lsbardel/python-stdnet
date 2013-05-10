@@ -64,13 +64,18 @@ calling the :meth:`register` method without explicitly passing a backend.'''
             return self._registered_names[name]
         raise AttributeError('No model named "%s"' % name)
     
-    def register(self, model, backend=None, include_related=True, **params):
+    def register(self, model, backend=None, read_backend=None,
+                 include_related=True, **params):
         '''Register a :class:`Model` with this :class:`Router`. If the
 model was already registered it does nothing.
 
 :param model: a :class:`Model` class.
 :param backend: a :class:`stdnet.BackendDataServer` or a
     :ref:`connection string <connection-string>`.
+:param read_backend: Optional :class:`stdnet.BackendDataServer` for read
+    operations. This is useful when the server has a master/slave
+    configuration, where the master accept write and read operations
+    and the ``slave`` read only operations.
 :param include_related: ``True`` if related models to ``model`` needs to be
     registered. Default ``True``.
 :param params: Additional parameters for the :func:`getdb` function.
@@ -78,6 +83,8 @@ model was already registered it does nothing.
 '''
         backend = backend or self._default_backend
         backend = getdb(backend=backend, **params)
+        if read_backend:
+            read_backend = getdb(read_backend)
         registered = 0
         for model in models_from_model(model, include_related=include_related):
             if model in self._registered_models:
@@ -85,7 +92,7 @@ model was already registered it does nothing.
             registered += 1
             default_manager = backend.default_manager or Manager
             manager_class = getattr(model, 'manager_class', default_manager)
-            manager = manager_class(model, backend, self)
+            manager = manager_class(model, backend, read_backend, self)
             self._registered_models[model] = manager
             if isinstance(model, ModelType):
                 attr_name = model._meta.name
@@ -150,23 +157,9 @@ For example::
 '''
         return list(self._register_applications(applications, models, backends))
     
-    def session(self, *models):
-        '''Obatain a :class:`Session` for ``models``, if given, otherwise a
-session for all :attr:`registered_models``, provided they have the same backend.
-If the models don't share the same backend an :class:`InvalidTransaction`
-error is raised.'''
-        models = models or self._registered_models
-        session = None
-        for model in models:
-            if model in self:
-                if session is None:
-                    session = self[model].session()
-                else:
-                    if session.backend != self[model].backend:
-                        raise InvalidTransaction("Models are registered with "\
-                                                 "different databases. Cannot "\
-                                                 "create transaction.")
-        return session
+    def session(self):
+        '''Obatain a new :class:`Session` for this ``Router``.'''
+        return Session(self)
         
     def create_all(self):
         '''Loop though :attr:`registered_models` and issue the

@@ -4,12 +4,14 @@ from itertools import chain
 from inspect import isgenerator
 from datetime import datetime
 
+from stdnet.utils import grouper
 from .models import StdModel
 from .fields import DateTimeField, CharField
 from .signals import post_commit, post_delete
 
 
-logger = logging.getLogger('stdnet.search')
+LOGGER = logging.getLogger('stdnet.searchengine')
+
 
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
@@ -154,18 +156,25 @@ through all the instances of model provided.
 If models are not provided, it reindex all models registered
 with the search engine.'''
         self.flush()
-        n = 0
+        total = 0
         # Loop over models
         for model in self.REGISTERED_MODELS:
             # get all fiels to index
             fields = tuple((f.name for f in model._meta.scalarfields\
                             if f.type == 'text'))
-            session = self.session()
-            with session.begin():
-                for obj in model.objects.query().load_only(*fields):
-                    n += 1
-                    self.index_item(obj, session)
-        return n
+            all = model.objects.query().load_only(*fields).all()
+            if all:
+                LOGGER.info('Indexing %s objects from %s model.',
+                            len(all), model._meta)
+                session = self.session()
+                for group in grouper(1000, all):
+                    with session.begin():
+                        for obj in group:
+                            if obj is None:
+                                break
+                            total += 1
+                            self.index_item(obj, session)
+        return total
 
     # INTERNALS
     #################################################################
@@ -244,13 +253,13 @@ engine index models.'''
 
     def index(self, instances, session, sender):
         # The session is not in a transaction since this is a callback
-        logger.debug('indexing %s instances of %s',
+        LOGGER.debug('indexing %s instances of %s',
                      len(instances), sender._meta)
         with session.begin(name='Index search engine') as t:
             self.se.index_items_from_model(instances, sender, t)
 
     def remove(self, instances, session, sender):
-        logger.debug('Removing from search index %s instances of %s',
+        LOGGER.debug('Removing from search index %s instances of %s',
                      len(instances), sender._meta)
         remove_item = self.se.remove_item
         with session.begin(name='Remove search indexes') as t:

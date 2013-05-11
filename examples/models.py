@@ -52,6 +52,8 @@ class Instrument2(Base):
 
     class Meta:
         ordering = 'id'
+        app_label = 'examples2'
+        name = 'instrument'
 
 
 class Fund(Base):

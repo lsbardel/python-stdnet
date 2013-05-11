@@ -92,7 +92,7 @@ class Q(object):
 
     @property
     def backend(self):
-        return self.session.read_backend
+        return self.session.model(self._meta).read_backend
 
     def get_field(self, field):
         '''A :class:`Q` performs a series of operations and ultimately
@@ -585,13 +585,6 @@ to load all fields except a subset specified by *fields*.
 the query on ``id`` which provides a direct access to the :attr:`session`
 instances. If the given primary key is present in the session, the object
 is returned directly without performing any query.'''
-        id = kwargs.get('id')
-        if id is not None and len(kwargs) == 1:
-            # check the current session first
-            el = self.session.get(id)
-            if el is not None:
-                return el
-        # not there, perform the database query
         return self.filter(**kwargs).items(
                                     callback=self.model.get_unique_instance)
 

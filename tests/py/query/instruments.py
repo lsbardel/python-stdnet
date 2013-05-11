@@ -1,17 +1,15 @@
 '''Test query.filter and query.exclude'''
 from stdnet.utils import test
 
-from examples.models import Instrument, Instrument2
-from examples.data import finance_data
+from examples.models import Instrument2, Fund, Position
+from examples import data
 
 
-class TestFilter(test.TestCase):
-    data_cls = finance_data
-    model = Instrument
+class TestFilter(data.FinanceTest):
     
     @classmethod
     def after_setup(cls):
-        return cls.data.create(cls, InstrumentModel=cls.model)
+        return cls.data.create(cls)
         
     def testAll(self):
         session = self.session()
@@ -204,4 +202,12 @@ class TestFilter(test.TestCase):
 
 
 class TestFilterOrdered(TestFilter):
-    model = Instrument2
+    models = (Instrument2, Fund, Position)
+    
+    def test_instrument2(self):
+        instrument = self.mapper.instrument
+        self.assertEqual(instrument.model, Instrument2)
+        self.assertEqual(instrument._meta.app_label, 'examples2')
+        self.assertEqual(instrument._meta.name, 'instrument')
+        self.assertEqual(instrument._meta.modelkey, 'examples2.instrument')
+        self.assertEqual(instrument._meta.ordering.name, 'id')

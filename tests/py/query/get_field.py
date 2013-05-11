@@ -1,7 +1,7 @@
 '''Test query.get_field method for obtaining a single field from a query.'''
 from stdnet.utils import test, zip, is_string
 
-from examples.models import Instrument, Position, ObjectAnalytics,\
+from examples.models import Instrument, ObjectAnalytics,\
                              AnalyticData, Group, Fund
 from examples.data import FinanceTest, INSTS_TYPES, CCYS_TYPES
 
@@ -36,7 +36,6 @@ class TestInstrument(FinanceTest):
 
 
 class TestRelated(FinanceTest):
-    model = Position
 
     @classmethod
     def after_setup(cls):
@@ -44,8 +43,8 @@ class TestRelated(FinanceTest):
         yield cls.data.makePositions(cls)
 
     def testInstrument(self):
-        session = self.session()
-        qs = session.query(self.model).get_field('instrument')
+        models = self.mapper
+        qs = models.position.query().get_field('instrument')
         self.assertEqual(qs._get_field, 'instrument')
         result = yield qs.all()
         self.assertTrue(result)
@@ -53,15 +52,15 @@ class TestRelated(FinanceTest):
             self.assertTrue(type(r), int)
 
     def testFilter(self):
-        session = self.session()
-        qs = session.query(self.model).get_field('instrument')
-        qi = session.query(Instrument).filter(id=qs)
+        models = self.mapper
+        qs = models.position.query().get_field('instrument')
+        qi = models.instrument.filter(id=qs)
         inst = yield qi.all()
         ids = yield qs.all()
         self.assertTrue(inst)
         self.assertTrue(len(ids) >= len(inst))
         idset = set(ids)
-        self.assertEqual(len(idset),len(inst))
+        self.assertEqual(len(idset), len(inst))
         self.assertEqual(idset, set((i.id for i in inst)))
 
 
@@ -108,15 +107,13 @@ class generator(test.DataGenerator):
         yield t.on_result
 
 
-class TestModelField(test.TestCase):
+class TestModelField(test.TestWrite):
     '''Test the get_field method when applied to ModelField'''
     models = (ObjectAnalytics, AnalyticData, Group, Instrument, Fund)
     data_cls = generator
 
-    @classmethod
-    def after_setup(cls):
-        cls.data = yield cls.data_cls(size=cls.size)
-        yield cls.data.create(cls)
+    def setUp(cls):
+        return cls.data.create(cls)
 
     def testLoad(self):
         session = self.session()
@@ -126,26 +123,23 @@ class TestModelField(test.TestCase):
         yield self.async.assertEqual(i.count(), session.query(Instrument).count())
 
     def testLoadMissing(self):
-        session = self.session()
-        session.query(Instrument).filter(id=(1,2,3)).delete()
-        q = session.query(ObjectAnalytics)\
-                   .filter(model_type=Instrument).get_field('id')
-        i = session.query(Instrument).filter(id=q).all()
+        models = self.mapper
+        yield models.instrument.filter(id=(1,2,3)).delete()
+        q = models.objectanalytics.filter(model_type=Instrument).get_field('id')
+        i = yield models.instrument.filter(id=q).all()
         self.assertTrue(i)
 
     def testUnion(self):
+        models = self.mapper
         def query():
-            session = self.session()
-            model_permissions = session.query(ObjectAnalytics).filter(id=(1,2,3))
-            objects = session.query(AnalyticData)\
-                             .exclude(object__model_type=Instrument)\
-                             .get_field('object')
+            model_permissions = models.objectanalytics.filter(id=(1,2,3))
+            objects = models.analyticdata.exclude(object__model_type=Instrument)\
+                                         .get_field('object')
             return model_permissions.union(objects).all()
-        result1 = query()
+        result1 = yield query()
         self.assertTrue(result1)
         # Now remove some instruments
-        session = self.session()
-        session.query(Instrument).filter(id=(1,2,3)).delete()
+        yield models.instrument.filter(id=(1,2,3)).delete()
         #
-        result2 = query()
+        result2 = yield query()
         self.assertTrue(result2)

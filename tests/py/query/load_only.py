@@ -232,8 +232,6 @@ class TestFieldReplace(test.TestCase):
         with session.begin() as t:
             t.add(s)
         yield t.on_result
-        # remove s from session so that we reloaded it
-        self.assertEqual(session.expunge(s), s)
         s = yield query.get(name='a')
         self.assertTrue(s.has_all_data)
         self.assertEqual(s.data, {'pv': {'': 0.5, 'mean': 2, 'std': 3.5}})

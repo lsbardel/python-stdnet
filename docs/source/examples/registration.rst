@@ -35,6 +35,8 @@ Accessing managers
 Given a ``models`` :class:`Router` there are two ways one can access a
 model :class:`Manager` to perform database queries.
 
+.. _router-dict:
+
 Dictionary interface
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The most straightforward and intuitive way, for accessing managers, is to use
@@ -52,14 +54,34 @@ the :class:`Router` as a dictionary of :class:`Manager`::
 Dotted notation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 An alternative to the dictionary interface is the dotted notation, where
-a manager can be access as an attribute of the :class:`Router`, the attribute
-name is given by the :class:`StdModel` metaclass name (usually the clas name of the
-model in lower case)::
+a manager can be accessed as an attribute of the :class:`Router`, the attribute
+name is given by the :class:`StdModel` metaclass name. This is the
+:attr:`ModelMeta.name` attribute of the :attr:`Model._meta` object.
+It is, by default, the class name of the model in lower case::
 
     query = models.instrument.query()
     #
     inst = models.instrument.new(...)
     
+This interface is less verbose than the :ref:`dictionary notation <router-dict>`
+and, importantly, it reduces to zero the imports one has to write on python
+modules using your application, in other words mit makes your application
+less dependent on the actual implementation of :class:`StdModel`.
+
+Multiple backends
+=========================
+
+The :class:`Router` allows to use your models in several different backends
+without changing the way you query your data. In addition it allows to
+specify different backends for ``write`` operations and for ``read`` only
+operations.
+
+To specify a diffenet backend for read operations one registers a model in
+the following way::
+
+    models.register(Position, 'redis://1270.0.0.1:6379?db=8&password=bla',
+                    'redis://1270.0.0.1:6380?db=1')
+
 
 Utilities
 ============================

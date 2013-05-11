@@ -14,7 +14,8 @@ from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
 from .fields import Field, AutoIdField
 
 
-__all__ = ['Metaclass',
+__all__ = ['ModelMeta',
+           'Metaclass',
            'Model',
            'ModelBase',
            'ModelState',
@@ -38,7 +39,7 @@ def get_fields(bases, attrs):
     return fields
 
 
-def make_app_label(new_class, app_label = None):
+def make_app_label(new_class, app_label=None):
     if app_label is None:
         model_module = sys.modules[new_class.__module__]
         try:
@@ -55,21 +56,37 @@ class ModelMeta(object):
     '''A class for storing meta data of a :class:`Model` class. It is the
 base class of :class:`Metaclass`.
 
+.. attribute:: abstract
+
+    If ``True``, it represents an abstract model and no database elements
+    are created.
+    
 .. attribute:: model
 
     :class:`Model` for which this class is the database metadata container.
     
 .. attribute:: name
 
-    The name of the :class:`Model`, used to construct the model collection name
+    Usually it is the :class:`Model` class name in lower-case, but it
+    can be customised.
+
+.. attribute:: app_label
+
+    Unless specified it is the name of the directory or file
+    (if at top level) containing the :class:`Model` definition. It can be
+    customised.
+    
+.. attribute:: modelkey
+
+    The modelkey which is by default given by ``app_label.name``.
 '''
     def __init__(self, model, app_label=None, modelkey=None, abstract=False,
-                 register=True):
+                  name=None, register=True, **kwargs):
         self.abstract = abstract
         self.model = model
         self.model._meta = self
         self.app_label = make_app_label(model, app_label)
-        self.name = model.__name__.lower()
+        self.name = (name or model.__name__).lower()
         if not modelkey:
             if self.app_label:
                 modelkey = '{0}.{1}'.format(self.app_label, self.name)
@@ -85,9 +102,11 @@ base class of :class:`Metaclass`.
         return self.model._model_type
     
     def pkname(self):
+        '''The name of the primary key.'''
         return 'id'
     
     def pk_to_python(self, value, backend):
+        '''Convert the primary key ``value`` to a valid python representation.'''
         return value
 
     def make_object(self, state=None, backend=None):
@@ -121,8 +140,8 @@ base class of :class:`Metaclass`.
 
 
 class Metaclass(ModelMeta):
-    '''An instance of :class:`Metaclass` stores all information
-which maps a :class:`StdModel` into an object in the in a remote
+    '''A :class:`ModelMeta` for storing information which maps a
+:class:`StdModel` into its remote counterpart in the
 :class:`stdnet.BackendDataServer`.
 An instance is initiated by the :mod:`stdnet.odm` when a :class:`StdModel`
 class is created.
@@ -139,39 +158,20 @@ class of :class:`StdModel` in the following way::
 
         class Meta:
             ordering = '-timestamp'
-            modelkey = 'custom'
+            name = 'custom'
 
 
-:parameter abstract: Check the :attr:`abstract` attribute.
+:parameter abstract: Check the :attr:`ModelMeta.abstract` attribute.
 :parameter ordering: Check the :attr:`ordering` attribute.
-:parameter app_label: Check the :attr:`app_label` attribute.
-:parameter modelkey: Check the :attr:`modelkey` attribute.
+:parameter app_label: Check the :attr:`ModelMeta.app_label` attribute.
+:parameter name: Check the :attr:`ModelMeta.name` attribute.
+:parameter modelkey: Check the :attr:`ModelMeta.modelkey` attribute.
 
 **Attributes and methods**:
 
 This is the list of attributes and methods available. All attributes,
 but the ones mantioned above, are initialized by the object relational
 mapper.
-
-.. attribute:: abstract
-
-    If ``True``, it represents an abstract model and no database elements
-    are created.
-
-.. attribute:: app_label
-
-    Unless specified it is the name of the directory or file
-    (if at top level) containing the :class:`StdModel` definition.
-    
-.. attribute:: name
-
-    The name of the :attr:`model`, usually it is the model class name
-    in lower-case, but it can be customised.
-
-.. attribute:: model
-
-    The :class:`StdModel` represented by the :class:`Metaclass`.
-    This attribute is set by the ``odm`` during class initialization.
 
 .. attribute:: ordering
 
@@ -196,12 +196,6 @@ mapper.
     List of :class:`Field` which are indices (:attr:`Field.index` attribute
     set to ``True``).
 
-.. attribute:: modelkey
-
-    Override the modelkey which is by default given by ``app_label.name``
-
-    Default ``None``.
-
 .. attribute:: pk
 
     The :class:`Field` representing the primary key.
@@ -218,12 +212,8 @@ mapper.
 '''
     connection_string = None
 
-    def __init__(self, model, fields, abstract=False, app_label='',
-                 verbose_name=None, ordering=None, modelkey=None, **kwargs):
-        super(Metaclass, self).__init__(model,
-                                        app_label=app_label,
-                                        modelkey=modelkey,
-                                        abstract=abstract)
+    def __init__(self, model, fields, ordering=None, **kwargs):
+        super(Metaclass, self).__init__(model, **kwargs)
         self.fields = []
         self.scalarfields = []
         self.indices = []
@@ -232,7 +222,6 @@ mapper.
         self.timeout = 0
         self.related = {}
         self.manytomany = []
-        self.verbose_name = verbose_name or self.name
         # Check if PK field exists
         pk = None
         pkname = 'id'
@@ -423,31 +412,14 @@ class StdNetType(ModelType):
     '''metaclass for StdModel'''
     @classmethod
     def make(cls, name, bases, attrs, meta):
-        if meta:
-            kwargs = meta_options(**meta.__dict__)
-        else:
-            kwargs = meta_options()
+        kwargs = meta.__dict__ if meta else {}
         # remove and build field list
         fields = get_fields(bases, attrs)
         # create the new class
         new_class = type.__new__(cls, name, bases, attrs)
-        app_label = kwargs.pop('app_label')
-        Metaclass(new_class, fields, app_label=app_label, **kwargs)
+        Metaclass(new_class, fields, **kwargs)
         signals.class_prepared.send(sender=new_class)
         return new_class
-
-
-def meta_options(abstract=False,
-                 app_label=None,
-                 ordering=None,
-                 modelkey=None,
-                 unique_together=None,
-                 **kwargs):
-    return {'abstract': abstract,
-            'app_label':app_label,
-            'ordering':ordering,
-            'modelkey':modelkey,
-            'unique_together':unique_together}
 
 
 class ModelState(object):
@@ -491,7 +463,19 @@ changes to the instance of :class:`Model` for which this is a state.'''
 class Model(UnicodeMixin):
     '''This is the base class for both :class:`StdModel` and :class:`Structure`
 classes. It implements the :attr:`uuid` attribute which provides the universal
-unique identifier for an instance of a model.'''
+unique identifier for an instance of a model.
+
+.. attribute:: _meta
+
+    A class attribute which is an instance of :class:`Metaclass`, it
+    containes all the information needed by a :class:`stdnet.BackendDataServer`.
+    
+.. attribute:: session
+
+    The :class:`Session` which loaded the instance. Only available,
+    when the instance has been loaded from a :class:`stdnet.BackendDataServer`
+    via a :ref:`query operation <tutorial-query>`.
+'''
     _model_type = None
     DoesNotExist = ObjectNotFound
     '''Exception raised when an instance of a model does not exist.'''
@@ -547,28 +531,13 @@ otherwise it returns the cached value.'''
     def __set_session(self, session):
         self._dbdata['session'] = session
     session = property(__get_session, __set_session)
-
-    def save(self):
-        '''A direct method for saving an object. This method is provided for
-convenience and should not be used when using a :class:`Transaction`.
-This method always commit changes immediately and if the :class:`Session`
-has already started a :class:`Transaction` an error will occur.
-If a session is not available, it tries to create one
-from its :class:`Manager`.'''
-        if not self.session:
-            raise SessionNotAvailable('No session available')
-        with self.session.begin() as t:
-            t.add(self)
-        return on_result(t.on_result, lambda r: self)
-
-    def delete(self):
-        if not self.session:
-            raise SessionNotAvailable('No session available')
-        with self.session.begin() as t:
-            t.delete(self)
-        return on_result(t.on_result, lambda r: self)
     
     def get_attr_value(self, name):
+        '''Provided for compatibility with :meth:`StdModel.get_attr_value`.
+For this class it simply get the attribute at name::
+    
+    return getattr(self, name)
+'''
         return getattr(self, name)
     
     def get_state_action(self):

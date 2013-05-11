@@ -20,7 +20,7 @@ class TestMeta(FinanceTest):
         self.assertIsInstance(qs, odm.Query)
         self.assertEqual(qs.model, models.instrument.model)
         
-    def testEmpty(self):
+    def test_empty_query(self):
         empty = self.session().empty(Instrument)
         self.assertEqual(empty.meta, Instrument._meta)
         self.assertEqual(len(empty), 0)

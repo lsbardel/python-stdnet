@@ -6,15 +6,21 @@ from stdnet.utils import test
 from examples.models import SimpleModel
 
 
+class StringData(test.DataGenerator):
+    
+    def generate(self):
+        self.names = self.populate()
+
+
 class TestManager(test.TestCase):
     model = SimpleModel
+    data_cls = StringData
     
     @classmethod
     def after_setup(cls):
         manager = cls.mapper.simplemodel
-        names = test.populate('string', 100, min_len=6, max_len=20)
         with manager.session().begin() as t:
-            for name in names:
+            for name in cls.data.names:
                 t.add(manager(code=name))
         yield t.on_result
         
@@ -32,24 +38,24 @@ class TestManager(test.TestCase):
         self.assertFalse(created)
         self.assertEqual(v,v2)
         
-    def testGet(self):
+    def test_get(self):
         objects = self.mapper[SimpleModel]
         v, created = yield objects.get_or_create(code='test2')
         self.assertTrue(created)
         v1 = yield objects.get(code='test2')
         self.assertEqual(v1, v)
         
-    def testGetError(self):
+    def test_get_error(self):
         '''Test for a ObjectNotFound exception.'''
         objects = self.mapper[SimpleModel]
         yield self.async.assertRaises(SimpleModel.DoesNotExist,
-                                lambda: objects.get(code='test3'))
+                                objects.get, code='test3')
         yield self.async.assertRaises(SimpleModel.DoesNotExist,
-                                lambda: objects.get(id=400))
+                                objects.get, id=-400)
         
     def testEmptyIDFilter(self):
         objects = self.mapper[SimpleModel]
-        yield self.async.assertEqual(objects.filter(id=400).count(), 0)
+        yield self.async.assertEqual(objects.filter(id=-1).count(), 0)
         yield self.async.assertEqual(objects.filter(id=1).count(), 1)
         yield self.async.assertEqual(objects.filter(id=2).count(), 1)
         

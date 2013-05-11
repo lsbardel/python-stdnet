@@ -33,20 +33,31 @@ StdModel Class
    :member-order: bysource
 
 
-
-.. _database-metaclass:
-
-Data Server Metaclass
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: Metaclass
-   :members:
-   :member-order: bysource
-
 Model
 ~~~~~~~~~~~~~~~~~
 
 .. autoclass:: Model
+   :members:
+   :member-order: bysource
+
+
+.. _database-metaclass:
+
+Model Meta
+==================
+
+
+Model Meta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ModelMeta
+   :members:
+   :member-order: bysource
+   
+StdModel Metaclass
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: Metaclass
    :members:
    :member-order: bysource
 

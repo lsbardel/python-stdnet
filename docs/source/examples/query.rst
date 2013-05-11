@@ -9,23 +9,21 @@ Query your Data
 The most powerful feature of :mod:`stdnet` is a comprehensive API for querying,
 searching and sorting your data in an efficient and elegant way.
 To retrieve objects from your data server, you construct a
-:class:`Query` via a :class:`Manager` on your model class
-or via a :class:`Session`.
+:class:`Query` via a :class:`Manager`.
 A :class:`Query` represents a collection of rules to aggregate objects
 from your model.
 
-In the following tutorial, it is assumed the models are registered with a
-backend dataserver so that the default :class:`Manager` is available.
-Alternatively, one can use the :ref:`session api <model-session>`.
+We pick up from the :ref:`registered models <tutorial-models-router>` router
+object created for our :ref:`tutorial application <tutorial-application>`.
 
 
 Retrieving all objects
 ==========================
 
 The simplest way to retrieve objects for a model is to get all of them.
-To do this, use the :meth:`Manager.query` method on a Manager:
+To do this, use the :meth:`Manager.query` method:
 
-    >>> funds = Fund.objects.query()
+    >>> funds = models.fund.query()
     >>> funds
     Query
     >>> list(funds)
@@ -47,7 +45,7 @@ To perform such operation, you refine the initial :class:`Query` by adding
 filter conditions.
 Lets create few other objects in the same line as above and try::
 
-    >>> eur_funds = Fund.objects.filter(ccy='EUR')
+    >>> eur_funds = models.fund.filter(ccy='EUR')
     >>> eur_funds
     Query.filter({'ccy': 'EUR'})
     >>> eur_funds.count()
@@ -58,7 +56,7 @@ Lets create few other objects in the same line as above and try::
 The :meth:`Query.count` method counts the object in the query without
 actually retrieving them. It is possible to filter from a list/tuple of values::
 
-    qs = Fund.objects.filter(ccy=('EUR','USD'))
+    qs = models.fund.filter(ccy=('EUR','USD'))
 
 This filter statement is equivalent to an union of two filters statements::
 

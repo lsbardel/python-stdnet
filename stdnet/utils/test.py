@@ -189,8 +189,7 @@ after the :meth:`setUpClass` was called. By default it does nothing.'''
     def session(cls, **kwargs):
         '''Create a new :class:`stdnet.odm.Session` bind to the
 :attr:`TestCase.backend` attribute.'''
-        from stdnet import odm
-        return odm.Session(cls.backend, **kwargs)
+        return cls.mapper.session()
     
     @classmethod
     def query(cls, model=None):
@@ -242,6 +241,9 @@ test function. Useful when testing write operations.'''
     def _post_teardown(self):
         if self.backend is not None:
             return self.backend.flush()
+        
+    def session(self):
+        return self.mapper.session()
         
 
 class StdnetPlugin(TestPlugin):

@@ -100,28 +100,29 @@ class finance_data(test.DataGenerator):
         self.dates =  populate('date',num_dates,start=date(2009,6,1),
                                end=date(2010,6,6))
 
-    def create(self, test, use_transaction=True, InstrumentModel=Instrument):
+    def create(self, test, use_transaction=True):
         session = test.session()
+        models = test.mapper
         eq = assertEqual if isinstance(test, type) else test.assertEqual
-        c = yield session.query(InstrumentModel).count()
+        c = yield models.instrument.query().count()
         eq(c, 0)
         if use_transaction:
             with session.begin() as t:
                 for name,ccy in zip(self.fund_names,self.fund_ccys):
-                    t.add(Fund(name=name, ccy=ccy))
+                    t.add(models.fund(name=name, ccy=ccy))
                 for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                         self.inst_ccys):
-                    t.add(InstrumentModel(name=name, type=typ, ccy=ccy))
+                    t.add(models.instrument(name=name, type=typ, ccy=ccy))
             yield t.on_result
         else:
             test.register()
             for name,typ,ccy in zip(self.inst_names,self.inst_types,\
                                     self.inst_ccys):
-                yield InstrumentModel(name=name, type=typ, ccy=ccy).save()
+                yield models.instrument.new(name=name, type=typ, ccy=ccy)
             for name,ccy in zip(self.fund_names,self.fund_ccys):
-                yield Fund(name=name, ccy=ccy).save()
-        self.num_insts = yield session.query(InstrumentModel).count()
-        self.num_funds = yield session.query(Fund).count()
+                yield models.fund(name=name, ccy=ccy)
+        self.num_insts = yield models.instrument.query().count()
+        self.num_funds = yield models.fund.query().count()
         eq(self.num_insts, len(self.inst_names))
         eq(self.num_funds, len(self.fund_names))
         yield session

@@ -12,38 +12,8 @@ __all__ = ['StdModel', 'model_to_dict']
 
 
 class StdModel(StdNetType('StdNetBase', (Model,), {})):
-    '''A :class:`Model` which contains data in :class:`Field`.
-
-.. attribute:: _meta
-
-    A class attribute which is an instance of :class:`Metaclass`, it
-    containes all the information needed by a :class:`stdnet.backendServer`.
-    
-.. attribute:: objects
-
-    A class attribute available when this model is
-    :ref:`registered with a backend server <register-model>`. it is
-    a :class:`Manager` for obtaining :class:`Session` and :class:`Query`.
-    
-.. attribute:: searchengine
-
-    A class attribute available when this model is registered and installed
-    with a :class:`SearchEngine` for full text search. Check the
-    :meth:`SearchEngine.register` documentation for more information. 
-
-.. attribute:: id
-
-    The instance primary key.
-
-.. attribute:: uuid
-
-    Universally unique identifier for an instance.
-
-.. attribute:: session
-
-    the :class:`Session` instance which loaded the instance (available
-    when the instance is loaded from the data server).
-'''
+    '''A :class:`Model` which contains data in :class:`Field`. This represents
+the main class of :mod:`stdnet.odm` module.'''
     _model_type = 'object'
     searchengine = None
     is_base_class = True

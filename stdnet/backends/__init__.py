@@ -248,8 +248,8 @@ from database.
                 else:
                     multi = False
                     relmodel = field.relmodel
-                    related = dict(((obj.id, obj)\
-                        for obj in self.make_objects(relmodel._meta, fdata)))
+                    related = dict(((obj.id, obj) for obj in\
+                            self.make_objects(relmodel._meta, fdata)))
                 related_data.append((field, related, multi))
         for state in data:
             instance = make_object(state, self)

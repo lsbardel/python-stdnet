@@ -116,7 +116,8 @@ base class of :class:`Metaclass`.
         if state:
             id, loadedfields, data = state
             field = self.pk
-            setattr(obj, field.attname, field.to_python(id, backend))
+            pkvalue = field.to_python(id, backend)
+            setattr(obj, field.attname, pkvalue)
             if loadedfields is not None:
                 loadedfields = tuple(loadedfields)
             obj._loadedfields = loadedfields
@@ -124,16 +125,13 @@ base class of :class:`Metaclass`.
             for field in obj.loadedfields():
                 value = field.value_from_data(obj, data)
                 setattr(obj, field.attname, field.to_python(value, backend))
-            obj._dbdata = data.get('__dbdata__', {})
+            #obj._dbdata = data.get('__dbdata__', {})
             if backend:
-                obj._dbdata[self.pkname()] = obj.pkvalue()
+                obj._dbdata[self.pkname()] = pkvalue
         return obj
 
     def __repr__(self):
-        if self.app_label:
-            return '%s.%s' % (self.app_label,self.name)
-        else:
-            return self.name
+        return self.modelkey
 
     def __str__(self):
         return self.__repr__()

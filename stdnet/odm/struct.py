@@ -187,12 +187,18 @@ can also be used as stand alone objects. For example::
     will be used.
     
     Default ``None``.
+    
+.. attribute:: field
+
+    The :class:`StructureField` which this owns this :class:`Structure`.
+    Default ``None``.
+
 '''
     _model_type = 'structure'
     pickler = None
     value_pickler = None
-    def __init__(self, value_pickler=None, name='', is_field=False, **kwargs):
-        self._is_field = is_field
+    def __init__(self, value_pickler=None, name='', field=False, **kwargs):
+        self._field = field
         self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
@@ -215,8 +221,12 @@ can also be used as stand alone objects. For example::
     def is_field(self):
         '''``True`` if this :class:`Structure` is proxy for a
 :class:`StructureField`.'''
-        return self._is_field
+        return self._field is not None
     
+    @property
+    def field(self):
+        return self._field
+        
     @property
     def cache(self):
         if 'cache' not in self._dbdata:

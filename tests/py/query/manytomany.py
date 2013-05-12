@@ -113,13 +113,8 @@ class TestManyToMany(TestManyToManyBase, test.TestCase):
         self.assertEqual(profile, profiles[0])
         
      
-     
-@test.sequential
-class TestManyToManyAddDelete(TestManyToManyBase, test.TestCase):
+class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
        
-    def tearDown(self):
-        return self.clear_all()
-    
     def testAdd(self):
         return self.addsome()
         

@@ -599,7 +599,7 @@ objects on the server side.'''
     def delete(self):
         '''Delete all matched elements of the :class:`Query`. It returns the
 list of ids deleted.'''
-        return self.backend_query().delete(self)
+        return self.session.delete(self)
 
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''

@@ -259,7 +259,7 @@ Process results after a commit.
         for result in results:
             if isinstance(result, Exception):
                 errors.append(result.__class__(
-                'Exception while commiting {0}. {1}'.format(self.meta, result)))
+                'Exception while committing %s. %s' % (self._meta, result)))
                 continue
             instance = self.pop(result.iid)
             id = tpy(result.id, self.backend)
@@ -278,12 +278,12 @@ Process results after a commit.
                     instances.append(instance)
         return instances, deleted, errors
 
-    def flush(self, model):
+    def flush(self):
         '''Completely flush :attr:`model` from the database. No keys
 associated with the model will exists after this operation.'''
         return self.backend.flush(self.model)
 
-    def clean(self, model):
+    def clean(self):
         '''Remove empty keys for a :attr:`model` from the database. No
 empty keys associated with the model will exists after this operation.'''
         return self.backend.clean(self.model)
@@ -485,9 +485,16 @@ processed.'''
             multi.append(backend.execute_session(data))
         resp = yield multi_async(multi)
         if resp:
-            yield multi_async((self._post_commit(session, r) for r in resp))
+            resp = multi_async((self._post_commit(session, r) for r in resp))
+            yield on_result(resp, lambda r: self._finish(session),
+                            lambda r: self._finish(session, r))
+        else:
+            yield self._finish(session)
+    
+    def _finish(self, session, result=None):
         session.transaction = None
-        yield self.finished
+        self._finished = True
+        return result if result else self._finished
         
     @async()
     def _post_commit(self, session, response):
@@ -529,8 +536,7 @@ Results can contain errors.
             for _, result in send(sm.model, instances=instances,
                                   session=session, transaction=self):
                 results.append(result)
-        results = yield multi_async(results, raise_on_error=True)
-        self._finished = True
+        results = yield multi_async(results)
         if exceptions:
             failures = len(exceptions)
             if failures > 1:
@@ -712,13 +718,17 @@ changes to the backend server immediately.
             sm._delete_query.append(instance_or_query)
         else:
             instance_or_query = sm.delete(instance_or_query, self)
-        return self.commit() if not self.transaction else instance_or_query
+        if not self.transaction:
+            transaction = self.begin()
+            return on_result(self.commit(),
+                             lambda r: transaction.deleted.get(sm._meta))
+        else:
+            return instance_or_query
 
     def flush(self, model):
         '''Completely flush a :class:`Model` from the database. No keys
 associated with the model will exists after this operation.'''
         return self.model(model).flush()
-        return self.backend.flush(self.check_model(model))
 
     def clean(self, model):
         '''Remove empty keys for a :class:`Model` from the database. No

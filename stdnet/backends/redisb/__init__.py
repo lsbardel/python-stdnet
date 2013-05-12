@@ -845,6 +845,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         # using a different pipe
         if backend_query is None:
             return
+        session = backend_query.session
         query = backend_query.queryelem
         keys = (backend_query.query_key,)
         meta_info = backend_query.meta_info
@@ -856,7 +857,8 @@ class BackendDataServer(stdnet.BackendDataServer):
             if rmanager.model == meta.model:
                 self.odmrun(pipe, 'aggregate', meta, keys, meta_info,
                             rmanager.field.attname)
-            else:
+            # only consider models which are registered with the router
+            elif rmanager.model in session.router:
                 rel_managers.append(rmanager)
         # loop over related managers
         for rmanager in rel_managers:

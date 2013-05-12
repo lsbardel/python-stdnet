@@ -1,5 +1,4 @@
 from stdnet.utils import test
-from stdnet.utils.populate import populate
 from stdnet.utils.py2py3 import zip
 
 from examples.models import NumericData, CrossData, Feed1
@@ -8,12 +7,12 @@ from examples.models import NumericData, CrossData, Feed1
 class NumberGenerator(test.DataGenerator):
     
     def generate(self):
-        self.d1 = populate('integer', start=-5, end=5)
-        self.d2 = populate('float', start=-10, end=10)
-        self.d3 = populate('float', start=-10, end=10)
-        self.d4 = populate('float', start=-10, end=10)
-        self.d5 = populate('integer', start=-5, end=5)
-        self.d6 = populate('integer', start=-5, end=5)
+        self.d1 = self.populate('integer', start=-5, end=5)
+        self.d2 = self.populate('float', start=-10, end=10)
+        self.d3 = self.populate('float', start=-10, end=10)
+        self.d4 = self.populate('float', start=-10, end=10)
+        self.d5 = self.populate('integer', start=-5, end=5)
+        self.d6 = self.populate('integer', start=-5, end=5)
         
         
 class NumericTest(test.TestCase):

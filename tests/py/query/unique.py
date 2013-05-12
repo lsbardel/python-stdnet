@@ -2,36 +2,41 @@
 from random import randint
 
 from stdnet import odm, CommitException
-from stdnet.utils import test, populate, zip, range
+from stdnet.utils import test, zip, range
 
 from examples.models import SimpleModel
 
 
-SIZE = 200
-sports = ['football','rugby','swimming','running','cycling']
+class SportGenerator(test.DataGenerator):
+    
+    def generate(self):
+        self.sports = ['football','rugby','swimming','running','cycling']
+        self.codes = set(self.populate('string', min_len=5, max_len=20))
+        self.size = len(self.codes)
+        self.groups = self.populate('choice', choice_from=self.sports)
+        self.codes = list(self.codes)
+        
+    def __iter__(self):
+        return zip(self.codes, self.groups)
 
-codes = set(populate('string',SIZE, min_len = 5, max_len = 20))
-SIZE = len(codes)
-groups = populate('choice', SIZE, choice_from=sports)
-codes = list(codes)
-
-def randomcode(num = 1):
-    a = set()
-    while len(a) < num:
-        a.add(codes[randint(0,len(codes)-1)])
-    if num == 1:
-        return tuple(a)[0]
-    else:
-        return a
+    def randomcode(self, num=1):
+        a = set()
+        while len(a) < num:
+            a.add(self.codes[randint(0, self.size-1)])
+        if num == 1:
+            return tuple(a)[0]
+        else:
+            return a
 
 
 class TestUniqueFilter(test.TestCase):
+    data_cls = SportGenerator
     model = SimpleModel
     
     @classmethod
     def after_setup(cls):
         with cls.session().begin() as t:
-            for n,g in zip(codes,groups):
+            for n, g in cls.data:
                 t.add(cls.model(code=n, group=g))
         return t.on_result
     
@@ -53,7 +58,7 @@ class TestUniqueFilter(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         for i in range(10):
-            code = randomcode()
+            code = self.data.randomcode()
             qs = yield query.filter(code=code).all()
             self.assertEqual(len(qs), 1)
             self.assertEqual(qs[0].code, code)
@@ -69,15 +74,15 @@ class TestUniqueFilter(test.TestCase):
         session = self.session()
         query = session.query(self.model)
         for i in range(10):
-            code = randomcode()
+            code = self.data.randomcode()
             all = yield query.exclude(code=code).all()
-            self.assertEqual(len(all), SIZE-1)
+            self.assertEqual(len(all), self.data.size-1)
             self.assertFalse(code in set((o.code for o in all)))
             
     def testFilterCodeIn(self):
         session = self.session()
         query = session.query(self.model)
-        codes = randomcode(num=3)
+        codes = self.data.randomcode(num=3)
         qs = yield query.filter(code__in=codes).all()
         self.assertTrue(qs)
         match = set((m.code for m in qs))
@@ -86,7 +91,7 @@ class TestUniqueFilter(test.TestCase):
     def testExcludeCodeIn(self):
         session = self.session()
         query = session.query(self.model)
-        codes = randomcode(num=3)
+        codes = self.data.randomcode(num=3)
         qs = yield query.exclude(code__in=codes).all()
         self.assertTrue(qs)
         match = set((m.code for m in qs))
@@ -96,7 +101,7 @@ class TestUniqueFilter(test.TestCase):
     def testExcludeInclude(self):
         session = self.session()
         query = session.query(self.model)
-        codes = randomcode(num = 3)
+        codes = self.data.randomcode(num=3)
         qs = yield query.exclude(code__in=codes).filter(code=codes).all()
         self.assertFalse(qs)        
             
@@ -148,7 +153,8 @@ class TestUniqueChange(test.TestCase):
         self.assertEqual(m.id, m2.id)
         # Save with different code
         m2.code = 'pippo2'
-        yield m2.save()
+        yield session.add(m2)
         m3 = yield query.get(code='pippo2')
         self.assertEqual(m.id, m3.id)
-        yield self.async.assertRaises(self.model.DoesNotExist, query.get, code='pippo')
+        yield self.async.assertRaises(self.model.DoesNotExist, query.get,
+                                      code='pippo')

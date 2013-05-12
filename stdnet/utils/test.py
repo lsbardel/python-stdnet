@@ -244,6 +244,10 @@ test function. Useful when testing write operations.'''
         
     def session(self):
         return self.mapper.session()
+    
+    def query(self, model=None):
+        '''Shortcut function to create a query for a model.'''
+        return self.session().query(model or self.model)
         
 
 class StdnetPlugin(TestPlugin):

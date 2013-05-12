@@ -7,28 +7,24 @@ from examples.models import Node, Role, Profile, Dictionary
 from examples.data import FinanceTest, Position, Instrument, Fund
 
 
-class NodeBase(object):
-    model = Node
-    nesting = 2
-        
-    @classmethod
-    def create(cls, root=None, nesting=None):
-        if root is None:
-            with cls.session().begin() as t:
-                root = t.add(cls.model(weight=1.0))
-            yield t.on_result
-            yield cls.create(root, nesting=cls.nesting)
-        elif nesting:
-            N = randint(2,9)
-            with cls.session().begin() as t:
-                for n in range(N):
-                    node = t.add(cls.model(parent=root, weight=uniform(0,1)))
-            yield t.on_result
-            yield cls.multi_async((cls.create(node, nesting-1) for node\
-                                    in t.saved[node._meta]))
+def create(cls, root=None, nesting=None):
+    models = cls.mapper
+    if root is None:
+        with models.session().begin() as t:
+            root = t.add(models.node(weight=1.0))
+        yield t.on_result
+        yield create(cls, root, nesting=nesting)
+    elif nesting:
+        N = randint(2,9)
+        with models.session().begin() as t:
+            for n in range(N):
+                node = t.add(models.node(parent=root, weight=uniform(0,1)))
+        yield t.on_result
+        yield cls.multi_async((create(cls, node, nesting-1) for node\
+                                in t.saved[node._meta]))
     
 
-class TestSelfForeignKey(NodeBase, test.TestCase):
+class TestSelfForeignKey(test.TestCase):
     '''The Node model is used only in this test class and should be used only
 in this test class so that we can use the manager in a parallel test suite.'''
     model = Node
@@ -36,7 +32,7 @@ in this test class so that we can use the manager in a parallel test suite.'''
         
     @classmethod
     def after_setup(cls):
-        return cls.create()
+        return create(cls, nesting=cls.nesting)
             
     def test_meta(self):
         all = yield self.query().load_related('parent').all()
@@ -76,14 +72,12 @@ in this test class so that we can use the manager in a parallel test suite.'''
             self.assertEqual(node.parent, root)
 
 
-@test.sequential
-class TestDeleteSelfRelated(NodeBase, test.TestCase):
+class TestDeleteSelfRelated(test.TestWrite):
+    model = Node
+    nesting = 2
     
     def setUp(self):
-        return self.create()
-    
-    def tearDown(self):
-        return self.clear_all()
+        return create(self, nesting=self.nesting)
     
     def test_related_delete_all(self):
         all = yield self.query().all()
@@ -117,8 +111,7 @@ class TestRealtedQuery(FinanceTest):
     
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        yield cls.data.makePositions(cls)
+        return cls.data.makePositions(cls)
         
     def test_related_filter(self):
         query = self.query(Position)

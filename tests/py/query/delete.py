@@ -2,13 +2,11 @@
 import datetime
 from random import randint
 
-from pulsar.apps.test import sequential
-
 from stdnet import odm
 from stdnet.utils import test, zip
 
 from examples.models import Instrument, Fund, Position, Dictionary, SimpleModel
-from examples.data import FinanceTest
+from examples.data import finance_data, FinanceTest
 
 
 class DictData(test.DataGenerator):
@@ -103,11 +101,10 @@ class TestPostDeleteSignal(test.TestCase):
         self.assertEqual(len(u.instances), 2)
         
 
-@sequential
-class TestDeleteMethod(FinanceTest):
+class TestDeleteMethod(test.TestWrite):
     '''Test the delete method in models and in queries.'''
-    def tearDown(self):
-        self.clear_all()
+    data_cls = finance_data
+    models = (Instrument, Fund, Position)
         
     def test_delete_all(self):
         session = yield self.data.create(self)
@@ -131,15 +128,9 @@ class TestDeleteMethod(FinanceTest):
             self.assertNotEqual(inst.ccy,'EUR')
         
         
-@sequential
-class TestDeleteScalarFields(FinanceTest):
-    
-    @classmethod
-    def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        
-    def tearDown(self):
-        self.clear_all()
+class TestDeleteScalarFields(test.TestWrite):
+    data_cls = finance_data
+    models = (Instrument, Fund, Position)
         
     def test_flush_simple_model(self):
         '''Use the class method flush to remove all instances of a
@@ -169,7 +160,7 @@ class TestDeleteScalarFields(FinanceTest):
         all = yield session.query(Instrument).all()
         self.assertEqual(all, [])
         # There should be only keys for indexes and auto id
-        backend = session.backend
+        backend = session.model(Instrument).backend
         if backend.name == 'redis':
             keys = yield session.keys(Instrument)
             self.assertEqual(len(keys), 1)
@@ -212,13 +203,11 @@ test as it involves lots of operations and consistency checks.'''
         self.assertEqual(Position.objects.all().count(),0)
         
         
-@sequential
-class TestDeleteStructuredFields(test.TestCase):
+class TestDeleteStructuredFields(test.TestWrite):
     model = Dictionary
     data_cls = DictData
     
     def setUp(self):
-        self.clear_all()
         session = self.session()
         with session.begin() as t:
             t.add(Dictionary(name='test'))
@@ -235,7 +224,7 @@ class TestDeleteStructuredFields(test.TestCase):
         self.assertEqual(len(session._models), 1)
         data = d.data
         self.assertEqual(len(session._models), 1)
-        self.assertTrue(data.is_field)
+        self.assertTrue(data.field)
         self.assertTrue(data.id)
         yield d.data.update(self.data.data)
         self.async.assertEqual(data.size(), len(self.data.data))

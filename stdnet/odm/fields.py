@@ -203,7 +203,7 @@ Each field is specified as a :class:`StdModel` class attribute.
         return to_string('%s.%s' % (self.meta,self.name))
 
     def value_from_data(self, instance, data):
-        return data.pop(self.attname,None)
+        return data.pop(self.attname, None)
 
     def register_with_model(self, name, model):
         '''Called during the creation of a the :class:`StdModel`

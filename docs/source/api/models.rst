@@ -310,16 +310,12 @@ Many2ManyRelatedManager
 Registration
 ======================
 
-Models can be registered with a :class:`stdnet.BackendDataServer` so that
-the model :class:`Manager` can be used to create instance and query the database.
-If a model is not registered, the only way to operate on it is via the
-:class:`Session` API.
-
-Registration is obtained via a :class:`Router`. The :class:`Router`
-has two methods for registering models, The first one is the :meth:`Router.register`
+To interact with a :class:`stdnet.BackendDataServer`,
+Models must registered. Registration is obtained via a :class:`Router` which
+has two methods for registering models. The first one is the :meth:`Router.register`
 method which is used to register a model and, possibly, all its related
-models. In addition it exposes the :meth:`Router.register_applications` method
-for registering all :class:`Model` from a list of python dotted paths or
+models. The second method is the :meth:`Router.register_applications` which
+registers all :class:`Model` from a list of python dotted paths or
 python modules.
 
 Check the :ref:`registering models tutorial <tutorial-registration>`

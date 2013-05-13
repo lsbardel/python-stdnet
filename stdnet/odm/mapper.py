@@ -6,8 +6,9 @@ from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
 from stdnet import getdb, InvalidTransaction
 
-from .base import StdNetType, AlreadyRegistered, ModelType
+from .base import StdNetType, AlreadyRegistered, ModelType, Model
 from .session import Manager, Session, ModelDictionary
+from .globals import get_model_from_hash
 
 __all__ = ['Router', 'model_iterator', 'all_models_sessions']
         
@@ -35,17 +36,25 @@ one wishes to do so.
         self._registered_names = {}
         self._default_backend = default_backend
         self._install_global = install_global
+        self._search_engine = None
         
     @property
     def default_backend(self):
         '''The default backend for this :class:`Router`. This is used when
 calling the :meth:`register` method without explicitly passing a backend.'''
         return self._default_backend
-    
+        
     @property
     def registered_models(self):
         '''List of registered :class:`Model`.'''
         return list(self._registered_models)
+    
+    @property
+    def search_engine(self):
+        '''The :class:`SearchEngine` for this :class:`Router`. This
+must be created by users. Check :ref:`full text search <tutorial-search>`
+tutorial for information.'''
+        return self._search_engine
     
     def __repr__(self):
         return '%s %s' % (self.__class__.__name.__, self._registered_models)
@@ -64,6 +73,11 @@ calling the :meth:`register` method without explicitly passing a backend.'''
             return self._registered_names[name]
         raise AttributeError('No model named "%s"' % name)
     
+    def set_search_engine(self, engine):
+        '''Set the search ``engine`` for this :class:`Router`.'''
+        self._search_engine = engine
+        self._search_engine.set_router(self)
+        
     def register(self, model, backend=None, read_backend=None,
                  include_related=True, **params):
         '''Register a :class:`Model` with this :class:`Router`. If the
@@ -104,14 +118,28 @@ model was already registered it does nothing.
                 model.objects = manager
         if registered:
             return backend
-        
+    
+    def from_uuid(self, uuid, session=None):
+        '''Retrieve a :class:`Model` from its universally unique identifier
+``uuid``. If the ``uuid`` does not match any instance an exception will raise.'''
+        elems = uuid.split('.')
+        if len(elems) == 2:
+            model = get_model_from_hash(elems[0])
+            if not model:
+                raise Model.DoesNotExist(\
+                            'model id "{0}" not available'.format(elems[0]))
+            if not session or session.router is not self:
+                session = self.session()
+            return session.query(model).get(id=elems[1])
+        raise Model.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
+
     def flush(self, exclude=None):
         '''Flush all :attr:`registered_models` excluding the ones
 in ``exclude`` (if provided).'''
         exclude = exclude or []
         results = []
         for manager in self._registered_models.values():
-            if not manager.model._meta.name in exclude:
+            if not manager._meta.name in exclude:
                 results.append(manager.flush())
         return multi_async(results)
         

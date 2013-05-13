@@ -262,17 +262,17 @@ Process results after a commit.
     def flush(self):
         '''Completely flush :attr:`model` from the database. No keys
 associated with the model will exists after this operation.'''
-        return self.backend.flush(self.model)
+        return self.backend.flush(self._meta)
 
     def clean(self):
         '''Remove empty keys for a :attr:`model` from the database. No
 empty keys associated with the model will exists after this operation.'''
-        return self.backend.clean(self.model)
+        return self.backend.clean(self._meta)
         
     def keys(self):
         '''Retrieve all keys for a :attr:`model`. Uses the
 :attr:`Manager.read_backend`.'''
-        return self.read_backend.model_keys(self.model)
+        return self.read_backend.model_keys(self._meta)
     
     ## INTERNALS
     def get_delete_query(self, session):
@@ -629,7 +629,7 @@ construct."""
 
     def empty(self, model):
         '''Returns an empty :class:`Query` for ``model``.'''
-        return EmptyQuery(self.manager(model).model, self)
+        return EmptyQuery(self.manager(model)._meta, self)
 
     @async()
     def get_or_create(self, model, **kwargs):

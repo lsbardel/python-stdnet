@@ -231,7 +231,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
         return (self.id, self._loadedfields, self.todict())
 
     def __setstate__(self, state):
-        self._meta.make_object(state)
+        self._meta.load_state(self, state)
         
     # INTERNALS
     

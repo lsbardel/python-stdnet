@@ -125,7 +125,7 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
         self.assertEqual(len(profiles), 1)
         profile = profiles[0]
         yield self.async.assertEqual(profile.roles.query().count(), 2)
-        yield profile.delete()
+        yield session.delete(profile)
         role1, role2 = yield session.query(Role).filter(name=('bla','foo')).all()
         yield self.async.assertEqual(role1.profiles.query().count(), 0)
         yield self.async.assertEqual(role2.profiles.query().count(), 0)
@@ -134,12 +134,12 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
         yield self.addsome()
         session = self.session()
         roles = session.query(Role)
-        self.assertEqual(roles.count(),2)
-        roles.delete()
+        yield self.async.assertEqual(roles.count(), 2)
+        yield roles.delete()
         self.assertEqual(session.query(Role).count(),0)
-        profile = session.query(Profile).get(id = 1)
-        self.assertEqual(profile.roles.query().count(),0)
-        profile.delete()
+        profile = session.query(Profile).get(id=1)
+        self.assertEqual(profile.roles.query().count(), 0)
+        yield session.delete(profile)
         
     def test_remove(self):
         session = self.session()

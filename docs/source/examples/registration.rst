@@ -83,16 +83,7 @@ the following way::
                     'redis://1270.0.0.1:6380?db=1')
 
 
-Utilities
-============================
-
-Instance form UUID
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: from_uuid
-
-
 Model Iterator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
 .. autofunction:: model_iterator

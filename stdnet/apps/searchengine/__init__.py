@@ -5,11 +5,13 @@ and indexed in redis and if you like in the same redis instance.
 
 Installing the search engine is as easy as
 
-* Create the search engine singletone::
+* Create a search engine and assign it the :attr:`stdnet.odm.Router.search_engine`
+  attribute. Here we use the :ref:`models router <tutorial-models-router>`
+  of our first tutorial::
 
     from stdnet.apps.searchengine import SearchEngine
     
-    engine = SearchEngine(backend, ...)
+    models.search_engine = SearchEngine(backend, ...)
     
   where backend is either a instance of a :class:`stdnet.BackendDataServer`
   or a valid :ref:`connection string <connection-string>` such as::
@@ -18,19 +20,27 @@ Installing the search engine is as easy as
       
   This is the back-end server where the text indices :class:`WordItem`
   are stored, and not the back-end server of your models to index.
-  They can be the same.
+  They can be the same. To use the same backend as the default
+  backend of the router::
+  
+    models.search_engine = SearchEngine(models.backend, ...)
 
 * Register models you want to index to the search engine signletone::
 
-    engine.register(MyModel, install=True)
+    models.search_engine.register(Instrument)
 
 Check the :meth:`stdnet.odm.SearchEngine.register` documentation for more
 information.
 
 Searching model instances for text can be achieved using the
-:class:`Query.search` method::
+:class:`stdnet.odm.Query.search` method::
 
-    MyModel.objects.query().search('bla foo...') 
+    models.instrument.search('bla foo...')
+    
+Like all :class:`stdnet.odm.Query` methods, the search method can be chained
+in an efficient way::
+
+    models.instrument.filter(ccy='EUR').search('bla foo...')
 
 API
 ==========
@@ -95,7 +105,7 @@ driver.
     
     def __init__(self, backend=None, min_word_length=3, stop_words=None,
                  metaphone=True, stemming=True, splitters=None, **kwargs):
-        super(SearchEngine, self).__init__(backend=getdb(backend), **kwargs)
+        super(SearchEngine, self).__init__(backend=backend, **kwargs)
         self.MIN_WORD_LENGTH = min_word_length
         splitters = splitters if splitters is not None else\
                     processors.PUNCTUATION_CHARS
@@ -110,6 +120,10 @@ driver.
             self.add_word_middleware(processors.stemming_processor)
         if metaphone:
             self.add_word_middleware(processors.tolerant_metaphone_processor)
+    
+    def set_router(self, router):
+        self.router = router
+        router.register(WordItem, self.backend)
         
     def split_text(self, text):
         if self.punctuation_regex:
@@ -120,14 +134,8 @@ driver.
                 word = word.lower()
                 yield word
     
-    def session(self, *models):
-        if self.backend:
-            return odm.Session(self.backend)
-        else:
-            return WordItem.objects.session(*models)
-    
     def flush(self):
-        return self.session(WordItem).flush(WordItem)
+        return self.router.worditem.flush()
         
     def add_item(self, item, words, transaction):
         for word in words:
@@ -162,7 +170,7 @@ the input :class:`Query` and the *text* to search.'''
         return odm.intersect((q,)+qs)
     
     def worditems(self, model=None):
-        q = self.session(WordItem).query(WordItem)
+        q = self.router.worditem.query()
         if model:
             if not isclass(model):
                 return q.filter(model_type=model.__class__, object_id=model.id)
@@ -174,7 +182,7 @@ the input :class:`Query` and the *text* to search.'''
     def _search(self, words, include=None, exclude=None, lookup=None):
         '''Full text search. Return a list of queries to intersect.'''
         lookup = lookup or 'contains'
-        query = self.session(WordItem).query(WordItem)
+        query = self.router.worditem.query()
         if include:
             query = query.filter(model_type__in=include)
         if exclude:

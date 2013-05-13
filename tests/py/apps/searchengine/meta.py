@@ -56,31 +56,25 @@ WORDS_GROUPS = lambda size : (' '.join(populate('choice', NUM_WORDS,\
                               choice_from = basic_english_words))\
                                for i in range(size))
     
-    
-class TestCase(test.TestCase):
+
+class SearchMixin(object):
     '''Mixin for testing the search engine. No tests implemented here,
 just registration and some utility functions. All search-engine tests
 below will derive from this class.'''
     multipledb = 'redis'
     metaphone = True
     stemming = True
+    models = (Item, RelatedItem)
     
     @classmethod
     def after_setup(cls):
-        cls.engine = cls.make_engine()
-        cls.engine.register(Item, ('related',))
-        cls.engine.register(RelatedItem)
+        cls.mapper.set_search_engine(cls.make_engine())
+        cls.mapper.search_engine.register(Item, ('related',))
+        cls.mapper.search_engine.register(RelatedItem)
     
     @classmethod
     def make_engine(cls):
-        return SearchEngine(metaphone=cls.metaphone, stemming=cls.stemming,
-                            backend=cls.backend)
-    
-    def query(self, model):
-        query = self.session().query(model, searchengine=self.engine)
-        self.assertEqual(query.searchengine, self.engine)
-        self.assertFalse(model.searchengine)
-        return query
+        return SearchEngine(metaphone=cls.metaphone, stemming=cls.stemming)
     
     def make_item(self, name='python', counter=10, content=None, related=None):
         content = content if content is not None else python_content
@@ -114,18 +108,25 @@ of words which have been included in the Items.'''
         yield cls.words
     
     def simpleadd(self, name='python', counter=10, content=None, related=None):
+        models = self.mapper
+        engine = models.search_engine
         item = yield self.make_item(name, counter, content, related)
-        wis = yield self.engine.worditems(item).all()
+        wis = yield engine.worditems(item).all()
         self.assertTrue(wis)
         session = self.session()
         objets = yield self.multi_async((wi.object(session) for wi in wis))
         for object in objets:
             self.assertEqual(object, item)
         yield item, wis
-
-
-class TestMeta(TestCase):
+        
+    
+class TestMeta(SearchMixin, test.TestCase):
     '''Test internal functions, not the API.'''
+    def test_mapper(self):
+        models = self.mapper
+        self.assertTrue(models.search_engine)
+        self.assertEqual(models.search_engine.router, models)
+        
     def testSplitting(self):
         eg = SearchEngine(metaphone=False, stemming=False)
         self.assertEqual(list(eg.words_from_text('bla-ciao+pippo')),\
@@ -154,15 +155,20 @@ class TestMeta(TestCase):
             self.assertEqual(d,NAMES[name])
     
     def testRegistered(self):
-        self.assertTrue(Item in self.engine.REGISTERED_MODELS)
-        self.assertTrue(RelatedItem in self.engine.REGISTERED_MODELS)
-        self.assertFalse(SimpleModel in self.engine.REGISTERED_MODELS)
-        self.assertEqual(self.engine.REGISTERED_MODELS[Item].related,
+        models = self.mapper
+        self.assertTrue(Item in models.search_engine.REGISTERED_MODELS)
+        self.assertTrue(RelatedItem in models.search_engine.REGISTERED_MODELS)
+        self.assertFalse(SimpleModel in models.search_engine.REGISTERED_MODELS)
+        self.assertEqual(models.search_engine.REGISTERED_MODELS[Item].related,
                          ('related',))
-        self.assertEqual(self.engine.REGISTERED_MODELS[RelatedItem].related, ())
+        self.assertEqual(
+                models.search_engine.REGISTERED_MODELS[RelatedItem].related, ())
         
     def testNoSearchEngine(self):
-        query = self.session().query(SimpleModel)
+        models = odm.Router(self.backend)
+        models.register(SimpleModel)
+        self.assertFalse(models.search_engine)
+        query = models.simplemodel.query()
         qs = query.search('bla')
         self.assertRaises(QuerySetError, qs.all)
         

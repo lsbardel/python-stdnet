@@ -62,32 +62,21 @@ The main methods to be implemented are :meth:`add_item`,
         self.add_processor(stdnet_processor(self))
         self.logger = logger or LOGGER
         self.max_in_session = max_in_session or 1000
+        self.router = None
 
     @property
     def backend(self):
         '''Backend for this search engine.'''
         return self._backend
     
-    def register(self, model, related=None, install=False):
+    def register(self, model, related=None):
         '''Register a :class:`StdModel` with this search :class:`SearchEngine`.
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.
 
 :parameter model: a :class:`StdModel` class.
 :parameter related: a list of related fields to include in the index.
-:parameter install: a flag indicating if to install this :class:`SearchEngine`
-    as the default search engine for ``model``. If this flag is ``True``
-    (default is ``False``), this search engine instance is available in
-    as :attr:`StdModel.searchengine` class attribute.
-
-Insalling the engine at class level, means you can use the engine via the
-:class:`Manager` api without explicitly passing the :class:`SearchEngine`
-instance::
-
-    MyModel.objects.query().search(...)
 '''
-        if install:
-            model.searchengine = self
         update_model = UpdateSE(self, related)
         self.REGISTERED_MODELS[model] = update_model
         post_commit.connect(update_model, sender=model)
@@ -166,8 +155,8 @@ add it to the index.
 :parameter transaction: A transaction for updating indexes.
 """
         self.logger.debug('Indexing %s objects of %s model.',
-                          len(all), model._meta)
-        session = self.session(model)
+                          len(items), model._meta)
+        session = self.session()
         wft = self.words_from_text
         add = self.add_item
         total = 0
@@ -211,9 +200,15 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
                 total += n
         yield total
 
+    def session(self):
+        '''Create a session for the search engine'''
+        return self.router.session()
+    
     # INTERNALS
     #################################################################
-
+    def set_router(self, router):
+        self.router = router
+        
     def item_field_iterator(self, item):
         if item:
             for processor in self.ITEM_PROCESSORS:
@@ -233,10 +228,6 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
         
     # ABSTRACT FUNCTIONS
     ################################################################
-    def session(self, *models):
-        '''Create a session for the search engine'''
-        raise NotImplementedError
-
     def remove_item(self, item_or_model, session, ids=None):
         '''Remove an item from the search indices'''
         raise NotImplementedError
@@ -289,12 +280,12 @@ class UpdateSE(object):
         '''An update on instances has occurred. Propagate it to the search
 engine index models.'''
         if sender:
-            se_session = self.se.session(sender)
-            if se_session.backend == session.backend:
-                if signal == post_delete:
-                    return self.remove(instances, sender, se_session)
-                else:
-                    return self.index(instances, sender, se_session)
+            # get a new session
+            se_session = self.se.router.session()
+            if signal == post_delete:
+                return self.remove(instances, sender, se_session)
+            else:
+                return self.index(instances, sender, se_session)
 
     def index(self, instances, sender, session):
         return self.se.index_items_from_model(instances, sender)

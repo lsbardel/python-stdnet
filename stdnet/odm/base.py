@@ -22,8 +22,7 @@ __all__ = ['ModelMeta',
            'create_model',
            'autoincrement',
            'ModelType', # Metaclass for all stdnet ModelBase classes
-           'StdNetType', # derived from ModelType, metaclass fro StdModel
-           'from_uuid']
+           'StdNetType']
 
 
 def get_fields(bases, attrs):
@@ -113,6 +112,10 @@ base class of :class:`Metaclass`.
         '''Create a new instance of :attr:`model` from a *state* tuple.'''
         model = self.model
         obj = model.__new__(model)
+        self.load_state(obj, state, backend)
+        return obj
+        
+    def load_state(self, obj, state=None, backend=None):
         if state:
             id, loadedfields, data = state
             field = self.pk
@@ -125,10 +128,10 @@ base class of :class:`Metaclass`.
             for field in obj.loadedfields():
                 value = field.value_from_data(obj, data)
                 setattr(obj, field.attname, field.to_python(value, backend))
-            #obj._dbdata = data.get('__dbdata__', {})
-            if backend:
+            pkname = self.pkname()
+            if backend or ('__dbdata__' in data and\
+                            data['__dbdata__'][pkname] == pkvalue):
                 obj._dbdata[self.pkname()] = pkvalue
-        return obj
 
     def __repr__(self):
         return self.modelkey
@@ -575,18 +578,3 @@ def create_model(name, *attributes, **params):
     params['attributes'] = unique_tuple(attributes)
     params['register'] = False
     return ModelType(name, (LocalModelBase,), params)
-
-
-def from_uuid(uuid, session=None):
-    '''Retrieve a :class:`Model` from its universally unique identifier
-*uuid*. If the *uuid* does not match any instance an exception will raise.'''
-    elems = uuid.split('.')
-    if len(elems) == 2:
-        model = get_model_from_hash(elems[0])
-        if not model:
-            raise Model.DoesNotExist(\
-                        'model id "{0}" not available'.format(elems[0]))
-        if not session:
-            session = model.objects.session()
-        return session.query(model).get(id = elems[1])
-    raise Model.DoesNotExist('uuid "{0}" not recognized'.format(uuid))

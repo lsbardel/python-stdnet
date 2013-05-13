@@ -84,18 +84,19 @@ class PickleSupport(test.TestCase):
         p = pickle.dumps(inst)
         inst2 = pickle.loads(p)
         self.assertEqual(inst, inst2)
-        self.assertEqual(inst.name,inst2.name)
-        self.assertEqual(inst.type,inst2.type)
-        self.assertEqual(inst.ccy,inst2.ccy)
+        self.assertEqual(inst.name, inst2.name)
+        self.assertEqual(inst.type, inst2.type)
+        self.assertEqual(inst.ccy, inst2.ccy)
         
     def testTempDictionary(self):
-        inst = yield self.session().add(
+        session = self.session()
+        inst = yield session.add(
                         Instrument(name='erz17', type='future', ccy='EUR'))
         self.assertTrue('cleaned_data' in inst._dbdata)
         p = pickle.dumps(inst)
         inst2 = pickle.loads(p)
         self.assertFalse('cleaned_data' in inst2._dbdata)
-        inst2.save()
+        yield session.add(inst2)
         self.assertTrue('cleaned_data' in inst._dbdata)
         
 
@@ -129,13 +130,15 @@ class TestStdModelMethods(test.TestCase):
         self.assertTrue(fields['timestamp'].as_cache)
         self.assertFalse(fields['timestamp'].required)
         self.assertFalse(fields['timestamp'].index)
-        m = self.session().add(self.model(code='bla', timestamp=datetime.now()))
+        session = self.session()
+        m = yield session.add(self.model(code='bla', timestamp=datetime.now()))
         self.assertTrue(m.timestamp)
         m.clear_cache_fields()
-        self.assertEqual(m.timestamp,None)
-        m.save()
-        m = self.query().get(id=1)
-        self.assertEqual(m.timestamp,None)
+        self.assertEqual(m.timestamp, None)
+        m2 = yield session.add(m)
+        self.assertEqual(m.id, m2.id)
+        m = yield self.query().get(id=m.id)
+        self.assertEqual(m.timestamp, None)
         
 
 class TestComplexModel(test.TestCase):
@@ -148,13 +151,13 @@ class TestComplexModel(test.TestCase):
         m = yield self.query().load_only('name').get(id=1)
         self.assertFalse(m.has_all_data)
         m.data = {'france':'paris'}
-        m.save()
+        yield session.add(m)
         m = yield self.query().get(id=1)
         self.assertEqual(m.data,{'italy':'rome',
                                  'england':'london',
                                  'france':'paris'})
         self.assertEqual(m.data__italy,'rome')
         m.data = None
-        m.save()
+        yield session.add(m)
         m = yield self.query().get(id=1)
         self.assertEqual(m.data, {})

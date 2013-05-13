@@ -4,7 +4,7 @@ from stdnet.utils import test
 from examples.models import SimpleModel
 
 
-class TestRegistration(test.TestCase):
+class TestRegistration(test.TestWrite):
 
     def register(self):
         router = odm.Router(self.backend)
@@ -35,30 +35,33 @@ class TestRegistration(test.TestCase):
             self.assertRaises(ModelNotRegistered, manager.session)
 
     def testFlushModel(self):
-        self.register()
-        odm.flush_models()
+        models = self.register()
+        yield models.flush()
 
-    def testFlushExclude(self):
-        self.register()
-        SimpleModel(code = 'test').save()
-        odm.flush_models(excludes = ('examples.simplemodel',))
-        qs = SimpleModel.objects.query()
-        self.assertTrue(qs)
-        odm.flush_models()
-        qs = SimpleModel.objects.query()
-        self.assertFalse(qs)
+    def test_flush_exclude(self):
+        models = self.register()
+        s = yield models.simplemodel.new(code='test')
+        models.flush(exclude=('examples.simplemodel',))
+        all = yield models.simplemodel.all()
+        self.assertEqual(len(all), 1)
+        self.assertEqual(all[0], s)
+        yield models.flush()
+        all = yield models.simplemodel.all()
+        self.assertFalse(all)
 
     def testFromUuid(self):
-        self.register()
-        s = SimpleModel(code='test').save()
+        models = self.register()
+        s = yield models.simplemodel.new(code='test')
         uuid = s.uuid
-        s2  = odm.from_uuid(s.uuid)
-        self.assertEqual(s,s2)
-        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid, 'ccdscscds')
-        self.assertRaises(SimpleModel.DoesNotExist,odm.from_uuid, 'ccdscscds.1')
+        s2  = yield models.from_uuid(s.uuid)
+        self.assertEqual(s, s2)
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                      models.from_uuid, 'ccdscscds')
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                      models.from_uuid, 'ccdscscds.1')
         a,b = tuple(uuid.split('.'))
-        self.assertRaises(SimpleModel.DoesNotExist,
-                          odm.from_uuid,'{0}.5'.format(a))
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                      models.from_uuid, '{0}.5'.format(a))
 
     def testFailedHashModel(self):
         self.assertRaises(KeyError, odm.hashmodel, SimpleModel)

@@ -215,9 +215,6 @@ class TestDeleteStructuredFields(test.TestWrite):
         yield t.on_result
         yield self.async.assertEqual(session.query(Dictionary).count(), 2)
     
-    def tearDown(self):
-        self.clear_all()
-    
     def fill(self, name):
         session = self.session()
         d = yield session.query(Dictionary).get(name=name)

@@ -1,15 +1,10 @@
-from pulsar.apps.test import sequential
+from stdnet.utils import test
+
+from .meta import Item, RelatedItem, SearchMixin
 
 
-from .meta import Item, RelatedItem
-from . import meta
-
-@sequential
-class TestSearchAddToEngine(meta.TestCase):
-    
-    def tearDown(self):
-        return self.clear_all()
-      
+class TestSearchAddToEngine(SearchMixin, test.TestWrite):
+          
     def testSimpleAdd(self):
         return self.simpleadd()
     
@@ -103,17 +98,13 @@ class TestSearchAddToEngine(meta.TestCase):
         self.assertEqual(str(wi.word),'20y')
 
 
-@sequential
-class TestCoverage(meta.TestCase):
+class TestCoverage(SearchMixin, test.TestWrite):
     
     @classmethod
     def make_engine(cls):
-        eg = meta.SearchEngine(metaphone=False, backend=cls.backend)
+        eg = meta.SearchEngine(metaphone=False)
         eg.add_word_middleware(meta.processors.metaphone_processor)
         return eg
-    
-    def tearDown(self):
-        return self.clear_all()
     
     def testAdd(self):
         item, wi = yield self.simpleadd('pink',

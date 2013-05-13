@@ -465,7 +465,7 @@ the :meth:`union` method.'''
         q.data['ordering'] = ordering
         return q
 
-    def search(self, text, lookup=None, engine=None):
+    def search(self, text, lookup=None):
         '''Search *text* in model. A search engine needs to be installed
 for this function to be available.
 
@@ -474,8 +474,6 @@ for this function to be available.
 ''' 
         q = self._clone()
         q.text = (text, lookup)
-        if engine:
-            q.searchengine = engine
         return q
 
     def where(self, code, load_only=None):
@@ -502,9 +500,9 @@ each element in the query. The *coe* should reference an instance of
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            self.searchengine = self.searchengine or self.model.searchengine
-            if self.searchengine:
-                return self.searchengine.search_model(q, *self.text)
+            searchengine = self.session.router.search_engine
+            if searchengine:
+                return searchengine.search_model(q, *self.text)
             else:
                 raise QuerySetError('Search not available for %s' % self._meta)
         else:

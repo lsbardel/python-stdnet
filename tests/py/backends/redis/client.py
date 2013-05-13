@@ -85,14 +85,14 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(N, 2)
         
     def testMove2Set(self):
-        yield test.multi((self.client.sadd('foo', 1, 2, 3, 4, 5),
-                          self.client.lpush('bla', 4, 5, 6, 7, 8)))
+        yield self.multi_async((self.client.sadd('foo', 1, 2, 3, 4, 5),
+                                self.client.lpush('bla', 4, 5, 6, 7, 8)))
         r = yield self.client.execute_script('move2set', ('foo', 'bla'), 's')
         self.assertEqual(len(r), 2)
         self.assertEqual(r[0], 2)
         self.assertEqual(r[1], 1)
-        yield test.multi((self.client.sinterstore('res1', 'foo', 'bla'),
-                          self.client.sunionstore('res2', 'foo', 'bla')))
+        yield self.multi_async((self.client.sinterstore('res1', 'foo', 'bla'),
+                                self.client.sunionstore('res2', 'foo', 'bla')))
         m1 = yield self.client.smembers('res1')
         m2 = yield self.client.smembers('res2')
         m1 = sorted((int(r) for r in m1))
@@ -102,31 +102,30 @@ class TestExtraClientCommands(TestCase):
     
     def testMove2ZSet(self):
         client = self.client
-        yield test.multi((client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e'),
-                          client.lpush('bla','d','e','f','g')))
+        yield self.multi_async((client.zadd('foo',1,'a',2,'b',3,'c',4,'d',5,'e'),
+                                client.lpush('bla','d','e','f','g')))
         r = yield client.execute_script('move2set', ('foo','bla'), 'z')
         self.assertEqual(len(r), 2)
         self.assertEqual(r[0], 2)
         self.assertEqual(r[1], 1)
-        yield test.multi((client.zinterstore('res1', ('foo', 'bla')),
-                          client.zunionstore('res2', ('foo', 'bla'))))
+        yield self.multi_async((client.zinterstore('res1', ('foo', 'bla')),
+                                client.zunionstore('res2', ('foo', 'bla'))))
         m1 = yield client.zrange('res1', 0, -1)
         m2 = yield client.zrange('res2', 0, -1)
         self.assertEqual(sorted(m1), [b'd', b'e'])
         self.assertEqual(sorted(m2), [b'a',b'b',b'c',b'd',b'e',b'f',b'g'])
         
     def testMoveSetSet(self):
-        r = yield test.multi((self.client.sadd('foo',1,2,3,4,5),
-                              self.client.sadd('bla',4,5,6,7,8)),
-                             raise_on_error=True)
+        r = yield self.multi_async((self.client.sadd('foo',1,2,3,4,5),
+                                    self.client.sadd('bla',4,5,6,7,8)))
         r = yield self.client.execute_script('move2set', ('foo', 'bla'), 's')
         self.assertEqual(len(r), 2)
         self.assertEqual(r[0], 2)
         self.assertEqual(r[1], 0)
         
     def testMove2List2(self):
-        yield test.multi((self.client.lpush('foo',1,2,3,4,5),
-                          self.client.lpush('bla',4,5,6,7,8)))
+        yield self.multi_async((self.client.lpush('foo',1,2,3,4,5),
+                                self.client.lpush('bla',4,5,6,7,8)))
         r = yield self.client.execute_script('move2set', ('foo','bla'), 's')
         self.assertEqual(len(r), 2)
         self.assertEqual(r[0], 2)
@@ -145,9 +144,9 @@ class TestExtraClientCommands(TestCase):
         
     def testKeyInfo2(self):
         client = self.client
-        yield test.multi((client.set('planet', 'mars'),
-                          client.lpush('foo', 1, 2, 3, 4, 5),
-                          client.lpush('bla', 4, 5, 6, 7, 8)))
+        yield self.multi_async((client.set('planet', 'mars'),
+                                client.lpush('foo', 1, 2, 3, 4, 5),
+                                client.lpush('bla', 4, 5, 6, 7, 8)))
         keys = yield client.execute_script('keyinfo', ('planet', 'bla'))
         self.assertEqual(len(keys), 2)
         
@@ -156,18 +155,18 @@ class TestExtraClientCommands(TestCase):
         
     # ZSET SCRIPTING COMMANDS
     def test_zdiffstore(self):
-        yield test.multi((self.make_zset('a', {'a1': 1, 'a2': 1, 'a3': 1}),
-                          self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2}),
-                          self.make_zset('c', {'a1': 6, 'a3': 5, 'a4': 4})))
+        yield self.multi_async((self.make_zset('a', {'a1': 1, 'a2': 1, 'a3': 1}),
+                                self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2}),
+                                self.make_zset('c', {'a1': 6, 'a3': 5, 'a4': 4})))
         n = yield self.client.zdiffstore('z', ['a', 'b', 'c'])
         self.assertEqual(n, 1)
         r = yield self.client.zrange('z', 0, -1, withscores=True)
         self.assertEquals(list(r), [(b'a2', 1)])
         
     def test_zdiffstore_withscores(self):
-        yield test.multi((self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2}),
-                          self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2}),
-                          self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})))
+        yield self.multi_async((self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2}),
+                                self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2}),
+                                self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})))
         n = yield self.client.zdiffstore('z', ['a', 'b', 'c'], withscores=True)
         self.assertEqual(n, 2)
         r = yield self.client.zrange('z', 0, -1, withscores=True)
@@ -175,8 +174,8 @@ class TestExtraClientCommands(TestCase):
         
     def test_zdiffstore2(self):
         c = self.get_client()
-        yield test.multi((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
-                          c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')))
+        yield self.multi_async((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
+                                c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')))
         r = yield c.zdiffstore('s3', ('s1', 's2'))
         self.async.assertEqual(c.zcard('s3'), 1)
         r = yield c.zrange('s3', 0, -1)
@@ -184,8 +183,8 @@ class TestExtraClientCommands(TestCase):
         
     def test_zdiffstore_withscores2(self):
         c = self.get_client()
-        yield test.multi((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
-                          c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')))
+        yield self.multi_async((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
+                                c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')))
         r = yield c.zdiffstore('s3', ('s1', 's2'), withscores=True)
         self.async.assertEqual(c.zcard('s3'), 3)
         r = yield c.zrange('s3', 0, -1, withscores=True)

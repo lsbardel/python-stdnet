@@ -26,12 +26,11 @@ class TestTransactions(test.TestCase):
         receiver = TransactionReceiver()
         odm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
-            self.assertEqual(t.backend, session.backend)
-            s = session.add(self.model(code = 'test',
-                                       description = 'just a test'))
+            self.assertEqual(t.session, session)
+            s = t.add(self.model(code='test', description='just a test'))
             self.assertFalse(s.id)
-            s2 = session.add(self.model(code = 'test2',
-                                   description = 'just a test'))
+            s2 = session.add(self.model(code='test2',
+                                   description='just a test'))
         yield t.on_result
         all = yield query.filter(code=('test','test2')).all()
         self.assertEqual(len(all), 2)
@@ -49,7 +48,7 @@ class TestTransactions(test.TestCase):
                                        description='just a test'))
         yield t.on_result
         yield self.async.assertEqual(query.get(id = s.id), s)
-        yield s.delete()
+        yield session.delete(s)
         yield self.async.assertRaises(self.model.DoesNotExist,
                                       query.get, id=s.id)
         

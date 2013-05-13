@@ -30,8 +30,8 @@ class ModelFieldPickler(encoders.Encoder):
     
     def load_iterable(self, iterable, session):
         ids = []
+        backend = session.model(self.model).read_backend
         tpy = self.model.pk().to_python
-        backend = session.backend
         ids = [tpy(id, backend) for id in iterable]
         result = session.query(self.model).filter(id=ids).all()
         return on_result(result, partial(self._sort, ids))

@@ -75,7 +75,7 @@ data loaded via the :meth:`loads` method.
         data = []
         load = self.loads
         for v in iterable:
-            data.append(load(data))
+            data.append(load(v))
         return data
     
         

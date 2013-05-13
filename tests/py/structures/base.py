@@ -25,7 +25,10 @@ of the :attr:`structure`.'''
         
     def test_meta(self):
         # start the transaction
-        session = self.session()
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        session = models.session()
         with session.begin() as t:
             l = t.add(self.create_one())
             self.assertTrue(l.id)

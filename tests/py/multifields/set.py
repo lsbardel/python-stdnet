@@ -39,7 +39,7 @@ class TestOrderedSet(test.TestCase):
         with session.begin() as t:
             for dt, value in zip(self.data.dates, self.data.values):
                 t.add(DateValue(dt=dt, value=value))
-        yield  t.on_result
+        yield t.on_result
         items = t.saved[DateValue._meta]
         with session.begin() as t:
             if update:
@@ -76,6 +76,6 @@ class TestOrderedSet(test.TestCase):
         ranks = []
         for v in vals:
             ranks.append(data.rank(v))
-        ranks = yield test.multi_async(ranks)
+        ranks = yield self.multi_async(ranks)
                             
 

@@ -45,7 +45,8 @@ List
 
 The following api methods are available for a :class:`List` and :class:`ListField`:
 
-* :meth:`Structure.size`
+* :meth:`Structure.size` list size.
+* :meth:`Structure.items` retrieve all items for a list.
 * :meth:`Sequence.push_back` append an element at the end of the list.
 * :meth:`List.push_front` prepend an element at the beginning of the list.
 * :meth:`Sequence.pop_back` remove the last element the list.
@@ -64,13 +65,43 @@ Set
 
 The following api methods are available for a :class:`Set` and :class:`SetField`:
 
-* :meth:`Structure.size`
+* :meth:`Structure.size` set size.
 * :meth:`Set.add` add a new element to the set.
 * :meth:`Set.update` add a collection of elements to the set.
 * :meth:`Set.discard` remove an element from the set if it is a member.
 * :meth:`Set.remove` remove an element from the set. Raises an :class:`KeyError`
   if not available.
 * :meth:`Set.difference_update` remove a collection of elements from the set.
+
+
+.. _tutorial-zset:
+
+Zset
+==============================
+
+**Backends**: :ref:`redis <redis-server>`
+
+**default encoder**: :class:`stdnet.utils.encoders.NumericDefault`.
+
+**Methods**
+
+The following api methods are available for a :class:`Zset` and
+:class:`SetField` with :class:`SetField.ordered` attribute set to ``True``:
+
+* :meth:`Structure.size` set size.
+* :meth:`Set.add` add a new element to the set.
+* :meth:`Zset.rank` the rank (position) of an element withing the ordered set.
+* :meth:`Set.update` add a collection of elements to the set.
+* :meth:`Set.discard` remove an element from the set if it is a member.
+* :meth:`Set.remove` remove an element from the set. Raises an :class:`KeyError`
+  if not available.
+* :meth:`Set.difference_update` remove a collection of elements from the set.
+* :meth:`OrderedMixin.range` the specified range of elements in the sorted set.
+* :meth:`OrderedMixin.irange` the specified range of elements by index.
+* :meth:`OrderedMixin.pop_range` remove the specified range of elements in
+  the sorted set.
+* :meth:`OrderedMixin.ipop_range` remove the specified range of elements
+  by index.
 
 
 .. _tutorial-hash:
@@ -88,11 +119,11 @@ Hash table
 
 The following api methods are available for a :class:`HashTable` and :class:`HashField`:
 
-* :meth:`Structure.size`
+* :meth:`Structure.size` Hash table size.
 * :meth:`Set.add` add a new element to the set.
 * :meth:`Set.update` add a collection of elements to the set.
 * :meth:`Set.discard` remove an element from the set if it is a memeber.
-* :meth:`Set.discard` remove an element from the set.
+* :meth:`Set.remove` remove an element from the set.
 * :meth:`Set.difference_update` remove a collection of elements from the set.
 
 

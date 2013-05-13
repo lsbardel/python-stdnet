@@ -111,14 +111,6 @@ class odmrun(RedisScript):
 class check_structures(RedisScript):
     script = read_lua_file('structures')
     
-    def callback(self, response, meta=None, instances=None, **opts):
-        results = []
-        for type, instance in zip(response, instances):
-            state = instance.get_state()
-            results.append(instance_session_result(
-                        state.iid, instance, instance.id, state.deleted, 0))
-        return session_result(meta, results)
-    
 
 ################################################################################
 ##    REDIS QUERY CLASS
@@ -375,6 +367,21 @@ def iteretor_pipelined(f):
 ################################################################################
 class RedisStructure(BackendStructure):
         
+    def __init__(self, *args, **kwargs):
+        super(RedisStructure, self).__init__(*args, **kwargs)
+        instance = self.instance
+        field = instance.field
+        if field:
+            model = field.model 
+            if instance._pkvalue:
+                id = self.backend.basekey(model._meta, 'obj', instance._pkvalue,
+                                          field.name)
+            else:
+                id = self.backend.basekey(model._meta, 'struct', field.name)
+        else:
+            id = instance.id
+        self.id = id
+            
     @property
     def is_pipeline(self):
         return self.client.is_pipeline
@@ -417,7 +424,7 @@ class Set(RedisStructure):
     def size(self):
         return self.client.scard(self.id)
     
-    def __iter__(self):
+    def items(self):
         return self.client.smembers(self.id)
     
 
@@ -449,7 +456,6 @@ class Zset(RedisStructure):
     
     def values(self):
         return self.irange(withscores=False)
-    __iter__ = values
     
     def size(self):
         return self.client.zcard(self.id)
@@ -560,8 +566,8 @@ class Hash(RedisStructure):
     def __contains__(self, key):
         return self.client.hexists(self.id, key)
     
-    def __iter__(self):
-        return iter(self.client.hkeys(self.id))
+    def keys(self):
+        return self.client.hkeys(self.id)
     
     def values(self):
         return self.client.hvals(self.id)
@@ -802,40 +808,37 @@ class BackendDataServer(stdnet.BackendDataServer):
         pipe = self.client.pipeline()
         for sm in session_data:  #loop through model sessions
             meta = sm.meta
-            model_type = meta.model._model_type
-            if model_type == 'structure':
+            if sm.structures:
                 self.flush_structure(sm, pipe)
-            elif model_type == 'object':
-                meta_info = json.dumps(self.meta(meta))
-                delquery = sm.deletes.backend_query(pipe=pipe) if sm.deletes\
-                             else None
-                self.accumulate_delete(pipe, delquery)
-                if sm.dirty:
-                    lua_data = [len(sm.dirty)]
-                    processed = []
-                    for instance in sm.dirty:
-                        state = instance.get_state()
-                        if not instance.is_valid():
-                            raise FieldValueError(
-                                        json.dumps(instance._dbdata['errors']))
-                        score = MIN_FLOAT
-                        if meta.ordering:
-                            if meta.ordering.auto:
-                                score = meta.ordering.name.incrby 
-                            else:
-                                v = getattr(instance, meta.ordering.name, None)
-                                if v is not None:
-                                    score = meta.ordering.field.scorefun(v)
-                        data = instance._dbdata['cleaned_data']
-                        action = state.action
-                        prev_id = state.iid if state.persistent else ''
-                        id = instance.pkvalue() or ''
-                        data = flat_mapping(data)
-                        lua_data.extend((action, prev_id, id, score, len(data)))
-                        lua_data.extend(data)
-                        processed.append(state.iid)
-                    self.odmrun(pipe, 'commit', meta, (), meta_info,
-                                *lua_data, iids=processed)
+            meta_info = json.dumps(self.meta(meta))
+            delquery = sm.deletes.backend_query(pipe=pipe) if sm.deletes else None
+            self.accumulate_delete(pipe, delquery)
+            if sm.dirty:
+                lua_data = [len(sm.dirty)]
+                processed = []
+                for instance in sm.dirty:
+                    state = instance.get_state()
+                    if not instance.is_valid():
+                        raise FieldValueError(
+                                    json.dumps(instance._dbdata['errors']))
+                    score = MIN_FLOAT
+                    if meta.ordering:
+                        if meta.ordering.auto:
+                            score = meta.ordering.name.incrby 
+                        else:
+                            v = getattr(instance, meta.ordering.name, None)
+                            if v is not None:
+                                score = meta.ordering.field.scorefun(v)
+                    data = instance._dbdata['cleaned_data']
+                    action = state.action
+                    prev_id = state.iid if state.persistent else ''
+                    id = instance.pkvalue() or ''
+                    data = flat_mapping(data)
+                    lua_data.extend((action, prev_id, id, score, len(data)))
+                    lua_data.extend(data)
+                    processed.append(state.iid)
+                self.odmrun(pipe, 'commit', meta, (), meta_info,
+                            *lua_data, iids=processed)
         return pipe.execute()
     
     def accumulate_delete(self, pipe, backend_query):
@@ -889,21 +892,19 @@ class BackendDataServer(stdnet.BackendDataServer):
         keys = [self.basekey(meta, OBJ, obj.id)]
         for field in meta.multifields:
             f = getattr(obj, field.attname)
-            keys.append(f.id)
+            be = self.structure(f)
+            keys.append(be.id)
         return keys
     
     def flush_structure(self, sm, pipe):
-        processed = []
-        keys = []
-        for instance in chain(sm._delete_query, sm.dirty):
-            state = instance.get_state()
-            binstance = instance.backend_structure(pipe)
-            binstance.commit()
-            keys.append(binstance.id)
-            processed.append(instance)
-        if processed:
-            pipe.execute_script('check_structures', keys, meta=sm.meta,
-                                instances=processed)
+        for instance in sm.structures:
+            be = self.structure(instance, pipe)
+            be.action = instance.action
+            if be.action == 'update':
+                be.flush()
+            else:
+                be.delete()
+            instance.cache.clear()
         
     def bind_before_send(self, callback):
         pass

@@ -33,7 +33,7 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
     data_cls = TsData
     
     def defaults(self):
-        return {'ticker', self.name}
+        return {'ticker': self.name}
     
     def adddata(self, obj, data=None):
         data = data or self.data.testdata
@@ -176,29 +176,31 @@ class TestDateTimeSeries(MultiFieldMixin, test.TestCase):
         mkdate = self.mkdate
         dt = mkdate(2010,7,1)
         dt2 = mkdate(2010,4,1)
-        ts.data.add(dt,56)
-        ts.data[dt2] = 78
-        ts.save()
-        self.assertEqual(ts.data.size(),2)
-        ts.data.update({mkdate(2009,3,1):"ciao",mkdate(2009,7,4):"luca"})
-        ts.save()
-        self.assertEqual(ts.data.size(),4)
-        self.assertTrue(dt2 in ts.data)
-        self.assertFalse(mkdate(2000,4,13) in ts.data)
+        data = ts.data
+        with ts.session.begin() as t:
+            data.add(dt,56)
+            data[dt2] = 78
+        yield t.on_result
+        yield self.async.assertEqual(ts.data.size(), 2)
+        yield ts.data.update({mkdate(2009,3,1):"ciao", mkdate(2009,7,4):"luca"})
+        yield self.async.assertEqual(ts.data.size(),4)
+        yield self.async.assertTrue(dt2 in ts.data)
+        yield self.async.assertFalse(mkdate(2000,4,13) in ts.data)
         
     def testGet(self):
         ts = yield self.make()
         mkdate = self.mkdate
-        dt = mkdate(2010,7,1)
-        dt2 = mkdate(2010,4,1)
-        ts.data.add(dt,56)
-        ts.data[dt2] = 78
-        ts.save()
-        self.assertEqual(ts.size(),2)
-        self.assertEqual(ts.data.get(dt),56)
-        self.assertEqual(ts.data[dt2],78)
-        self.assertRaises(KeyError,lambda : ts.data[mkdate(2010,3,1)])
-        self.assertEqual(ts.data.get(mkdate(2010,3,1)),None)
+        with ts.session.begin() as t:
+            dt = mkdate(2010,7,1)
+            dt2 = mkdate(2010,4,1)
+            ts.data.add(dt,56)
+            ts.data[dt2] = 78
+        yield t.on_result
+        yield self.async.assertEqual(ts.size(), 2)
+        yield self.async.assertEqual(ts.data.get(dt), 56)
+        yield self.async.assertEqual(ts.data[dt2], 78)
+        yield self.async.assertRaises(KeyError, lambda : ts.data[mkdate(2010,3,1)])
+        yield self.async.assertEqual(ts.data.get(mkdate(2010,3,1)), None)
         
     def testRange(self):
         '''Test the range (by time) command'''

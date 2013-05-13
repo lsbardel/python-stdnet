@@ -38,19 +38,18 @@ class TestHashField(MultiFieldMixin, test.TestCase):
     def test_update(self):
         d = yield self.create(True)
         data = d.data
-        self.assertTrue(data.is_field)
+        self.assertTrue(data.field)
         self.assertEqual(data.session, d.session)
         self.assertEqual(data.cache.cache, None)
         items = yield data.items()
         self.assertTrue(data.cache.cache)
-        self.assertEqual(data.cache.cache, items)
+        self.assertNotEqual(data.cache.cache, items)
+        self.assertEqual(data.cache.cache, dict(items))
     
     def test_add(self):
         d = yield self.create()
         self.assertTrue(d.session)
-        self.assertTrue(d in d.session)
         with d.session.begin() as t:
-            t.add(d)
             for k, v in iteritems(self.data.data):
                 d.data.add(k, v)
             size = yield d.data.size()
@@ -76,8 +75,8 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         
     def testValues(self):
         d = yield self.create(True)
-        values = list(d.data.values())
-        self.assertEqual(len(self.data.data),len(values))
+        values = yield d.data.values()
+        self.assertEqual(len(self.data.data), len(values))
         
     def createN(self):
         with self.session().begin() as t:

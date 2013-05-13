@@ -24,7 +24,7 @@ query_result = namedtuple('query_result','key count')
 # if the instance is persistent on the backend, bid is the id in the backend.
 instance_session_result = namedtuple('instance_session_result',
                                      'iid persistent id deleted score')
-session_data = namedtuple('session_data', 'meta dirty deletes queries')
+session_data = namedtuple('session_data', 'meta dirty deletes queries structures')
 session_result = namedtuple('session_result','meta results')
 
 pass_through = lambda x: x
@@ -54,44 +54,22 @@ def get_connection_string(scheme, address, params):
 
     
 class BackendStructure(object):
-    __slots__ = ('instance', 'client', 'backend', '_id')
+    __slots__ = ('instance', 'backend', 'client')
     
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.backend = backend
         self.client = client
-        if not instance.id:
-            raise ValueError('No id available')
-        # if structure has no instance create the database id
-        if instance.is_field:
-            id = instance.id
-        else:
-            id = backend.basekey(self.instance._meta, self.instance.id)
-        self._id = id
-    
-    def commit(self):
-        '''Commit to backend server.'''
-        instance = self.instance
-        if instance.get_state().deleted:
-            result = self.delete()
-        else:
-            result = self.flush()
-        instance.cache.clear()
-        return result
     
     @property
     def name(self):
         return self.instance.name
     
-    @property
-    def id(self):
-        return self._id
-    
     def backend_structure(self):
         return self
     
     def clone(self):
-        return self.__class__(self.instance, self.client)
+        return self.__class__(self.instance, self.backend, self.client)
     
     def delete(self):   # pragma: no cover
         raise NotImplementedError

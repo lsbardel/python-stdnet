@@ -135,7 +135,7 @@ and vice-versa. It is design to be fast and safe to use::
 	class Position(odm.StdModel):
 	    instrument = odm.ForeignKey(Instrument, related_name='positions')
 	    fund       = odm.ForeignKey(Fund)
-	    history    = odm.ListField(model = PositionDescriptor)
+	    history    = odm.ListField(model=PositionDescriptor)
 	    
 	    def __unicode__(self):
 	        return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
@@ -144,14 +144,16 @@ and vice-versa. It is design to be fast and safe to use::
 	    
 Register models with backend::
 
-	odm.register(Instrument,'redis://localhost?db=1')
-	odm.register(Fund,'redis://localhost?db=1')
-	odm.register(PositionDescriptor,'redis://localhost?db=2')
-	odm.register(Position,'redis://localhost?db=2')
+    models = orm.Router('redis://localhost?db=1')
+    models.register(Instrument)
+    models.register(Fund)
+    models.register(PositionDescriptor,'redis://localhost?db=2')
+    models.register(Position,'redis://localhost?db=2')
 
 And play with the API::
 
-	>>> f = Fund(name="pluto, description="The pluto fund", ccy="EUR").save()
+	>>> f = models.fund.new(name="pluto, description="The pluto fund", ccy="EUR")
+	>>> f
 	Fund: pluto
 
 
@@ -166,18 +168,19 @@ windows you can find sources from MSOpenTech_.
 
 Requirements for running tests:
 
+* ``python-stdnet`` project directory.
 * pulsar_.
 
-Note, these requirements are only needed if you are planning to run tests.
 To run tests open a shell and launch Redis. On another shell,
-from the package directory, type::
+from within the ``python-stdnet`` package directory, type::
 
     python runtests.py
     
-Tests are run against a local redis server on port 6379 and database 7 by default.
-To change the server and database where to run tests pass the ``--server`` option as follow::
+Tests are run against a local redis server on port ``6379`` and database 7 by default.
+To change the server and database where to run tests pass the ``--server``
+option as follow::
 
-    python runtests.py --server redis://myserver.com:6450/?db=12
+    python runtests.py --server redis://myserver.com:6450?db=12&password=bla
 
 For more information type::
 

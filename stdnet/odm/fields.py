@@ -147,14 +147,12 @@ Each field is specified as a :class:`StdModel` class attribute.
     type = None
     python_type = None
     index = True
-    ordered = False
     charset = None
     hidden = False
     internal_type = None
 
-    def __init__(self, unique=False, ordered=None, primary_key=False,
-                 required=True, index=None, hidden=None, as_cache=False,
-                 **extras):
+    def __init__(self, unique=False, primary_key=False, required=True,
+                 index=None, hidden=None, as_cache=False, **extras):
         self.primary_key = primary_key
         index = index if index is not None else self.index
         if primary_key:
@@ -173,7 +171,6 @@ Each field is specified as a :class:`StdModel` class attribute.
             self.unique = False
             self.index = False
         self.charset = extras.pop('charset',self.charset)
-        self.ordered = ordered if ordered is not None else self.ordered
         self.hidden = hidden if hidden is not None else self.hidden
         self.meta = None
         self.name = None
@@ -431,7 +428,6 @@ a :class:`datetime.date` instance.'''
     type = 'date'
     internal_type = 'numeric'
     python_type = date
-    ordered = True
     _default = None
 
     @field_value_error

@@ -15,10 +15,6 @@ class MultiFieldMixin(object):
     '''Test class which add a couple of tests for multi fields.'''
     attrname = 'data'
     data_cls = StringData
-    
-    @classmethod
-    def after_setup(cls):
-        cls.data = cls.data_cls(cls.size)
         
     def setUp(self):
         self.names = test.populate('string', size=10)
@@ -28,13 +24,12 @@ class MultiFieldMixin(object):
         return {}
         
     def get_object_and_field(self, save=True, **kwargs):
+        models = self.mapper
         params = self.defaults()
         params.update(kwargs)
         m = self.model(**params)
         if save:
-            with self.session().begin() as t:
-                t.add(m)
-            yield t.on_result
+            yield models.session().add(m)
         yield m, getattr(m, self.attrname)
     
     def adddata(self, obj):
@@ -44,32 +39,47 @@ class MultiFieldMixin(object):
         yield self.async.assertRaises(StructureFieldError,
                                       self.get_object_and_field, False)
     
-    def test_multiFieldId(self):
+    def test_multi_field_meta(self):
         '''Here we check for multifield specific stuff like the instance
 related keys (keys which are related to the instance rather than the model).'''
         # get instance and field, the field has no data here
-        obj, field = yield self.get_object_and_field()
-        # get the object id
-        id = to_string(obj.id)
-        # get the field database key
-        field_key = to_string(field.id)
-        self.assertTrue(id in field_key)
+        models = self.mapper
         #
-        backend = obj.session.backend
+        obj, field = yield self.get_object_and_field()
+        #
+        self.assertTrue(field.field)
+        self.assertEqual(field.field.model, self.model)
+        self.assertEqual(field._pkvalue, obj.pkvalue())
+        self.assertEqual(field.session, obj.session)
+        #
+        be = field.backend_structure()
+        self.assertEqual(be.backend, models[self.model].backend)
+        self.assertEqual(be.instance, field)
+        #
+        if be.backend.name == 'redis':
+            yield self.check_redis_structure(obj, be)
+        
+    def check_redis_structure(self, obj, be):
+        session = obj.session
+        backend = be.backend
+        #
+        # field id should be in instance keys
         keys = backend.instance_keys(obj)
-        if backend.name == 'redis':
-            # field id should be in instance keys
-            self.assertTrue(field.id in keys)
-            lkeys = yield backend.model_keys(self.model._meta)
-            # the field has no data, so there is no key in the database
-            self.assertFalse(field.id in lkeys)
+        self.assertTrue(be.id in keys)
+        #
+        # the field has no data, so there is no key in the database
+        lkeys = yield backend.model_keys(self.model._meta)
+        self.assertFalse(be.id in lkeys)
         #
         # Lets add data
-        self.adddata(obj)
+        yield self.adddata(obj)
         # The field id should be in the server keys
         if backend.name == 'redis':
-            lkeys = list(backend.model_keys(self.model._meta))
-            self.assertTrue(field.id in lkeys)
-        obj.delete()
-        lkeys = list(backend.model_keys(self.model._meta))
-        self.assertFalse(field.id in lkeys)
+            lkeys = yield backend.model_keys(self.model._meta)
+            self.assertTrue(be.id in lkeys)
+        #
+        # Delete the object
+        yield session.delete(obj)
+        # The backend id should not be in all model keys
+        lkeys = yield backend.model_keys(self.model._meta)
+        self.assertFalse(be.id in lkeys)

@@ -48,9 +48,14 @@ class StructureFieldProxy(LazyProxy):
     def get_structure(self, instance, session):
         if session is None:
             raise StructureFieldError('No session available, Cannot access.')
-        return self.factory(session=session,
-                            field=self,
-                            pickler=self.field.pickler,
+        pkvalue = None
+        if not self.field.class_field:
+            pkvalue = instance.pkvalue()
+            if pkvalue is None:
+                raise StructureFieldError('Cannot access "%s". The "%s" model ' 
+                                'is not persistent' % (instance, self.field))
+        return self.factory(pkvalue=pkvalue, session=session,
+                            field=self.field, pickler=self.field.pickler,
                             value_pickler=self.field.value_pickler,
                             **self.field.struct_params)
     
@@ -193,17 +198,16 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
         return True
     
     def structure_class(self):
-        raise NotImplementedError()
+        '''Returns the :class:`Structure` class for this field.'''
+        raise NotImplementedError
 
     def set_cache(self, instance, data):
         setattr(instance,self.get_cache_name(),data)
         
 
 class SetField(StructureField):
-    '''A field maintaining an unordered collection of values. It is initiated
-without any argument other than an optional model class.
-When accessed from the model instance, it returns an instance of
-:class:`Set` structure. For example::
+    '''A field maintaining an unordered or ordered collection of values.
+It is initiated without any argument other than an optional model class::
 
     class User(odm.StdModel):
         username  = odm.AtomField(unique = True)
@@ -218,7 +222,19 @@ It can be used in the following way::
     >>> user.save()
     >>> user2 in user.following
     True
-    '''
+    
+.. attribute:: ordered
+
+    A flag indicating if the elements in this set are ordered with respect
+    a score. If ordered, the :meth:`StructureField.structure_class` method
+    returns a :class:`Zset` otherwise a :class:`Set`.
+    Default ``False``.
+'''
+    ordered = False
+    def __init__(self, *args, **kwargs):
+        self.ordered = kwargs.pop('ordered', self.ordered)
+        super(SetField, self).__init__(*args, **kwargs)
+        
     def structure_class(self):
         return Zset if self.ordered else Set
     

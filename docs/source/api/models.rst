@@ -121,11 +121,8 @@ SearchEngine Interface
 Data Structures
 ==============================
 
-Data structures are fundamental constructs around which you build your application.
-They are used in almost all computer programs, therefore becoming fluent in what the standard
-data-structures can do for you is essential to get full value out of them.
-The `standard template library`_ in C++ implements a wide array of structures,
-python has several of them too. ``stdnet`` implements **six** remote structures:
+Data structures are subclasses of :class:`Structure`.
+There are six of them:
 
  * :class:`List`, implemented as a doubly-linked sequence.
  * :class:`Set`, a container of unique values.
@@ -138,10 +135,13 @@ An additional structure is provided in the :mod:`stdnet.apps.columnts` module
  * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate timeseries structure
    (useful for modelling financial timeseries for example).
 
-The structures are bind to a remote dataserver and they derive from
-from :class:`Structure` base class.
+.. note::
 
-
+    Stand alone data structures are available for redis backend only. Usually,
+    one uses these models via a
+    :ref:`data-structure fields <model-field-structure>`.
+    
+    
 Creating Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -150,8 +150,8 @@ in the following way::
 
     from stdnet import odm
 
-    session = odm.Session(...)
-    l = session.add(odm.List())
+    models = odm.Router('redis://localhost:6379')
+    l = models.register(odm.List())
     s = session.add(odm.Set())
     o = session.add(odm.Zset())
     h = session.add(odm.HashTable())
@@ -161,7 +161,6 @@ If no ``id`` is specified, stdnet will create one for you::
 
     >>> l.id
     '2d0cbac9'
-    >>>
 
 To add data you have two options: immediate commit or transactions. For example,
 lets add elements to a set::

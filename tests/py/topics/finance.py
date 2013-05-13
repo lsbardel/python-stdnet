@@ -2,26 +2,18 @@ import datetime
 import logging
 from random import randint
 
-from pulsar.apps.test import sequential
-
 from stdnet import QuerySetError
 from stdnet.utils import test
 
 from examples.models import Instrument, Fund, Position, PortfolioView,\
                              UserDefaultView
-from examples.data import FinanceTest, INSTS_TYPES, CCYS_TYPES
+from examples.data import finance_data, INSTS_TYPES, CCYS_TYPES
 
 
-@sequential
-class TestFinanceApplication(FinanceTest):
+class TestFinanceApplication(test.TestWrite):
+    data_cls = finance_data
+    models = (Instrument, Fund, Position)
     
-    @classmethod
-    def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        
-    def tearDown(self):
-        self.clear_all()
-        
     def testGetObject(self):
         '''Test get method for id and unique field'''
         session = yield self.data.create(self)

@@ -174,8 +174,8 @@ add it to the index.
         yield total
 
     def query(self, model):
-        '''Return a query for model when indexing is to be performed.'''
-        session = self.session(model)
+        '''Return a query for ``model`` when it needs to be indexed.'''
+        session = self.router.session()
         fields = tuple((f.name for f in model._meta.scalarfields\
                          if f.type=='text'))
         qs = session.query(model).load_only(*fields)
@@ -196,7 +196,7 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
                             if f.type=='text'))
             all = yield self.query(model).all()
             if all:
-                n = yield self.index_items_from_model(group, model)
+                n = yield self.index_items_from_model(all, model)
                 total += n
         yield total
 
@@ -291,8 +291,8 @@ engine index models.'''
         return self.se.index_items_from_model(instances, sender)
 
     def remove(self, instances, sender, session):
-        self.logger.debug('Removing from search index %s instances of %s',
-                          len(instances), sender._meta)
+        self.se.logger.debug('Removing from search index %s instances of %s',
+                             len(instances), sender._meta)
         remove_item = self.se.remove_item
         with session.begin(name='Remove search indexes') as t:
             remove_item(sender, t, instances)

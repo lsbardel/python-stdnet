@@ -33,12 +33,11 @@ class WordItem(odm.StdModel):
     class Meta:
         ordering = -odm.autoincrement()
 
-    def object(self, session=None):
+    def object(self, session):
         '''Instance of :attr:`model_type` with id :attr:`object_id`.'''
         if not hasattr(self, '_object'):
-            if session is None:
-                session = self.model_type.session()
-            query = session.query(self.model_type)
+            pkname = self.model_type._meta.pkname()
+            query = session.query(self.model_type).filter(**{pkname: self.object_id})
             return query.items(callback=self.__set_object)
         else:
             return self._object

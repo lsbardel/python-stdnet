@@ -1,4 +1,4 @@
-'''Search engine application in `apps.searchengine`.'''
+'''search a mock database.'''
 from stdnet import odm
 from stdnet.utils import test, populate
 
@@ -9,13 +9,14 @@ from .meta import SearchMixin
 
 class TestBigSearch(SearchMixin, test.TestCase):
     
-    def setUp(self):
-        self.mapper.set_search_engine(self.make_engine())
-        self.mapper.search_engine.register(Item, ('related',))
-        self.mapper.search_engine.register(RelatedItem)
-        return self.make_items(num=30, content=True)
+    @classmethod
+    def after_setup(cls):
+        cls.mapper.set_search_engine(cls.make_engine())
+        cls.mapper.search_engine.register(Item, ('related',))
+        cls.mapper.search_engine.register(RelatedItem)
+        return cls.data.make_items(cls, content=True)
     
-    def test_session(self):
+    def test_meta_session(self):
         models = self.mapper
         self.assertFalse(models.search_engine.backend)
         session = models.search_engine.session()
@@ -36,6 +37,8 @@ class TestBigSearch(SearchMixin, test.TestCase):
         sw = ' '.join(populate('choice', 1, choice_from=self.words))
         qs = yield models.item.search(sw).all()
         self.assertTrue(qs)
+        for item in qs:
+            self.assertTrue(sw in item.name or sw in item.content)
         
     def testSearch(self):
         engine = self.mapper.search_engine
@@ -52,10 +55,11 @@ class TestBigSearch(SearchMixin, test.TestCase):
         self.assertEqual(set(q1), set(all))
         
     def testInSearch(self):
+        models = self.mapper
+        query = models.item.query()
         sw = ' '.join(populate('choice', 5, choice_from=self.words))
-        query = self.session().query(Item)
-        res1 = yield query.search(sw, engine=self.engine).all()
-        res2 = yield query.search(sw, lookup='in',  engine=self.engine).all()
+        res1 = yield query.search(sw).all()
+        res2 = yield query.search(sw, lookup='in').all()
         self.assertTrue(res2)
         self.assertTrue(len(res1) < len(res2))
         

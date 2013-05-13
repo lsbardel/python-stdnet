@@ -1,25 +1,42 @@
 from stdnet.utils import test
 
-from .meta import Item, RelatedItem, SearchMixin
+from .meta import Item, RelatedItem, SearchMixin, SearchEngine, processors
 
 
-class TestSearchAddToEngine(SearchMixin, test.TestWrite):
-          
+class SearchWriteMixin(SearchMixin):
+    
+    @classmethod
+    def after_setup(cls):
+        pass
+    
+    def setUp(self):
+        self.mapper.set_search_engine(self.make_engine())
+        self.mapper.search_engine.register(Item, ('related',))
+        self.mapper.search_engine.register(RelatedItem)
+        
+
+class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
+    
     def testSimpleAdd(self):
         return self.simpleadd()
     
     def testDoubleEntries(self):
-        '''Test an item indexed twice'''
+        '''Test an item indexed twice.'''
+        models = self.mapper
+        session = models.session()
+        engine = models.search_engine
         item, wi = yield self.simpleadd()
         wi = set((w.word for w in wi))
-        yield item.save()
-        items = yield self.engine.worditems(item).all()
+        yield session.add(item)
+        items = yield engine.worditems(item).all()
         wi2 = set((w.word for w in items))
         self.assertEqual(wi, wi2)    
         
     def testSearchWords(self):
+        models = self.mapper
+        engine = models.search_engine
         yield self.simpleadd()
-        words = list(self.engine.words_from_text('python gains'))
+        words = list(engine.words_from_text('python gains'))
         self.assertTrue(len(words) >= 2)
         
     def testSearchModelSimple(self):
@@ -61,33 +78,42 @@ class TestSearchAddToEngine(SearchMixin, test.TestWrite):
         yield self.async.assertEqual(qs.count(), 1)
         
     def testFlush(self):
-        yield self.make_items()
-        yield self.engine.flush()
-        yield self.async.assertFalse(self.engine.worditems().count())
+        models = self.mapper
+        engine = models.search_engine
+        yield self.data.make_items(self)
+        yield engine.flush()
+        yield self.async.assertFalse(engine.worditems().count())
         
     def testDelete(self):
+        models = self.mapper
+        session = models.session()
+        engine = models.search_engine
         item = yield self.make_item()
-        words = yield self.engine.worditems().all()
+        words = yield engine.worditems().all()
         self.assertTrue(words)
-        yield item.delete()
-        wis = self.engine.worditems(Item)
+        yield session.delete(item)
+        wis = engine.worditems(Item)
         yield self.async.assertFalse(wis.count(), 0)
         
     def testReindex(self):
-        yield self.make_items()
-        wis1 = yield self.engine.worditems().all()
+        models = self.mapper
+        engine = models.search_engine
+        yield self.data.make_items(self)
+        wis1 = yield engine.worditems().all()
         self.assertTrue(wis1)
-        yield self.engine.reindex()
-        wis2 = yield self.engine.worditems().all()
+        yield engine.reindex()
+        wis2 = yield engine.worditems().all()
         self.assertTrue(wis1)
         self.assertEqual(set(wis1), set(wis2))
         
     def test_skip_indexing_when_missing_fields(self):
-        session = self.session()
+        models = self.mapper
+        engine = models.search_engine
+        session = models.session()
         item, wis = yield self.simpleadd()
-        obj = yield self.query(Item).load_only('id').get(id=item.id)
-        yield obj.save()
-        wis2 = yield self.engine.worditems(obj).all()
+        obj = yield models.item.query().load_only('id').get(id=item.id)
+        yield session.add(obj)
+        wis2 = yield engine.worditems(obj).all()
         self.assertEqual(wis, wis2)
         
     def testAddWithNumbers(self):
@@ -98,12 +124,12 @@ class TestSearchAddToEngine(SearchMixin, test.TestWrite):
         self.assertEqual(str(wi.word),'20y')
 
 
-class TestCoverage(SearchMixin, test.TestWrite):
+class TestCoverage(SearchWriteMixin, test.TestWrite):
     
     @classmethod
     def make_engine(cls):
-        eg = meta.SearchEngine(metaphone=False)
-        eg.add_word_middleware(meta.processors.metaphone_processor)
+        eg = SearchEngine(metaphone=False)
+        eg.add_word_middleware(processors.metaphone_processor)
         return eg
     
     def testAdd(self):

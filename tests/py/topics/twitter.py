@@ -1,5 +1,3 @@
-from pulsar.apps.test import sequential
-
 from datetime import datetime
 from random import randint
 
@@ -15,18 +13,15 @@ MAX_FOLLOWERS = 10
 usernames = populate('string',NUM_USERS, min_len=5, max_len=20)
 passwords = populate('string',NUM_USERS, min_len=8, max_len=20)
 
-@sequential
-class TestTwitter(test.TestCase):
+
+class TestTwitter(test.TestWrite):
     models = (User, Post)
 
     def setUp(self):
-        self.register()
-        with User.objects.transaction() as t:
-            for username,password in zip(usernames,passwords):
+        with self.mapper.session().begin() as t:
+            for username, password in zip(usernames,passwords):
                 t.add(User(username=username, password=password))
-    
-    def tearDown(self):
-        self.clear_all()
+        return t.on_result
         
     def testMeta(self):
         following = User.following
@@ -43,7 +38,8 @@ class TestTwitter(test.TestCase):
         self.assertEqual(followers.name_formodel,'user')
         
     def testRelated(self):
-        users = User.objects.query()
+        models = self.mapper
+        users = models.user.query()
         user1 = users[0]
         user2 = users[1]
         user3 = users[2]
@@ -60,9 +56,9 @@ class TestTwitter(test.TestCase):
     def testFollowers(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
-        users = list(User.objects.query())
+        models = self.mapper
+        users = yield models.user.query().all()
         N = len(users)
-        
         count = []
         # Follow users
         for user in users:
@@ -83,26 +79,27 @@ class TestTwitter(test.TestCase):
     def testFollowersTransaction(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
-        users = list(User.objects.query())
+        models = self.mapper
+        users = yield models.user.query().all()
         N = len(users)
-        
         # Follow users
-        with User.objects.transaction() as t:
+        with models.session().begin() as t:
             for user in users:
                 n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
                 following = user.following
                 for tofollow in populate('choice',n, choice_from = users):
                     following.add(tofollow, transaction = t)
-        
         for user in users:
             for following in user.following.query():
                 self.assertTrue(user in following.followers.query())
             
     def testMessages(self):
-        users = User.objects.query()
+        models = self.mapper
+        users = yield models.user.query().all()
+        ids = [u.id in u in users]
         N = len(users)
         id = randint(1,N)
-        user = User.objects.get(id = id)
+        user = models.user.get(id = id)
         user.newupdate('this is my first message')
         user.newupdate('and this is another one')
         user.save()

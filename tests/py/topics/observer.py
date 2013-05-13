@@ -17,8 +17,7 @@ class ObserverData(test.DataGenerator):
         self.observables, self.observers = self.size
 
 
-@test.sequential
-class ObserverTest(test.TestCase):
+class ObserverTest(test.TestWrite):
     multipledb = 'redis'
     models = (Observer,Observable)
     data_cls = ObserverData
@@ -89,8 +88,10 @@ class ObserverTest(test.TestCase):
     def test_save(self):
         models = self.mapper
         obs = yield models.observable.query().sort_by('id').all()
-        for o in obs:
-            o.save()
+        with models.session().begin() as t:
+            for o in obs:
+                t.add(o)
+        yield t.on_result
         now = time()
         # The first observable is connected with all observers
         self.assertEqual(models.observer.updates.size(), 20)

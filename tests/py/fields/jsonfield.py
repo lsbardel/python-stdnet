@@ -70,16 +70,17 @@ class TestJsonField(test.TestCase):
                                date2timestamp(timestamp), 5)
         
     def testCreateFromString(self):
+        models = self.mapper
         mean = 'mean'
         timestamp = time.time()
         data = {'mean': mean,
                 'std': 5.78,
                 'timestamp': timestamp}
         datas = json.dumps(data)
-        a = yield Statistics(dt=date.today(), data=datas).save()
-        a = yield Statistics.objects.get(id=a.id)
+        a = yield models.statistics.new(dt=date.today(), data=datas)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(a.data['mean'], mean)
-        a = yield Statistics.objects.get(id=a.id)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(len(a.data),3)
         self.assertEqual(a.data['mean'],mean)
         self.assertAlmostEqual(a.data['timestamp'], timestamp)
@@ -94,8 +95,9 @@ class TestJsonField(test.TestCase):
         self.assertEqual(a.data, {})
         
     def testValueError(self):
-        a = Statistics(dt=date.today(), data={'mean': self})
-        self.assertRaises(stdnet.FieldValueError, a.save)
+        models = self.mapper
+        a = models.statistics(dt=date.today(), data={'mean': self})
+        self.assertRaises(stdnet.FieldValueError, models.session().add, a)
         self.assertTrue('data' in a._dbdata['errors'])
         
 
@@ -143,8 +145,10 @@ The `as_string` atttribute is set to ``False``.'''
         self.assertEqual(float(data['data__pv']), 3.2)
         
     def testGet(self):
-        m = yield self.make().save()
-        m = yield self.model.objects.get(id=m.id)
+        models = self.mapper
+        session = models.session()
+        m = yield session.add(self.make())
+        m = yield models.statistics3.get(id=m.id)
         self.assertEqual(m.data['mean'], 1.0)
         self.assertEqual(m.data['std'], 5.78)
         self.assertEqual(m.data['pv'], 3.2)
@@ -153,19 +157,23 @@ The `as_string` atttribute is set to ``False``.'''
         
     def testmakeEmptyError(self):
         '''Here we test when we have a key which is empty.'''
+        models = self.mapper
+        session = models.session()
         m = self.make(self.def_baddata)
         self.assertFalse(m.is_valid())
-        self.assertRaises(stdnet.FieldValueError,m.save)
+        self.assertRaises(stdnet.FieldValueError, session.add, m)
         
     def testmakeEmpty(self):
+        models = self.mapper
+        session = models.session()
         m = self.make(self.def_data2)
         self.assertTrue(m.is_valid())
         cdata = m._dbdata['cleaned_data']
         self.assertEqual(len(cdata),10)
         self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
-        obj = yield m.save()
-        obj = yield self.model.objects.get(id=obj.id)
+        obj = yield session.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
         self.assertEqual(obj.data['dt'].date(), date.today())
         self.assertEqual(obj.data__dt.date(), date.today())
         self.assertEqual(obj.data['pv']['mean']['1y'], 1.0)
@@ -174,12 +182,15 @@ The `as_string` atttribute is set to ``False``.'''
         
     def testmakeEmpty2(self):
         models = self.mapper
+        session = models.session()
         m = self.make({'ts': [1,2,3,4]})
         obj = yield models.add(m)
         obj = yield models.statistics3.get(id=obj.id)
         self.assertEqual(obj.data, {'ts': [1, 2, 3, 4]})
     
     def testFuzzySmall(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 0))
         m = self.make(data)
@@ -189,11 +200,13 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = yield m.save()
-        obj = yield self.model.objects.get(id=obj.id)
+        obj = yield session.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
         self.assertEqualDict(data, obj.data)
         
     def testFuzzyMedium(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 1))
         m = self.make(data)
@@ -203,11 +216,13 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = yield m.save()
+        obj = yield session.add(m)
         #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testFuzzy(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 3))
         m = self.make(deepcopy(data))
@@ -217,25 +232,29 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = yield m.save()
+        obj = yield session.add(m)
         #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testEmptyDict(self):
-        r = yield self.model(name='bla', data = {'bla':'ciao'}).save()
+        models = self.mapper
+        session = models.session()
+        r = yield session.add(self.model(name='bla', data = {'bla':'ciao'}))
         self.assertEqual(r.data, {'bla':'ciao'})
         r.data = None
-        yield r.save()
-        r = yield self.model.objects.get(id=r.id)
+        yield session.add(r)
+        r = yield models.statistics3.get(id=r.id)
         self.assertEqual(r.data, {})
         
     def testFromEmpty(self):
         '''Test the change of a data jsonfield from empty to populated.'''
-        r = yield self.model(name = 'bla').save()
+        models = self.mapper
+        session = models.session()
+        r = yield models.statistics3.new(name = 'bla')
         self.assertEqual(r.data, {})
         r.data = {'bla':'ciao'}
-        yield r.save()
-        r = yield self.model.objects.get(id=r.id)
+        yield session.add(r)
+        r = yield models.statistics3.get(id=r.id)
         self.assertEqual(r.data, {'bla':'ciao'})
     
     def assertEqualDict(self,data1,data2):

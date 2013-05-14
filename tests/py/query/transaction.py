@@ -52,25 +52,6 @@ class TestTransactions(test.TestCase):
         yield self.async.assertRaises(self.model.DoesNotExist,
                                       query.get, id=s.id)
         
-    def testNoTransaction(self):
-        session = self.session()
-        s = yield session.add(odm.Set())
-        l = yield session.add(odm.List())
-        h = yield session.add(odm.HashTable())
-        yield self.async.assertEqual(l.size(), 0)
-        m = yield session.add(self.model(code='xxxxx', description='just a test'))
-        # add an entry to the hashtable
-        yield h.add('test', 'bla')
-        yield l.push_back(5)
-        yield l.push_back(8)
-        yield s.update((2,3,4,5,6,7))
-        self.assertTrue(m.get_state().persistent)
-        yield self.async.assertEqual(s.size(), 6)
-        yield self.async.assertEqual(h.size(), 1)
-        yield self.async.assertEqual(l.size(), 2)
-        m1 = yield session.query(self.model).get(code='xxxxx')
-        self.assertEqual(m1, m)
-        
     def test_force_update(self):
         session = self.session()
         with session.begin() as t:

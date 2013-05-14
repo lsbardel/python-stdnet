@@ -114,20 +114,21 @@ class NonRequiredForeignKey(test.TestCase):
     def test_load_related_when_deleted(self):
         '''Use load_related on foreign key which was deleted.'''
         models = self.mapper
+        session = models.session()
         yield self.create_feeds_with_data('ccc1')
         feed = yield models.feed1.get(name='ccc1')
         live = yield feed.live
         self.assertTrue(feed.live)
         self.assertEqual(feed.live.id, feed.live_id)
         # Now we delete the feed
-        yield feed.live.delete()
+        yield session.delete(feed.live)
         # we still have a reference to it
         self.assertTrue(feed.live_id)
         self.assertTrue(feed.live)
         #
         feed = yield models.feed1.get(name='ccc1')
         live = yield feed.live
-        self.assertFalse(feed.live)
+        self.assertFalse(live)
         self.assertFalse(feed.live_id)
         #
         feed = yield models.feed1.query().load_related('live').get(name='ccc1')

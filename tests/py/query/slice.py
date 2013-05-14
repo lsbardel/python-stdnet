@@ -2,12 +2,10 @@
 from stdnet import QuerySetError
 from stdnet.utils import test
 
-from examples.models import Instrument
 from examples.data import FinanceTest
 
 
 class TestFilter(FinanceTest):
-    model = Instrument
     
     @classmethod
     def after_setup(cls):
@@ -72,8 +70,8 @@ class TestFilter(FinanceTest):
         self.assertEqual(q1[0].id,N-1)
         
     def testSliceGetField(self):
-        '''test silve in conjunction with get_field method'''
+        '''test slice in conjunction with get_field method'''
         session = self.session()
         qs = session.query(self.model).get_field('id')
-        self.assertRaises(QuerySetError, lambda: qs[:2])
+        yield self.async.assertRaises(QuerySetError, lambda: qs[:2])
     

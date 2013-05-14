@@ -4,6 +4,7 @@ from stdnet.utils import test
 from examples.models import Dictionary, Profile
 from examples.data import FinanceTest, Position, Instrument, Fund
 
+
 class Role(odm.StdModel):
     profile = odm.ForeignKey(Profile)
 
@@ -145,7 +146,7 @@ class test_load_related(FinanceTest):
 
 
 class test_load_related_empty(test.TestCase):
-    model = Role
+    models = (Role, Profile, Position, Instrument, Fund)
     
     @classmethod
     def after_setup(cls):
@@ -161,9 +162,9 @@ class test_load_related_empty(test.TestCase):
         yield t.on_result
         
     def testEmpty(self):
-        session = self.session()
-        instruments = yield session.query(Position).load_related('instrument').all()
-        self.assertEqual(instruments, [])
+        models = self.mapper
+        insts = yield models.position.query().load_related('instrument').all()
+        self.assertEqual(insts, [])
         
     def test_related_no_fields(self):
         qs = self.query().load_related('profile')
@@ -173,7 +174,8 @@ class test_load_related_empty(test.TestCase):
     
  
 class load_related_structure(test.TestCase):
-
+    model = Dictionary
+    
     @classmethod
     def after_setup(cls):
         with cls.session().begin() as t:

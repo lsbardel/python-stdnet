@@ -5,9 +5,6 @@ import time
 from datetime import date, datetime
 from decimal import Decimal
 
-from pulsar import multi_async
-from pulsar.apps.test import sequential
-
 import stdnet
 from stdnet import FieldValueError
 from stdnet.utils import test, populate, zip, is_string, to_string, unichr, ispy3k
@@ -24,15 +21,11 @@ class TestDateModel2(TestDateModel):
     pass
 
 
-@sequential
-class TestAtomFields(test.TestCase):
+class TestAtomFields(test.TestWrite):
     model = TestDateModel
         
     def setUp(self):
         return self.create()
-        
-    def tearDown(self):
-        return self.clear_all()
         
     def create(self):
         models = self.mapper
@@ -50,7 +43,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates[dt] = query.filter(dt=dt).all()
-        done_dates = yield multi_async(done_dates)
+        done_dates = yield self.multi_async(done_dates)
         N = 0
         for dt, elems in done_dates.items():
             N += len(elems)
@@ -65,7 +58,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates[dt] = query.filter(dt=dt).count()
-        done_dates = yield multi_async(done_dates)
+        done_dates = yield self.multi_async(done_dates)
         N = yield query.count()
         for d in done_dates.values():
             N -= d
@@ -78,7 +71,7 @@ class TestAtomFields(test.TestCase):
         for dt in dates:
             if dt not in done_dates:
                 done_dates[dt] = query.filter(dt=dt).count()
-        done_dates = yield multi_async(done_dates)
+        done_dates = yield self.multi_async(done_dates)
         for d in done_dates.values():
             self.assertEqual(d, 0)
             
@@ -154,9 +147,9 @@ class TestIntegerField(test.TestCase):
         models = self.mapper
         p = models.page(in_navigation=0)
         self.assertEqual(p.in_navigation, 0)
-        yield p.save()
+        yield models.session().add(p)
         self.assertEqual(p.in_navigation, 0)
-        p = yield Page.objects.get(id=p.id)
+        p = yield models.page.get(id=p.id)
         self.assertEqual(p.in_navigation, 0)
                
 
@@ -176,7 +169,7 @@ class TestDateData(test.TestCase):
         self.assertEqual(v.dt1, None)
         self.assertEqual(v.dt2.date(), date.today())
         v.dt2 = None
-        yield v.save()
+        yield models.session().add(v)
         self.assertEqual(v.dt2.date(), date.today())
         
 
@@ -204,14 +197,17 @@ class TestBoolField(test.TestCase):
             self.assertEqual(func(None),0)
         
     def test_bool_value(self):
-        d = yield self.model(pv=1.).save()
-        d = yield self.model.objects.get(id=d.id)
+        models = self.mapper
+        session = models.session()
+        d = yield session.add(models.numericdata(pv=1.))
+        d = yield models.numericdata.get(id=d.id)
         self.assertEqual(d.ok, False)
         d.ok = 'jasxbhjaxsbjxsb'
-        self.assertRaises(FieldValueError, d.save)
+        self.assertRaises(FieldValueError, session.add, d)
         d.ok = True
-        yield d.save()
-        d = yield self.model.objects.get(id=d.id)
+        # the session is in a transaction! that is way is failing
+        yield session.add(d)
+        d = yield models.numericdata.get(id=d.id)
         self.assertEqual(d.ok, True)
           
     
@@ -259,32 +255,36 @@ class TestPickleObjectField(test.TestCase):
         return field
     
     def testOkObject(self):
+        session = self.session()
         v = self.model(data=['ciao','pippo'])
         self.assertEqual(v.data, ['ciao','pippo'])
-        yield v.save()
+        yield session.add(v)
         self.assertEqual(v.data, ['ciao','pippo'])
-        v = yield self.model.objects.get(id=v.id)
+        v = yield session.query(self.model).get(id=v.id)
         self.assertEqual(v.data, ['ciao','pippo'])
         
     def testRecursive(self):
-        '''Silly test to test both pickle field and pickable instace'''
-        v = yield self.model(data=('ciao','pippo', 4, {})).save()
+        '''Silly test to test both pickle field and pickable instance'''
+        session = self.session()
+        v = yield session.add(self.model(data=('ciao','pippo', 4, {})))
         v2 = self.model(data=v)
         self.assertEqual(v2.data, v)
-        yield v2.save()
+        yield session.add(v2)
         self.assertEqual(v2.data, v)
-        v2 = yield self.model.objects.get(id=v2.id)
+        v2 = yield session.query(self.model).get(id=v2.id)
         self.assertEqual(v2.data, v)
     
 
 class TestErrorAtomFields(test.TestCase):
-
+    
     def testSessionNotAvailable(self):
+        session = self.session()
         m = TestDateModel2(name=names[1], dt=dates[0], person='sdcbsc')
-        self.assertRaises(stdnet.SessionNotAvailable, m.save)
+        self.assertRaises(stdnet.InvalidTransaction, session.add, m)
     
     def testNotSaved(self):
+        session = self.session()
         m = TestDateModel2(name=names[1], dt=dates[0])
-        self.assertRaises(stdnet.StdNetException, m.delete)    
+        self.assertRaises(stdnet.StdNetException, session.delete, m)    
 
 

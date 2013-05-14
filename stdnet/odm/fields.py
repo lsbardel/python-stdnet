@@ -628,8 +628,11 @@ the database field for the ``File`` model will have a ``folder_id`` field.
         return '%s_id' % self.name
         
     def get_value(self, instance, *bits):
-        related = getattr(instance, self.name)
-        return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
+        if not bits:
+            return getattr(instance, self.attname)
+        else:
+            related = getattr(instance, self.name)
+            return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)

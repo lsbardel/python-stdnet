@@ -222,7 +222,7 @@ class TestDeleteStructuredFields(test.TestWrite):
         data = d.data
         self.assertEqual(len(session._models), 1)
         self.assertTrue(data.field)
-        self.assertTrue(data.id)
+        self.assertFalse(data.id)
         yield d.data.update(self.data.data)
         self.async.assertEqual(data.size(), len(self.data.data))
         yield d
@@ -242,7 +242,7 @@ class TestDeleteStructuredFields(test.TestWrite):
         yield session.flush(Dictionary)
         yield self.async.assertEqual(session.query(Dictionary).count(), 0)
         # Now we check the database if it is empty as it should
-        backend = session.backend
+        backend = self.mapper.dictionary.backend
         if backend.name == 'redis':
             keys = yield session.keys(Dictionary)
             self.assertEqual(keys, [])

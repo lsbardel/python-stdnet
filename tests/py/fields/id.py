@@ -31,6 +31,7 @@ Use the manager for convenience.'''
         self.assertTrue(t1.timestamp < t2.timestamp)
         
     def test_change_id(self):
+        session = self.session()
         t1 = yield self.make()
         id1 = t1.id
         self.assertEqual(id1, t1._dbdata['id'])
@@ -39,15 +40,16 @@ Use the manager for convenience.'''
         t1.id = id2
         self.assertEqual(id1, t1._dbdata['id'])
         self.assertNotEqual(id2, t1._dbdata['id'])
-        yield t1.save()
+        yield session.add(t1)
         self.assertEqual(id2, t1.id)
         self.assertEqual(id2, t1._dbdata['id'])
         yield self.async.assertEqual(self.query().filter(id=(id1, id2)).count(), 1)
         
     def test_clone(self):
         t1 = yield self.make()
+        session = t1.session
         yield pulsar.async_sleep(0.5)
-        t2 = yield t1.clone(id=genid()).save()
+        t2 = yield session.add(t1.clone(id=genid()))
         self.assertNotEqual(t1.id, t2.id)
         self.assertEqual(t1.name, t2.name)
         self.assertNotEqual(t1.timestamp, t2.timestamp)
@@ -60,8 +62,9 @@ Use the manager for convenience.'''
         
     def test_delete_and_clone(self):
         t1 = yield self.make()
-        yield t1.delete()
-        t2 = yield t1.clone(id=genid()).save()
+        session = t1.session
+        yield session.delete(t1)
+        t2 = yield session.add(t1.clone(id=genid()))
         self.assertNotEqual(t1.id, t2.id)
         self.assertEqual(t1.name, t2.name)
         tasks = yield self.query().filter(id=(t1.id,t2.id)).all()
@@ -69,8 +72,9 @@ Use the manager for convenience.'''
         self.assertEqual(tasks[0].id, t2.id)
         
     def test_fail(self):
+        session = self.session()
         t = Task(name='pluto')
-        yield self.async.assertRaises(Exception, t.save)
+        yield self.async.assertRaises(Exception, session.add, t)
 
 
 class TestAutoId(test.TestCase):
@@ -128,9 +132,7 @@ class CompositeId(test.TestCase):
     
     def create(self, word, book):
         session = self.session()
-        with session.begin() as t:
-            m = t.add(self.model(word=word, book=book))
-        yield t.on_result
+        m = yield session.add(self.model(word=word, book=book))
         self.assertEqual(m.pkvalue(), m.id)
         id = m.id
         m = yield session.query(self.model).get(word=word, book=book)
@@ -161,10 +163,11 @@ class CompositeId(test.TestCase):
         
     def test_change(self):
         m = yield self.create('ciao', 'libro')
+        session = m.session
         id = m.id
         m.word = 'beautiful'
         self.assertNotEqual(m.pkvalue(), id)
-        yield m.save()
+        yield session.add(m)
         self.assertNotEqual(m.id, id)
         self.assertEqual(m.word, 'beautiful') 
         query = self.query()

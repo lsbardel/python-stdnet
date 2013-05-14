@@ -6,7 +6,6 @@ import weakref
 
 from stdnet.utils.exceptions import *
 from stdnet.utils import zip, to_string, UnicodeMixin, unique_tuple
-from stdnet.utils.async import on_result
 
 from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\

@@ -836,6 +836,10 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     The :class:`StdModel` for this :class:`Manager`. This attribute is
     assigned by the Object data mapper at runtime.
 
+.. attribute:: router
+
+    The :class:`Router` which contain this this :class:`Manager`.
+    
 .. attribute:: backend
 
     The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
@@ -856,6 +860,10 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     @property
     def _meta(self):
         return self.model._meta
+    
+    @property
+    def router(self):
+        return self._router
     
     @property
     def backend(self):

@@ -1,25 +1,37 @@
 from datetime import datetime
-from random import randint
+from random import randint, choice
 
 from stdnet import odm
-from stdnet.utils import test, populate, zip
+from stdnet.utils import test, zip, populate
 
 from examples.models import User, Post
 
-NUM_USERS = 50
-MIN_FOLLOWERS = 5
-MAX_FOLLOWERS = 10
 
-usernames = populate('string',NUM_USERS, min_len=5, max_len=20)
-passwords = populate('string',NUM_USERS, min_len=8, max_len=20)
-
+class TwitterData(test.DataGenerator):
+    sizes = {'tiny': (10, 5),
+             'small': (30, 10),
+             'normal': (100, 30),
+             'big': (1000, 100),
+             'huge': (100000, 1000)}
+    
+    def generate(self):
+        size, _ = self.size
+        self.usernames = self.populate('string', size=size, min_len=5, max_len=20)
+        self.passwords = self.populate('string', size=size, min_len=8, max_len=20)
+        
+    def followers(self):
+        _, max_size = self.size
+        min_size = max_size // 2
+        return randint(min_size, max_size)
+        
 
 class TestTwitter(test.TestWrite):
     models = (User, Post)
+    data_cls = TwitterData
 
     def setUp(self):
         with self.mapper.session().begin() as t:
-            for username, password in zip(usernames,passwords):
+            for username, password in zip(self.data.usernames, self.data.passwords):
                 t.add(User(username=username, password=password))
         return t.on_result
         
@@ -62,17 +74,17 @@ class TestTwitter(test.TestWrite):
         count = []
         # Follow users
         for user in users:
-            n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
+            N = self.data.followers()
             uset = set()
-            for tofollow in populate('choice',n, choice_from = users):
+            for tofollow in populate('choice', N, choice_from=users):
                 uset.add(tofollow)
                 user.following.add(tofollow)
             count.append(len(uset))
             self.assertTrue(user.following.query().count()>0)
-        
-        for user,N in zip(users,count):
+        #
+        for user, N in zip(users, count):
             all_following = user.following.query()
-            self.assertEqual(all_following.count(),N)
+            self.assertEqual(all_following.count(), N)
             for following in all_following:
                 self.assertTrue(user in following.followers.query())
                 
@@ -80,28 +92,31 @@ class TestTwitter(test.TestWrite):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
         models = self.mapper
-        users = yield models.user.query().all()
+        session = models.session()
+        users = yield models.user.query(session).all()
         N = len(users)
         # Follow users
-        with models.session().begin() as t:
+        with session.begin() as t:
             for user in users:
-                n = randint(MIN_FOLLOWERS,MAX_FOLLOWERS)
+                self.assertEqual(user.session, session)
+                N = self.data.followers()
                 following = user.following
-                for tofollow in populate('choice',n, choice_from = users):
-                    following.add(tofollow, transaction = t)
+                for tofollow in populate('choice', N, choice_from=users):
+                    following.add(tofollow)
+        yield t.on_result
         for user in users:
-            for following in user.following.query():
-                self.assertTrue(user in following.followers.query())
+            following = yield user.following.query().all()
+            for user2 in following:
+                group = yield user2.followers.query()
+                self.assertTrue(user in group)
             
     def testMessages(self):
         models = self.mapper
         users = yield models.user.query().all()
-        ids = [u.id in u in users]
-        N = len(users)
-        id = randint(1,N)
-        user = models.user.get(id = id)
-        user.newupdate('this is my first message')
-        user.newupdate('and this is another one')
-        user.save()
-        self.assertEqual(user.updates.size(),2)
+        ids = [u.id for u in users]
+        id = choice(ids)
+        user = yield models.user.get(id=id)
+        yield models.user.newupdate(user, 'this is my first message')
+        yield models.user.newupdate(user, 'and this is another one')
+        yield self.async.assertEqual(user.updates.size(), 2)
             

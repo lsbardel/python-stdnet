@@ -3,9 +3,11 @@ from datetime import date
 from stdnet.utils import test
 from stdnet.apps.columnts import ColumnTS
 
-class TestEvaluate(test.TestCase):
+from .main import ColumnMixin
 
-    def testSimple(self):
+class TestEvaluate(ColumnMixin, test.TestCase):
+
+    def test_simple(self):
         session = self.session()
         ts = session.add(ColumnTS(id = 'goog'))
         self.assertEqual(ts.evaluate('return self:length()'), 0)

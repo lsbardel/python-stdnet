@@ -44,8 +44,6 @@ class BaseSerializerMixin(object):
     
     @classmethod
     def after_setup(cls):
-        cls.data = yield cls.data_cls(size=cls.size)
-        cls.register()
         yield cls.data.create(cls)
 
     def get(self, **options):
@@ -57,8 +55,9 @@ class BaseSerializerMixin(object):
         return s
     
     def dump(self):
+        models = self.mapper
         s = self.get()
-        qs = yield self.model.objects.query().sort_by('id').all()
+        qs = yield models.instrument.query().sort_by('id').all()
         s.dump(qs)
         self.assertTrue(s.data)
         self.assertEqual(len(s.data), 1)
@@ -82,14 +81,15 @@ class SerializerMixin(BaseSerializerMixin):
 class LoadSerializerMixin(BaseSerializerMixin):
     
     def testLoad(self):
+        models = self.mapper
         s = yield self.dump()
-        qs = yield self.model.objects.query().sort_by('id').all()
+        qs = yield models.instrument.query().sort_by('id').all()
         self.assertTrue(qs)
         data = s.write().getvalue()
         with Tempfile(data) as tmp:
-            yield self.model.objects.flush()
+            yield models.instrument.flush()
             yield s.load(tmp.open(), self.model)
-        qs2 = yield self.model.objects.query().sort_by('id').all()
+        qs2 = yield models.instrument.query().sort_by('id').all()
         self.assertEqual(qs, qs2)
 
 

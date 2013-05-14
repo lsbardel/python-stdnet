@@ -10,10 +10,11 @@ class TestFinanceJSON(base.SerializerMixin, FinanceTest):
     serializer = 'json'
 
     def testTwoModels(self):
+        models = self.mapper
         s = yield self.dump()
         d = s.data[0]
         self.assertEqual(d['model'], str(self.model._meta))
-        all = yield Fund.objects.query().sort_by('id').all()
+        all = yield models.fund.query().sort_by('id').all()
         s.dump(all)
         self.assertEqual(len(s.data), 2)
 

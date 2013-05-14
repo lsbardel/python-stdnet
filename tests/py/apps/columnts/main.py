@@ -1,14 +1,12 @@
 import os
+from random import randint
 from datetime import date, datetime, timedelta
 from struct import unpack
 
 from stdnet import SessionNotAvailable, CommitException
-from stdnet.utils import test, encoders, populate, ispy3k
-from stdnet.apps.columnts import ColumnTS
+from stdnet.utils import test, encoders, populate, ispy3k, iteritems
+from stdnet.apps.columnts import ColumnTS, as_dict
 from stdnet.backends import redisb
-
-from examples.data import tsdata
-from examples.tsmodels import ColumnTimeSeries
 
 from tests.py.structures.base import StructMixin
 
@@ -26,18 +24,98 @@ class timeseries_test1(redisb.RedisScript):
               redisb.read_lua_file('columnts.columnts'),
               redisb.read_lua_file('test1',this_path))
     
-
-class TestMeta(test.TestCase):
     
-    def testLuaClass(self):
-        session = self.session()
-        ts = session.add(ColumnTS(id='bla'))
-        c = self.backend.client
-        r = c.execute_script('timeseries_test1', (ts.dbid(),))
-        self.assertEqual(r, b'OK')
+class ColumnData(test.DataGenerator):
+    
+    def generate(self):
+        size = self.size
+        self.data1 = tsdata(self, ('a','b','c','d','f','g'))
+        self.data2 = tsdata(self, ('a','b','c','d','f','g'))
+        self.data3 = tsdata(self, ('a','b','c','d','f','g'))
+        self.missing = tsdata(self, ('a','b','c','d','f','g'), missing=True)
+        self.data_mul1 = tsdata(self, ('eurusd',))
+        self.data_mul2 = tsdata(self, ('gbpusd',))
+        
+        
+class tsdata(object):
+    
+    def __init__(self, g, fields, start=None, end=None, missing=False):
+        end = end or date.today()
+        if not start:
+            start = end - timedelta(days=g.size)
+        # random dates
+        self.dates = g.populate('date', start=start, end=end)
+        self.unique_dates = set(self.dates)
+        self.fields = {}
+        self.sorted_fields = {}
+        for field in fields:
+            vals = g.populate('float')
+            if missing:
+                N = len(vals)
+                for num in range(randint(0, N//2)):
+                    index = randint(0, N-1)
+                    vals[index] = nan
+            self.fields[field] = vals
+            self.sorted_fields[field] = []
+        self.values = []
+        date_dict = {}
+        for i,dt in enumerate(self.dates):
+            vals = dict(((f,v[i]) for f,v in iteritems(self.fields)))
+            self.values.append((dt,vals))
+            date_dict[dt] = vals
+        sdates = []
+        for i,dt in enumerate(sorted(date_dict)):
+            sdates.append(dt)
+            fields = date_dict[dt]
+            for field in fields:
+                self.sorted_fields[field].append(fields[field])
+        self.sorted_values = (sdates,self.sorted_fields)
+        self.length = len(sdates)
+        
+    def create(self, test, id=None):
+        '''Create one ColumnTS with six fields and cls.size dates'''
+        models = test.mapper
+        ts = models.register(ColumnTS())
+        models.session().add(ts)
+        with ts.session.begin() as t:
+            t.add(ts)
+            ts.update(self.values)
+        yield t.on_result
+        yield ts
 
 
-class TestCase(test.TestCase):
+class ColumnMixin(object):
+    '''Used by all tests on ColumnTS'''
+    structure = ColumnTS
+    name = 'columnts'
+    data_cls = ColumnData
+    
+    def create_one(self):
+        ts = self.structure()
+        d1 = date(2012,1,23)
+        data = {d1: {'open':586, 'high':588.66,
+                     'low':583.16, 'close':585.52},
+                date(2012,1,20): {'open':590.53, 'high':591,
+                                  'low':581.7, 'close':585.99},
+                date(2012,1,19): {'open':640.99, 'high':640.99,
+                                  'low':631.46, 'close':639.57}}
+        ts.add(d1, data[d1])
+        self.data = data
+        data = self.data.copy()
+        data.pop(d1)
+        data = tuple(data.items())
+        ts.update(data)
+        # test bad add
+        self.assertRaises(TypeError, ts.add, date(2012,1,20), 1, 2, 3)
+        return ts
+    
+    def empty(self):
+        models = self.mapper
+        l = models.register(self.structure())
+        self.assertTrue(l.id)
+        models.session().add(l)
+        self.assertTrue(l.session is not None)
+        return l
     
     def check_stats(self, stat_field, data):
         N = len(data)
@@ -53,91 +131,72 @@ class TestCase(test.TestCase):
         self.assertAlmostEqual(stat_field['sum2'], sum(cdata2)/NC)
         self.assertAlmostEqual(stat_field['dsum'], sum(dd)/(NC-1))
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
-        
-
-class TestTimeSeries(TestCase, StructMixin):
-    structure = ColumnTS
-    name = 'columnts'
     
-    def create_one(self, session):
-        ts = session.add(ColumnTS(id='goog'))
-        d1 = date(2012,1,23)
-        data = {d1: {'open':586, 'high':588.66,
-                     'low':583.16, 'close':585.52},
-                date(2012,1,20): {'open':590.53, 'high':591,
-                                  'low':581.7, 'close':585.99},
-                date(2012,1,19): {'open':640.99, 'high':640.99,
-                                  'low':631.46, 'close':639.57}}
-        ts.add(d1,data[d1])
-        self.data = data
-        data = self.data.copy()
-        data.pop(d1)
-        data = tuple(data.items())
-        ts.update(data)
-        # test bad add
-        self.assertRaises(TypeError, ts.add, date(2012,1,20), 1, 2, 3)
-        return ts
+    def as_dict(self, serie):
+        times, fields = yield serie.irange()
+        yield as_dict(times, fields)
     
     def makeGoogle(self):
-        session = self.session()
-        with session.begin():
-            ts = self.createOne(session)
-            self.assertTrue(len(ts.cache.fields['open']),2)
-            self.assertTrue(len(ts.cache.fields),4)
-        self.assertEqual(ts.size(), 3)
-        dates, fields = ts.irange()
-        self.assertEqual(len(fields),4)
-        self.assertEqual(len(dates),3)
+        ts = self.mapper.register(self.create_one())
+        self.assertTrue(len(ts.cache.fields['open']), 2)
+        self.assertTrue(len(ts.cache.fields), 4)
+        yield self.mapper.session().add(ts)
+        yield self.async.assertEqual(ts.size(), 3)
+        dates, fields = yield ts.irange()
+        self.assertEqual(len(fields), 4)
+        self.assertEqual(len(dates), 3)
         for field in fields:
             values = fields[field]
-            self.assertEqual(len(values),3)
+            self.assertEqual(len(values), 3)
             for dt, v in zip(dates, values):
                 v2 = self.data[dt.date()][field]
-                self.assertAlmostEqual(v,v2)
-        return ts
-            
+                self.assertAlmostEqual(v, v2)
+        yield ts
+        
+        
+class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
+    
+    def testLuaClass(self):
+        ts = self.empty()
+        backend = ts.backend_structure()
+        self.assertEqual(backend.instance, ts)
+        c = backend.client
+        r = yield c.execute_script('timeseries_test1', (backend.id,))
+        self.assertEqual(r, b'OK')
+        
     def testEmpty2(self):
         '''Check an empty timeseries'''
-        session = self.session()
-        ts = session.add(ColumnTS(id='goog'))
-        self.assertEqual(ts.size(),0)
-        self.assertEqual(ts.numfields(),0)
-        self.assertEqual(ts.fields(),())
+        ts = self.empty()
+        yield self.async.assertEqual(ts.numfields(), 0)
+        yield self.async.assertEqual(ts.fields(), ())
         
     def testFrontBack(self):
-        session = self.session()
-        ts = session.add(ColumnTS(pickler=encoders.DateConverter()))
-        self.assertEqual(ts.size(),0)
-        self.assertEqual(ts.front(), None)
-        self.assertEqual(ts.back(), None)
+        models = self.mapper
+        ts = models.register(ColumnTS(pickler=encoders.DateConverter()))
+        models.session().add(ts)
+        yield self.async.assertEqual(ts.front(), None)
+        yield self.async.assertEqual(ts.back(), None)
         d2 = date.today()
         d1 = d2 - timedelta(days=2)
-        session.begin()
-        ts.add(d2,'foo',-5.2)
-        ts.add(d1,'foo',789.3)
-        self.assertEqual(ts.size(),0)
-        self.assertEqual(ts.front(), None)
-        self.assertEqual(ts.back(), None)
-        session.commit()
-        self.assertEqual(ts.size(),2)
-        self.assertEqual(ts.front(), (d1,{'foo':789.3}))
-        self.assertEqual(ts.back(), (d2,{'foo':-5.2}))
+        with ts.session.begin() as t:
+            ts.add(d2,'foo',-5.2)
+            ts.add(d1,'foo',789.3)
+        yield t.on_result
+        yield self.async.assertEqual(ts.size(),2)
+        yield self.async.assertEqual(ts.front(), (d1, {'foo':789.3}))
+        yield self.async.assertEqual(ts.back(), (d2, {'foo':-5.2}))
         
-    def testAddSimple(self):
-        session = self.session()
-        ts = session.add(ColumnTS(id='goog'))
-        # start a transaction
-        session.begin()
-        ts.add(date.today(),'pv',56)
-        self.assertEqual(ts.size(),0)
-        self.assertTrue(ts.cache.fields)
-        ts.add(date.today()-timedelta(days=2), 'pv', 53.8)
-        self.assertTrue(len(ts.cache.fields['pv']), 2)
-        # commit transaction
-        session.commit()
-        self.assertEqual(ts.fields(),('pv',))
-        self.assertEqual(ts.numfields(),1)
-        self.assertEqual(ts.size(),2)
+    def test_ddd_simple(self):
+        ts = self.empty()
+        with ts.session.begin() as t:
+            ts.add(date.today(), 'pv', 56)
+            self.assertTrue(ts.cache.fields)
+            ts.add(date.today()-timedelta(days=2), 'pv', 53.8)
+            self.assertTrue(len(ts.cache.fields['pv']), 2)
+        yield t.on_result
+        yield self.async.assertEqual(ts.fields(), ('pv',))
+        yield self.async.assertEqual(ts.numfields(), 1)
+        yield self.async.assertEqual(ts.size(), 2)
         #
         # Check that a string is available at the field key
         bts = ts.backend_structure()
@@ -165,29 +224,27 @@ class TestTimeSeries(TestCase, StructMixin):
         for v, t in zip(fields['pv'],[53.8, 56]):
             self.assertAlmostEqual(v, t)
         
-    def testAddNil(self):
-        session = self.session()
-        # start a transaction
-        session.begin()
-        ts = session.add(ColumnTS(id='goog'))
-        ts.add(date.today(), 'pv', 56)
-        ts.add(date.today()-timedelta(days=2), 'pv', nan)
-        session.commit()
-        self.assertEqual(ts.size(), 2)
-        dt, fields = ts.irange()
+    def test_add_nil(self):
+        ts = self.empty()
+        with ts.session.begin() as t:
+            ts.add(date.today(), 'pv', 56)
+            ts.add(date.today()-timedelta(days=2), 'pv', nan)
+        yield t.on_result
+        yield self.async.assertEqual(ts.size(), 2)
+        dt, fields = yield ts.irange()
         self.assertEqual(len(dt), 2)
         self.assertTrue('pv' in fields)
         n = fields['pv'][0]
         self.assertNotEqual(n, n)
         
     def testGoogleDrop(self):
-        ts = self.makeGoogle()
-        self.assertEqual(ts.fields(),('close','high','low','open'))
-        self.assertEqual(ts.numfields(),4)
-        self.assertEqual(ts.size(),3)
+        ts = yield self.makeGoogle()
+        yield self.async.assertEqual(ts.fields(), ('close','high','low','open'))
+        yield self.async.assertEqual(ts.numfields(), 4)
+        yield self.async.assertEqual(ts.size(), 3)
         
     def testRange(self):
-        ts = self.makeGoogle()
+        ts = yield self.makeGoogle()
         data = ts.irange()
         self.assertEqual(len(data),2)
         dt,fields = data
@@ -198,7 +255,7 @@ class TestTimeSeries(TestCase, StructMixin):
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
         
     def testRangeField(self):
-        ts = self.makeGoogle()
+        ts = yield self.makeGoogle()
         data = ts.irange(fields=('low','high','badone'))
         self.assertEqual(len(data),2)
         dt,fields = data
@@ -210,7 +267,7 @@ class TestTimeSeries(TestCase, StructMixin):
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
         
     def testRaises(self):
-        ts = self.makeGoogle()
+        ts = yield self.makeGoogle()
         self.assertRaises(TypeError, ts.merge, 5)
         self.assertRaises(ValueError, ts.merge, (5,))
         ts.session = None
@@ -218,7 +275,7 @@ class TestTimeSeries(TestCase, StructMixin):
         
     def testUpdateDict(self):
         '''Test updating via a dictionary.'''
-        ts = self.makeGoogle()
+        ts = yield self.makeGoogle()
         data = {date(2012,1,23):{'open':586.00, 'high':588.66,
                                  'low':583.16, 'close':585.52},
                 date(2012,1,25):{'open':586.32, 'high':687.68,
@@ -237,8 +294,8 @@ class TestTimeSeries(TestCase, StructMixin):
                 v2 = data[d.date()][field]
                 self.assertAlmostEqual(v1, v2)
         
-    def testBadQuery(self):
-        ts = self.makeGoogle()
+    def __testBadQuery(self):
+        ts = yield self.makeGoogle()
         # get the backend id and override it
         id = ts.dbid()
         client = ts.session.backend.client
@@ -251,9 +308,9 @@ class TestTimeSeries(TestCase, StructMixin):
         self.assertRaises(redisb.ScriptError, ts.irange)
         self.assertRaises(redisb.RedisInvalidResponse, ts.size)
         
-    def testGet(self):
-        ts = self.makeGoogle()
-        v = ts.get(date(2012,1,23))
+    def test_get(self):
+        ts = yield self.makeGoogle()
+        v = yield ts.get(date(2012,1,23))
         self.assertTrue(v)
         self.assertEqual(len(v),4)
         v2 = ts[date(2012,1,23)]
@@ -262,7 +319,7 @@ class TestTimeSeries(TestCase, StructMixin):
         self.assertRaises(KeyError, lambda: ts[date(2014,1,1)])
         
     def testSet(self):
-        ts = self.makeGoogle()
+        ts = yield self.makeGoogle()
         ts[date(2012,1,27)] = {'open': 600}
         self.assertEqual(len(ts), 4)
         res = ts[date(2012,1,27)]
@@ -272,98 +329,47 @@ class TestTimeSeries(TestCase, StructMixin):
         self.assertNotEqual(res['high'],res['high'])
         self.assertNotEqual(res['low'],res['low'])
         
-    def testIter(self):
-        ts = self.makeGoogle()
-        dates = list(ts)
+    def test_times(self):
+        ts = yield self.makeGoogle()
+        dates = yield ts.itimes()
         self.assertTrue(dates)
-        self.assertEqual(len(dates),3)
+        self.assertEqual(len(dates), 3)
         for dt in dates:
-            self.assertTrue(isinstance(dt,datetime))
+            self.assertIsInstance(dt, datetime)
         
 
-class TestColumnTSBase(TestCase):
-    '''Class for testing large data'''
+class TestOperations(ColumnMixin, test.TestCase):
+    
     @classmethod
-    def setUpClass(cls):
-        size = cls.size
-        cls.data1 = tsdata(size=size, fields=('a','b','c','d','f','g'))
-        cls.data2 = tsdata(size=size, fields=('a','b','c','d','f','g'))
-        cls.data3 = tsdata(size=size, fields=('a','b','c','d','f','g'))
-        cls.data_mul1 = tsdata(size=size, fields=('eurusd',))
-        cls.data_mul2 = tsdata(size=size, fields=('gbpusd',))
-        cls.ColumnTS = ColumnTS
-        yield super(TestColumnTSBase, cls).setUpClass()
-    
-    def create(self):
-        '''Create one ColumnTS with six fields and cls.size dates'''
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-        return ts1
-    
-
-class TestOperations(TestColumnTSBase):
-    
-    def testSimpleStats(self):
-        ts1 = self.create()
-        dt,fields = ts1.irange()
-        self.assertEqual(len(fields),6)
-        result = ts1.istats(0,-1)
-        self.assertTrue(result)
-        self.assertEqual(result['start'],dt[0])
-        self.assertEqual(result['stop'],dt[-1])
-        self.assertEqual(result['len'],len(dt))
-        stats = result['stats']
-        for field in ('a','b','c','d','f','g'):
-            self.assertTrue(field in stats)
-            stat_field = stats[field]
-            data = self.data1.sorted_fields[field]
-            self.check_stats(stat_field, data)
-            
-    def testStatsByTime(self):
-        ts1 = self.create()
-        dt, fields = ts1.irange()
-        self.assertEqual(len(fields),6)
-        dt = dt[5:-5]
-        start = dt[0]
-        end = dt[-1]
-        # Perform the statistics between start and end
-        result = ts1.stats(start, end)
-        self.assertTrue(result)
-        self.assertEqual(result['start'], start)
-        self.assertEqual(result['stop'], end)
-        self.assertEqual(result['len'], len(dt))
-        stats = result['stats']
-        for field in ('a','b','c','d','f','g'):
-            self.assertTrue(field in stats)
-            stat_field = stats[field]
-            data = self.data1.sorted_fields[field][5:-5]
-            self.check_stats(stat_field, data)
+    def after_setup(cls):
+        cls.ts1 = yield cls.data.data1.create(cls)
+        cls.ts2 = yield cls.data.data2.create(cls)
+        cls.ts3 = yield cls.data.data3.create(cls)
+        cls.mul1 = yield cls.data.data_mul1.create(cls)
+        cls.mul2 = yield cls.data.data_mul2.create(cls)
             
     def test_merge2series(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-        self.assertEqual(ts1.size(),len(self.data1.unique_dates))
-        self.assertEqual(ts1.numfields(),6)
-        self.assertEqual(ts2.size(),len(self.data2.unique_dates))
-        self.assertEqual(ts2.numfields(),6)
-        ts3 = self.ColumnTS(id = 'merged')
-        # merge ts1 with weight -1  and ts2 with weight 2
-        ts3.merge((-1,ts1),(2,ts2))
-        session.commit()
-        self.assertTrue(ts3.size())
-        self.assertEqual(ts3.numfields(),6)
+        data = self.data
+        ts1, ts2 = self.ts1, self.ts2
+        yield self.async.assertEqual(ts1.size(), data.data1.length)
+        yield self.async.assertEqual(ts1.numfields(), 6)
+        yield self.async.assertEqual(ts2.size(), data.data2.length)
+        yield self.async.assertEqual(ts2.numfields(), 6)
+        ts3 = self.mapper.register(self.structure())
+        session = self.mapper.session()
+        with session.begin() as t:
+            t.add(ts3)
+            # merge ts1 with weight -1  and ts2 with weight 2
+            ts3.merge((-1, ts1), (2, ts2))
+        yield t.on_result
+        yield self.async.assertTrue(ts3.size())
+        yield self.async.assertEqual(ts3.numfields(), 6)
         times, fields = ts3.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)
             v2 = ts2.get(dt)
-            if dt in self.data1.unique_dates and dt in self.data2.unique_dates:
+            if dt in data.data1.unique_dates and dt in data.data2.unique_dates:
                 for field, values in fields.items():
                     res = 2*v2[field] - v1[field]
                     self.assertAlmostEqual(values[i],res)
@@ -374,99 +380,89 @@ class TestOperations(TestColumnTSBase):
                     self.assertNotEqual(v,v)
                  
     def test_merge3series(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            ts3 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-            ts3.update(self.data3.values)
-        self.assertEqual(ts1.size(),self.data1.length)
-        self.assertEqual(ts2.size(),self.data2.length)
-        self.assertEqual(ts3.size(),self.data3.length)
-        with session.begin():
-            ts = self.ColumnTS(id = 'merged')
-            ts.merge((0.5,ts1),(1.3,ts2),(-2.65,ts3))
-            self.assertEqual(ts.session,session)
-        length = ts.size()
-        self.assertTrue(length >= max(self.data1.length,self.data2.length,
-                                      self.data3.length))
-        self.assertEqual(ts.numfields(),6)
-        times, fields = ts.irange()
-        for i,dt in enumerate(times):
-            dt = dt.date()
-            v1 = ts1.get(dt)
-            v2 = ts2.get(dt)
-            v3 = ts3.get(dt)
+        data = self.data
+        ts1, ts2, ts3 = self.ts1, self.ts2, self.ts3
+        ts4 = self.mapper.register(self.structure())
+        session = self.mapper.session()
+        yield self.async.assertEqual(ts1.size(), data.data1.length)
+        yield self.async.assertEqual(ts2.size(), data.data2.length)
+        yield self.async.assertEqual(ts3.size(), data.data3.length)
+        with session.begin() as t:
+            t.add(ts4)
+            # merge ts1 with weight -1  and ts2 with weight 2
+            ts4.merge((0.5, ts1), (1.3, ts2), (-2.65, ts3))
+            self.assertEqual(ts4.session, session)
+        yield t.on_result
+        length = yield ts4.size()
+        self.assertTrue(length >= max(data.data1.length, data.data2.length,
+                                      data.data3.length))
+        yield self.async.assertEqual(ts2.numfields(), 6)
+        #
+        results = yield self.as_dict(ts4)
+        d1 = yield self.as_dict(ts1)
+        d2 = yield self.as_dict(ts2)
+        d3 = yield self.as_dict(ts3)
+        #
+        for dt in results:
+            v1 = d1.get(dt)
+            v2 = d2.get(dt)
+            v3 = d3.get(dt)
+            result = results[dt]
             if v1 is not None and v2 is not None and v3 is not None:
-                for field,values in fields.items():
+                for field in result:
+                    vc = result[field]
                     res = 0.5*v1[field] + 1.3*v2[field] - 2.65*v3[field]
-                    self.assertAlmostEqual(values[i],res)
+                    self.assertAlmostEqual(vc, res)
             else:
-                for values in fields.values():
-                    v = values[i]
-                    self.assertNotEqual(v,v)
+                for v in result.values():
+                    self.assertNotEqual(v, v)
 
-    def testAddMultiply1(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            mul1 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-            mul1.update(self.data_mul1.values)
-        self.assertEqual(ts1.size(),self.data1.length)
-        self.assertEqual(ts2.size(),self.data2.length)
-        self.assertEqual(mul1.size(),self.data_mul1.length)
-        with session.begin():
-            ts = self.ColumnTS(id = 'merged')
-            ts.merge((1.5,mul1,ts1),(-1.2,ts2))
-            self.assertEqual(ts.session,session)
-        length = ts.size()
-        self.assertTrue(length >= max(self.data1.length,
-                                      self.data2.length))
-        self.assertEqual(ts.numfields(),6)
-        times, fields = ts.irange()
-        for i,dt in enumerate(times):
-            dt = dt.date()
-            v1 = ts1.get(dt)
-            v2 = ts2.get(dt)
+    def test_add_multiply1(self):
+        data = self.data
+        ts1, ts2, mul1 = self.ts1, self.ts2, self.mul1
+        ts = self.mapper.register(self.structure())
+        session = self.mapper.session()
+        with session.begin() as t:
+            t.add(ts)
+            ts.merge((1.5, mul1, ts1), (-1.2, ts2))
+            self.assertTrue(ts.cache.merged_series)
+            self.assertEqual(ts.session, session)
+        yield t.on_result
+        length = yield ts.size()
+        self.assertTrue(length >= max(data.data1.length, data.data2.length))
+        yield self.async.assertEqual(ts.numfields(), 6)
+        results = yield self.as_dict(ts)
+        mul1 = yield self.as_dict(mul1)
+        d1 = yield self.as_dict(ts1)
+        d2 = yield self.as_dict(ts2)
+        for dt in results:
+            v1 = d1.get(dt)
+            v2 = d2.get(dt)
             m1 = mul1.get(dt)
+            result = results[dt]
             if v1 is not None and v2 is not None and m1 is not None:
                 m1 = m1['eurusd']
-                for field,values in fields.items():
+                for field in result:
+                    vc = result[field]
                     res = 1.5*m1*v1[field] - 1.2*v2[field]
-                    self.assertAlmostEqual(values[i],res)
+                    self.assertAlmostEqual(vc, res)
             else:
-                for values in fields.values():
-                    v = values[i]
+                for v in result.values():
                     self.assertNotEqual(v,v)
     
-    def testAddMultiply(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            mul1 = session.add(self.ColumnTS())
-            mul2 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-            mul1.update(self.data_mul1.values)
-            mul2.update(self.data_mul2.values)
-        self.assertEqual(ts1.size(),self.data1.length)
-        self.assertEqual(ts2.size(),self.data2.length)
-        self.assertEqual(mul1.size(),self.data_mul1.length)
-        self.assertEqual(mul2.size(),self.data_mul2.length)
-        with session.begin():
-            ts = self.ColumnTS(id='merged')
-            ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2))
-            self.assertEqual(ts.session,session)
-        length = ts.size()
-        self.assertTrue(length >= max(self.data1.length,
-                                      self.data2.length))
-        self.assertEqual(ts.numfields(),6)
+    def test_add_multiply2(self):
+        data = self.data
+        ts1, ts2, mul1, mul2 = self.ts1, self.ts2, self.mul1, self.mul2
+        ts = self.mapper.register(self.structure())
+        session = self.mapper.session()
+        with session.begin() as t:
+            t.add(ts)
+            ts.merge((1.5, mul1, ts1), (-1.2, mul2, ts2))
+            self.assertEqual(ts.session, session)
+        yield t.on_result
+        length = yield ts.size()
+        self.assertTrue(length >= max(data.data1.length, data.data2.length))
+        yield self.async.assertEqual(ts.numfields(), 6)
         times, fields = ts.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
@@ -486,16 +482,11 @@ class TestOperations(TestColumnTSBase):
                     v = values[i]
                     self.assertNotEqual(v,v)
                     
-    def testMultiplyNoStore(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-        self.assertEqual(ts1.size(),self.data1.length)
-        self.assertEqual(ts2.size(),self.data2.length)
-        times, fields = self.ColumnTS.merged_series((1.5,ts1),(-1.2,ts2))
+    def test_multiply_no_store(self):
+        data = self.data
+        ts1, ts2 = self.ts1, self.ts2
+        times, fields = yield self.structure.merged_series((1.5, ts1),
+                                                           (-1.2, ts2))
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)
@@ -509,32 +500,22 @@ class TestOperations(TestColumnTSBase):
                     v = values[i]
                     self.assertNotEqual(v,v)
 
-    def testMergedFields(self):
-        session = self.session()
-        with session.begin():
-            ts1 = session.add(self.ColumnTS())
-            ts2 = session.add(self.ColumnTS())
-            mul1 = session.add(self.ColumnTS())
-            mul2 = session.add(self.ColumnTS())
-            ts1.update(self.data1.values)
-            ts2.update(self.data2.values)
-            mul1.update(self.data_mul1.values)
-            mul2.update(self.data_mul2.values)
-        self.assertEqual(ts1.size(),self.data1.length)
-        self.assertEqual(ts2.size(),self.data2.length)
-        self.assertEqual(mul1.size(),self.data_mul1.length)
-        self.assertEqual(mul2.size(),self.data_mul2.length)
-        with session.begin():
-            ts = self.ColumnTS(id='merged')
-            ts.merge((1.5,mul1,ts1),(-1.2,mul2,ts2),
-                     fields = ('a','b','c','badone'))
+    def test_merge_fields(self):
+        data = self.data
+        ts1, ts2, mul1, mul2 = self.ts1, self.ts2, self.mul1, self.mul2
+        ts = self.mapper.register(self.structure())
+        session = self.mapper.session()
+        with session.begin() as t:
+            t.add(ts)
+            ts.merge((1.5, mul1, ts1), (-1.2, mul2, ts2),
+                     fields=('a','b','c','badone'))
             self.assertEqual(ts.session,session)
-        length = ts.size()
-        self.assertTrue(length >= max(self.data1.length,
-                                      self.data2.length))
-        self.assertEqual(ts.numfields(),3)
-        self.assertEqual(ts.fields(),('a','b','c'))
-        times, fields = ts.irange()
+        yield t.on_result
+        length = yield ts.size()
+        self.assertTrue(length >= max(data.data1.length, data.data2.length))
+        yield self.async.assertEqual(ts.numfields(), 3)
+        yield self.async.self.assertEqual(ts.fields(), ('a','b','c'))
+        times, fields = yield ts.irange()
         for i,dt in enumerate(times):
             dt = dt.date()
             v1 = ts1.get(dt)
@@ -552,61 +533,19 @@ class TestOperations(TestColumnTSBase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
+    
 
-
-class TestMultivariateStats(TestColumnTSBase):
-    
-    def testSimpleMultiStats(self):
-        ts1 = self.create()
-        dt,fields = ts1.irange()
-        result = ts1.imulti_stats()
-        self.assertTrue(result)
-        self.assertEqual(result['type'],'multi')
-        self.assertEqual(result['start'],dt[0])
-        self.assertEqual(result['stop'],dt[-1])
-        self.assertEqual(result['N'],len(dt))
-    
-    
-class TestMissingValues(TestCase):
+class a:    
+#class TestMissingValues(TestOperations):
     
     @classmethod
-    def setUpClass(cls):
-        d1 = populate('float', size=20)
-        d2 = populate('float', size=20)
-        cls.fields = {'a':d1, 'b':d2}
-        dates = [date(2010,1,i+1) for i in range(20)]
-        d1[3] = d1[0] = d1[18] = nan
-        d2[3] =  d2[9] = nan
-        cls.data = [(dt, {'a':a, 'b':b}) for dt, a, b in zip(dates, d1, d2)]
-        cls.ColumnTS = ColumnTS
-        yield super(TestMissingValues, cls).setUpClass()
-        
-    def setUp(self):
-        session = self.session()
-        with session.begin() as t:
-            ts1 = t.add(self.ColumnTS())
-            ts1.update(self.data)
-        yield t.on_result
-        self.ts1 = ts1
+    def after_setup(cls):
+        cls.ts1 = yield cls.data.missing.create(cls)
     
-    def testStats(self):
+    def test_missing(self):
         result = self.ts1.istats(0, -1)
         stats = result['stats']
-        self.assertEqual(len(stats),2)
+        self.assertEqual(len(stats), 6)
         for stat in stats:
             self.check_stats(stats[stat],self.fields[stat])
     
-    
-class TestColumnTSField(TestCase):
-    model = ColumnTimeSeries
-    
-    def setUp(self):
-        self.register()
-        
-    def testMeta(self):
-        meta = self.model._meta
-        self.assertTrue(len(meta.multifields),1)
-        m = meta.multifields[0]
-        self.assertEqual(m.name,'data')
-        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
-        

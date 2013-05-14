@@ -350,17 +350,7 @@ elements in the query.'''
                         'bk': bk,
                         'fields': fields}
                 yield field.name, data
-            
 
-def iteretor_pipelined(f):
-    
-    def _(self):
-        if self.is_pipeline:
-            return iter(())
-        else:
-            return f(self)
-        
-    return _
 
 ################################################################################
 ##    STRUCTURES

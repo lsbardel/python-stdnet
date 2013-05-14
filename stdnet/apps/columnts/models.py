@@ -1,11 +1,11 @@
 '''Multivariate numeric timeseries interface.'''
-from stdnet import odm, SessionNotAvailable
+from stdnet import odm, SessionNotAvailable, InvalidTransaction
 from stdnet.utils.skiplist import skiplist
-from stdnet.utils.async import on_result
+from stdnet.utils.async import on_result, async
 from stdnet.utils import encoders, iteritems, zip, iterpair
 
 
-__all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField']
+__all__ = ['TimeseriesCache', 'ColumnTS', 'ColumnTSField', 'as_dict']
 
 
 class TimeseriesCache(object):
@@ -27,6 +27,18 @@ class TimeseriesCache(object):
         self.delete_fields.clear()
         self.deleted_timestamps.clear()
 
+
+def as_dict(times, fields):
+    lists = []
+    names = []
+    d = {}
+    for name, value in fields.items():
+        names.append(name)
+        lists.append(value)
+    for dt, data in zip(times, zip(*lists)):
+        d[dt] = dict(zip(names,data))
+    return d
+        
 
 class ColumnTS(odm.TS):
     '''A specialised :class:`stdnet.odm.TS` structure for numeric
@@ -164,38 +176,59 @@ The result will be calculated using the formula::
          ...
 '''
         session = self.session
+        if not session:
+            raise SessionNotAvailable('No session available')
+        self.check_router(session.router, *series)
+        return self._merge(*series, **kwargs)
+
+    @classmethod
+    def merged_series(cls, *series, **kwargs):
+        '''Merge ``series`` and return the results without storing data
+in the backend server.'''
+        router, backend = cls.check_router(None, *series)
+        if backend:
+            target = router.register(cls(), backend)
+            router.session().add(target)
+            target._merge(*series, **kwargs)
+            res = target.backend_structure().irange_and_delete()
+            return on_result(res, target.load_data)
+
+    # INTERNALS
+    @classmethod
+    def check_router(cls, router, *series):
+        backend = None
         for serie in series:
             if len(serie) < 2:
                 raise ValueError('merge requires tuples of length 2 or more')
             for s in serie[1:]:
-                if session is None:
-                    session = s.session
-        if not session:
-            raise SessionNotAvailable('No session available')
-        self.session = session
+                if not s.session:
+                    raise SessionNotAvailable('No session available')
+                if router is None:
+                    router = s.session.router
+                else:
+                    if router is not s.session.router:
+                        raise InvalidTransaction('mistmaching routers')
+                if backend is None:
+                    backend = s.backend_structure().backend
+                else:
+                    if backend is not s.backend_structure().backend:
+                        raise InvalidTransaction('merging is possible only on '
+                                                 'the same backend')
+        return router, backend
+
+    def _merge(self, *series, **kwargs):
         fields = kwargs.get('fields') or ()
         self.backend_structure().merge(series, fields)
-        session.add(self)
-
-    @classmethod
-    def merged_series(cls, *series, **kwargs):
-        '''Merge series into a new :class:`ColumnTS`.'''
-        target = cls()
-        target.merge(*series, **kwargs)
-        res = target.backend_structure().irange_and_delete()
-        return on_result(res, target.load_data)
-
-    # INTERNALS
-
+        
     def load_data(self, result):
-        '''Overwrite :meth:`stdnet.odm.PairMixin.load_data` method'''
+        #Overwrite :meth:`stdnet.odm.PairMixin.load_data` method
         loads = self.pickler.loads
         vloads = self.value_pickler.loads
         dt = [loads(t) for t in result[0]]
         vals = {}
         for f, data in iterpair(result[1]):
             vals[f] = [vloads(d) for d in data]
-        return (dt,vals)
+        return (dt, vals)
 
     def load_get_data(self, result):
         vloads = self.value_pickler.loads

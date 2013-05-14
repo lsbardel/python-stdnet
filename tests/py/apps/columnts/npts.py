@@ -6,26 +6,25 @@ try:
     from stdnet.apps.columnts import npts
     from dynts import tsname
     
+    nptsColumnTS = npts.ColumnTS
+    
     class ColumnTimeSeriesNumpy(odm.StdModel):
         ticker = odm.SymbolField(unique = True)
         data = npts.ColumnTSField()
     
 except ImportError:
-    npts = None
+    nptsColumnTS = None
     ColumnTimeSeriesNumpy = None
     
 from . import main
 
-do_tests = npts is not None
+
 skipUnless = test.unittest.skipUnless
 
-@skipUnless(do_tests, 'Requires dynts') 
-class TestDynTsIntegration(main.TestColumnTSBase):
-    
-    @classmethod
-    def setUpClass(cls):
-        super(TestDynTsIntegration, cls).setUpClass()
-        cls.ColumnTS = npts.ColumnTS if npts else None
+
+@skipUnless(nptsColumnTS, 'Requires dynts') 
+class TestDynTsIntegration(main.TestOperations):
+    ColumnTS = nptsColumnTS 
             
     def testGetFields(self):
         ts1 = self.create()
@@ -57,19 +56,4 @@ class TestDynTsIntegration(main.TestColumnTSBase):
         n = N//2
         dte = dates[n]
         v = ts1[dte]
-        
-
-@skipUnless(do_tests, 'Requires stdnet-redis and dynts')        
-class TestColumnTSField(main.TestCase):
-    model = ColumnTimeSeriesNumpy
-    
-    def setUp(self):
-        self.register()
-        
-    def testMeta(self):
-        meta = self.model._meta
-        self.assertTrue(len(meta.multifields),1)
-        m = meta.multifields[0]
-        self.assertEqual(m.name, 'data')
-        self.assertTrue(isinstance(m.value_pickler, encoders.Double))
         

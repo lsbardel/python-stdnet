@@ -1,8 +1,11 @@
 from datetime import date, datetime
 
-from .main import TestColumnTSBase
+from stdnet.utils import test
 
-class TestManipulate(TestColumnTSBase):
+from .main import ColumnMixin
+
+
+class TestManipulate(ColumnMixin, test.TestCase):
 
     def pop_range(self, byrank, ts, start, end, num_popped, sl, sl2=None):
         all_dates, all_fields = ts.irange()

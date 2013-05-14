@@ -40,6 +40,14 @@ Cache Server
    :member-order: bysource
 
 
+Backend Structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: BackendStructure
+   :members:
+   :member-order: bysource
+   
+   
 Asynchronous Components
 ===============================
 

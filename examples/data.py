@@ -27,38 +27,6 @@ class key_data(test.DataGenerator):
             yield prefix+k,v
 
 
-class tsdata(key_data):
-    '''Data generator for ColumnTS'''
-    def generate(self, fields=None, datatype='float',
-                 start=None, end=None, **kwargs):
-        fields = fields or ('data',)
-        end = end or date.today()
-        if not start:
-            start = end - timedelta(days = self.size)
-        # random dates
-        self.dates = populate('date', self.size, start=start, end=end)
-        self.unique_dates = set(self.dates)
-        self.fields = {}
-        self.sorted_fields = {}
-        for field in fields:
-            self.fields[field] = populate(datatype, self.size)
-            self.sorted_fields[field] = []
-        self.values = []
-        date_dict = {}
-        for i,dt in enumerate(self.dates):
-            vals = dict(((f,v[i]) for f,v in iteritems(self.fields)))
-            self.values.append((dt,vals))
-            date_dict[dt] = vals
-        sdates = []
-        for i,dt in enumerate(sorted(date_dict)):
-            sdates.append(dt)
-            fields = date_dict[dt]
-            for field in fields:
-                self.sorted_fields[field].append(fields[field])
-        self.sorted_values = (sdates,self.sorted_fields)
-        self.length = len(sdates)
-
-
 class hash_data(key_data):
     sizes = {'tiny': (50,30), # fields/average field size
              'small': (300,100),

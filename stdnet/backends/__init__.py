@@ -54,8 +54,21 @@ def get_connection_string(scheme, address, params):
 
     
 class BackendStructure(object):
-    __slots__ = ('instance', 'backend', 'client')
+    '''Interface for :class:`stdnet.odm.Structure` backends.
     
+.. attribute:: instance
+
+    The :class:`stdnet.odm.Structure` which this backend represents.
+    
+.. attribute:: backend
+
+    The :class:`BackendDataServer`
+    
+.. attribute:: client
+
+    The client of the :class:`BackendDataServer`
+    
+'''
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.backend = backend

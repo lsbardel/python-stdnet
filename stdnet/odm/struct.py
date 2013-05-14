@@ -291,7 +291,7 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return self.value_pickler.load_iterable(data, self.session)
     
     def backend_structure(self, client=None):
-        '''Returns a valid :class:`stdnet.BackendDataServer` for this
+        '''Returns a valid :class:`stdnet.BackendStructure` for this
 :class:`Structure`.'''
         if self._field:
             backend = self.session.model(self._field.model).backend
@@ -495,18 +495,20 @@ a numeric value, the score.'''
         s2 = self.pickler.dumps(stop)
         return self.backend_structure().count(s1, s2)
     
-    def range(self, start, stop, callback=None, withscores=True):
+    def range(self, start, stop, callback=None, withscores=True, **options):
         '''Return a range with scores between start and end.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().range(s1, s2, withscores=withscores)
+        res = self.backend_structure().range(s1, s2, withscores=withscores,
+                                             **options)
         if not callback:
             callback = self.load_data if withscores else self.load_values
         return on_result(res, callback)
     
-    def irange(self, start=0, end=-1, callback=None, withscores=True):
+    def irange(self, start=0, end=-1, callback=None, withscores=True, **options):
         '''Return the range by rank between start and end.'''
-        res = self.backend_structure().irange(start, end, withscores=withscores)
+        res = self.backend_structure().irange(start, end, withscores=withscores,
+                                              **options)
         if not callback:
             callback = self.load_data if withscores else self.load_values
         return on_result(res, callback)

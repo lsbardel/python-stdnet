@@ -10,9 +10,9 @@ Registration
 
 Registration consists in associating a :class:`StdModel` to a :class:`Manager`
 via a :class:`Router`. In this way one can have a group of models associated
-with their managers pointing at their, possibly different, backend servers.
+with their managers pointing at their, possibly different, back-end servers.
 Registration is straightforward and as shown in the
-:ref:`tutorial application <tutorial>` it is acheived simply by::
+:ref:`tutorial application <tutorial>` it is achieved by::
 
     from stdnet import odm
     
@@ -23,8 +23,8 @@ Registration is straightforward and as shown in the
     models.register(Position)
 
 The :ref:`connection string <connection-string>` passed as first argument when
-initialising a :class:`Router`, is the default backend of that :class:`Router`.
-It is possible to register models to a different backend by passing a connection
+initialising a :class:`Router`, is the default back-end of that :class:`Router`.
+It is possible to register models to a different back-end by passing a connection
 string to the :meth:`Router.register` method::
 
     models.register(MyModel, 'redis://1270.0.0.1:6379?db=8&password=bla')
@@ -65,18 +65,18 @@ It is, by default, the class name of the model in lower case::
     
 This interface is less verbose than the :ref:`dictionary notation <router-dict>`
 and, importantly, it reduces to zero the imports one has to write on python
-modules using your application, in other words mit makes your application
+modules using your application, in other words it makes your application
 less dependent on the actual implementation of :class:`StdModel`.
 
 Multiple backends
 =========================
 
-The :class:`Router` allows to use your models in several different backends
+The :class:`Router` allows to use your models in several different back-ends
 without changing the way you query your data. In addition it allows to
-specify different backends for ``write`` operations and for ``read`` only
+specify different back-ends for ``write`` operations and for ``read`` only
 operations.
 
-To specify a diffenet backend for read operations one registers a model in
+To specify a different back-end for read operations one registers a model in
 the following way::
 
     models.register(Position, 'redis://1270.0.0.1:6379?db=8&password=bla',

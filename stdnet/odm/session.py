@@ -131,7 +131,8 @@ within this :class:`SessionModel`.'''
         iid = instance.get_state().iid
         return iid in self._new or\
                iid in self._modified or\
-               iid in self._deleted
+               iid in self._deleted or\
+               instance in self._structures
 
     def get(self, id):
         if id in self._modified:
@@ -515,7 +516,8 @@ Results can contain errors.
             for _, result in send(sm.model, instances=instances,
                                   session=session, transaction=self):
                 results.append(result)
-        results = yield multi_async(results)
+        if results:
+            results = yield multi_async(results)
         if exceptions:
             failures = len(exceptions)
             if failures > 1:
@@ -528,12 +530,8 @@ Results can contain errors.
         
 
 class Session(object):
-    '''The manager of persistent operations on the backend data server for
-:class:`StdModel` classes.
-
-.. attribute:: backend
-
-    the :class:`stdnet.BackendDataServer` instance
+    '''The middleware for persistent operations on the back-end. It is created
+via the :meth:`Router.session` method.
 
 .. attribute:: transaction
 
@@ -542,13 +540,11 @@ class Session(object):
 
 .. attribute:: router
 
-    An optional instance of a :class:`Router`. If available, any operation
-    on a model is carried out only if that model is in the :attr:`router`
-    and it has the same :attr:`backend` as this session.
+    Instance of the :class:`Router` which created this :class:`Session`.
 
 .. attribute:: query_class
 
-    class for querying. Default is :class:`Query`.
+    Class for querying. Default is :class:`Query`.
 '''
     def __init__(self, router, query_class=None):
         self.transaction = None
@@ -582,7 +578,8 @@ class Session(object):
     
     @property
     def dirty(self):
-        '''set of all changed instances in the session'''
+        '''The set of instances in this :class:`Session` which have
+been modified.'''
         return frozenset(chain(*tuple((sm.dirty for sm\
                                         in itervalues(self._models)))))
         
@@ -658,13 +655,14 @@ from the **kwargs** parameters.
             return sm.get(id)
 
     def add(self, instance, modified=True, **params):
-        '''Add an *instance* to the session. If the session is not in
+        '''Add an ``instance`` to the session. If the session is not in
 a :ref:`transactional state <transactional-state>`, this operation
 commits changes to the back-end server immediately and return
 what is return by :meth:`Transaction.commit`. Otherwise it return the
 input ``instance``.
 
-:parameter instance: a class:`StdModel` or a :class:`Structure` instance.
+:parameter instance: a :class:`Model` instance. It must be registered with the
+    :attr:`router` which created this :class:`Session`.
 :parameter modified: a boolean flag indicating if the instance was modified.
 :return: the instance.
 
@@ -729,10 +727,7 @@ of :class:`Model`.'''
         manager = self.manager(model)
         sm = self._models.get(manager)
         if sm is None and create:
-            if manager.model._model_type == 'structure':
-                sm = SessionStructure(manager)
-            else:
-                sm = SessionModel(manager)
+            sm = SessionModel(manager)
             self._models[manager] = sm
         return sm
 
@@ -759,7 +754,11 @@ values valid for the :meth:`model` method.'''
                     structure_model = model.model
                     if structure_model:
                         return self.manager(structure_model)
-            raise InvalidTransaction('"%s" not session mapper' % meta)
+                    else:
+                        manager = self.router.structure(model)
+                        if manager:
+                            return manager
+            raise InvalidTransaction('"%s" not valid in this session' % meta)
 
     def backends_data(self):
         backends = {}
@@ -923,7 +922,7 @@ nothing for redis or mongo.'''
     
     def query(self, session=None):
         '''Returns a new :class:`Query` for :attr:`Manager.model`.'''
-        if session is None:
+        if session is None or session.router is not self.router:
             session = self.session()
         return session.query(self.model)
 
@@ -967,3 +966,9 @@ a full text search value.'''
     
     def __hash__(self):
         return hash(self.model._meta)
+
+
+class StructureManager(Manager):
+    
+    def __hash__(self):
+        return hash(self.model)

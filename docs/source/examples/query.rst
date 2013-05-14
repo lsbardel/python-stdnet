@@ -15,7 +15,8 @@ from your model.
 
 We pick up from the :ref:`registered models <tutorial-models-router>` router
 object created for our :ref:`tutorial application <tutorial-application>`.
-
+Throughout this tutorial, we use the :ref:`dotted notation <router-dotted>`
+for accessing model managers.
 
 Retrieving all objects
 ==========================
@@ -60,8 +61,8 @@ actually retrieving them. It is possible to filter from a list/tuple of values::
 
 This filter statement is equivalent to an union of two filters statements::
 
-    q1 = Fund.objects.filter(ccy='EUR')
-    q2 = Fund.objects.filter(ccy='USD')
+    q1 = models.fund.filter(ccy='EUR')
+    q2 = models.fund.filter(ccy='USD')
     qs = q1.union(q2)
 
 
@@ -77,16 +78,16 @@ Concatenating filters
 
 You can perform further selection by concatenating filters::
 
-    qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
+    qs = models.instrument.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
     
 or equivalently::
     
-    qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))
+    qs = models.instrument.filter(ccy=('EUR','USD'), types=('equity',bond'))
 
 Which is equivalent to an **intersection** of two filter statement::
 
-    q1 = Fund.objects.filter(ccy=('EUR', 'USD'))
-    q2 = Fund.objects.filter(types=('equity',bond'))
+    q1 = models.fund.filter(ccy=('EUR', 'USD'))
+    q2 = models.fund.filter(types=('equity',bond'))
     qs = q1.intersect(q2)
 
 
@@ -96,15 +97,15 @@ Exclude
 ===============================
 You can also exclude fields from lookups::
 
-    Instrument.objects.exclude(type='future')
+    qs = models.instrument.exclude(type='future')
 
 You can exclude a list of fields::
 
-    Instrument.objects.exclude(type=('future','equity'))
+    qs = models.instrument.exclude(type=('future','equity'))
 
 Concatenation is also supported::
 
-    qs = Instrument.objects.exclude(ccy=('EUR','USD'), types=('equity',bond'))
+    qs = models.instrument.exclude(ccy=('EUR','USD'), types=('equity',bond'))
 
 
 Union
@@ -115,14 +116,14 @@ situations. There is another method which can be used to combine together
 two or more :class:`Query` into a different query. The :meth:`Query.union`
 method performs just that, an union of queries. Consider the following example::
 
-    qs = Instrument.objects.filter(ccy='EUR', type='equity')
+    qs = models.instrument.filter(ccy='EUR', type='equity')
 
 this retrieve all instruments with ``ccy='EUR'`` **AND** ``type='equity'``. What about
 if we need all instruments with ``ccy='EUR'`` **OR** ``type='equity'``? We use the
 :meth:`Query.union` method::
 
-    q1 = Instruments.objecyts.filter(type='equity')
-    qs = Instrument.objects.filter(ccy='EUR').union(q1)
+    q1 = models.instrument.filter(type='equity')
+    qs = models.instrument.filter(ccy='EUR').union(q1)
 
 
 .. _range-lookups:
@@ -131,34 +132,36 @@ Range lookups
 ====================
 
 Range lookups is how you refine the query methods you have learned so far.
-They are specified by appending a suffix to the field name preceded by double underscore ``__``. 
+They are specified by appending a suffix to the field name preceded by
+double underscore ``__``. 
 Range lookups can be applied to any :class:`Field` which has an internal
 numerical representation. Such fields
-are: :class:`IntegerField`, :class:`FloatField`, :class:`DateField`, :class:`DateTimeField` and so on.   
+are: :class:`IntegerField`, :class:`FloatField`, :class:`DateField`,
+:class:`DateTimeField` and so on.   
 
 There are four of them:
 
  * ``gt``, greater than. For example::
     
-    qs = Position.objects.filter(size__gt=100)
+    qs = models.position.filter(size__gt=100)
     
  * ``ge``, greater than or equal to. For example::
     
-    qs = Position.objects.filter(size__ge=100)
+    qs = models.position.filter(size__ge=100)
     
  * ``lt``, less than. For example::
     
-    qs = Position.objects.filter(size__lt=100)
+    qs = models.position.filter(size__lt=100)
     
  * ``le``, less than or equal to. For example::
     
-    qs = Position.objects.filter(size__le=100)    
+    qs = models.position.filter(size__le=100)    
  
  
 They can be combined, for example, this is a :class:`Query` for a ``size`` between
 10 and 100::
 
-    qs = Position.objects.filter(size__ge=10, size__le=100)
+    qs = models.position.filter(size__ge=10, size__le=100)
      
 
 .. _text-lookups:
@@ -173,15 +176,15 @@ There are four of them:
 
  * ``contains``, check if a text field contains the text. For example::
     
-    qs = Fund.objects.filter(description__contains='technology')
+    qs = models.fund.filter(description__contains='technology')
     
  * ``startswith``, check if a text field starts with the given text. For example::
     
-    qs = Fund.objects.filter(description__starts='The')
+    qs = models.fund.filter(description__starts='The')
     
  * ``endswith``, check if a text field ends with the given text. For example::
     
-    qs = Fund.objects.filter(description__endswith='The')
+    qs = models.fund.filter(description__endswith='a')
     
 
 .. _query_where:
@@ -199,14 +202,16 @@ Consider the following model::
         b = odm.FloatField()
         ...
 
+    models.register(Data)
+    
 The following is a query which works for both mongo and redis::
 
-    qs = Data.objects.query().where('this.a > this.b')
+    qs = models.data.query().where('this.a > this.b')
 
 The where method can be chained in the same way as
 :ref:`filter <tutorial-filter>` and :ref:`exclude <tutorial-exclude>`::
 
-    s = Data.objects.filter(flag='foo', a__lt=4).where('this.a > this.b')
+    s = models.data.filter(flag='foo', a__lt=4).where('this.a > this.b')
 
 .. note::
     
@@ -226,15 +231,15 @@ The model has a :class:`ForeignKey` to the :class:`Instrument` model.
 Using the related field query API one can construct a query to fetch positions
 an subset of instruments in this way::
 
-    qs = Position.objects.filter(instrument__ccy='EUR')
+    qs = models.position.filter(instrument__ccy='EUR')
 
 that is the name of the :class:`ForeignKey` field, followed by a double underscore ``__``,
 followed by the name of the field in the related model.
 
 This is merely a syntactic sugar in place of this equivalent query::
 
-    qi = Instrument.objects.filter(ccy='EUR')
-    qs = Position.objects.filter(instrument=qi)
+    qi = models.instrument.filter(ccy='EUR')
+    qs = models.position.filter(instrument=qi)
     
     
 .. _query_slice:
@@ -243,15 +248,15 @@ Limit Query Size
 ====================
 
 When dealing with large amount of data, a :class:`Query` can be sliced
-using Python�s array-slicing syntax. For example, this returns the first
+using python array-slicing syntax. For example, this returns the first
 10 objects::
 
-    >> Instrument.objects.query()[:10]
+    >> qs = models.instrument.query()[:10]
     
 This returns the sixth through tenth objects::
 
-    >> Instrument.objects.query()[5:10]
+    >> qs = models.instrument.query()[5:10]
     
 This returns the last 5 objects::
 
-    >> Instrument.objects.query()[-5:]
+    >> qs = models.instrument.query()[-5:]

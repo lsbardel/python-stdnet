@@ -163,6 +163,21 @@ size_script = '\n'.join(('var doc = db.%s.findOne({"_id": ObjectId("%s")});',
                          
 class MongoStructure(stdnet.BackendStructure):
     
+    def __init__(self, *args, **kwargs):
+        super(MongoStructure, self).__init__(*args, **kwargs)
+        instance = self.instance
+        field = instance.field
+        if field:
+            model = field.model 
+            if instance._pkvalue:
+                id = self.backend.basekey(model._meta, 'obj', instance._pkvalue)
+            else:
+                raise NotImplemenetedError('Class structures not available')
+        else:
+            raise NotImplemenetedError('Stand alone structures not available')
+        self.name = field.name
+        self.id = id
+        
     def selector(self):
         if self.instance.instance is not None:
             return {'_id': self.instance.instance.id}

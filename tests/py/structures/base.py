@@ -13,26 +13,36 @@ class StructMixin(object):
 of the :attr:`structure`.'''
         raise NotImplementedError
     
-    def asserGroups(self, l):
-        sm = l.session.model(l._meta)
-        self.assertEqual(len(sm),1)
-        self.assertTrue(l.session)
-        self.assertTrue(l.get_state().persistent)
-        self.assertFalse(l in sm.new)
-        self.assertTrue(l in sm.dirty)
-        self.assertTrue(l in sm.modified)
-        self.assertFalse(l in sm.loaded)
+    def empty(self):
+        models = self.mapper
+        l = models.register(self.structure())
+        self.assertTrue(l.id)
+        models.session().add(l)
+        self.assertTrue(l.session is not None)
+        return l
+    
+    def not_empty(self):
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        yield models.session().add(l)
+        self.assertTrue(l.session is not None)
+        yield l
+    
+    def test_no_session(self):
+        l = self.create_one()
+        self.assertFalse(l.session)
+        self.assertTrue(l.id)
+        session = self.mapper.session()
+        self.assertRaises(InvalidTransaction, session.add, l)
         
     def test_meta(self):
-        # start the transaction
         models = self.mapper
         l = models.register(self.create_one())
         self.assertTrue(l.id)
         session = models.session()
         with session.begin() as t:
-            l = t.add(self.create_one())
-            self.assertTrue(l.id)
-            self.assertEqual(l.instance, None)
+            t.add(l)    # add the structure to the session
             self.assertEqual(l.session, session)
             self.assertEqual(l._meta.name, self.name)
             self.assertEqual(l._meta.model._model_type, 'structure')
@@ -41,51 +51,32 @@ of the :attr:`structure`.'''
             self.assertTrue(l in session)
             size = yield l.size()
             self.assertEqual(size, 0)
-            self.asserGroups(l)
         yield t.on_result
         yield l
     
     def test_commit(self):
         l = yield self.test_meta()
-        self.assertTrue(l.get_state().persistent)
-        self.assertTrue(l.size())
-        self.assertTrue(l in l.session)
-        self.asserGroups(l)
-        
-    def test_transaction(self):
-        session = self.session()
-        with session.begin() as t:
-            l = t.add(self.create_one())
-            # Trying to save within a section will throw an InvalidTransaction
-            self.assertRaises(InvalidTransaction, l.save)
-            # Same for delete
-            self.assertRaises(InvalidTransaction, l.delete)
-            self.assertTrue(l.get_state().persistent)
-            self.asserGroups(l)
-        yield t.on_result
-        self.assertTrue(l.size())
-        self.assertTrue(l.get_state().persistent)
+        yield self.async.assertTrue(l.size())
         
     def test_delete(self):
-        session = self.session()
-        with session.begin() as t:
-            s = t.add(self.create_one())
-        yield t.on_result
-        self.asserGroups(s)
-        yield self.async.assertTrue(s.size())
-        yield s.delete()
-        yield self.async.assertEqual(s.size(),0)
-        self.assertNotEqual(s.session, None)
-        self.assertFalse(s in session)
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        session = models.session()
+        yield session.add(l)
+        yield self.async.assertTrue(l.size())
+        yield session.delete(l)
+        yield self.async.assertEqual(l.size(), 0)
+        self.assertEqual(l.session, session)
         
     def test_empty(self):
         '''Create an empty structure'''
-        session = self.session()
+        models = self.mapper
+        l = models.register(self.structure())
+        self.assertTrue(l.id)
+        session = models.session()
         with session.begin() as t:
-            l = t.add(self.structure())
+            t.add(l)
         yield t.on_result
-        self.asserGroups(l)
         yield self.async.assertEqual(l.size(), 0)
         self.assertEqual(l.session, session)
-        self.asserGroups(l)
-        self.assertFalse(l.get_state().deleted)

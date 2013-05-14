@@ -7,7 +7,8 @@ from stdnet.utils.importer import import_module
 from stdnet import getdb, InvalidTransaction
 
 from .base import StdNetType, AlreadyRegistered, ModelType, Model
-from .session import Manager, Session, ModelDictionary
+from .session import Manager, Session, ModelDictionary, StructureManager
+from .struct import Structure
 from .globals import get_model_from_hash
 
 __all__ = ['Router', 'model_iterator', 'all_models_sessions']
@@ -36,6 +37,7 @@ one wishes to do so.
         self._registered_names = {}
         self._default_backend = default_backend
         self._install_global = install_global
+        self._structures = {}
         self._search_engine = None
         
     @property
@@ -73,6 +75,9 @@ tutorial for information.'''
             return self._registered_names[name]
         raise AttributeError('No model named "%s"' % name)
     
+    def structure(self, model):
+        return self._structures.get(model)            
+    
     def set_search_engine(self, engine):
         '''Set the search ``engine`` for this :class:`Router`.'''
         self._search_engine = engine
@@ -100,6 +105,10 @@ model was already registered it does nothing.
         if read_backend:
             read_backend = getdb(read_backend)
         registered = 0
+        if isinstance(model, Structure):
+            self._structures[model] = StructureManager(model, backend,
+                                                       read_backend, self)
+            return model
         for model in models_from_model(model, include_related=include_related):
             if model in self._registered_models:
                 continue

@@ -25,7 +25,7 @@ class TestZset(StructMixin, test.TestCase):
                (317.8,'juppiter')]
     
     def create_one(self):
-        l = odm.Zset()
+        l = self.structure()
         l.add(1,'earth')
         l.add(0.06,'mercury')
         l.add(317.8,'juppiter')
@@ -42,8 +42,12 @@ class TestZset(StructMixin, test.TestCase):
         return l
         
     def planets(self):
-        with self.session().begin() as t:
-            l = t.add(self.create_one())
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        session = models.session()
+        with session.begin() as t:
+            t.add(l)
             size = yield l.size()
             self.assertEqual(size, 0)
         yield t.on_result
@@ -51,17 +55,6 @@ class TestZset(StructMixin, test.TestCase):
         size = yield l.size()
         self.assertEqual(size, 9)
         yield l
-        
-    def testZsetState(self):
-        '''test a very simple zset with integer'''
-        session = self.session()
-        z = session.add(odm.Zset())
-        self.assertTrue(z.get_state().persistent)
-        self.assertTrue(z in session)
-        self.assertEqual(z.session, session)
-        session.delete(z)
-        self.assertFalse(z in session)
-        self.assertTrue(z.session)
         
     def test_irange(self):
         l = yield self.planets()
@@ -97,9 +90,9 @@ class TestZset(StructMixin, test.TestCase):
         v = [t[1] for t in self.result]
         self.assertEqual(r,v)
                 
-    def testItems(self):
+    def test_items(self):
         '''test a very simple zset with integer'''
         l = yield self.planets()
         r = list(l.items())
-        self.assertEqual(r, self.result)
+        self.assertEqual(r, [r[1] for r in self.result])
 

@@ -5,19 +5,20 @@ and indexed in redis and if you like in the same redis instance.
 
 Installing the search engine is as easy as
 
-* Create a search engine and assign it the :attr:`stdnet.odm.Router.search_engine`
-  attribute. Here we use the :ref:`models router <tutorial-models-router>`
-  of our first tutorial::
+* Create a search engine and use the :meth:`stdnet.odm.Router.set_search_engine`
+  method to install it in the router. Here, we use the
+  :ref:`models router <tutorial-models-router>` of our first tutorial::
 
     from stdnet.apps.searchengine import SearchEngine
     
-    models.search_engine = SearchEngine(backend, ...)
+    models.set_search_engine(SearchEngine(backend, ...))
     
   where backend is either a instance of a :class:`stdnet.BackendDataServer`
   or a valid :ref:`connection string <connection-string>` such as::
   
       redis://127.0.0.1:6379?db=4
-      
+
+  or ``None``, to use the default :attr:`stdnet.odm.Router.backend`.
   This is the back-end server where the text indices :class:`WordItem`
   are stored, and not the back-end server of your models to index.
   They can be the same. To use the same backend as the default
@@ -29,9 +30,9 @@ Installing the search engine is as easy as
 
     models.search_engine.register(Instrument)
 
-Check the :meth:`stdnet.odm.SearchEngine.register` documentation for more
-information.
-
+  Check the :meth:`stdnet.odm.SearchEngine.register` documentation for more
+  information.
+  
 Searching model instances for text can be achieved using the
 :class:`stdnet.odm.Query.search` method::
 

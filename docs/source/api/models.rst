@@ -121,23 +121,27 @@ SearchEngine Interface
 Data Structures
 ==============================
 
-Data structures are subclasses of :class:`Structure`.
-There are six of them:
+Data structures are subclasses of :class:`Structure`, which in term is
+a subclass of :class:`Model`. They are rarely used in stand alone mode,
+instead they form the back-end of
+:ref:`data structure fields <model-field-structure>`.
+
+There are five of them:
 
  * :class:`List`, implemented as a doubly-linked sequence.
  * :class:`Set`, a container of unique values.
  * :class:`HashTable`, unique associative container.
  * :class:`Zset`, an ordered container of unique values.
- * :class:`TS`, a timeseries implemented as a ordered unique associative container.
+ * :class:`TS`, a time-series implemented as a ordered unique associative container.
 
 An additional structure is provided in the :mod:`stdnet.apps.columnts` module
 
- * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate timeseries structure
-   (useful for modelling financial timeseries for example).
+ * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate time-series structure
+   (useful for modelling financial data for example).
 
 .. note::
 
-    Stand alone data structures are available for redis backend only. Usually,
+    Stand alone data structures are available for redis back-end only. Usually,
     one uses these models via a
     :ref:`data-structure fields <model-field-structure>`.
     
@@ -151,31 +155,20 @@ in the following way::
     from stdnet import odm
 
     models = odm.Router('redis://localhost:6379')
-    l = models.register(odm.List())
-    s = session.add(odm.Set())
-    o = session.add(odm.Zset())
-    h = session.add(odm.HashTable())
-    t = session.add(odm.TS())
+    li = models.register(odm.List())
+    
+At this point the ``li`` instance is registered with a :class:`Router` and the
+session API can be used::
+
+    with models.session().begin() as t:
+        t.add(li)
+        li.push_back('bla')
+        li.push_back('foo')
 
 If no ``id`` is specified, stdnet will create one for you::
 
     >>> l.id
     '2d0cbac9'
-
-To add data you have two options: immediate commit or transactions. For example,
-lets add elements to a set::
-
-    >>> s.update((4, 6, 'bla', 'foo', 4))
-    >>> s.size()
-    4
-
-Alternatively, one could use :ref:`transactions <model-transactions>` to
-combine several updates together::
-
-    with session.begin():
-        s.update((4, 6, 'bla', 'foo', 4))
-        h['foo'] = 56
-        o.add(3,'a zset element with score 3')
 
 
 Base Class and Mixins

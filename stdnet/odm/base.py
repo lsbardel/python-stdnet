@@ -516,7 +516,7 @@ otherwise it returns the cached value.'''
 
     @classmethod
     def get_uuid(cls, id):
-        return '{0}.{1}'.format(cls._meta.hash,id)
+        return '%s.%s' % (cls._meta.hash, id)
 
     @property
     def uuid(self):

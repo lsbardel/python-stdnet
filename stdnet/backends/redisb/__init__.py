@@ -379,7 +379,7 @@ class RedisStructure(BackendStructure):
             else:
                 id = self.backend.basekey(model._meta, 'struct', field.name)
         else:
-            id = instance.id
+            id = '%s.%s' % (instance._meta.name, instance.id)
         self.id = id
             
     @property
@@ -659,11 +659,10 @@ class NumberArray(RedisStructure):
         return self.client.execute_script('numberarray_getset', (self.id,),
                                           'set', index+1, value)
     
-    def __iter__(self):
-        return iter(self.client.execute_script('numberarray_all_raw',
-                                               (self.id,),))
+    def range(self):
+        return self.client.execute_script('numberarray_all_raw', (self.id,),)
     
-    def resize(self, size, value = None):
+    def resize(self, size, value=None):
         if value is not None:
             argv = (size,value)
         else:
@@ -810,10 +809,10 @@ class BackendDataServer(stdnet.BackendDataServer):
             meta = sm.meta
             if sm.structures:
                 self.flush_structure(sm, pipe)
-            meta_info = json.dumps(self.meta(meta))
             delquery = sm.deletes.backend_query(pipe=pipe) if sm.deletes else None
             self.accumulate_delete(pipe, delquery)
             if sm.dirty:
+                meta_info = json.dumps(self.meta(meta))
                 lua_data = [len(sm.dirty)]
                 processed = []
                 for instance in sm.dirty:

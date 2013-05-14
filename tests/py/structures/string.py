@@ -17,12 +17,12 @@ class TestString(StructMixin, test.TestCase):
         a.push_back('this is a test')
         return a
     
-    def testIncr(self):
-        session = self.session()
-        a = session.add(self.structure())
-        self.assertEqual(a.incr(),1)
-        self.assertEqual(a.incr(),2)
-        self.assertEqual(a.incr(3),5)
-        self.assertEqual(a.incr(-7),-2)
+    def test_incr(self):
+        a = self.empty()
+        a.session.add(a)
+        yield self.async.assertEqual(a.incr(), 1)
+        yield self.async.assertEqual(a.incr(), 2)
+        yield self.async.assertEqual(a.incr(3), 5)
+        yield self.async.assertEqual(a.incr(-7), -2)
         
     

@@ -2,33 +2,13 @@
 
 
 =======================================
-Structures and Structure-Fields
+Structure-Fields
 =======================================
 
-The :ref:`structure models <model-structures>` are the networked equivalent
-of data-structures such as sets, hash-tables, lists and so forth.
-They are one of the two :class:`Model` types supported in :mod:`stdnet`,
-with the other covered in the :ref:`using models tutorial <tutorial>`.
-
-The best way to manipulate structures is by using the
-:ref:`session api <model-session>`::
-
-    from stdnet import odm
-    
-    # get a session with redis backend
-    session = odm.Session('redis://localhost:8888?db=3&namespace=test.')
-    
-    # Enter a transactional state
-    with session.begin() as t:
-        # create a new list structure
-        list = t.add(odm.List('list1'))
-        # add some data
-        list.push_back(3)
-        list.push_back('Hello')
-
-
-These structures can also be used as :class:`stdnet.odm.StructureField` in
-:class:`stdnet.odm.StdModel`.
+The :ref:`structure fields <model-field-structure>` are the networked equivalent
+of data-structures such as sets, hash-tables, lists and so forth. They
+are associated with an instance of a :class:`StdModel` or, for redis
+backend only, with a :class:`StdModel` class.
 
 .. module:: stdnet.odm
 
@@ -43,7 +23,8 @@ List
 
 **Methods**
 
-The following api methods are available for a :class:`List` and :class:`ListField`:
+The following api methods are available for a :class:`ListField` via the
+:class:`List` structure:
 
 * :meth:`Structure.size` list size.
 * :meth:`Structure.items` retrieve all items for a list.

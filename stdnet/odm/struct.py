@@ -35,7 +35,7 @@ def commit_when_no_transaction(f):
 not in a transaction.'''
     def _(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
-        return self.session.add(self)
+        return self.session.add(self) if self.session is not None else r
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
@@ -555,12 +555,12 @@ sequence.'''
         yield self.value_pickler.loads(value)
     
     def __getitem__(self, index):
-        value = self.session.structure(self).get(index)
-        return self.value_pickler.loads(value)
+        value = self.read_backend_structure().get(index)
+        return on_result(value, self.value_pickler.loads)
     
     def __setitem__(self, index, value):
         value = self.value_pickler.dumps(value)
-        self.session.structure(self).set(index,value)
+        self.backend_structure().set(index, value)
     
     
 ################################################################################
@@ -678,7 +678,7 @@ and values are objects.'''
     def ipop(self, index):
         '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
 index is not out of bound.'''
-        res = self.session.backend.structure(self).ipop(index)
+        res = self.backend_structure().ipop(index)
         return on_result(res, lambda r: self._load_get_data(r, index, None))
     
     def times(self, start, stop, callback=None, **kwargs):

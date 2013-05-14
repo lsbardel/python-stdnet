@@ -3,7 +3,7 @@
 .. module:: stdnet.odm
 
 =========================================
-Search for text in your models
+Full text search
 =========================================
 
 Full text search in most key-value stores is not provided out of the box as

@@ -164,8 +164,7 @@ lua scripts to redis via the ``evalsha`` command.
 .. attribute:: required_scripts
 
     A list/tuple of other :class:`RedisScript` names required by this script
-    to properly execute. These scripts needs to be loaded before this script
-    can run.
+    to properly execute.
     
 .. attribute:: sha1
 
@@ -213,11 +212,9 @@ lua scripts to redis via the ``evalsha`` command.
         
     def callback(self, response, **options):
         '''This is the only method user should override when writing a new
-:class:`RedisScript`. By default it returns *response*.
+:class:`RedisScript`. By default it returns ``response``.
 
-:parameter request: a class:`RedisRequest`.
-:parameter response: the parsed response from the remote redis server.
-:parameter args: parameters of the redis script.
+:parameter response: the response obtained from the script execution.
 :parameter options: Additional options for the callback.
 '''
         return response

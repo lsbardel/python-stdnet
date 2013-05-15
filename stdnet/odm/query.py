@@ -7,7 +7,6 @@ from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
 from stdnet.utils.exceptions import *
 
 from .globals import lookup_value
-from .signals import *
 
 
 __all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',

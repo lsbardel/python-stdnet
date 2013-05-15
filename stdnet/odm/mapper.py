@@ -4,6 +4,7 @@ from inspect import ismodule, isclass
 from stdnet.utils import native_str
 from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
+from stdnet.utils.dispatch import Signal
 from stdnet import getdb, InvalidTransaction
 
 from .base import StdNetType, AlreadyRegistered, ModelType, Model
@@ -31,6 +32,34 @@ class Router(object):
     
 The ``models`` instance in the above snipped can be set globally if
 one wishes to do so.
+
+.. attribute:: pre_commit
+
+    A signal which can be used to register ``callbacks`` before instances are
+    committed::
+    
+        models.pre_commit.connect(callback, sender=MyModel)
+    
+.. attribute:: pre_delete
+
+    A signal which can be used to register ``callbacks`` before instances are
+    deleted::
+    
+        models.pre_delete.connect(callback, sender=MyModel)
+        
+.. attribute:: post_commit
+
+    A signal which can be used to register ``callbacks`` after instances are
+    committed::
+    
+        models.post_commit.connect(callback, sender=MyModel)
+        
+.. attribute:: post_delete
+
+    A signal which can be used to register ``callbacks`` after instances are
+    deleted::
+    
+        models.post_delete.connect(callback, sender=MyModel)
 '''
     def __init__(self, default_backend=None, install_global=False):
         self._registered_models = ModelDictionary()
@@ -39,6 +68,10 @@ one wishes to do so.
         self._install_global = install_global
         self._structures = {}
         self._search_engine = None
+        self.pre_commit = Signal(providing_args=["instances", "session"])
+        self.pre_delete = Signal(providing_args=["instances", "session"])
+        self.post_commit = Signal(providing_args=["instances", "session"])
+        self.post_delete = Signal(providing_args=["instances", "session"])
         
     @property
     def default_backend(self):

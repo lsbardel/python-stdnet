@@ -1,3 +1,29 @@
+'''The :mod:`stdnet.backends.redisb.client` implements several extensions
+to the standard redis client in redis-py_
+
+
+Client
+~~~~~~~~~~~~~~
+
+.. autoclass:: Redis
+   :members:
+   :member-order: bysource
+   
+Prefixed Client
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: PrefixedRedis
+   :members:
+   :member-order: bysource
+   
+RedisScript
+~~~~~~~~~~~~~~~
+
+.. autoclass:: RedisScript
+   :members:
+   :member-order: bysource
+     
+'''
 import os
 import io
 import socket
@@ -9,7 +35,7 @@ from redis.exceptions import NoScriptError
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge,\
                             PubSub
 
-from .extensions import get_script, RedisManager,\
+from .extensions import get_script, RedisManager, RedisScript,\
                         script_callback, redis_connection, redis_after_receive
 from .prefixed import *
 
@@ -211,7 +237,15 @@ class Redis(redis.StrictRedis):
         return PrefixedRedis(self, prefix)
     
     def execute_script(self, name, keys, *args, **options):
-        '''Execute a registered lua script at *name*.'''
+        '''Execute a registered lua script at ``name``. The script must
+be implemented via subclassing :class:`RedisScript`.
+
+:param name: the name of the registered script.
+:param keys: tuple/list of keys pased to the script.
+:param args: argument passed to the script.
+:param options: key-value parameters passed to the :meth:`RedisScript.callback`
+    method once the script has finished execution.
+'''
         script = get_script(name)
         if not script:
             raise RedisError('No such script "%s"' % name)            

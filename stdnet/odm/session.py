@@ -10,7 +10,6 @@ from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *
 
 from .query import Q, Query, EmptyQuery
-from .signals import *
 
 
 __all__ = ['Session',
@@ -292,6 +291,7 @@ empty keys associated with the model will exists after this operation.'''
         
     def backends_data(self, session):
         transaction = session.transaction
+        models = session.router
         be = self.backend
         rbe = self.read_backend
         model= self.model
@@ -302,11 +302,9 @@ empty keys associated with the model will exists after this operation.'''
         queries = self._queries
         if dirty or deletes or queries or structures:
             if transaction.signal_delete and deletes:
-                pre_delete.send(model, instances=deletes, session=session,
-                                transaction=transaction)
+                models.pre_delete.send(model, instances=deletes, session=session)
             if dirty and transaction.signal_commit:
-                pre_commit.send(model, instances=dirty, session=session,
-                                transaction=transaction)
+                models.pre_commit.send(model, instances=dirty, session=session)
             if be == rbe:
                 yield be, session_data(meta, dirty, deletes, queries,
                                        structures)
@@ -491,6 +489,7 @@ Results can contain errors.
     for information.'''
         signals = []
         exceptions = []
+        models = session.router
         for result in response or ():
             if isinstance(result, Exception):
                 exceptions.append(result)
@@ -505,11 +504,11 @@ Results can contain errors.
             if deleted:
                 self.deleted[meta] = deleted
                 if self.signal_delete:
-                    signals.append((post_delete.send, sm, deleted))
+                    signals.append((models.post_delete.send, sm, deleted))
             if saved:
                 self.saved[meta] = saved
                 if self.signal_commit:
-                    signals.append((post_commit.send_robust, sm, saved))
+                    signals.append((models.post_commit.send_robust, sm, saved))
         # Once finished we send signals
         results = []
         for send, sm, instances in signals:
@@ -564,13 +563,6 @@ via the :meth:`Router.session` method.
 
     def __len__(self):
         return len(self._models)
-    
-    def __getitem__(self, model):
-        meta = self.check_model(model)
-        if self._router:
-            return self._router[meta.model]
-        else:
-            return Manager(meta.model, self.backend)
 
     @property
     def router(self):
@@ -710,7 +702,6 @@ associated with the model will exists after this operation.'''
         '''Remove empty keys for a :class:`Model` from the database. No
 empty keys associated with the model will exists after this operation.'''
         return self.model(model).clean()
-        return self.backend.clean(self.check_model(model))
 
     def keys(self, model):
         '''Retrieve all keys for a *model*.'''
@@ -772,16 +763,32 @@ values valid for the :meth:`model` method.'''
             
       
 class LazyProxy(object):
-    
+    '''Base class for descriptors used by :class:`ForeignKey` and
+:class:`StructureField`.
+
+.. attribute:: field
+
+    The :class:`Field` which create this descriptor. Either a
+    :class:`ForeignKey` or a :class:`StructureField`.
+'''
     def __init__(self, field):
         self.field = field
+    
+    def __repr__(self):
+        return self.field.name
+    __str__ = __repr__
     
     @property
     def name(self):
         return self.field.name
     
-    def load(self, instance, session=None, backend=None):
+    def load(self, instance, session):
+        '''Load the lazy data for this descriptor. Implemented by
+subclasses.'''
         raise NotImplementedError
+    
+    def load_from_manager(self, manager):
+        raise NotImplementedError('cannot access %s from manager' % self)
     
     def __get__(self, instance, instance_type=None):
         if not self.field.class_field:
@@ -793,10 +800,10 @@ class LazyProxy(object):
     
     
 class Manager(object):
-    '''A manager class for models. To use a :class:`StdModel` in conjunction
-with a :ref:`backend server <db-index>` must be associated with a
-:class:`Manager` class. A manager for a model is accessed via a :class:`Router`
-which has :ref:`registered the model <tutorial-registration>`::
+    '''before a :class:`StdModel` can be used in conjunction
+with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
+with it via a :class:`Router`. Check the
+:ref:`registration tutorial <tutorial-registration>` for further info::
 
     class MyModel(odm.StdModel):
         group = odm.SymbolField()
@@ -875,9 +882,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
     def __getattr__(self, attrname):
         result = getattr(self.model, attrname)
         if isinstance(result, LazyProxy):
-            result = result.load(self, backend=self.backend)
-            if result.session is None:
-                result.session = self.session()
+            return result.load_from_manager(self)
         return result
     
     def __str__(self):
@@ -946,6 +951,7 @@ a full text search value.'''
         return self.query().search(text, lookup=lookup)
 
     def get(self, **kwargs):
+        '''Shortcut for ``self.query().get**kwargs)``.'''
         return self.query().get(**kwargs)
 
     def flush(self):

@@ -3,7 +3,7 @@ from time import time
 
 from stdnet.utils import test
 
-from examples.observer import Observer, Observable
+from examples.observer import Observer, Observable, update_observers
 
 
 class ObserverData(test.DataGenerator):
@@ -24,6 +24,10 @@ class ObserverTest(test.TestWrite):
         
     def setUp(self):
         models = self.mapper
+        #
+        # Register post commit callback
+        models.post_commit.connect(update_observers, sender=Observable)
+        #
         # Create the observables and the observers
         session = models.session()
         with session.begin() as t:
@@ -51,19 +55,23 @@ class ObserverTest(test.TestWrite):
         yield t.on_result
         # We should have added several observer_observalbles through instances
         self.assertEqual(len(t.saved), 1)
-    
-    def tearDown(self):
-        return self.clear_all()
+        self.observables = observables
+        self.observers = observers
         
     def test_meta(self):
         models = self.mapper
-        s = models.observer.updates
-        self.assertEqual(s.penalty, 5)
-        self.assertTrue(s.session is not None)
-        self.assertTrue(s.is_field)
+        zset = models.observer.updates
+        self.assertEqual(zset.penalty, 5)
+        self.assertTrue(zset.session is not None)
+        self.assertTrue(zset.field)
+        self.assertEqual(zset.model, Observer)
+        #
+        backend = zset.backend_structure()
+        self.assertEqual(backend.instance, zset)
         
     def test_created(self):
-        observers = yield self.models.observer.query().all()
+        models = self.mapper
+        observers = yield models.observer.all()
         self.assertEqual(len(observers), self.data.observers)
         for o in observers:
             created = self.created[o.id]
@@ -71,37 +79,46 @@ class ObserverTest(test.TestWrite):
             self.assertEqual(created, set(observables))
             
     def test_simple_save(self):
+        '''Save the first observable and check for updates.'''
         models = self.mapper
-        obs = yield models.observable.query().get(id=1)
+        obs = self.observables[0]
         now = time()
         yield self.async.assertEqual(models.observer.updates.size(), 0)
         yield obs.save()
         # The first observable is connected with all observers
         updates = yield models.observer.updates.size()
         self.assertEqual(updates, self.data.observers)
-        data = list(Observer.updates.irange(0,-1))
-        self.assertEqual(len(data), 20)
-        for n,sv in enumerate(data,1):
+        #
+        data = yield models.observer.updates.irange(0, -1)
+        self.assertEqual(len(data), self.data.observers)
+        # Check the score
+        for n, sv in enumerate(data, 1):
             score, id = sv
             self.assertTrue(score > now)
             
-    def test_save(self):
+    def test_save_all(self):
         models = self.mapper
-        obs = yield models.observable.query().sort_by('id').all()
         with models.session().begin() as t:
-            for o in obs:
+            for o in self.observables:
                 t.add(o)
         yield t.on_result
         now = time()
         # The first observable is connected with all observers
-        self.assertEqual(models.observer.updates.size(), 20)
-        data = list(Observer.updates.irange(0,-1))
-        self.assertEqual(len(data), 20)
-        penalty = Observer.updates.penalty
+        # therefore we have all observers to be updated
+        updates = yield models.observer.updates.size()
+        self.assertEqual(updates, self.data.observers)
+        #
+        data = yield models.observer.updates.irange()
+        self.assertEqual(len(data), self.data.observers)
+        # Check the score
+        #
+        penalty = models.observer.updates.penalty
         prev = None
+        #
+        observers = dict(((o.id, o) for o in self.observers))
         for score, id in data:
-            observer = Observer.objects.get(id = id)
-            N = observer.underlyings.query().count()
+            observer = observers[id]
+            N = yield observer.underlyings.query().count()
             if prev:
                 self.assertTrue(N <= prev)
             prev = N

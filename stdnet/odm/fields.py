@@ -233,6 +233,8 @@ function users should never call.'''
         return self.name
 
     def get_cache_name(self):
+        '''name for the private attribute which contains a cached value
+for this field. Used only by realted fields.'''
         return '_%s_cache' % self.name
 
     def id(self, obj):
@@ -616,7 +618,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
             self._register_with_related_model()
         else:
             raise FieldError('Duplicated related name "{0}"\
- in model "{1}" and field {2}'.format(related_name,meta,self))
+ in model "{1}" and field {2}'.format(self.related_name, meta, self))
 
     def _register_with_related_model(self):
         manager = self.related_manager_class(self)

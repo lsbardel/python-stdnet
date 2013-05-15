@@ -243,8 +243,14 @@ TS
    :member-order: bysource
 
 
-Sessions and Managers
+Sessions
 =========================
+
+A :class:`Session` is the middleware between a :class:`Manager` and
+a :class:`stdnet.BackendDataServer`. It is obtained from either the
+:meth:`Router.session` or, equivalently, from the :meth:`Manager.session`.
+A :class:`Session` is an holding zone for :class:`SessionModel` and it
+communicates with the :class:`stdnet.BackendDataServer` via :class:`Transaction`.
 
 Session
 ~~~~~~~~~~~~~~~
@@ -267,6 +273,9 @@ Transaction
    :members:
    :member-order: bysource
    
+Managers
+=================
+
 Manager
 ~~~~~~~~~~~~~~~~~~
 .. autoclass:: Manager
@@ -296,7 +305,13 @@ Many2ManyRelatedManager
    :members:
    :member-order: bysource
 
-  
+LazyProxy
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: LazyProxy
+   :members:
+   :member-order: bysource
+     
 .. _register-model:
 
 

@@ -13,18 +13,21 @@ class TransactionReceiver(object):
     def __init__(self):
         self.transactions = []
         
-    def __call__(self, sender, instances=None, **kwargs):
+    def __call__(self, sender, instances, session, **kwargs):
         self.transactions.append((sender, instances))
         
 
-class TestTransactions(test.TestCase):
+class TestTransactions(test.TestWrite):
     model = SimpleModel
     
+    def setUp(self):
+        models = self.mapper
+        self.receiver = TransactionReceiver()
+        models.post_commit.connect(self.receiver, self.model)
+        
     def testCreate(self):
         session = self.session()
         query = session.query(self.model)
-        receiver = TransactionReceiver()
-        odm.post_commit.connect(receiver, self.model)
         with session.begin() as t:
             self.assertEqual(t.session, session)
             s = t.add(self.model(code='test', description='just a test'))
@@ -34,6 +37,7 @@ class TestTransactions(test.TestCase):
         yield t.on_result
         all = yield query.filter(code=('test','test2')).all()
         self.assertEqual(len(all), 2)
+        receiver = self.receiver
         self.assertTrue(len(receiver.transactions), 1)
         sender, instances = receiver.transactions[0]
         self.assertEqual(sender, self.model)

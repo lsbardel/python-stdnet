@@ -25,10 +25,8 @@ The collection of tutorials examples is available in the
    sorting
    search
    sessions
-   related
-   structures
-   json
    twitter
+   permissions
    columnts
    
    
@@ -37,6 +35,9 @@ The collection of tutorials examples is available in the
 .. toctree::
    :maxdepth: 1
    
+   related
+   structures
+   json
    primary
    performance
    underscore

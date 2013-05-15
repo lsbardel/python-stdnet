@@ -22,13 +22,14 @@ class StructureFieldProxy(LazyProxy):
         super(StructureFieldProxy, self).__init__(field)
         self.factory = factory
         
-    def load(self, instance, session):
+    def load_from_manager(self, manager):
         if self.field.class_field:
             # don't cache when this is a class field
-            if not backend and session:
-                backend = session.backend
-            return self.get_structure(instance, backend)
-        #
+            return self.get_structure(None, manager.session())
+        else:
+            raise NotImplementedError('Cannot access %s from manager' % self)
+        
+    def load(self, instance, session):
         cache_name = self.field.get_cache_name()
         cache_val = None
         try:

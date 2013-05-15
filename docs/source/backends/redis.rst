@@ -163,7 +163,13 @@ Asynchronous Connection
 
 .. automodule:: stdnet.backends.redisb.async  
    
-   
+
+Client Extensions
+=====================
+
+.. automodule:: stdnet.backends.redisb.client
+
+
 .. _Redis: http://redis.io/
 .. _stdnet-redis: https://github.com/lsbardel/redis
 .. _cython: http://cython.org/

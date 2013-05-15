@@ -79,15 +79,17 @@ class update_model(object):
         self.transaction = transaction
         
         
-class TestPostDeleteSignal(test.TestCase):
+class TestPostDeleteSignal(test.TestWrite):
     model = SimpleModel
             
     def setUp(self):
+        models = self.mapper
         self.update_model = update_model(self)
-        odm.post_delete.connect(self.update_model, sender=self.model)
+        models.post_delete.connect(self.update_model, sender=self.model)
         
     def tearDown(self):
-        odm.post_delete.disconnect(self.update_model, sender=self.model)
+        models = self.mapper
+        models.post_delete.disconnect(self.update_model, sender=self.model)
         
     def testSignal(self):
         session = self.session()

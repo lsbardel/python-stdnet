@@ -15,7 +15,6 @@ class StdModel(StdNetType('StdNetBase', (Model,), {})):
     '''A :class:`Model` which contains data in :class:`Field`. This represents
 the main class of :mod:`stdnet.odm` module.'''
     _model_type = 'object'
-    searchengine = None
     is_base_class = True
     _loadedfields = None
 

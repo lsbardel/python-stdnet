@@ -3,18 +3,19 @@ from functools import partial
 import stdnet
 from stdnet.utils import encoders, iteritems
 from stdnet.utils.async import on_result
+from stdnet.utils.dispatch import Signal
 from stdnet import FieldValueError, QuerySetError, ManyToManyError
 
 from .session import Manager, LazyProxy
-from . import signals
+
+__all__ = ['LazyForeignKey', 'ModelFieldPickler']
 
 
 RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 
 pending_lookups = {}
 
-
-__all__ = ['LazyForeignKey', 'ModelFieldPickler']
+class_prepared = Signal(providing_args=["class"])
 
 
 class ModelFieldPickler(encoders.Encoder):
@@ -72,7 +73,7 @@ Sent from class_prepared."""
         callback(sender)
 
 
-signals.class_prepared.connect(do_pending_lookups)
+class_prepared.connect(do_pending_lookups)
 
 
 class ProxyManager(Manager):

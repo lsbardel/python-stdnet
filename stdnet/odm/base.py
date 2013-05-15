@@ -7,10 +7,10 @@ import weakref
 from stdnet.utils.exceptions import *
 from stdnet.utils import zip, to_string, UnicodeMixin, unique_tuple
 
-from . import signals
 from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
                      range_lookup_info
 from .fields import Field, AutoIdField
+from .related import class_prepared
 
 
 __all__ = ['ModelMeta',
@@ -418,7 +418,7 @@ class StdNetType(ModelType):
         # create the new class
         new_class = type.__new__(cls, name, bases, attrs)
         Metaclass(new_class, fields, **kwargs)
-        signals.class_prepared.send(sender=new_class)
+        class_prepared.send(sender=new_class)
         return new_class
 
 
@@ -542,6 +542,17 @@ For this class it simply get the attribute at name::
     
     def get_state_action(self):
         return 'update'
+    
+    def save(self):
+        '''Save the model by adding it to the :attr:`session`. If the
+:attr:`session` is not available, it raises a :class:`SessionNotAvailable`
+exception.'''
+        return self.session.add(self)
+    
+    def delete(self):
+        '''Delete the model. If the :attr:`session` is not available,
+it raises a :class:`SessionNotAvailable` exception.'''
+        return self.session.delete(self)
 
 
 ModelBase = ModelType('ModelBase', (Model,), {'is_base_class': True})

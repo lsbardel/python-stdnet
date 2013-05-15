@@ -36,7 +36,7 @@ class RedisUpdateZset(redisb.Zset):
         result = None
         if cache.toadd:
             flat = tuple(self.flat(cache.toadd.items()))
-            self.client.execute_script('update_observer', self.id, *flat)
+            self.client.execute_script('update_observer', (self.id,), *flat)
             result = True
         if cache.toremove:
             flat = tuple((el[1] for el in cache.toremove))
@@ -47,8 +47,8 @@ class RedisUpdateZset(redisb.Zset):
     def flat(self, zs):
         for s, el in zs:
             yield s
-            yield el[0]
             yield el[1]
+            yield el[2]
 
 
 class UpdateZset(odm.Zset):
@@ -59,10 +59,12 @@ class UpdateZset(odm.Zset):
         super(UpdateZset,self).__init__(*args, **kwargs)
         
     def dump_data(self, instances):
-        for instance in instances:
+        dt = time()
+        for n, instance in enumerate(instances):
             if hasattr(instance, 'pkvalue'):
                 instance = instance.pkvalue()
-            yield time(), (self.penalty, instance)
+            # put n so that it allows for repeated values
+            yield dt, (n, self.penalty, instance)
 
 # Register the new structure with redis backend
 redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
@@ -86,17 +88,17 @@ class Observer(odm.StdModel):
     
     
 def update_observers(sender, instances, session=None, **kwargs):
+    # This callback must be registered with the router
+    # post_commit method
     # Instances of observable got an update. Loop through the updated observables
     # and push to the observer class updates all the observers of the observable.
-    observers_to_notify = set()
-    for observable in instances:
-        to_notify = observable.observers.query().get_field('id').all()
-        observers_to_notify.update(to_notify)
-    if observers_to_notify:
-        return session[Observer].updates.update(observers_to_notify)
+    models = session.router
+    observers = models.observer
+    through = models[observers.underlyings.model]
+    all = yield through.filter(observable=instances).get_field('observer').all()
+    if all:
+        yield observers.updates.update(all)
 
-# Register event
-odm.post_commit.connect(update_observers, sender=Observable)
             
     
     

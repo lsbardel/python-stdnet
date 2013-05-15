@@ -9,10 +9,10 @@ from stdnet.utils.async import async
 
 from .models import StdModel
 from .fields import DateTimeField, CharField
-from .signals import post_commit, post_delete
 
 
 LOGGER = logging.getLogger('stdnet.search')
+
 
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
@@ -79,8 +79,8 @@ indexed by the search engine.
 '''
         update_model = UpdateSE(self, related)
         self.REGISTERED_MODELS[model] = update_model
-        post_commit.connect(update_model, sender=model)
-        post_delete.connect(update_model, sender=model)
+        self.router.post_commit.connect(update_model, sender=model)
+        self.router.post_delete.connect(update_model, sender=model)
         
     def get_related_fields(self, item):
         if not isclass(item):
@@ -275,14 +275,14 @@ class UpdateSE(object):
         self.se = se
         self.related = related or ()
 
-    def __call__(self, instances, signal=None, sender=None, session=None,
-                 **kwargs):
+    def __call__(self, instances, signal, sender, **kwargs):
         '''An update on instances has occurred. Propagate it to the search
 engine index models.'''
         if sender:
             # get a new session
-            se_session = self.se.router.session()
-            if signal == post_delete:
+            models = self.se.router
+            se_session = models.session()
+            if signal == models.post_delete:
                 return self.remove(instances, sender, se_session)
             else:
                 return self.index(instances, sender, se_session)

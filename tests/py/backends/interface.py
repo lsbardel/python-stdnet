@@ -30,11 +30,7 @@ class TestBackend(test.TestCase):
         
     def testMissingStructure(self):
         l = odm.List()
-        self.assertRaises(SessionNotAvailable, l.backend_structure)
-        session = odm.Session(backend=self.get_backend())
-        session.begin()
-        session.add(l)
-        self.assertRaises(ModelNotAvailable, l.backend_structure)
+        self.assertRaises(AttributeError, l.backend_structure)
 
     def testRedis(self): 
         b = getdb('redis://')
@@ -42,5 +38,7 @@ class TestBackend(test.TestCase):
         self.assertEqual(b.connection_string, 'redis://127.0.0.1:6379?db=0')
         
     def testBackendStructure_error(self):
-        m = SimpleModel()
-        self.assertRaises(ValueError, BackendStructure, m, None, None)
+        s = BackendStructure(None, None, None)
+        self.assertRaises(NotImplementedError, s.flush)
+        self.assertRaises(NotImplementedError, s.delete)
+        self.assertRaises(NotImplementedError, s.size)

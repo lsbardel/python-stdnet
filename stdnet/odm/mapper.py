@@ -181,13 +181,15 @@ in ``exclude`` (if provided).'''
         exclude = exclude or []
         results = []
         for manager in self._registered_models.values():
-            if not manager._meta.name in exclude:
+            m = manager._meta
+            if not (m.name in exclude or m.modelkey in exclude):
                 results.append(manager.flush())
         return multi_async(results)
         
-    def unregister(model=None):
+    def unregister(self, model=None):
         '''Unregister a ``model`` if provided, otherwise it unregister all
-registered models. Return a list of unregistered model managers.'''
+registered models. Return a list of unregistered model managers or ``None``
+if no managers were removed.'''
         if model is not None:
             try:
                 manager = self._registered_models.pop(model)

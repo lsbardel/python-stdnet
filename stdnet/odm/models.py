@@ -96,7 +96,7 @@ raises :class:`AttributeError`.'''
             bits = name.split(JSPLITTER)
             fname = bits[0]
             if fname in self._meta.dfields:
-                return self._meta.dfields[fname].get_value(self, bits[1:])
+                return self._meta.dfields[fname].get_value(self, *bits[1:])
             else:
                 return getattr(self, name)
         else:

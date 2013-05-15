@@ -13,7 +13,7 @@ Ver. 0.8 - Development
   Check the :ref:`registration tutorial <tutorial-registration>` for more
   details.
 * Can handle master/slave server configuration by registering models to a
-  backend server and read-only server for read operations (queries).
+  back-end server and read-only server for read operations (queries).
 * Added :ref:`where <query_where>` selector for ad-hoc queries. The argument is
   a valid expression (lua_ for redis_ and javascript for mongodb_).
 * AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not

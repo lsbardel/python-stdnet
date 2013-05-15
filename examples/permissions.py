@@ -81,9 +81,9 @@ class User(odm.StdModel):
     
 class Group(odm.StdModel):
     '''A group is always owned by a user but can be assigned to several
-ather users via the Role through model'''
+other users via the Role through model'''
     id = odm.CompositeIdField('name', 'user')
-    name = odm.SymbolField(unique=True)
+    name = odm.SymbolField()
     user = odm.ForeignKey(User)
     #
     users = odm.ManyToManyField(User, related_name='groups')
@@ -118,16 +118,18 @@ def add_role(instance, permission_level, ):
 permissions'''
 
 def authenticated_query(query, user, level):
+    session = query.session
+    models = session.router
     owner_query = query.filter(user=user)
     # all roles for the query model with appropriate permission level
-    roles = Role.objects.filter(model_type=query.model, level__ge=level)
+    roles = models.role.filter(model_type=query.model, level__ge=level)
     # Now we need groups which have these roles
-    groups = Role.groups.throughquery().filter(role=roles).get_field('group')
+    groups = Role.groups.throughquery(session).filter(role=roles).get_field('group')
     # I need to know if user is in any of these groups
     if user.groups.filter(id=groups).count():
         # it is, lets get the model with permissions less
         # or equal permission level
-        permitted = InstanceRole.objects.filter(role=roles).get_field('object_id')
+        permitted = models.instancerole.filter(role=roles).get_field('object_id')
         return owner_query.union(model.objects.filter(id=permitted))
     else:
         return owner_query

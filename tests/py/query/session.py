@@ -48,7 +48,6 @@ class TestSession(test.TestWrite):
         yield t.on_result
         query = session.query(SimpleModel)
         yield self.async.assertEqual(query.count(), 3)
-        self.assertEqual(query.session, session.model(SimpleModel))
         all = yield query.all()
         self.assertEqual(len(all), 3)
         qs = query.filter(group='planet')

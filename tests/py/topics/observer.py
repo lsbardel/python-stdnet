@@ -19,7 +19,7 @@ class ObserverData(test.DataGenerator):
 
 class ObserverTest(test.TestWrite):
     multipledb = 'redis'
-    models = (Observer,Observable)
+    models = (Observer, Observable)
     data_cls = ObserverData
         
     def setUp(self):

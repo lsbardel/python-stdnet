@@ -26,6 +26,11 @@ class timeseries_test1(redisb.RedisScript):
     
     
 class ColumnData(test.DataGenerator):
+    sizes = {'tiny': 100,
+             'small': 300,
+             'normal': 2000,
+             'big': 10000,
+             'huge': 1000000}
     
     def generate(self):
         size = self.size
@@ -75,7 +80,7 @@ class tsdata(object):
     def create(self, test, id=None):
         '''Create one ColumnTS with six fields and cls.size dates'''
         models = test.mapper
-        ts = models.register(ColumnTS())
+        ts = models.register(test.structure())
         models.session().add(ts)
         with ts.session.begin() as t:
             t.add(ts)
@@ -200,8 +205,9 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         #
         # Check that a string is available at the field key
         bts = ts.backend_structure()
-        keys = tuple(bts.allkeys())
-        self.assertEqual(len(keys),3)
+        keys = yield bts.allkeys()
+        keys = tuple((b.decode('utf-8') for b in keys))
+        self.assertEqual(len(keys), 3)
         self.assertTrue(bts.id in keys)
         self.assertTrue(bts.fieldsid in keys)
         self.assertTrue(bts.fieldid('pv') in keys)

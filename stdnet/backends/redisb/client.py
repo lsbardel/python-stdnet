@@ -32,12 +32,12 @@ from itertools import chain
 
 import redis
 from redis.exceptions import NoScriptError
-from redis.client import pairs_to_dict, BasePipeline, list_or_args, dict_merge,\
-                            PubSub
+from redis.client import pairs_to_dict, BasePipeline, list_or_args, PubSub
 
 from .extensions import get_script, RedisManager, RedisScript,\
                         script_callback, redis_connection, redis_after_receive
 from .prefixed import *
+from .info import parse_info
 
 __all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
            'InvalidResponse', 'ResponseError', 'RedisError']
@@ -168,11 +168,17 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
             raise
         
 
+def dict_update(original, data):
+    target = original.copy()
+    target.update(data)
+    return target
+    
 class Redis(redis.StrictRedis):
     # Overridden callbacks
-    RESPONSE_CALLBACKS = dict_merge(
+    RESPONSE_CALLBACKS = dict_update(
         redis.StrictRedis.RESPONSE_CALLBACKS,
-        {'EVALSHA': script_callback}
+        {'EVALSHA': script_callback,
+         'INFO': parse_info}
     )
 
     def execute_command(self, *args, **options):

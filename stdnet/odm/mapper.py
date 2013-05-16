@@ -7,7 +7,7 @@ from stdnet.utils.importer import import_module
 from stdnet.utils.dispatch import Signal
 from stdnet import getdb, InvalidTransaction
 
-from .base import StdNetType, AlreadyRegistered, ModelType, Model
+from .base import AlreadyRegistered, ModelType, Model
 from .session import Manager, Session, ModelDictionary, StructureManager
 from .struct import Structure
 from .globals import get_model_from_hash
@@ -337,7 +337,7 @@ For example::
             for name in dir(mod_models):
                 value = getattr(mod_models, name)
                 meta = getattr(value, '_meta', None)
-                if isinstance(value, StdNetType) and meta:
+                if isinstance(value, ModelType) and meta:
                     for model in models_from_model(value, 
                                             include_related=include_related):
                         if model._meta.app_label == label\

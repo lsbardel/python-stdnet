@@ -43,3 +43,4 @@ The collection of tutorials examples is available in the
    underscore
    serialise
    asynchronous
+   local

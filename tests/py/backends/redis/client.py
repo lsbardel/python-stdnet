@@ -1,8 +1,6 @@
 import json
 from hashlib import sha1
 
-from pulsar.apps.test import sequential
-
 from stdnet import getdb
 from stdnet.backends import redisb
 from stdnet.utils import test, flatzset
@@ -24,22 +22,18 @@ return cjson.encode(js)''')
         return json.loads(result.decode(request.encoding))
 
 
-class TestCase(test.TestCase):
+class TestCase(test.TestWrite):
     multipledb = 'redis'
     
-    def get_client(self):
-        client = self.backend.client
-        return client.prefixed(self.namespace)
-        
     def setUp(self):
-        self.client = self.get_client()
-        return self.client.flushdb()
+        client = self.backend.client
+        self.client = client.prefixed(self.namespace)
     
     def tearDown(self):
         return self.client.flushdb()
         
     def make_hash(self, key, d):
-        for k,v in d.items():
+        for k, v in d.items():
             self.client.hset(key, k, v)
 
     def make_list(self, name, l):
@@ -66,7 +60,7 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(script.sha1,sha)
         
     def test_del_pattern(self):
-        c = self.get_client()
+        c = self.client
         items = ('bla',1,
                  'bla1','ciao',
                  'bla2','foo',
@@ -131,25 +125,6 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(r[0], 2)
         self.assertEqual(r[1], 2)
         
-    def testKeyInfo(self):
-        yield self.client.set('planet', 'mars')
-        yield self.client.lpush('foo', 1, 2, 3, 4, 5)
-        yield self.client.lpush('bla', 4, 5, 6, 7, 8)
-        keys = yield self.client.execute_script('keyinfo', (), '*')
-        self.assertEqual(len(keys), 3)
-        d = dict(((k.id, k) for k in keys))
-        self.assertEqual(d['planet'].length, 4)
-        self.assertEqual(d['planet'].type, 'string')
-        self.assertEqual(d['planet'].encoding, 'raw')
-        
-    def testKeyInfo2(self):
-        client = self.client
-        yield self.multi_async((client.set('planet', 'mars'),
-                                client.lpush('foo', 1, 2, 3, 4, 5),
-                                client.lpush('bla', 4, 5, 6, 7, 8)))
-        keys = yield client.execute_script('keyinfo', ('planet', 'bla'))
-        self.assertEqual(len(keys), 2)
-        
     def test_bad_execute_script(self):
         self.assertRaises(redisb.RedisError, self.client.execute_script, 'foo', ())
         
@@ -173,7 +148,7 @@ class TestExtraClientCommands(TestCase):
         self.assertEquals(list(r), [(b'a2', 1), (b'a1', 2)])
         
     def test_zdiffstore2(self):
-        c = self.get_client()
+        c = self.client
         yield self.multi_async((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
                                 c.zadd('s2', 6, 'a', 9, 'b', 100, 'c')))
         r = yield c.zdiffstore('s3', ('s1', 's2'))
@@ -182,7 +157,7 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(r, [b'd'])
         
     def test_zdiffstore_withscores2(self):
-        c = self.get_client()
+        c = self.client
         yield self.multi_async((c.zadd('s1', 1, 'a', 2, 'b', 3, 'c', 4, 'd'),
                                 c.zadd('s2', 6, 'a', 2, 'b', 100, 'c')))
         r = yield c.zdiffstore('s3', ('s1', 's2'), withscores=True)
@@ -213,5 +188,3 @@ class TestExtraClientCommands(TestCase):
         self.assertEqual(res, [b'a', b'c', b'd'])
         rem = yield self.client.zrange('foo', 0, -1)
         self.assertEqual(rem, [b'e'])
-        
-        

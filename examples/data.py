@@ -49,12 +49,12 @@ class hash_data(key_data):
 
 
 class finance_data(test.DataGenerator):
-    sizes = {'tiny': (20,3,10,1), # positions = 20*100*3 = 30
-             'small': (100,10,30,2), # positions = 20*100*3 = 600
-             'normal': (500,20,100,3), # positions = 20*100*3 = 6,000
-             'big': (2000,30,200,5), # positions = 30*200*5 = 30,000
-             'huge': (10000,50,300,8)}# positions = 50*300*8 = 120,000
-
+    sizes = {'tiny': (20, 3, 10, 1), # positions = 20*100*3 = 30
+             'small': (100, 10, 30, 2), # positions = 20*100*3 = 600
+             'normal': (500, 20, 100, 3), # positions = 20*100*3 = 6,000
+             'big': (2000, 30, 200, 5), # positions = 30*200*5 = 30,000
+             'huge': (10000, 50, 300, 8)}# positions = 50*300*8 = 120,000
+    
     def generate(self, insts_types=None, ccys_types=None, **kwargs):
         inst_len, fund_len, pos_len, num_dates = self.size
         insts_types = insts_types or INSTS_TYPES

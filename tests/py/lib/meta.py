@@ -4,8 +4,7 @@ from datetime import datetime
 
 from stdnet import odm
 from stdnet.utils import test, pickle
-from stdnet.odm import model_iterator
-from stdnet.odm.base import StdNetType
+from stdnet.odm import model_iterator, ModelType
 
 from examples.models import SimpleModel, ComplexModel
 from examples.data import FinanceTest, Instrument, Fund, Position
@@ -109,7 +108,7 @@ class TestRegistration(test.TestCase):
         self.assertTrue(d)
         for m in d:
             self.assertTrue(inspect.isclass(m))
-            self.assertTrue(isinstance(m, StdNetType))
+            self.assertTrue(isinstance(m, ModelType))
 
 
 class TestStdModelMethods(test.TestCase):

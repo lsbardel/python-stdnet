@@ -102,8 +102,8 @@ class DateValue(odm.StdModel):
 
 
 class Calendar(odm.StdModel):
-    name   = odm.SymbolField(unique = True)
-    data   = odm.SetField(DateValue, ordered = True)
+    name   = odm.SymbolField(unique=True)
+    data   = odm.SetField(DateValue, ordered=True)
 
     def add(self, dt, value):
         event = DateValue(dt = dt,value = value).save()
@@ -111,7 +111,7 @@ class Calendar(odm.StdModel):
 
 
 class Dictionary(odm.StdModel):
-    name = odm.SymbolField(unique = True)
+    name = odm.SymbolField(unique=True)
     data = odm.HashField()
 
 

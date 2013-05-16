@@ -41,11 +41,13 @@ Model
    :member-order: bysource
 
 
+Create Model
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: create_model
+
+
 .. _database-metaclass:
-
-Model Meta
-==================
-
 
 Model Meta
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,13 +56,6 @@ Model Meta
    :members:
    :member-order: bysource
    
-StdModel Metaclass
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: Metaclass
-   :members:
-   :member-order: bysource
-
 
 Model State
 ~~~~~~~~~~~~~~~~~

@@ -5,23 +5,34 @@ from functools import partial
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems
 from stdnet.utils.exceptions import *
 
-from .base import StdNetType, Model, raise_kwargs
+from .base import ModelType, ModelBase, raise_kwargs
+from .session import Manager
 
 
-__all__ = ['StdModel', 'model_to_dict']
+__all__ = ['StdModel', 'create_model', 'model_to_dict']
 
 
-class StdModel(StdNetType('StdNetBase', (Model,), {})):
+class StdModel(ModelBase):
     '''A :class:`Model` which contains data in :class:`Field`. This represents
 the main class of :mod:`stdnet.odm` module.'''
     _model_type = 'object'
-    is_base_class = True
+    abstract = True
     _loadedfields = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs.pop(self._meta.pkname(), None)
         for field in self._meta.scalarfields:
             self.set_field_value(field, kwargs.pop(field.name, None))
+        attributes = self._meta.attributes
+        if args:
+            N = len(args)
+            if N > len(attributes):
+                raise ValueError('Too many attributes')
+            attrs, attributes = attributes[:N], attributes[N:]
+            for name, value in zip(attrs, args):
+                setattr(self, name, value)
+        for name in attributes:
+            setattr(self, name, kwargs.pop(name, None))
         raise_kwargs(self, kwargs)
 
     @property
@@ -264,6 +275,26 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
         setattr(self, field.get_cache_name(), rel_obj)
         return rel_obj
     
+
+def create_model(name, *attributes, **params):
+    '''Create a :class:`Model` class for objects requiring
+and interface similar to :class:`StdModel`. We refers to this type
+of models as :ref:`local models <local-models>` since instances of such
+models are not persistent on a :class:`stdnet.BackendDataServer`.
+
+:param name: Name of the model class.
+:param attributes: positiona attribute names. These are the only attribute
+    available to the model during the default constructor.
+:param params: key-valued parameter to pass to the :class:`ModelMeta`
+    constructor.
+:return: a local :class:`Model` class.
+    '''
+    params['register'] = False
+    params['attributes'] = attributes
+    kwargs = {'manager_class': params.pop('manager_class', Manager),
+              'Meta': params}
+    return ModelType(name, (StdModel,), kwargs)
+
 
 def model_to_dict(instance, fields=None, exclude=None):
     if isinstance(instance, StdModel):

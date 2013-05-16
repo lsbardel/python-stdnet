@@ -7,8 +7,6 @@ from itertools import starmap
 from stdnet.utils import zip, map, ispy3k
 from stdnet.utils.dispatch import Signal
 
-from .info import RedisKey
-
 __all__ = ['RedisScript',
            'get_script',
            'registered_scripts',
@@ -275,34 +273,6 @@ class zpop(RedisScript):
 class zdiffstore(RedisScript):
     script = read_lua_file('commands.zdiffstore')
     
-    
-class keyinfo(countpattern):
-    script = read_lua_file('commands.keyinfo')
-    
-    def preprocess_args(self, client, args):
-        if args and client.prefix:
-            a = ['%s%s' % (client.prefix, args[0])]
-            a.extend(args[1:])
-            args = tuple(a)
-        return args
-    
-    def callback(self, response, redis_client=None, **options):
-        client = redis_client
-        if client.is_pipeline:
-            client = client.client
-        encoding = client.connection_pool.encoding
-        all_keys = []
-        for key, typ, length, ttl, enc, idle in response:
-            key = key.decode(encoding)[len(client.prefix):]
-            key = RedisKey(id=key, client=client,
-                           type=typ.decode(encoding),
-                           length=length,
-                           ttl=ttl if ttl != -1 else False,
-                           encoding=enc.decode(encoding),
-                           idle=idle)
-            all_keys.append(key)
-        return all_keys
-
 
 class move2set(RedisScript):
     script = (read_lua_file('commands.utils'),

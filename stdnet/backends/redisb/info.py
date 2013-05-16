@@ -6,8 +6,11 @@ from datetime import datetime
 from copy import copy
 
 from stdnet.utils.structures import OrderedDict
+from stdnet.utils.async import async
 from stdnet.utils import iteritems, format_int
 from stdnet import odm
+
+from .extensions import RedisScript, read_lua_file
 
 init_data = {'set': {'count': 0, 'size': 0},
              'zset': {'count': 0, 'size': 0},
@@ -18,13 +21,106 @@ init_data = {'set': {'count': 0, 'size': 0},
              'unknown': {'count': 0, 'size': 0}}
 
 
-__all__ = ['RedisDb',
-           'RedisKey',
-           'RedisDataFormatter',
-           'redis_info']
+__all__ = ['RedisDb', 'RedisKey', 'RedisDataFormatter']
 
 
-class RediInfo(object):
+class keyinfo(RedisScript):
+    script = read_lua_file('commands.keyinfo')
+    
+    def preprocess_args(self, client, args):
+        if args and client.prefix:
+            a = ['%s%s' % (client.prefix, args[0])]
+            a.extend(args[1:])
+            args = tuple(a)
+        return args
+    
+    def callback(self, response, redis_client=None, **options):
+        client = redis_client
+        if client.is_pipeline:
+            client = client.client
+        encoding = client.connection_pool.encoding
+        all_keys = []
+        for key, typ, length, ttl, enc, idle in response:
+            key = key.decode(encoding)[len(client.prefix):]
+            key = RedisKey(key=key, client=client,
+                           type=typ.decode(encoding),
+                           length=length,
+                           ttl=ttl if ttl != -1 else False,
+                           encoding=enc.decode(encoding),
+                           idle=idle)
+            all_keys.append(key)
+        return all_keys
+
+
+def parse_info(response):
+    '''Parse the response of Redis's INFO command into a Python dict.
+In doing so, convert byte data into unicode.'''
+    info = {}
+    response = response.decode('utf-8')
+    def get_value(value):
+        if ',' and '=' not in value:
+            return value
+        sub_dict = {}
+        for item in value.split(','):
+            k, v = item.split('=')
+            try:
+                sub_dict[k] = int(v)
+            except ValueError:
+                sub_dict[k] = v
+        return sub_dict
+    data = info
+    for line in response.splitlines():
+        keyvalue = line.split(':')
+        if len(keyvalue) == 2:
+            key,value = keyvalue
+            try:
+                data[key] = int(value)
+            except ValueError:
+                data[key] = get_value(value)
+        else:
+            data = {}
+            info[line[2:]] = data
+    return info
+
+
+class RedisDbQuery(odm.QueryBase):
+    
+    @property
+    def client(self):
+        return self.session.router[self.model].backend.client
+    
+    @async()
+    def items(self):
+        client = self.client
+        info = yield client.info()
+        rd = []
+        for n, data in self.keyspace(info):
+            rd.append(self.instance(n, data))
+        yield rd
+    
+    def get(self, db=None):
+        if db is not None:
+            info = yield self.client.info()
+            data = info.get('db%s' % db)
+            if data:
+                yield self.instance(db, data)
+    
+    def keyspace(self, info):
+        n = 0
+        keyspace = info['Keyspace']
+        while keyspace:
+            info = keyspace.pop('db%s' % n, None)
+            if info:
+                yield n, info
+            n += 1
+    
+    def instance(self, db, data):
+        rdb = self.model(db=int(db), keys=data['keys'], expires=data['expires'])
+        rdb.session = self.session
+        return rdb
+
+
+class RedisDbManager(odm.Manager):
     '''Handler for gathering information from redis.'''
     names = ('Server','Memory','Persistence',
              'Replication','Clients','Stats','CPU')
@@ -32,38 +128,35 @@ class RediInfo(object):
                   'uptime_in_seconds': ('timedelta', 'uptime'),
                   'uptime_in_days': None}
     
-    def __init__(self, client, info, formatter):
-        self.client = client
-        self.version = info['redis_version']
-        self.info = info
+    query_class = RedisDbQuery
+    
+    def __init__(self, *args, **kwargs):
+        self.formatter = kwargs.pop('formatter', RedisDataFormatter())
         self._panels = OrderedDict()
-        self.formatter = formatter
-        self.databases = RedisDb.objects.all(self)
+        super(RedisDbManager, self).__init__(*args, **kwargs)
+        
+    @property
+    def client(self):
+        return self.backend.client
     
-    def keyspace(self):
-        n = 0
-        while True:
-            key = 'db%s' % n
-            if key in self.info:
-                yield n, self.info[key]
-                n += 1
-            else:
-                break
-    
+    @async()
     def panels(self):
-        if not self._panels:
-            for name in self.names:
-                self.makepanel(name)
-        return self._panels
+        info = yield self.client.info()
+        panels = {}
+        for name in self.names:
+            val = self.makepanel(name, info)
+            if val:
+                panels[name] = val
+        yield panels
     
-    def makepanel(self, name):
-        if name not in self.info:
+    def makepanel(self, name, info):
+        if name not in info:
             return
-        pa = self._panels[name] = []
+        pa = []
         nicename = self.formatter.format_name
         nicebool = self.formatter.format_bool
         boolval = (0,1)
-        for k,v in iteritems(self.info[name]):
+        for k,v in iteritems(info[name]):
             add = True
             if k in self.converters or isinstance(v,int):
                 fdata = self.converters.get(k,('int',None))
@@ -81,89 +174,21 @@ class RediInfo(object):
                            'value':v})
         return pa
     
-    
-class RedisDbManager(object):
-    
-    def all(self, info):
-        rd = []
-        for n, data in info.keyspace():
-            rdb = RedisDb(client=info.client, db=n, keys=data['keys'],
-                          expires=data['expires'])
-            rd.append(rdb)
-        return rd
-    
-    def get(self, db=None, info=None):
-        if info and db is not None:
-            data = info.get('db%s' % db)
-            if data:
-                return RedisDb(client=info.client, db=int(db),
-                               keys=data['keys'], expires=data['expires'])
-                            
-    
-class RedisDb(odm.ModelBase):
-    '''
-    Handler for gathering information from a Redis database.
-    
-.. attribute:: id
-
-    Database number
-    
-.. attribute:: db
-
-    Database number
-    
-.. attribute:: keys
-
-    Number of keys in the database
-    
-.. attribute:: expires
-
-    Number of keys with expiry in the database
-    '''
-    def __init__(self, client=None, db=None, keys=None, expires=None):
-        self.id = db
-        if client and db is None:
-            self.id = client.db
-        if self.id != client.db:
-            client = client.clone(db=self.id)
-        self.client = client
-        self.keys = keys
-        self.expires = expires
-    
-    def delete(self, flushdb = None):
+    def delete(self, instance):
+        '''Delete an instance'''
+        client = None
         flushdb(self.client) if flushdb else self.client.flushdb()
-        
-    objects = RedisDbManager()
     
-    def query(self):
-        '''Build a query for keys'''
-        return RedisKey.objects.query(self)
-    
-    def all(self):
-        return RedisKey.objects.all(self)
-    
-    @property
-    def db(self):
-        return self.id
-    
-    def __unicode__(self):
-        return '{0}'.format(self.id)
-    
-    
-class KeyQuery(object):
-    '''A lazy query for keys'''
-    def __init__(self, db):
-        self.db = db
-        self.pattern = '*'
-        self.slice = None
-        
-    def search(self, pattern):
-        o = copy(self)
-        o.pattern = pattern
-        return o
-    
+
+class KeyQuery(odm.QueryBase):
+    '''A lazy query for keys in a redis database.'''
+    db = None    
     def count(self):
         return self.db.client.countpattern(self.pattern)
+    
+    def filter(self, db=None):
+        self.db=db
+        return self
     
     def all(self):
         return list(self)
@@ -208,43 +233,41 @@ class KeyQuery(object):
                 N = self.count()
             start += N
         return start+1, stop-start
-    
+                            
 
-
-class RedisKeyManager(object):
-    
-    def query(self, db):
-        return KeyQuery(db)
-    
-    def all(self, db):
-        return self.query(db).all()
+class RedisKeyManager(odm.Manager):
+    query_class = KeyQuery
             
     def delete(self, instances):
         if instances:
             keys = tuple((instance.id for instance in instances))
             return instances[0].client.delete(*keys)
     
+
+class RedisDb(odm.StdModel):
+    db = odm.IntegerField(primary_key=True)
+        
+    manager_class = RedisDbManager
     
-class RedisKey(odm.ModelBase):
-    database = None
-    def __init__(self, client = None, type = None, length = 0, ttl = None,
-                 encoding = None, idle = None, **kwargs):
-        self.client = client
-        self.type = type
-        self.length = length
-        self.time_to_expiry = ttl
-        self.encoding = encoding
-        self.idle = idle
+    def __unicode__(self):
+        return '%s' % self.db
     
-    objects = RedisKeyManager()
+    class Meta:
+        attributes = ('keys', 'expires')
+        
+
+class RedisKey(odm.StdModel):
+    key = odm.SymbolField(primary_key=True)
+    db = odm.ForeignKey(RedisDb, related_name='all_keys')
     
-    @property
-    def key(self):
-        return self.id
+    manager_class = RedisKeyManager
     
     def __unicode__(self):
         return self.key
-
+    
+    class Meta:
+        attributes = 'type', 'length', 'ttl', 'encoding', 'idle', 'client'
+    
 
 class RedisDataFormatter(object):
     
@@ -266,12 +289,4 @@ class RedisDataFormatter(object):
     
     def format_timedelta(self, td):
         return td
-            
-            
-def redis_info(client, formatter=None):
-    '''Return a :class:`RedisInfo` handler for obtaining server information
-from redis.'''
-    info = yield client.info()
-    formatter = formatter or RedisDataFormatter()
-    yield RediInfo(client, info, formatter)
     

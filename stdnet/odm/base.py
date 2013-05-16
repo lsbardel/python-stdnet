@@ -1,6 +1,7 @@
 '''Defines Metaclasses and Base classes for stdnet Models.'''
 import sys
 from copy import copy, deepcopy
+from inspect import isclass
 import hashlib
 import weakref
 
@@ -11,17 +12,11 @@ from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
                      range_lookup_info
 from .fields import Field, AutoIdField
 from .related import class_prepared
+from .session import Manager
 
 
-__all__ = ['ModelMeta',
-           'Metaclass',
-           'Model',
-           'ModelBase',
-           'ModelState',
-           'create_model',
-           'autoincrement',
-           'ModelType', # Metaclass for all stdnet ModelBase classes
-           'StdNetType']
+__all__ = ['ModelMeta', 'Model', 'ModelBase', 'ModelState',
+           'autoincrement', 'ModelType']
 
 
 def get_fields(bases, attrs):
@@ -29,11 +24,11 @@ def get_fields(bases, attrs):
     for base in bases:
         if hasattr(base, '_meta'):
             fields.update(deepcopy(base._meta.dfields))
-
-    for name,field in list(attrs.items()):
-        if isinstance(field,Field):
+    #
+    for name, field in list(attrs.items()):
+        if isinstance(field, Field):
             fields[name] = attrs.pop(name)
-
+    #
     return fields
 
 
@@ -51,14 +46,39 @@ def make_app_label(new_class, app_label=None):
 
 
 class ModelMeta(object):
-    '''A class for storing meta data of a :class:`Model` class. It is the
-base class of :class:`Metaclass`.
+    '''A class for storing meta data for a :class:`Model` class.
+To override default behaviour you can specify the ``Meta`` class as an inner
+class of :class:`Model` in the following way::
+
+    from datetime import datetime
+    from stdnet import odm
+
+    class MyModel(odm.StdModel):
+        timestamp = odm.DateTimeField(default = datetime.now)
+        ...
+
+        class Meta:
+            ordering = '-timestamp'
+            name = 'custom'
+
+
+:parameter register: if ``True`` (default), this :class:`ModelMeta` is
+    registered in the global models hashtable.
+:parameter abstract: Check the :attr:`abstract` attribute.
+:parameter ordering: Check the :attr:`ordering` attribute.
+:parameter app_label: Check the :attr:`app_label` attribute.
+:parameter name: Check the :attr:`name` attribute.
+:parameter modelkey: Check the :attr:`modelkey` attribute.
+:parameter attributes: Check the :attr:`attributes` attribute.
+
+This is the list of attributes and methods available. All attributes,
+but the ones mantioned above, are initialized by the object relational
+mapper.
 
 .. attribute:: abstract
 
-    If ``True``, it represents an abstract model and no database elements
-    are created.
-    
+    If ``True``, This is an abstract Meta class.
+
 .. attribute:: model
 
     :class:`Model` for which this class is the database metadata container.
@@ -77,11 +97,61 @@ base class of :class:`Metaclass`.
 .. attribute:: modelkey
 
     The modelkey which is by default given by ``app_label.name``.
+    
+.. attribute:: ordering
+
+    Optional name of a :class:`Field` in the :attr:`model`.
+    If provided, model indices will be sorted with respect to the value of the
+    specified field. It can also be a :class:`autoincrement` instance.
+    Check the :ref:`sorting <sorting>` documentation for more details.
+
+    Default: ``None``.
+
+.. attribute:: dfields
+
+    dictionary of :class:`Field` instances. It does not include
+    :class:`StructureField`.
+
+.. attribute:: fields
+
+    list of all :class:`Field` instances.
+
+.. attribute:: indices
+
+    List of :class:`Field` which are indices (:attr:`Field.index` attribute
+    set to ``True``).
+
+.. attribute:: pk
+
+    The :class:`Field` representing the primary key.
+    
+.. attribute:: related
+
+    Dictionary of :class:`related.RelatedManager` for the :attr:`model`. It is
+    created at runtime by the object data mapper.
+    
+.. attribute:: manytomany
+
+    List of :class:`ManyToManyField` names for the :attr:`model`. This
+    information is useful during registration.
+    
+.. attribute:: attributes
+
+    Additional attributes for :attr:`model`.
 '''
-    def __init__(self, model, app_label=None, modelkey=None, abstract=False,
-                  name=None, register=True, **kwargs):
-        self.abstract = abstract
+    def __init__(self, model, fields, app_label=None, modelkey=None,
+                 name=None, register=True, pkname=None, ordering=None,
+                 attributes=None, abstract=False, **kwargs):
         self.model = model
+        self.abstract = abstract
+        self.attributes = unique_tuple(attributes or ())
+        self.dfields = {}
+        self.fields = []
+        self.scalarfields = []
+        self.indices = []
+        self.multifields = []
+        self.related = {}
+        self.manytomany = []
         self.model._meta = self
         self.app_label = make_app_label(model, app_label)
         self.name = (name or model.__name__).lower()
@@ -91,22 +161,36 @@ base class of :class:`Metaclass`.
             else:
                 modelkey = self.name
         self.modelkey = modelkey
-        if not abstract and register:
+        if not self.abstract and register:
             hashmodel(model)
+        #
+        # Check if PK field exists
+        pk = None
+        pkname = pkname or 'id'
+        for name in fields:
+            field = fields[name]
+            if field.primary_key:
+                if pk is not None:
+                    raise FieldError("Primary key already available %s." % name)
+                pk = field
+                pkname = name
+        if pk is None and not self.abstract:
+            # ID field not available, create one
+            pk = AutoIdField(primary_key=True)
+        fields.pop(pkname, None)
+        for name, field in fields.items():
+            field.register_with_model(name, model)
+        if pk is not None:
+            pk.register_with_model(pkname, model)
+        self.ordering = None
+        if ordering:
+            self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
 
     @property
     def type(self):
         '''Model type, either ``structure`` or ``object``.'''
         return self.model._model_type
     
-    def pkname(self):
-        '''The name of the primary key.'''
-        return 'id'
-    
-    def pk_to_python(self, value, backend):
-        '''Convert the primary key ``value`` to a valid python representation.'''
-        return value
-
     def make_object(self, state=None, backend=None):
         '''Create a new instance of :attr:`model` from a *state* tuple.'''
         model = self.model
@@ -137,117 +221,13 @@ base class of :class:`Metaclass`.
 
     def __str__(self):
         return self.__repr__()
-
-
-class Metaclass(ModelMeta):
-    '''A :class:`ModelMeta` for storing information which maps a
-:class:`StdModel` into its remote counterpart in the
-:class:`stdnet.BackendDataServer`.
-An instance is initiated by the :mod:`stdnet.odm` when a :class:`StdModel`
-class is created.
-
-To override default behaviour you can specify the ``Meta`` class as an inner
-class of :class:`StdModel` in the following way::
-
-    from datetime import datetime
-    from stdnet import odm
-
-    class MyModel(odm.StdModel):
-        timestamp = odm.DateTimeField(default = datetime.now)
-        ...
-
-        class Meta:
-            ordering = '-timestamp'
-            name = 'custom'
-
-
-:parameter abstract: Check the :attr:`ModelMeta.abstract` attribute.
-:parameter ordering: Check the :attr:`ordering` attribute.
-:parameter app_label: Check the :attr:`ModelMeta.app_label` attribute.
-:parameter name: Check the :attr:`ModelMeta.name` attribute.
-:parameter modelkey: Check the :attr:`ModelMeta.modelkey` attribute.
-
-**Attributes and methods**:
-
-This is the list of attributes and methods available. All attributes,
-but the ones mantioned above, are initialized by the object relational
-mapper.
-
-.. attribute:: ordering
-
-    Optional name of a :class:`Field` in the :attr:`model`.
-    If provided, model indices will be sorted with respect to the value of the
-    specified field. It can also be a :class:`autoincrement` instance.
-    Check the :ref:`sorting <sorting>` documentation for more details.
-
-    Default: ``None``.ma
-
-.. attribute:: dfields
-
-    dictionary of :class:`Field` instances. It does not include
-    :class:`StructureField`.
-
-.. attribute:: fields
-
-    list of all :class:`Field` instances.
-
-.. attribute:: indices
-
-    List of :class:`Field` which are indices (:attr:`Field.index` attribute
-    set to ``True``).
-
-.. attribute:: pk
-
-    The :class:`Field` representing the primary key.
-    
-.. attribute:: related
-
-    Dictionary of :class:`RelatedManager` for the :attr:`model`. It is
-    created at runtime by the object data mapper.
-    
-.. attribute:: manytomany
-
-    List of :class:`ManyToManyField` names for the :attr:`model`. This
-    information is useful during registration.
-'''
-    connection_string = None
-
-    def __init__(self, model, fields, ordering=None, **kwargs):
-        super(Metaclass, self).__init__(model, **kwargs)
-        self.fields = []
-        self.scalarfields = []
-        self.indices = []
-        self.multifields = []
-        self.dfields = {}
-        self.timeout = 0
-        self.related = {}
-        self.manytomany = []
-        # Check if PK field exists
-        pk = None
-        pkname = 'id'
-        for name in fields:
-            field = fields[name]
-            if field.primary_key:
-                if pk is not None:
-                    raise FieldError("Primary key already available %s." % name)
-                pk = field
-                pkname = name
-        if pk is None:
-            # ID field not available, create one
-            pk = AutoIdField(primary_key=True)
-        fields.pop(pkname, None)
-        for name, field in fields.items():
-            field.register_with_model(name, model)
-        pk.register_with_model(pkname, model)
-        self.ordering = None
-        if ordering:
-            self.ordering = self.get_sorting(ordering, ImproperlyConfigured)
     
     def pkname(self):
         '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
 
     def pk_to_python(self, value, backend):
+        '''Convert the primary key ``value`` to a valid python representation.'''
         return self.pk.to_python(value, backend)
     
     def is_valid(self, instance):
@@ -302,8 +282,8 @@ Return ``True`` if the instance is ready to be saved to database.'''
                     sortby = f.attname
                 return orderinginfo(sortby, f, desc, self.model, nested, False)
         errorClass = errorClass or ValueError
-        raise errorClass('Cannot Order by attribute "{0}".\
- It is not a scalar field.'.format(sortby))
+        raise errorClass('"%s" cannot order by attribute "%s". It is not a '
+                         'scalar field.' % (self, sortby))
 
     def backend_fields(self, fields):
         '''Return a two elements tuple containing a list
@@ -393,33 +373,23 @@ an id already available, the score of that word is incremented by the
 class ModelType(type):
     '''Model metaclass'''
     def __new__(cls, name, bases, attrs):
-        if attrs.pop('is_base_class', False):
-            return super(ModelType, cls).__new__(cls, name, bases, attrs)
-        return cls.make(name, bases, attrs, attrs.pop('Meta', None))
-
-    @classmethod
-    def make(cls, name, bases, attrs, meta):
-        register = attrs.pop('register', True)
-        attributes = attrs.pop('attributes', None)
-        new_class = type.__new__(cls, name, bases, attrs)
-        ModelMeta(new_class, register=register)
-        if attributes is not None:
-            new_class._meta.attributes = attributes 
-        return new_class
-
-
-class StdNetType(ModelType):
-    '''metaclass for StdModel'''
-    @classmethod
-    def make(cls, name, bases, attrs, meta):
-        kwargs = meta.__dict__ if meta else {}
-        # remove and build field list
+        meta = attrs.pop('Meta', None)
+        if isclass(meta):
+            meta = dict(((k, v) for k, v in meta.__dict__.items()\
+                          if not k.startswith('__')))
+        else:
+            meta = meta or {}
+        cls.extend_meta(meta, attrs)
         fields = get_fields(bases, attrs)
-        # create the new class
-        new_class = type.__new__(cls, name, bases, attrs)
-        Metaclass(new_class, fields, **kwargs)
-        class_prepared.send(sender=new_class)
+        new_class = super(ModelType, cls).__new__(cls, name, bases, attrs)
+        ModelMeta(new_class, fields, **meta) 
         return new_class
+    
+    @classmethod
+    def extend_meta(cls, meta, attrs):
+        for name in ('register', 'abstract', 'attributes'):
+            if name in attrs:
+                meta[name] = attrs.pop(name)
 
 
 class ModelState(object):
@@ -467,7 +437,7 @@ unique identifier for an instance of a model.
 
 .. attribute:: _meta
 
-    A class attribute which is an instance of :class:`Metaclass`, it
+    A class attribute which is an instance of :class:`ModelMeta`, it
     containes all the information needed by a :class:`stdnet.BackendDataServer`.
     
 .. attribute:: session
@@ -555,7 +525,7 @@ it raises a :class:`SessionNotAvailable` exception.'''
         return self.session.delete(self)
 
 
-ModelBase = ModelType('ModelBase', (Model,), {'is_base_class': True})
+ModelBase = ModelType('ModelBase', (Model,), {'abstract': True})
 
 
 def raise_kwargs(model, kwargs):
@@ -567,24 +537,3 @@ def raise_kwargs(model, kwargs):
             keys += ' is an'
         raise ValueError("%s invalid keyword for %s." % (keys, model._meta))
 
-
-class LocalModelBase(Model):
-    def __init__(self, *args, **kwargs):
-        attributes = self._meta.attributes
-        if args:
-            N = len(args)
-            if N > len(attributes):
-                raise ValueError('Too many attributes')
-            attrs, attributes = attributes[:N], attributes[N:]
-            for name, value in zip(attrs, args):
-                setattr(self, name, value)
-        for name in attributes:
-            setattr(self, name, kwargs.pop(name, None))
-        raise_kwargs(self, kwargs)
-        
-
-def create_model(name, *attributes, **params):
-    '''Create a local model class'''
-    params['attributes'] = unique_tuple(attributes)
-    params['register'] = False
-    return ModelType(name, (LocalModelBase,), params)

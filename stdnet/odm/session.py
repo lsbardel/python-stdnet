@@ -540,16 +540,11 @@ via the :meth:`Router.session` method.
 .. attribute:: router
 
     Instance of the :class:`Router` which created this :class:`Session`.
-
-.. attribute:: query_class
-
-    Class for querying. Default is :class:`Query`.
 '''
-    def __init__(self, router, query_class=None):
+    def __init__(self, router):
         self.transaction = None
         self._models = OrderedDict()
         self._router = router
-        self.query_class = query_class or Query
 
     def __str__(self):
         return str(self._router)
@@ -610,10 +605,10 @@ construct."""
             self.begin()
         return self.transaction.commit()
     
-    def query(self, model, query_class=None, **kwargs):
+    def query(self, model, **kwargs):
         '''Create a new :class:`Query` for *model*.'''
-        query_class = query_class or self.query_class
         sm = self.model(model)
+        query_class = sm.manager.query_class or Query
         return query_class(sm._meta, self, **kwargs)
 
     def empty(self, model):
@@ -798,7 +793,7 @@ subclasses.'''
         else:
             return self
     
-    
+
 class Manager(object):
     '''before a :class:`StdModel` can be used in conjunction
 with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
@@ -854,8 +849,12 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
     A :class:`stdnet.BackendDataServer` for read-only operations (Queries).
 
+.. attribute:: query_class
+
+    Class for querying. Default is :class:`Query`.
 '''
     session_factory = Session
+    query_class = None
     
     def __init__(self, model, backend=None, read_backend=None, router=None):
         self.model = model

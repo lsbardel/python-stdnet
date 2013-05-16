@@ -9,7 +9,7 @@ from stdnet.utils.exceptions import *
 from .globals import lookup_value
 
 
-__all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',
+__all__ = ['Q', 'QueryBase', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
 
 def iterable(value):

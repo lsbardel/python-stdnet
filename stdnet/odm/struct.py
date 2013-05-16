@@ -211,6 +211,7 @@ can also be used as stand alone objects. For example::
 
 '''
     _model_type = 'structure'
+    abstract = True
     pickler = None
     value_pickler = None
     def __init__(self, value_pickler=None, name='', field=False, session=None,

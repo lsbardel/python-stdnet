@@ -9,6 +9,13 @@ class TestModel(test.TestCase):
         self.assertTrue(isinstance(User, odm.ModelType))
         self.assertEqual(User._meta.attributes, ('name', 'email'))
         
+    def test_create_name(self):
+        User = odm.create_model('UserBase', 'name', 'email', 'name',
+                                abstract=True, pkname='bla')
+        self.assertEqual(User.__name__, 'UserBase')
+        self.assertTrue(User._meta.abstract)
+        self.assertEqual(User._meta.pkname(), 'bla')
+        
     def test_init(self):
         User = odm.create_model('User', 'name', 'email')
         user = User(name='luca')
@@ -25,3 +32,9 @@ class TestModel(test.TestCase):
         self.assertEqual(user.name, 'bla')
         self.assertEqual(user.email, 'bla@foo')
         self.assertRaises(ValueError, User, 'foo', 'jhjh', 'gjgj')
+        
+    def test_router(self):
+        models = odm.Router()
+        User = odm.create_model('User', 'name', 'email', 'name')
+        models.register(User)
+        self.assertEqual(models.user.model, User)

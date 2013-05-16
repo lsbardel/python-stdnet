@@ -1,89 +1,99 @@
 import time
 
-from stdnet.backends.redisb import redis_info, RedisDb, RedisKey, RedisDataFormatter
+from stdnet.backends.redisb import RedisDb, RedisKey, RedisDataFormatter
 
 from . import client
 
 
 class TestInfo(client.TestCase):
+    models = (RedisDb, RedisKey)
     
-    def setUp(self):
-        yield super(TestInfo,self).setUp()
-        yield self.client.set('test', 'bla')
-        self.db = self.client.db
-        self.info = yield redis_info(self.client)
+    def get_manager(self, key='test', value='bla'):
+        yield self.client.set(key, value)
+        yield self.mapper.redisdb
         
-    def newdb(self):
-        db = self.info.databases[0]
-        self.assertNotEqual(db.client, self.info.client)
-        return db
+    def test_dataFormatter(self):
+        f = RedisDataFormatter()
+        self.assertEqual(f.format_date('bla'), '')
+        d = f.format_date(time.time())
+        self.assertTrue(d)
+    
+    def testKeyInfo(self):
+        yield self.client.set('planet', 'mars')
+        yield self.client.lpush('foo', 1, 2, 3, 4, 5)
+        yield self.client.lpush('bla', 4, 5, 6, 7, 8)
+        keys = yield self.client.execute_script('keyinfo', (), '*')
+        self.assertEqual(len(keys), 3)
+        d = dict(((k.key, k) for k in keys))
+        self.assertEqual(d['planet'].length, 4)
+        self.assertEqual(d['planet'].type, 'string')
+        self.assertEqual(d['planet'].encoding, 'raw')
         
-    def test_simple(self):
-        info = self.info
-        self.assertTrue(info.client)
-        self.assertEqual(info.client.db,self.db)
-        self.assertTrue(info.version)
-        self.assertTrue(info.formatter)
-        self.assertEqual(info.formatter.format_name('ciao'),'ciao')
-        self.assertEqual(info.formatter.format_bool(0),'no')
-        self.assertEqual(info.formatter.format_bool('bla'),'yes')
+    def testKeyInfo2(self):
+        client = self.client
+        yield self.multi_async((client.set('planet', 'mars'),
+                                client.lpush('foo', 1, 2, 3, 4, 5),
+                                client.lpush('bla', 4, 5, 6, 7, 8)))
+        keys = yield client.execute_script('keyinfo', ('planet', 'bla'))
+        self.assertEqual(len(keys), 2)
         
-    def test_keys(self):
-        info = self.info
-        dbs = info.databases
+    def test_manager(self):
+        redisdb = yield self.get_manager()
+        self.assertTrue(redisdb.client)
+        self.assertEqual(redisdb.backend.client, redisdb.client)
+        self.assertTrue(redisdb.formatter)
+        self.assertEqual(redisdb.formatter.format_name('ciao'), 'ciao')
+        self.assertEqual(redisdb.formatter.format_bool(0), 'no')
+        self.assertEqual(redisdb.formatter.format_bool('bla'), 'yes')
+        
+    def test_info_pannel_names(self):
+        info = yield self.client.info()
+        self.assertTrue(info)
+        for name in self.mapper.redisdb.names:
+            self.assertTrue(name in info)
+            
+    def test_databases(self):
+        redisdb = yield self.get_manager()
+        dbs = yield redisdb.all()
         self.assertTrue(dbs)
-        self.assertTrue(isinstance(dbs,list))
+        self.assertIsInstance(dbs, list)
         for db in dbs:
-            self.assertEqual(db.id,db.client.db)
-            self.assertEqual(len(info.db(db.id)),2)
-            self.assertEqual(len(info.db(db.db)),2)
+            self.assertIsInstance(db.db, int)
+            self.assertTrue(db.expires <= db.keys)
         
-    def test_makepanel(self):
-        info = self.info
-        p = info.makepanel('sdkjcbnskbcd')
-        self.assertEqual(p,None)
-        for name in info.info:
-            if not name:
-                continue
-            p = info.makepanel(name)
-            self.assertTrue(p)
-            self.assertTrue(isinstance(p,list))
+    def test_makepanel_empty(self):
+        redisdb = yield self.get_manager()
+        p = redisdb.makepanel('sdkjcbnskbcd', {})
+        self.assertEqual(p, None)
             
     def test_panels(self):
-        p = self.info.panels()
+        redisdb = yield self.get_manager()
+        p = yield redisdb.panels()
         self.assertTrue(p)
-    
-    def testRedisDBModel(self):
-        info = self.info
-        dbs = RedisDb.objects.all(info)
-        self.assertTrue(dbs)
-        self.assertTrue(isinstance(dbs,list))
-        for db in dbs:
-            c = RedisDb.objects.get(db = db.id, info = info)
-            self.assertEqual(c.id,db.id)
+        for name in redisdb.names:
+            val = p.pop(name)
+            self.assertIsInstance(val, list)
+        self.assertFalse(p)
         
-    def testRedisDbDelete(self):
-        info = self.info
-        dbs = RedisDb.objects.all(info)
-        called = []
-        flushdb = lambda client: called.append(client)
+    def __test_database(self):
+        redisdb = yield self.get_manager()
+        dbs = yield redisdb.all()
         for db in dbs:
-            db.delete(flushdb)
-        self.assertEqual(len(called),len(dbs))
-        
-    def testInfoKeys(self):
-        info = self.info
+            dbkeys = yield db.all_keys.all()
+            self.assertIsInstance(dbkeys, list)
+            
+    def __testInfoKeys(self):
+        redisdb = yield self.get_manager()
         dbs = RedisDb.objects.all(info)
         for db in dbs:
             keys = RedisKey.objects.query(db)
             self.assertEqual(keys.db, db)
             self.assertEqual(keys.pattern, '*')
             
-    def testQuery(self):
-        db = self.newdb()
-        db.client.set('blaxxx', 'test')
+    def __test_search(self):
+        redisdb = yield self.get_manager()
+        yield  redisdb.client.set('blaxxx', 'test')
         query = db.query()
-        self.assertEqual(query.db, db)
         q = query.search('blax*')
         self.assertNotEqual(query, q)
         self.assertEqual(q.db, db)
@@ -96,8 +106,9 @@ class TestInfo(client.TestCase):
         key = q[0]
         self.assertEqual(str(key), 'blaxxx')
         
-    def testQuerySlice(self):
-        db = self.newdb()
+    def __testQuerySlice(self):
+        redisdb = yield self.get_manager()
+        db = self.newdb(info)
         db.client.set('blaxxx', 'test')
         db.client.set('blaxyy', 'test2')
         all = db.all()
@@ -112,8 +123,9 @@ class TestInfo(client.TestCase):
         self.assertEqual(db.query().delete(), 1)
         self.assertEqual(db.all(), [])
         
-    def testRedisKeyManager(self):
-        db = self.newdb()
+    def __testRedisKeyManager(self):
+        redisdb = yield self.get_manager()
+        db = self.newdb(info)
         db.client.set('blaxxx', 'test')
         db.client.set('blaxyy', 'test2')
         all = db.all()
@@ -121,16 +133,13 @@ class TestInfo(client.TestCase):
         self.assertEqual(RedisKey.objects.delete(all), 2)
         self.assertEqual(db.all(), [])
     
-    def testdataFormatter(self):
-        f = RedisDataFormatter()
-        self.assertEqual(f.format_date('bla'), '')
-        d = f.format_date(time.time())
-        self.assertTrue(d)
-        
-    def test_tails(self):
-        # Make sure we have an 100% coverage
-        self.assertFalse(list(self.info._dbs(('dbh',))),[])
-        db = RedisDb(self.info.client)
-        self.assertEqual(db.id,self.client.db)
-        self.assertEqual(str(db),str(db.id))
+    def __testRedisDbDelete(self):
+        redisdb = yield self.get_manager()
+        dbs = RedisDb.objects.all(info)
+        called = []
+        flushdb = lambda client: called.append(client)
+        for db in dbs:
+            db.delete(flushdb)
+        self.assertEqual(len(called),len(dbs))
+
         

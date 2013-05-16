@@ -76,24 +76,10 @@ Sent from class_prepared."""
 class_prepared.connect(do_pending_lookups)
 
 
-class ProxyManager(Manager):
-
-    def __init__(self, proxymodel):
-        self.model = None
-        self.proxymodel = proxymodel
-
-    @property
-    def backend(self):
-        return self.proxymodel.objects.backend
-
-    def register(self, model, backend=None):
-        self.model = model
-
-
 def Many2ManyThroughModel(field):
     '''Create a Many2Many through model with two foreign key fields and a
 CompositeFieldId depending on the two foreign keys.'''
-    from stdnet.odm import StdNetType, StdModel, ForeignKey, CompositeIdField
+    from stdnet.odm import ModelType, StdModel, ForeignKey, CompositeIdField
     name_model = field.model._meta.name
     name_relmodel = field.relmodel._meta.name
     # The two models are the same.
@@ -103,9 +89,7 @@ CompositeFieldId depending on the two foreign keys.'''
     # Create the through model
     if through is None:
         name = '{0}_{1}'.format(name_model, name_relmodel)
-        pmanager = ProxyManager(field.model)
-        through = StdNetType(name, (StdModel,), {'objects': pmanager})
-        pmanager.register(through)
+        through = ModelType(name, (StdModel,), {})
         field.through = through
     # The first field
     field1 = ForeignKey(field.model,

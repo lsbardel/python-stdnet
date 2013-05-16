@@ -60,14 +60,16 @@ class TestMeta(FinanceTest):
         self.assertEqual(query, query.exclude())
         
         
-class TestMetaRepr(FinanceTest):
+class TestMetaWithData(FinanceTest):
     
     @classmethod
     def after_setup(cls):
-        cls.data = cls.data_cls(size=cls.size)
-        yield cls.data.create(cls)
+        return cls.data.create(cls)
         
-    def testRepr(self):
+    def test_repr(self):
+        models = self.mapper
+        # make sure there is at least one of them
+        yield models.instrument.new(name='a123345566', ccy='EUR', type='future')
         query = self.query().filter(ccy='EUR')\
                             .exclude(type=('equity', 'bond'))
         self.assertTrue(str(query))

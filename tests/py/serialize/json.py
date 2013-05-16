@@ -18,12 +18,6 @@ class TestFinanceJSON(base.SerializerMixin, FinanceTest):
         s.dump(all)
         self.assertEqual(len(s.data), 2)
 
-    def testModelToSerialize(self):
-        all = list(odm.all_models_sessions(self.models))
-        self.assertEqual(len(all), 3)
-        for m, session in all:
-            self.assertNotEqual(session, None)
-
 
 class TestLoadFinanceJSON(base.LoadSerializerMixin, FinanceTest):
     serializer = 'json'

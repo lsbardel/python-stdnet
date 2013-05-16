@@ -7,8 +7,8 @@ from stdnet.utils import test, BytesIO, to_bytes
 
 class Tempfile(object):
 
-    def __init__(self, data, text = True):
-        fd, path = tempfile.mkstemp(text = text)
+    def __init__(self, data, text=True):
+        fd, path = tempfile.mkstemp(text=text)
         self.handler = None
         self.path = path
         os.write(fd, to_bytes(data))
@@ -88,7 +88,7 @@ class LoadSerializerMixin(BaseSerializerMixin):
         data = s.write().getvalue()
         with Tempfile(data) as tmp:
             yield models.instrument.flush()
-            yield s.load(tmp.open(), self.model)
+            yield s.load(models, tmp.open(), self.model)
         qs2 = yield models.instrument.query().sort_by('id').all()
         self.assertEqual(qs, qs2)
 
@@ -110,6 +110,6 @@ class TestMeta(test.TestCase):
         self.assertTrue(isinstance(s, DummySerializer))
         self.assertRaises(NotImplementedError, s.dump, None)
         self.assertRaises(NotImplementedError, s.write)
-        self.assertRaises(NotImplementedError, s.load, None)
+        self.assertRaises(NotImplementedError, s.load, None, None)
         self.assertTrue(odm.unregister_serializer('dummy'))
         self.assertRaises(ValueError, odm.get_serializer, 'dummy')

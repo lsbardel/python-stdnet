@@ -19,7 +19,7 @@ class TestFinanceCSV(base.SerializerMixin, FinanceTest):
         
     def testLoadError(self):
         s = yield self.dump()
-        self.assertRaises(ValueError, s.load, 'bla')
+        self.assertRaises(ValueError, s.load, self.mapper, 'bla')
         
         
 class TestLoadFinanceCSV(base.LoadSerializerMixin, FinanceTest):

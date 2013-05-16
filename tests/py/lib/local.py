@@ -11,10 +11,10 @@ class TestModel(test.TestCase):
         
     def test_create_name(self):
         User = odm.create_model('UserBase', 'name', 'email', 'name',
-                                abstract=True, pkname='bla')
+                                abstract=True)
         self.assertEqual(User.__name__, 'UserBase')
         self.assertTrue(User._meta.abstract)
-        self.assertEqual(User._meta.pkname(), 'bla')
+        self.assertRaises(AttributeError, User._meta.pkname)
         
     def test_init(self):
         User = odm.create_model('User', 'name', 'email')

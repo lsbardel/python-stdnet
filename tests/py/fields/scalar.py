@@ -205,7 +205,6 @@ class TestBoolField(test.TestCase):
         d.ok = 'jasxbhjaxsbjxsb'
         self.assertRaises(FieldValueError, session.add, d)
         d.ok = True
-        # the session is in a transaction! that is way is failing
         yield session.add(d)
         d = yield models.numericdata.get(id=d.id)
         self.assertEqual(d.ok, True)

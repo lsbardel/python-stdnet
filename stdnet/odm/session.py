@@ -459,15 +459,20 @@ processed.'''
         session = self.session
         self.session = None
         multi = []
-        for backend, data in session.backends_data():
-            multi.append(backend.execute_session(data))
-        resp = yield multi_async(multi)
-        if resp:
-            resp = multi_async((self._post_commit(session, r) for r in resp))
-            yield on_result(resp, lambda r: self._finish(session),
-                            lambda r: self._finish(session, r))
+        try:
+            for backend, data in session.backends_data():
+                multi.append(backend.execute_session(data))
+            re = yield multi_async(multi)
+        except Exception as e:
+            yield self._finish(session, e)
+            raise
         else:
-            yield self._finish(session)
+            if re:
+                re = multi_async((self._post_commit(session, r) for r in re))
+                yield on_result(re, lambda r: self._finish(session),
+                                    lambda r: self._finish(session, r))
+            else:
+                yield self._finish(session)
     
     def _finish(self, session, result=None):
         session.transaction = None

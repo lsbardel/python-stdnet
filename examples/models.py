@@ -172,19 +172,10 @@ class Collection(odm.StdModel):
 
 #############################################################
 ## TWITTER CLONE MODELS
-class UserManager(odm.Manager):
-    
-    @async()
-    def newupdate(self, user, message):
-        p  = yield self.router.post.new(data=message, user=user)
-        yield user.updates.push_front(p)
-        yield p
-
-
 class Post(odm.StdModel):
     dt   = odm.DateTimeField(index=False, default=datetime.now)
     data = odm.CharField(required=True)
-    user = odm.ForeignKey("User", index=False)
+    user = odm.ForeignKey('examples.user', index=False)
 
     def __unicode__(self):
         return self.data
@@ -192,20 +183,20 @@ class Post(odm.StdModel):
 
 class User(odm.StdModel):
     '''A model for holding information about users'''
-    username = odm.SymbolField(unique = True)
-    password = odm.SymbolField(index = False)
-    updates = odm.ListField(model = Post)
+    username = odm.SymbolField(unique=True)
+    password = odm.SymbolField(index=False)
+    updates = odm.ListField(model=Post)
     following = odm.ManyToManyField(model='self', related_name='followers')
-
-    manager_class = UserManager
     
     def __unicode__(self):
         return self.username
-
-    def newupdate(self, data):
-        p  = Post(data=data, user=self, dt=datetime.now()).save()
-        self.updates.push_front(p)
-        return p
+    
+    @async()
+    def newupdate(self, message):
+        session = self.session
+        p  = yield session.router.post.new(data=message, user=self)
+        yield self.updates.push_front(p)
+        yield p
 
 
 

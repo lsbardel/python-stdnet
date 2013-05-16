@@ -39,8 +39,7 @@ class TestRelated(FinanceTest):
 
     @classmethod
     def after_setup(cls):
-        cls.data = yield cls.data_cls(size=cls.size)
-        yield cls.data.makePositions(cls)
+        return cls.data.makePositions(cls)
 
     def testInstrument(self):
         models = self.mapper

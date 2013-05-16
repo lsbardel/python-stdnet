@@ -28,10 +28,7 @@ class TestSetField(test.TestCase):
 class TestOrderedSet(test.TestCase):
     multipledb = 'redis'
     models = (Calendar, DateValue)
-    
-    @classmethod
-    def after_setup(cls):
-        cls.data = ZsetData(cls.size)
+    data_cls = ZsetData
     
     def fill(self, update=False):
         session = self.session()

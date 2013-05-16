@@ -160,7 +160,7 @@ several class methods for testing in a parallel test suite.
             cls.models = (cls.model,)
         if not cls.model and cls.models:
             cls.model = cls.models[0]
-        cls.data = cls.data_cls(cls.size, cls.sizes)
+        cls.data = cls.data_cls(cls.cfg.size, cls.sizes)
     
     @classmethod
     def setUpClass(cls):
@@ -269,7 +269,13 @@ class StdnetPlugin(TestPlugin):
                           desc='Switch off asynchronous bindings',
                           action="store_true",
                           default=False)
-
+    
+    def configure(self, cfg):
+        if cfg.sync:
+            settings.ASYNC_BINDINGS = False
+        if cfg.py_redis_parser:
+            settings.REDIS_PY_PARSER = True
+        
     def on_start(self):
         servers = []
         names = set()
@@ -287,13 +293,6 @@ class StdnetPlugin(TestPlugin):
         if not servers:
             raise pulsar.HaltServer('No server available. BAILING OUT')
         settings.servers = servers
-        if self.config.py_redis_parser:
-            settings.REDIS_PY_PARSER = True
-        if self.config.sync:
-            settings.ASYNC_BINDINGS = False
-        
-    def loadTestsFromTestCase(self, cls):
-        cls.size = self.config.size
         
         
 class testmaker(object):

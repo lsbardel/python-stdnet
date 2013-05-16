@@ -382,7 +382,8 @@ class ModelType(type):
         cls.extend_meta(meta, attrs)
         fields = get_fields(bases, attrs)
         new_class = super(ModelType, cls).__new__(cls, name, bases, attrs)
-        ModelMeta(new_class, fields, **meta) 
+        ModelMeta(new_class, fields, **meta)
+        class_prepared.send(sender=new_class)
         return new_class
     
     @classmethod

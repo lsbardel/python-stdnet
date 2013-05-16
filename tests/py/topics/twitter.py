@@ -44,10 +44,10 @@ class TestTwitter(test.TestWrite):
         self.assertEqual(followers.relmodel,User)
         self.assertEqual(following.model, followers.model)
         self.assertEqual(len(following.model._meta.dfields),3)
-        self.assertEqual(following.name_relmodel,'user')
-        self.assertEqual(following.name_formodel,'user2')
-        self.assertEqual(followers.name_relmodel,'user2')
-        self.assertEqual(followers.name_formodel,'user')
+        self.assertEqual(following.name_relmodel, 'user')
+        self.assertEqual(following.name_formodel, 'user2')
+        self.assertEqual(followers.name_relmodel, 'user2')
+        self.assertEqual(followers.name_formodel, 'user')
         
     def testRelated(self):
         models = self.mapper
@@ -116,7 +116,7 @@ class TestTwitter(test.TestWrite):
         ids = [u.id for u in users]
         id = choice(ids)
         user = yield models.user.get(id=id)
-        yield models.user.newupdate(user, 'this is my first message')
-        yield models.user.newupdate(user, 'and this is another one')
+        yield user.newupdate('this is my first message')
+        yield user.newupdate('and this is another one')
         yield self.async.assertEqual(user.updates.size(), 2)
             

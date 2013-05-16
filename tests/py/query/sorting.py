@@ -102,7 +102,7 @@ class TestSortByForeignKeyField(TestSort):
         
     @classmethod
     def after_setup(cls):
-        cls.data = d = SortGenerator(cls.size)
+        d = cls.data
         session = cls.session()
         with session.begin() as t:
             for g in d.groups:

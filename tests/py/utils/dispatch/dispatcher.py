@@ -1,4 +1,5 @@
 import gc
+from inspect import istraceback
 
 from stdnet.utils.dispatch import Signal
 from stdnet.utils import test
@@ -96,8 +97,10 @@ class DispatcherTests(test.TestCase):
             raise ValueError('this')
         a_signal.connect(fails)
         result = a_signal.send_robust(sender=self, val="test")
-        err = result[0][1]
-        self.assertTrue(isinstance(err, ValueError))
+        err_info = result[0][1]
+        self.assertIsInstance(err_info, tuple)
+        self.assertEqual(err_info[0], ValueError)
+        err = err_info[1]
         self.assertEqual(err.args, ('this',))
         a_signal.disconnect(fails)
         self._testIsClean(a_signal)

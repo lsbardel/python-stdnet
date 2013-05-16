@@ -4,14 +4,15 @@ Ver. 0.8 - Development
 ===============================
 * This version brings several new functionalities, bug fixes, asynchronous
   connections and a departure from the global registration of models.
+* The API for querying, committing and deleting instances has changed, and it
+  it is now based on the :class:`stdnet.odm.Router` class.
+* A :class:`stdnet.odm.Router` is a placeholder of registered models for
+  one's application. Check the :ref:`registration tutorial
+  <tutorial-registration>` for more details.
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
   Pre-alpha at this stage.
 * Added preliminary support for :ref:`Sql backend <sql-server>`.
   Pre-alpha at this stage.
-* Added the :class:`stdnet.odm.Router` class for registering models in one
-  placeholder. With a router one can access managers of the registered models.
-  Check the :ref:`registration tutorial <tutorial-registration>` for more
-  details.
 * Can handle master/slave server configuration by registering models to a
   back-end server and read-only server for read operations (queries).
 * Added :ref:`where <query_where>` selector for ad-hoc queries. The argument is

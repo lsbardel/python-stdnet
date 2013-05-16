@@ -84,13 +84,13 @@ class BackendStructure(object):
     def clone(self):
         return self.__class__(self.instance, self.backend, self.client)
     
-    def delete(self):   # pragma: no cover
+    def delete(self):
         raise NotImplementedError
     
-    def flush(self):    # pragma: no cover
+    def flush(self):
         raise NotImplementedError
     
-    def size(self):     # pragma: no cover
+    def size(self):
         raise NotImplementedError
     
     

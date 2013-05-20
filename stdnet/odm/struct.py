@@ -555,7 +555,8 @@ sequence.'''
     def pop_back(self):
         '''Remove the last element from the :class:`Sequence`.'''
         value = yield self.backend_structure().pop_back()
-        yield self.value_pickler.loads(value)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     def __getitem__(self, index):
         value = self.read_backend_structure().get(index)
@@ -606,17 +607,20 @@ the front of the list in an efficient manner.'''
     def pop_front(self):
         '''Remove the first element from of the list.'''
         value = yield self.backend_structure().pop_front()
-        yield self.value_pickler.loads(value)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     @async()
     def block_pop_back(self, timeout = None):
         value = yield self.backend_structure().block_pop_back(timeout)
-        yield self.value_pickler.loads(value)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     @async()
     def block_pop_front(self, timeout = None, transaction = None):
         value = yield self.backend_structure().block_pop_front(timeout)
-        yield self.value_pickler.loads(value)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     @commit_when_no_transaction
     def push_front(self, value):

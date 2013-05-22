@@ -497,12 +497,18 @@ class List(RedisStructure):
     
     def pop_back(self):
         return self.client.rpop(self.id)
-
-    def block_pop_front(self, timeout):
-        return self.client.blpop(self.id, timeout)
     
+    @async.async()
     def block_pop_front(self, timeout):
-        return self.client.brpop(self.id, timeout)
+        value = yield self.client.blpop(self.id, timeout)
+        if value:
+            yield value[1]
+    
+    @async.async()
+    def block_pop_back(self, timeout):
+        value = yield self.client.brpop(self.id, timeout)
+        if value:
+            yield value[1]
     
     def flush(self):
         cache = self.instance.cache
@@ -799,7 +805,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             meta = sm.meta
             if sm.structures:
                 self.flush_structure(sm, pipe)
-            delquery = sm.deletes.backend_query(pipe=pipe) if sm.deletes else None
+            delquery = None
+            if sm.deletes is not None:
+                delquery = sm.deletes.backend_query(pipe=pipe)
             self.accumulate_delete(pipe, delquery)
             if sm.dirty:
                 meta_info = json.dumps(self.meta(meta))

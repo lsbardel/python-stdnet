@@ -136,9 +136,9 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
         roles = session.query(Role)
         yield self.async.assertEqual(roles.count(), 2)
         yield roles.delete()
-        self.assertEqual(session.query(Role).count(),0)
-        profile = session.query(Profile).get(id=1)
-        self.assertEqual(profile.roles.query().count(), 0)
+        yield self.async.assertEqual(session.query(Role).count(), 0)
+        profile = yield session.query(Profile).get(id=1)
+        yield self.async.assertEqual(profile.roles.query().count(), 0)
         yield session.delete(profile)
         
     def test_remove(self):
@@ -166,10 +166,10 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
         # Now remove the role
         yield p2.roles.remove(role)
         profiles = role.profiles.query()
-        self.assertEqual(profiles.count(),1)
-        p1.roles.remove(role)
+        yield self.async.assertEqual(profiles.count(),1)
+        yield p1.roles.remove(role)
         profiles = role.profiles.query()
-        self.assertEqual(profiles.count(), 0)
+        yield self.async.assertEqual(profiles.count(), 0)
         
         
 class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
@@ -203,8 +203,8 @@ class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
                                          m.role.new(name='foo')))
         # Add a role to a profile
         pr1, pr2 = yield self.multi_async((p1.roles.add(r1), p2.roles.add(r1)))
-        self.assertEqual(pr1.role, r1)
-        self.assertEqual(pr2.role, r1)
+        yield self.async.assertEqual(pr1.role, r1)
+        yield self.async.assertEqual(pr2.role, r1)
         
 
 class TestManyToManyThrough(test.TestCase):

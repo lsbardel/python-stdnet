@@ -42,3 +42,40 @@ class TestList(StructMixin, test.TestCase):
         result = [3, 5.6, 'save', {'test': 1}, {'test': 2}]
         yield self.async.assertEqual(l.items(), result)
         self.assertEqual(list(l), result)
+
+    def test_pop_front(self):
+        list = yield self.not_empty()
+        elem = yield list.pop_front()
+        self.assertEqual(elem, 3)
+        elem = yield list.pop_front()
+        self.assertEqual(elem, 5.6)
+        elem = yield list.pop_front()
+        self.assertEqual(elem, None)
+        
+    def test_pop_back(self):
+        list = yield self.not_empty()
+        elem = yield list.pop_back()
+        self.assertEqual(elem, 5.6)
+        elem = yield list.pop_back()
+        self.assertEqual(elem, 3)
+        elem = yield list.pop_back()
+        self.assertEqual(elem, None)
+        
+    def test_block_pop_front(self):
+        list = yield self.not_empty()
+        elem = yield list.block_pop_front(1)
+        self.assertEqual(elem, 3)
+        elem = yield list.block_pop_front(1)
+        self.assertEqual(elem, 5.6)
+        elem = yield list.block_pop_front(1)
+        self.assertEqual(elem, None)
+        
+    def test_block_pop_back(self):
+        list = yield self.not_empty()
+        elem = yield list.block_pop_back(1)
+        self.assertEqual(elem, 5.6)
+        elem = yield list.block_pop_back(1)
+        self.assertEqual(elem, 3)
+        elem = yield list.block_pop_back(1)
+        self.assertEqual(elem, None)
+        

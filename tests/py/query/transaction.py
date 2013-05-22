@@ -51,7 +51,7 @@ class TestTransactions(test.TestWrite):
             s = session.add(self.model(code='bla',
                                        description='just a test'))
         yield t.on_result
-        yield self.async.assertEqual(query.get(id = s.id), s)
+        yield self.async.assertEqual(query.get(id=s.id), s)
         yield session.delete(s)
         yield self.async.assertRaises(self.model.DoesNotExist,
                                       query.get, id=s.id)
@@ -96,7 +96,7 @@ class TestMultiFieldTransaction(test.TestCase):
         self.assertFalse(d1.data.cache.toadd)
         self.assertFalse(d2.data.cache.toadd)
         d1, d2 = yield query.filter(id__in=(1,2)).sort_by('id').load_related('data').all()
-        self.assertEqual(d1.data['ciao'],'hello in Italian')
-        self.assertEqual(d2.data['wine'],'drink to enjoy with or without food')
+        self.assertEqual(d1.data['ciao'], 'hello in Italian')
+        self.assertEqual(d2.data['wine'], 'drink to enjoy with or without food')
     
     

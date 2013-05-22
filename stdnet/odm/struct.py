@@ -433,8 +433,11 @@ methods, while its iterator is over keys.'''
 
     def __getitem__(self, key):
         dkey = self.pickler.dumps(key)
-        res = self.read_backend_structure().get(dkey)
-        return on_result(res, lambda r: self._load_get_data(r, key))
+        if self.cache.cache is None:
+            res = self.read_backend_structure().get(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key))
+        else:
+            return self.cache.cache[key]
     
     def get(self, key, default=None):
         '''Retrieve a single element from the structure.
@@ -442,9 +445,12 @@ If the element is not available return the default value.
 
 :parameter key: lookup field
 :parameter default: default value when the field is not available'''
-        dkey = self.pickler.dumps(key)
-        res = self.read_backend_structure().get(dkey)
-        return on_result(res, lambda r: self._load_get_data(r, key, default))
+        if self.cache.cache is None:
+            dkey = self.pickler.dumps(key)
+            res = self.read_backend_structure().get(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key, default))
+        else:
+            return self.cache.cache.get(key, default)
         
     def pop(self, key, *args):
         if len(args) <= 1:
@@ -611,13 +617,17 @@ the front of the list in an efficient manner.'''
             yield self.value_pickler.loads(value)
     
     @async()
-    def block_pop_back(self, timeout = None):
+    def block_pop_back(self, timeout=10):
+        '''Remove the last element from of the list. If no elements are
+available, blocks for at least ``timeout`` seconds.'''
         value = yield self.backend_structure().block_pop_back(timeout)
         if value is not None:
             yield self.value_pickler.loads(value)
     
     @async()
-    def block_pop_front(self, timeout = None, transaction = None):
+    def block_pop_front(self, timeout=10):
+        '''Remove the first element from of the list. If no elements are
+available, blocks for at least ``timeout`` seconds.'''
         value = yield self.backend_structure().block_pop_front(timeout)
         if value is not None:
             yield self.value_pickler.loads(value)

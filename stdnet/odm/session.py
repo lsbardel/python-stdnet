@@ -298,10 +298,11 @@ empty keys associated with the model will exists after this operation.'''
         meta = model._meta
         dirty = self.dirty
         deletes = self.get_delete_query(session)
+        has_delete = deletes is not None
         structures = self._structures
         queries = self._queries
-        if dirty or deletes or queries or structures:
-            if transaction.signal_delete and deletes:
+        if dirty or has_delete or queries is not None or structures:
+            if transaction.signal_delete and has_delete:
                 models.pre_delete.send(model, instances=deletes, session=session)
             if dirty and transaction.signal_commit:
                 models.pre_commit.send(model, instances=dirty, session=session)
@@ -309,7 +310,7 @@ empty keys associated with the model will exists after this operation.'''
                 yield be, session_data(meta, dirty, deletes, queries,
                                        structures)
             else:
-                if dirty or deletes or structures:
+                if dirty or has_delete or structures:
                     yield be, session_data(meta, dirty, deletes, (), structures)
                 if queries:
                     yield rbe, session_data(meta, (), (), queries, ())

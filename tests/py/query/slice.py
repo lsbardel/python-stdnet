@@ -47,13 +47,13 @@ class TestFilter(FinanceTest):
         qs = session.query(self.model)
         N = qs.count()
         self.assertTrue(N)
-        q1 = qs[0:]
-        self.assertEqual(len(q1),N)
+        q1 = yield qs[0:]
+        self.assertEqual(len(q1), N)
         # This time the result is sorted by ids
-        q1 = qs[3:]
-        self.assertEqual(len(q1),N-3)
-        for id,q in enumerate(q1,4):
-            self.assertEqual(q.id,id)
+        q1 = yield qs[3:]
+        self.assertEqual(len(q1), N-3)
+        for id, q in enumerate(q1, 4):
+            self.assertEqual(q.id, id)
             
     def testSliceBack(self):
         session = self.session()

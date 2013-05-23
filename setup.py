@@ -1,4 +1,5 @@
-from distutils.core import setup
+from setuptools import setup
+#from distutils.core import setup
 from distutils.command.install_data import install_data
 from distutils.command.install import INSTALL_SCHEMES
 
@@ -116,7 +117,7 @@ def run_setup(with_cext=False):
                    'packages': packages,
                    'package_data': {package_name: data_files},
                    'classifiers':  mod.CLASSIFIERS,
-                   'requires': requirements()})
+                   'install_requires': requirements()})
     setup(**params)
     
 def status_msgs(*msgs):

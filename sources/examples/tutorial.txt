@@ -7,8 +7,17 @@ Using Models
 ============================
 
 Here we deal with model implementation and creating instances persistent
-in a backend database.
+in a backend database. A :class:`Model` is the single, definitive source of
+data about your data. There are two types of models in :mod:`stdnet`:
+the :class:`StdModel` which consists of :class:`Field` and behaviours of
+the data you are storing and the
+:class:`Structure`, the networked equivalent of data-structures such as sets,
+hash tables, lists. The goal is to define your data model in one place
+and automatically derive things from it.
 
+In this tutorial we concentrate on :class:`StdModel`, which can be thought as the
+equivalent to a table in a conventional relational database. The data structures will
+be covered in the :ref:`using data structures <tutorial-structures>` tutorial.
 
 .. _creating-models:
 
@@ -21,7 +30,7 @@ snippet implements two models, ``Author`` and ``Book``::
 
     from stdnet import odm
 
-    class Author(odm.StModel):
+    class Author(odm.StdModel):
         name = odm.SymbolField()
 
     class Book(odm.StdModel):
@@ -92,80 +101,115 @@ The only difference is the ``prices`` :class:`ListField`
 in the ``Instrument`` model which is
 not available in a traditional relational database.
 
-The metaclass
-~~~~~~~~~~~~~~~~~~~~~~~
-The ``Position`` models specifies a ``Meta`` class with an ``ordering``
-attribute.
-When provided, as in this case, the Meta class fields are used by the ``odm``
-to customise the build of the :class:`Metaclass` for the model. The metaclas
-is stored in the :attr:`StdModel._meta` attribute.
+.. note::    **The metaclass**
+    
+    The ``Position`` models specifies a ``Meta`` class with an ``ordering``
+    attribute.
+    When provided, as in this case, the Meta class fields are used by the ``odm``
+    to customise the build of the :class:`Metaclass` for the model. The metaclas
+    is stored in the :attr:`StdModel._meta` attribute.
+    
+    In this case we instruct the ``odm`` to manage the ``Position`` model
+    as ordered with respect to the :class:`DateField` ``dt``
+    in descending order. Check the  :ref:`sorting <sorting>`
+    documentation for more details or ordering and sorting.
 
-In this case we instruct the ``odm`` to manage the ``Position`` model
-as ordered with respect to the :class:`DateField` ``dt``
-in descending order. Check the  :ref:`sorting <sorting>`
-documentation for more details or ordering and sorting.
 
+.. _tutorial-models-router:
 
 Registering Models
 ================================
 
-Before playing with the API let's to :ref:`register the models <register-model>`
-to a backend server. Registration is not compulsory, but it is required when using
-model's :class:`Manager`::
+Before playing with the API, we need to register the models we intend to use
+with back-end servers. :ref:`Registration <tutorial-registration>` is an important
+topic and is covered in details in the next tutorial. For now,
+all we need to know is that it provides a placeholder for :class:`Model`
+and their :ref:`backend server <db-index>`. The placeholder is given by
+the :class:`Router` which is a mapping from a :class:`Model`
+to a :class:`Manager`::
 
     import odm
 
-    odm.register(Fund, 'redis://my.host.name:6379/?db=1')
-    odm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-    odm.register(Position, 'redis://my.host.name:6379/?db=1')
+    models = odm.Router('redis://my.host.name:6379?db=1')
+    
+    models.register(Fund)
+    models.register(Instrument)
+    models.register(Position)
 
+The above code registers the three models to a :ref:`redis backend <redis-server>`,
+at redis db 1. You can pass several parameters to the connection string, including a ``password``,
+a connection ``timeout`` and a ``namespace`` for your model keys. For example::
 
-.. _one-to-many:
+    router.register(Fund, 'redis://my.host.name:6379?db=3&password=pippo&namespace=xxxx.&timeout=5')
 
-One-to-many relationships
-================================
+includes all possible parameters for a :ref:`redis connection string <redis-connection-string>`.
+The :ref:`registration tutorial <tutorial-registration>` illustrates the different ways
+one can register models and how to organise your application.
 
-The *Position* model contains two :class:`ForeignKey` fields.
-In the context of relational databases a
-`foreign key <http://en.wikipedia.org/wiki/Foreign_key>`_ is
-a referential constraint between two tables.
-
-For stdnet is exactly the same thing. The field store the ``id`` of a
-related :class:`StdModel` instance.
-Behind the scenes, this functionality is implemented by Python descriptors_.
-This shouldn't really matter to you, but we point it out here for the curious.
-
-
-Using Models
+Creating objects
 ==================
 
-Using models is equivalent to executing queries to the backend database.
-Once again, the API is very similar to executing queries in django_.
+Using the `models` :class:`Router` registered above, is equivalent to executing
+queries in the backend database.
 Once you've created your models, ``stdnet`` automatically gives you
 a data-server abstraction API that lets you create, retrieve,
 update and delete objects.
 
-Creating objects
-~~~~~~~~~~~~~~~~~~~~~
-
 An instance of a :class:`StdModel`, an object for clarity,
-is mapped to a hash table in the :class:`stdnet.BackendDataServer` backend.
-To create an object, instantiate it using keyword arguments to the
-model class, then call ``save()`` to save it to the data-server.
-Here's an example::
+is created by initialising it using keyword arguments which match
+model's :class:`Field`. Here's an example::
 
-	>>> b = Fund(name='Markowitz', ccy='EUR')
-	>>> b.save()
-	Fund: Markowitz
-	>>> b.id
-	1
-	>>> b.name
-	'Markowitz'
-	>>> b.ccy
-	'EUR'
-	>>> b.description
-	''
+    >>> b = models[Fund](name='Markowitz', ccy='EUR')
+    >>> b
+    Fund: Markowitz
+    >>> b.id
+    >>> b.name
+    'Markowitz'
+    >>> b.ccy
+    'EUR'
+    >>> b.description
+    ''
+    
+The instance created in this way is not persistent in the backend server, and you can
+check that by noting that its ``id`` is ``None``.
+To commit changes, one obtains a :class:`Session` and add the instance to it::
 
+    >>> models.session().add(b)
+    >>> b.id
+    1
+    >>> b.name
+    'Markowitz'
+    >>> b.ccy
+    'EUR'
+    >>> b.description
+    ''
 
+A shortcut for creating an instance is to use the :meth:`Manager.new` method::
+
+    >>> b = models['Fund'].new(name='Pluto', ccy='EUR')
+    >>> b.id
+    2
+    
+
+An alternative interface for accessing a model :class:`Manager` is the
+:ref:`router dot notation <router-dotted>`::
+
+    >>> b = models.fund.new(name='Star', ccy='GBP')
+    >>> b
+    Fund: Star
+    >>> b.id
+    3
+    
+    
+For bulk updates it is better to use the :ref:`session api <model-session>`
+which in this example would look like::
+
+    >>> with models.session().begin() as transaction:
+    >>>     transaction.add(models.fund(name='Markowitz', ccy='EUR'))
+    >>>     transaction.add(Fund(name='Pluto', ccy='USD'))
+    >>>     ...
+    >>>
+    
+On exit of the ``with`` block, the transaction commits changes to the server.
+    
 .. _django: https://www.djangoproject.com/
-.. _descriptors: http://users.rcn.com/python/download/Descriptor.htm

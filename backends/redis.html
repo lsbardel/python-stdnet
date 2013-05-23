@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Redis Backend &mdash; python stdnet v0.7c6 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <title>Redis &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.8.1b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,12 +21,13 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
-    <link rel="up" title="Backend Data Server" href="index.html" />
-    <link rel="next" title="Applications" href="../apps/index.html" />
-    <link rel="prev" title="Backend Data Server" href="index.html" /> 
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Backend Servers" href="index.html" />
+    <link rel="next" title="Mongo DB" href="mongo.html" />
+    <link rel="prev" title="API" href="api.html" /> 
   </head>
   <body>
+
     <div class="related">
       <h3>Navigation</h3>
       <ul>
@@ -37,23 +38,34 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../apps/index.html" title="Applications"
+          <a href="mongo.html" title="Mongo DB"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Backend Data Server"
+          <a href="api.html" title="API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Backend Data Server</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Backend Servers</a> &raquo;</li> 
       </ul>
-    </div>  
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="redis-backend">
-<span id="redis-server"></span><h1>Redis Backend<a class="headerlink" href="#redis-backend" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="redis">
+<span id="redis-server"></span><h1>Redis<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="http://redis.io/">Redis</a> is an advanced key-value store where each key is associated with a value.
 What makes Redis different from many other key-value databases, is that values can
 be of different types:</p>
@@ -64,35 +76,63 @@ be of different types:</p>
 <li>Sets</li>
 <li>Sorted Sets</li>
 <li>Hash tables</li>
-<li><a class="reference internal" href="../stdnetredis.html#redis-timeseries"><em>Timeseries</em></a> (only if you use the <a class="reference external" href="https://github.com/lsbardel/redis">stdnet-redis</a> branch)</li>
 </ul>
 </div></blockquote>
 <p>In other words, you can look at redis as a data structure server, the networked
-equivalent of the <a class="reference external" href="http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html">standard template library in C++</a>.
-And that is where stdnet get its name from, <em>std</em> from the standard template library
-and <em>net</em> from networked.</p>
+equivalent of the <a class="reference external" href="http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html">standard template library in C++</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">stdnet get its name from, <strong>std</strong> from as Standard Template Library
+and <strong>net</strong> from networked.</p>
+</div>
 <p>Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
 since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.</p>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>, provides the standard redis client.</li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> optional, only required if the <a class="reference internal" href="#redis-async"><em>asynchronous connection</em></a>
+is used.</li>
+</ul>
+</div>
+<div class="section" id="connection-string">
+<span id="redis-connection-string"></span><h2>Connection String<a class="headerlink" href="#connection-string" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="index.html#connection-string"><em>connection string</em></a> is a way to specify
+the various parameters of the backend to use. Redis supports the following
+parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">db</span></tt>, the database number.</li>
+<li><tt class="docutils literal"><span class="pre">namespace</span></tt>, the namespace for all the keys used by the backend.</li>
+<li><tt class="docutils literal"><span class="pre">password</span></tt>, database password.</li>
+<li><tt class="docutils literal"><span class="pre">timeout</span></tt>, connection timeout (0 is an asynchronous connection).</li>
+</ul>
+<p>A full connection string could be:</p>
+<div class="highlight-python"><pre>redis://127.0.0.1:6379?db=3&amp;password=bla&amp;namespace=test.&amp;timeout=5</pre>
+</div>
+</div>
 <div class="section" id="model-data">
 <h2>Model data<a class="headerlink" href="#model-data" title="Permalink to this headline">¶</a></h2>
-<p>Each <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class has an associated <tt class="docutils literal"><span class="pre">base</span> <span class="pre">key</span></tt> which
-specify the namespace for all keys associated with it:</p>
+<p>Each <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class has an associated <tt class="docutils literal"><span class="pre">base</span> <span class="pre">key</span></tt> which
+specifies the namespace for all keys associated with it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">getdb</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">Word</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdb</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://localhost:6379?prefix=bla.&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rdb</span><span class="o">.</span><span class="n">basekey</span><span class="p">(</span><span class="n">Word</span><span class="o">.</span><span class="n">_meta</span><span class="p">)</span>
-<span class="go">&#39;bla.searchengine.word&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">WordItem</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdb</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://localhost:6379?db=7&amp;namespace=bla.&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rdb</span><span class="o">.</span><span class="n">basekey</span><span class="p">(</span><span class="n">WordItem</span><span class="o">.</span><span class="n">_meta</span><span class="p">)</span>
+<span class="go">&#39;bla.searchengine.worditem&#39;</span>
 </pre></div>
 </div>
 <div class="section" id="instances">
 <h3>Instances<a class="headerlink" href="#instances" title="Permalink to this headline">¶</a></h3>
-<p>Each <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instance is mapped into a redis <strong>Hash table</strong>.
+<p>Each <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instance is mapped into a redis <strong>Hash table</strong>.
 The hash table key is uniquely evaluated by the model hash and
 the <em>id</em> of the model instance and it is stored at:</p>
 <div class="highlight-python"><pre>&lt;&lt;basekey&gt;&gt;:obj:&lt;&lt;id&gt;&gt;</pre>
 </div>
-<p>The hash fields and values are given by the field name and values of the
+<p>For example, a <tt class="docutils literal"><span class="pre">WordItem</span></tt> with id <tt class="docutils literal"><span class="pre">1</span></tt> is mapped by the database handler
+in the code snipped above, into a redis hash table
+at key <tt class="docutils literal"><span class="pre">bla.searchengine.worditem:obj:1</span></tt>.
+The hash fields and values are given by the field name and values of the
 model instance.</p>
 </div>
 <div class="section" id="indexes">
@@ -102,19 +142,17 @@ following form:</p>
 <div class="highlight-python"><pre>&lt;&lt;basekey&gt;&gt;:idx:&lt;&lt;field name&gt;&gt;:&lt;&lt;field value&gt;&gt;</pre>
 </div>
 <p>If the model specify an <a class="reference internal" href="../examples/sorting.html#implicit-sorting"><em>implicit ordering</em></a> via the
-<tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.base.Metaclass.ordering</span></tt> attribute, indexes are stored
+<tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Metaclass.ordering</span></tt> attribute, indexes are stored
 in sorted sets rather than sets.</p>
-<p>Indices are updated and removed via the <tt class="docutils literal"><span class="pre">update_indices</span></tt> function in the
-<tt class="docutils literal"><span class="pre">section.lua</span></tt> script.</p>
 </div>
 <div class="section" id="unique-constratins">
 <h3>Unique Constratins<a class="headerlink" href="#unique-constratins" title="Permalink to this headline">¶</a></h3>
 <p>For some models you may need to specify certain field to be unique across
 the Model. For example the following <tt class="docutils literal"><span class="pre">User</span></tt> model:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
-    <span class="n">username</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">emauil</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-    <span class="n">password</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">emauil</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>specifies two constrains.
@@ -129,927 +167,19 @@ key given by:</p>
 <p>Each hash table map a field value to the <tt class="docutils literal"><span class="pre">id</span></tt> containing that value</p>
 </div>
 </div>
-<div class="section" id="parser">
-<span id="redis-parser"></span><h2>Parser<a class="headerlink" href="#parser" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet is shipped with a redis parser written in python and a faster version
-written in C. In order to use the C parser you need to have installed
-<a class="reference external" href="http://cython.org/">cython</a>.
-The C parser wraps the protocol parsing code in <a class="reference external" href="https://github.com/antirez/hiredis">hiredis</a> and it is available
-for both windows and linux. To just compile the extensions:</p>
-<div class="highlight-python"><pre>python setup.py build_ext</pre>
-</div>
-<p>If extensions are are installed dusring setup,
-the C parser will be the default parser unless you set the
-<a class="reference internal" href="../utility.html#settings"><em>settings.REDIS_PY_PARSER</em></a> value to <tt class="xref docutils literal"><span class="pre">True</span></tt>
-(you would want to do that mainly for benchmarking reasons).</p>
-<p>To check if the extensions are available:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">lib</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">lib</span><span class="o">.</span><span class="n">hasextensions</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span>
-</pre></div>
-</div>
-<p>In windows you may need to install <a class="reference external" href="http://www.mingw.org/">mingw</a> and install using the command:</p>
-<div class="highlight-python"><pre>python setup.py build -c mingw32
-python setup.py install</pre>
-</div>
-</div>
-<div class="section" id="module-stdnet.lib.redis">
-<span id="redis-client-api"></span><span id="redis-client"></span><h2>Redis client API<a class="headerlink" href="#module-stdnet.lib.redis" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="redis">
-<h3>Redis<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.Redis">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">Redis</tt><big>(</big><em>connection_pool=None</em>, <em>**connection_kwargs</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implementation of the Redis protocol.
-This class provides a Python interface to all Redis commands.</p>
-<p>Connection and Pipeline derive from this, implementing how
-the commands are sent and received to the Redis server</p>
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.pipeline">
-<tt class="descname">pipeline</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a new <a class="reference internal" href="#stdnet.lib.redis.Pipeline" title="stdnet.lib.redis.Pipeline"><tt class="xref py py-class docutils literal"><span class="pre">Pipeline</span></tt></a> that can queue multiple commands for
-later execution. Apart from making a group of operations
-atomic, pipelines are useful for reducing the back-and-forth overhead
-between the client and server.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.prefixed">
-<tt class="descname">prefixed</tt><big>(</big><em>prefix</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.prefixed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a new <a class="reference internal" href="#stdnet.lib.redis.PrefixedRedis" title="stdnet.lib.redis.PrefixedRedis"><tt class="xref py py-class docutils literal"><span class="pre">PrefixedRedis</span></tt></a> client</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.request">
-<tt class="descname">request</tt><big>(</big><em>cmnd</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a new <tt class="xref py py-class docutils literal"><span class="pre">RedisRequest</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.execute_command">
-<tt class="descname">execute_command</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.execute_command" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute a command and return a parsed response</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.parse_response">
-<tt class="descname">parse_response</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.parse_response" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses a response from the Redis server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.bgrewriteaof">
-<tt class="descname">bgrewriteaof</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.bgrewriteaof" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tell the Redis server to rewrite the AOF file from data in memory.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.bgsave">
-<tt class="descname">bgsave</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.bgsave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tell the Redis server to save its data to disk.  Unlike save(),
-this method is asynchronous and returns immediately.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.config_get">
-<tt class="descname">config_get</tt><big>(</big><em>pattern='*'</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.config_get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a dictionary of configuration based on the <tt class="docutils literal"><span class="pre">pattern</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.config_set">
-<tt class="descname">config_set</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.config_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set config item <tt class="docutils literal"><span class="pre">name</span></tt> with <tt class="docutils literal"><span class="pre">value</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.dbsize">
-<tt class="descname">dbsize</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.dbsize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the number of keys in the current database</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.delete">
-<tt class="descname">delete</tt><big>(</big><em>*names</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete one or more keys specified by <tt class="docutils literal"><span class="pre">names</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.flushall">
-<tt class="descname">flushall</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.flushall" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete all keys in all databases on the current host</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.flushdb">
-<tt class="descname">flushdb</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.flushdb" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete all keys in the current database</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.info">
-<tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a dictionary containing information about the Redis server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lastsave">
-<tt class="descname">lastsave</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lastsave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a Python datetime object representing the last time the
-Redis database was saved to disk</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.ping">
-<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.ping" title="Permalink to this definition">¶</a></dt>
-<dd><p>Ping the Redis server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.echo">
-<tt class="descname">echo</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.echo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Ping the Redis server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.save">
-<tt class="descname">save</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tell the Redis server to save its data to disk,
-blocking until the save is complete</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shutdown the server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.slaveof">
-<tt class="descname">slaveof</tt><big>(</big><em>host=None</em>, <em>port=None</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.slaveof" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the server to be a replicated slave of the instance identified
-by the <tt class="docutils literal"><span class="pre">host</span></tt> and <tt class="docutils literal"><span class="pre">port</span></tt>. If called without arguements, the
-instance is promoted to a master instead.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.append">
-<tt class="descname">append</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.append" title="Permalink to this definition">¶</a></dt>
-<dd><p>Appends the string <tt class="docutils literal"><span class="pre">value</span></tt> to the value at <tt class="docutils literal"><span class="pre">key</span></tt>. If <tt class="docutils literal"><span class="pre">key</span></tt>
-doesn&#8217;t already exist, create it with a value of <tt class="docutils literal"><span class="pre">value</span></tt>.
-Returns the new length of the value at <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.decr">
-<tt class="descname">decr</tt><big>(</big><em>name</em>, <em>amount=1</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.decr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decrements the value of <tt class="docutils literal"><span class="pre">key</span></tt> by <tt class="docutils literal"><span class="pre">amount</span></tt>.  If no key exists,
-the value will be initialized as 0 - <tt class="docutils literal"><span class="pre">amount</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.exists">
-<tt class="descname">exists</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a boolean indicating whether key <tt class="docutils literal"><span class="pre">name</span></tt> exists</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.expire">
-<tt class="descname">expire</tt><big>(</big><em>name</em>, <em>time</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.expire" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set an expire flag on key <tt class="docutils literal"><span class="pre">name</span></tt> for <tt class="docutils literal"><span class="pre">time</span></tt> seconds</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.expireat">
-<tt class="descname">expireat</tt><big>(</big><em>name</em>, <em>when</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.expireat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set an expire flag on key <tt class="docutils literal"><span class="pre">name</span></tt>. <tt class="docutils literal"><span class="pre">when</span></tt> can be represented
-as an integer indicating unix time or a Python datetime object.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.get">
-<tt class="descname">get</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the value at key <tt class="docutils literal"><span class="pre">name</span></tt>, or None of the key doesn&#8217;t exist</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.getset">
-<tt class="descname">getset</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.getset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the value at key <tt class="docutils literal"><span class="pre">name</span></tt> to <tt class="docutils literal"><span class="pre">value</span></tt> if key doesn&#8217;t exist
-Return the value at key <tt class="docutils literal"><span class="pre">name</span></tt> atomically</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.incr">
-<tt class="descname">incr</tt><big>(</big><em>name</em>, <em>amount=1</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.incr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Increments the value of <tt class="docutils literal"><span class="pre">key</span></tt> by <tt class="docutils literal"><span class="pre">amount</span></tt>.  If no key exists,
-the value will be initialized as <tt class="docutils literal"><span class="pre">amount</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.keys">
-<tt class="descname">keys</tt><big>(</big><em>pattern='*'</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.keys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of keys matching <tt class="docutils literal"><span class="pre">pattern</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.mget">
-<tt class="descname">mget</tt><big>(</big><em>keys</em>, <em>*args</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.mget" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of values ordered identically to <tt class="docutils literal"><span class="pre">keys</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.mset">
-<tt class="descname">mset</tt><big>(</big><em>mapping</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.mset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets each key in the <tt class="docutils literal"><span class="pre">mapping</span></tt> dict to its corresponding value</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.msetnx">
-<tt class="descname">msetnx</tt><big>(</big><em>mapping</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.msetnx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets each key in the <tt class="docutils literal"><span class="pre">mapping</span></tt> dict to its corresponding value if
-none of the keys are already set</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.move">
-<tt class="descname">move</tt><big>(</big><em>name</em>, <em>db</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.move" title="Permalink to this definition">¶</a></dt>
-<dd><p>Moves the key <tt class="docutils literal"><span class="pre">name</span></tt> to a different Redis database <tt class="docutils literal"><span class="pre">db</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.randomkey">
-<tt class="descname">randomkey</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.randomkey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the name of a random key</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.rename">
-<tt class="descname">rename</tt><big>(</big><em>src</em>, <em>dst</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.rename" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rename key <tt class="docutils literal"><span class="pre">src</span></tt> to <tt class="docutils literal"><span class="pre">dst</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.renamenx">
-<tt class="descname">renamenx</tt><big>(</big><em>src</em>, <em>dst</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.renamenx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rename key <tt class="docutils literal"><span class="pre">src</span></tt> to <tt class="docutils literal"><span class="pre">dst</span></tt> if <tt class="docutils literal"><span class="pre">dst</span></tt> doesn&#8217;t already exist</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.set">
-<tt class="descname">set</tt><big>(</big><em>name</em>, <em>value</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute the <tt class="docutils literal"><span class="pre">SET</span></tt> command to set the value at key <tt class="docutils literal"><span class="pre">name</span></tt>
-to <tt class="docutils literal"><span class="pre">value</span></tt>. If a <tt class="docutils literal"><span class="pre">timeout</span></tt> is available and positive,
-the <tt class="docutils literal"><span class="pre">SETEX</span></tt> command is executed instead.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.setnx">
-<tt class="descname">setnx</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.setnx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the value of key <tt class="docutils literal"><span class="pre">name</span></tt> to <tt class="docutils literal"><span class="pre">value</span></tt> if key doesn&#8217;t exist</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.strlen">
-<tt class="descname">strlen</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.strlen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of bytes stored in the value of <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.substr">
-<tt class="descname">substr</tt><big>(</big><em>name</em>, <em>start</em>, <em>end=-1</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.substr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a substring of the string at key <tt class="docutils literal"><span class="pre">name</span></tt>. <tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt>
-are 0-based integers specifying the portion of the string to return.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.ttl">
-<tt class="descname">ttl</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.ttl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the number of seconds until the key <tt class="docutils literal"><span class="pre">name</span></tt> will expire</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.type">
-<tt class="descname">type</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the type of key <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.object">
-<tt class="descname">object</tt><big>(</big><em>name</em>, <em>subcommand</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.object" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the subcommand on key <tt class="docutils literal"><span class="pre">name</span></tt>. The subcommand
-can be one of: refcount, encoding, idletime.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.blpop">
-<tt class="descname">blpop</tt><big>(</big><em>keys</em>, <em>timeout=0</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.blpop" title="Permalink to this definition">¶</a></dt>
-<dd><p>LPOP a value off of the first non-empty list
-named in the <tt class="docutils literal"><span class="pre">keys</span></tt> list.</p>
-<p>If none of the lists in <tt class="docutils literal"><span class="pre">keys</span></tt> has a value to LPOP, then block
-for <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds, or until a value gets pushed on to one
-of the lists.</p>
-<p>If timeout is 0, then block indefinitely.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.brpop">
-<tt class="descname">brpop</tt><big>(</big><em>keys</em>, <em>timeout=0</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.brpop" title="Permalink to this definition">¶</a></dt>
-<dd><p>RPOP a value off of the first non-empty list
-named in the <tt class="docutils literal"><span class="pre">keys</span></tt> list.</p>
-<p>If none of the lists in <tt class="docutils literal"><span class="pre">keys</span></tt> has a value to LPOP, then block
-for <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds, or until a value gets pushed on to one
-of the lists.</p>
-<p>If timeout is 0, then block indefinitely.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lindex">
-<tt class="descname">lindex</tt><big>(</big><em>name</em>, <em>index</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lindex" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the item from list <tt class="docutils literal"><span class="pre">name</span></tt> at position <tt class="docutils literal"><span class="pre">index</span></tt></p>
-<p>Negative indexes are supported and will return an item at the
-end of the list</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.llen">
-<tt class="descname">llen</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.llen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the length of the list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lpop">
-<tt class="descname">lpop</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lpop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove and return the first item of the list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lpush">
-<tt class="descname">lpush</tt><big>(</big><em>name</em>, <em>*values</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lpush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Push <tt class="docutils literal"><span class="pre">values</span></tt> onto the head of the list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lrange">
-<tt class="descname">lrange</tt><big>(</big><em>name</em>, <em>start</em>, <em>end</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lrange" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a slice of the list <tt class="docutils literal"><span class="pre">name</span></tt> between
-position <tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt></p>
-<p><tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt> can be negative numbers just like
-Python slicing notation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lrem">
-<tt class="descname">lrem</tt><big>(</big><em>name</em>, <em>value</em>, <em>num=0</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lrem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove the first <tt class="docutils literal"><span class="pre">num</span></tt> occurrences of <tt class="docutils literal"><span class="pre">value</span></tt> from list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-<p>If <tt class="docutils literal"><span class="pre">num</span></tt> is 0, then all occurrences will be removed</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.lset">
-<tt class="descname">lset</tt><big>(</big><em>name</em>, <em>index</em>, <em>value</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.lset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set <tt class="docutils literal"><span class="pre">position</span></tt> of list <tt class="docutils literal"><span class="pre">name</span></tt> to <tt class="docutils literal"><span class="pre">value</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.ltrim">
-<tt class="descname">ltrim</tt><big>(</big><em>name</em>, <em>start</em>, <em>end</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.ltrim" title="Permalink to this definition">¶</a></dt>
-<dd><p>Trim the list <tt class="docutils literal"><span class="pre">name</span></tt>, removing all values not within the slice
-between <tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt></p>
-<p><tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt> can be negative numbers just like
-Python slicing notation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.rpop">
-<tt class="descname">rpop</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.rpop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove and return the last item of the list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.rpoplpush">
-<tt class="descname">rpoplpush</tt><big>(</big><em>src</em>, <em>dst</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.rpoplpush" title="Permalink to this definition">¶</a></dt>
-<dd><p>RPOP a value off of the <tt class="docutils literal"><span class="pre">src</span></tt> list and atomically LPUSH it
-on to the <tt class="docutils literal"><span class="pre">dst</span></tt> list.  Returns the value.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.rpush">
-<tt class="descname">rpush</tt><big>(</big><em>name</em>, <em>*values</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.rpush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Push <tt class="docutils literal"><span class="pre">values</span></tt> onto the tail of the list <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.sort">
-<tt class="descname">sort</tt><big>(</big><em>name</em>, <em>start=None</em>, <em>num=None</em>, <em>by=None</em>, <em>get=None</em>, <em>desc=False</em>, <em>alpha=False</em>, <em>store=None</em>, <em>storeset=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.sort" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort and return the list, set or sorted set at <tt class="docutils literal"><span class="pre">name</span></tt>.</p>
-<p><tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">num</span></tt> allow for paging through the sorted data</p>
-<dl class="docutils">
-<dt><tt class="docutils literal"><span class="pre">by</span></tt> allows using an external key to weight and sort the items.</dt>
-<dd>Use an &#8220;*&#8221; to indicate where in the key the item value is located</dd>
-<dt><tt class="docutils literal"><span class="pre">get</span></tt> allows for returning items from external keys rather than the</dt>
-<dd>sorted data itself.  Use an &#8220;*&#8221; to indicate where int he key
-the item value is located</dd>
-</dl>
-<p><tt class="docutils literal"><span class="pre">desc</span></tt> allows for reversing the sort</p>
-<p><tt class="docutils literal"><span class="pre">alpha</span></tt> allows for sorting lexicographically rather than numerically</p>
-<dl class="docutils">
-<dt><tt class="docutils literal"><span class="pre">store</span></tt> allows for storing the result of the sort into</dt>
-<dd>the key <tt class="docutils literal"><span class="pre">store</span></tt></dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zadd">
-<tt class="descname">zadd</tt><big>(</big><em>name</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zadd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add member the iterable over two dimensional elements <tt class="docutils literal"><span class="pre">args</span></tt>.
-The first element is the score and the second is the value.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zcard">
-<tt class="descname">zcard</tt><big>(</big><em>name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of elements in the sorted set <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zincrby">
-<tt class="descname">zincrby</tt><big>(</big><em>name</em>, <em>value</em>, <em>amount=1</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zincrby" title="Permalink to this definition">¶</a></dt>
-<dd><p>Increment the score of <tt class="docutils literal"><span class="pre">value</span></tt> in sorted set <tt class="docutils literal"><span class="pre">name</span></tt> by <tt class="docutils literal"><span class="pre">amount</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zrange">
-<tt class="descname">zrange</tt><big>(</big><em>name</em>, <em>start</em>, <em>end</em>, <em>desc=False</em>, <em>withscores=False</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zrange" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a range of values from sorted set <tt class="docutils literal"><span class="pre">name</span></tt> between
-<tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt> sorted in ascending order.</p>
-<p><tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">end</span></tt> can be negative, indicating the end of the range.</p>
-<p><tt class="docutils literal"><span class="pre">desc</span></tt> indicates to sort in descending order.</p>
-<dl class="docutils">
-<dt><tt class="docutils literal"><span class="pre">withscores</span></tt> indicates to return the scores along with the values.</dt>
-<dd>The return type is a list of (value, score) pairs</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zrangebyscore">
-<tt class="descname">zrangebyscore</tt><big>(</big><em>name</em>, <em>min</em>, <em>max</em>, <em>desc=False</em>, <em>start=None</em>, <em>num=None</em>, <em>withscores=False</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zrangebyscore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a range of values from the sorted set <tt class="docutils literal"><span class="pre">name</span></tt> with scores
-between <tt class="docutils literal"><span class="pre">min</span></tt> and <tt class="docutils literal"><span class="pre">max</span></tt>.</p>
-<p>If <tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">num</span></tt> are specified, then return a slice of the range.</p>
-<dl class="docutils">
-<dt><tt class="docutils literal"><span class="pre">withscores</span></tt> indicates to return the scores along with the values.</dt>
-<dd>The return type is a list of (value, score) pairs</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zrank">
-<tt class="descname">zrank</tt><big>(</big><em>name</em>, <em>value</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zrank" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a 0-based value indicating the rank of <tt class="docutils literal"><span class="pre">value</span></tt> in sorted set
-<tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zrem">
-<tt class="descname">zrem</tt><big>(</big><em>name</em>, <em>*values</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zrem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove member <tt class="docutils literal"><span class="pre">value</span></tt> from sorted set <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zremrangebyrank">
-<tt class="descname">zremrangebyrank</tt><big>(</big><em>name</em>, <em>start</em>, <em>stop</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zremrangebyrank" title="Permalink to this definition">¶</a></dt>
-<dd><p>&#8216;Remove all elements in the sorted set <tt class="docutils literal"><span class="pre">name</span></tt> with rank
-between <tt class="docutils literal"><span class="pre">start</span></tt> and <tt class="docutils literal"><span class="pre">stop</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zremrangebyscore">
-<tt class="descname">zremrangebyscore</tt><big>(</big><em>name</em>, <em>min</em>, <em>max</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zremrangebyscore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove all elements in the sorted set <tt class="docutils literal"><span class="pre">name</span></tt> with scores
-between <tt class="docutils literal"><span class="pre">min</span></tt> and <tt class="docutils literal"><span class="pre">max</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zrevrank">
-<tt class="descname">zrevrank</tt><big>(</big><em>name</em>, <em>value</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zrevrank" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a 0-based value indicating the descending rank of
-<tt class="docutils literal"><span class="pre">value</span></tt> in sorted set <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zscore">
-<tt class="descname">zscore</tt><big>(</big><em>name</em>, <em>value</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zscore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the score of element <tt class="docutils literal"><span class="pre">value</span></tt> in sorted set <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zinterstore">
-<tt class="descname">zinterstore</tt><big>(</big><em>dest</em>, <em>keys</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zinterstore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Intersect multiple sorted sets specified by <tt class="docutils literal"><span class="pre">keys</span></tt> into
-a new sorted set, <tt class="docutils literal"><span class="pre">dest</span></tt>. Scores in the destination will be
-aggregated based on the <tt class="docutils literal"><span class="pre">aggregate</span></tt>, or SUM if none is provided.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zunionstore">
-<tt class="descname">zunionstore</tt><big>(</big><em>dest</em>, <em>keys</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zunionstore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Union multiple sorted sets specified by <tt class="docutils literal"><span class="pre">keys</span></tt> into
-a new sorted set, <tt class="docutils literal"><span class="pre">dest</span></tt>. Scores in the destination will be
-aggregated based on the <tt class="docutils literal"><span class="pre">aggregate</span></tt>, or SUM if none is provided.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zdiffstore">
-<tt class="descname">zdiffstore</tt><big>(</big><em>dest</em>, <em>keys</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zdiffstore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the difference of multiple sorted sets specified by
-<tt class="docutils literal"><span class="pre">keys</span></tt> into a new sorted set, <tt class="docutils literal"><span class="pre">dest</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zpopbyrank">
-<tt class="descname">zpopbyrank</tt><big>(</big><em>name</em>, <em>start</em>, <em>stop=None</em>, <em>withscores=False</em>, <em>desc=False</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zpopbyrank" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pop a range by rank</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.zpopbyscore">
-<tt class="descname">zpopbyscore</tt><big>(</big><em>name</em>, <em>start</em>, <em>stop=None</em>, <em>withscores=False</em>, <em>desc=False</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.zpopbyscore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pop a range by score</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hdel">
-<tt class="descname">hdel</tt><big>(</big><em>key</em>, <em>field</em>, <em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hdel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes the specified <tt class="docutils literal"><span class="pre">fields</span></tt> from the hash stored at <tt class="docutils literal"><span class="pre">key</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hexists">
-<tt class="descname">hexists</tt><big>(</big><em>name</em>, <em>key</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hexists" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a boolean indicating if <tt class="docutils literal"><span class="pre">key</span></tt> exists within hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hget">
-<tt class="descname">hget</tt><big>(</big><em>name</em>, <em>key</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hget" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the value of <tt class="docutils literal"><span class="pre">key</span></tt> within the hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hgetall">
-<tt class="descname">hgetall</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hgetall" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a Python dict of the hash&#8217;s name/value pairs</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hincrby">
-<tt class="descname">hincrby</tt><big>(</big><em>name</em>, <em>key</em>, <em>amount=1</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hincrby" title="Permalink to this definition">¶</a></dt>
-<dd><p>Increment the value of <tt class="docutils literal"><span class="pre">key</span></tt> in hash <tt class="docutils literal"><span class="pre">name</span></tt> by <tt class="docutils literal"><span class="pre">amount</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hkeys">
-<tt class="descname">hkeys</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hkeys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the list of keys within hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hlen">
-<tt class="descname">hlen</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hlen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of elements in hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hset">
-<tt class="descname">hset</tt><big>(</big><em>name</em>, <em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set <tt class="docutils literal"><span class="pre">key</span></tt> to <tt class="docutils literal"><span class="pre">value</span></tt> within hash <tt class="docutils literal"><span class="pre">name</span></tt>
-Returns 1 if HSET created a new field, otherwise 0</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hsetnx">
-<tt class="descname">hsetnx</tt><big>(</big><em>name</em>, <em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hsetnx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set <tt class="docutils literal"><span class="pre">key</span></tt> to <tt class="docutils literal"><span class="pre">value</span></tt> within hash <tt class="docutils literal"><span class="pre">name</span></tt> if <tt class="docutils literal"><span class="pre">key</span></tt> does not
-exist.  Returns 1 if HSETNX created a field, otherwise 0.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hmset">
-<tt class="descname">hmset</tt><big>(</big><em>name</em>, <em>mapping</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hmset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets each key in the <tt class="docutils literal"><span class="pre">mapping</span></tt> dict to its corresponding value
-in the hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hmget">
-<tt class="descname">hmget</tt><big>(</big><em>name</em>, <em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hmget" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of values ordered identically to <tt class="docutils literal"><span class="pre">fields</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.hvals">
-<tt class="descname">hvals</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.hvals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the list of values within hash <tt class="docutils literal"><span class="pre">name</span></tt></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.script_call">
-<tt class="descname">script_call</tt><big>(</big><em>name</em>, <em>keys</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.script_call" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute a registered lua script.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.countpattern">
-<tt class="descname">countpattern</tt><big>(</big><em>pattern</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.countpattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>delete all keys matching <em>pattern</em>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Redis.delpattern">
-<tt class="descname">delpattern</tt><big>(</big><em>pattern</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Redis.delpattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>delete all keys matching <em>pattern</em>.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="redisproxy">
-<h3>RedisProxy<a class="headerlink" href="#redisproxy" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.RedisProxy">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">RedisProxy</tt><big>(</big><em>client</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.RedisProxy" title="Permalink to this definition">¶</a></dt>
-<dd><p>A proxy to a <a class="reference internal" href="#stdnet.lib.redis.Redis" title="stdnet.lib.redis.Redis"><tt class="xref py py-class docutils literal"><span class="pre">Redis</span></tt></a> client. It is the base class
-of <a class="reference internal" href="#stdnet.lib.redis.PrefixedRedis" title="stdnet.lib.redis.PrefixedRedis"><tt class="xref py py-class docutils literal"><span class="pre">PrefixedRedis</span></tt></a> and <a class="reference internal" href="#stdnet.lib.redis.Pipeline" title="stdnet.lib.redis.Pipeline"><tt class="xref py py-class docutils literal"><span class="pre">Pipeline</span></tt></a>.</p>
-<dl class="attribute">
-<dt id="stdnet.lib.redis.RedisProxy.client">
-<tt class="descname">client</tt><a class="headerlink" href="#stdnet.lib.redis.RedisProxy.client" title="Permalink to this definition">¶</a></dt>
-<dd><p>The underlying <a class="reference internal" href="#stdnet.lib.redis.Redis" title="stdnet.lib.redis.Redis"><tt class="xref py py-class docutils literal"><span class="pre">Redis</span></tt></a> client</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="prefixedredis">
-<h3>PrefixedRedis<a class="headerlink" href="#prefixedredis" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.PrefixedRedis">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">PrefixedRedis</tt><big>(</big><em>client</em>, <em>prefix</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.PrefixedRedis" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.lib.redis.RedisProxy" title="stdnet.lib.redis.RedisProxy"><tt class="xref py py-class docutils literal"><span class="pre">RedisProxy</span></tt></a> for a prefixed redis client.
-It append a prefix to all keys.</p>
-<dl class="attribute">
-<dt id="stdnet.lib.redis.PrefixedRedis.prefix">
-<tt class="descname">prefix</tt><a class="headerlink" href="#stdnet.lib.redis.PrefixedRedis.prefix" title="Permalink to this definition">¶</a></dt>
-<dd><p>The prefix for this <a class="reference internal" href="#stdnet.lib.redis.PrefixedRedis" title="stdnet.lib.redis.PrefixedRedis"><tt class="xref py py-class docutils literal"><span class="pre">PrefixedRedis</span></tt></a></p>
-</dd></dl>
-
-<p>Typical usage:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">getdb</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">redis</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">()</span><span class="o">.</span><span class="n">client</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pr</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">prefixed</span><span class="p">(</span><span class="s">&#39;myprefix.&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
-<span class="go">&#39;foo&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">redis</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
-<span class="go">None</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">redis</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;myprefix.a&#39;</span><span class="p">)</span>
-<span class="go">&#39;foo&#39;</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="pipeline">
-<h3>Pipeline<a class="headerlink" href="#pipeline" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.Pipeline">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">Pipeline</tt><big>(</big><em>client</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.lib.redis.Pipeline" title="stdnet.lib.redis.Pipeline"><tt class="xref py py-class docutils literal"><span class="pre">Pipeline</span></tt></a> provide a way to commit multiple commands
-to the Redis server in one transmission.
-This is convenient for batch processing, such as
-saving all the values in a list to Redis.</p>
-<p>All commands executed within a pipeline are wrapped with MULTI and EXEC
-calls. This guarantees all commands executed in the pipeline will be
-executed atomically.</p>
-<p>Check <a class="reference external" href="http://redis.io/topics/transactions">redis transactions</a>
-for further information.</p>
-<p>Any command raising an exception does <em>not</em> halt the execution of
-subsequent commands in the pipeline. Instead, the exception is caught
-and its instance is placed into the response list returned by
-<a class="reference internal" href="#stdnet.lib.redis.Pipeline.execute" title="stdnet.lib.redis.Pipeline.execute"><tt class="xref py py-meth docutils literal"><span class="pre">execute()</span></tt></a>.
-Code iterating over the response list should be able to deal with an
-instance of an exception as a potential value. In general, these will be
-ResponseError exceptions, such as those raised when issuing a command
-on a key of a different datatype.</p>
-<dl class="method">
-<dt id="stdnet.lib.redis.Pipeline.execute_command">
-<tt class="descname">execute_command</tt><big>(</big><em>cmnd</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline.execute_command" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stage a command to be executed when execute() is next called</p>
-<p>Returns the current Pipeline object back so commands can be
-chained together, such as:</p>
-<p>pipe = pipe.set(&#8216;foo&#8217;, &#8216;bar&#8217;).incr(&#8216;baz&#8217;).decr(&#8216;bang&#8217;)</p>
-<p>At some other point, you can then run: pipe.execute(),
-which will execute all commands queued in the pipe.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Pipeline.add_callback">
-<tt class="descname">add_callback</tt><big>(</big><em>callback</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline.add_callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adding a callback to the latest command in the pipeline.
-Typical usage:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">pipe</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">mycallback</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The callback will be executed after the default callback for the command
-with the following syntax:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">mycallback</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">current_result</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>where <tt class="docutils literal"><span class="pre">results</span></tt> is a list of previous pipeline&#8217;s command results and
-<tt class="docutils literal"><span class="pre">current_result</span></tt> is the result of the command the callback is
-associated with. The result from the callback will be added to
-the list of results.
-Several callbacks can be added for a given command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">pipe</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">mycallback</span><span class="p">)</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">mycallback2</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Pipeline.execute">
-<tt class="descname">execute</tt><big>(</big><em>load_script=False</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Pipeline.execute" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute all commands in the current pipeline.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="connection-pool">
-<h3>Connection Pool<a class="headerlink" href="#connection-pool" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.ConnectionPool">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">ConnectionPool</tt><a class="headerlink" href="#stdnet.lib.redis.ConnectionPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.lib.redis.Redis" title="stdnet.lib.redis.Redis"><tt class="xref py py-class docutils literal"><span class="pre">Redis</span></tt></a> <a class="reference internal" href="#stdnet.lib.redis.Connection" title="stdnet.lib.redis.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a> pool.</p>
-<dl class="method">
-<dt id="stdnet.lib.redis.ConnectionPool.get_connection">
-<tt class="descname">get_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.ConnectionPool.get_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a connection from the pool</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.ConnectionPool.make_connection">
-<tt class="descname">make_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.ConnectionPool.make_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new connection</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.ConnectionPool.release">
-<tt class="descname">release</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.ConnectionPool.release" title="Permalink to this definition">¶</a></dt>
-<dd><p>Releases the connection back to the pool</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.ConnectionPool.disconnect">
-<tt class="descname">disconnect</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.lib.redis.ConnectionPool.disconnect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Disconnects all connections in the pool</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="connection">
-<h3>Connection<a class="headerlink" href="#connection" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.lib.redis.Connection">
-<em class="property">class </em><tt class="descclassname">stdnet.lib.redis.</tt><tt class="descname">Connection</tt><big>(</big><em>pool</em>, <em>reader_class=None</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>&#8216;Manages TCP or UNIX communication to and from a Redis server.
-This class should not be directly initialized. Instead use the
-<a class="reference internal" href="#stdnet.lib.redis.ConnectionPool" title="stdnet.lib.redis.ConnectionPool"><tt class="xref py py-class docutils literal"><span class="pre">ConnectionPool</span></tt></a>:</p>
-<div class="highlight-python"><pre>from stdnet.lib.connection ConnectionPool
-
-pool = ConnectionPool(('',6379), db=1)
-c = pool.get_connection()</pre>
-</div>
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.pool">
-<tt class="descname">pool</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>instance of the <a class="reference internal" href="#stdnet.lib.redis.ConnectionPool" title="stdnet.lib.redis.ConnectionPool"><tt class="xref py py-class docutils literal"><span class="pre">ConnectionPool</span></tt></a> managing the connection</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.parser">
-<tt class="descname">parser</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.parser" title="Permalink to this definition">¶</a></dt>
-<dd><p>instance of a Redis parser.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.sock">
-<tt class="descname">sock</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.sock" title="Permalink to this definition">¶</a></dt>
-<dd><p>Python socket which handle the sending and receiving of data.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.request_class">
-<tt class="descname">request_class</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.request_class" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">SyncRedisRequest</span></tt></p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.socket_class">
-<tt class="descname">socket_class</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.socket_class" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">_socketobject</span></tt></p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.encoding_errors">
-<tt class="descname">encoding_errors</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.encoding_errors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manages TCP communication to and from a Redis server</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.address">
-<tt class="descname">address</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.address" title="Permalink to this definition">¶</a></dt>
-<dd><p>Redis server address</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.encoding">
-<tt class="descname">encoding</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.encoding" title="Permalink to this definition">¶</a></dt>
-<dd><p>Redis server address</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.db">
-<tt class="descname">db</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.db" title="Permalink to this definition">¶</a></dt>
-<dd><p>Redis server database number</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.password">
-<tt class="descname">password</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.password" title="Permalink to this definition">¶</a></dt>
-<dd><p>Redis server database number</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.lib.redis.Connection.socket_type">
-<tt class="descname">socket_type</tt><a class="headerlink" href="#stdnet.lib.redis.Connection.socket_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Socket type</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<tt class="descname">sock</tt></dt>
-<dd><p>Connection socket</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Connection.connect">
-<tt class="descname">connect</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.connect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Connects to the Redis server if not already connected.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Connection.on_connect">
-<tt class="descname">on_connect</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.on_connect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize the connection, authenticate and select a database</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Connection.disconnect">
-<tt class="descname">disconnect</tt><big>(</big><em>release_connection=True</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.disconnect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Disconnects from the Redis server</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Connection.pack_command">
-<tt class="descname">pack_command</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.pack_command" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pack a series of arguments into a value Redis command</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.lib.redis.Connection.pack_pipeline">
-<tt class="descname">pack_pipeline</tt><big>(</big><em>commands</em><big>)</big><a class="headerlink" href="#stdnet.lib.redis.Connection.pack_pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Internal function for packing pipeline commands into a
-command byte to be send to redis.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-</div>
 <div class="section" id="redis-session">
-<h2>Redis Session<a class="headerlink" href="#redis-session" title="Permalink to this headline">¶</a></h2>
-<p>Redis <a class="reference internal" href="../model/session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt> are handled by lua scripts which
+<span id="redis-parser"></span><h2>Redis Session<a class="headerlink" href="#redis-session" title="Permalink to this headline">¶</a></h2>
+<p>Redis <a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt> are handled by lua scripts which
 perform them in a single atomic operation.</p>
 </div>
 <div class="section" id="redis-query">
 <h2>Redis Query<a class="headerlink" href="#redis-query" title="Permalink to this headline">¶</a></h2>
-<p>A <a class="reference internal" href="../model/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a> is handled by two different lua scripts, the first is script
-perform the aggregation of which results in a temporary redis <tt class="docutils literal"><span class="pre">key</span></tt>
-holding the <tt class="docutils literal"><span class="pre">ids</span></tt> which result from the query operations.
-The second script is used to load the data from redis to the client.</p>
+<p>A <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a> is handled in redis by two different lua scripts:</p>
+<ul class="simple">
+<li>the first is script performs the aggregation of which results in a temporary
+redis <tt class="docutils literal"><span class="pre">key</span></tt> holding the <tt class="docutils literal"><span class="pre">ids</span></tt> resulting from the query operations.</li>
+<li>The second script is used to load the data from redis into the client.</li>
+</ul>
 <div class="section" id="aggregation">
 <span id="redis-aggragation"></span><h3>Aggregation<a class="headerlink" href="#aggregation" title="Permalink to this headline">¶</a></h3>
 </div>
@@ -1066,6 +196,176 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
 </ul>
 </div>
 </div>
+<div class="section" id="module-stdnet.backends.redisb.async">
+<span id="asynchronous-connection"></span><span id="redis-async"></span><h2>Asynchronous Connection<a class="headerlink" href="#module-stdnet.backends.redisb.async" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#module-stdnet.backends.redisb.async" title="stdnet.backends.redisb.async"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends.redisb.async</span></tt></a> implements an asynchronous connector
+for <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>. It uses <a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> asynchronous framework. To use this connector,
+add <tt class="docutils literal"><span class="pre">timeout=0</span></tt> to redis <a class="reference internal" href="index.html#connection-string"><em>connection string</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;redis://127.0.0.1:6378?password=bla&amp;timeout=0&#39;</span>
+</pre></div>
+</div>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">getdb</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://127.0.0.1:6378?password=bla&amp;timeout=0&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-stdnet.backends.redisb.client">
+<span id="client-extensions"></span><h2>Client Extensions<a class="headerlink" href="#module-stdnet.backends.redisb.client" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#module-stdnet.backends.redisb.client" title="stdnet.backends.redisb.client"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends.redisb.client</span></tt></a> implements several extensions
+to the standard redis client in <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a></p>
+<div class="section" id="client">
+<h3>Client<a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.backends.redisb.client.Redis">
+<em class="property">class </em><tt class="descclassname">stdnet.backends.redisb.client.</tt><tt class="descname">Redis</tt><big>(</big><em>host='localhost'</em>, <em>port=6379</em>, <em>db=0</em>, <em>password=None</em>, <em>socket_timeout=None</em>, <em>connection_pool=None</em>, <em>charset='utf-8'</em>, <em>errors='strict'</em>, <em>decode_responses=False</em>, <em>unix_socket_path=None</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.execute_command">
+<tt class="descname">execute_command</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.execute_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a command and return a parsed response</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.parse_response">
+<tt class="descname">parse_response</tt><big>(</big><em>connection</em>, <em>command_name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.parse_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a response from the Redis server</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.prefixed">
+<tt class="descname">prefixed</tt><big>(</big><em>prefix</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.prefixed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new <a class="reference internal" href="#stdnet.backends.redisb.client.PrefixedRedis" title="stdnet.backends.redisb.client.PrefixedRedis"><tt class="xref py py-class docutils literal"><span class="pre">PrefixedRedis</span></tt></a> client</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.execute_script">
+<tt class="descname">execute_script</tt><big>(</big><em>name</em>, <em>keys</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.execute_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a registered lua script at <tt class="docutils literal"><span class="pre">name</span></tt>. The script must
+be implemented via subclassing <a class="reference internal" href="#stdnet.backends.redisb.client.RedisScript" title="stdnet.backends.redisb.client.RedisScript"><tt class="xref py py-class docutils literal"><span class="pre">RedisScript</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; the name of the registered script.</li>
+<li><strong>keys</strong> &#8211; tuple/list of keys pased to the script.</li>
+<li><strong>args</strong> &#8211; argument passed to the script.</li>
+<li><strong>options</strong> &#8211; key-value parameters passed to the <a class="reference internal" href="#stdnet.backends.redisb.client.RedisScript.callback" title="stdnet.backends.redisb.client.RedisScript.callback"><tt class="xref py py-meth docutils literal"><span class="pre">RedisScript.callback()</span></tt></a>
+method once the script has finished execution.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.countpattern">
+<tt class="descname">countpattern</tt><big>(</big><em>pattern</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.countpattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete all keys matching <em>pattern</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.delpattern">
+<tt class="descname">delpattern</tt><big>(</big><em>pattern</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.delpattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete all keys matching <em>pattern</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.zdiffstore">
+<tt class="descname">zdiffstore</tt><big>(</big><em>dest</em>, <em>keys</em>, <em>withscores=False</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.zdiffstore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the difference of multiple sorted sets specified by
+<tt class="docutils literal"><span class="pre">keys</span></tt> into a new sorted set, <tt class="docutils literal"><span class="pre">dest</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.zpopbyrank">
+<tt class="descname">zpopbyrank</tt><big>(</big><em>name</em>, <em>start</em>, <em>stop=None</em>, <em>withscores=False</em>, <em>desc=False</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.zpopbyrank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pop a range by rank</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.Redis.zpopbyscore">
+<tt class="descname">zpopbyscore</tt><big>(</big><em>name</em>, <em>start</em>, <em>stop=None</em>, <em>withscores=False</em>, <em>desc=False</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.zpopbyscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pop a range by score</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="prefixed-client">
+<h3>Prefixed Client<a class="headerlink" href="#prefixed-client" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.backends.redisb.client.PrefixedRedis">
+<em class="property">class </em><tt class="descclassname">stdnet.backends.redisb.client.</tt><tt class="descname">PrefixedRedis</tt><big>(</big><em>client</em>, <em>prefix</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.PrefixedRedis" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for a prefixed redis client. It append a prefix to all keys.</p>
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.client.PrefixedRedis.prefix">
+<tt class="descname">prefix</tt><a class="headerlink" href="#stdnet.backends.redisb.client.PrefixedRedis.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>The prefix to append to all keys</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.PrefixedRedis.execute_command">
+<tt class="descname">execute_command</tt><big>(</big><em>cmnd</em>, <em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.PrefixedRedis.execute_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a command and return a parsed response</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="redisscript">
+<h3>RedisScript<a class="headerlink" href="#redisscript" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.backends.redisb.client.RedisScript">
+<em class="property">class </em><tt class="descclassname">stdnet.backends.redisb.client.</tt><tt class="descname">RedisScript</tt><big>(</big><em>script</em>, <em>name</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.RedisScript" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref py py-class docutils literal"><span class="pre">RedisScriptBase</span></tt> is a class which helps the sending and receiving
+lua scripts to redis via the <tt class="docutils literal"><span class="pre">evalsha</span></tt> command.</p>
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.client.RedisScript.script">
+<tt class="descname">script</tt><a class="headerlink" href="#stdnet.backends.redisb.client.RedisScript.script" title="Permalink to this definition">¶</a></dt>
+<dd><p>The lua script to run</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.client.RedisScript.required_scripts">
+<tt class="descname">required_scripts</tt><a class="headerlink" href="#stdnet.backends.redisb.client.RedisScript.required_scripts" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list/tuple of other <a class="reference internal" href="#stdnet.backends.redisb.client.RedisScript" title="stdnet.backends.redisb.client.RedisScript"><tt class="xref py py-class docutils literal"><span class="pre">RedisScript</span></tt></a> names required by this script
+to properly execute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.client.RedisScript.sha1">
+<tt class="descname">sha1</tt><a class="headerlink" href="#stdnet.backends.redisb.client.RedisScript.sha1" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference external" href="http://en.wikipedia.org/wiki/SHA-1">SHA-1</a> hexadecimal representation of <a class="reference internal" href="#stdnet.backends.redisb.client.RedisScript.script" title="stdnet.backends.redisb.client.RedisScript.script"><tt class="xref py py-attr docutils literal"><span class="pre">script</span></tt></a> required by the
+<tt class="docutils literal"><span class="pre">EVALSHA</span></tt> redis command. This attribute is evaluated by the library,
+it is not set by the user.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.client.RedisScript.callback">
+<tt class="descname">callback</tt><big>(</big><em>response</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.RedisScript.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the only method user should override when writing a new
+<a class="reference internal" href="#stdnet.backends.redisb.client.RedisScript" title="stdnet.backends.redisb.client.RedisScript"><tt class="xref py py-class docutils literal"><span class="pre">RedisScript</span></tt></a>. By default it returns <tt class="docutils literal"><span class="pre">response</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; the response obtained from the script execution.</li>
+<li><strong>options</strong> &#8211; Additional options for the callback.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
 </div>
 
 
@@ -1080,21 +380,13 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Redis Backend</a><ul>
+<li><a class="reference internal" href="#">Redis</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#connection-string">Connection String</a></li>
 <li><a class="reference internal" href="#model-data">Model data</a><ul>
 <li><a class="reference internal" href="#instances">Instances</a></li>
 <li><a class="reference internal" href="#indexes">Indexes</a></li>
 <li><a class="reference internal" href="#unique-constratins">Unique Constratins</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#parser">Parser</a></li>
-<li><a class="reference internal" href="#module-stdnet.lib.redis">Redis client API</a><ul>
-<li><a class="reference internal" href="#redis">Redis</a></li>
-<li><a class="reference internal" href="#redisproxy">RedisProxy</a></li>
-<li><a class="reference internal" href="#prefixedredis">PrefixedRedis</a></li>
-<li><a class="reference internal" href="#pipeline">Pipeline</a></li>
-<li><a class="reference internal" href="#connection-pool">Connection Pool</a></li>
-<li><a class="reference internal" href="#connection">Connection</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#redis-session">Redis Session</a></li>
@@ -1103,16 +395,23 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
 <li><a class="reference internal" href="#loading">Loading</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-stdnet.backends.redisb.async">Asynchronous Connection</a></li>
+<li><a class="reference internal" href="#module-stdnet.backends.redisb.client">Client Extensions</a><ul>
+<li><a class="reference internal" href="#client">Client</a></li>
+<li><a class="reference internal" href="#prefixed-client">Prefixed Client</a></li>
+<li><a class="reference internal" href="#redisscript">RedisScript</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">Backend Data Server</a></p>
+  <p class="topless"><a href="api.html"
+                        title="previous chapter">API</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../apps/index.html"
-                        title="next chapter">Applications</a></p>
+  <p class="topless"><a href="mongo.html"
+                        title="next chapter">Mongo DB</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/backends/redis.txt"
@@ -1135,34 +434,17 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="../apps/index.html" title="Applications"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Backend Data Server"
-             >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Backend Data Server</a> &raquo;</li> 
-      </ul>
-    </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2011, Luca Sbardella.
+        &copy; Copyright 2010-2013, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
+  
   _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
   _gaq.push(['_trackPageview']);
 
   (function() {

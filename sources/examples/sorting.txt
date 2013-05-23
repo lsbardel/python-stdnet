@@ -29,10 +29,12 @@ method with a field name as parameter. Lets consider the following model::
         activity = odm.SymbolField()
         dt = odm.DateTimeField()
         
-
+    models = odm.Router()
+    models.register(SportActivity)
+    
 To obtained a sorted query on dates for a given person::
 
-    SportActivity.objects.filter(person='pippo').sort_by('-dt')
+    qs = models.sportactivity.filter(person='pippo').sort_by('-dt')
 
 The negative sign in front of ``dt`` indicates descending order.
 
@@ -58,10 +60,12 @@ Let's consider the following Log model example::
     
         class Meta:
             ordering = '-timestamp'
+            
+    models.register(Log)
 
 It makes lots of sense to have the log entries always sorted in a descending
 order with respect to the ``timestamp`` field.
-This solution always returns querysets in this order, without the need to
+This solution always returns :class:`Query` in this order, without the need to
 call ``sort_by`` method.
 
 .. note:: Implicit sorting is a much faster solution than explicit sorting,

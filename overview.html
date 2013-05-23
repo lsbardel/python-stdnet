@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview and Installation &mdash; python stdnet v0.7 documentation</title>
-    <link rel="stylesheet" href="static/celery.css" type="text/css" />
+    <title>Overview and Installation &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7',
+        VERSION:     '0.8.1b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,11 +21,12 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7 documentation" href="index.html" />
-    <link rel="next" title="Tutorials &amp; Examples" href="examples/index.html" />
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="index.html" />
+    <link rel="next" title="FAQ" href="faq.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
   <body>
+
     <div class="related">
       <h3>Navigation</h3>
       <ul>
@@ -36,14 +37,25 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="examples/index.html" title="Tutorials &amp; Examples"
+          <a href="faq.html" title="FAQ"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li> 
       </ul>
-    </div>  
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -52,14 +64,19 @@
             
   <div class="section" id="overview-and-installation">
 <span id="intro-overview"></span><h1>Overview and Installation<a class="headerlink" href="#overview-and-installation" title="Permalink to this headline">¶</a></h1>
-<p><strong>A stand-alone Python 3 compatible data manager for Redis remote data structures.</strong></p>
-<p>The data is owned by different, configurable back-end databases and it is accessed using a
-light-weight Object Data Mapper (ODM).
-The <a class="reference external" href="http://github.com/lsbardel/python-stdnet">source code</a> and <a class="reference external" href="http://lsbardel.github.com/python-stdnet/">documentation</a> are hosted at github while <a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">Downloads</a> are available via PyPi.</p>
+<p><strong>Object data mapper and advanced query manager for non relational databases.</strong></p>
+<p>The data is owned by different, configurable back-end databases and it is
+accessed using a light-weight Object Data Mapper (ODM). The ODM presents a
+method of associating user-defined Python classes with database <strong>collections</strong>,
+and instances of those classes with <strong>items</strong> in their corresponding collections.
+Collections and items are different for different backend databases but
+are treated in the same way in the python language domain.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
+<tr class="field"><th class="field-name">CI:</th><td class="field-body"><a class="reference external" href="http://travis-ci.org/lsbardel/python-stdnet"><img alt="stdnet-build" src="https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master" /></a></td>
+</tr>
 <tr class="field"><th class="field-name">Documentation:</th><td class="field-body"><a class="reference external" href="http://lsbardel.github.com/python-stdnet/">http://lsbardel.github.com/python-stdnet/</a></td>
 </tr>
 <tr class="field"><th class="field-name">Dowloads:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/python-stdnet/">http://pypi.python.org/pypi/python-stdnet/</a></td>
@@ -68,49 +85,54 @@ The <a class="reference external" href="http://github.com/lsbardel/python-stdnet
 </tr>
 <tr class="field"><th class="field-name">Mailing List:</th><td class="field-body"><a class="reference external" href="https://groups.google.com/group/python-stdnet">https://groups.google.com/group/python-stdnet</a></td>
 </tr>
-<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, odm</td>
+<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, mongo, odm</td>
 </tr>
 </tbody>
 </table>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
-<div class="contents local topic" id="id4">
+<div class="contents local topic" id="id1">
 <ul class="simple">
-<li><a class="reference internal" href="#features" id="id9">Features</a></li>
-<li><a class="reference internal" href="#requirements" id="id10">Requirements</a></li>
-<li><a class="reference internal" href="#philosophy" id="id11">Philosophy</a></li>
-<li><a class="reference internal" href="#installing" id="id12">Installing</a></li>
-<li><a class="reference internal" href="#version-check" id="id13">Version Check</a></li>
-<li><a class="reference internal" href="#backends" id="id14">Backends</a></li>
-<li><a class="reference internal" href="#object-data-mapper" id="id15">Object Data Mapper</a></li>
-<li><a class="reference internal" href="#running-tests" id="id16">Running Tests</a></li>
-<li><a class="reference internal" href="#kudos" id="id17">Kudos</a></li>
-<li><a class="reference internal" href="#contributing" id="id18">Contributing</a></li>
-<li><a class="reference internal" href="#license" id="id19">License</a></li>
+<li><a class="reference internal" href="#features" id="id5">Features</a></li>
+<li><a class="reference internal" href="#requirements" id="id6">Requirements</a></li>
+<li><a class="reference internal" href="#philosophy" id="id7">Philosophy</a></li>
+<li><a class="reference internal" href="#installing" id="id8">Installing</a></li>
+<li><a class="reference internal" href="#version-check" id="id9">Version Check</a></li>
+<li><a class="reference internal" href="#backends" id="id10">Backends</a></li>
+<li><a class="reference internal" href="#object-data-mapper" id="id11">Object Data Mapper</a></li>
+<li><a class="reference internal" href="#running-tests" id="id12">Running Tests</a></li>
+<li><a class="reference internal" href="#kudos" id="id13">Kudos</a></li>
+<li><a class="reference internal" href="#contributing" id="id14">Contributing</a></li>
+<li><a class="reference internal" href="#license" id="id15">License</a></li>
 </ul>
 </div>
 <div class="section" id="features">
-<h3><a class="toc-backref" href="#id9">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id5">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Models with scalar and multi-value fields.</li>
-<li>Reach query API including unions, intersections, exclusions, ranges and more.</li>
+<li>Rich query API including unions, intersections, exclusions, ranges and more.</li>
+<li>Minimal server round-trips via backend scripting (lua for redis).</li>
 <li>Full text search.</li>
+<li>Signals handling to allow decoupled applications to get notified on changes.</li>
+<li>Synchronous and asynchronous database connection.</li>
 <li>Multi-variate numeric timeseries application.</li>
-<li>Publish/Subscribe application.</li>
+<li>Asynchronous Publish/Subscribe application.</li>
+<li>90% Test coverage.</li>
+<li>Fully documented.</li>
 </ul>
 </div>
 <div class="section" id="requirements">
-<h3><a class="toc-backref" href="#id10">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Python 2.6 to Python 3.3. Single codebase.</li>
-<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server version 2.6 or above.</li>
-<li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for faster redis protocol parser.</li>
-<li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a> only when using the asynchronous redis connection or the
-test suite.</li>
+<li>Python 2.6, 2.7, 3.2, 3.3 and <a class="reference external" href="http://pypy.org/">pypy</a>. Single code-base.</li>
+<li><a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> for <a class="reference internal" href="backends/redis.html#redis-server"><em>redis backend</em></a>.</li>
+<li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pymongo/">pymongo</a> for the mongo backend.</li>
+<li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a> when using the asynchronous connections or the test suite.</li>
+<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server version 2.6 or above and/or a <a class="reference external" href="http://www.mongodb.org/">Mongo</a> server.</li>
 </ul>
 </div>
 <div class="section" id="philosophy">
-<h3><a class="toc-backref" href="#id11">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h3>
 <p>Key-valued pairs databases, also know as key-value stores, have many differences
 from traditional relational databases,
 most important being they do not use <tt class="docutils literal"><span class="pre">SQL</span></tt> as their query language,
@@ -124,7 +146,7 @@ Bandwidth and server round-trips can be reduced to the bare minimum
 so that your application is fast and memory efficient.</p>
 </div>
 <div class="section" id="installing">
-<h3><a class="toc-backref" href="#id12">Installing</a><a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">Installing</a><a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h3>
 <p>To install, download, uncompress and type:</p>
 <div class="highlight-python"><pre>python setup.py install</pre>
 </div>
@@ -136,32 +158,27 @@ so that your application is fast and memory efficient.</p>
 </div>
 </div>
 <div class="section" id="version-check">
-<h3><a class="toc-backref" href="#id13">Version Check</a><a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">Version Check</a><a class="headerlink" href="#version-check" title="Permalink to this headline">¶</a></h3>
 <p>To know which version you have installed:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stdnet</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">__version__</span>
-<span class="go">&#39;0.7c2&#39;</span>
+<span class="go">&#39;0.8.0&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stdnet</span><span class="o">.</span><span class="n">VERSION</span>
-<span class="go">stdnet_version(major=0, minor=7, micro=0, releaselevel=&#39;rc&#39;, serial=2)</span>
+<span class="go">stdnet_version(major=0, minor=8, micro=0, releaselevel=&#39;final&#39;, serial=1)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="backends">
-<h3><a class="toc-backref" href="#id14">Backends</a><a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h3>
-<p>Backend data-stores provide the backbone of the library,
-while the Object Data Mapper the syntactic sugar.
-Currently the list of back-ends is limited to</p>
+<h3><a class="toc-backref" href="#id10">Backends</a><a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h3>
+<p>Backend data-stores are the backbone of the library.
+Currently the list is limited to</p>
 <ul class="simple">
-<li><a class="reference external" href="http://redis.io/">Redis</a>.</li>
-</ul>
-<p>There are plans to extend it to</p>
-<ul class="simple">
-<li>Local memory (planned). For testing purposes.</li>
-<li>Amazon <a class="reference external" href="http://aws.amazon.com/dynamodb/">DynamoDB</a>.</li>
+<li><a class="reference external" href="http://redis.io/">Redis</a> 2.6 or above.</li>
+<li><a class="reference external" href="http://www.mongodb.org/">Mongodb</a> (alpha).</li>
 </ul>
 </div>
 <div class="section" id="object-data-mapper">
-<h3><a class="toc-backref" href="#id15">Object Data Mapper</a><a class="headerlink" href="#object-data-mapper" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Object Data Mapper</a><a class="headerlink" href="#object-data-mapper" title="Permalink to this headline">¶</a></h3>
 <p>The <tt class="docutils literal"><span class="pre">stdnet.odm</span></tt> module is the ODM, it maps python objects into database data
 and vice-versa. It is design to be fast and safe to use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
@@ -196,47 +213,46 @@ and vice-versa. It is design to be fast and safe to use:</p>
 <span class="k">class</span> <span class="nc">Position</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="n">instrument</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">&#39;positions&#39;</span><span class="p">)</span>
     <span class="n">fund</span>       <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
-    <span class="n">history</span>    <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">PositionDescriptor</span><span class="p">)</span>
+    <span class="n">history</span>    <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">ListField</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">PositionDescriptor</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> @ </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fund</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Register models with backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
-<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
-<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
-<span class="n">odm</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">Router</span><span class="p">(</span><span class="s">&#39;redis://localhost?db=1&#39;</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PositionDescriptor</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span><span class="s">&#39;redis://localhost?db=2&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And play with the API:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;pluto, description=&quot;</span><span class="n">The</span> <span class="n">pluto</span> <span class="n">fund</span><span class="s">&quot;, ccy=&quot;</span><span class="n">EUR</span><span class="s">&quot;).save()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;pluto, description=&quot;</span><span class="n">The</span> <span class="n">pluto</span> <span class="n">fund</span><span class="s">&quot;, ccy=&quot;</span><span class="n">EUR</span><span class="s">&quot;)</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="n">f</span>
 <span class="go">Fund: pluto</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="running-tests">
-<span id="runningtests"></span><h3><a class="toc-backref" href="#id16">Running Tests</a><a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h3>
+<span id="runningtests"></span><h3><a class="toc-backref" href="#id12">Running Tests</a><a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h3>
 <p>At the moment, only redis back-end is available and therefore to run tests you
 need to install <a class="reference external" href="http://redis.io/">Redis</a>. If you are using linux, it can be achieved simply
 by downloading, uncompressing and running <tt class="docutils literal"><span class="pre">make</span></tt>, if you are using
-windows and want to save yourself a headache you can download precompiled
-binaries at <a class="reference external" href="http://code.google.com/p/servicestack/wiki/RedisWindowsDownload">servicestack</a>.</p>
+windows you can find sources from <a class="reference external" href="https://github.com/MSOpenTech/redis">MSOpenTech</a>.</p>
 <p>Requirements for running tests:</p>
 <ul class="simple">
-<li><a class="reference external" href="http://pypi.python.org/pypi/unittest2">unittest2</a> for python 2.6 only.</li>
-<li><a class="reference external" href="http://pypi.python.org/pypi/argparse">argparse</a> for python 2.6, 3 and 3.1 only.</li>
-<li><a class="reference external" href="http://pypi.python.org/pypi/mock">mock</a> for python 2.6 to python 3.2 only.</li>
-<li><a class="reference external" href="http://readthedocs.org/docs/nose/en/latest">nose</a> or <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a>.</li>
+<li><tt class="docutils literal"><span class="pre">python-stdnet</span></tt> project directory.</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a>.</li>
 </ul>
-<p>Note, these requirements are only needed if you are planning to run tests.
-To run tests open a shell and launch Redis. On another shell,
-from the package directory, type:</p>
+<p>To run tests open a shell and launch Redis. On another shell,
+from within the <tt class="docutils literal"><span class="pre">python-stdnet</span></tt> package directory, type:</p>
 <div class="highlight-python"><pre>python runtests.py</pre>
 </div>
-<p>Tests are run against a local redis server on port 6379 and database 7 by default.
-To change the server and database where to run tests pass the <tt class="docutils literal"><span class="pre">--server</span></tt> option as follow:</p>
-<div class="highlight-python"><pre>python runtests.py --server redis://myserver.com:6450/?db=12</pre>
+<p>Tests are run against a local redis server on port <tt class="docutils literal"><span class="pre">6379</span></tt> and database 7 by default.
+To change the server and database where to run tests pass the <tt class="docutils literal"><span class="pre">--server</span></tt>
+option as follow:</p>
+<div class="highlight-python"><pre>python runtests.py --server redis://myserver.com:6450?db=12&amp;password=bla</pre>
 </div>
 <p>For more information type:</p>
 <div class="highlight-python"><pre>python runtests.py -h</pre>
@@ -249,17 +265,14 @@ To change the server and database where to run tests pass the <tt class="docutil
 </div>
 </div>
 <div class="section" id="kudos">
-<span id="id6"></span><h3><a class="toc-backref" href="#id17">Kudos</a><a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h3>
+<span id="id2"></span><h3><a class="toc-backref" href="#id13">Kudos</a><a class="headerlink" href="#kudos" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference external" href="http://redis.io/">Redis</a> simply because this library uses its awesome features.</li>
-<li><a class="reference external" href="http://github.com/andymccurdy/redis-py">redis-py</a> for the Redis Python client initial implementation which has been subsequently modified.</li>
-<li><a class="reference external" href="https://github.com/pietern/hiredis-py">hiredis-py</a> for some parts of the C parser.</li>
 <li><a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> and <a class="reference external" href="http://www.djangoproject.com/">Django</a> for ideas and API design.</li>
-<li>Armin Ronacher and Ask Solem for the celery sphinx theme used for the documentation.</li>
 </ul>
 </div>
 <div class="section" id="contributing">
-<span id="id7"></span><h3><a class="toc-backref" href="#id18">Contributing</a><a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3><a class="toc-backref" href="#id14">Contributing</a><a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h3>
 <p>Development of stdnet happens at Github: <a class="reference external" href="http://github.com/lsbardel/python-stdnet">http://github.com/lsbardel/python-stdnet</a></p>
 <p>We very much welcome your contribution of course. To do so, simply follow these guidelines:</p>
 <ol class="arabic simple">
@@ -270,7 +283,7 @@ To change the server and database where to run tests pass the <tt class="docutil
 </ol>
 </div>
 <div class="section" id="license">
-<span id="id8"></span><h3><a class="toc-backref" href="#id19">License</a><a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
+<span id="id4"></span><h3><a class="toc-backref" href="#id15">License</a><a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
 <p>This software is licensed under the New <a class="reference external" href="http://www.opensource.org/licenses/bsd-license.php">BSD</a> License. See the LICENSE
 file in the top distribution directory for the full license text.</p>
 </div>
@@ -312,8 +325,8 @@ file in the top distribution directory for the full license text.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Python Stdnet</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="examples/index.html"
-                        title="next chapter">Tutorials &amp; Examples</a></p>
+  <p class="topless"><a href="faq.html"
+                        title="next chapter">FAQ</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/overview.txt"
@@ -336,33 +349,17 @@ file in the top distribution directory for the full license text.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="examples/index.html" title="Tutorials &amp; Examples"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Python Stdnet"
-             >previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.7 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2011, Luca Sbardella.
+        &copy; Copyright 2010-2013, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
+  
   _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
   _gaq.push(['_trackPageview']);
 
   (function() {

@@ -1,0 +1,148 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Asynchronous usage &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Local Models" href="local.html" />
+    <link rel="prev" title="Export &amp; Load data" href="serialise.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="local.html" title="Local Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="serialise.html" title="Export &amp; Load data"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="asynchronous-usage">
+<span id="tutorial-asynchronous"></span><h1>Asynchronous usage<a class="headerlink" href="#asynchronous-usage" title="Permalink to this headline">¶</a></h1>
+<p>Stdnet has been designed so that it can operate in fully asynchronous mode
+if the backend connection class is asynchronous.
+The <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis backend</em></a> is shipped with an asychronous client
+written using <a class="reference external" href="http://quantmind.github.com/pulsar/">pulsar</a>.</p>
+<p>When using stdnet in asynchronous mode, a user writes generator method
+which <a class="reference external" href="http://quantmind.github.com/pulsar/">pulsar</a> treats as asynchronous coroutines. In this way adding instances
+of Found model in <a class="reference internal" href="tutorial.html#tutorial-application"><em>our tutorial application</em></a>
+becomes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">fund</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Markowitz&#39;</span><span class="p">,</span> <span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or using a <a class="reference internal" href="sessions.html#model-session"><em>session</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">session</span><span class="p">()</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Markowitz&#39;</span><span class="p">,</span> <span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">))</span>
+<span class="k">yield</span> <span class="n">t</span><span class="o">.</span><span class="n">on_result</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="serialise.html"
+                        title="previous chapter">Export &amp; Load data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="local.html"
+                        title="next chapter">Local Models</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/asynchronous.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,249 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Structure-Fields &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Field Generator" href="json.html" />
+    <link rel="prev" title="Related Models" href="related.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="json.html" title="Field Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="related.html" title="Related Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="structure-fields">
+<span id="tutorial-structures"></span><h1>Structure-Fields<a class="headerlink" href="#structure-fields" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="../api/fields.html#model-field-structure"><em>structure fields</em></a> are the networked equivalent
+of data-structures such as sets, hash-tables, lists and so forth. They
+are associated with an instance of a <tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt> or, for redis
+backend only, with a <tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt> class.</p>
+<span class="target" id="module-stdnet.odm"></span><div class="section" id="list">
+<span id="tutorial-list"></span><h2>List<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h2>
+<p><strong>Backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a>, <a class="reference internal" href="../backends/mongo.html#mongo-server"><em>mongodb</em></a></p>
+<p><strong>default encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.NumericDefault" title="stdnet.utils.encoders.NumericDefault"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.NumericDefault</span></tt></a>.</p>
+<p><strong>Methods</strong></p>
+<p>The following api methods are available for a <a class="reference internal" href="../api/fields.html#stdnet.odm.ListField" title="stdnet.odm.ListField"><tt class="xref py py-class docutils literal"><span class="pre">ListField</span></tt></a> via the
+<a class="reference internal" href="../api/models.html#stdnet.odm.List" title="stdnet.odm.List"><tt class="xref py py-class docutils literal"><span class="pre">List</span></tt></a> structure:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.size" title="stdnet.odm.Structure.size"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.size()</span></tt></a> list size.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.items" title="stdnet.odm.Structure.items"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.items()</span></tt></a> retrieve all items for a list.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Sequence.push_back" title="stdnet.odm.Sequence.push_back"><tt class="xref py py-meth docutils literal"><span class="pre">Sequence.push_back()</span></tt></a> append an element at the end of the list.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.List.push_front" title="stdnet.odm.List.push_front"><tt class="xref py py-meth docutils literal"><span class="pre">List.push_front()</span></tt></a> prepend an element at the beginning of the list.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Sequence.pop_back" title="stdnet.odm.Sequence.pop_back"><tt class="xref py py-meth docutils literal"><span class="pre">Sequence.pop_back()</span></tt></a> remove the last element the list.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.List.pop_front" title="stdnet.odm.List.pop_front"><tt class="xref py py-meth docutils literal"><span class="pre">List.pop_front()</span></tt></a> remove the first element of the list.</li>
+</ul>
+</div>
+<div class="section" id="set">
+<span id="tutorial-set"></span><h2>Set<a class="headerlink" href="#set" title="Permalink to this headline">¶</a></h2>
+<p><strong>Backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a>, <a class="reference internal" href="../backends/mongo.html#mongo-server"><em>mongodb</em></a></p>
+<p><strong>default encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.NumericDefault" title="stdnet.utils.encoders.NumericDefault"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.NumericDefault</span></tt></a>.</p>
+<p><strong>Methods</strong></p>
+<p>The following api methods are available for a <a class="reference internal" href="../api/models.html#stdnet.odm.Set" title="stdnet.odm.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a> and <a class="reference internal" href="../api/fields.html#stdnet.odm.SetField" title="stdnet.odm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">SetField</span></tt></a>:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.size" title="stdnet.odm.Structure.size"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.size()</span></tt></a> set size.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.add" title="stdnet.odm.Set.add"><tt class="xref py py-meth docutils literal"><span class="pre">Set.add()</span></tt></a> add a new element to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.update" title="stdnet.odm.Set.update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.update()</span></tt></a> add a collection of elements to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.discard" title="stdnet.odm.Set.discard"><tt class="xref py py-meth docutils literal"><span class="pre">Set.discard()</span></tt></a> remove an element from the set if it is a member.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.remove" title="stdnet.odm.Set.remove"><tt class="xref py py-meth docutils literal"><span class="pre">Set.remove()</span></tt></a> remove an element from the set. Raises an <tt class="xref py py-class docutils literal"><span class="pre">KeyError</span></tt>
+if not available.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.difference_update" title="stdnet.odm.Set.difference_update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.difference_update()</span></tt></a> remove a collection of elements from the set.</li>
+</ul>
+</div>
+<div class="section" id="zset">
+<span id="tutorial-zset"></span><h2>Zset<a class="headerlink" href="#zset" title="Permalink to this headline">¶</a></h2>
+<p><strong>Backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a></p>
+<p><strong>default encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.NumericDefault" title="stdnet.utils.encoders.NumericDefault"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.NumericDefault</span></tt></a>.</p>
+<p><strong>Methods</strong></p>
+<p>The following api methods are available for a <a class="reference internal" href="../api/models.html#stdnet.odm.Zset" title="stdnet.odm.Zset"><tt class="xref py py-class docutils literal"><span class="pre">Zset</span></tt></a> and
+<a class="reference internal" href="../api/fields.html#stdnet.odm.SetField" title="stdnet.odm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">SetField</span></tt></a> with <a class="reference internal" href="../api/fields.html#stdnet.odm.SetField.ordered" title="stdnet.odm.SetField.ordered"><tt class="xref py py-class docutils literal"><span class="pre">SetField.ordered</span></tt></a> attribute set to <tt class="xref docutils literal"><span class="pre">True</span></tt>:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.size" title="stdnet.odm.Structure.size"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.size()</span></tt></a> set size.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.add" title="stdnet.odm.Set.add"><tt class="xref py py-meth docutils literal"><span class="pre">Set.add()</span></tt></a> add a new element to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Zset.rank" title="stdnet.odm.Zset.rank"><tt class="xref py py-meth docutils literal"><span class="pre">Zset.rank()</span></tt></a> the rank (position) of an element withing the ordered set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.update" title="stdnet.odm.Set.update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.update()</span></tt></a> add a collection of elements to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.discard" title="stdnet.odm.Set.discard"><tt class="xref py py-meth docutils literal"><span class="pre">Set.discard()</span></tt></a> remove an element from the set if it is a member.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.remove" title="stdnet.odm.Set.remove"><tt class="xref py py-meth docutils literal"><span class="pre">Set.remove()</span></tt></a> remove an element from the set. Raises an <tt class="xref py py-class docutils literal"><span class="pre">KeyError</span></tt>
+if not available.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.difference_update" title="stdnet.odm.Set.difference_update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.difference_update()</span></tt></a> remove a collection of elements from the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.range" title="stdnet.odm.OrderedMixin.range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.range()</span></tt></a> the specified range of elements in the sorted set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.irange" title="stdnet.odm.OrderedMixin.irange"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.irange()</span></tt></a> the specified range of elements by index.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.pop_range" title="stdnet.odm.OrderedMixin.pop_range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.pop_range()</span></tt></a> remove the specified range of elements in
+the sorted set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.ipop_range" title="stdnet.odm.OrderedMixin.ipop_range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.ipop_range()</span></tt></a> remove the specified range of elements
+by index.</li>
+</ul>
+</div>
+<div class="section" id="hash-table">
+<span id="tutorial-hash"></span><h2>Hash table<a class="headerlink" href="#hash-table" title="Permalink to this headline">¶</a></h2>
+<p><strong>Backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a></p>
+<p><strong>default field encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.Default" title="stdnet.utils.encoders.Default"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Default</span></tt></a>.</p>
+<p><strong>default value encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.NumericDefault" title="stdnet.utils.encoders.NumericDefault"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.NumericDefault</span></tt></a>.</p>
+<p><strong>Methods</strong></p>
+<p>The following api methods are available for a <a class="reference internal" href="../api/models.html#stdnet.odm.HashTable" title="stdnet.odm.HashTable"><tt class="xref py py-class docutils literal"><span class="pre">HashTable</span></tt></a> and <a class="reference internal" href="../api/fields.html#stdnet.odm.HashField" title="stdnet.odm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">HashField</span></tt></a>:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.size" title="stdnet.odm.Structure.size"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.size()</span></tt></a> Hash table size.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.add" title="stdnet.odm.Set.add"><tt class="xref py py-meth docutils literal"><span class="pre">Set.add()</span></tt></a> add a new element to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.update" title="stdnet.odm.Set.update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.update()</span></tt></a> add a collection of elements to the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.discard" title="stdnet.odm.Set.discard"><tt class="xref py py-meth docutils literal"><span class="pre">Set.discard()</span></tt></a> remove an element from the set if it is a memeber.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.remove" title="stdnet.odm.Set.remove"><tt class="xref py py-meth docutils literal"><span class="pre">Set.remove()</span></tt></a> remove an element from the set.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Set.difference_update" title="stdnet.odm.Set.difference_update"><tt class="xref py py-meth docutils literal"><span class="pre">Set.difference_update()</span></tt></a> remove a collection of elements from the set.</li>
+</ul>
+</div>
+<div class="section" id="timiseries">
+<span id="tutorial-timeseries"></span><h2>Timiseries<a class="headerlink" href="#timiseries" title="Permalink to this headline">¶</a></h2>
+<p><strong>Backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis</em></a></p>
+<p><strong>default field encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.DateTimeConverter" title="stdnet.utils.encoders.DateTimeConverter"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.DateTimeConverter</span></tt></a>.</p>
+<p><strong>default value encoder</strong>: <a class="reference internal" href="../api/utility.html#stdnet.utils.encoders.Json" title="stdnet.utils.encoders.Json"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.encoders.Json</span></tt></a>.</p>
+<p>A timeseries is an ordered associative container where entries are ordered with
+respect times and each entry is associated with a time. There are two
+types of timeseries in stdnet: the <a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> which accepts any
+type of entry and the <a class="reference internal" href="columnts.html#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.apps.columnts.ColumnTS</span></tt></a>, a specialized
+<a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> for multivariate numeric timeseries.</p>
+<p>The <a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">TS</span></tt></a> has a simple api:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="o">...</span>
+<span class="k">with</span> <span class="n">session</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">TS</span><span class="p">())</span>
+    <span class="n">ts</span><span class="p">[</span><span class="n">date</span><span class="p">(</span><span class="mi">2013</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="s">&quot;New year&#39;s day!&quot;</span>
+</pre></div>
+</div>
+<p><strong>Methods</strong></p>
+<p>The following api methods are available for a <a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">TS</span></tt></a> and <a class="reference internal" href="../api/fields.html#stdnet.odm.TimeSeriesField" title="stdnet.odm.TimeSeriesField"><tt class="xref py py-class docutils literal"><span class="pre">TimeSeriesField</span></tt></a>:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.Structure.size" title="stdnet.odm.Structure.size"><tt class="xref py py-meth docutils literal"><span class="pre">Structure.size()</span></tt></a></li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.range" title="stdnet.odm.OrderedMixin.range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.range()</span></tt></a> retrieve a range between two dates/datetimes.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.irange" title="stdnet.odm.OrderedMixin.irange"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.irange()</span></tt></a> retrieve a range by rank.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.pop_range" title="stdnet.odm.OrderedMixin.pop_range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.pop_range()</span></tt></a> remove a range between two dates/datetimes.</li>
+<li><a class="reference internal" href="../api/models.html#stdnet.odm.OrderedMixin.ipop_range" title="stdnet.odm.OrderedMixin.ipop_range"><tt class="xref py py-meth docutils literal"><span class="pre">OrderedMixin.ipop_range()</span></tt></a> remove a range by rank.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Structure-Fields</a><ul>
+<li><a class="reference internal" href="#list">List</a></li>
+<li><a class="reference internal" href="#set">Set</a></li>
+<li><a class="reference internal" href="#zset">Zset</a></li>
+<li><a class="reference internal" href="#hash-table">Hash table</a></li>
+<li><a class="reference internal" href="#timiseries">Timiseries</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="related.html"
+                        title="previous chapter">Related Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="json.html"
+                        title="next chapter">Field Generator</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/structures.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

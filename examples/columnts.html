@@ -1,0 +1,391 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Multivariate Time Series &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Related Models" href="related.html" />
+    <link rel="prev" title="Role based access control" href="permissions.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="related.html" title="Related Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="permissions.html" title="Role based access control"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-stdnet.apps.columnts">
+<span id="multivariate-time-series"></span><span id="apps-timeserie"></span><h1>Multivariate Time Series<a class="headerlink" href="#module-stdnet.apps.columnts" title="Permalink to this headline">¶</a></h1>
+<p><strong>backends</strong>: <a class="reference internal" href="../backends/redis.html#redis-server"><em>Redis</em></a>.</p>
+<p>An application which implements a specialised remote
+<a class="reference internal" href="../api/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a> for managing numeric multivariate
+<a class="reference external" href="http://en.wikipedia.org/wiki/Time_series">timeseries</a> and perform remote analysis on them. The main classes
+for this application are <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>, the stand alone data structure, and
+the correspondent <a class="reference internal" href="#stdnet.apps.columnts.ColumnTSField" title="stdnet.apps.columnts.ColumnTSField"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTSField</span></tt></a> which can be used as
+a <a class="reference internal" href="../api/fields.html#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StructureField</span></tt></a> on a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a>.</p>
+<p>The API is straightforward:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTS</span>
+
+<span class="n">ts</span> <span class="o">=</span> <span class="n">ColumnTS</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">21</span><span class="p">),</span> <span class="p">{</span><span class="s">&#39;open&#39;</span><span class="p">:</span> <span class="mf">603.87</span><span class="p">,</span> <span class="s">&#39;close&#39;</span><span class="p">:</span> <span class="mf">614.00</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>It can also be used as a <a class="reference internal" href="../api/fields.html#model-field-structure"><em>datastructure fields</em></a>.
+For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+<span class="kn">from</span> <span class="nn">stdnet.apps.columnts</span> <span class="kn">import</span> <span class="n">ColumnTSField</span>
+
+<span class="k">class</span> <span class="nc">Ticker</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">ColumnTSField</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="section" id="statistical-analysis">
+<h2>Statistical Analysis<a class="headerlink" href="#statistical-analysis" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="istats-stats">
+<h3>istats &amp; stats<a class="headerlink" href="#istats-stats" title="Permalink to this headline">¶</a></h3>
+<p>These two methods execute statistical analysis on the data stored in one
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>. The <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS.istats" title="stdnet.apps.columnts.ColumnTS.istats"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS.istats</span></tt></a> method performs analysis by selecting
+time range by rank, while <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS.stats" title="stdnet.apps.columnts.ColumnTS.stats"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS.stats</span></tt></a> method performs analysis
+by selecting ranges by a <em>start</em> and an <em>end</em> date (or datetime).</p>
+</div>
+<div class="section" id="multi">
+<h3>multi<a class="headerlink" href="#multi" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="evaluate">
+<h3>evaluate<a class="headerlink" href="#evaluate" title="Permalink to this headline">¶</a></h3>
+<p>To perform analysis you write lua scripts:</p>
+<div class="highlight-python"><pre>self:range()
+
+ts.evaluate(script)</pre>
+</div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="columnts">
+<h3>ColumnTS<a class="headerlink" href="#columnts" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.apps.columnts.ColumnTS">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTS</tt><big>(</big><em>value_pickler=None</em>, <em>name=''</em>, <em>field=False</em>, <em>session=None</em>, <em>pkvalue=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specialised <a class="reference internal" href="../api/models.html#stdnet.odm.TS" title="stdnet.odm.TS"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.TS</span></tt></a> structure for numeric
+multivariate timeseries.</p>
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.front">
+<tt class="descname">front</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.front" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the front pair of the structure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.back">
+<tt class="descname">back</tt><big>(</big><em>*fields</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.back" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the back pair of the structure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.info">
+<tt class="descname">info</tt><big>(</big><em>start=None</em>, <em>end=None</em>, <em>fields=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide data information for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>. If no
+parameters are specified it returns the number of data points for each
+fields, as well as the start and end date.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.fields">
+<tt class="descname">fields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tuple of ordered fields for this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.numfields">
+<tt class="descname">numfields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.numfields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of fields.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.istats">
+<tt class="descname">istats</tt><big>(</big><em>start=0</em>, <em>end=-1</em>, <em>fields=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.istats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a multivariate statistic calculation of this
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> from <em>start</em> to <em>end</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; Optional index (rank) where to start the analysis.</li>
+<li><strong>end</strong> &#8211; Optional index (rank) where to end the analysis.</li>
+<li><strong>fields</strong> &#8211; Optional subset of <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS.fields" title="stdnet.apps.columnts.ColumnTS.fields"><tt class="xref py py-meth docutils literal"><span class="pre">fields()</span></tt></a> to perform analysis on.
+If not provided all fields are included in the analysis.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.stats">
+<tt class="descname">stats</tt><big>(</big><em>start</em>, <em>end</em>, <em>fields=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a multivariate statistic calculation of this
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> from a <em>start</em>  date/datetime to an 
+<em>end</em> date/datetime.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; Start date for analysis.</li>
+<li><strong>end</strong> &#8211; End date for analysis.</li>
+<li><strong>fields</strong> &#8211; Optional subset of <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS.fields" title="stdnet.apps.columnts.ColumnTS.fields"><tt class="xref py py-meth docutils literal"><span class="pre">fields()</span></tt></a> to perform analysis on.
+If not provided all fields are included in the analysis.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.imulti_stats">
+<tt class="descname">imulti_stats</tt><big>(</big><em>start=0</em>, <em>end=-1</em>, <em>series=None</em>, <em>fields=None</em>, <em>stats=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.imulti_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform cross multivariate statistics calculation of
+this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other optional <em>series</em> from <em>start</em>
+to <em>end</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; the start rank.</li>
+<li><strong>start</strong> &#8211; the end rank</li>
+<li><strong>field</strong> &#8211; name of field to perform multivariate statistics.</li>
+<li><strong>series</strong> &#8211; a list of two elements tuple containing the id of the
+a <tt class="xref py py-class docutils literal"><span class="pre">columnTS</span></tt> and a field name.</li>
+<li><strong>stats</strong> &#8211; list of statistics to evaluate.
+Default: [&#8216;covariance&#8217;]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.multi_stats">
+<tt class="descname">multi_stats</tt><big>(</big><em>start</em>, <em>end</em>, <em>series=None</em>, <em>fields=None</em>, <em>stats=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.multi_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform cross multivariate statistics calculation of
+this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> and other <em>series</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> &#8211; the start date.</li>
+<li><strong>start</strong> &#8211; the end date</li>
+<li><strong>field</strong> &#8211; name of field to perform multivariate statistics.</li>
+<li><strong>series</strong> &#8211; a list of two elements tuple containing the id of the
+a <tt class="xref py py-class docutils literal"><span class="pre">columnTS</span></tt> and a field name.</li>
+<li><strong>stats</strong> &#8211; list of statistics to evaluate.
+Default: [&#8216;covariance&#8217;]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.apps.columnts.ColumnTS.merge">
+<tt class="descname">merge</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge this <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> with several other <em>series</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters series:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">a list of tuples where the nth element is a tuple
+of the form:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">wight_n</span><span class="p">,</span> <span class="n">ts_n1</span><span class="p">,</span> <span class="n">ts_n2</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ts_nMn</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The result will be calculated using the formula:</p>
+<div class="highlight-python"><pre>ts = weight_1*ts_11*ts_12*...*ts_1M1 + weight_2*ts_21*ts_22*...*ts_2M2 +
+     ...</pre>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="stdnet.apps.columnts.ColumnTS.merged_series">
+<em class="property">classmethod </em><tt class="descname">merged_series</tt><big>(</big><em>*series</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTS.merged_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge <tt class="docutils literal"><span class="pre">series</span></tt> and return the results without storing data
+in the backend server.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="columntsfield">
+<h3>ColumnTSField<a class="headerlink" href="#columntsfield" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.apps.columnts.ColumnTSField">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.columnts.</tt><tt class="descname">ColumnTSField</tt><big>(</big><em>model=None</em>, <em>pickler=None</em>, <em>value_pickler=None</em>, <em>class_field=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.columnts.ColumnTSField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A multivariate timeseries field.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="redis-implementation">
+<h2>Redis Implementation<a class="headerlink" href="#redis-implementation" title="Permalink to this headline">¶</a></h2>
+<p>The implementation uses several redis structures for a given
+<a class="reference internal" href="#stdnet.apps.columnts.ColumnTS" title="stdnet.apps.columnts.ColumnTS"><tt class="xref py py-class docutils literal"><span class="pre">ColumnTS</span></tt></a> instance.</p>
+<ul class="simple">
+<li>A <em>zset</em> for holding times in an ordered fashion.</li>
+<li>A <em>set</em> for holding <em>fields</em> names, obtained via the <a class="reference internal" href="#stdnet.apps.columnts.ColumnTS.fields" title="stdnet.apps.columnts.ColumnTS.fields"><tt class="xref py py-meth docutils literal"><span class="pre">ColumnTS.fields()</span></tt></a>
+method.</li>
+<li>A <em>string</em> for each <em>field</em> to hold numeric values.</li>
+</ul>
+<p>This composite data-structure looks and feels like a redis zset.
+However, the ordered set doesn&#8217;t actually store the data, it is there to
+maintain order and facilitate retrieval by times (scores) and rank.</p>
+<p>For a given <em>field</em>, the data is stored in a sequence of 9-bytes string
+with the initial byte (<tt class="docutils literal"><span class="pre">byte0</span></tt>) indicating the type of data:</p>
+<div class="highlight-python"><pre>&lt;byte0&gt;&lt;byte1,...,byte8&gt;</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Multivariate Time Series</a><ul>
+<li><a class="reference internal" href="#statistical-analysis">Statistical Analysis</a><ul>
+<li><a class="reference internal" href="#istats-stats">istats &amp; stats</a></li>
+<li><a class="reference internal" href="#multi">multi</a></li>
+<li><a class="reference internal" href="#evaluate">evaluate</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#columnts">ColumnTS</a></li>
+<li><a class="reference internal" href="#columntsfield">ColumnTSField</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#redis-implementation">Redis Implementation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="permissions.html"
+                        title="previous chapter">Role based access control</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="related.html"
+                        title="next chapter">Related Models</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/columnts.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

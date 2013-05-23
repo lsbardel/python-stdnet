@@ -18,7 +18,6 @@ advanced queries and nothing else.
    
    models
    fields
-   backends
    utility
 
    

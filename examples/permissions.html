@@ -1,0 +1,326 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Role based access control &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Multivariate Time Series" href="columnts.html" />
+    <link rel="prev" title="A twitter clone" href="twitter.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="columnts.html" title="Multivariate Time Series"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="twitter.html" title="A twitter clone"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-examples.permissions">
+<span id="role-based-access-control"></span><span id="permissions-example"></span><h1>Role based access control<a class="headerlink" href="#module-examples.permissions" title="Permalink to this headline">¶</a></h1>
+<p>This section is a practical application of <tt class="docutils literal"><span class="pre">stdnet</span></tt> for solving
+role-based access control (RBAC). It is an approach for managing users permissions on
+your application which could be a web-site, an organisation and so forth.</p>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>There are five different elements to get familiar with this RBAC
+implementation:</p>
+<ul class="simple">
+<li><strong>System</strong>: this is your application/organization/web site.</li>
+<li><strong>Roles</strong>: within a <strong>system</strong>, <strong>roles</strong> are created for various <strong>operations</strong>.</li>
+<li><strong>Permissions</strong>: they represents the power to perform certain <strong>operations</strong>
+on a resource and are assigned to specific <strong>roles</strong> within a <strong>system</strong>.</li>
+<li><strong>Operations</strong>: what can a user do with that permission, usually, <tt class="docutils literal"><span class="pre">read</span></tt>
+<tt class="docutils literal"><span class="pre">write</span></tt>, <tt class="docutils literal"><span class="pre">delete</span></tt>.</li>
+<li><strong>Subjects</strong>: these are the system users which are assigned particulr <strong>roles</strong>.
+Permissions are not assigned directly to <strong>subjects</strong>, instead they are acquired
+through their roles.</li>
+</ul>
+<p>The <tt class="xref py py-class docutils literal"><span class="pre">Permission</span></tt> to perform certain certain <strong>operations</strong> are assigned
+to specific <strong>roles</strong>.</p>
+<p>This example is manages Users, Groups and Permissions.</p>
+</div>
+<div class="section" id="roles">
+<h2>Roles<a class="headerlink" href="#roles" title="Permalink to this headline">¶</a></h2>
+<p>In this implementation a role is uniquely identified by a <tt class="docutils literal"><span class="pre">name</span></tt> and
+a <tt class="docutils literal"><span class="pre">owner</span></tt>.</p>
+<dl class="class">
+<dt id="examples.permissions.Role">
+<em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">Role</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.Role" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> is uniquely identified by its <a class="reference internal" href="#examples.permissions.Role.name" title="examples.permissions.Role.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a> and
+<a class="reference internal" href="#examples.permissions.Role.owner" title="examples.permissions.Role.owner"><tt class="xref py py-attr docutils literal"><span class="pre">owner</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="examples.permissions.Role.name">
+<tt class="descname">name</tt><a class="headerlink" href="#examples.permissions.Role.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this role.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="examples.permissions.Role.owner">
+<tt class="descname">owner</tt><a class="headerlink" href="#examples.permissions.Role.owner" title="Permalink to this definition">¶</a></dt>
+<dd><p>The owner of this role-permission.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="examples.permissions.Role.permissions">
+<tt class="descname">permissions</tt><a class="headerlink" href="#examples.permissions.Role.permissions" title="Permalink to this definition">¶</a></dt>
+<dd><p>the set of all <tt class="xref py py-class docutils literal"><span class="pre">Permission</span></tt> assigned to this <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="examples.permissions.Role.add_permission">
+<tt class="descname">add_permission</tt><big>(</big><em>resource</em>, <em>operation</em><big>)</big><a class="headerlink" href="#examples.permissions.Role.add_permission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new <tt class="xref py py-class docutils literal"><span class="pre">Permission</span></tt> for <tt class="docutils literal"><span class="pre">resource</span></tt> to perform an
+<tt class="docutils literal"><span class="pre">operation</span></tt>. The resource can be either an object or a model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="examples.permissions.Role.assignto">
+<tt class="descname">assignto</tt><big>(</big><em>subject</em><big>)</big><a class="headerlink" href="#examples.permissions.Role.assignto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign this <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> to <tt class="docutils literal"><span class="pre">subject</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="subjects">
+<h2>Subjects<a class="headerlink" href="#subjects" title="Permalink to this headline">¶</a></h2>
+<p>The subject in this implementation is given by the <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>.
+Therefore <em class="xref std std-ref">roles</em> are assigned to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>. Since roles
+are implemented via the <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> model, the relationship between
+<a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> and <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> is obtained via a
+<a class="reference internal" href="../api/fields.html#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ManyToManyField</span></tt></a>.</p>
+<dl class="class">
+<dt id="examples.permissions.Group">
+<em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">Group</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.Group" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="examples.permissions.Group.name">
+<tt class="descname">name</tt><a class="headerlink" href="#examples.permissions.Group.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group name. If the group is for a signle user, it can be the
+user username</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="examples.permissions.Group.user">
+<tt class="descname">user</tt><a class="headerlink" href="#examples.permissions.Group.user" title="Permalink to this definition">¶</a></dt>
+<dd><p>A group is always <cite>owned</cite> by a <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>. For example the <tt class="docutils literal"><span class="pre">admin</span></tt>
+group for a website is owned by the <tt class="docutils literal"><span class="pre">website</span></tt> user.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="examples.permissions.Group.users">
+<tt class="descname">users</tt><a class="headerlink" href="#examples.permissions.Group.users" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="../api/fields.html#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ManyToManyField</span></tt></a> for linking <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>
+and <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="examples.permissions.Group.role_owner_set">
+<tt class="descname">role_owner_set</tt><a class="headerlink" href="#examples.permissions.Group.role_owner_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
+relationships under the hood.
+If a model has a <tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt> field, instances of
+that model will have access to the related (foreign) objects
+via a simple attribute of the model.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>The system user is implemented via the <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>. Since roles are always assigned
+to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>, a <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a> obtains permissions via the groups he belongs
+to.</p>
+<dl class="class">
+<dt id="examples.permissions.User">
+<em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">User</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>The user of a system. The only field required is the <tt class="xref py py-attr docutils literal"><span class="pre">username</span></tt>.
+which is also unique across all users.</p>
+<dl class="attribute">
+<dt id="examples.permissions.User.group_user_set">
+<tt class="descname">group_user_set</tt><a class="headerlink" href="#examples.permissions.User.group_user_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
+relationships under the hood.
+If a model has a <tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt> field, instances of
+that model will have access to the related (foreign) objects
+via a simple attribute of the model.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="design">
+<h2>Design<a class="headerlink" href="#design" title="Permalink to this headline">¶</a></h2>
+<p>A <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> is always owned by a <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a> but several user can be
+part of that Group. Lets consider a web-site where we need to manage
+permissions and be able to query
+efficiently only on instances for which a Given user has enough permissions.</p>
+<p>The first step is to register a <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt>, lets assume one called <tt class="docutils literal"><span class="pre">MyModel</span></tt>,
+with the permission engine:</p>
+<blockquote>
+<div>register_for_permissions(MyModel)</div></blockquote>
+<p>from now on every time a new instance of <tt class="docutils literal"><span class="pre">MyModel</span></tt> is created, it must
+be given the user owning the instance.</p>
+<p>First we create the website User and define a set of permissions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">website</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;website&#39;</span><span class="p">)</span>
+
+<span class="n">read</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">create</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">update</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">delete</span> <span class="o">=</span> <span class="mi">40</span>
+</pre></div>
+</div>
+<p>The higher the permission level the more restrictive is the algorithm.
+We then create a group for all authenticated users:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">authenticated</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;authenticated&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">website</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and another group called &#8216;administrator&#8217;:</p>
+<blockquote>
+<div>admin = Group(name=&#8217;administrator&#8217;, user=website).save()</div></blockquote>
+<p>We want all <tt class="docutils literal"><span class="pre">authenticated</span></tt> users to be able to <cite>read</cite> instances from
+model <tt class="docutils literal"><span class="pre">MyModel</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;can read my model&#39;</span><span class="p">,</span>
+            <span class="n">permission_level</span><span class="o">=</span><span class="n">read</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">MyModel</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="n">role</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">authenticated</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We want all <tt class="docutils literal"><span class="pre">admin</span></tt> users to be able to <cite>update</cite> instances from
+model <tt class="docutils literal"><span class="pre">MyModel</span></tt> but not delete them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;can create/update my model&#39;</span><span class="p">,</span>
+            <span class="n">permission_level</span><span class="o">=</span><span class="n">update</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">MyModel</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="n">role</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When we create a new instance of <tt class="docutils literal"><span class="pre">MyModel</span></tt> we need to give the required role</p>
+<blockquote>
+<div><p>instance = MyModel(....., user=user).save()</p>
+<p>role.add(instance)</p>
+</div></blockquote>
+<p>Lets assume we have a <tt class="docutils literal"><span class="pre">query</span></tt> on <tt class="docutils literal"><span class="pre">MyModel</span></tt> and we need all the instances
+for <tt class="docutils literal"><span class="pre">user</span></tt> with permission <tt class="docutils literal"><span class="pre">level</span></tt>:</p>
+<blockquote>
+<div>authenticated_query(query, user, level)</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Role based access control</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#roles">Roles</a></li>
+<li><a class="reference internal" href="#subjects">Subjects</a></li>
+<li><a class="reference internal" href="#design">Design</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="twitter.html"
+                        title="previous chapter">A twitter clone</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="columnts.html"
+                        title="next chapter">Multivariate Time Series</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/permissions.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

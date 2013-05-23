@@ -33,16 +33,6 @@ StdModel Class
    :member-order: bysource
 
 
-
-.. _database-metaclass:
-
-Data Server Metaclass
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: Metaclass
-   :members:
-   :member-order: bysource
-
 Model
 ~~~~~~~~~~~~~~~~~
 
@@ -51,6 +41,30 @@ Model
    :member-order: bysource
 
 
+Create Model
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: create_model
+
+
+.. _database-metaclass:
+
+Model Meta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ModelMeta
+   :members:
+   :member-order: bysource
+   
+
+Model State
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: ModelState
+   :members:
+   :member-order: bysource
+   
+   
 autoincrement
 ~~~~~~~~~~~~~~~~~~
 
@@ -102,27 +116,31 @@ SearchEngine Interface
 Data Structures
 ==============================
 
-Data structures are fundamental constructs around which you build your application.
-They are used in almost all computer programs, therefore becoming fluent in what the standard
-data-structures can do for you is essential to get full value out of them.
-The `standard template library`_ in C++ implements a wide array of structures,
-python has several of them too. ``stdnet`` implements **six** remote structures:
+Data structures are subclasses of :class:`Structure`, which in term is
+a subclass of :class:`Model`. They are rarely used in stand alone mode,
+instead they form the back-end of
+:ref:`data structure fields <model-field-structure>`.
+
+There are five of them:
 
  * :class:`List`, implemented as a doubly-linked sequence.
  * :class:`Set`, a container of unique values.
  * :class:`HashTable`, unique associative container.
  * :class:`Zset`, an ordered container of unique values.
- * :class:`TS`, a timeseries implemented as a ordered unique associative container.
+ * :class:`TS`, a time-series implemented as a ordered unique associative container.
 
 An additional structure is provided in the :mod:`stdnet.apps.columnts` module
 
- * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate timeseries structure
-   (useful for modelling financial timeseries for example).
+ * :class:`stdnet.apps.columnts.ColumnTS` a numeric multivariate time-series structure
+   (useful for modelling financial data for example).
 
-The structures are bind to a remote dataserver and they derive from
-from :class:`Structure` base class.
+.. note::
 
-
+    Stand alone data structures are available for redis back-end only. Usually,
+    one uses these models via a
+    :ref:`data-structure fields <model-field-structure>`.
+    
+    
 Creating Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -131,33 +149,21 @@ in the following way::
 
     from stdnet import odm
 
-    session = odm.Session(...)
-    l = session.add(odm.List())
-    s = session.add(odm.Set())
-    o = session.add(odm.Zset())
-    h = session.add(odm.HashTable())
-    t = session.add(odm.TS())
+    models = odm.Router('redis://localhost:6379')
+    li = models.register(odm.List())
+    
+At this point the ``li`` instance is registered with a :class:`Router` and the
+session API can be used::
+
+    with models.session().begin() as t:
+        t.add(li)
+        li.push_back('bla')
+        li.push_back('foo')
 
 If no ``id`` is specified, stdnet will create one for you::
 
     >>> l.id
     '2d0cbac9'
-    >>>
-
-To add data you have two options: immediate commit or transactions. For example,
-lets add elements to a set::
-
-    >>> s.update((4, 6, 'bla', 'foo', 4))
-    >>> s.size()
-    4
-
-Alternatively, one could use :ref:`transactions <model-transactions>` to
-combine several updates together::
-
-    with session.begin():
-        s.update((4, 6, 'bla', 'foo', 4))
-        h['foo'] = 56
-        o.add(3,'a zset element with score 3')
 
 
 Base Class and Mixins
@@ -180,6 +186,10 @@ Base Class and Mixins
    :member-order: bysource
 
 .. autoclass:: OrderedMixin
+   :members:
+   :member-order: bysource
+
+.. autoclass:: StructureCache
    :members:
    :member-order: bysource
 
@@ -228,8 +238,14 @@ TS
    :member-order: bysource
 
 
-Session and Managers
+Sessions
 =========================
+
+A :class:`Session` is the middleware between a :class:`Manager` and
+a :class:`stdnet.BackendDataServer`. It is obtained from either the
+:meth:`Router.session` or, equivalently, from the :meth:`Manager.session`.
+A :class:`Session` is an holding zone for :class:`SessionModel` and it
+communicates with the :class:`stdnet.BackendDataServer` via :class:`Transaction`.
 
 Session
 ~~~~~~~~~~~~~~~
@@ -252,6 +268,9 @@ Transaction
    :members:
    :member-order: bysource
    
+Managers
+=================
+
 Manager
 ~~~~~~~~~~~~~~~~~~
 .. autoclass:: Manager
@@ -274,48 +293,44 @@ One2ManyRelatedManager
    :member-order: bysource
    
    
+Many2ManyRelatedManager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: stdnet.odm.related.Many2ManyRelatedManager
+   :members:
+   :member-order: bysource
+
+LazyProxy
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: LazyProxy
+   :members:
+   :member-order: bysource
+     
 .. _register-model:
 
 
 Registration
 ======================
 
-Models can be registered with a :class:`stdnet.BackendDataServer` so that
-the model :class:`Manager` can be used to create instance and query the database.
-If a model is not registered, the only way to operate on it is via the
-:class:`Session` API.
+To interact with a :class:`stdnet.BackendDataServer`,
+Models must registered. Registration is obtained via a :class:`Router` which
+has two methods for registering models. The first one is the :meth:`Router.register`
+method which is used to register a model and, possibly, all its related
+models. The second method is the :meth:`Router.register_applications` which
+registers all :class:`Model` from a list of python dotted paths or
+python modules.
 
-Stdnet provides two registration functions, a low level and a higher level one
-which can be used to register several models at once.
+Check the :ref:`registering models tutorial <tutorial-registration>`
+for further explanation and examples.
 
-Register
+Router
 ~~~~~~~~~~~~~~~~
 
-.. autofunction:: register
+.. autoclass:: stdnet.odm.Router
+   :members:
+   :member-order: bysource
 
-
-Register application models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: register_application_models
-
-
-Register applications
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: register_applications
-
-
-Registered models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: registered_models
-
-
-Unregister model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: unregister
 
 
 .. _standard template library: http://www.sgi.com/tech/stl/

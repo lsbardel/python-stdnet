@@ -1,6 +1,6 @@
 .. _stdnetredis:
 
-.. note::
+.. warning::
     
     This branch is not longer active. Both the *ZDIFFSTORE* command and the
     *timeseries* data-structure have been implemented using lua scripts.

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search for text in your models &mdash; python stdnet v0.7 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <title>Full text search &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7',
+        VERSION:     '0.8.1b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,12 +21,13 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sessions" href="sessions.html" />
     <link rel="prev" title="Sorting and Ordering" href="sorting.html" /> 
   </head>
   <body>
+
     <div class="related">
       <h3>Navigation</h3>
       <ul>
@@ -42,53 +43,152 @@
         <li class="right" >
           <a href="sorting.html" title="Sorting and Ordering"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
-    </div>  
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet.odm"><span id="tutorial-search"></span></span><div class="section" id="search-for-text-in-your-models">
-<h1>Search for text in your models<a class="headerlink" href="#search-for-text-in-your-models" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-stdnet.odm"><span id="tutorial-search"></span></span><div class="section" id="full-text-search">
+<h1>Full text search<a class="headerlink" href="#full-text-search" title="Permalink to this headline">¶</a></h1>
 <p>Full text search in most key-value stores is not provided out of the box as
-it is in traditional relational databases.</p>
-<p>One may argue that no-sql databases don&#8217;t need to provide such feature since
+it is in traditional relational databases.
+One may argue that no-sql databases don&#8217;t need to provide such feature since
 search engines such as <a class="reference external" href="http://lucene.apache.org/solr/">Solr</a>, <a class="reference external" href="http://www.elasticsearch.org/">ElasticSearch</a> or <a class="reference external" href="http://sphinxsearch.com/">Sphinx</a> can be used to
 provide a full text search solution.</p>
-<p>Stdnet provides an <em class="xref std std-ref">interface for searching</em> so that such
-engines can be used by third party applications.</p>
-<span class="target" id="module-stdnet.apps.searchengine"></span><div class="section" id="redis-based-solution">
-<h2>Redis based solution<a class="headerlink" href="#redis-based-solution" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet also provides a redis-based implementation so that you can have your models
-stored and indexed in the same redis instance.
-This is a great solution during development and for medium sized applications.
-Installing the search engine is explained in
-<a class="reference internal" href="../apps/searchengine.html#apps-searchengine"><em>redis search</em></a> documention. It is as easy as</p>
+<p>Stdnet provides the <a class="reference internal" href="../api/models.html#stdnet.odm.SearchEngine" title="stdnet.odm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.SearchEngine</span></tt></a> interface
+for implementing full text search of stdnet models. The interface
+can be customized with third party applications.</p>
+<div class="section" id="module-stdnet.apps.searchengine">
+<span id="redis-based-solution"></span><h2>Redis based solution<a class="headerlink" href="#module-stdnet.apps.searchengine" title="Permalink to this headline">¶</a></h2>
+<p>Stdnet provides a redis-based implementation for the
+<a class="reference internal" href="../api/models.html#stdnet.odm.SearchEngine" title="stdnet.odm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.SearchEngine</span></tt></a> so that you can have your models stored
+and indexed in redis and if you like in the same redis instance.</p>
+<p>Installing the search engine is as easy as</p>
 <ul>
-<li><p class="first"><a class="reference internal" href="../api/models.html#register-model"><em>Registering</em></a> the <a class="reference internal" href="../apps/searchengine.html#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a> model which stores
-the indices for your models</p>
-</li>
-<li><p class="first">Create the search engine singletone:</p>
+<li><p class="first">Create a search engine and use the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.set_search_engine" title="stdnet.odm.Router.set_search_engine"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Router.set_search_engine()</span></tt></a>
+method to install it in the router. Here, we use the
+<a class="reference internal" href="tutorial.html#tutorial-models-router"><em>models router</em></a> of our first tutorial:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
 
-<span class="n">se</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">()</span>
+<span class="n">models</span><span class="o">.</span><span class="n">set_search_engine</span><span class="p">(</span><span class="n">SearchEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="o">...</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>where backend is either a instance of a <a class="reference internal" href="../backends/api.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a>
+or a valid <a class="reference internal" href="../backends/index.html#connection-string"><em>connection string</em></a> such as:</p>
+<div class="highlight-python"><pre>redis://127.0.0.1:6379?db=4</pre>
+</div>
+<p>or <tt class="xref docutils literal"><span class="pre">None</span></tt>, to use the default <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Router.backend</span></tt>.
+This is the back-end server where the text indices <a class="reference internal" href="#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a>
+are stored, and not the back-end server of your models to index.
+They can be the same. To use the same backend as the default
+backend of the router:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">search_engine</span> <span class="o">=</span> <span class="n">SearchEngine</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Register models you want to search to the search engine signletone:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">se</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
+<li><p class="first">Register models you want to index to the search engine signletone:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">search_engine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Check the <a class="reference internal" href="../api/models.html#stdnet.odm.SearchEngine.register" title="stdnet.odm.SearchEngine.register"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.SearchEngine.register()</span></tt></a> documentation for more
+information.</p>
 </li>
 </ul>
-<p>searching model instances for text can be achieved using the
-<tt class="xref py py-class docutils literal"><span class="pre">Query.search</span></tt> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">MyModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;bla foo...&#39;</span><span class="p">)</span>
+<p>Searching model instances for text can be achieved using the
+<a class="reference internal" href="../api/models.html#stdnet.odm.Query.search" title="stdnet.odm.Query.search"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query.search</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;bla foo...&#39;</span><span class="p">)</span>
 </pre></div>
+</div>
+<p>Like all <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a> methods, the search method can be chained
+in an efficient way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;bla foo...&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="searchengine">
+<h4>SearchEngine<a class="headerlink" href="#searchengine" title="Permalink to this headline">¶</a></h4>
+<dl class="class">
+<dt id="stdnet.apps.searchengine.SearchEngine">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.searchengine.</tt><tt class="descname">SearchEngine</tt><big>(</big><em>backend=None</em>, <em>min_word_length=3</em>, <em>stop_words=None</em>, <em>metaphone=True</em>, <em>stemming=True</em>, <em>splitters=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>A python implementation for the <a class="reference internal" href="../api/models.html#stdnet.odm.SearchEngine" title="stdnet.odm.SearchEngine"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.SearchEngine</span></tt></a>
+driver.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>min_word_length</strong> &#8211; <p>minimum number of words required by the engine
+to work.</p>
+<p>Default <tt class="docutils literal"><span class="pre">3</span></tt>.</p>
+</li>
+<li><strong>stop_words</strong> &#8211; <p>list of words not included in the search engine.</p>
+<p>Default <tt class="docutils literal"><span class="pre">stdnet.apps.searchengine.ignore.STOP_WORDS</span></tt></p>
+</li>
+<li><strong>metaphone</strong> &#8211; <p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the double <a class="reference external" href="http://en.wikipedia.org/wiki/Metaphone">metaphone</a> algorithm will be
+used to store and search for words. The metaphone should be the last
+world middleware to be added.</p>
+<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+</li>
+<li><strong>splitters</strong> &#8211; <p>string whose characters are used to split text
+into words. If this parameter is set to <cite>&#8220;_-&#8220;</cite>,
+for example, than the word <cite>bla_pippo_ciao-moon</cite> will
+be split into <cite>bla</cite>, <cite>pippo</cite>, <cite>ciao</cite> and <cite>moon</cite>.
+Set to empty string for no splitting.
+Splitting will always occur on white spaces.</p>
+<p>Default
+<tt class="docutils literal"><span class="pre">stdnet.apps.searchengine.ignore.PUNCTUATION_CHARS</span></tt>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="stdnet.apps.searchengine.SearchEngine.search_model">
+<tt class="descname">search_model</tt><big>(</big><em>q</em>, <em>text</em>, <em>lookup=None</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.SearchEngine.search_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements <a class="reference internal" href="../api/models.html#stdnet.odm.SearchEngine.search_model" title="stdnet.odm.SearchEngine.search_model"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.SearchEngine.search_model()</span></tt></a>.
+It return a new <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElem</span></tt> instance from
+the input <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt> and the <em>text</em> to search.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="worditem">
+<h4>WordItem<a class="headerlink" href="#worditem" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><dl class="class">
+<dt id="stdnet.apps.searchengine.WordItem">
+<em class="property">class </em><tt class="descclassname">stdnet.apps.searchengine.</tt><tt class="descname">WordItem</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.WordItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>A model for associating a word with general
+<a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instance.</p>
+<dl class="method">
+<dt id="stdnet.apps.searchengine.WordItem.object">
+<tt class="descname">object</tt><big>(</big><em>session</em><big>)</big><a class="headerlink" href="#stdnet.apps.searchengine.WordItem.object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instance of <tt class="xref py py-attr docutils literal"><span class="pre">model_type</span></tt> with id <tt class="xref py py-attr docutils literal"><span class="pre">object_id</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
 </div>
 </div>
 </div>
@@ -105,8 +205,15 @@ the indices for your models</p>
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Search for text in your models</a><ul>
-<li><a class="reference internal" href="#redis-based-solution">Redis based solution</a></li>
+<li><a class="reference internal" href="#">Full text search</a><ul>
+<li><a class="reference internal" href="#module-stdnet.apps.searchengine">Redis based solution</a><ul>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#searchengine">SearchEngine</a></li>
+<li><a class="reference internal" href="#worditem">WordItem</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -139,34 +246,17 @@ the indices for your models</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="sessions.html" title="Sessions"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="sorting.html" title="Sorting and Ordering"
-             >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
-      </ul>
-    </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2011, Luca Sbardella.
+        &copy; Copyright 2010-2013, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
+  
   _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
   _gaq.push(['_trackPageview']);
 
   (function() {

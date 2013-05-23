@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Data Server &mdash; python stdnet v0.7c6 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <title>Backend Servers &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7c6',
+        VERSION:     '0.8.1b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,11 +21,12 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7c6 documentation" href="../index.html" />
-    <link rel="next" title="Redis Backend" href="redis.html" />
-    <link rel="prev" title="Search" href="../model/search.html" /> 
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="next" title="API" href="api.html" />
+    <link rel="prev" title="Internals and Utilities" href="../api/utility.html" /> 
   </head>
   <body>
+
     <div class="related">
       <h3>Navigation</h3>
       <ul>
@@ -36,194 +37,53 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="redis.html" title="Redis Backend"
+          <a href="api.html" title="API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../model/search.html" title="Search"
+          <a href="../api/utility.html" title="Internals and Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li> 
       </ul>
-    </div>  
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="module-stdnet"><span id="db-index"></span></span><div class="section" id="backend-data-server">
-<h1>Backend Data Server<a class="headerlink" href="#backend-data-server" title="Permalink to this headline">¶</a></h1>
-<p>Behind the scenes is the database. Currently stdnet has support for <a class="reference external" href="http://redis.io/">Redis</a> only but
-an open door is left for including other backends.</p>
+  <span class="target" id="module-stdnet"><span id="db-index"></span></span><div class="section" id="backend-servers">
+<h1>Backend Servers<a class="headerlink" href="#backend-servers" title="Permalink to this headline">¶</a></h1>
+<p>Behind the scenes we have the database.
+Currently stdnet supports <a class="reference external" href="http://redis.io/">Redis</a> and <a class="reference external" href="http://docs.mongodb.org/">mongoDB</a>.</p>
 <div class="section" id="backends">
 <h2>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="redis.html">Redis Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="redis.html">Redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongo.html">Mongo DB</a></li>
 </ul>
 </div>
+<p id="connection-string">A backend instance is usually obtained via the <a class="reference internal" href="api.html#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a> function by
+passing a valid connection string:</p>
+<div class="highlight-python"><pre>from pulsar import getdb
+
+b1 = getdb('redis://127.0.0.1:9739?db=7&amp;namespace=test.')
+b2 = getdb('mongo://127.0.0.1:9739?db=test)</pre>
 </div>
-<div class="section" id="api">
-<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id1">
-<h3>Backend data server<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.BackendDataServer">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name</em>, <em>address</em>, <em>pickler=None</em>, <em>charset='utf-8'</em>, <em>connection_string=''</em>, <em>prefix=None</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic interface for a backend database:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> &#8211; name of database, such as <strong>redis</strong>, <strong>couchdb</strong>, etc..</li>
-<li><strong>params</strong> &#8211; dictionary of configuration parameters</li>
-<li><strong>pickler</strong> &#8211; calss for serializing and unserializing data.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>It must implement the <em>loads</em> and <em>dumps</em> methods.</p>
-<dl class="method">
-<dt id="stdnet.BackendDataServer.disconnect">
-<tt class="descname">disconnect</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.disconnect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Disconnect the connection.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.make_objects">
-<tt class="descname">make_objects</tt><big>(</big><em>meta</em>, <em>data</em>, <em>related_fields=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.make_objects" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generator of <a class="reference internal" href="../model/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> instances with data
-from database.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>meta</strong> &#8211; instance of model <a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
-<li><strong>data</strong> &#8211; iterator over instances data.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.structure">
-<tt class="descname">structure</tt><big>(</big><em>instance</em>, <em>client=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.structure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a backend <a class="reference internal" href="../model/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a> handler.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>instance</strong> &#8211; a <a class="reference internal" href="../model/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a></li>
-<li><strong>client</strong> &#8211; Optional client handler</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.clean">
-<tt class="descname">clean</tt><big>(</big><em>meta</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.clean" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove temporary keys for a model</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.basekey">
-<tt class="descname">basekey</tt><big>(</big><em>meta</em>, <em>*args</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.basekey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the key to access model data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>meta</strong> &#8211; a <a class="reference internal" href="../model/models.html#stdnet.odm.Metaclass" title="stdnet.odm.Metaclass"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt></a>.</li>
-<li><strong>args</strong> &#8211; optional list of strings which are attached to the basekey.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a native string</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.setup_connection">
-<tt class="descname">setup_connection</tt><big>(</big><em>address</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.setup_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback during initialization. Implementation should override
-this function for customizing their handling of connection parameters. It
-must return a instance of the backend handler.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.execute_session">
-<tt class="descname">execute_session</tt><big>(</big><em>session</em>, <em>callback</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.execute_session" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute a <a class="reference internal" href="../model/session.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> in the backend server.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.model_keys">
-<tt class="descname">model_keys</tt><big>(</big><em>meta</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.model_keys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of database keys used by model <em>model</em></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.instance_keys">
-<tt class="descname">instance_keys</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.instance_keys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of database keys used by instance <em>obj</em></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.clear">
-<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.clear" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove <em>all</em> values from the database at once.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.flush">
-<tt class="descname">flush</tt><big>(</big><em>meta=None</em>, <em>pattern=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flush all model keys from the database</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.publish">
-<tt class="descname">publish</tt><big>(</big><em>channel</em>, <em>message</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.publish" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish a <em>message</em> to a <em>channel</em>. The backend must support pub/sub
-paradigm.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="backend-query">
-<h3>Backend Query<a class="headerlink" href="#backend-query" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.BackendQuery">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendQuery</tt><big>(</big><em>queryelem</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendQuery" title="Permalink to this definition">¶</a></dt>
-<dd><p>Backend queryset class which implements the database
-queries specified by <a class="reference internal" href="../model/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a>.</p>
-<dl class="attribute">
-<dt id="stdnet.BackendQuery.queryelem">
-<tt class="descname">queryelem</tt><a class="headerlink" href="#stdnet.BackendQuery.queryelem" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="../model/models.html#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt></a> to process.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.BackendQuery.executed">
-<tt class="descname">executed</tt><a class="headerlink" href="#stdnet.BackendQuery.executed" title="Permalink to this definition">¶</a></dt>
-<dd><p>flag indicating if the query has been executed in the backend server</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
+<p>Check <a class="reference internal" href="redis.html#redis-connection-string"><em>redis connection strings</em></a> for a
+full list of valid parameters.</p>
 </div>
 </div>
 
@@ -239,13 +99,8 @@ queries specified by <a class="reference internal" href="../model/models.html#st
 </p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Backend Data Server</a><ul>
+<li><a class="reference internal" href="#">Backend Servers</a><ul>
 <li><a class="reference internal" href="#backends">Backends</a><ul>
-</ul>
-</li>
-<li><a class="reference internal" href="#api">API</a><ul>
-<li><a class="reference internal" href="#id1">Backend data server</a></li>
-<li><a class="reference internal" href="#backend-query">Backend Query</a></li>
 </ul>
 </li>
 </ul>
@@ -253,11 +108,11 @@ queries specified by <a class="reference internal" href="../model/models.html#st
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../model/search.html"
-                        title="previous chapter">Search</a></p>
+  <p class="topless"><a href="../api/utility.html"
+                        title="previous chapter">Internals and Utilities</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="redis.html"
-                        title="next chapter">Redis Backend</a></p>
+  <p class="topless"><a href="api.html"
+                        title="next chapter">API</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/backends/index.txt"
@@ -280,33 +135,17 @@ queries specified by <a class="reference internal" href="../model/models.html#st
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="redis.html" title="Redis Backend"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="../model/search.html" title="Search"
-             >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7c6 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2011, Luca Sbardella.
+        &copy; Copyright 2010-2013, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
+  
   _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
   _gaq.push(['_trackPageview']);
 
   (function() {

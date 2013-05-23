@@ -1,0 +1,242 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Registration &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Query your Data" href="query.html" />
+    <link rel="prev" title="Using Models" href="tutorial.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="query.html" title="Query your Data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Using Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.odm"><span id="tutorial-registration"></span></span><div class="section" id="registration">
+<h1>Registration<a class="headerlink" href="#registration" title="Permalink to this headline">¶</a></h1>
+<p>Registration consists in associating a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>
+via a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>. In this way one can have a group of models associated
+with their managers pointing at their, possibly different, back-end servers.
+Registration is straightforward and as shown in the
+<a class="reference internal" href="tutorial.html#tutorial"><em>tutorial application</em></a> it is achieved by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
+
+<span class="n">models</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">Router</span><span class="p">(</span><span class="s">&#39;redis://1270.0.0.1:6379?db=7&amp;password=bla&#39;</span><span class="p">)</span>
+
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../backends/index.html#connection-string"><em>connection string</em></a> passed as first argument when
+initialising a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>, is the default back-end of that <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>.
+It is possible to register models to a different back-end by passing a connection
+string to the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.register" title="stdnet.odm.Router.register"><tt class="xref py py-meth docutils literal"><span class="pre">Router.register()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">,</span> <span class="s">&#39;redis://1270.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="accessing-managers">
+<h2>Accessing managers<a class="headerlink" href="#accessing-managers" title="Permalink to this headline">¶</a></h2>
+<p>Given a <tt class="docutils literal"><span class="pre">models</span></tt> <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> there are two ways one can access a
+model <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> to perform database queries.</p>
+<div class="section" id="dictionary-interface">
+<span id="router-dict"></span><h3>Dictionary interface<a class="headerlink" href="#dictionary-interface" title="Permalink to this headline">¶</a></h3>
+<p>The most straightforward and intuitive way, for accessing managers, is to use
+the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> as a dictionary of <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Crate a Query for Instrument</span>
+<span class="n">query</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+<span class="c">#</span>
+<span class="c"># Create a new Instrument and save it to the backend server</span>
+<span class="n">inst</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dotted-notation">
+<span id="router-dotted"></span><h3>Dotted notation<a class="headerlink" href="#dotted-notation" title="Permalink to this headline">¶</a></h3>
+<p>An alternative to the dictionary interface is the dotted notation, where
+a manager can be accessed as an attribute of the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>, the attribute
+name is given by the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> metaclass name. This is the
+<a class="reference internal" href="../api/models.html#stdnet.odm.ModelMeta.name" title="stdnet.odm.ModelMeta.name"><tt class="xref py py-attr docutils literal"><span class="pre">ModelMeta.name</span></tt></a> attribute of the <a class="reference internal" href="../api/models.html#stdnet.odm.Model._meta" title="stdnet.odm.Model._meta"><tt class="xref py py-attr docutils literal"><span class="pre">Model._meta</span></tt></a> object.
+It is, by default, the class name of the model in lower case:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+<span class="c">#</span>
+<span class="n">inst</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This interface is less verbose than the <a class="reference internal" href="#router-dict"><em>dictionary notation</em></a>
+and, importantly, it reduces to zero the imports one has to write on python
+modules using your application, in other words it makes your application
+less dependent on the actual implementation of <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</p>
+</div>
+</div>
+<div class="section" id="multiple-backends">
+<h2>Multiple backends<a class="headerlink" href="#multiple-backends" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> allows to use your models in several different back-ends
+without changing the way you query your data. In addition it allows to
+specify different back-ends for <tt class="docutils literal"><span class="pre">write</span></tt> operations and for <tt class="docutils literal"><span class="pre">read</span></tt> only
+operations.</p>
+<p>To specify a different back-end for read operations one registers a model in
+the following way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://1270.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">,</span>
+                <span class="s">&#39;redis://1270.0.0.1:6380?db=1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="model-iterator">
+<h2>Model Iterator<a class="headerlink" href="#model-iterator" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="stdnet.odm.model_iterator">
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em>, <em>include_related=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.model_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator of <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes found in <em>application</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; A python dotted path or an iterable over python
+dotted-paths where models are defined.</td>
+</tr>
+</tbody>
+</table>
+<p>Only models defined in these paths are considered.</p>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.odm</span> <span class="kn">import</span> <span class="n">model_iterator</span>
+
+<span class="n">APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;stdnet.contrib.searchengine&#39;</span><span class="p">,</span>
+        <span class="s">&#39;stdnet.contrib.timeseries&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">model_iterator</span><span class="p">(</span><span class="n">APPS</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Registration</a><ul>
+<li><a class="reference internal" href="#accessing-managers">Accessing managers</a><ul>
+<li><a class="reference internal" href="#dictionary-interface">Dictionary interface</a></li>
+<li><a class="reference internal" href="#dotted-notation">Dotted notation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#multiple-backends">Multiple backends</a></li>
+<li><a class="reference internal" href="#model-iterator">Model Iterator</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Using Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="query.html"
+                        title="next chapter">Query your Data</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/registration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

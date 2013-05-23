@@ -1,0 +1,188 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Primary Keys and Unique Fields &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.1b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
+    <link rel="next" title="Performance" href="performance.html" />
+    <link rel="prev" title="Field Generator" href="json.html" /> 
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="performance.html" title="Performance"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="json.html" title="Field Generator"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-stdnet.odm"><span id="tutorial-primary-unique"></span></span><div class="section" id="primary-keys-and-unique-fields">
+<h1>Primary Keys and Unique Fields<a class="headerlink" href="#primary-keys-and-unique-fields" title="Permalink to this headline">¶</a></h1>
+<p>Each <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> must have a primary key. The model primary key <a class="reference internal" href="../api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a>
+can be obtained via the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel.pk" title="stdnet.odm.StdModel.pk"><tt class="xref py py-meth docutils literal"><span class="pre">StdModel.pk()</span></tt></a> class method. A model can have one and only one
+primary key which is specified by passing <tt class="docutils literal"><span class="pre">primary_key=True</span></tt> during
+model definition:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>A primary key field has the <a class="reference internal" href="../api/fields.html#stdnet.odm.Field.primary_key" title="stdnet.odm.Field.primary_key"><tt class="xref py py-attr docutils literal"><span class="pre">Field.primary_key</span></tt></a> attribute <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<div class="section" id="composite-id">
+<span id="tutorial-compositeid"></span><h2>Composite ID<a class="headerlink" href="#composite-id" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../api/fields.html#stdnet.odm.CompositeIdField" title="stdnet.odm.CompositeIdField"><tt class="xref py py-class docutils literal"><span class="pre">CompositeIdField</span></tt></a> enforces a group of fields in a model to be
+unique (together). Let`s consider the following model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Vote</span><span class="p">(</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">full_name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now I want to make <tt class="docutils literal"><span class="pre">full_name</span></tt> and <tt class="docutils literal"><span class="pre">address</span></tt> unique together, so that
+given a name and address I can uniquely identify a vote.
+This is achieved by introducing a <a class="reference internal" href="../api/fields.html#stdnet.odm.CompositeIdField" title="stdnet.odm.CompositeIdField"><tt class="xref py py-class docutils literal"><span class="pre">CompositeIdField</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Vote</span><span class="p">(</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CompositeIdField</span><span class="p">(</span><span class="s">&#39;full_name&#39;</span><span class="p">,</span> <span class="s">&#39;address&#39;</span><span class="p">)</span>
+    <span class="n">full_name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <a class="reference internal" href="../api/fields.html#stdnet.odm.CompositeIdField" title="stdnet.odm.CompositeIdField"><tt class="xref py py-class docutils literal"><span class="pre">CompositeIdField</span></tt></a> is used, behind the scenes,
+by the <a class="reference internal" href="related.html#through-model"><em>through model</em></a> in the <a class="reference internal" href="../api/fields.html#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">ManyToManyField</span></tt></a>.</p>
+</div>
+</div>
+<div class="section" id="unique-fields">
+<span id="tutorial-unique"></span><h2>Unique Fields<a class="headerlink" href="#unique-fields" title="Permalink to this headline">¶</a></h2>
+<p>A <a class="reference internal" href="../api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> can be enforced to be unique by passing the <tt class="docutils literal"><span class="pre">unique=True</span></tt>
+during model definition. The following models specifies two fields to be unique
+across the whole model instances:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">full_name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo">
+<a href="../index.html">
+  <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
+</a>
+</p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Primary Keys and Unique Fields</a><ul>
+<li><a class="reference internal" href="#composite-id">Composite ID</a></li>
+<li><a class="reference internal" href="#unique-fields">Unique Fields</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="json.html"
+                        title="previous chapter">Field Generator</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="performance.html"
+                        title="next chapter">Performance</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/examples/primary.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2010-2013, Luca Sbardella.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  
+  _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+  </body>
+</html>

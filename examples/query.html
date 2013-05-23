@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Query your Data &mdash; python stdnet v0.7 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <title>Query your Data &mdash; python stdnet v0.8.1b1 documentation</title>
+    <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.7',
+        VERSION:     '0.8.1b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,12 +21,13 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.7 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sorting and Ordering" href="sorting.html" />
-    <link rel="prev" title="Using Models" href="tutorial.html" /> 
+    <link rel="prev" title="Registration" href="registration.html" /> 
   </head>
   <body>
+
     <div class="related">
       <h3>Navigation</h3>
       <ul>
@@ -40,12 +41,23 @@
           <a href="sorting.html" title="Sorting and Ordering"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="tutorial.html" title="Using Models"
+          <a href="registration.html" title="Registration"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
-    </div>  
+    </div>
+<div class="deck">
+<div class="header">
+    
+        <p class="developmentversion">
+        Documentation for pulsar's DEVELOPMENT version. Get the 
+        <a href="http://packages.python.org/stdnet/">release docs here</a>.
+        </p>
+    
+</div>
+</div>
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -54,38 +66,42 @@
             
   <span class="target" id="module-stdnet.odm"><span id="tutorial-query"></span></span><div class="section" id="query-your-data">
 <h1>Query your Data<a class="headerlink" href="#query-your-data" title="Permalink to this headline">¶</a></h1>
-<p>The most powerful feature of stdnet is a comprehensive API for querying your
-data in an efficient and elegant way.
+<p>The most powerful feature of <a class="reference internal" href="../faq.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> is a comprehensive API for querying,
+searching and sorting your data in an efficient and elegant way.
 To retrieve objects from your data server, you construct a
-<a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> on your model class
-or via a <a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a>.
+<a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> via a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>.
 A <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> represents a collection of rules to aggregate objects
 from your model.</p>
-<p>In the following tutorial, it is assumed the models are registered with a backend dataserver
-so that the default <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> is available. Alternatively, one can use the
-<a class="reference internal" href="sessions.html#model-session"><em>session api</em></a>.</p>
+<p>We pick up from the <a class="reference internal" href="tutorial.html#tutorial-models-router"><em>registered models</em></a> router
+object created for our <a class="reference internal" href="tutorial.html#tutorial-application"><em>tutorial application</em></a>.
+Throughout this tutorial, we use the <a class="reference internal" href="registration.html#router-dotted"><em>dotted notation</em></a>
+for accessing model managers.</p>
 <div class="section" id="retrieving-all-objects">
 <h2>Retrieving all objects<a class="headerlink" href="#retrieving-all-objects" title="Permalink to this headline">¶</a></h2>
 <p>The simplest way to retrieve objects for a model is to get all of them.
-To do this, use the <a class="reference internal" href="../api/models.html#stdnet.odm.Manager.query" title="stdnet.odm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> method on a Manager:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+To do this, use the <a class="reference internal" href="../api/models.html#stdnet.odm.Manager.query" title="stdnet.odm.Manager.query"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.query()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funds</span>
 <span class="go">Query</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">funds</span><span class="p">)</span>
 <span class="go">[Fund: Markowitz]</span>
 </pre></div>
 </div>
-<p><a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> are lazy, they are evaluated only when you iterate over them
-or explicitly call the <a class="reference internal" href="../api/models.html#stdnet.odm.Query.items" title="stdnet.odm.Query.items"><tt class="xref py py-class docutils literal"><span class="pre">Query.items</span></tt></a> method.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> are lazy, they are evaluated only when you iterate over them,
+or invoke the the <tt class="xref py py-class docutils literal"><span class="pre">Query.all</span></tt> method or slice the query like a
+list.</p>
+</div>
 </div>
 <div class="section" id="filtering">
-<h2>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline">¶</a></h2>
+<span id="tutorial-filter"></span><h2>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline">¶</a></h2>
 <p>This operation is somehow equivalent to a <tt class="docutils literal"><span class="pre">SELECT</span> <span class="pre">WHERE</span></tt> statement in
 a traditional SQL database.
 To perform such operation, you refine the initial <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> by adding
 filter conditions.
 Lets create few other objects in the same line as above and try:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span>
 <span class="go">Query.filter({&#39;ccy&#39;: &#39;EUR&#39;})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">eur_funds</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
@@ -96,56 +112,158 @@ Lets create few other objects in the same line as above and try:</p>
 </div>
 <p>The <a class="reference internal" href="../api/models.html#stdnet.odm.Query.count" title="stdnet.odm.Query.count"><tt class="xref py py-meth docutils literal"><span class="pre">Query.count()</span></tt></a> method counts the object in the query without
 actually retrieving them. It is possible to filter from a list/tuple of values:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>This filter statement is equivalent to an union of two filters statements:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
-<span class="n">q2</span> <span class="o">=</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;USD&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;USD&#39;</span><span class="p">)</span>
 <span class="n">qs</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">q2</span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Filter and <a class="reference internal" href="#tutorial-exclude"><em>exclude</em></a> lookups can only be done on
+<a class="reference internal" href="../api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> which are indices, i.e. thier <a class="reference internal" href="../api/fields.html#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-class docutils literal"><span class="pre">Field.index</span></tt></a>
+attribute is set to <cite>True</cite>.</p>
 </div>
-<div class="section" id="concatenating">
-<h2>Concatenating<a class="headerlink" href="#concatenating" title="Permalink to this headline">¶</a></h2>
-<p>You can perform further selection by concatenating queries:</p>
-<div class="highlight-python"><pre>qs = Instrument.objects.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))</pre>
+</div>
+<div class="section" id="concatenating-filters">
+<h2>Concatenating filters<a class="headerlink" href="#concatenating-filters" title="Permalink to this headline">¶</a></h2>
+<p>You can perform further selection by concatenating filters:</p>
+<div class="highlight-python"><pre>qs = models.instrument.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))</pre>
 </div>
 <p>or equivalently:</p>
-<div class="highlight-python"><pre>qs = Instrument.objects.filter(ccy=('EUR','USD'), types=('equity',bond'))</pre>
+<div class="highlight-python"><pre>qs = models.instrument.filter(ccy=('EUR','USD'), types=('equity',bond'))</pre>
 </div>
-<p>Which is equivalent to an intersection of two filter statement:</p>
-<div class="highlight-python"><pre>q1 = Fund.objects.filter(ccy=('EUR', 'USD'))
-q2 = Fund.objects.filter(types=('equity',bond'))
+<p>Which is equivalent to an <strong>intersection</strong> of two filter statement:</p>
+<div class="highlight-python"><pre>q1 = models.fund.filter(ccy=('EUR', 'USD'))
+q2 = models.fund.filter(types=('equity',bond'))
 qs = q1.intersect(q2)</pre>
 </div>
 </div>
-<div class="section" id="excluding">
-<h2>Excluding<a class="headerlink" href="#excluding" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="exclude">
+<span id="tutorial-exclude"></span><h2>Exclude<a class="headerlink" href="#exclude" title="Permalink to this headline">¶</a></h2>
 <p>You can also exclude fields from lookups:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;future&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;future&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>You can exclude a list of fields:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;future&#39;</span><span class="p">,</span><span class="s">&#39;equity&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;future&#39;</span><span class="p">,</span><span class="s">&#39;equity&#39;</span><span class="p">))</span>
 </pre></div>
+</div>
+<p>Concatenation is also supported:</p>
+<div class="highlight-python"><pre>qs = models.instrument.exclude(ccy=('EUR','USD'), types=('equity',bond'))</pre>
 </div>
 </div>
 <div class="section" id="union">
 <h2>Union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="../api/models.html#stdnet.odm.Query.filter" title="stdnet.odm.Query.filter"><tt class="xref py py-meth docutils literal"><span class="pre">Query.filter()</span></tt></a> and <a class="reference internal" href="../api/models.html#stdnet.odm.Query.exclude" title="stdnet.odm.Query.exclude"><tt class="xref py py-meth docutils literal"><span class="pre">Query.exclude()</span></tt></a> methods cover most common
 situations. There is another method which can be used to combine together
-two or more <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> into a different query. The <a class="reference internal" href="../api/models.html#stdnet.odm.Query.union" title="stdnet.odm.Query.union"><tt class="xref py py-class docutils literal"><span class="pre">Query.union</span></tt></a>
+two or more <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> into a different query. The <a class="reference internal" href="../api/models.html#stdnet.odm.Query.union" title="stdnet.odm.Query.union"><tt class="xref py py-meth docutils literal"><span class="pre">Query.union()</span></tt></a>
 method performs just that, an union of queries. Consider the following example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;equity&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;equity&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>this retrieve all instruments with <tt class="docutils literal"><span class="pre">ccy='EUR'</span></tt> <strong>AND</strong> <tt class="docutils literal"><span class="pre">type='equity'</span></tt>. What about
 if we need all instruments with <tt class="docutils literal"><span class="pre">ccy='EUR'</span></tt> <strong>OR</strong> <tt class="docutils literal"><span class="pre">type='equity'</span></tt>? We use the
 <a class="reference internal" href="../api/models.html#stdnet.odm.Query.union" title="stdnet.odm.Query.union"><tt class="xref py py-meth docutils literal"><span class="pre">Query.union()</span></tt></a> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">Instruments</span><span class="o">.</span><span class="n">objecyts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;equity&#39;</span><span class="p">)</span>
-<span class="n">qs</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">q1</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;equity&#39;</span><span class="p">)</span>
+<span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">q1</span><span class="p">)</span>
 </pre></div>
+</div>
+</div>
+<div class="section" id="range-lookups">
+<span id="id1"></span><h2>Range lookups<a class="headerlink" href="#range-lookups" title="Permalink to this headline">¶</a></h2>
+<p>Range lookups is how you refine the query methods you have learned so far.
+They are specified by appending a suffix to the field name preceded by
+double underscore <tt class="docutils literal"><span class="pre">__</span></tt>.
+Range lookups can be applied to any <a class="reference internal" href="../api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> which has an internal
+numerical representation. Such fields
+are: <a class="reference internal" href="../api/fields.html#stdnet.odm.IntegerField" title="stdnet.odm.IntegerField"><tt class="xref py py-class docutils literal"><span class="pre">IntegerField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.FloatField" title="stdnet.odm.FloatField"><tt class="xref py py-class docutils literal"><span class="pre">FloatField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.DateField" title="stdnet.odm.DateField"><tt class="xref py py-class docutils literal"><span class="pre">DateField</span></tt></a>,
+<a class="reference internal" href="../api/fields.html#stdnet.odm.DateTimeField" title="stdnet.odm.DateTimeField"><tt class="xref py py-class docutils literal"><span class="pre">DateTimeField</span></tt></a> and so on.</p>
+<p>There are four of them:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">gt</span></tt>, greater than. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__gt</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">ge</span></tt>, greater than or equal to. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__ge</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">lt</span></tt>, less than. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__lt</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">le</span></tt>, less than or equal to. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__le</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div></blockquote>
+<p>They can be combined, for example, this is a <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> for a <tt class="docutils literal"><span class="pre">size</span></tt> between
+10 and 100:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__ge</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">size__le</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="text-lookups">
+<span id="id2"></span><h2>Text lookups<a class="headerlink" href="#text-lookups" title="Permalink to this headline">¶</a></h2>
+<p>Text lookups is the <a class="reference internal" href="#range-lookups"><em>range lookup</em></a> for text fields
+such as <a class="reference internal" href="../api/fields.html#stdnet.odm.SymbolField" title="stdnet.odm.SymbolField"><tt class="xref py py-class docutils literal"><span class="pre">SymbolField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.CharField" title="stdnet.odm.CharField"><tt class="xref py py-class docutils literal"><span class="pre">CharField</span></tt></a> and <a class="reference internal" href="../api/fields.html#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a>.</p>
+<p>There are four of them:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">contains</span></tt>, check if a text field contains the text. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">description__contains</span><span class="o">=</span><span class="s">&#39;technology&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">startswith</span></tt>, check if a text field starts with the given text. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">description__starts</span><span class="o">=</span><span class="s">&#39;The&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">endswith</span></tt>, check if a text field ends with the given text. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">description__endswith</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="where">
+<span id="query-where"></span><h2>Where<a class="headerlink" href="#where" title="Permalink to this headline">¶</a></h2>
+<p>Use the <a class="reference internal" href="../api/models.html#stdnet.odm.Query.where" title="stdnet.odm.Query.where"><tt class="xref py py-meth docutils literal"><span class="pre">Query.where()</span></tt></a> method to pass a string containing a valid
+<strong>expression</strong> to the query system to provide greater flexibility with queries.
+Consider the following model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+    <span class="o">...</span>
+
+<span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The following is a query which works for both mongo and redis:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s">&#39;this.a &gt; this.b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The where method can be chained in the same way as
+<a class="reference internal" href="#tutorial-filter"><em>filter</em></a> and <a class="reference internal" href="#tutorial-exclude"><em>exclude</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">s</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">flag</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">a__lt</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s">&#39;this.a &gt; this.b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The expression evaluates to lua in redis and to javascript in mongo.</p>
 </div>
 </div>
 <div class="section" id="related-fields">
@@ -156,50 +274,29 @@ the <tt class="xref py py-class docutils literal"><span class="pre">Position</sp
 The model has a <a class="reference internal" href="../api/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> to the <tt class="xref py py-class docutils literal"><span class="pre">Instrument</span></tt> model.</p>
 <p>Using the related field query API one can construct a query to fetch positions
 an subset of instruments in this way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument__ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument__ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>that is the name of the <a class="reference internal" href="../api/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, followed by a double underscore <tt class="docutils literal"><span class="pre">__</span></tt>,
 followed by the name of the field in the related model.</p>
 <p>This is merely a syntactic sugar in place of this equivalent query:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qi</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
-<span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument</span><span class="o">=</span><span class="n">qi</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qi</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span>
+<span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument</span><span class="o">=</span><span class="n">qi</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="field-lookups">
-<span id="id1"></span><h2>Field lookups<a class="headerlink" href="#field-lookups" title="Permalink to this headline">¶</a></h2>
-<p>Field lookups is how you refine the query methods you have learned so far.
-They are specified by appending a suffix to the field name preceded by double underscore <tt class="docutils literal"><span class="pre">__</span></tt>.</p>
-<div class="section" id="numeric-loopups">
-<h3>Numeric loopups<a class="headerlink" href="#numeric-loopups" title="Permalink to this headline">¶</a></h3>
-<p>Numeric loopus can be applied to any field which has an internal numerical representation. Such fields
-are: <a class="reference internal" href="../api/fields.html#stdnet.odm.IntegerField" title="stdnet.odm.IntegerField"><tt class="xref py py-class docutils literal"><span class="pre">IntegerField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.FloatField" title="stdnet.odm.FloatField"><tt class="xref py py-class docutils literal"><span class="pre">FloatField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.DateField" title="stdnet.odm.DateField"><tt class="xref py py-class docutils literal"><span class="pre">DateField</span></tt></a>, <a class="reference internal" href="../api/fields.html#stdnet.odm.DateTimeField" title="stdnet.odm.DateTimeField"><tt class="xref py py-class docutils literal"><span class="pre">DateTimeField</span></tt></a> and so on.</p>
-<p>There are four of them:</p>
-<blockquote>
-<div><ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">gt</span></tt>, greater than. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__gt</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
+<div class="section" id="limit-query-size">
+<span id="query-slice"></span><h2>Limit Query Size<a class="headerlink" href="#limit-query-size" title="Permalink to this headline">¶</a></h2>
+<p>When dealing with large amount of data, a <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> can be sliced
+using python array-slicing syntax. For example, this returns the first
+10 objects:</p>
+<div class="highlight-python"><pre>&gt;&gt; qs = models.instrument.query()[:10]</pre>
 </div>
-</li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">ge</span></tt>, greater than or equal to. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__ge</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
+<p>This returns the sixth through tenth objects:</p>
+<div class="highlight-python"><pre>&gt;&gt; qs = models.instrument.query()[5:10]</pre>
 </div>
-</li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">lt</span></tt>, less than. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__lt</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">le</span></tt>, less than or equal to. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">Position</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">size__le</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</div></blockquote>
+<p>This returns the last 5 objects:</p>
+<div class="highlight-python"><pre>&gt;&gt; qs = models.instrument.query()[-5:]</pre>
 </div>
 </div>
 </div>
@@ -219,21 +316,21 @@ are: <a class="reference internal" href="../api/fields.html#stdnet.odm.IntegerFi
 <li><a class="reference internal" href="#">Query your Data</a><ul>
 <li><a class="reference internal" href="#retrieving-all-objects">Retrieving all objects</a></li>
 <li><a class="reference internal" href="#filtering">Filtering</a></li>
-<li><a class="reference internal" href="#concatenating">Concatenating</a></li>
-<li><a class="reference internal" href="#excluding">Excluding</a></li>
+<li><a class="reference internal" href="#concatenating-filters">Concatenating filters</a></li>
+<li><a class="reference internal" href="#exclude">Exclude</a></li>
 <li><a class="reference internal" href="#union">Union</a></li>
+<li><a class="reference internal" href="#range-lookups">Range lookups</a></li>
+<li><a class="reference internal" href="#text-lookups">Text lookups</a></li>
+<li><a class="reference internal" href="#where">Where</a></li>
 <li><a class="reference internal" href="#related-fields">Related Fields</a></li>
-<li><a class="reference internal" href="#field-lookups">Field lookups</a><ul>
-<li><a class="reference internal" href="#numeric-loopups">Numeric loopups</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#limit-query-size">Limit Query Size</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="tutorial.html"
-                        title="previous chapter">Using Models</a></p>
+  <p class="topless"><a href="registration.html"
+                        title="previous chapter">Registration</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="sorting.html"
                         title="next chapter">Sorting and Ordering</a></p>
@@ -259,34 +356,17 @@ are: <a class="reference internal" href="../api/fields.html#stdnet.odm.IntegerFi
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="sorting.html" title="Sorting and Ordering"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="tutorial.html" title="Using Models"
-             >previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.7 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Tutorials &amp; Examples</a> &raquo;</li> 
-      </ul>
-    </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2011, Luca Sbardella.
+        &copy; Copyright 2010-2013, Luca Sbardella.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
+  
   _gaq.push(['_setAccount', 'UA-3900561-6']);
+  
   _gaq.push(['_trackPageview']);
 
   (function() {

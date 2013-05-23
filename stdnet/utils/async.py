@@ -33,6 +33,15 @@ if not settings.ASYNC_BINDINGS:
     def is_failure(result):
         return False
     
+    def execute_generator(gen):
+        result = None
+        while True:
+            try:
+                result = gen.send(result)
+            except StopIteration:
+                break
+        return result
+        
     def multi_async(data, **kwargs):
         if isgenerator(data):
             result = []
@@ -41,8 +50,8 @@ if not settings.ASYNC_BINDINGS:
                 try:
                     res = next(data)
                     if isgenerator(res):
-                        res = multi_async(res)
-                    result.append(result)
+                        res = execute_generator(res)
+                    result.append(res)
                 except StopIteration:
                     break
                 except Exception:
@@ -64,14 +73,7 @@ if not settings.ASYNC_BINDINGS:
             assert isgeneratorfunction(f),\
                     'async decorator only for generator functions'
             def _(*args, **kwargs):
-                gen = f(*args, **kwargs)
-                result = None
-                while True:
-                    try:
-                        result = gen.send(result)
-                    except StopIteration:
-                        break
-                return result
+                return execute_generator(f(*args, **kwargs))
             return _
 
 

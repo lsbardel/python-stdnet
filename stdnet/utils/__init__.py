@@ -20,7 +20,7 @@ if ispy3k:  # pragma: no cover
 else:   # pragma: no cover
     import cPickle as pickle
     unichr = unichr
-    from .py2 import raise_error_trace
+    from ._py2 import raise_error_trace
     
 from .jsontools import *
 from .populate import populate

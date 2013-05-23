@@ -16,6 +16,7 @@ install:
   - ls -la
 script: python -m runtests --verbosity 2 --log-level debug
 
+# Only test master and dev
 branches:
   only:
     - master

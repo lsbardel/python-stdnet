@@ -7,7 +7,8 @@ and instances of those classes with **items** in their corresponding collections
 Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
-:CI: |stdnet-build|_ 
+:Master CI: |master-build|_ 
+:Dev CI: |dev-build|_ 
 :Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
@@ -15,8 +16,10 @@ are treated in the same way in the python language domain.
 :Keywords: server, database, cache, redis, mongo, odm
 
 
-.. |stdnet-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
-.. _stdnet-build: http://travis-ci.org/lsbardel/python-stdnet
+.. |master-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
+.. _master-build: http://travis-ci.org/lsbardel/python-stdnet
+.. |dev-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=dev
+.. _dev-build: http://travis-ci.org/lsbardel/python-stdnet
 
 Contents
 ~~~~~~~~~~~~~~~

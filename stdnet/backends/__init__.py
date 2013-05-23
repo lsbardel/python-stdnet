@@ -1,23 +1,18 @@
-import json
 from collections import namedtuple
 
-from stdnet.conf import settings
+from stdnet.utils.exceptions import *
+from stdnet.utils.conf import settings
 from stdnet.utils.importer import import_module
-from stdnet.exceptions import *
-from stdnet.utils import zip, iteritems, itervalues, UnicodeMixin,\
-                            int_or_float, to_string, urlencode, urlparse
+from stdnet.utils import iteritems, int_or_float, to_string, urlencode, urlparse
 
 
-__all__ = ['BackendRequest',
-           'BackendStructure',
-           'AsyncObject',
+__all__ = ['BackendStructure',
            'BackendDataServer',
-           'BackendQuery',
            'CacheServer',
            'session_result',
+           'session_data',
            'instance_session_result',
            'query_result',
-           'on_result',
            'range_lookups',
            'getdb',
            'getcache']
@@ -29,6 +24,7 @@ query_result = namedtuple('query_result','key count')
 # if the instance is persistent on the backend, bid is the id in the backend.
 instance_session_result = namedtuple('instance_session_result',
                                      'iid persistent id deleted score')
+session_data = namedtuple('session_data', 'meta dirty deletes queries structures')
 session_result = namedtuple('session_result','meta results')
 
 pass_through = lambda x: x
@@ -48,188 +44,65 @@ range_lookups = {
     
 
 def get_connection_string(scheme, address, params):
-    address = ':'.join((str(b) for b in address))
+    if address:
+        address = ':'.join((str(b) for b in address))
+    else:
+        address = ''
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
 
-
-class BackendRequest(object):
-    '''Signature class for Stdnet Request classes'''
-    def add_callback(self, callback, errback=None):
-        raise NotImplementedError()
-
-
-def on_result(result, callback, *args, **kwargs):
-    if isinstance(result, BackendRequest):
-        return result.add_callback(lambda res : callback(res, *args, **kwargs))
-    else:
-        return callback(result, *args, **kwargs)
-       
-
-class AsyncObject(UnicodeMixin):
-    '''A class for handling asynchronous requests. The main method here
-is :meth:`async_handle`. Avery time there is a result from the server,
-this method should be called.'''
-    def async_handle(self, result, callback, *args, **kwargs):
-        if isinstance(result, BackendRequest):
-            return result.add_callback(lambda res :\
-                        self.async_callback(callback, res, *args, **kwargs))
-        else:
-            return self.async_callback(callback, result, *args, **kwargs)
-        
-    def async_callback(self, callback, result, *args, **kwargs):
-        if isinstance(result, Exception):
-            raise result
-        else:
-            return callback(result, *args, **kwargs)
     
+class BackendStructure(object):
+    '''Interface for :class:`stdnet.odm.Structure` backends.
     
-class BackendStructure(AsyncObject):
-    __slots__ = ('instance', 'client', 'backend', '_id')
+.. attribute:: instance
+
+    The :class:`stdnet.odm.Structure` which this backend represents.
     
+.. attribute:: backend
+
+    The :class:`BackendDataServer`
+    
+.. attribute:: client
+
+    The client of the :class:`BackendDataServer`
+    
+'''
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.backend = backend
         self.client = client
-        if not instance.id:
-            raise ValueError('No id available')
-        # if structure has no instance create the database id
-        if instance.instance is not None:
-            id = instance.id
-        else:
-            id = backend.basekey(self.instance._meta, self.instance.id)
-        self._id = id
-    
-    def commit(self):
-        '''Commit to backend server.'''
-        instance = self.instance
-        if instance.state().deleted:
-            result = self.delete()
-        else:
-            result = self.flush()
-        instance.cache.clear()
-        return result
     
     @property
     def name(self):
         return self.instance.name
     
-    @property
-    def id(self):
-        return self._id
-    
     def backend_structure(self):
         return self
     
     def clone(self):
-        return self.__class__(self.instance, self.client)
+        return self.__class__(self.instance, self.backend, self.client)
     
-    def delete(self):   # pragma: no cover
-        raise NotImplementedError()
+    def delete(self):
+        raise NotImplementedError
     
-    def flush(self):    # pragma: no cover
-        raise NotImplementedError()
+    def flush(self):
+        raise NotImplementedError
     
-    def size(self):     # pragma: no cover
-        raise NotImplementedError()
+    def size(self):
+        raise NotImplementedError
     
     
-class BackendQuery(object):
-    '''Backend queryset class which implements the database
-queries specified by :class:`stdnet.odm.Query`.
-
-.. attribute:: queryelem
-
-    The :class:`stdnet.odm.QueryElement` to process.
-    
-.. attribute:: executed
-
-    flag indicating if the query has been executed in the backend server
-    
-'''
-    def __init__(self, queryelem, timeout=0, **kwargs):
-        '''Initialize the query for the backend database.'''
-        self.queryelem = queryelem
-        self.expire = max(timeout,10)
-        self.timeout = timeout
-        self.__count = None
-        # build the queryset without performing any database communication
-        self._build(**kwargs)
-
-    def __repr__(self):
-        return self.queryelem.__repr__()
-    
-    def __str__(self):
-        return str(self.queryelem)
-    
-    @property
-    def backend(self):
-        return self.queryelem.backend
-    
-    @property
-    def meta(self):
-        return self.queryelem.meta
-    
-    @property
-    def executed(self):
-        return self.__count is not None
-    
-    def __len__(self):
-        return self.execute_query()
-    
-    def count(self):
-        return self.execute_query()
-
-    def __contains__(self, val):
-        self.execute_query()
-        return self._has(val)
-        
-    def items(self, slic):
-        return on_result(self.execute_query(), self._get_items, slic)
-    
-    def execute_query(self):
-        if not self.executed:
-            return on_result(self._execute_query(), self._got_count)
-        return self.__count
-    
-    # VIRTUAL FUNCTIONS
-    
-    def _has(self, val):    # pragma: no cover
-        raise NotImplementedError()
-    
-    def _items(self, slic):     # pragma: no cover
-        raise NotImplementedError()
-    
-    def _build(self, **kwargs):     # pragma: no cover
-        raise NotImplementedError()
-    
-    def _execute_query(self):       # pragma: no cover
-        '''Execute the query without fetching data from server. Must
- be implemented by data-server backends.'''
-        raise NotImplementedError()
-    
-    # PRIVATE
-    def _got_count(self, c):
-        self.__count = c
-        return c
-    
-    def _get_items(self, c, slic):
-        if c:
-            return self._items(slic)
-        else:
-            return ()
-
-
 class CacheServer(object):
     '''A key-value store server for storing and retrieving values at keys.'''
     def set(self, key, value, timeout=None):
         '''Set ``value`` at ``key`` with ``timeout``.'''
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def get(self, key, default=None):
         '''Fetch the value at ``key``.'''
-        raise NotImplementedError()
+        raise NotImplementedError
     
     def __getitem__(self):
         v = self.get(key)
@@ -242,7 +115,7 @@ class CacheServer(object):
         self.set(key, value)
     
     def __contains__(self, key):
-        raise NotImplementedError()
+        raise NotImplementedError
     
     
 class BackendDataServer(object):
@@ -274,11 +147,16 @@ directly, instead, the :func:`getdb` function should be used.
 
     The :class:`BackendQuery` class for this backend.
     
-**METHODS**
+.. attribute:: default_manager
+
+    The default model Manager for this backend. If not
+    provided, the :class:`stdnet.odm.Manager` is used.
+    Default ``None``.
+    
 '''
-    Transaction = None
     Query = None
     structure_module = None
+    default_manager = None
     default_port = 8000
     struct_map = {}
     async_handlers = {}
@@ -317,7 +195,10 @@ directly, instead, the :func:`getdb` function should be used.
             return self.issame(other)
         else:
             return False
-        
+    
+    def __hash__(self):
+        return id(self)
+            
     def issame(self, other):
         return self.client == other.client
     
@@ -347,7 +228,7 @@ from database.
 :parameter meta: instance of model :class:`stdnet.odm.Metaclass`.
 :parameter data: iterator over instances data.
 '''
-        make_object = meta.maker
+        make_object = meta.make_object
         related_data = []
         if related_fields:
             for fname, fdata in iteritems(related_fields):
@@ -358,13 +239,11 @@ from database.
                 else:
                     multi = False
                     relmodel = field.relmodel
-                    related = dict(((obj.id, obj)\
-                        for obj in self.make_objects(relmodel._meta, fdata)))
+                    related = dict(((obj.id, obj) for obj in\
+                            self.make_objects(relmodel._meta, fdata)))
                 related_data.append((field, related, multi))
         for state in data:
-            instance = make_object()
-            instance.__setstate__(state)
-            instance._dbdata[instance._meta.pkname()] = instance.pkvalue()
+            instance = make_object(state, self)
             for field, rdata, multi in related_data:
                 if multi:
                     field.set_cache(instance, rdata.get(str(instance.id)))
@@ -420,6 +299,13 @@ indices are created.'''
         '''Return a list of database keys used by instance *obj*'''
         return [self.basekey(obj._meta, obj.id)]
     
+    def auto_id_to_python(self, value):
+        '''Return a proper python value for the auto id.'''
+        return value
+    
+    def bind_before_send(self, callback):
+        pass
+    
     # PURE VIRTUAL METHODS
     
     def setup_connection(self, address):
@@ -435,7 +321,7 @@ must return a instance of the backend handler.'''
     def model_keys(self, meta):
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
-        
+    
     def as_cache(self):
         '''Return a :class:`CacheServer` handle for this backend.'''
         raise NotImplementedError('This backend cannot be used as cache')
@@ -461,21 +347,14 @@ def parse_backend(backend):
 It returns a (scheme, host, params) tuple."""
     r = urlparse.urlsplit(backend)
     scheme, host = r.scheme, r.netloc
-    if scheme not in ('https', 'http'):
-        query = r.path
-        path = ''
+    path, query = r.path, r.query
+    if path and not query:
+        query, path = path, ''
         if query:
             if query.find('?'):
                 path = query
             else:
                 query = query[1:]
-    else:
-        path, query = r.path, r.query
-    
-    if path:
-        raise ImproperlyConfigured("Backend URI must not have a path.\
- Found {0}".format(path))
-        
     if query:
         params = dict(urlparse.parse_qsl(query))
     else:
@@ -488,7 +367,7 @@ def _getdb(scheme, host, params):
     try:
         module = import_module('stdnet.backends.%sb' % scheme)
     except ImportError:
-        module = import_module(scheme)
+        module = import_module('stdnet.backends.sql')
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
     
     
@@ -501,6 +380,8 @@ def getdb(backend=None, **kwargs):
         return None
     scheme, address, params = parse_backend(backend)
     params.update(kwargs)
+    if 'timeout' in params:
+        params['timeout'] = int(params['timeout'])
     return _getdb(scheme, address, params)
 
 

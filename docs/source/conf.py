@@ -22,6 +22,7 @@ sys.path.append(base_dir)
 import stdnet
 version = stdnet.__version__
 release = version
+import runtests # so that it import pulsar if available
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
@@ -46,7 +47,7 @@ master_doc = 'index'
 project = 'python stdnet'
 copyright = '2010-2013, Luca Sbardella'
 
-html_theme = 'celery'
+html_theme = 'pulsar'
 
 templates_path = ['_templates']
 html_static_path = ['_static']

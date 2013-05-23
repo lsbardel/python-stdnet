@@ -2,15 +2,26 @@
 
 Ver. 0.8 - Development
 ===============================
-* This version brings several bug fixes and new functionalities. 
+* This version brings several new functionalities, bug fixes, asynchronous
+  connections and a departure from the global registration of models.
+* The API for querying, committing and deleting instances has changed, and it
+  it is now based on the :class:`stdnet.odm.Router` class.
+* A :class:`stdnet.odm.Router` is a placeholder of registered models for
+  one's application. Check the :ref:`registration tutorial
+  <tutorial-registration>` for more details.
 * Added preliminary support for :ref:`mongoDB backend <mongo-server>`.
-  Very much alpha at this stage.
-* Added :ref:`where <query_where>` selector for ad-hoc queries. Argument is
-  a valid expression (lua for redis and javascript for mongodb).
-* :class:`stdnet.odm.AutoField` does not inherit from
-  :class:`stdnet.odm.IntegerField` so that it works for different backends.
-* Moved :mod:`test` module into the :mod:`stdnet.utils` module and refactored
-  the main test class for handling tests on multiple backends at once.
+  Pre-alpha at this stage.
+* Added preliminary support for :ref:`Sql backend <sql-server>`.
+  Pre-alpha at this stage.
+* Can handle master/slave server configuration by registering models to a
+  back-end server and read-only server for read operations (queries).
+* Added :ref:`where <query_where>` selector for ad-hoc queries. The argument is
+  a valid expression (lua_ for redis_ and javascript for mongodb_).
+* AutoField has been renamed :class:`stdnet.odm.AutoIdField` and it does not
+  inherit from :class:`stdnet.odm.IntegerField` so that it can work
+  for different backends.
+* Moved ``test`` module into the :mod:`stdnet.utils.test` module and refactored
+  the main test class for handling tests on multiple back-ends at once.
 * :class:`stdnet.odm.ManyToManyField` field can perform queries on the whole
   data-set of the model which maintains the
   :ref:`many-to-many relationship <many-to-many>`.
@@ -29,14 +40,18 @@ Ver. 0.8 - Development
   model caused the deletion of the instances pointing to those deleted objects.
 * Minor bug fix in lua ``odm`` script when sorting with respect related model
   fields which are missing.
-* Added the new :meth:`stdnet.odm.StdModel.get_model_attribute` method for
-  retrieving nested attribute values using the double underscore notation.
+* Added the new :meth:`stdnet.odm.StdModel.get_attr_value` method for
+  retrieving nested attribute values using the (optional)
+  :ref:`double underscore notation <tutorial-underscore>`.
 * :attr:`stdnet.odm.Field.default` attribute made read-only.
 * :meth:`stdnet.odm.Session.add` accept ``force_update`` parameter which can be used to
   force an ``update`` rather than an ``override`` when an instance is persistent and
   fully loaded.
-* Removed asynchronous redis connection. To be implemented by another package.
-* **650 regression tests** with **93%** coverage.
+* A new asynchronous redis connection for fully asynchronous usage of the api.
+  Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information.
+* Refactored test suite to handle asynchronous and synchronous connections.
+* Redis ``odm`` script is able to fix unique-keys/ids conflicts.
+* **578 regression tests** with **93%** coverage.
   
 .. _vers07:
 
@@ -341,3 +356,4 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _unittest2: http://pypi.python.org/pypi/unittest2
 .. _lua: http://www.lua.org/
 .. _lunatest: https://github.com/silentbicycle/lunatest
+.. _mongodb: http://www.mongodb.org/

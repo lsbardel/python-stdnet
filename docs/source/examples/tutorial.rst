@@ -11,7 +11,7 @@ in a backend database. A :class:`Model` is the single, definitive source of
 data about your data. There are two types of models in :mod:`stdnet`:
 the :class:`StdModel` which consists of :class:`Field` and behaviours of
 the data you are storing and the
-:class:`Structure` the networked equivalent of data-structures such as sets,
+:class:`Structure`, the networked equivalent of data-structures such as sets,
 hash tables, lists. The goal is to define your data model in one place
 and automatically derive things from it.
 
@@ -115,44 +115,101 @@ not available in a traditional relational database.
     documentation for more details or ordering and sorting.
 
 
+.. _tutorial-models-router:
+
 Registering Models
 ================================
 
-Before playing with the API let's to :ref:`register the models <register-model>`
-to a backend server. Registration is not compulsory, but it is required when using
-model's :class:`Manager`::
+Before playing with the API, we need to register the models we intend to use
+with back-end servers. :ref:`Registration <tutorial-registration>` is an important
+topic and is covered in details in the next tutorial. For now,
+all we need to know is that it provides a placeholder for :class:`Model`
+and their :ref:`backend server <db-index>`. The placeholder is given by
+the :class:`Router` which is a mapping from a :class:`Model`
+to a :class:`Manager`::
 
     import odm
 
-    odm.register(Fund, 'redis://my.host.name:6379/?db=1')
-    odm.register(Instrument, 'redis://my.host.name:6379/?db=1')
-    odm.register(Position, 'redis://my.host.name:6379/?db=1')
+    models = odm.Router('redis://my.host.name:6379?db=1')
+    
+    models.register(Fund)
+    models.register(Instrument)
+    models.register(Position)
 
+The above code registers the three models to a :ref:`redis backend <redis-server>`,
+at redis db 1. You can pass several parameters to the connection string, including a ``password``,
+a connection ``timeout`` and a ``namespace`` for your model keys. For example::
+
+    router.register(Fund, 'redis://my.host.name:6379?db=3&password=pippo&namespace=xxxx.&timeout=5')
+
+includes all possible parameters for a :ref:`redis connection string <redis-connection-string>`.
+The :ref:`registration tutorial <tutorial-registration>` illustrates the different ways
+one can register models and how to organise your application.
 
 Creating objects
 ==================
 
-Using models is equivalent to executing queries in the backend database.
+Using the `models` :class:`Router` registered above, is equivalent to executing
+queries in the backend database.
 Once you've created your models, ``stdnet`` automatically gives you
 a data-server abstraction API that lets you create, retrieve,
 update and delete objects.
 
 An instance of a :class:`StdModel`, an object for clarity,
 is created by initialising it using keyword arguments which match
-model's :class:`Field` names and then call the :class:`Model.save` method
-to commit it changes to the data-server. Here's an example::
+model's :class:`Field`. Here's an example::
 
-	>>> b = Fund(name='Markowitz', ccy='EUR')
-	>>> b.save()
-	Fund: Markowitz
-	>>> b.id
-	1
-	>>> b.name
-	'Markowitz'
-	>>> b.ccy
-	'EUR'
-	>>> b.description
-	''
+    >>> b = models[Fund](name='Markowitz', ccy='EUR')
+    >>> b
+    Fund: Markowitz
+    >>> b.id
+    >>> b.name
+    'Markowitz'
+    >>> b.ccy
+    'EUR'
+    >>> b.description
+    ''
+    
+The instance created in this way is not persistent in the backend server, and you can
+check that by noting that its ``id`` is ``None``.
+To commit changes, one obtains a :class:`Session` and add the instance to it::
 
+    >>> models.session().add(b)
+    >>> b.id
+    1
+    >>> b.name
+    'Markowitz'
+    >>> b.ccy
+    'EUR'
+    >>> b.description
+    ''
 
+A shortcut for creating an instance is to use the :meth:`Manager.new` method::
+
+    >>> b = models['Fund'].new(name='Pluto', ccy='EUR')
+    >>> b.id
+    2
+    
+
+An alternative interface for accessing a model :class:`Manager` is the
+:ref:`router dot notation <router-dotted>`::
+
+    >>> b = models.fund.new(name='Star', ccy='GBP')
+    >>> b
+    Fund: Star
+    >>> b.id
+    3
+    
+    
+For bulk updates it is better to use the :ref:`session api <model-session>`
+which in this example would look like::
+
+    >>> with models.session().begin() as transaction:
+    >>>     transaction.add(models.fund(name='Markowitz', ccy='EUR'))
+    >>>     transaction.add(Fund(name='Pluto', ccy='USD'))
+    >>>     ...
+    >>>
+    
+On exit of the ``with`` block, the transaction commits changes to the server.
+    
 .. _django: https://www.djangoproject.com/

@@ -1,48 +1,80 @@
+from pulsar import multi_async
+
 from stdnet import odm
 from stdnet.utils import test
 
 from .base import StructMixin
-
-
-class TestHash(StructMixin, test.CleanTestCase):
+        
+        
+class TestHash(StructMixin, test.TestCase):
     structure = odm.HashTable
     name = 'hashtable'
     
-    def createOne(self, session):
-        h = session.add(odm.HashTable())
+    def create_one(self):
+        h = odm.HashTable()
         h['bla'] = 'foo'
         h['pluto'] = 3
         return h
         
-    def testNoTransaction(self):
-        session = self.session()
-        d = session.add(odm.HashTable())
-        d['bla'] = 5676
-        self.assertEqual(d.size(),1)
-        self.assertEqual(d['bla'],5676)
+    def test_get_empty(self):
+        d = self.empty()        
+        result = yield d.get('blaxxx', 3)
+        self.assertEqual(result, 3)
         
-    def testPop(self):
-        session = self.session()
-        with session.begin():
-            d = session.add(odm.HashTable())
+    def test_pop(self):
+        models = self.mapper
+        d = models.register(self.create_one())
+        session = models.session()
+        with session.begin() as t:
+            d = t.add(d)
             d['foo'] = 'ciao'
-        self.assertEqual(d.size(),1)
-        self.assertEqual(d['foo'],'ciao')
-        self.assertRaises(KeyError, lambda : d.pop('bla'))
-        self.assertEqual(d.pop('bla',56),56)
-        self.assertRaises(TypeError, lambda : d.pop('bla',1,2))
-        self.assertEqual(d.pop('foo'),'ciao')
-        self.assertEqual(len(d),0)
+        yield t.on_result
+        yield self.async.assertEqual(d.size(), 3)
+        yield self.async.assertEqual(d['foo'], 'ciao')
+        yield self.async.assertRaises(KeyError, d.pop, 'blascd')
+        yield self.async.assertEqual(d.pop('xxx', 56), 56)
+        self.assertRaises(TypeError, d.pop, 'xxx', 1, 2)
+        yield self.async.assertEqual(d.pop('foo'), 'ciao')
+        yield self.async.assertEqual(d.size(), 2)
         
-    def testGet(self):
-        session = self.session()
-        with session.begin():
-            h = session.add(odm.HashTable())
-            h['bla'] = 'foo'
-            h['bee'] = 3
+    def test_get(self):
+        models = self.mapper
+        d = models.register(self.structure())
+        session = models.session()
+        with session.begin() as t:
+            d = t.add(d)
+            d['baba'] = 'foo'
+            d['bee'] = 3
+            self.assertEqual(len(d.cache.toadd), 2)
+        yield t.on_result
+        result = yield multi_async((d['baba'], d.get('bee'), d.get('ggg'),
+                                    d.get('ggg', 1)))
+        self.assertEqual(result, ['foo', 3, None, 1])
+        yield self.async.assertRaises(KeyError, lambda : d['gggggg'])
+
+    def test_keys(self):
+        models = self.mapper
+        d = models.register(self.create_one())
+        session = models.session()
+        yield session.add(d)
+        values = yield d.keys()
+        self.assertEqual(set(('bla', 'pluto')), set(values))
         
-        self.assertEqual(h['bla'],'foo')
-        self.assertEqual(h.get('bee'),3)
-        self.assertEqual(h.get('ggg'),None)
-        self.assertEqual(h.get('ggg',1),1)
-        self.assertRaises(KeyError, lambda : h['gggggg'])
+    def test_values(self):
+        models = self.mapper
+        d = models.register(self.create_one())
+        session = models.session()
+        yield session.add(d)
+        values = yield d.values()
+        self.assertEqual(set(('foo', 3)), set(values))
+        
+    def test_items(self):
+        models = self.mapper
+        d = models.register(self.create_one())
+        session = models.session()
+        yield session.add(d)
+        values = yield d.items()
+        data = {'bla': 'foo', 'pluto': 3}
+        self.assertNotEqual(data, values)
+        self.assertEqual(data, dict(values))
+        

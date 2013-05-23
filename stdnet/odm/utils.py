@@ -6,7 +6,7 @@ from inspect import isclass
 
 from stdnet.utils import StringIO
 
-from .base import get_model_from_hash
+from .globals import get_model_from_hash
 
 __all__ = ['get_serializer',
            'register_serializer',
@@ -88,12 +88,14 @@ to each :class:`Serializer` implementation.
 
     @property
     def data(self):
+        '''CList of data to dump into a stream.'''
         if not hasattr(self, '_data'):
             self._data = []
         return self._data
 
     def dump(self, qs):
-        '''Dump a :class:`Query` *qs* into a stream.'''
+        '''Add a :class:`Query` ``qs`` into the collection of :attr:`data`
+to dump into a stream. No writing is done until the :meth:`write` method.'''
         raise NotImplementedError
 
     def write(self, stream=None):
@@ -103,20 +105,24 @@ provided, a python ``StringIO`` is used.
 :return: the stream object.'''
         raise NotImplementedError
 
-    def load(self, stream, model=None):
+    def load(self, models, stream, model=None):
         '''Load a stream of data into the database.
 
+:param models: the :class:`Router` which must contains all the model this
+    method will load.
 :param stream: bytes or an object with a ``read`` method returning bytes.
 :param model: Optional :class:`StdModel` we need to load. If not provided all
-    models in *stream* are loaded.
+    models in ``stream`` are loaded.
+    
+This method must be implemented by subclasses.
 '''
         raise NotImplementedError
 
 
 class JsonSerializer(Serializer):
     '''The default :class:`Serializer` of :mod:`stdnet`. It
-serialize/unserialize models into json data. It has one option given
-by the *indent* of the json string for pretty serialization.'''
+serialise/unserialise models into json data. It has one option given
+by the *indent* of the ``json`` string for pretty serialisation.'''
     arguments = ('indent',)
 
     def get_data(self, qs):
@@ -124,12 +130,15 @@ by the *indent* of the json string for pretty serialization.'''
         for obj in qs:
             data.append(obj.tojson())
             meta = obj._meta
-        return {'model':str(meta),
-                'hash':meta.hash,
-                'data':data}
+        if data:
+            return {'model': str(meta),
+                    'hash': meta.hash,
+                    'data': data}
 
     def dump(self, qs):
-        self.data.append(self.get_data(qs))
+        data = self.get_data(qs)
+        if data:
+            self.data.append(data)
 
     def write(self, stream=None):
         stream = stream or StringIO()
@@ -137,7 +146,7 @@ by the *indent* of the json string for pretty serialization.'''
         stream.write(line)
         return stream
 
-    def load(self, stream, model=None):
+    def load(self, models, stream, model=None):
         if hasattr(stream, 'read'):
             stream = stream.read()
         data = json.loads(stream, **self.options)
@@ -146,8 +155,10 @@ by the *indent* of the json string for pretty serialization.'''
             if model:
                 model = self.on_load_model(model, model_data)
                 if model:
+                    manager = models[model]
                     LOGGER.info('Loading model %s', model._meta)
-                    with model.objects.transaction(signal_commit=False) as t:
+                    session = manager.session()
+                    with session.begin(signal_commit=False) as t:
                         for item_data in model_data['data']:
                             t.add(model.from_base64_data(**item_data))
             else:
@@ -190,7 +201,7 @@ query into a csv file.'''
                 'data': data}
         self.data.append(data)
 
-    def write(self, stream = None):
+    def write(self, stream=None):
         stream = stream or StringIO()
         if self.data:
             fieldnames = self.data[0]['fieldnames']
@@ -202,13 +213,14 @@ query into a csv file.'''
                     w.writerow(row)
         return stream
 
-    def load(self, stream, model = None):
+    def load(self, models, stream, model=None):
         if not model:
             raise ValueError('Model is required when loading from csv file')
         r = csv.DictReader(stream, **self.options)
-        with model.objects.transaction() as t:
+        with models.session().begin() as t:
             for item_data in r:
                 t.add(model.from_base64_data(**item_data))
+        return t.on_result
 
 
 register_serializer('json', JsonSerializer)

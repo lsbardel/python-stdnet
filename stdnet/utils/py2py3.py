@@ -60,7 +60,7 @@ else:   # pragma: no cover
             return unicode('{0} object'.format(self.__class__.__name__))
         
         def __str__(self):
-            return self.__unicode__().encode('utf-8','ignore')
+            return self.__unicode__().encode('utf-8', 'ignore')
         
         def __repr__(self):
             return '%s: %s' % (self.__class__.__name__,self)

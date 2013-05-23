@@ -1,15 +1,15 @@
 from copy import copy
 from inspect import isgenerator
+from functools import partial
 
-from stdnet import on_result, BackendRequest, range_lookups
-from stdnet.exceptions import *
-from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
+from stdnet import range_lookups
+from stdnet.utils import JSPLITTER, iteritems, unique_tuple
+from stdnet.utils.exceptions import *
 
 from .globals import lookup_value
-from .signals import *
 
 
-__all__ = ['Q', 'Query', 'QueryElement', 'EmptyQuery',
+__all__ = ['Q', 'QueryBase', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
 
 def iterable(value):
@@ -95,7 +95,7 @@ class Q(object):
 
     @property
     def backend(self):
-        return self.session.backend
+        return self.session.model(self._meta).read_backend
 
     def get_field(self, field):
         '''A :class:`Q` performs a series of operations and ultimately
@@ -135,8 +135,8 @@ fields.
         pass
 
     def backend_query(self, **kwargs):
-        '''Build the :class:`stdnet.BackendQuery` for this instance. This
-is a virtual method with different implementation in :class:`Query`
+        '''Build the :class:`stdnet.utils.async.BackendQuery` for this instance.
+This is a virtual method with different implementation in :class:`Query`
 and :class:`QueryElement`.'''
         raise NotImplementedError
 
@@ -228,8 +228,8 @@ class Select(QueryElement):
 def make_select(keyword,queries):
     first = queries[0]
     queries = [q.construct() for q in queries]
-    return Select(first.meta, first.session, keyword = keyword,
-                  underlying = queries)
+    return Select(first.meta, first.session, keyword=keyword,
+                  underlying=queries)
 
 def intersect(queries):
     return make_select('intersect',queries)
@@ -247,11 +247,7 @@ def queryset(qs, **kwargs):
 class QueryBase(Q):
 
     def __iter__(self):
-        result = self.items()
-        if isinstance(result, BackendRequest):
-            raise RuntimeError('Cannot iterate. Asynchronous result not ready.')
-        else:
-            return iter(result)
+        return iter(self.items())
 
     def __len__(self):
         return self.count()
@@ -366,6 +362,7 @@ criteria and options associated with it.
         self.fargs  = kwargs.pop('fargs', None)
         self.eargs  = kwargs.pop('eargs', None)
         self.unions = kwargs.pop('unions', ())
+        self.searchengine = kwargs.pop('searchengine', None)
         self.intersections = kwargs.pop('intersections', ())
         self.text  = kwargs.pop('text', None)
         self.exclude_fields = kwargs.pop('exclude_fields', None)
@@ -380,22 +377,17 @@ criteria and options associated with it.
             return False
 
     def __repr__(self):
-        seq = self.cache().get(None)
+        seq = self.backend_query().cache.get(None) if self.executed else None
         if seq is None:
             s = self.__class__.__name__
             if self.fargs:
-                s = '%s.filter(%s)' % (s,self.fargs)
+                s = '%s.filter(%s)' % (s, self.fargs)
             if self.eargs:
-                s = '%s.exclude(%s)' % (s,self.eargs)
+                s = '%s.exclude(%s)' % (s, self.eargs)
             return s
         else:
-            return str(seq)
+            return repr(seq)
     __str__ = __repr__
-
-    def __getitem__(self, slic):
-        if isinstance(slic, slice):
-            return self.items(slic)
-        return self.items()[slic]
 
     def filter(self, **kwargs):
         '''Create a new :class:`Query` with additional clauses corresponding to
@@ -476,23 +468,31 @@ the :meth:`union` method.'''
         q.data['ordering'] = ordering
         return q
 
-    def search(self, text, lookup = None):
+    def search(self, text, lookup=None):
         '''Search *text* in model. A search engine needs to be installed
 for this function to be available.
 
 :parameter text: a string to search.
 :return type: a new :class:`Query` instance.
-'''
-        if self._meta.searchengine:
-            q = self._clone()
-            q.text = (text,lookup)
-            return q
-        else:
-            raise QuerySetError('Search not implemented for {0} model'\
-                                .format(self.model))
+''' 
+        q = self._clone()
+        q.text = (text, lookup)
+        return q
 
     def where(self, code, load_only=None):
-        '''For backend supporting scripting, pass the code to execute.'''
+        '''For :ref:`backend <db-index>` supporting scripting, it is possible
+to construct complex queries which execute the scripting *code* against
+each element in the query. The *coe* should reference an instance of
+:attr:`model` by ``this`` keyword.
+
+:parameter code: a valid expression in the scripting language of the database.
+:parameter load_only: Load only the selected fields when performing the query
+    (this is different from the :meth:`load_only` method which is used when
+    fetching data from the database). This field is an optimization which is
+    used by the :ref:`redis backend <redis-server>` only and can be safely
+    ignored in most use-cases.
+:return: a new :class:`Query`
+'''
         if code:
             q = self._clone()
             q.data['where'] = (code, load_only)
@@ -503,20 +503,24 @@ for this function to be available.
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
-            return self._meta.searchengine.search_model(q, *self.text)
+            searchengine = self.session.router.search_engine
+            if searchengine:
+                return searchengine.search_model(q, *self.text)
+            else:
+                raise QuerySetError('Search not available for %s' % self._meta)
         else:
             return q
 
     def load_related(self, related, *related_fields):
         '''It returns a new :class:`Query` that automatically
-follows the foreign-key relationship *related*.
+follows the foreign-key relationship ``related``.
 
 :parameter related: A field name corresponding to a :class:`ForeignKey`
     in :attr:`Query.model`.
-:parameter fields: optional :class:`Field` names for the *related*
+:parameter related_fields: optional :class:`Field` names for the ``related``
     model to load. If not provided, all fields will be loaded.
 
-This function is :ref:`performance boost <increase-performance>` when
+This function is :ref:`performance boost <performance-loadrelated>` when
 accessing the related fields of all (most) objects in your query.
 
 If Your model contains more than one foreign key, you can use this function
@@ -527,7 +531,8 @@ in a generative way::
 :rtype: a new :class:`Query`.'''
         field = self._get_related_field(related)
         if not field:
-            raise FieldError('%s is not a related field' % related)
+            raise FieldError('"%s" is not a related field for "%s"' %\
+                              (related, self._meta))
         q = self._clone()
         return q._add_to_load_related(field, *related_fields)
 
@@ -567,19 +572,22 @@ to load all fields except a subset specified by *fields*.
         q.exclude_fields = fs if fs else None
         return q
 
+    ##        METHODS FOR RETRIEVING DATA
+    
+    def __getitem__(self, slic):
+        return self.backend_query()[slic]
+    
+    def items(self, callback=None):
+        '''Retrieve all items for this :class:`Query`.'''
+        return self.backend_query().items(callback=callback)
+    
     def get(self, **kwargs):
         '''Return an instance of a model matching the query. A special case is
 the query on ``id`` which provides a direct access to the :attr:`session`
 instances. If the given primary key is present in the session, the object
 is returned directly without performing any query.'''
-        id = kwargs.get('id')
-        if id is not None and len(kwargs) == 1:
-            # check the current session first
-            el = self.session.get(self.model, id)
-            if el is not None:
-                return el
-        # not there, perform the database query
-        return on_result(self.filter(**kwargs).items(), self._get)
+        return self.filter(**kwargs).items(
+                                    callback=self.model.get_unique_instance)
 
     def count(self):
         '''Return the number of objects in ``self``.
@@ -592,10 +600,7 @@ objects on the server side.'''
     def delete(self):
         '''Delete all matched elements of the :class:`Query`. It returns the
 list of ids deleted.'''
-        session = self.session
-        with session.begin() as t:
-            session.delete(self)
-        return t.deleted.get(self._meta)
+        return self.session.delete(self)
 
     def construct(self):
         '''Build the :class:`QueryElement` representing this query.'''
@@ -604,13 +609,13 @@ list of ids deleted.'''
         return self.__construct
 
     def backend_query(self, **kwargs):
-        '''Build and return the :class:`stdnet.BackendQuery`.
+        '''Build and return the :class:`stdnet.utils.async.BackendQuery`.
 This is a lazy method in the sense that it is evaluated once only and its
 result stored for future retrieval.'''
         q = self.construct()
         return q if isinstance(q, EmptyQuery) else q.backend_query(**kwargs)
 
-    def test_unique(self, fieldname, value, instance = None, exception = None):
+    def test_unique(self, fieldname, value, instance=None, exception=None):
         '''Test if a given field *fieldname* has a unique *value*
 in :attr:`model`. The field must be an index of the model.
 If the field value is not unique and the *instance* is not the same
@@ -623,17 +628,10 @@ an exception is raised.
     Default: :attr:`ModelMixin.DoesNotValidate`.
 :return: *value*
 '''
-        try:
-            r = self.get(**{fieldname:value})
-        except self.model.DoesNotExist:
-            return value
-
-        if instance and r.id == instance.id:
-            return value
-        else:
-            exception = exception or self.model.DoesNotValidate
-            raise exception('An instance with {0} {1} is already available'\
-                            .format(fieldname,value))
+        qs = self.filter(**{fieldname:value})
+        callback = partial(self._test_unique, fieldname, value,
+                           instance, exception)
+        return qs.backend_query().items(callback=callback)
 
     def map_reduce(self, map_script, reduce_script, **kwargs):
         '''Perform a map/reduce operation on this query.'''
@@ -644,16 +642,9 @@ an exception is raised.
     ############################################################################
     def clear(self):
         self.__construct = None
-        self.__slice_cache = None
-
-    def cache(self):
-        if not self.__slice_cache:
-            self.__slice_cache = {}
-        return self.__slice_cache
 
     def _construct(self):
         if self.fargs:
-            args = []
             fargs = self.aggregate(self.fargs)
             for f in fargs:
                 # no values to filter on. empty result.
@@ -738,46 +729,18 @@ an exception is raised.
         #
         return [queryset(self, name=name, underlying=field_lookups[name])\
                 for name in sorted(field_lookups)]
-
-    def items(self, slic=None):
-        '''This function does the actual fetching of data from the backend
-server matching this :class:`Query`. This method is usually not called directly,
-instead use the :meth:`all` method or alternatively slice the query in the same
-way you can slice a list or iterate over the query.'''
-        key = None
-        seq = self.cache().get(None)
-        if slic:
-            if seq is not None:
-                return seq[slic]
-            else:
-                key = (slic.start, slic.step, slic.stop)
-        if seq is not None:
-            return seq
-        else:
-            return on_result(self.backend_query().items(slic), self._items, key)
         
-    def _items(self, items, key):
-        if isinstance(items, Exception):
-            raise items
-        session = self.session
-        seq = []
-        model = self.model
-        for el in items:
-            if isinstance(el, model):
-                session.add(el, modified=False)
-            seq.append(el)
-        self.cache()[key] = seq
-        return seq
-
-    def _get(self, items):
+    def _test_unique(self, fieldname, value, instance, exception, items):
         if items:
-            if len(items) == 1:
-                return items[0]
+            r = self.model.get_unique_instance(items)
+            if instance and r.id == instance.id:
+                return value
             else:
-                raise QuerySetError('Get query {0} yielded non\
- unique results'.format(self))
+                exception = exception or self.model.DoesNotValidate
+                raise exception('An instance with %s %s is already available'\
+                                % (fieldname, value))
         else:
-            raise self.model.DoesNotExist()
+            return value
 
     def _get_related_field(self, related):
         meta = self._meta

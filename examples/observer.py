@@ -5,10 +5,9 @@ observing.
 from time import time
 from stdnet import odm
 from stdnet.odm import struct
-from stdnet.lib import redis
 from stdnet.backends import redisb
 
-class update_observer(redis.RedisScript):
+class update_observer(redisb.RedisScript):
     '''Script for adding/updating an observer. The ARGV contains, the member
 value, the initial score (usually a timestamp) and the increment for
 subsequent additions.'''
@@ -36,8 +35,8 @@ class RedisUpdateZset(redisb.Zset):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            flat = tuple(self.flat(cache.toadd))
-            self.client.script_call('update_observer', self.id, *flat)
+            flat = tuple(self.flat(cache.toadd.items()))
+            self.client.execute_script('update_observer', (self.id,), *flat)
             result = True
         if cache.toremove:
             flat = tuple((el[1] for el in cache.toremove))
@@ -46,10 +45,10 @@ class RedisUpdateZset(redisb.Zset):
         return result
     
     def flat(self, zs):
-        for s,el in zs:
+        for s, el in zs:
             yield s
-            yield el[0]
             yield el[1]
+            yield el[2]
 
 
 class UpdateZset(odm.Zset):
@@ -58,13 +57,14 @@ class UpdateZset(odm.Zset):
     def __init__(self, *args, **kwargs):
         self.penalty = kwargs.pop('penalty',self.penalty)
         super(UpdateZset,self).__init__(*args, **kwargs)
-    
-    def add(self, instance):
-        self.update((instance,))
         
     def dump_data(self, instances):
-        for instance in instances:
-            yield time(),(self.penalty,instance.id)
+        dt = time()
+        for n, instance in enumerate(instances):
+            if hasattr(instance, 'pkvalue'):
+                instance = instance.pkvalue()
+            # put n so that it allows for repeated values
+            yield dt, (n, self.penalty, instance)
 
 # Register the new structure with redis backend
 redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
@@ -80,19 +80,25 @@ class Observable(odm.StdModel):
 
 
 class Observer(odm.StdModel):
-    underlyings = odm.ManyToManyField(Observable, related_name = 'observers')
+    # Underlyings are the Obsarvable this Observer is tracking for updates
+    underlyings = odm.ManyToManyField(Observable, related_name='observers')
     
     # field with a 5 seconds penalty
-    updates = UpdatesField(class_field = True,
-                           penalty = 5)
+    updates = UpdatesField(class_field=True, penalty=5)
     
     
-def update_observers(sender, instances, **kwargs):
-    for observable in instances:
-        Observer.updates.update(observable.observers.query())
+def update_observers(sender, instances, session=None, **kwargs):
+    # This callback must be registered with the router
+    # post_commit method
+    # Instances of observable got an update. Loop through the updated observables
+    # and push to the observer class updates all the observers of the observable.
+    models = session.router
+    observers = models.observer
+    through = models[observers.underlyings.model]
+    all = yield through.filter(observable=instances).get_field('observer').all()
+    if all:
+        yield observers.updates.update(all)
 
-# Register event
-odm.post_commit.connect(update_observers, sender = Observable)
             
     
     

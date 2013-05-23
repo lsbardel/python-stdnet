@@ -7,34 +7,35 @@ from stdnet.utils import test
 
 from examples.models import Instrument, Fund, Position, PortfolioView,\
                              UserDefaultView
-from examples.data import FinanceTest, INSTS_TYPES, CCYS_TYPES
+from examples.data import finance_data, INSTS_TYPES, CCYS_TYPES
 
 
-class TestFinanceApplication(FinanceTest):
-        
+class TestFinanceApplication(test.TestWrite):
+    data_cls = finance_data
+    models = (Instrument, Fund, Position)
+    
     def testGetObject(self):
         '''Test get method for id and unique field'''
-        self.data.create(self)
-        session = self.session()
+        session = yield self.data.create(self)
         query = session.query(Instrument)
-        obj = query.get(id = 2)
-        self.assertEqual(obj.id,2)
+        obj = yield query.get(id=2)
+        self.assertEqual(obj.id, 2)
         self.assertTrue(obj.name)
-        obj2 = query.get(name = obj.name)
+        obj2 = yield query.get(name=obj.name)
         self.assertEqual(obj, obj2)
         
     def testLen(self):
         '''Simply test len of objects greater than zero'''
-        session = self.data.create(self)
-        objs = session.query(Instrument).all()
-        self.assertTrue(len(objs)>0)
+        session = yield self.data.create(self)
+        objs = yield session.query(Instrument).all()
+        self.assertTrue(len(objs) > 0)
     
     def testFilter(self):
         '''Test filtering on a model without foreignkeys'''
-        self.data.create(self)
+        yield self.data.create(self)
         session = self.session()
         query = session.query(Instrument)
-        self.assertRaises(QuerySetError, query.get, type = 'equity')
+        self.async.assertRaises(QuerySetError, query.get, type='equity')
         tot = 0
         for t in INSTS_TYPES:
             fs = query.filter(type = t)
@@ -56,7 +57,7 @@ class TestFinanceApplication(FinanceTest):
         self.assertEqual(tot,len(all))
         
     def testValidation(self):
-        pos = Position(size = 10)
+        pos = Position(size=10)
         self.assertFalse(pos.is_valid())
         self.assertEqual(len(pos._dbdata['errors']),3)
         self.assertEqual(len(pos._dbdata['cleaned_data']),1)
@@ -64,11 +65,10 @@ class TestFinanceApplication(FinanceTest):
         
     def testForeignKey(self):
         '''Test filtering with foreignkeys'''
-        self.data.makePositions(self)
-        session = self.session()
+        session = yield self.data.makePositions(self)
         query = session.query(Position)
         #
-        positions = query.all()
+        positions = yield query.all()
         self.assertTrue(positions)
         for p in positions:
             self.assertTrue(isinstance(p.instrument,Instrument))
@@ -93,7 +93,7 @@ class TestFinanceApplication(FinanceTest):
         self.assertEqual(total_positions,totp)
         
     def testRelatedManagerFilter(self):
-        session = self.data.makePositions(self)
+        session = yield self.data.makePositions(self)
         instruments = session.query(Instrument)
         for instrument in instruments:
             positions = instrument.positions.query()
@@ -111,8 +111,7 @@ class TestFinanceApplication(FinanceTest):
         
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
-        self.data.create(self)
-        session = self.session()
+        session = yield self.data.create(self)
         instruments = session.query(Instrument)
         funds = session.query(Fund)
         self.assertTrue(instruments.count())
@@ -125,7 +124,7 @@ class TestFinanceApplication(FinanceTest):
     def testDelete(self):
         '''Test delete on models with related models'''
         # Create Positions which hold foreign keys to Instruments
-        session = self.data.makePositions(self)
+        session = yield self.data.makePositions(self)
         instruments = session.query(Instrument)
         positions = session.query(Position)
         self.assertTrue(instruments.count())

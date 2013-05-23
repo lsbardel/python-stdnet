@@ -1,17 +1,13 @@
 import logging
 from copy import copy
-from hashlib import sha1
-import time
 from datetime import date, datetime
 from base64 import b64encode
 
 from stdnet import range_lookups
-from stdnet.exceptions import *
-from stdnet.utils import pickle, DefaultJSONEncoder,\
-                         DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, to_string, iteritems,\
-                         encoders, flat_to_nested, dict_flat_generator,\
-                         string_type
+from stdnet.utils import DefaultJSONEncoder, DefaultJSONHook, timestamp2date,\
+                         date2timestamp, UnicodeMixin, to_string, string_type,\
+                         encoders, flat_to_nested, dict_flat_generator
+from stdnet.utils.exceptions import *
 
 from . import related
 from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER
@@ -19,7 +15,7 @@ from .globals import get_model_from_hash, get_hash_from_model, JSPLITTER
 logger = logging.getLogger('stdnet.odm')
 
 __all__ = ['Field',
-           'AutoField',
+           'AutoIdField',
            'AtomField',
            'IntegerField',
            'BooleanField',
@@ -41,15 +37,13 @@ NONE_EMPTY = (None,'')
 
 
 def field_value_error(f):
-
-    def _(self, value):
+    def _(self, value, *args, **kwargs):
         try:
-            return f(self, value)
+            return f(self, value, *args, **kwargs)
         except FieldValueError:
             raise
         except:
             raise FieldValueError('%s not valid for "%s"' % (value, self.name))
-
     _.__name__ = f.__name__
     _.__doc__ = f.__doc__
     return _
@@ -90,7 +84,7 @@ Each field is specified as a :class:`StdModel` class attribute.
     * :attr:`Field.unique` is also ``True``.
     * There can be only one in a model.
     * It's attribute name in the model must be **id**.
-    * If not specified a :class:`AutoField` will be added.
+    * If not specified a :class:`AutoIdField` will be added.
 
     Default ``False``.
 
@@ -150,14 +144,12 @@ Each field is specified as a :class:`StdModel` class attribute.
     type = None
     python_type = None
     index = True
-    ordered = False
     charset = None
     hidden = False
     internal_type = None
 
-    def __init__(self, unique=False, ordered=None, primary_key=False,
-                 required=True, index=None, hidden=None, as_cache=False,
-                 **extras):
+    def __init__(self, unique=False, primary_key=False, required=True,
+                 index=None, hidden=None, as_cache=False, **extras):
         self.primary_key = primary_key
         index = index if index is not None else self.index
         if primary_key:
@@ -165,6 +157,7 @@ Each field is specified as a :class:`StdModel` class attribute.
             self.required = True
             self.index = True
             self.as_cache = False
+            extras['default'] = None
         else:
             self.unique = unique
             self.required = required
@@ -175,7 +168,6 @@ Each field is specified as a :class:`StdModel` class attribute.
             self.unique = False
             self.index = False
         self.charset = extras.pop('charset',self.charset)
-        self.ordered = ordered if ordered is not None else self.ordered
         self.hidden = hidden if hidden is not None else self.hidden
         self.meta = None
         self.name = None
@@ -187,6 +179,10 @@ Each field is specified as a :class:`StdModel` class attribute.
     @property
     def default(self):
         return self._default
+    
+    @property
+    def class_field(self):
+        return False
     
     def get_encoder(self, params):
         return None
@@ -201,7 +197,7 @@ Each field is specified as a :class:`StdModel` class attribute.
         return to_string('%s.%s' % (self.meta,self.name))
 
     def value_from_data(self, instance, data):
-        return data.pop(self.attname,None)
+        return data.pop(self.attname, None)
 
     def register_with_model(self, name, model):
         '''Called during the creation of a the :class:`StdModel`
@@ -220,6 +216,8 @@ function users should never call.'''
         meta.fields.append(self)
         if not self.primary_key:
             self.add_to_fields()
+        else:
+            model._meta.pk = self
 
     def add_to_fields(self):
         meta = self.model._meta
@@ -232,6 +230,8 @@ function users should never call.'''
         return self.name
 
     def get_cache_name(self):
+        '''name for the private attribute which contains a cached value
+for this field. Used only by realted fields.'''
         return '_%s_cache' % self.name
 
     def id(self, obj):
@@ -274,18 +274,29 @@ lookup on fields with additional nested fields. This is the case of
 
     def todelete(self):
         return False
-
-    ############################################################################
-    ##    NESTED ATTRIBUTES
-    ############################################################################
-    def get_attr(self, value, name):
-        raise AttributeError
     
     ############################################################################
-    ##    FIELD CONVERTERS
+    ##    FIELD VALUES
     ############################################################################
+    def get_value(self, instance, *bits):
+        '''Retrieve the value :class:`Field` from a
+:class:`StdModel` ``instance``.
 
-    def to_python(self, value):
+:param instance: The :class:`StdModel` ``instance`` invoking this function.
+:param bits: Additional information for nested fields which derives from
+    the :ref:`double underscore <tutorial-underscore>` notation.
+:return: the value of this :class:`Field` in the ``instance``. can raise
+    :class:`AttributeError`.
+    
+This method is used by the :meth:`StdModel.get_attr_value` method when
+retrieving values form a :class:`StdModel` instance.
+'''
+        if bits:
+            raise AttributeError
+        else:
+            return getattr(instance, self.attname)
+    
+    def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
 data type, raising :class:`stdnet.FieldValueError` if the data
 can't be converted.
@@ -331,7 +342,7 @@ value with a specific data type. it can be of four different types:
 * floating point
 * symbol
 '''
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if hasattr(value, '_meta'):
             return value.pkvalue()
         else:
@@ -339,16 +350,29 @@ value with a specific data type. it can be of four different types:
     json_serialize = to_python
 
 
-class AutoField(AtomField):
-    '''An :class:`AtomField` that automatically generated by the
-backend server.
-You usually won't need to use this directly;
-a ``primary_key`` field  of this type, named ``id``,
-will automatically be added to your model
+class AutoIdField(AtomField):
+    '''An :class:`AtomField` for primary keys which are automatically
+generated by the backend server.
+You usually won't need to use this directly; a ``primary_key`` field
+of this type, named ``id``, will automatically be added to your model
 if you don't specify otherwise.
-    '''
+Check the :ref:`primary key tutorial <tutorial-primary-unique>` for
+further information on primary keys.'''
     type = 'auto'
     
+    def __init__(self, *args, **kwargs):
+        kwargs['primary_key'] = True
+        super(AutoIdField, self).__init__(*args, **kwargs)
+    
+    @field_value_error
+    def to_python(self, value, backend=None):
+        if hasattr(value, '_meta'):
+            return value.pkvalue()
+        elif backend:
+            return backend.auto_id_to_python(value)
+        else:
+            return value
+        
 
 class BooleanField(AtomField):
     '''A boolean :class:`AtomField`'''
@@ -361,7 +385,7 @@ class BooleanField(AtomField):
         super(BooleanField,self).__init__(required = required,**kwargs)
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value in NONE_EMPTY:
             return self.get_default()
         else:
@@ -379,8 +403,8 @@ class IntegerField(AtomField):
     python_type = int
 
     @field_value_error
-    def to_python(self, value):
-        value = super(IntegerField, self).to_python(value)
+    def to_python(self, value, backend=None):
+        value = super(IntegerField, self).to_python(value, backend)
         if value in NONE_EMPTY:
             return self.get_default()
         else:
@@ -403,11 +427,10 @@ a :class:`datetime.date` instance.'''
     type = 'date'
     internal_type = 'numeric'
     python_type = date
-    ordered = True
     _default = None
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
             if isinstance(value,date):
                 if isinstance(value,datetime):
@@ -438,7 +461,7 @@ a :class:`datetime.datetime` instance.'''
     index = False
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
             if isinstance(value,date):
                 if not isinstance(value,datetime):
@@ -465,7 +488,7 @@ or other entities. They are indexes by default.'''
         return encoders.Default(self.charset)
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         value = super(SymbolField,self).to_python(value)
         if value is not None:
             return self.encoder.loads(value)
@@ -500,7 +523,7 @@ In python this is converted to `bytes`.'''
     _default = b''
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value is not None:
             return self.encoder.loads(value)
         else:
@@ -592,7 +615,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
             self._register_with_related_model()
         else:
             raise FieldError('Duplicated related name "{0}"\
- in model "{1}" and field {2}'.format(related_name,meta,self))
+ in model "{1}" and field {2}'.format(self.related_name, meta, self))
 
     def _register_with_related_model(self):
         manager = self.related_manager_class(self)
@@ -603,8 +626,9 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def get_attname(self):
         return '%s_id' % self.name
         
-    def get_attr(self, value, bits):
-        return value.get_model_attribute(JSPLITTER.join(bits))
+    def get_value(self, instance, *bits):
+        related = getattr(instance, self.name)
+        return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)
@@ -618,11 +642,13 @@ the database field for the ``File`` model will have a ``folder_id`` field.
             raise FieldValueError('cannot evaluate score of {0}'.format(value))
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if isinstance(value, self.relmodel):
-            return value.id
+            return value.pkvalue()
+        elif value:
+            return self.relmodel._meta.pk.to_python(value, backend)
         else:
-            return self.relmodel._meta.pk_to_python(value)
+            return value
     json_serialize = to_python
 
     def filter(self, session, name, value):
@@ -690,8 +716,7 @@ behaviour and how the field is stored in the back-end server.
 
     And::
 
-        >>> m = MyModel(name = 'bla',
-                        data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
+        >>> m = MyModel(name='bla', data={'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
         >>> m.cleaned_data
         {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
  'data__pv__std': '3.5', 'data': '""'}
@@ -722,7 +747,7 @@ behaviour and how the field is stored in the back-end server.
                 object_hook = params.pop('decoder_hook', DefaultJSONHook))
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value is None:
             return self.get_default()
         try:
@@ -779,7 +804,8 @@ behaviour and how the field is stored in the back-end server.
                 name = JSPLITTER.join((self.attname, name))
             return (name, None)
     
-    def get_attr(self, value, bits):
+    def get_value(self, instance, *bits):
+        value = getattr(instance, self.name)
         try:
             for bit in bits:
                 value = value[bit]
@@ -803,7 +829,7 @@ registered in the model hash table, it can be used.'''
         return self.index_value(value)
 
     @field_value_error
-    def to_python(self, value):
+    def to_python(self, value, backend=None):
         if value and not hasattr(value,'_meta'):
             value = self.encoder.loads(value)
             return get_model_from_hash(value)
@@ -852,7 +878,7 @@ argument.
     
     and to remove::
     
-        >>> u.following.remove(User.objects.get(name='john))
+        >>> u.following.remove(User.objects.get(name='john'))
 
 .. attribute:: through
 
@@ -892,10 +918,12 @@ argument.
     def add_to_fields(self):
         #A many to many field is a dummy field. All it does it provides a proxy
         #for the through model. Remove it from the fields dictionary
+        #and addit to the list of many_to_many
         self.meta.dfields.pop(self.name)
+        self.meta.manytomany.append(self.name)
 
 
-class CompositeIdField(SymbolField):
+class CompositeIdField(AutoIdField):
     '''This field can be used when an instance of a model is uniquely
 identified by a combination of two or more :class:`Field` in the model
 itself. It requires a number of positional arguments greater or equal 2.
@@ -906,10 +934,34 @@ These arguments must be fields names in the model where the
 
     list of :class:`Field` names which are used to uniquely identify a
     model instance
+    
+Check the :ref:`composite id tutorial <tutorial-compositeid>` for more
+information and tips on how to use it.
 '''
     type = 'composite'
     def __init__(self, *fields, **kwargs):
-        kwargs['primary_key'] = True
-        super(CompositeIdField,self).__init__(**kwargs)
+        super(CompositeIdField, self).__init__(**kwargs)
         self.fields = fields
+        if len(self.fields) < 2:
+            raise FieldError('At least tow fields are required by composite '\
+                             'CompositeIdField')
 
+    def get_value(self, instance, *bits):
+        if bits:
+            raise AttributeError
+        values = tuple((getattr(instance, f.attname) for f in self.fields))
+        return hash(values)
+    
+    def register_with_model(self, name, model):
+        fields = []
+        for field in self.fields:
+            if field not in model._meta.dfields:
+                raise FieldError('Composite id field "%s" in in "%s" model.' %\
+                                 (field, model._meta))
+            field = model._meta.dfields[field]
+            if field.internal_type not in ('text', 'numeric'):
+                raise FieldError('Composite id field "%s" not valid type.' %\
+                                 field)
+            fields.append(field)
+        self.fields = tuple(fields)
+        return super(CompositeIdField, self).register_with_model(name, model)

@@ -4,10 +4,11 @@ import tempfile
 from stdnet import odm
 from stdnet.utils import test, BytesIO, to_bytes
 
+
 class Tempfile(object):
 
-    def __init__(self, data, text = True):
-        fd, path = tempfile.mkstemp(text = text)
+    def __init__(self, data, text=True):
+        fd, path = tempfile.mkstemp(text=text)
         self.handler = None
         self.path = path
         os.write(fd, to_bytes(data))
@@ -38,9 +39,12 @@ class Tempfile(object):
         os.remove(self.path)
 
 
-class SerializerMixin(object):
-    '''A mixin for testing serializers.'''
+class BaseSerializerMixin(object):
     serializer = 'json'
+    
+    @classmethod
+    def after_setup(cls):
+        yield cls.data.create(cls)
 
     def get(self, **options):
         s = odm.get_serializer(self.serializer)
@@ -49,32 +53,44 @@ class SerializerMixin(object):
         self.assertFalse(s.data)
         self.assertTrue(s)
         return s
-
+    
+    def dump(self):
+        models = self.mapper
+        s = self.get()
+        qs = yield models.instrument.query().sort_by('id').all()
+        s.dump(qs)
+        self.assertTrue(s.data)
+        self.assertEqual(len(s.data), 1)
+        yield s
+    
+    
+class SerializerMixin(BaseSerializerMixin):
+    
     def testMeta(self):
         self.get()
 
-    def testDump(self):
-        self.data.create(self)
-        s = self.get()
-        qs = self.model.objects.query().sort_by('id')
-        s.dump(qs)
-        self.assertTrue(s.data)
-        return s
+    def test_dump(self):
+        return self.dump()
 
-    def testWrite(self):
-        s = self.testDump()
+    def test_write(self):
+        s = yield self.dump()
         data = s.write()
         self.assertTrue(data)
 
+
+class LoadSerializerMixin(BaseSerializerMixin):
+    
     def testLoad(self):
-        s = self.testDump()
-        qs = self.model.objects.query().sort_by('id').all()
+        models = self.mapper
+        s = yield self.dump()
+        qs = yield models.instrument.query().sort_by('id').all()
+        self.assertTrue(qs)
         data = s.write().getvalue()
         with Tempfile(data) as tmp:
-            self.model.objects.flush()
-            s.load(tmp.open(), self.model)
-        qs2 = self.model.objects.query().sort_by('id').all()
-        self.assertEqual(qs,qs2)
+            yield models.instrument.flush()
+            yield s.load(models, tmp.open(), self.model)
+        qs2 = yield models.instrument.query().sort_by('id').all()
+        self.assertEqual(qs, qs2)
 
 
 class DummySerializer(odm.Serializer):
@@ -88,12 +104,12 @@ class TestMeta(test.TestCase):
         self.assertRaises(ValueError, odm.get_serializer, 'djsbvjchvsdjcvsdj')
 
     def testRegisterUnregister(self):
-        odm.register_serializer('dummy',DummySerializer())
+        odm.register_serializer('dummy', DummySerializer())
         s = odm.get_serializer('dummy')
         self.assertTrue('dummy' in odm.all_serializers())
-        self.assertTrue(isinstance(s,DummySerializer))
+        self.assertTrue(isinstance(s, DummySerializer))
         self.assertRaises(NotImplementedError, s.dump, None)
         self.assertRaises(NotImplementedError, s.write)
-        self.assertRaises(NotImplementedError, s.load, None)
+        self.assertRaises(NotImplementedError, s.load, None, None)
         self.assertTrue(odm.unregister_serializer('dummy'))
         self.assertRaises(ValueError, odm.get_serializer, 'dummy')

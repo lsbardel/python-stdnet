@@ -8,76 +8,75 @@ class StructMixin(object):
     structure = None
     name = None
     
-    def createOne(self, session):
+    def create_one(self):
         '''Create a structure and add few elements. Must return an instance
 of the :attr:`structure`.'''
         raise NotImplementedError
     
-    def asserGroups(self, l):
-        sm = l.session.model(l._meta)
-        self.assertEqual(len(sm),1)
-        self.assertTrue(l.session)
-        self.assertTrue(l.state().persistent)
-        self.assertFalse(l in sm.new)
-        self.assertTrue(l in sm.dirty)
-        self.assertTrue(l in sm.modified)
-        self.assertFalse(l in sm.loaded)
-        
-    def testMeta(self):
-        session = self.session()
-        # start the transaction
-        session.begin()
-        l = self.createOne(session)
+    def empty(self):
+        models = self.mapper
+        l = models.register(self.structure())
         self.assertTrue(l.id)
-        self.assertEqual(l.instance, None)
-        self.assertEqual(l.session, session)
-        self.assertEqual(l._meta.name, self.name)
-        self.assertEqual(l._meta.model._model_type, 'structure')
-        #Structure have always the persistent flag set to True
-        self.assertTrue(l.state().persistent)
-        self.assertTrue(l in session)
-        self.assertEqual(l.size(), 0)
-        self.asserGroups(l)
+        models.session().add(l)
+        self.assertTrue(l.session is not None)
         return l
     
-    def testCommit(self):
-        l = self.testMeta()
-        l.session.commit()
-        self.assertTrue(l.state().persistent)
-        self.assertTrue(l.size())
-        self.assertTrue(l in l.session)
-        self.asserGroups(l)
+    def not_empty(self):
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        yield models.session().add(l)
+        self.assertTrue(l.session is not None)
+        yield l
+    
+    def test_no_session(self):
+        l = self.create_one()
+        self.assertFalse(l.session)
+        self.assertTrue(l.id)
+        session = self.mapper.session()
+        self.assertRaises(InvalidTransaction, session.add, l)
         
-    def testTransaction(self):
-        session = self.session()
-        with session.begin():
-            l = self.createOne(session)
-            # Trying to save within a section will throw an InvalidTransaction
-            self.assertRaises(InvalidTransaction, l.save)
-            # Same for delete
-            self.assertRaises(InvalidTransaction, l.delete)
-            self.assertTrue(l.state().persistent)
-            self.asserGroups(l)
-        self.assertTrue(l.size())
-        self.assertTrue(l.state().persistent)
+    def test_meta(self):
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        session = models.session()
+        with session.begin() as t:
+            t.add(l)    # add the structure to the session
+            self.assertEqual(l.session, session)
+            self.assertEqual(l._meta.name, self.name)
+            self.assertEqual(l._meta.model._model_type, 'structure')
+            #Structure have always the persistent flag set to True
+            self.assertTrue(l.get_state().persistent)
+            self.assertTrue(l in session)
+            size = yield l.size()
+            self.assertEqual(size, 0)
+        yield t.on_result
+        yield l
+    
+    def test_commit(self):
+        l = yield self.test_meta()
+        yield self.async.assertTrue(l.size())
         
-    def testDelete(self):
-        session = self.session()
-        with session.begin():
-            s = self.createOne(session)
-        self.asserGroups(s)
-        self.assertTrue(s.size())
-        s.delete()
-        self.assertEqual(s.size(),0)
-        self.assertNotEqual(s.session,None)
-        self.assertFalse(s in session)
+    def test_delete(self):
+        models = self.mapper
+        l = models.register(self.create_one())
+        self.assertTrue(l.id)
+        session = models.session()
+        yield session.add(l)
+        yield self.async.assertTrue(l.size())
+        yield session.delete(l)
+        yield self.async.assertEqual(l.size(), 0)
+        self.assertEqual(l.session, session)
         
-    def testEmpty(self):
-        session = self.session()
-        with session.begin():
-            l = session.add(self.structure())
-        self.asserGroups(l)
-        self.assertEqual(l.size(),0)
-        self.assertEqual(l.session,session)
-        self.asserGroups(l)
-        self.assertFalse(l.state().deleted)
+    def test_empty(self):
+        '''Create an empty structure'''
+        models = self.mapper
+        l = models.register(self.structure())
+        self.assertTrue(l.id)
+        session = models.session()
+        with session.begin() as t:
+            t.add(l)
+        yield t.on_result
+        yield self.async.assertEqual(l.size(), 0)
+        self.assertEqual(l.session, session)

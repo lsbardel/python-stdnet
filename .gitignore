@@ -3,6 +3,7 @@
 *.so
 *.prof
 dist
+__pycache__
 lib/src/hr.c
 stdnet/lib/hr.pyd
 stdnet/lib/hr.so

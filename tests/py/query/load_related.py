@@ -1,32 +1,28 @@
-from stdnet import FieldError
+from stdnet import odm, FieldError
 from stdnet.utils import test
 
-from examples.models import Dictionary
-from examples.data import finance_data, Position, Instrument, Fund
+from examples.models import Dictionary, Profile
+from examples.data import FinanceTest, Position, Instrument, Fund
 
 
-class test_load_related(test.TestCase):
-    data_cls = finance_data
-    models = (Instrument, Fund, Position)
+class Role(odm.StdModel):
+    profile = odm.ForeignKey(Profile)
+
+
+class test_load_related(FinanceTest):
     
     @classmethod
-    def setUpClass(cls):
-        super(test_load_related, cls).setUpClass()
-        cls.data = cls.data_cls(size=cls.size)
-        cls.data.makePositions(cls('testMeta'))
+    def after_setup(cls):
+        yield cls.data.makePositions(cls)
         
-    @classmethod
-    def tearDownClass(cls):
-        yield cls.clear_all()
-
     def testMeta(self):
         session = self.session()
         query = session.query(Position)
         self.assertEqual(query.select_related, None)
         pos1 = query.load_related('instrument')
-        self.assertEqual(len(pos1.select_related),1)
+        self.assertEqual(len(pos1.select_related), 1)
         self.assertEqual(pos1.select_related['instrument'], ())
-        pos2 = pos1.load_related('instrument','name','ccy')
+        pos2 = pos1.load_related('instrument', 'name', 'ccy')
         self.assertEqual(pos1.select_related['instrument'], ())
         self.assertEqual(pos2.select_related['instrument'], ('name','ccy'))
         pos3 = pos2.load_related('fund','name')
@@ -44,7 +40,7 @@ class test_load_related(test.TestCase):
         pos = query.load_related('instrument')
         fund = Position._meta.dfields['fund']
         inst = Position._meta.dfields['instrument']
-        pos = list(pos)
+        pos = yield pos.all()
         self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
@@ -55,18 +51,18 @@ class test_load_related(test.TestCase):
             val = getattr(p,cache,None)
             self.assertFalse(val)
 
-    def testSingle_withFields(self):
+    def test_single_with_fields(self):
         session = self.session()
         query = session.query(Position)
         pos = query.load_related('instrument', 'name', 'ccy')
         inst = Position._meta.dfields['instrument']
-        pos = list(pos)
+        pos = yield pos.all()
         self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
             val = getattr(p, cache, None)
             self.assertTrue(val)
-            self.assertTrue(isinstance(val,inst.relmodel))
+            self.assertTrue(isinstance(val, inst.relmodel))
             self.assertEqual(set(val._loadedfields),set(('name','ccy')))
             self.assertTrue(val.name)
             self.assertTrue(val.ccy)
@@ -78,7 +74,7 @@ class test_load_related(test.TestCase):
         query = session.query(Position)
         pos = query.load_related('instrument', 'id')
         inst = Position._meta.dfields['instrument']
-        pos = list(pos)
+        pos = yield pos.all()
         self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
@@ -96,7 +92,7 @@ class test_load_related(test.TestCase):
                                      .load_related('fund')
         fund = Position._meta.dfields['fund']
         inst = Position._meta.dfields['instrument']
-        pos = list(pos)
+        pos = yield pos.all()
         self.assertTrue(pos)
         for p in pos:
             cache = inst.get_cache_name()
@@ -104,9 +100,9 @@ class test_load_related(test.TestCase):
             self.assertTrue(val)
             self.assertTrue(isinstance(val,inst.relmodel))
             cache = fund.get_cache_name()
-            val = getattr(p,cache,None)
+            val = getattr(p, cache, None)
             self.assertTrue(val)
-            self.assertTrue(isinstance(val,fund.relmodel))
+            self.assertTrue(isinstance(val, fund.relmodel))
 
     def testError(self):
         session = self.session()
@@ -121,22 +117,26 @@ class test_load_related(test.TestCase):
         session = self.session()
         query = session.query(Position)
         inst = Position._meta.dfields['instrument']
-        q = query.load_only('dt','size').load_related('instrument')
-        self.assertEqual(q.fields,('dt','size'))
-        for p in q:
+        qs = query.load_only('dt','size').load_related('instrument')
+        self.assertEqual(qs.fields, ('dt','size'))
+        qs = yield qs.all()
+        self.assertTrue(qs)
+        for p in qs:
             self.assertEqual(set(p._loadedfields),
                              set(('dt','instrument','size')))
             cache = inst.get_cache_name()
             val = getattr(p, cache, None)
             self.assertTrue(val)
-            self.assertTrue(isinstance(val,inst.relmodel))
+            self.assertTrue(isinstance(val, inst.relmodel))
 
-    def testWithFilter(self):
+    def test_with_filter(self):
         session = self.session()
         instruments = session.query(Instrument).filter(ccy='EUR')
         qs = session.query(Position).filter(instrument=instruments)\
                                     .load_related('instrument')
         inst = Position._meta.dfields['instrument']
+        qs = yield qs.all()
+        self.assertTrue(qs)
         for p in qs:
             cache = inst.get_cache_name()
             val = getattr(p, cache, None)
@@ -146,41 +146,64 @@ class test_load_related(test.TestCase):
 
 
 class test_load_related_empty(test.TestCase):
-    models = (Instrument, Fund, Position)
+    models = (Role, Profile, Position, Instrument, Fund)
     
+    @classmethod
+    def after_setup(cls):
+        with cls.session().begin() as t:
+            p1 = t.add(Profile())
+            p2 = t.add(Profile())
+            p3 = t.add(Profile())
+        yield t.on_result
+        with cls.session().begin() as t:
+            t.add(Role(profile=p1))
+            t.add(Role(profile=p1))
+            t.add(Role(profile=p3))
+        yield t.on_result
+        
     def testEmpty(self):
-        session = self.session()
-        instruments = session.query(Position).load_related('instrument').all()
-        self.assertEqual(instruments, [])
+        models = self.mapper
+        insts = yield models.position.query().load_related('instrument').all()
+        self.assertEqual(insts, [])
         
-        
-class load_related_structure(test.CleanTestCase):
-
-    def setUp(self):
-        session = self.session()
-        with session.begin():
-            d1 = session.add(Dictionary(name = 'english-italian'))
-            d2 = session.add(Dictionary(name = 'italian-english'))
-        with session.begin():
+    def test_related_no_fields(self):
+        qs = self.query().load_related('profile')
+        query = yield qs.all()
+        profiles = set((role.profile for role in query))
+        self.assertEqual(len(profiles), 2)
+    
+ 
+class load_related_structure(test.TestCase):
+    model = Dictionary
+    
+    @classmethod
+    def after_setup(cls):
+        with cls.session().begin() as t:
+            d1 = t.add(Dictionary(name='english-italian'))
+            d2 = t.add(Dictionary(name='italian-english'))
+        yield t.on_result
+        with cls.session().begin() as t:
             d1.data.update((('ball','palla'),
                             ('boat','nave'),
                             ('cat','gatto')))
             d2.data.update((('palla','ball'),
                             ('nave','boat'),
                             ('gatto','cat')))
+        yield t.on_result
 
-    def testGet(self):
+    def test_hash(self):
         session = self.session()
         query = session.query(Dictionary)
         # Check if data is there first
-        d = query.get(name = 'english-italian')
-        remote = dict(d.data.items())
-        self.assertEqual(len(remote),3)
+        d = yield query.get(name = 'english-italian')
+        data = yield d.data.items()
+        remote = dict(data)
+        self.assertEqual(len(remote), 3)
         #
-        d = query.load_related('data').get(name='english-italian')
+        d = yield query.load_related('data').get(name='english-italian')
         data = d.data
         # the cache should be available
         cache = data.cache.cache
-        self.assertEqual(len(cache),3)
-        self.assertEqual(cache,remote)
+        self.assertEqual(len(cache), 3)
+        self.assertEqual(cache, remote)
 

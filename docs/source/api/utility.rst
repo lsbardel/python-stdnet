@@ -9,30 +9,10 @@ Internals and Utilities
 Default Settings
 =========================
 
-.. automodule:: stdnet.conf
+.. automodule:: stdnet.utils.conf
 
 
 .. module:: stdnet.odm
-
-Model Utilities
-============================
-
-Instance form UUID
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: from_uuid
-
-
-Model Iterator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: model_iterator
-
-
-Flush Models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: stdnet.odm.flush_models
 
 
 .. _serialize-models:
@@ -88,70 +68,10 @@ JSON utilities
 
 .. _encoders:
 
-.. module:: stdnet.utils.encoders
-
 Encoders
 =======================
 
-.. autoclass:: Encoder
-   :members:
-   :member-order: bysource
-
-
-No Encoder
-~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: NoEncoder
-   :members:
-   :member-order: bysource
-
-
-Default
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: Default
-   :members:
-   :member-order: bysource
-
-
-Bytes
-~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: Bytes
-   :members:
-   :member-order: bysource
-
-
-Json
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: Json
-   :members:
-   :member-order: bysource
-
-
-Python Pickle
-~~~~~~~~~~~~~~~~~~~~
-   
-.. autoclass:: PythonPickle
-   :members:
-   :member-order: bysource
-
-
-DateTimeConverter
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DateTimeConverter
-   :members:
-   :member-order: bysource
-   
-   
-DateConverter
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DateConverter
-   :members:
-   :member-order: bysource
+.. automodule:: stdnet.utils.encoders
 
 
 .. module:: stdnet
@@ -165,12 +85,7 @@ Exceptions
    
 .. autoclass:: ImproperlyConfigured
    :members:
-   :member-order: bysource
-   
-.. autoclass:: ModelNotRegistered
-   :members:
-   :member-order: bysource
-   
+   :member-order: bysource   
    
 .. autoclass:: QuerySetError
    :members:
@@ -219,11 +134,9 @@ Populate
 .. autofunction:: stdnet.utils.populate
 
 
-.. module:: stdnet.test
+.. _api-testing:
 
-TestCase
-~~~~~~~~~~~~~~~
+Testing
+======================
 
-.. autoclass:: TestCase
-   :members:
-   :member-order: bysource
+.. automodule:: stdnet.utils.test

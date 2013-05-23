@@ -1,16 +1,15 @@
 from uuid import uuid4
-from collections import namedtuple
 
-from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
-                            BytesIO, iterpair, ispy3k
-from stdnet.lib import zset, skiplist
-from stdnet import SessionNotAvailable
+from stdnet.utils import iteritems, encoders, BytesIO, iterpair, ispy3k
+from stdnet.utils.zset import zset
+from stdnet.utils.skiplist import skiplist
+from stdnet.utils.async import on_result, async, is_async
 
 from .base import ModelBase
-from .session import commit_when_no_transaction, withsession
 
 
 __all__ = ['Structure',
+           'StructureCache',
            'Sequence',
            'OrderedMixin',
            'KeyValueMixin',
@@ -24,13 +23,25 @@ __all__ = ['Structure',
            # Mixins
            'OrderedMixin',
            'PairMixin',
-           'KeyValueMixin']
+           'KeyValueMixin',
+           'commit_when_no_transaction']
 
+
+def commit_when_no_transaction(f):
+    '''Decorator for committing changes when the instance session is
+not in a transaction.'''
+    def _(self, *args, **kwargs):
+        r = f(self, *args, **kwargs)
+        return self.session.add(self) if self.session is not None else r
+    _.__name__ = f.__name__
+    _.__doc__ = f.__doc__
+    return _
 
 ################################################################################
 ##    CACHE CLASSES FOR STRUCTURES
 ################################################################################
-class structure_cache(object):
+class StructureCache(object):
+    '''Interface for all :attr:`Structure.cache` classes.'''
     def __init__(self):
         self.clear()
     
@@ -41,13 +52,17 @@ class structure_cache(object):
             return str(self.cache)
         
     def clear(self):
+        '''Clear the cache for data'''
         self.cache = None
+        
+    def items(self):
+        return self.cache
         
     def set_cache(self, data):
         raise NotImplementedError()
     
     
-class stringcache(structure_cache):
+class stringcache(StructureCache):
     
     def getvalue(self):
         return self.data.getvalue()
@@ -60,7 +75,7 @@ class stringcache(structure_cache):
         self.data = BytesIO()
     
     
-class listcache(structure_cache):
+class listcache(StructureCache):
         
     def push_front(self, value):
         self.front.append(value)
@@ -79,7 +94,7 @@ class listcache(structure_cache):
         self.cache.extend(data)
         
     
-class setcache(structure_cache):
+class setcache(StructureCache):
 
     def __contains__(self, v):
         if v not in self.toremove:
@@ -87,7 +102,7 @@ class setcache(structure_cache):
         
     def update(self, values):
         self.toadd.update(values)
-        self.toremove.difference_update(values)
+        self.toremove.difference_update(self.toadd)
         
     def remove(self, values, add_to_remove = True):
         self.toadd.difference_update(values)
@@ -132,6 +147,9 @@ class hashcache(zsetcache):
             self.cache = {}
         self.cache.update(data)
         
+    def items(self):
+        return self.cache.items()
+        
     def remove(self, keys, add_to_remove = True):
         d = lambda x : self.toadd.pop(x,None)
         for key in keys:
@@ -168,51 +186,43 @@ can also be used as stand alone objects. For example::
     db = stdnet.getdb(...)
     mylist = db.list('bla')
 
-.. attribute:: instance
+.. attribute:: cache
 
-    An optional :class:`StdModel` instance to which the structure belongs
-    to via a :ref:`structured field <model-field-structure>`. This attribute
-    is initialised by the :mod:`odm`.
-    
-    Default ``None``.
-    
-.. attribute:: timeout
+    A python :class:`StructureCache` for this :class:`Structure`.
+    The :attr:`cache` is used when adding or removing data via
+    :class:`Transaction` as well as
+    for storing the results obtained form a call to :meth:`items`.
 
-    Expiry timeout. If different from zero it represents the number of seconds
-    after which the structure is deleted from the data server.
-    
-    Default ``0``.
-
-.. attribute:: pickler
+.. attribute:: value_pickler
 
     Class used for serialize and unserialize values.
-    If ``None`` the :attr:`backend` pickler will be used.
+    If ``None`` the :attr:`stdnet.utils.encoders.NumericDefault`
+    will be used.
     
     Default ``None``.
-    '''
+    
+.. attribute:: field
+
+    The :class:`StructureField` which this owns this :class:`Structure`.
+    Default ``None``.
+
+'''
     _model_type = 'structure'
+    abstract = True
     pickler = None
     value_pickler = None
-    def __init__(self, instance=None, timeout=0, value_pickler=None, name='',
-                  **kwargs):
-        self.instance = instance
+    def __init__(self, value_pickler=None, name='', field=False, session=None,
+                 pkvalue=None, **kwargs):
+        self._field = field
+        self._pkvalue = pkvalue
         self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()
-        self.timeout = timeout
         self.setup(**kwargs)
-        if self.instance is not None:
-            if not self.id:
-                raise ValueError('Structure has instance but not id')
-        elif not self.id:
+        self.session = session
+        if not self.id and not self._field:
             self.id = self.makeid()
-        self._dbdata['id'] = self.id
-        
-    def obtain_session(self):
-        if self.session is not None:
-            return self.session.session()
-        elif self.instance is not None:
-            return self.instance.obtain_session()
+            self._dbdata['id'] = self.id
         
     def makeid(self):
         return str(uuid4())[:8]
@@ -221,36 +231,52 @@ can also be used as stand alone objects. For example::
         pass
     
     @property
+    def field(self):
+        return self._field
+    
+    @property
+    def model(self):
+        '''The :class:`StdModel` which contains the :attr:`field` of this
+:class:`Structure`. Only available if :attr:`field` is defined.'''
+        if self._field:
+            return self._field.model
+        
+    @property
     def cache(self):
         if 'cache' not in self._dbdata:
             self._dbdata['cache'] = self.cache_class()
         return self._dbdata['cache']
         
     def __repr__(self):
-        return '%s(%s) %s' % (self.__class__.__name__, self.id, self.cache)
+        return '%s %s' % (self.__class__.__name__, self.cache)
         
     def __str__(self):
         return self.__repr__()
     
     def __iter__(self):
         # Iterate through the structure
-        if self.cache.cache is None:
-            data = self.load_data(self.session.structure(self))
-            self.cache.set_cache(data)
-        return iter(self.cache.cache)
+        res = self.items()
+        if is_async(res):
+            raise RuntimeError('Cannot iterate on asynchronous result.')
+        else:
+            return iter(res)
         
     def size(self):
-        '''Number of elements in structure.'''
+        '''Number of elements in the :class:`Structure`.'''
         if self.cache.cache is None:
-            return self.backend_structure().size()
+            return self.read_backend_structure().size()
         else:
             return len(self.cache.cache)
     
     def __contains__(self, value):
-        return self.pickler.dumps(value) in self.backend_structure()
+        return self.pickler.dumps(value) in self.read_backend_structure()
     
     def __len__(self):
         return self.size()
+    
+    def items(self):
+        '''All items of this :class:`Structure`. Implemented by subclasses.'''
+        raise NotImplementedError
     
     def set_cache(self, data):
         '''Set the cache for the :class:`Structure`.
@@ -259,18 +285,24 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         self.cache.set_cache(self.load_data(data))
         
     def load_data(self, data):
-        '''Load data from the :class:`stdnet.BackendDataServer`.'''
-        loads = self.value_pickler.loads
-        return (loads(v) for v in data)
+        '''Load ``data`` from the :class:`stdnet.BackendDataServer`.'''
+        return self.value_pickler.load_iterable(data, self.session)
     
-    def dbid(self):
-        return self.backend_structure().id
-    
-    ############################################################################
-    ## INTERNALS
-    @withsession
     def backend_structure(self, client=None):
-        return self.session.backend.structure(self, client)
+        '''Returns a valid :class:`stdnet.BackendStructure` for this
+:class:`Structure`.'''
+        if self._field:
+            backend = self.session.model(self._field.model).backend
+        else:
+            backend = self.session.model(self).backend
+        return backend.structure(self, client)
+    
+    def read_backend_structure(self, client=None):
+        if self._field:
+            backend = self.session.model(self._field.model).read_backend
+        else:
+            backend = self.session.model(self).read_backend
+        return backend.structure(self, client)
 
 
 ################################################################################
@@ -279,7 +311,15 @@ Do not override this function. Use :meth:`load_data` method instead.'''
 class PairMixin(object):
     '''A mixin for structures with which holds pairs. It is the parent class
 of :class:`KeyValueMixin` and it is used as base class for the ordered set
-structure :class:`Zset`.'''
+structure :class:`Zset`.
+
+.. attribute:: pickler
+
+    An :ref:`encoder <encoders>` for the additional value in the pair.
+    The additional value is a field key for :class:`Hashtable`,
+    a numeric score for :class:`Zset` and a tim value for :class:`TS`. 
+    
+'''
     pickler = encoders.NoEncoder()
     
     def setup(self, pickler=None, **kwargs):
@@ -288,19 +328,23 @@ structure :class:`Zset`.'''
     def __setitem__(self, key, value):
         self.add(key, value)
     
+    @async()
     def items(self):
-        '''Iteratir over items (pairs) of :class:`PairMixin`.'''
+        '''Iterator over items (pairs) of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            data = self.session.structure(self).items()
-            self.cache.set_cache(self.load_data(data))
-        return iteritems(self.cache.cache)
+            data = yield self.read_backend_structure().items()
+            data = yield self.load_data(data)
+            self.cache.set_cache(data)
+        yield self.cache.items()
     
+    @async()
     def values(self):
         '''Iteratir over values of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            return self.load_values(self.session.structure(self).values())
+            data = yield self.read_backend_structure().values()
+            yield self.load_values(data)
         else:
-            return self.cache.cache.values()
+            yield self.cache.cache.values()
         
     def pair(self, pair):
         '''Add a *pair* to the structure.'''
@@ -316,7 +360,7 @@ structure :class:`Zset`.'''
             return pair
         
     def add(self, *pair):
-        self.update((pair,))
+        return self.update((pair,))
         
     @commit_when_no_transaction
     def update(self, mapping):
@@ -342,41 +386,57 @@ Equivalent to python dictionary update method.
     
     def load_data(self, mapping):
         loads = self.pickler.loads
-        vloads = self.value_pickler.loads
-        return ((loads(k), vloads(v)) for k,v in iterpair(mapping))
+        if self.value_pickler.require_session():
+            data1 = []
+            def _iterable():
+                for k, v in iterpair(mapping):
+                    data1.append(loads(k))
+                    yield v
+            res = self.value_pickler.load_iterable(_iterable(), self.session)
+            return on_result(res, lambda data2: zip(data1, data2))
+        else:
+            vloads = self.value_pickler.loads
+            return [(loads(k), vloads(v)) for k, v in iterpair(mapping)]
     
     def load_keys(self, iterable):
         loads = self.pickler.loads
-        return (loads(k) for k in iterable)
+        return [loads(k) for k in iterable]
     
     def load_values(self, iterable):
         vloads = self.value_pickler.loads
-        return (vloads(v) for v in iterable)
-    
+        return [vloads(v) for v in iterable]
 
+    
 class KeyValueMixin(PairMixin):
     '''A mixin for ordered and unordered key-valued pair containers.
 A key-value pair container has the :meth:`values` and :meth:`items`
 methods, while its iterator is over keys.'''
     def __iter__(self):
-        return iter(self.keys())
+        res = self.keys()
+        if is_async(res):
+            raise RuntimeError('Cannot iterate on asynchronous result.')
+        else:
+            return iter(res)
     
+    @async()
     def keys(self):
         if self.cache.cache is None:
-            loads = self.pickler.loads
-            return self.load_keys(self.session.structure(self))
+            keys = yield self.read_backend_structure().keys()
+            yield self.load_keys(keys)
         else:
-            return self.cache.cache
+            yield self.cache.cache
     
     def __delitem__(self, key):
-        '''Immediately remove an element. To remove with transactions use the
-:meth:`remove` method`.'''
-        self.pop(key)
+        '''Remove an element. Same as the :meth:`remove` method`.'''
+        return self.pop(key)
 
     def __getitem__(self, key):
         dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key)
+        if self.cache.cache is None:
+            res = self.read_backend_structure().get(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key))
+        else:
+            return self.cache.cache[key]
     
     def get(self, key, default=None):
         '''Retrieve a single element from the structure.
@@ -384,17 +444,18 @@ If the element is not available return the default value.
 
 :parameter key: lookup field
 :parameter default: default value when the field is not available'''
-        dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).get(dkey)
-        return self.async_handle(res, self._load_get_data, key, default)
+        if self.cache.cache is None:
+            dkey = self.pickler.dumps(key)
+            res = self.read_backend_structure().get(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key, default))
+        else:
+            return self.cache.cache.get(key, default)
         
     def pop(self, key, *args):
-        dkey = self.pickler.dumps(key)
-        res = self.session.backend.structure(self).pop(dkey)
-        if len(args) == 1:
-            return self.async_handle(res, self._load_get_data, key, args[0])
-        elif not args:
-            return self.async_handle(res, self._load_get_data, key)
+        if len(args) <= 1:
+            dkey = self.pickler.dumps(key)
+            res = self.read_backend_structure().pop(dkey)
+            return on_result(res, lambda r: self._load_get_data(r, key, *args))
         else:
             raise TypeError('pop expected at most 2 arguments, got {0}'\
                             .format(len(args)+1))
@@ -420,7 +481,7 @@ If the element is not available return the default value.
     
 class OrderedMixin(object):
     '''A mixin for a :class:`Structure` which maintains ordering with respect
-a numeric value we call score.'''
+a numeric value, the score.'''
     
     def front(self):
         '''Return the front pair of the structure'''
@@ -440,29 +501,40 @@ a numeric value we call score.'''
         s2 = self.pickler.dumps(stop)
         return self.backend_structure().count(s1, s2)
     
-    def range(self, start, stop, callback=None, **kwargs):
+    def range(self, start, stop, callback=None, withscores=True, **options):
         '''Return a range with scores between start and end.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().range(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        res = self.backend_structure().range(s1, s2, withscores=withscores,
+                                             **options)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
     
-    def irange(self, start=0, end=-1, callback=None, **kwargs):
+    def irange(self, start=0, end=-1, callback=None, withscores=True, **options):
         '''Return the range by rank between start and end.'''
-        res = self.backend_structure().irange(start, end, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        res = self.backend_structure().irange(start, end, withscores=withscores,
+                                              **options)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
         
-    def pop_range(self, start, stop, callback=None, **kwargs):
+    def pop_range(self, start, stop, callback=None, withscores=True):
         '''pop a range by score from the :class:`OrderedMixin`'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().pop_range(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        res = self.backend_structure().pop_range(s1, s2, withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
 
-    def ipop_range(self, start=0, stop=-1, callback=None, **kwargs):
+    def ipop_range(self, start=0, stop=-1, callback=None, withscores=True):
         '''pop a range from the :class:`OrderedMixin`'''
-        res = self.backend_structure().ipop_range(start, stop, **kwargs)
-        return self.async_handle(res, callback or self.load_data)
+        res = self.backend_structure().ipop_range(start, stop,
+                                                  withscores=withscores)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return on_result(res, callback)
     
 
 class Sequence(object):
@@ -471,24 +543,33 @@ container. The elements in a sequence container are ordered following a linear
 sequence.'''
     cache_class = listcache
     
+    @async()
+    def items(self):
+        if self.cache.cache is None:
+            data = yield self.read_backend_structure().range()
+            self.cache.set_cache(self.load_data(data))
+        yield self.cache.cache
+    
     @commit_when_no_transaction
     def push_back(self, value):
         '''Appends a copy of *value* at the end of the :class:`Sequence`.'''
         self.cache.push_back(self.value_pickler.dumps(value))
         return self
-        
+    
+    @async()    
     def pop_back(self):
         '''Remove the last element from the :class:`Sequence`.'''
-        value = self.session.structure(self).pop_back()
-        return self.value_pickler.loads(value)
+        value = yield self.backend_structure().pop_back()
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     def __getitem__(self, index):
-        value = self.session.structure(self).get(index)
-        return self.value_pickler.loads(value)
+        value = self.read_backend_structure().get(index)
+        return on_result(value, self.value_pickler.loads)
     
     def __setitem__(self, index, value):
         value = self.value_pickler.dumps(value)
-        self.session.structure(self).set(index,value)
+        self.backend_structure().set(index, value)
     
     
 ################################################################################
@@ -527,22 +608,32 @@ class List(Sequence, Structure):
     '''A doubly-linked list :class:`Structure`. It expands the
 :class:`Sequence` mixin with functionalities to add and remove from
 the front of the list in an efficient manner.'''
+    @async()
     def pop_front(self):
         '''Remove the first element from of the list.'''
-        value = self.session.structure(self).pop_front()
-        return self.value_pickler.loads(value)
+        value = yield self.backend_structure().pop_front()
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
-    def block_pop_back(self, timeout = None):
-        value = self.session.structure(self).block_pop_back(timeout)
-        return self.value_pickler.loads(value)
+    @async()
+    def block_pop_back(self, timeout=10):
+        '''Remove the last element from of the list. If no elements are
+available, blocks for at least ``timeout`` seconds.'''
+        value = yield self.backend_structure().block_pop_back(timeout)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
-    def block_pop_front(self, timeout = None, transaction = None):
-        value = self.session.structure(self).block_pop_front(timeout)
-        return self.value_pickler.loads(value)
+    @async()
+    def block_pop_front(self, timeout=10):
+        '''Remove the first element from of the list. If no elements are
+available, blocks for at least ``timeout`` seconds.'''
+        value = yield self.backend_structure().block_pop_front(timeout)
+        if value is not None:
+            yield self.value_pickler.loads(value)
     
     @commit_when_no_transaction
     def push_front(self, value):
-        '''Appends a copy of *value* to the beginning of the list.'''
+        '''Appends a copy of ``value`` to the beginning of the list.'''
         self.cache.push_front(self.value_pickler.dumps(value))
 
 
@@ -551,9 +642,6 @@ class Zset(OrderedMixin, PairMixin, Set):
 :class:`OrderedMixin` and :class:`PairMixin`.'''
     pickler = encoders.Double()
     cache_class = zsetcache
-    
-    def __iter__(self):
-        return iter(self.values())
     
     def rank(self, value):
         '''The rank of a given *value*. This is the position of *value*
@@ -565,14 +653,8 @@ in the :class:`OrderedMixin` container.'''
 class HashTable(KeyValueMixin, Structure):
     '''A :class:`Structure` which is the networked equivalent to
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
+    pickler = encoders.Default()
     cache_class = hashcache
-        
-    def addnx(self, field, value, transaction = None):
-        '''Set the value of a hash field only if the field
-does not exist.'''
-        return self._addnx(self.cursor(transaction),
-                           self.pickler.dumps(key),
-                           self.pickler_value.dumps(value))
     
     if not ispy3k:
         def iteritems(self):
@@ -605,20 +687,20 @@ and values are objects.'''
     def ipop(self, index):
         '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
 index is not out of bound.'''
-        res = self.session.backend.structure(self).ipop(index)
-        return self.async_handle(res, self._load_get_data, index, None)
+        res = self.backend_structure().ipop(index)
+        return on_result(res, lambda r: self._load_get_data(r, index, None))
     
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
         res = self.backend_structure().times(s1, s2, **kwargs)
-        return self.async_handle(res, callback or self.load_keys)
+        return on_result(res, callback or self.load_keys)
     
     def itimes(self, start=0, stop=-1, callback=None, **kwargs):
         '''The times between rank *start* and *stop*.'''
         res = self.backend_structure().itimes(start, stop, **kwargs)
-        return self.async_handle(res, callback or self.load_keys)
+        return on_result(res, callback or self.load_keys)
     
     
 class String(Sequence, Structure):

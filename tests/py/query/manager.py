@@ -1,83 +1,105 @@
 import random
 
 import stdnet
-from stdnet.utils import test, populate
+from stdnet.utils import test
 
 from examples.models import SimpleModel
 
-LEN = 100
-names = populate('string',LEN, min_len = 5, max_len = 20)
 
-
-class TestManager(test.CleanTestCase):
-    model = SimpleModel
+class StringData(test.DataGenerator):
     
-    def setUp(self):
-        self.register()
+    def generate(self):
+        self.names = self.populate()
+
+
+class TestManager(test.TestCase):
+    model = SimpleModel
+    data_cls = StringData
+    
+    @classmethod
+    def after_setup(cls):
+        manager = cls.mapper.simplemodel
+        with manager.session().begin() as t:
+            for name in cls.data.names:
+                t.add(manager(code=name))
+        yield t.on_result
         
-    def fill(self):
-        with SimpleModel.objects.session().begin() as t:
-            for name in names:
-                t.session.add(SimpleModel(code = name))
-                
+    def test_manager(self):
+        models = self.mapper
+        self.assertEqual(models[SimpleModel], models.simplemodel)
+        self.assertEqual(models.simplemodel.model, self.model)
+    
     def testGetOrCreate(self):
-        v, created = SimpleModel.objects.get_or_create(code='test')
+        objects = self.mapper[SimpleModel]
+        v,  created = yield objects.get_or_create(code='test')
         self.assertTrue(created)
         self.assertEqual(v.code,'test')
-        v2,created = SimpleModel.objects.get_or_create(code='test')
+        v2, created = yield objects.get_or_create(code='test')
         self.assertFalse(created)
         self.assertEqual(v,v2)
         
-    def testGet(self):
-        v,created = SimpleModel.objects.get_or_create(code = 'test')
+    def test_get(self):
+        objects = self.mapper[SimpleModel]
+        v, created = yield objects.get_or_create(code='test2')
         self.assertTrue(created)
-        v1 = SimpleModel.objects.get(code = 'test')
-        self.assertEqual(v1,v)
+        v1 = yield objects.get(code='test2')
+        self.assertEqual(v1, v)
         
-    def testGetError(self):
+    def test_get_error(self):
         '''Test for a ObjectNotFound exception.'''
-        self.assertRaises(SimpleModel.DoesNotExist,
-                          SimpleModel.objects.get, code = 'test2')
-        self.assertRaises(SimpleModel.DoesNotExist,
-                          SimpleModel.objects.get, id = 34)
+        objects = self.mapper[SimpleModel]
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                objects.get, code='test3')
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                objects.get, id=-400)
         
     def testEmptyIDFilter(self):
-        self.assertEqual(SimpleModel.objects.filter(id = 1).count(),0)
-        SimpleModel.objects.get_or_create(code = 'test')
-        self.assertEqual(SimpleModel.objects.filter(id = 1).count(),1)
-        self.assertEqual(SimpleModel.objects.filter(id = 2).count(),0)
+        objects = self.mapper[SimpleModel]
+        yield self.async.assertEqual(objects.filter(id=-1).count(), 0)
+        yield self.async.assertEqual(objects.filter(id=1).count(), 1)
+        yield self.async.assertEqual(objects.filter(id=2).count(), 1)
         
     def testUniqueFilter(self):
-        self.assertEqual(SimpleModel.objects.filter(code = 'test').count(),0)
-        SimpleModel.objects.get_or_create(code = 'test')
-        self.assertEqual(SimpleModel.objects.filter(code = 'test').count(),1)
-        self.assertEqual(SimpleModel.objects.filter(code = 'test2').count(),0)
+        objects = self.mapper[SimpleModel]
+        yield self.async.assertEqual(objects.filter(code='test4').count(), 0)
+        yield objects.get_or_create(code='test4')
+        yield self.async.assertEqual(objects.filter(code='test4').count(), 1)
+        yield self.async.assertEqual(objects.filter(code='foo').count(), 0)
         
     def testIndexFilter(self):
-        self.assertEqual(SimpleModel.objects.filter(group = 'g1').count(),0)
-        v,created=SimpleModel.objects.get_or_create(code = 'test',group = 'g2')
-        self.assertEqual(SimpleModel.objects.filter(group = 'g1').count(),0)
-        self.assertEqual(SimpleModel.objects.filter(group = 'g2').count(),1)
-        v1 = SimpleModel.objects.get(group = 'g2')
-        self.assertEqual(v,v1)
-        get1 = lambda : SimpleModel.objects.get(group = 'g1')
-        self.assertRaises(stdnet.ObjectNotFound,get1)
-        v2,created =SimpleModel.objects.get_or_create(code = 'test2', group = 'g2')
-        self.assertEqual(SimpleModel.objects.filter(group = 'g2').count(),2)
-        get2 = lambda : SimpleModel.objects.get(group = 'g2')
-        self.assertRaises(stdnet.QuerySetError,get2)
+        objects = self.mapper.simplemodel
+        yield self.async.assertEqual(objects.filter(group='g1').count(), 0)
+        v, created = yield objects.get_or_create(code='test5', group='g2')
+        yield self.async.assertEqual(objects.filter(group='g1').count(), 0)
+        yield self.async.assertEqual(objects.filter(group='g2').count(), 1)
+        v1 = yield objects.get(group='g2')
+        self.assertEqual(v, v1)
+        yield self.async.assertRaises(SimpleModel.DoesNotExist,
+                                      objects.get, group='g1')
+        v2, created = yield objects.get_or_create(code='test6', group='g2')
+        yield self.async.assertEqual(objects.filter(group='g2').count(), 2)
+        yield self.async.assertRaises(stdnet.QuerySetError,
+                                      objects.get, group='g2')
         
     def testNoFilter(self):
-        filter1 = lambda : SimpleModel.objects.filter(description = 'bo').count()
-        self.assertRaises(stdnet.QuerySetError,filter1)
+        objects = self.mapper[SimpleModel]
+        filter1 = lambda : objects.filter(description = 'bo').count()
+        yield self.async.assertRaises(stdnet.QuerySetError, filter1)
         
     def testContainsAll(self):
         '''Test filter when performing a all request'''
-        self.fill()
-        qs = SimpleModel.objects.query()
-        self.assertFalse('ciao' in qs)
+        objects = self.mapper[SimpleModel]
+        qs = objects.query()
+        all = yield qs.all()
+        self.assertTrue(all)
         self.assertTrue(qs.backend_query())
         self.assertTrue(1 in qs)
-        self.assertEqual(qs.cache(),{})
+        be = qs.backend_query()
+        self.assertEqual(be.cache[None], all)
         
-        
+    def test_pkvalue(self):
+        models = self.mapper
+        all = yield models.simplemodel.all()
+        self.assertTrue(all)
+        for o in all:
+            self.assertEqual(models.simplemodel.pkvalue(o), o.pkvalue())

@@ -42,11 +42,8 @@ class make_random(object):
                 yield key,v
     
     
-class TestJsonField(test.CleanTestCase):
+class TestJsonField(test.TestCase):
     model = Statistics
-    
-    def setUp(self):
-        self.register()
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
@@ -55,48 +52,52 @@ class TestJsonField(test.CleanTestCase):
         self.assertEqual(field.as_string,True)
         
     def testCreate(self):
+        models = self.mapper
         mean = Decimal('56.4')
         started = date(2010,1,1)
         timestamp = datetime.now()
-        a = self.model(dt=date.today(), data={'mean': mean,
+        a = yield models.statistics.new(dt=date.today(),
+                                        data={'mean': mean,
                                               'std': 5.78,
                                               'started': started,
-                                              'timestamp':timestamp}).save()
-        self.assertEqual(a.data['mean'],mean)
-        a = self.model.objects.get(id=a.id)
-        self.assertEqual(len(a.data),4)
-        self.assertEqual(a.data['mean'],mean)
-        self.assertEqual(a.data['started'],started)
+                                              'timestamp':timestamp})
+        self.assertEqual(a.data['mean'], mean)
+        a = yield models.statistics.get(id=a.id)
+        self.assertEqual(len(a.data), 4)
+        self.assertEqual(a.data['mean'], mean)
+        self.assertEqual(a.data['started'], started)
         self.assertAlmostEqual(date2timestamp(a.data['timestamp']),
                                date2timestamp(timestamp), 5)
         
     def testCreateFromString(self):
+        models = self.mapper
         mean = 'mean'
         timestamp = time.time()
         data = {'mean': mean,
                 'std': 5.78,
                 'timestamp': timestamp}
         datas = json.dumps(data)
-        a = Statistics(dt=date.today(), data=datas).save()
-        a = Statistics.objects.get(id = a.id)
-        self.assertEqual(a.data['mean'],mean)
-        a = Statistics.objects.get(id = a.id)
+        a = yield models.statistics.new(dt=date.today(), data=datas)
+        a = yield models.statistics.get(id=a.id)
+        self.assertEqual(a.data['mean'], mean)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(len(a.data),3)
         self.assertEqual(a.data['mean'],mean)
         self.assertAlmostEqual(a.data['timestamp'], timestamp)
         
     def test_default(self):
+        models = self.mapper
         a = Statistics(dt=date.today())
         self.assertEqual(a.data, {})
-        a.save()
+        yield models.add(a)
         self.assertEqual(a.data, {})
-        a = Statistics.objects.get(id=a.id)
+        a = yield models.statistics.get(id=a.id)
         self.assertEqual(a.data, {})
         
     def testValueError(self):
-        a = Statistics(dt = date.today(),
-                       data = {'mean': self})
-        self.assertRaises(stdnet.FieldValueError,a.save)
+        models = self.mapper
+        a = models.statistics(dt=date.today(), data={'mean': self})
+        self.assertRaises(stdnet.FieldValueError, models.session().add, a)
         self.assertTrue('data' in a._dbdata['errors'])
         
 
@@ -123,13 +124,11 @@ The `as_string` atttribute is set to ``False``.'''
                         'mean': {'1y':1.0,'2y':1.1},
                         'std': {'1y':4.0,'2y':5.1}},
                 'dt': datetime.now()}
-    
-    def setUp(self):
-        self.register()
         
-    def make(self, data = None):
+    def make(self, data=None, name=None):
         data = data or self.def_data
-        return self.model(name = 'bla', data = data)
+        name = name or self.data.random_string()
+        return self.model(name=name, data=data)
         
     def testMeta(self):
         field = self.model._meta.dfields['data']
@@ -140,48 +139,58 @@ The `as_string` atttribute is set to ``False``.'''
         self.assertTrue(m.is_valid())
         data = m._dbdata['cleaned_data']
         data.pop('data')
-        self.assertEqual(len(data),6)
-        self.assertEqual(float(data['data__mean']),1.0)
-        self.assertEqual(float(data['data__std']),5.78)
-        self.assertEqual(float(data['data__pv']),3.2)
+        self.assertEqual(len(data), 6)
+        self.assertEqual(float(data['data__mean']), 1.0)
+        self.assertEqual(float(data['data__std']), 5.78)
+        self.assertEqual(float(data['data__pv']), 3.2)
         
     def testGet(self):
-        m = self.make().save()
-        m = self.model.objects.get(id = m.id)
-        self.assertEqual(m.data['mean'],1.0)
-        self.assertEqual(m.data['std'],5.78)
-        self.assertEqual(m.data['pv'],3.2)
-        self.assertEqual(m.data['dt'],date.today())
-        self.assertEqual(m.data['name'],'bla')
+        models = self.mapper
+        session = models.session()
+        m = yield session.add(self.make())
+        m = yield models.statistics3.get(id=m.id)
+        self.assertEqual(m.data['mean'], 1.0)
+        self.assertEqual(m.data['std'], 5.78)
+        self.assertEqual(m.data['pv'], 3.2)
+        self.assertEqual(m.data['dt'], date.today())
+        self.assertEqual(m.data['name'], 'bla')
         
     def testmakeEmptyError(self):
         '''Here we test when we have a key which is empty.'''
+        models = self.mapper
+        session = models.session()
         m = self.make(self.def_baddata)
         self.assertFalse(m.is_valid())
-        self.assertRaises(stdnet.FieldValueError,m.save)
+        self.assertRaises(stdnet.FieldValueError, session.add, m)
         
     def testmakeEmpty(self):
+        models = self.mapper
+        session = models.session()
         m = self.make(self.def_data2)
         self.assertTrue(m.is_valid())
         cdata = m._dbdata['cleaned_data']
         self.assertEqual(len(cdata),10)
         self.assertTrue('data' in cdata)
         self.assertEqual(cdata['data__pv__mean__1y'],'1.0')
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqual(obj.data['dt'].date(),date.today())
-        self.assertEqual(obj.data__dt.date(),date.today())
-        self.assertEqual(obj.data['pv']['mean']['1y'],1.0)
-        self.assertEqual(obj.data__pv__mean__1y,1.0)
-        self.assertEqual(obj.data__dt.date(),date.today())
+        obj = yield session.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
+        self.assertEqual(obj.data['dt'].date(), date.today())
+        self.assertEqual(obj.data__dt.date(), date.today())
+        self.assertEqual(obj.data['pv']['mean']['1y'], 1.0)
+        self.assertEqual(obj.data__pv__mean__1y, 1.0)
+        self.assertEqual(obj.data__dt.date(), date.today())
         
     def testmakeEmpty2(self):
-        m = self.make({'ts':[1,2,3,4]})
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqual(obj.data,{'ts':[1,2,3,4]})
+        models = self.mapper
+        session = models.session()
+        m = self.make({'ts': [1,2,3,4]})
+        obj = yield models.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
+        self.assertEqual(obj.data, {'ts': [1, 2, 3, 4]})
     
     def testFuzzySmall(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 0))
         m = self.make(data)
@@ -191,11 +200,13 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
-        self.assertEqualDict(data,obj.data)
+        obj = yield session.add(m)
+        obj = yield models.statistics3.get(id=obj.id)
+        self.assertEqualDict(data, obj.data)
         
     def testFuzzyMedium(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 1))
         m = self.make(data)
@@ -205,11 +216,13 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
+        obj = yield session.add(m)
+        #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testFuzzy(self):
+        models = self.mapper
+        session = models.session()
         r = make_random()
         data = dict(r.make(nesting = 3))
         m = self.make(deepcopy(data))
@@ -219,25 +232,29 @@ The `as_string` atttribute is set to ``False``.'''
         for k in cdata:
             if k is not 'name':
                 self.assertTrue(k.startswith('data__'))
-        obj = m.save()
-        obj = self.model.objects.get(id = obj.id)
+        obj = yield session.add(m)
+        #obj = self.model.objects.get(id=obj.id)
         #self.assertEqualDict(data,obj.data)
         
     def testEmptyDict(self):
-        r = self.model(name = 'bla', data = {'bla':'ciao'}).save()
+        models = self.mapper
+        session = models.session()
+        r = yield session.add(self.model(name='bla', data = {'bla':'ciao'}))
         self.assertEqual(r.data, {'bla':'ciao'})
         r.data = None
-        r.save()
-        r = self.model.objects.get(id = r.id)
+        yield session.add(r)
+        r = yield models.statistics3.get(id=r.id)
         self.assertEqual(r.data, {})
         
     def testFromEmpty(self):
         '''Test the change of a data jsonfield from empty to populated.'''
-        r = self.model(name = 'bla').save()
+        models = self.mapper
+        session = models.session()
+        r = yield models.statistics3.new(name = 'bla')
         self.assertEqual(r.data, {})
         r.data = {'bla':'ciao'}
-        r.save()
-        r = self.model.objects.get(id = r.id)
+        yield session.add(r)
+        r = yield models.statistics3.get(id=r.id)
         self.assertEqual(r.data, {'bla':'ciao'})
     
     def assertEqualDict(self,data1,data2):

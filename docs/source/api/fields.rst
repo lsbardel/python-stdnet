@@ -79,10 +79,10 @@ BooleanField
    :member-order: bysource
 
    
-AutoField
+AutoIdField
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: AutoField
+.. autoclass:: AutoIdField
    :members:
    :member-order: bysource
 

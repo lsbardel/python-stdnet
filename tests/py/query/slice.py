@@ -2,57 +2,58 @@
 from stdnet import QuerySetError
 from stdnet.utils import test
 
-from examples.models import Instrument
 from examples.data import FinanceTest
 
 
 class TestFilter(FinanceTest):
-    model = Instrument
     
-    def setUp(self):
-        self.data.create(self)
+    @classmethod
+    def after_setup(cls):
+        yield cls.data.create(cls)
         
     def testAll(self):
         session = self.session()
         qs = session.query(self.model)
-        self.assertTrue(qs.count() > 0)
-        q1 = qs.all()
-        self.assertEqual(len(q1),qs.count())
+        c = yield qs.count()
+        self.assertTrue(c > 0)
+        q1 = yield qs.all()
+        self.assertEqual(len(q1), qs.count())
         
     def testUnsortedSliceSimple(self):
         session = self.session()
         qs = session.query(self.model)
-        self.assertTrue(qs.count() > 0)
-        q1 = qs[0:2]
-        self.assertEqual(len(q1),2)
-        self.assertEqual([q.id for q in q1],[1,2])
+        c = yield qs.count()
+        self.assertTrue(c > 0)
+        q1 = yield qs[0:2]
+        self.assertEqual(len(q1), 2)
+        self.assertEqual([q.id for q in q1], [1, 2])
         
     def testUnsortedSliceComplex(self):
         session = self.session()
         qs = session.query(self.model)
-        N = qs.count()
+        N = yield qs.count()
         self.assertTrue(N)
-        q1 = qs[0:-1]
-        self.assertEqual(len(q1),N-1)
-        for id,q in enumerate(q1,1):
-            self.assertEqual(q.id,id)
-        q1 = qs[2:4]
-        self.assertEqual(len(q1),2)
-        self.assertEqual(q1[0].id,3)
-        self.assertEqual(q1[1].id,4)
+        q1 = yield qs[0:-1]
+        self.assertEqual(len(q1), N-1)
+        for id, q in enumerate(q1,1):
+            self.assertEqual(q.id, id)
+        q1 = yield qs[2:4]
+        self.assertEqual(len(q1), 2)
+        self.assertEqual(q1[0].id, 3)
+        self.assertEqual(q1[1].id, 4)
             
     def testUnsortedSliceToEnd(self):
         session = self.session()
         qs = session.query(self.model)
         N = qs.count()
         self.assertTrue(N)
-        q1 = qs[0:]
-        self.assertEqual(len(q1),N)
+        q1 = yield qs[0:]
+        self.assertEqual(len(q1), N)
         # This time the result is sorted by ids
-        q1 = qs[3:]
-        self.assertEqual(len(q1),N-3)
-        for id,q in enumerate(q1,4):
-            self.assertEqual(q.id,id)
+        q1 = yield qs[3:]
+        self.assertEqual(len(q1), N-3)
+        for id, q in enumerate(q1, 4):
+            self.assertEqual(q.id, id)
             
     def testSliceBack(self):
         session = self.session()
@@ -69,8 +70,8 @@ class TestFilter(FinanceTest):
         self.assertEqual(q1[0].id,N-1)
         
     def testSliceGetField(self):
-        '''test silve in conjunction with get_field method'''
+        '''test slice in conjunction with get_field method'''
         session = self.session()
         qs = session.query(self.model).get_field('id')
-        self.assertRaises(QuerySetError, lambda: qs[:2])
+        yield self.async.assertRaises(QuerySetError, lambda: qs[:2])
     

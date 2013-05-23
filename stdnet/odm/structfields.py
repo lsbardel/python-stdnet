@@ -1,9 +1,10 @@
-from stdnet.exceptions import *
 from stdnet.utils import encoders
+from stdnet.utils.exceptions import *
 
-from .fields import Field
-from . import related
 from .struct import *
+from .fields import Field
+from .session import LazyProxy
+from . import related
 
 
 __all__ = ['StructureField',
@@ -15,56 +16,47 @@ __all__ = ['StructureField',
            'TimeSeriesField']
 
 
-class StructureFieldProxy(object):
+class StructureFieldProxy(LazyProxy):
     '''A descriptor for a :class:`StructureField`.'''
     def __init__(self, field, factory):
-        self.field = field
+        super(StructureFieldProxy, self).__init__(field)
         self.factory = factory
-        self.cache_name = field.get_cache_name()
         
-    @property
-    def name(self):
-        return self.field.name
-        
-    def __get__(self, instance, instance_type=None):
-        if not self.field.class_field:
-            if instance is None:
-                return self
-            if instance.id is None:
-                raise StructureFieldError('id for %s is not available.\
- Call save on instance before accessing %s.' % (instance._meta, self.name))
-        else:
-            instance = instance_type
-        cache_name = self.cache_name
-        cache_val = None
+    def load_from_manager(self, manager):
         if self.field.class_field:
-            session = instance.objects.session()
+            # don't cache when this is a class field
+            return self.get_structure(None, manager.session())
         else:
-            session = instance.session
+            raise NotImplementedError('Cannot access %s from manager' % self)
+        
+    def load(self, instance, session):
+        cache_name = self.field.get_cache_name()
+        cache_val = None
         try:
             cache_val = getattr(instance, cache_name)
             if not isinstance(cache_val, Structure):
-                raise AttributeError()
+                raise AttributeError
             structure = cache_val 
         except AttributeError:
             structure = self.get_structure(instance, session)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
                 structure.set_cache(cache_val)
-        structure.session = session
+        if session: # override session only if a new session is given
+            structure.session = session
         return structure
         
     def get_structure(self, instance, session):
-        if self.field.class_field:
-            id = session.backend.basekey(instance._meta, 'struct', self.name)
-            instance = None
-        else:
-            id = session.backend.basekey(instance._meta, 'obj', instance.id,
-                                         self.name)
-        return self.factory(id=id,
-                            instance=instance,
-                            name=self.name,
-                            pickler=self.field.pickler,
+        if session is None:
+            raise StructureFieldError('No session available, Cannot access.')
+        pkvalue = None
+        if not self.field.class_field:
+            pkvalue = instance.pkvalue()
+            if pkvalue is None:
+                raise StructureFieldError('Cannot access "%s". The "%s" model ' 
+                                'is not persistent' % (instance, self.field))
+        return self.factory(pkvalue=pkvalue, session=session,
+                            field=self.field, pickler=self.field.pickler,
                             value_pickler=self.field.value_pickler,
                             **self.field.struct_params)
 
@@ -72,7 +64,7 @@ class StructureFieldProxy(object):
 class StructureField(Field):
     '''Virtual base class for :class:`Field` which are proxies to
 :ref:`data structures <model-structures>` such as :class:`List`,
-:class:`Set`, :class:`OrderedSet`, :class:`HashTable` and timeseries
+:class:`Set`, :class:`Zset`, :class:`HashTable` and timeseries
 :class:`TS`.
 
 Sometimes you want to structure your data model without breaking it up
@@ -147,9 +139,13 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
         self.index = False
         self.unique = False
         self.primary_key = False
-        self.class_field = class_field
+        self._class_field = class_field
         self.pickler = pickler
         self.value_pickler = value_pickler
+    
+    @property
+    def class_field(self):
+        return self._class_field
     
     def _handle_extras(self, **extras):
         self.struct_params = extras
@@ -193,17 +189,16 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
         return True
     
     def structure_class(self):
-        raise NotImplementedError()
+        '''Returns the :class:`Structure` class for this field.'''
+        raise NotImplementedError
 
     def set_cache(self, instance, data):
         setattr(instance,self.get_cache_name(),data)
         
 
 class SetField(StructureField):
-    '''A field maintaining an unordered collection of values. It is initiated
-without any argument other than an optional model class.
-When accessed from the model instance, it returns an instance of
-:class:`Set` structure. For example::
+    '''A field maintaining an unordered or ordered collection of values.
+It is initiated without any argument other than an optional model class::
 
     class User(odm.StdModel):
         username  = odm.AtomField(unique = True)
@@ -218,7 +213,19 @@ It can be used in the following way::
     >>> user.save()
     >>> user2 in user.following
     True
-    '''
+    
+.. attribute:: ordered
+
+    A flag indicating if the elements in this set are ordered with respect
+    a score. If ordered, the :meth:`StructureField.structure_class` method
+    returns a :class:`Zset` otherwise a :class:`Set`.
+    Default ``False``.
+'''
+    ordered = False
+    def __init__(self, *args, **kwargs):
+        self.ordered = kwargs.pop('ordered', self.ordered)
+        super(SetField, self).__init__(*args, **kwargs)
+        
     def structure_class(self):
         return Zset if self.ordered else Set
     

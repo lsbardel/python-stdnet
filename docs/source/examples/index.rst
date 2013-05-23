@@ -20,14 +20,14 @@ The collection of tutorials examples is available in the
    :maxdepth: 1
    
    tutorial
+   registration
    query
    sorting
    search
    sessions
-   related
-   structures
-   json
    twitter
+   permissions
+   columnts
    
    
 **Topics**
@@ -35,6 +35,12 @@ The collection of tutorials examples is available in the
 .. toctree::
    :maxdepth: 1
    
+   related
+   structures
+   json
+   primary
    performance
    underscore
    serialise
+   asynchronous
+   local

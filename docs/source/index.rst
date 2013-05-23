@@ -4,21 +4,25 @@
 Python Stdnet
 ======================
 
-.. rubric:: A networked data structures manager design to work with Redis_
-  data-store, but implemented so that other storage systems can be supported
-  in the future.
+.. rubric:: Object data mapper and advanced query manager for non
+  relational databases. Designed to work with Redis_ data-store, it now has an
+  experimental implementation for Mongodb_.
   
   
-It is shipped with an object-data mapper which greatly facilitates the
-management and retrieval of large data-sets.
-It includes a stand-alone, ``python 3`` compatible,
-:ref:`redis client <redis-client>` which was originally forked from redis-py_.
-There are no dependencies, it requires ``python 2.6`` up to ``python 3.3`` and
-there are over 600 tests with a coverage over 90%.
+The object-data mapper greatly facilitates the management and retrieval of
+large data-sets. It requires ``python 2.6`` up to ``python 3.3`` single code base.
+There are over 600 tests with a coverage of about 90%.
 
 **The library is stable, used in production and continuously maintained**.
 
-**Dependencies**: None
+.. _requirements:
+
+Requirements
+================
+
+* redis-py_ for :ref:`redis backend <redis-server>`. Redis 2.6 or above.
+* Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (pre-alpha).
+* Optional pulsar_ for :ref:`asynchronous database connection <tutorial-asynchronous>`.
 
 .. _contents:
 
@@ -29,12 +33,11 @@ Contents
    :maxdepth: 1
    
    overview
+   faq
    examples/index
    api/index
    backends/index
-   apps/index
    changelog
-   stdnetredis
    
 
 Indices and tables
@@ -44,8 +47,17 @@ Indices and tables
 * :ref:`modindex`
 
 
+Legacy
+============
+
+.. toctree::
+   :maxdepth: 1
+   
+   stdnetredis
 
 .. _Redis: http://redis.io/
 .. _redis-py: https://github.com/andymccurdy/redis-py
 .. _cython: http://cython.org/
-
+.. _Mongodb: http://www.mongodb.org/
+.. _pymongo: http://api.mongodb.org/python/current/index.html
+.. _pulsar: https://pypi.python.org/pypi/pulsar

@@ -1,104 +1,91 @@
 import os
 from datetime import date
 
-from stdnet import odm, InvalidTransaction
+from stdnet import odm
 from stdnet.utils import test, encoders, zip
-from stdnet.utils.populate import populate
 
-dates = list(set(populate('date',100,start=date(2009,6,1),end=date(2010,6,6))))
-values = populate('float',len(dates),start=0,end=1000)
+from tests.py.multifields.timeseries import TsData
 
 from .base import StructMixin
 
-class TestTS(StructMixin, test.CleanTestCase):
+
+class TestTS(StructMixin, test.TestCase):
     structure = odm.TS
+    data_cls = TsData
     name = 'ts'
     
-    def createOne(self, session):
-        ts = session.add(odm.TS())
-        ts.update(zip(dates,values))
-        return ts
-        
-    def testMeta2(self):
-        ts = self.testMeta()
+    def create_one(self):
+        ts = self.structure()
+        ts.update(zip(self.data.dates, self.data.values))
         self.assertFalse(ts.cache.cache)
         self.assertTrue(ts.cache.toadd)
         self.assertFalse(ts.cache.toremove)
+        return ts
         
-    def testEmpty2(self):
-        session = self.session()
-        ts = session.add(odm.TS())
-        self.assertTrue(ts.id)
-        self.assertEqual(ts.size(),0)
-        self.assertEqual(ts.front(),None)
-        self.assertEqual(ts.back(),None)
-        self.assertEqual(ts.size(),0)
+    def test_empty2(self):
+        ts = self.empty()
+        yield self.async.assertEqual(ts.front(), None)
+        yield self.async.assertEqual(ts.back(), None)
         
-    def testData(self):
-        session = self.session()
-        session.begin()
-        ts = self.createOne(session)
-        self.assertTrue(ts.cache.toadd)
-        session.commit()
-        self.assertEqual(ts.size(),len(dates))
-        front = ts.front()
-        back = ts.back()
-        self.assertTrue(back[0]>front[0])
-        range = list(ts.range(date(2009,10,1),date(2010,5,1)))
+    def test_range(self):
+        ts = yield self.not_empty()
+        yield self.async.assertEqual(ts.size(), len(self.data.dates))
+        front = yield ts.front()
+        back = yield ts.back()
+        self.assertTrue(back[0] > front[0])
+        all_dates = yield ts.itimes()
+        N = len(all_dates)
+        start = N // 4
+        end = 3 * N // 4
+        range = yield ts.range(all_dates[start],all_dates[end])
         self.assertTrue(range)
-        for time,val in range:
+        for time, val in range:
             self.assertTrue(time>=front[0])
             self.assertTrue(time<=back[0])
             
-    def testGet(self):
-        session = self.session()
-        with session.begin():
-            ts = session.add(odm.TS())
-            ts.update(zip(dates,values))
-        dt1 = dates[0]
-        val1 = ts[dt1]
+    def test_get(self):
+        ts = yield self.not_empty()
+        dt1 = self.data.dates[0]
+        val1 = yield ts[dt1]
         self.assertTrue(val1)
-        self.assertEqual(ts.get(dt1),val1)
-        self.assertEqual(ts.get(date(1990,1,1)),None)
-        self.assertEqual(ts.get(date(1990,1,1),1),1)
-        self.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
+        yield self.async.assertEqual(ts.get(dt1), val1)
+        yield self.async.assertEqual(ts.get(date(1990,1,1)),None)
+        yield self.async.assertEqual(ts.get(date(1990,1,1),1),1)
+        yield self.async.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
         
-    def testPop(self):
-        session = self.session()
-        with session.begin():
-            ts = session.add(odm.TS())
-            ts.update(zip(dates,values))
-        dt = dates[5]
-        self.assertTrue(dt in ts)
-        v = ts.pop(dt)
+    def test_pop(self):
+        ts = yield self.not_empty()
+        dt = self.data.dates[5]
+        yield self.async.assertTrue(dt in ts)
+        v = yield ts.pop(dt)
         self.assertTrue(v)
-        self.assertFalse(dt in ts)
-        self.assertRaises(KeyError, ts.pop, dt)
-        self.assertEqual(ts.pop(dt,'bla'), 'bla')
+        yield self.async.assertFalse(dt in ts)
+        yield self.async.assertRaises(KeyError, ts.pop, dt)
+        yield self.async.assertEqual(ts.pop(dt,'bla'), 'bla')
         
     def test_rank_ipop(self):
-        session = self.session()
-        with session.begin():
-            ts = session.add(odm.TS())
-            ts.update(zip(dates,values))
-        dt = dates[5]
-        value = ts.get(dt)
-        r = ts.rank(dt)
-        all_dates = list((d.date() for d in ts.itimes()))
-        self.assertEqual(all_dates[r], dt)
-        value2 = ts.ipop(r)
+        ts = yield self.not_empty()
+        dt = self.data.dates[5]
+        value = yield ts.get(dt)
+        r = yield ts.rank(dt)
+        all_dates = yield ts.itimes()
+        self.assertEqual(all_dates[r].date(), dt)
+        value2 = yield ts.ipop(r)
         self.assertEqual(value, value2)
-        self.assertFalse(dt in ts)
+        yield self.async.assertFalse(dt in ts)
         
     def test_pop_range(self):
-        session = self.session()
-        with session.begin():
-            ts = session.add(odm.TS())
-            ts.update(zip(dates,values))
-        all_dates = list((d.date() for d in ts.itimes()))
-        range = list(ts.range(all_dates[5],all_dates[15]))
+        ts = yield self.not_empty()
+        all_dates = yield ts.itimes()
+        N = len(all_dates)
+        start = N // 4
+        end = 3 * N // 4
+        range = yield ts.range(all_dates[start],all_dates[end])
         self.assertTrue(range)
-        range2 = list(ts.pop_range(all_dates[5],all_dates[15]))
+        range2 = yield ts.pop_range(all_dates[start], all_dates[end])
         self.assertEqual(range, range2)
+        all_dates = yield ts.itimes()
+        all_dates = set(all_dates)
+        self.assertTrue(all_dates)
         for dt,_ in range:
-            self.assertFalse(dt in ts) 
+            self.assertFalse(dt in all_dates) 

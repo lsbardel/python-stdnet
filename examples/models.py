@@ -2,10 +2,14 @@ import time
 from datetime import datetime, date
 
 from stdnet import odm
+from stdnet.utils.async import async
 
 
 class CustomManager(odm.Manager):
 
+    def small_query(self, **kwargs):
+        return self.query(**kwargs).load_only('code', 'group')
+    
     def something(self):
         return "I'm a custom manager"
 
@@ -18,8 +22,9 @@ class SimpleModel(odm.StdModel):
     object = odm.PickleObjectField(required=False)
     cached_data = odm.ByteField(as_cache=True)
     timestamp = odm.DateTimeField(as_cache=True)
+    number = odm.FloatField(required=False)
 
-    objects = CustomManager()
+    manager_class = CustomManager
 
     def __unicode__(self):
         return self.code
@@ -48,6 +53,8 @@ class Instrument2(Base):
 
     class Meta:
         ordering = 'id'
+        app_label = 'examples2'
+        name = 'instrument'
 
 
 class Fund(Base):
@@ -95,8 +102,8 @@ class DateValue(odm.StdModel):
 
 
 class Calendar(odm.StdModel):
-    name   = odm.SymbolField(unique = True)
-    data   = odm.SetField(DateValue, ordered = True)
+    name   = odm.SymbolField(unique=True)
+    data   = odm.SetField(DateValue, ordered=True)
 
     def add(self, dt, value):
         event = DateValue(dt = dt,value = value).save()
@@ -104,7 +111,7 @@ class Calendar(odm.StdModel):
 
 
 class Dictionary(odm.StdModel):
-    name = odm.SymbolField(unique = True)
+    name = odm.SymbolField(unique=True)
     data = odm.HashField()
 
 
@@ -165,11 +172,10 @@ class Collection(odm.StdModel):
 
 #############################################################
 ## TWITTER CLONE MODELS
-
 class Post(odm.StdModel):
-    dt   = odm.DateTimeField(index = False)
-    data = odm.CharField(required = True)
-    user = odm.ForeignKey("User", index = False)
+    dt   = odm.DateTimeField(index=False, default=datetime.now)
+    data = odm.CharField(required=True)
+    user = odm.ForeignKey('examples.user', index=False)
 
     def __unicode__(self):
         return self.data
@@ -177,24 +183,26 @@ class Post(odm.StdModel):
 
 class User(odm.StdModel):
     '''A model for holding information about users'''
-    username = odm.SymbolField(unique = True)
-    password = odm.SymbolField(index = False)
-    updates = odm.ListField(model = Post)
+    username = odm.SymbolField(unique=True)
+    password = odm.SymbolField(index=False)
+    updates = odm.ListField(model=Post)
     following = odm.ManyToManyField(model='self', related_name='followers')
-
+    
     def __unicode__(self):
         return self.username
-
-    def newupdate(self, data):
-        p  = Post(data = data, user = self, dt = datetime.now()).save()
-        self.updates.push_front(p)
-        return p
+    
+    @async()
+    def newupdate(self, message):
+        session = self.session
+        p  = yield session.router.post.new(data=message, user=self)
+        yield self.updates.push_front(p)
+        yield p
 
 
 
 ##############################################
 class Role(odm.StdModel):
-    name = odm.SymbolField()
+    name = odm.SymbolField(unique=True)
 
     def __unicode__(self):
         return self.name
@@ -296,7 +304,7 @@ class WordBook(odm.StdModel):
     book = odm.SymbolField()
 
     def __unicode__(self):
-        return self.id
+        return '%s:%s' % (self.word, self.book)
 
 
 ################################################################################

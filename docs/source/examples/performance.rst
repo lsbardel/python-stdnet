@@ -117,7 +117,44 @@ loading a subsets of fields::
 
 Use load_related
 ====================
+The :meth:`Query.load_related` method is another performance boost tool when
+used in the right circumstances. It is similar to the `eager loading`_ in SqlAlchemy
+and the `select_related`_ in Django.
+The method returns a new :meth:`Query` that automatically load the
+:class:`ForeignKey` field at the same time as the parent object, within a single
+back-end roundtrip.
 
+This is a performance booster which results in (sometimes much) larger queries
+but means later use of foreign-key relationships won't require database queries.
+
+Let's consider the :ref:`Position model <tutorial-application>` in the
+tutorial application and lets assume we need to access the ``instrument`` and ``fund``
+foreign keys::
+
+
+    positions = Position.objects.query()
+    for p in positions:
+        # requires one database roundtrip
+        i = p.instrument
+        # requires another database roundtrip
+        f = p.fund
+        
+Since foreign key are not loaded by default, when accessing the field for the first time,
+stdnet needs to load it from the backend-server. Check
+:ref:`one to many relationship <one-to-many>` tutorial for more information on
+lazy loading.
+
+The above example can be drammatically speeded up by modifying the query in
+the following way::
+
+    positions = Position.objects.query().load_related('instrument')\
+                                        .load_related('fund')
+    for p in positions:
+        # No database roundtrip
+        i = p.instrument
+        # No database roundtrip
+        f = p.fund
+        
 
 Get single fields
 ====================
@@ -129,3 +166,7 @@ I could issue the following command::
 
 The :meth:`Q.get_field` method returns a new query which evaluates to a
 list of field values.
+
+
+.. _`eager loading`: http://docs.sqlalchemy.org/en/latest/orm/loading.html
+.. _`select_related`: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related

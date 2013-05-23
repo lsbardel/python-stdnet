@@ -6,40 +6,37 @@
 Sessions
 ============================
 
-The :class:`Session` is designed along the lines of SQLAlchemy_. It establishes
-all conversations with the database and represents a *holding zone* for all the
-objects which you have loaded or associated with it during its lifespan.
-
-It also provides the entry point to acquire a :class:`Query` object, which sends
-queries to the database using the :attr:`Session.backend`, the session
-database connection.
+A :class:`Session` is a lightweight component which establishes all
+conversations with backend databases. It is the middleware
+between :class:`Model` and :class:`Router` on one side and the
+:class:`stdnet.BackendDataServer` on the other side.
 
 
 Obtaining a session
 =====================
 
-:class:`Session` is a regular Python class which can be directly instantiated
-by passing the backend connection string or an instance of
-a :class:`stdnet.BackendDataServer`::
-
-    from stdnet import odm
+:class:`Session` is a regular Python class which is obtained from
+a :class:`Router` via the :meth:`Router.session` method. We continue to use the
+:ref:`models router <tutorial-models-router>` 
+created for our :ref:`tutorial application <tutorial-application>`::
     
-    session = odm.Session('redis://localhost:8060?db=3')
-    
-    
-Alternatively, if a model ``MyModel`` has been :ref:`registered <register-model>`,
-one can obtain a session, from the model manager::
- 
-    session = myModel.objects.session()
+    session = models.session()
+    session2 = models.session()
      
-    
+
 Query a model
 ====================
 
 Once a session is obtained, one can create a query on a model by simply invoking
 the :meth:`Session.query` method::
 
-    query = session.query(MyModel)
+    query = session.query(models.fund)
+    
+A less verbose way of obtaining a query is to use the :meth:`Manager.query`
+method directly::
+
+    query = models.fund.query()
+    
     
     
 .. _transactional-state:
@@ -58,5 +55,4 @@ The returned transaction instance is the same as the value stored at the
 from a session already in a transactional state an :class:`InvalidTransaction`
 exception will occur.
  
-    
-.. _SQLAlchemy: http://www.sqlalchemy.org/  
+  

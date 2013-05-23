@@ -28,16 +28,42 @@ since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis is great solution.
 
 
+Requirements
+==================
+
+* redis-py_, provides the standard redis client.
+* pulsar_ optional, only required if the :ref:`asynchronous connection <redis-async>`
+  is used.
+
+.. _redis-connection-string:
+
+Connection String
+====================
+
+The :ref:`connection string <connection-string>` is a way to specify
+the various parameters of the backend to use. Redis supports the following
+parameters:
+
+* ``db``, the database number.
+* ``namespace``, the namespace for all the keys used by the backend.
+* ``password``, database password.
+* ``timeout``, connection timeout (0 is an asynchronous connection).
+
+A full connection string could be::
+
+    redis://127.0.0.1:6379?db=3&password=bla&namespace=test.&timeout=5
+
+
 Model data
 ==================
 Each :class:`stdnet.odm.StdModel` class has an associated ``base key`` which
-specify the namespace for all keys associated with it::
+specifies the namespace for all keys associated with it::
 
     >>> from stdnet import getdb
-    >>> from stdnet.apps.searchengine import Word
+    >>> from stdnet.apps.searchengine import WordItem
     >>> rdb = getdb('redis://localhost:6379?db=7&namespace=bla.')
-    >>> rdb.basekey(Word._meta)
-    'bla.searchengine.word'
+    >>> rdb.basekey(WordItem._meta)
+    'bla.searchengine.worditem'
      
 Instances
 ~~~~~~~~~~~~~~~
@@ -48,7 +74,9 @@ the *id* of the model instance and it is stored at::
 
     <<basekey>>:obj:<<id>>
     
-
+For example, a ``WordItem`` with id ``1`` is mapped by the database handler
+in the code snipped above, into a redis hash table
+at key ``bla.searchengine.worditem:obj:1``.
 The hash fields and values are given by the field name and values of the
 model instance.
 
@@ -92,85 +120,6 @@ Each hash table map a field value to the ``id`` containing that value
 
 .. _redis-parser:
 
-Parser
-==============
-
-Stdnet is shipped with a redis parser written in python and a faster version
-written in C. In order to use the C parser you need to have installed
-cython_.
-The C parser wraps the protocol parsing code in hiredis_ and it is available
-for both windows and linux. To just compile the extensions::
-
-    python setup.py build_ext
-
-If extensions are are installed dusring setup,
-the C parser will be the default parser unless you set the
-:ref:`settings.REDIS_PY_PARSER <settings>` value to ``True``
-(you would want to do that mainly for benchmarking reasons).
-
-To check if the extensions are available::
-
-    >>> from stdnet import lib
-    >>> lib.hasextensions
-    True
-    >>> _
-        
-In windows you may need to install mingw_ and install using the command::
-
-    python setup.py build -c mingw32
-    python setup.py install
-
-
-.. _mingw: http://www.mingw.org/
-
-.. _redis-client:
-
-Redis client API
-==================
-
-.. automodule:: stdnet.lib.redis
-
-Redis
-~~~~~~~~~~~~~
-.. autoclass:: Redis
-   :members:
-   :member-order: bysource
-
-
-RedisProxy
-~~~~~~~~~~~~~~~~
-.. autoclass:: RedisProxy
-   :members:
-   :member-order: bysource
-   
-      
-PrefixedRedis
-~~~~~~~~~~~~~~~~
-.. autoclass:: PrefixedRedis
-   :members:
-   :member-order: bysource
-   
-   
-Pipeline
-~~~~~~~~~~~~~~~
-.. autoclass:: Pipeline
-   :members:
-   :member-order: bysource
-   
-   
-Connection Pool
-~~~~~~~~~~~~~~~
-.. autoclass:: ConnectionPool
-   :members:
-   :member-order: bysource
-   
-   
-Connection
-~~~~~~~~~~~~~~~
-.. autoclass:: Connection
-   :members:
-   :member-order: bysource
-   
 
 
 Redis Session
@@ -182,10 +131,11 @@ perform them in a single atomic operation.
 Redis Query
 =====================
 
-A :class:`stdnet.odm.Query` is handled by two different lua scripts, the first is script
-perform the aggregation of which results in a temporary redis ``key``
-holding the ``ids`` which result from the query operations.
-The second script is used to load the data from redis to the client.
+A :class:`stdnet.odm.Query` is handled in redis by two different lua scripts:
+
+* the first is script performs the aggregation of which results in a temporary
+  redis ``key`` holding the ``ids`` resulting from the query operations.
+* The second script is used to load the data from redis into the client.
 
 .. _redis-aggragation:
 
@@ -204,10 +154,25 @@ The list of arguments passed to the :mod:`stdnet.lib.lua.load_query` script:
 * List of field to loads as ``[num_fields, field1, ...]``. if ``num_fields``
   is ``0``, all model fields will load.
 * List of related model to load as ``[num_rel_models, rel_models1, ...]``.
-    
+
+
+.. _redis-async:
+
+Asynchronous Connection
+===========================
+
+.. automodule:: stdnet.backends.redisb.async  
    
-   
+
+Client Extensions
+=====================
+
+.. automodule:: stdnet.backends.redisb.client
+
+
 .. _Redis: http://redis.io/
 .. _stdnet-redis: https://github.com/lsbardel/redis
 .. _cython: http://cython.org/
 .. _hiredis: https://github.com/antirez/hiredis
+.. _redis-py: https://github.com/andymccurdy/redis-py
+.. _pulsar: https://pypi.python.org/pypi/pulsar

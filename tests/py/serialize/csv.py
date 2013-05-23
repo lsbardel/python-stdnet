@@ -1,24 +1,26 @@
 '''Test the CSV serializer'''
 from stdnet import odm
-from stdnet.utils import test
 
-from examples.data import FinanceTest, Instrument, Fund, Position
+from examples.data import FinanceTest, Fund
 
-from .base import SerializerMixin
+from . import base
 
 
-class TestFinanceCSV(FinanceTest, SerializerMixin):
+class TestFinanceCSV(base.SerializerMixin, FinanceTest):
     serializer = 'csv'
-    
-    def setUp(self):
-        self.register()
         
     def testTwoModels(self):
-        s = self.testDump()
+        models = self.mapper
+        s = yield self.dump()
         self.assertEqual(len(s.data), 1)
-        self.assertRaises(ValueError, s.dump, Fund.objects.query())
+        funds = yield models.fund.all()
+        self.assertRaises(ValueError, s.dump, funds)
         self.assertEqual(len(s.data), 1)
         
     def testLoadError(self):
-        s = self.testDump()
-        self.assertRaises(ValueError, s.load, 'bla')
+        s = yield self.dump()
+        self.assertRaises(ValueError, s.load, self.mapper, 'bla')
+        
+        
+class TestLoadFinanceCSV(base.LoadSerializerMixin, FinanceTest):
+    serializer = 'csv'

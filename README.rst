@@ -8,7 +8,7 @@ Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
 :CI: |stdnet-build|_ 
-:Documentation: http://lsbardel.github.com/python-stdnet/
+:Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
 :Mailing List: https://groups.google.com/group/python-stdnet
@@ -41,7 +41,7 @@ Features
 Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
-* redis-py_ for :ref:`redis backend <redis-server>`.
+* redis-py_ for redis backend.
 * Optional pymongo_ for the mongo backend.
 * Optional pulsar_ when using the asynchronous connections or the test suite.
 * You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.

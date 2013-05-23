@@ -51,7 +51,7 @@ Ver. 0.8 - Development
   Check the :ref:`asynchronous tutorial <tutorial-asynchronous>` for information.
 * Refactored test suite to handle asynchronous and synchronous connections.
 * Redis ``odm`` script is able to fix unique-keys/ids conflicts.
-* **575 regression tests** with **93%** coverage.
+* **578 regression tests** with **93%** coverage.
   
 .. _vers07:
 

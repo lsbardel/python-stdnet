@@ -30,7 +30,12 @@ import socket
 from copy import copy
 from itertools import chain
 
-import redis
+try:
+    import redis
+except ImportError:
+    from stdnet import ImproperlyConfigured
+    raise ImproperlyConfigured('Redis backend requires redis python client')
+
 from redis.exceptions import NoScriptError
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, PubSub
 

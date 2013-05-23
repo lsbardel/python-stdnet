@@ -116,7 +116,7 @@ def run_setup(with_cext=False):
                    'packages': packages,
                    'package_data': {package_name: data_files},
                    'classifiers':  mod.CLASSIFIERS,
-                   'install_requires': requirements()})
+                   'requires': requirements()})
     setup(**params)
     
 def status_msgs(*msgs):

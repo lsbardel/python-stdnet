@@ -1,18 +1,17 @@
-import copy
 from inspect import ismodule, isclass
 
 from stdnet.utils import native_str
 from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
 from stdnet.utils.dispatch import Signal
-from stdnet import getdb, InvalidTransaction
+from stdnet import getdb
 
-from .base import AlreadyRegistered, ModelType, Model
+from .base import ModelType, Model
 from .session import Manager, Session, ModelDictionary, StructureManager
 from .struct import Structure
 from .globals import get_model_from_hash
 
-__all__ = ['Router', 'model_iterator', 'all_models_sessions']
+__all__ = ['Router', 'model_iterator']
         
         
 class Router(object):
@@ -252,7 +251,6 @@ method for::
     def _register_applications(self, applications, models, backends):
         backends = backends or {}
         for model in model_iterator(applications):
-            meta = model._meta
             name = str(model._meta)
             if models and name not in models:
                 continue
@@ -331,7 +329,6 @@ For example::
                 mod_models = import_module('.models', application)
             except ImportError:
                 mod_models = mod
-            mod_name = mod.__name__
             label = getattr(mod_models, 'app_label', label)
             models = set()
             for name in dir(mod_models):
@@ -348,27 +345,3 @@ For example::
         for app in application:
             for m in model_iterator(app):
                 yield m
-
-
-def all_models_sessions(models, processed=None, session=None):
-    '''Given an iterable over models, return a generator of the same models
-plus hidden models such as the through model of :class:`ManyToManyField`
-through models.'''
-    processed = processed if processed is not None else set()
-    for model in models:
-        if model and model not in processed:
-            try:
-                model_session = model.objects.session()
-            except ModelNotRegistered:
-                model_session = session
-            yield model, model_session
-            processed.add(model)
-            for field in model._meta.fields:
-                if hasattr(field, 'relmodel'):
-                    for m in all_models_sessions((field.relmodel,), processed):
-                        yield m
-                if hasattr(field, 'through'):
-                    for m in all_models_sessions((field.through,), processed,
-                                                 model_session):
-                        yield m
-

@@ -7,10 +7,15 @@ Backend Query
    :members:
    :member-order: bysource
 '''
-from inspect import isgeneratorfunction
-from functools import partial
+import sys
+
+from inspect import isgeneratorfunction, isgenerator
+
+from stdnet.utils import raise_error_trace
 
 from .conf import settings
+
+async_binding = True
 
 if settings.ASYNC_BINDINGS:
     try:
@@ -19,15 +24,36 @@ if settings.ASYNC_BINDINGS:
         settings.ASYNC_BINDINGS = False
         
 if not settings.ASYNC_BINDINGS:
+    # Simulate asynchronous bindings
+    async_binding = False
     
     def is_async(result):
         return False
-    
+        
     def is_failure(result):
         return False
     
     def multi_async(data, **kwargs):
-        return data
+        if isgenerator(data):
+            result = []
+            exc_info = None
+            while True:
+                try:
+                    res = next(data)
+                    if isgenerator(res):
+                        res = multi_async(res)
+                    result.append(result)
+                except StopIteration:
+                    break
+                except Exception:
+                    if exc_info is None:
+                        exc_info = sys.exc_info()
+            if exc_info:
+                raise_error_trace(exc_info[1], exc_info[2])
+            else:
+                return result
+        else:
+            return data
     
     def maybe_async(data):
         return data
@@ -35,7 +61,8 @@ if not settings.ASYNC_BINDINGS:
     class async:
         
         def __call__(self, f):
-            assert isgeneratorfunction(f), 'async decorator only for generator functions'
+            assert isgeneratorfunction(f),\
+                    'async decorator only for generator functions'
             def _(*args, **kwargs):
                 gen = f(*args, **kwargs)
                 result = None
@@ -52,15 +79,9 @@ def on_result(result, callback, errback=None):
     if is_async(result):
         return result.add_callback(callback, errback)
     elif is_failure(result):
-        result.raise_all()
+        return errback(result) if errback else result
     else:
         return callback(result)
-    
-def on_error(result, callback):
-    if is_async(result):
-        return result.add_errback(callback)
-    else:
-        return result
     
     
 class BackendQuery(object):

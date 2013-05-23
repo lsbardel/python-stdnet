@@ -2,13 +2,9 @@ import logging
 
 from itertools import chain
 from inspect import isgenerator, isclass
-from datetime import datetime
 
 from stdnet.utils import grouper
 from stdnet.utils.async import async
-
-from .models import StdModel
-from .fields import DateTimeField, CharField
 
 
 LOGGER = logging.getLogger('stdnet.search')
@@ -191,9 +187,6 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
         total = 0
         # Loop over models
         for model in self.REGISTERED_MODELS:
-            # get all fiels to index
-            fields = tuple((f.name for f in model._meta.scalarfields\
-                            if f.type=='text'))
             all = yield self.query(model).all()
             if all:
                 n = yield self.index_items_from_model(all, model)

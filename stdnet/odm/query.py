@@ -3,7 +3,7 @@ from inspect import isgenerator
 from functools import partial
 
 from stdnet import range_lookups
-from stdnet.utils import zip, JSPLITTER, iteritems, unique_tuple
+from stdnet.utils import JSPLITTER, iteritems, unique_tuple
 from stdnet.utils.exceptions import *
 
 from .globals import lookup_value
@@ -641,7 +641,6 @@ an exception is raised.
 
     def _construct(self):
         if self.fargs:
-            args = []
             fargs = self.aggregate(self.fargs)
             for f in fargs:
                 # no values to filter on. empty result.

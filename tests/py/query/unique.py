@@ -118,7 +118,7 @@ class TestUniqueFilter(test.TestCase):
                     query.test_unique, 'code', m.code, m2, ValueError)
 
 
-class TestUniqueCreate(test.TestCase):
+class TestUniqueCreate(test.TestWrite):
     model = SimpleModel
         
     def testAddNew(self):
@@ -139,10 +139,6 @@ class TestUniqueCreate(test.TestCase):
         self.assertEqualId(m, 2)
         query = session.query(self.model)
         yield self.async.assertEqual(query.count(), 2)
-    
-
-class TestUniqueChange(test.TestCase):
-    model = SimpleModel
     
     def testChangeValue(self):
         session = self.session()

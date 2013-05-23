@@ -67,7 +67,7 @@ class TestExtraClientCommands(TestCase):
                  'xxxx','moon',
                  'blaaaaaaaaaaaaaa','sun',
                  'xyyyy','earth')
-        self.async.asserTrue(c.execute_command('MSET', *items))
+        yield self.async.assertTrue(c.execute_command('MSET', *items))
         N = yield c.delpattern('bla*')
         self.assertEqual(N, 4)
         yield self.async.assertFalse(c.exists('bla'))

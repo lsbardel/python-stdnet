@@ -6,7 +6,7 @@ from inspect import isclass
 
 from stdnet.utils import StringIO
 
-from .base import get_model_from_hash
+from .globals import get_model_from_hash
 
 __all__ = ['get_serializer',
            'register_serializer',

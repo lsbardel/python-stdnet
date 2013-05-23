@@ -1,5 +1,6 @@
 import os
 import sys
+from inspect import istraceback
 from itertools import chain
 from collections import Mapping
 from uuid import uuid4
@@ -9,9 +10,17 @@ from .py2py3 import *
 if ispy3k:  # pragma: no cover
     import pickle
     unichr = chr
+    
+    def raise_error_trace(err, traceback):
+        if istraceback(traceback):
+            raise err.with_traceback(traceback)
+        else:
+            raise err
+        
 else:   # pragma: no cover
     import cPickle as pickle
-    unichr = unichr 
+    unichr = unichr
+    from .py2 import raise_error_trace
     
 from .jsontools import *
 from .populate import populate

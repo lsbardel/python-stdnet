@@ -1,15 +1,12 @@
 import logging
 from copy import copy
-import time
 from datetime import date, datetime
 from base64 import b64encode
 
 from stdnet import range_lookups
-from stdnet.utils import pickle, DefaultJSONEncoder,\
-                         DefaultJSONHook, timestamp2date, date2timestamp,\
-                         UnicodeMixin, to_string, iteritems,\
-                         encoders, flat_to_nested, dict_flat_generator,\
-                         string_type
+from stdnet.utils import DefaultJSONEncoder, DefaultJSONHook, timestamp2date,\
+                         date2timestamp, UnicodeMixin, to_string, string_type,\
+                         encoders, flat_to_nested, dict_flat_generator
 from stdnet.utils.exceptions import *
 
 from . import related
@@ -719,8 +716,7 @@ behaviour and how the field is stored in the back-end server.
 
     And::
 
-        >>> m = MyModel(name = 'bla',
-                        data = {'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
+        >>> m = MyModel(name='bla', data={'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
         >>> m.cleaned_data
         {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
  'data__pv__std': '3.5', 'data': '""'}
@@ -882,7 +878,7 @@ argument.
     
     and to remove::
     
-        >>> u.following.remove(User.objects.get(name='john))
+        >>> u.following.remove(User.objects.get(name='john'))
 
 .. attribute:: through
 

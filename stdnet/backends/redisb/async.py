@@ -18,8 +18,13 @@ from functools import partial
 import redis
 from redis.exceptions import NoScriptError
 
+from stdnet.utils.async import async_binding, multi_async, async
+
+if not async_binding:   #pragma    nocover
+    raise ImportError
+
 import pulsar
-from pulsar import multi_async, async, Deferred
+from pulsar import Deferred, NOT_DONE
 from pulsar.utils.pep import ispy3k, map
 
 from .extensions import get_script, RedisManager
@@ -93,7 +98,7 @@ class AsyncRedisRequest(object):
         if not self.args_options:
             return self.client.on_response(self.response, self.raise_on_error)
         else:
-            return False
+            return NOT_DONE
     
     
 class RedisProtocol(pulsar.ProtocolConsumer):
@@ -101,19 +106,41 @@ class RedisProtocol(pulsar.ProtocolConsumer):
     parser = None
     release_connection = True
     
-    def start_request(self):
-        self.transport.write(self.current_request.command)
-    
     def data_received(self, data):
         response = self.current_request.feed(data)
-        if response is not False:
+        if response is not NOT_DONE:
             on_finished = self.current_request.on_finished
             if on_finished and not on_finished.done():
                 on_finished.callback(response)
             elif self.release_connection:
                 self.finished(response)
-        
     
+    def start_request(self):
+        # If this is the first request and the connection is new do
+        # the login/database switch
+        if self.connection.processed <= 1 and self.request_processed == 1:
+            request = self.current_request
+            reqs = []
+            client = request.client
+            if client.is_pipeline:
+                client = client.client
+            producer = self.producer
+            c = producer.connection
+            if producer.password:
+                reqs.append(producer._new_request(client,
+                        'auth', (producer.password,), on_finished=Deferred()))
+            if c.db:
+                reqs.append(producer._new_request(client,
+                        'select', (c.db,), on_finished=Deferred()))
+            reqs.append(request)
+            for req, next in zip(reqs, reqs[1:]):
+                req.on_finished.add_callback(partial(self._next, next))
+            self._current_request = reqs[0]
+        self.transport.write(self.current_request.command)
+        
+    def _next(self, request, r):
+        return self.new_request(request)
+
     
 class AsyncConnectionPool(pulsar.Client, RedisManager):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
@@ -133,9 +160,11 @@ data-structure server.'''
         return PubSub(self, shard_hint)
     
     def request(self, client, command_name, *args, **options):
-        consumer = options.pop('consumer', None)
+        response = options.pop('consumer', None)
+        full_response = options.pop('full_response', False)
         request = self._new_request(client, command_name, args, **options)
-        return self.response(request, consumer=consumer)
+        response = self.response(request, response, False)
+        return response if full_response else response.on_finished
     
     def request_pipeline(self, pipeline, raise_on_error=True):
         commands = pipeline.command_stack
@@ -146,33 +175,8 @@ data-structure server.'''
                                   [(('EXEC', ), {})]))
         request = self._new_request(pipeline, '', commands,
                                     raise_on_error=raise_on_error)
-        return self.response(request)
-        
-    def response(self, request, consumer=None):
-        first_request = request
-        if not consumer:
-            consumer = self.consumer_factory(self.get_connection(request))
-        # If this is a new connection we need to select database and login
-        if consumer.connection.processed <= 1 and not consumer.request_processed:
-            reqs = []
-            client = request.client
-            if client.is_pipeline:
-                client = client.client
-            c = self.connection
-            if self.password:
-                reqs.append(self._new_request(client,
-                        'auth', (self.password,), on_finished=Deferred()))
-            if c.db:
-                reqs.append(self._new_request(client,
-                        'select', (c.db,), on_finished=Deferred()))
-            reqs.append(request)
-            for req, next in zip(reqs, reqs[1:]):
-                req.on_finished.add_callback(
-                                partial(self._next, consumer, next))
-            first_request = reqs[0]
-        consumer.new_request(first_request)
-        return consumer.on_finished
-            
+        return self.response(request).on_finished
+    
     def _new_request(self, client, command_name, args, **options):
         return AsyncRedisRequest(client, self.connection, self.timeout,
                                  self.encoding, self.encoding_errors,

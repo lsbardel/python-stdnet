@@ -1,10 +1,9 @@
 from functools import partial
 
-import stdnet
-from stdnet.utils import encoders, iteritems
+from stdnet.utils import encoders
 from stdnet.utils.async import on_result
 from stdnet.utils.dispatch import Signal
-from stdnet import FieldValueError, QuerySetError, ManyToManyError
+from stdnet import QuerySetError, ManyToManyError
 
 from .session import Manager, LazyProxy
 

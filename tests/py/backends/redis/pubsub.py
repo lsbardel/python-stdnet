@@ -1,6 +1,8 @@
 from stdnet.utils import test
+from stdnet.utils.async import async_binding
 
-    
+
+@test.skipUnless(async_binding, 'Requires asynchronous binding')
 class TestRedisPrefixed(test.TestCase):
     multipledb = 'redis'
     

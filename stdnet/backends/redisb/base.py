@@ -28,7 +28,8 @@ def redis_client(address, connection_pool=None, timeout=None, reader=None,
     if not connection_pool:
         if timeout == 0:
             if not AsyncConnectionPool:
-                raise ImportError('Asynchronous connection requires pulsar')
+                raise ImportError('Asynchronous connection requires async '
+                                  'bindings installed.')
             connection_pool = AsyncConnectionPool
         else:
             connection_pool = ConnectionPool

@@ -2,6 +2,7 @@
 import pulsar
 
 from stdnet.utils import test
+from stdnet.utils.async import async_binding
 
 from examples.data import FinanceTest 
 
@@ -13,20 +14,11 @@ def check_connection(self, command_name):
         for conn in pool._concurrent_connections:
             consumer = conn.current_consumer
             request = consumer.current_request
-            self.assertEqual(client.available_connections, 1)   
+            self.assertEqual(client.available_connections, 1)
     
     
+@test.skipUnless(async_binding, 'Requires asynchronous binding')
 class TestRedisAsyncClient(test.TestWrite):
-    multipledb = 'redis'
-       
-    @classmethod
-    def backend_params(cls):
-        return {'timeout': 0}
-    
-    
-
-class a: 
-#class TestRedisAsyncClient(FinanceTest):
     multipledb = 'redis'
     
     @classmethod
@@ -39,11 +31,8 @@ class a:
         
     def test_client(self):
         redis = self.mapper.default_backend.client
-        ping = yield redis.ping()
-        check_connection(self, 'PING')
-        
-    def test_load(self):
-        result = yield self.mapper.instrument.all()
+        ping = redis.execute_command('PING', full_response=True)
+        result = yield ping.on_finished
         self.assertTrue(result)
-        check_connection(self, 'EVALSHA')
+        
         

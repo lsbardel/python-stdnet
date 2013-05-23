@@ -2,17 +2,13 @@
 import sys
 from copy import copy, deepcopy
 from inspect import isclass
-import hashlib
-import weakref
 
 from stdnet.utils.exceptions import *
-from stdnet.utils import zip, to_string, UnicodeMixin, unique_tuple
+from stdnet.utils import UnicodeMixin, unique_tuple
 
-from .globals import hashmodel, JSPLITTER, get_model_from_hash, orderinginfo,\
-                     range_lookup_info
+from .globals import hashmodel, JSPLITTER, orderinginfo
 from .fields import Field, AutoIdField
 from .related import class_prepared
-from .session import Manager
 
 
 __all__ = ['ModelMeta', 'Model', 'ModelBase', 'ModelState',
@@ -207,7 +203,6 @@ mapper.
             if loadedfields is not None:
                 loadedfields = tuple(loadedfields)
             obj._loadedfields = loadedfields
-            fields = self.dfields
             for field in obj.loadedfields():
                 value = field.value_from_data(obj, data)
                 setattr(obj, field.attname, field.to_python(value, backend))
@@ -258,7 +253,6 @@ Return ``True`` if the instance is ready to be saved to database.'''
         return len(errors) == 0
 
     def get_sorting(self, sortby, errorClass=None):
-        s = None
         desc = False
         if isinstance(sortby, autoincrement):
             f = self.pk
@@ -315,7 +309,6 @@ of fields names and a list of field attribute names.'''
         '''Model metadata in a dictionary'''
         pk = self.pk
         id_type = 3
-        id_fields = None
         if pk.type == 'auto':
             id_type = 1
         return {'id_name': pk.name,

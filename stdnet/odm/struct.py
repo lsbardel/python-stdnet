@@ -1,11 +1,8 @@
 from uuid import uuid4
-from collections import namedtuple
 
-from stdnet.utils import iteritems, itervalues, missing_intervals, encoders,\
-                            BytesIO, iterpair, ispy3k
+from stdnet.utils import iteritems, encoders, BytesIO, iterpair, ispy3k
 from stdnet.utils.zset import zset
 from stdnet.utils.skiplist import skiplist
-from stdnet import SessionNotAvailable
 from stdnet.utils.async import on_result, async, is_async
 
 from .base import ModelBase
@@ -656,13 +653,6 @@ class HashTable(KeyValueMixin, Structure):
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     pickler = encoders.Default()
     cache_class = hashcache
-        
-    def addnx(self, field, value, transaction = None):
-        '''Set the value of a hash field only if the field
-does not exist.'''
-        return self._addnx(self.cursor(transaction),
-                           self.pickler.dumps(key),
-                           self.pickler_value.dumps(value))
     
     if not ispy3k:
         def iteritems(self):

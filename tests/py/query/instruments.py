@@ -53,12 +53,18 @@ class TestFilter(data.FinanceTest):
         
     def testDoubleFilter(self):
         session = self.session()
-        qs = session.query(self.model).filter(ccy='EUR', type='future')
-        all = yield qs.all()
-        self.assertTrue(all)
+        for ccy in ('EUR','USD','JPY'):
+            for type in ('equity','bond','future'):
+                qs = session.query(self.model).filter(ccy=ccy, type=type)
+                all = yield qs.all()
+                if all:
+                    break
+            if all:
+                break
+        self.assertTrue(all) 
         for inst in all:
-            self.assertEqual(inst.ccy, 'EUR')
-            self.assertEqual(inst.type, 'future')
+            self.assertEqual(inst.ccy, ccy)
+            self.assertEqual(inst.type, type)
             
     def testDoubleFilterIn(self):
         CCYS = ('EUR','USD')

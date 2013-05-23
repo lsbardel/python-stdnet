@@ -1,11 +1,8 @@
-import json
-from copy import copy
 from itertools import chain
-from functools import partial
 
-from stdnet import getdb, session_result, session_data
+from stdnet import session_result, session_data
 from stdnet.utils.async import on_result, async, multi_async
-from stdnet.utils import itervalues, zip
+from stdnet.utils import itervalues
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *
 
@@ -451,7 +448,16 @@ processed.'''
         if self.executed:
             raise InvalidTransaction('Invalid operation. '\
                                      'Transaction already executed.')
-        self.on_result = self._commit()
+        session = self.session
+        try:
+            self.on_result = self._commit()
+        except:
+            self._finish(session)
+            raise
+        else:
+            self.on_result = on_result(self.on_result,
+                                       lambda r: self._finish(session),
+                                       lambda r: self._finish(session, r))
         return self.on_result
     
     # INTERNAL FUNCTIONS
@@ -460,25 +466,15 @@ processed.'''
         session = self.session
         self.session = None
         multi = []
-        try:
-            for backend, data in session.backends_data():
-                multi.append(backend.execute_session(data))
-            re = yield multi_async(multi)
-        except Exception as e:
-            yield self._finish(session, e)
-            raise
-        else:
-            if re:
-                re = multi_async((self._post_commit(session, r) for r in re))
-                yield on_result(re, lambda r: self._finish(session),
-                                    lambda r: self._finish(session, r))
-            else:
-                yield self._finish(session)
+        for backend, data in session.backends_data():
+            multi.append(backend.execute_session(data))
+        re = yield multi_async(multi)
+        yield multi_async((self._post_commit(session, r) for r in re))
     
     def _finish(self, session, result=None):
         session.transaction = None
         self._finished = True
-        return result if result else self._finished
+        return self._finished if result is None else result
         
     @async()
     def _post_commit(self, session, response):

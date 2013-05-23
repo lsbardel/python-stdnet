@@ -1,10 +1,10 @@
 from stdnet.utils import encoders
 from stdnet.utils.exceptions import *
 
+from .struct import *
 from .fields import Field
 from .session import LazyProxy
 from . import related
-from .struct import *
 
 
 __all__ = ['StructureField',
@@ -59,16 +59,6 @@ class StructureFieldProxy(LazyProxy):
                             field=self.field, pickler=self.field.pickler,
                             value_pickler=self.field.value_pickler,
                             **self.field.struct_params)
-    
-    def get_id(self):
-        if self.field.class_field:
-            id = backend.basekey(instance._meta, 'struct', self.name)
-        else:
-            pk = instance.pkvalue()
-            if pk is None:
-                raise StructureFieldError('id for %s is not available. Call'\
-'save on instance before accessing %s.' % (instance._meta, self.name))
-            id = backend.basekey(instance._meta, 'obj', pk, self.name)
 
 
 class StructureField(Field):

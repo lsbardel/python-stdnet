@@ -1,5 +1,3 @@
-import copy
-import json
 from functools import partial
 
 from stdnet.utils import zip, JSPLITTER, EMPTYJSON, iteritems

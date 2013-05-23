@@ -37,8 +37,14 @@ if not settings.ASYNC_BINDINGS:
         def __call__(self, f):
             assert isgeneratorfunction(f), 'async decorator only for generator functions'
             def _(*args, **kwargs):
-                res = tuple(f(*args, **kwargs))
-                return res[-1] if res else None
+                gen = f(*args, **kwargs)
+                result = None
+                while True:
+                    try:
+                        result = gen.send(result)
+                    except StopIteration:
+                        break
+                return result
             return _
 
 

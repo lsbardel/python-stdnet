@@ -44,4 +44,5 @@ def start():
     
 if __name__ == '__main__':
     print(sys.version)
+    print('testing with pulsar %s' % pulsar.__version__)
     start()

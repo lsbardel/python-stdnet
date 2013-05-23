@@ -169,8 +169,7 @@ try:
                     s = getdb(s)
                     s.ping()
                 except:
-                    logger.error('Could not obtain server %s' % s,
-                                 exc_info=True)
+                    logger.exception('Could not obtain server %s', s)
                 else:
                     if s.name not in names:
                         names.add(s.name)

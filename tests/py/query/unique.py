@@ -129,6 +129,7 @@ class TestUniqueCreate(test.TestWrite):
         # Try to create another one
         m2 = self.model(code='me', group='foo')
         yield self.async.assertRaises(CommitException, session.add, m2)
+        self.assertFalse(session.transaction)
         query = session.query(self.model)
         yield self.async.assertEqual(query.count(), 1)
         m = yield query.get(code='me')

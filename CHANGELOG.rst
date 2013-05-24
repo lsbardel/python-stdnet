@@ -1,5 +1,11 @@
 .. _vers08:
 
+Ver. 0.8.1 - Development
+===============================
+* Improved ``setup.py`` so that it does not log a python 2 module syntax error
+  when installing for python 3.
+* :ref:`Custom manager <custom-manager>` documentation.
+
 Ver. 0.8.0 - 2013 May 24
 ===============================
 * This version brings several new functionalities, bug fixes, asynchronous

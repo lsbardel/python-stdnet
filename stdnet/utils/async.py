@@ -76,12 +76,16 @@ if not settings.ASYNC_BINDINGS:
                 return execute_generator(f(*args, **kwargs))
             return _
 
+pass_through = lambda r: r
 
 def on_result(result, callback, errback=None):
     if is_async(result):
         return result.add_callback(callback, errback)
     elif is_failure(result):
-        result.raise_all()
+        if errback:
+            return on_result(errback(result), pass_through)
+        else:
+            result.raise_all()
     else:
         return callback(result)
     

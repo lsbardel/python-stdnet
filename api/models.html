@@ -600,6 +600,12 @@ an id already available, the score of that word is incremented by the
 <dd><p>the <a class="reference internal" href="#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class for this query.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="stdnet.odm.Q.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#stdnet.odm.Q.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>the <a class="reference internal" href="../backends/api.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> class for this query.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="stdnet.odm.Q.get_field">
 <tt class="descname">get_field</tt><big>(</big><em>field</em><big>)</big><a class="headerlink" href="#stdnet.odm.Q.get_field" title="Permalink to this definition">¶</a></dt>
@@ -1698,13 +1704,6 @@ in the <a class="reference internal" href="#stdnet.odm.OrderedMixin" title="stdn
 <em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">HashTable</tt><big>(</big><em>value_pickler=None</em>, <em>name=''</em>, <em>field=False</em>, <em>session=None</em>, <em>pkvalue=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.HashTable" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <a class="reference internal" href="#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a> which is the networked equivalent to
 a Python <tt class="docutils literal"><span class="pre">dict</span></tt>. Derives from <a class="reference internal" href="#stdnet.odm.KeyValueMixin" title="stdnet.odm.KeyValueMixin"><tt class="xref py py-class docutils literal"><span class="pre">KeyValueMixin</span></tt></a>.</p>
-<dl class="method">
-<dt id="stdnet.odm.HashTable.addnx">
-<tt class="descname">addnx</tt><big>(</big><em>field</em>, <em>value</em>, <em>transaction=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.HashTable.addnx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the value of a hash field only if the field
-does not exist.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>

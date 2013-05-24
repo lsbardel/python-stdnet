@@ -81,7 +81,7 @@ def on_result(result, callback, errback=None):
     if is_async(result):
         return result.add_callback(callback, errback)
     elif is_failure(result):
-        return errback(result) if errback else result
+        result.raise_all()
     else:
         return callback(result)
     

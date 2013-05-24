@@ -1,6 +1,6 @@
 .. _vers08:
 
-Ver. 0.8 - Development
+Ver. 0.8.0 - 2013 May 24
 ===============================
 * This version brings several new functionalities, bug fixes, asynchronous
   connections and a departure from the global registration of models.

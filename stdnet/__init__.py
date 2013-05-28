@@ -4,7 +4,7 @@ from .utils.conf import settings
 from .utils.version import get_version, stdnet_version
 from .backends import *
 
-VERSION = stdnet_version(0, 8, 1, 'alpha', 1)
+VERSION = stdnet_version(0, 8, 0, 'final', 1)
 
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"

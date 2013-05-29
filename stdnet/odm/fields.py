@@ -220,6 +220,7 @@ function users should never call.'''
             model._meta.pk = self
 
     def add_to_fields(self):
+        '''Add this :class:`Field` to the fields of :attr:`model`.'''
         meta = self.model._meta
         meta.scalarfields.append(self)
         if self.index:
@@ -279,8 +280,8 @@ lookup on fields with additional nested fields. This is the case of
     ##    FIELD VALUES
     ############################################################################
     def get_value(self, instance, *bits):
-        '''Retrieve the value :class:`Field` from a
-:class:`StdModel` ``instance``.
+        '''Retrieve the value :class:`Field` from a :class:`StdModel`
+``instance``.
 
 :param instance: The :class:`StdModel` ``instance`` invoking this function.
 :param bits: Additional information for nested fields which derives from
@@ -295,6 +296,14 @@ retrieving values form a :class:`StdModel` instance.
             raise AttributeError
         else:
             return getattr(instance, self.attname)
+        
+    def set_value(self, instance, value):
+        '''Set the ``value`` for this :class:`Field` in a ``instance``
+of a :class:`StdModel`.'''
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
+        return value
+        
     
     def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
@@ -629,6 +638,13 @@ the database field for the ``File`` model will have a ``folder_id`` field.
     def get_value(self, instance, *bits):
         related = getattr(instance, self.name)
         return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
+    
+    def set_value(self, instance, value):
+        if isinstance(value, self.relmodel):
+            setattr(instance, self.name, value)
+            return value
+        else:
+            return super(ForeignKey, self).set_value(instance, value)
 
     def register_with_model(self, name, model):
         super(ForeignKey,self).register_with_model(name, model)

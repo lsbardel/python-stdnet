@@ -5,7 +5,7 @@ from stdnet.utils import test
 from examples.models import Person, Group 
 
 
-class fkmeta(test.TestCase):
+class TestForeignKey(test.TestCase):
     models = (Person, Group)
     
     @classmethod
@@ -42,4 +42,16 @@ class fkmeta(test.TestCase):
     def testCoverage(self):
         self.assertRaises(FieldError, odm.ForeignKey, None)
         
-        
+
+class TestForeignKeyWrite(test.TestWrite):
+    models = (Person, Group)
+    
+    def test_create(self):
+        models = self.mapper
+        group = yield models.group.new(name='quant')
+        self.assertEqual(group.name, 'quant')
+        self.assertEqualId(group, 1)
+        person = yield models.person.new(name='luca', group=group)
+        self.assertEqualId(person, 1)
+        self.assertEqual(group.id, person.group_id)
+        self.assertEqual(group, person.group)

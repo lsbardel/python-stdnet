@@ -20,7 +20,7 @@ the main class of :mod:`stdnet.odm` module.'''
     def __init__(self, *args, **kwargs):
         kwargs.pop(self._meta.pkname(), None)
         for field in self._meta.scalarfields:
-            self.set_field_value(field, kwargs.pop(field.name, None))
+            field.set_value(self, kwargs.pop(field.name, None))
         attributes = self._meta.attributes
         if args:
             N = len(args)
@@ -80,11 +80,6 @@ attribute set to ``True`` won't be included.
             name = field.attname
             if hasattr(self, name):
                 yield field, getattr(self,name)
-
-    def set_field_value(self, field, value):
-        value = field.to_python(value)
-        setattr(self, field.attname, value)
-        return value
 
     def clear_cache_fields(self):
         '''Set cache fields to ``None``. Check :attr:`Field.as_cache`

@@ -1,6 +1,5 @@
 from io import BytesIO
 
-
 __all__ = ['RedisParser']
 
 
@@ -26,11 +25,7 @@ class redisReadTask(object):
             self.rtype = rtype
             length = None
             if rtype == b'-':
-                if response.startswith(b'LOADING '):
-                    response = b"Redis is loading data into memory"
-                elif response.startswith(b'ERR '):
-                    response = response[4:]
-                response = self.reader.responseError(response.decode('utf-8'))
+                response = reader.responseError(response.decode('utf-8'))
             elif rtype == b':':
                 response = int(response)
             elif rtype == b'$':
@@ -85,7 +80,7 @@ class redisReadTask(object):
     
 class RedisParser(object):
     '''A python paraser for redis.'''
-    
+
     def __init__(self, protocolError, responseError):
         self.protocolError = protocolError
         self.responseError = responseError

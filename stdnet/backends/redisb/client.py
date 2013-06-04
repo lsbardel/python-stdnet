@@ -36,21 +36,17 @@ except ImportError:
     from stdnet import ImproperlyConfigured
     raise ImproperlyConfigured('Redis backend requires redis python client')
 
-from redis.exceptions import NoScriptError
+from redis.exceptions import NoScriptError, ConnectionError, ResponseError,\
+                                RedisError
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, PubSub
+from redis.connection import PythonParser
 
 from .extensions import get_script, RedisManager, RedisScript,\
                         script_callback, redis_connection, redis_after_receive
 from .prefixed import *
 from .info import parse_info
 
-__all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool',
-           'InvalidResponse', 'ResponseError', 'RedisError']
-
-InvalidResponse = redis.InvalidResponse
-ResponseError = redis.ResponseError
-RedisError = redis.RedisError
-ConnectionError = redis.ConnectionError
+__all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool', 'RedisError']
 
 
 class Connection(redis.Connection):

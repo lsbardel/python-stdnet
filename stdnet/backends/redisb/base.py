@@ -1,25 +1,27 @@
-try:
-    import hiredis
-except:
-    hiredis = None
-hiredis = None
+from redis.connection import PythonParser as _p, InvalidResponse
+EXCEPTION_CLASSES = _p.EXCEPTION_CLASSES
 
 from .extensions import *
 from .client import *
 from .info import *
-from . import parser 
+from . import parser
+ 
 
 try:
     from .async import AsyncConnectionPool
 except ImportError:
     AsyncConnectionPool = None
+    
+def ResponseError(response):
+    "Parse an error response"
+    error_code = response.split(' ')[0]
+    if error_code not in EXCEPTION_CLASSES:
+        error_code = 'ERR'
+    response = response[len(error_code) + 1:]
+    return EXCEPTION_CLASSES[error_code](response)
 
 PythonRedisParser = lambda : parser.RedisParser(InvalidResponse, ResponseError)
-
-if hiredis:  #pragma    nocover
-    RedisParser = lambda : hiredis.Reader(InvalidResponse, ResponseError)
-else:   #pragma    nocover
-    RedisParser = PythonRedisParser
+RedisParser = PythonRedisParser
     
     
 def redis_client(address, connection_pool=None, timeout=None, reader=None,

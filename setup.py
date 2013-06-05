@@ -5,7 +5,7 @@ from setuptools import setup
 from distutils.command.install_data import install_data
 from distutils.command.install import INSTALL_SCHEMES
 
-with_extensions = False
+with_extensions = True
 package_name = 'stdnet'
 package_fullname = 'python-%s' % package_name
 root_dir = os.path.split(os.path.abspath(__file__))[0]

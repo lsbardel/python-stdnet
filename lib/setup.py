@@ -9,9 +9,11 @@ from distutils.errors import (CCompilerError, DistutilsExecError,
                               DistutilsPlatformError)
 try:
     from Cython.Distutils import build_ext
+    from Cython.Build import cythonize
     cython_message = None
 except ImportError:
     from distutils.command.build_ext import build_ext
+    cythonize = None
     cython_message = 'Cannot build C extensions, Cython is not installed.'
     
 try:
@@ -60,18 +62,20 @@ class tolerant_build_ext(build_ext):
 
 ################################################################################
 ##    EXTENSIONS
+lib_path = os.path.dirname(__file__)
 
-ext_modules  = Extension('stdnet.lib.hr', ['lib/src/hr.pyx',
-                                           'lib/hiredis/hiredis.c',
-                                           'lib/hiredis/sds.c',
-                                           'lib/src/reader.c'])
+def full_path(sources):    
+    return [os.path.join(lib_path, path) for path in sources]
 
-base_path = os.path.split(os.path.abspath(__file__))[0]
-include_dirs.append(os.path.join(base_path,'hiredis'))
-include_dirs.append(os.path.join(base_path,'src'))
+ext_module  = Extension('stdnet.backends.redisb.cparser',
+                        full_path(['src/hr.pyx']),
+                        language='c++')
+
+include_dirs.append(os.path.join(lib_path, 'src'))
+
 
 libparams = {
-             'ext_modules': [ext_modules],
+             'ext_modules': cythonize(ext_module),
              'cmdclass': {'build_ext' : tolerant_build_ext},
              'include_dirs': include_dirs
              }

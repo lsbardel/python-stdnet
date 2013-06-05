@@ -1,24 +1,26 @@
-cimport common
+cdef extern from "parser.h":
+    
+    cdef cppclass RedisParser:
+        RedisParser(object, object) except +
+        void feed(const char*)
+        object gets()
 
 
-cdef class RedisReader:
+cdef class CRedisParser:
     '''Cython wrapper for Hiredis protocol parser.'''
     
-    cdef common.pythonReader *_c_reader
+    cdef RedisParser *_parser
 
-    def __cinit__(self, perr, rerr):
-        self._c_reader = common.pythonReaderCreate(perr, rerr)
-        if self._c_reader is NULL:
-            raise MemoryError()
+    def __cinit__(self, object perr, object rerr):
+        self._parser = new RedisParser(perr, rerr)
         
     def __dealloc__(self):
-        if self._c_reader is not NULL:
-            common.pythonReaderFree(self._c_reader)
-            self._c_reader = NULL
+        if self._parser is not NULL:
+            del self._parser
         
     def feed(self, object stream):
-        common.pythonReader_feed(self._c_reader, stream)
+        self._parser.feed(stream)
         
     def gets(self):
-        return common.pythonReader_gets(self._c_reader)
+        return self._parser.gets()
         

@@ -31,6 +31,7 @@
 #define __READIS_PARSER_H__
 
 #include <Python.h>
+#include <memory>
 #include <cstdlib>
 #include <string>
 #include <sstream>

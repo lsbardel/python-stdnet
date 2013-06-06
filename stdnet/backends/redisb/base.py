@@ -1,11 +1,17 @@
 from redis.connection import PythonParser as _p, InvalidResponse
 EXCEPTION_CLASSES = _p.EXCEPTION_CLASSES
+HAS_C_EXTENSIONS = False
 
 from .extensions import *
 from .client import *
 from .info import *
 from . import parser
- 
+
+try:
+    from . import cparser
+    HAS_C_EXTENSIONS = True
+except ImportError:
+    cparser = parser
 
 try:
     from .async import AsyncConnectionPool
@@ -21,9 +27,10 @@ def ResponseError(response):
     return EXCEPTION_CLASSES[error_code](response)
 
 PythonRedisParser = lambda : parser.RedisParser(InvalidResponse, ResponseError)
-RedisParser = PythonRedisParser
-    
-    
+CppRedisParser = lambda : cparser.RedisParser(InvalidResponse, ResponseError)
+RedisParser = CppRedisParser
+
+
 def redis_client(address, connection_pool=None, timeout=None, reader=None,
                  **kwargs):
     '''Get a new redis client'''

@@ -4,10 +4,8 @@
 *.prof
 dist
 __pycache__
-lib/src/hr.c
-stdnet/lib/hr.pyd
-stdnet/lib/hr.so
-build/*
+extensions/src/cparser.cpp
+build
 .settings
 docs/build
 .coverage
@@ -16,5 +14,4 @@ htmlprof
 .project
 .pydevproject
 MANIFEST
-vendor/src/hr.c
 *~

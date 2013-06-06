@@ -5,14 +5,13 @@ from setuptools import setup
 from distutils.command.install_data import install_data
 from distutils.command.install import INSTALL_SCHEMES
 
-with_extensions = True
+if sys.version_info < (2, 6):
+    raise Exception("stdnet requires Python 2.6 or higher.")
+
 package_name = 'stdnet'
 package_fullname = 'python-%s' % package_name
 root_dir = os.path.split(os.path.abspath(__file__))[0]
 package_dir = os.path.join(root_dir, package_name)
-
-if sys.version_info < (2, 6):
-    raise Exception("stdnet requires Python 2.6 or higher.")
 
 def get_module():
     if root_dir not in sys.path:
@@ -22,7 +21,11 @@ def get_module():
 mod = get_module()
 
 # Try to import lib build
-from lib.setup import libparams, BuildFailed
+try:
+    from extensions.setup import libparams, BuildFailed
+except ImportError:
+    libparams = None
+    
 
 def read(fname):
     return open(os.path.join(root_dir, fname)).read()
@@ -95,11 +98,8 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
         file_info[0] = '\\PURELIB\\%s' % file_info[0]
         
 
-def run_setup(with_cext=False, argv=None):
-    if with_cext:
-        params = libparams
-    else:
-        params = {'cmdclass': {}}
+def run_setup(params=None, argv=None):
+    params = params or {'cmdclass': {}}
     if sys.platform == "darwin":
         params['cmdclass']['install_data'] = osx_install_data
     else:
@@ -128,24 +128,21 @@ def status_msgs(*msgs):
         print(msg)
     print('*' * 75)
     
-if with_extensions:
+if libparams is None:
+    status_msgs('WARNING: C extensions could not be compiled, '
+                'Cython is not installed.')
+    run_setup()
+    status_msgs("Plain-Python build succeeded.")
+else:
     try:
-        run_setup(True)
+        run_setup(libparams)
     except BuildFailed as exc:
         status_msgs(
                 exc.msg,
-                "WARNING: The C extension could not be compiled, " +
+                "WARNING: C extensions could not be compiled, " +
                     "speedups are not enabled.",
                 "Failure information, if any, is above.",
-                "Retrying the build without the C extension now."
+                "Retrying the build without C extensions now."
             )
-    
         run_setup()
-    
-        status_msgs(
-            "WARNING: The C extension could not be compiled, " +
-                "speedups are not enabled.",
-            "Plain-Python build succeeded."
-        )
-else:
-    run_setup()
+        status_msgs("Plain-Python build succeeded.")

@@ -8,10 +8,6 @@ include docs/Makefile
 include docs/source/conf.py
 include stdnet/utils/dispatch/license.txt
 recursive-include stdnet/backends/redisb/lua *.lua
-recursive-include lib *.py
-recursive-include lib/hiredis *
-include lib/src/reader.c
-include lib/src/reader.h
-include lib/src/hr.pyx
-include lib/src/common.pxd
+recursive-include extensions *
 recursive-include docs *.rst
+exclude extensions/src/cparser.cpp

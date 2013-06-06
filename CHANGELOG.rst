@@ -2,6 +2,7 @@
 
 Ver. 0.8.1 - Development
 ===============================
+* C++ redis parser.
 * Improved ``setup.py`` so that it does not log a python 2 module syntax error
   when installing for python 3.
 * :ref:`Custom manager <custom-manager>` documentation.

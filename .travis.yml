@@ -9,6 +9,7 @@ python:
 
 install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install --use-mirrors argparse unittest2; fi
+  - pip install cython
   - pip install pulsar
   - python setup.py install
   - sudo rm -rf stdnet

@@ -14,4 +14,7 @@ htmlprof
 .project
 .pydevproject
 MANIFEST
+Include
+Lib
+Scripts
 *~

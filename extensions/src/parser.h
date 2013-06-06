@@ -37,6 +37,7 @@
 #include <deque>
 
 #define CR '\r'
+#define CRLF "\r\n"
 #define PROTOCOL_ERROR  ''
 #define RESPONSE_INTEGER  ':'
 #define RESPONSE_STRING  '$'
@@ -133,9 +134,9 @@ inline bool read_buffer(buffer_type& buffer, str_type& str) {
         return false;
     } else {
         size_t s = str.size();
-        // done with it
+        // If the last character is CR, we have a response
         if (s && str.at(s-1) == CR) {
-            str.pop_back();
+            str.erase(s-1);
             return true;
         } else {    // more data in the string
             str_type extra;
@@ -210,10 +211,20 @@ inline PyObject* RedisParser::task(TaskPtr& task) {
 inline PyObject* StringTask::decode(RedisParser& parser) {
     str_type str;
     if(read_buffer(parser.buffer, str)) {
-        this->str += str;
-        if (this->length == this->str.size()) {
-            return pystring(this->str);
+        // Handle 99% of cases - to avoid a string copy!
+        if(!this->str.size()) {
+            if (this->length == str.size()) {
+                return pystring(str);
+            }
+        } else {
+            this->str += str;
+            if (this->length == this->str.size()) {
+                return pystring(this->str);
+            }
         }
+        // Not done yet, put the CRLF at the end of the string.
+        // This only happen when the final string as a \r\n in the middle of it.
+        this->str += CRLF;
     }
     return NULL;
 }

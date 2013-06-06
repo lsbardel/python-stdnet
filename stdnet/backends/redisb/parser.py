@@ -1,6 +1,6 @@
-from io import BytesIO
-
 __all__ = ['RedisParser']
+
+from collections import deque
 
 
 REPLAY_TYPE = frozenset((b'$',  # REDIS_REPLY_STRING,
@@ -10,73 +10,33 @@ REPLAY_TYPE = frozenset((b'$',  # REDIS_REPLY_STRING,
                          b'-')) # REDIS_REPLY_ERROR
 
  
-class redisReadTask(object):
-    '''A redis read task, implemented along the line of hiredis.
+class StringTask(object):
+    __slots__ = ('length',)
     
-:parameter rtype: Type of reply (one of ``$,*,:,+,-``).
-:parameter response: The response to read
-:parameter reader: the :class:`RedisReader` managing the :class:`redisReadTask`.
-'''
-    __slots__ = ('rtype','response','length','reader')
+    def __init__(self, length):
+        self.length = length
+        
+    def decode(self, parser):
+        return parser.read(self.length)
     
-    def __init__(self, rtype, response, reader):
-        self.reader = reader
-        if rtype in REPLAY_TYPE:
-            self.rtype = rtype
-            length = None
-            if rtype == b'-':
-                response = reader.responseError(response.decode('utf-8'))
-            elif rtype == b':':
-                response = int(response)
-            elif rtype == b'$':
-                length = int(response)
-                response = b''
-            elif rtype == b'*':
-                length = int(response)
-                response = []
-            self.response = response
-            self.length = length
-        else:
-            raise self.reader.protocolError('Protocol Error.\
- Could not decode type "{0}"'.format(rtype)) 
+
+class ArrayTask(object):
+    __slots__ = ('length', '_response')
+    
+    def __init__(self, length):
+        self.length = length
+        self._response = []
         
-    def gets(self, response=False, recursive=False):
-        gets = self.reader.gets
-        read = self.reader.read
-        stack = self.reader._stack
-        if self.rtype == b'$':
-            if response is False:
-                if self.length == -1:
-                    return None
-                response = read(self.length)
-                if response is False:
-                    stack.append(self)
-                    return False
-            self.response = response
-        elif self.rtype == b'*':
-            length = self.length
-            if length == -1:
-                return None
-            stack.append(self)
-            append = self.response.append
-            if response is not False:
-                length -= 1
-                append(response)
-            while length > 0:
-                response = gets(True)
-                if response is False:
-                    self.length = length
-                    return False
-                length -= 1
-                append(response)
-            stack.pop()
-        
-        if stack and not recursive:
-            task = stack.pop()
-            return task.gets(self.response,recursive)
-        
-        return self.response
-                             
+    def decode(self, parser):
+        while self.length > 0:
+            response = parser._get_new()
+            if response is None:
+                break;
+            self.length -= 1
+            self._response.append(response)
+        if not self.length:
+            return self._response
+                                     
     
 class RedisParser(object):
     '''A python paraser for redis.'''
@@ -84,43 +44,65 @@ class RedisParser(object):
     def __init__(self, protocolError, responseError):
         self.protocolError = protocolError
         self.responseError = responseError
-        self._stack = []
-        self._inbuffer = BytesIO()
+        self._stack = deque()
+        self._inbuffer = bytearray()
     
     def on_connect(self, connection):
         pass
-    
+
     def on_disconnect(self):
         pass
     
+    def feed(self, buffer):
+        '''Feed new data into the buffer'''
+        self._inbuffer.extend(buffer)
+        
+    def get(self):
+        '''Called by the Parser'''
+        if self._stack:
+            task = self._stack.popleft()
+            result = task.decode(self)
+            if result is None:
+                self._stack.appendleft(task)
+            return result
+        else:
+            return self._get_new()
+
+    def buffer(self):
+        '''Current buffer'''
+        return bytes(self._inbuffer)
+    
+    def task(self, task):
+        result = task.decode(self)
+        if result is None:
+            self._stack.append(task)
+        return result
+    
+    def _get_new(self):
+        response = self.read()
+        if response is not None:
+            rtype, response = bytes(response[:1]), bytes(response[1:])
+            if rtype == b'-':
+                return self.responseError(response)
+            elif rtype == b':':
+                return int(response)
+            elif rtype == b'+':
+                return response
+            elif rtype == b'$':
+                return self.task(StringTask(int(response)))
+            elif rtype == b'*':
+                return self.task(ArrayTask(int(response)))
+            else:
+                raise self.protocolError()
+
     def read(self, length=None):
         """
         Read a line from the buffer is no length is specified,
         otherwise read ``length`` bytes. Always strip away the newlines.
         """
-        if length is not None:
-            chunk = self._inbuffer.read(length+2)
-        else:
-            chunk = self._inbuffer.readline()
-        if chunk:
-            if chunk[-2:] == b'\r\n':
-                return chunk[:-2]
-            else:
-                self._inbuffer = BytesIO(chunk)
-        return False
-    
-    def feed(self, buffer):
-        '''Feed new data into the buffer'''
-        buffer = self._inbuffer.read(-1) + buffer
-        self._inbuffer = BytesIO(buffer)
-        
-    def gets(self, recursive=False):
-        '''Called by the Parser'''
-        if self._stack and not recursive:
-            task = self._stack.pop()
-        else:
-            response = self.read()
-            if not response:
-                return False
-            task = redisReadTask(response[:1], response[1:], self)
-        return task.gets(recursive=recursive)
+        b = self._inbuffer
+        if length is None:
+            length = b.find(b'\r\n')
+        if len(b) >= length+2:
+            self._inbuffer, chunk = b[length+2:], b[:length]
+            return chunk

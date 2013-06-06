@@ -84,7 +84,7 @@ class AsyncRedisRequest(object):
     
     def feed(self, data):
         self.parser.feed(data)
-        response = self.parser.gets()
+        response = self.parser.get()
         while response is not False:
             self.last_response = response
             if self.args_options:
@@ -94,7 +94,7 @@ class AsyncRedisRequest(object):
             if not isinstance(response, Exception):
                 response = self.client.parse_response(self, args[0], **options)
             self.response.append(response)
-            response = self.parser.gets()
+            response = self.parser.get()
         if not self.args_options:
             return self.client.on_response(self.response, self.raise_on_error)
         else:

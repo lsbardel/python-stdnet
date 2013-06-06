@@ -56,6 +56,7 @@ class tolerant_build_ext(build_ext):
 lib_path = os.path.dirname(__file__)
 extra_compile_args = []
 if os.name != 'nt':
+    # required by std::shared_ptr
     extra_compile_args.append('-std=gnu++0x')
 
 def full_path(sources):    

@@ -37,7 +37,6 @@
 #include <sstream>
 #include <deque>
 
-#define CR '\r'
 #define CRLF "\r\n"
 #define PROTOCOL_ERROR  ''
 #define RESPONSE_INTEGER  ':'
@@ -51,8 +50,7 @@ class Task;
 class StringTask;
 class ArrayTask;
 typedef std::shared_ptr<Task> TaskPtr;
-typedef std::stringstream  buffer_type;
-typedef std::string str_type;
+typedef std::string string;
 typedef long long integer;
 
 class RedisParser {
@@ -64,14 +62,15 @@ public:
     //
     void feed(const char* data);
     PyObject* get();
+    PyObject* get_buffer() const;
 private:
     std::deque<TaskPtr> stack;
     PyObject *protocolError;
     PyObject *replyError;
-    buffer_type buffer;
+    string buffer;
     //
     PyObject* task(TaskPtr& task);
-    PyObject* get_from_stack();
+    PyObject* _get_new();
     RedisParser();
     //
     friend class Task;
@@ -97,7 +96,7 @@ public:
     StringTask(integer length):Task(length) {}
     PyObject* decode(RedisParser& parser);
 private:
-    str_type str;
+    string str;
 };
 
 
@@ -111,15 +110,15 @@ private:
 
 //
 // Obatin a python string from a c++ stringstream buffer
-inline PyObject* pystring(const str_type& value) {
-    return Py_BuildValue("s#", value.c_str(), value.size());
+inline PyObject* pybytes(const string& value) {
+    return Py_BuildValue("y#", value.c_str(), value.size());
 }
 //
-inline PyObject* pystring_tuple(const str_type& value) {
-    return Py_BuildValue("(s#)", value.c_str(), value.size());
+inline PyObject* pybytes_tuple(const string& value) {
+    return Py_BuildValue("(y#)", value.c_str(), value.size());
 }
 //
-inline PyObject* pylong(const str_type& value) {
+inline PyObject* pylong(const string& value) {
     long long resp = atoi(value.c_str());
     return PyLong_FromLongLong(resp);
 }
@@ -127,47 +126,62 @@ inline PyObject* pylong(const str_type& value) {
 //
 // read data from the buffer and put it into string str. If the data is ready
 // return true, otherwise false.
-inline bool read_buffer(buffer_type& buffer, str_type& str) {
-    std::getline(buffer, str);
-    if (buffer.eof()) {
-        buffer.clear();
-        buffer.seekg(0, buffer.beg);
-        return false;
+inline bool read_buffer(string& buffer, string& str) {
+    integer size = buffer.find(CRLF);
+    if (size >= 0) {
+        str.append(buffer.substr(0, size));
+        buffer.erase(0, size+2);
+        return true;
     } else {
-        size_t s = str.size();
-        // If the last character is CR, we have a response
-        if (s && str.at(s-1) == CR) {
-            str.erase(s-1);
-            return true;
-        } else {    // more data in the string
-            str_type extra;
-            if (read_buffer(buffer, extra)) {
-                str += extra;
-                return true;
-            } else {
-                return false;
-            }
-        }
+        return false;
+    }
+}
+//
+inline bool read_buffer(string& buffer, string& str, integer size) {
+    if (buffer.size() >= size+2) {
+        str.append(buffer.substr(0, size));
+        buffer.erase(0, size+2);
+        return true;
+    } else {
+        return false;
     }
 }
 
-
 inline void RedisParser::feed(const char* data) {
-    buffer << data;
+    this->buffer.append(data);
 }
 
 inline PyObject* RedisParser::get() {
-    str_type response;
+    PyObject* result;
+    if (this->stack.size()) {
+        TaskPtr task(this->stack.front());
+        this->stack.pop_front();
+        result = task->decode(*this);
+        if (!result) {
+            this->stack.push_front(task);
+        }
+    } else {
+        result = this->_get_new();
+    }
+    return result ? result : Py_BuildValue("");
+}
+
+inline PyObject* RedisParser::get_buffer() const {
+    return pybytes(this->buffer);
+}
+
+inline PyObject* RedisParser::_get_new() {
+    string response;
     if (read_buffer(this->buffer, response)) {
-        char rtype(response.at(1));
+        char rtype(response.at(0));
         response.erase(0,1);
         switch(rtype) {
         case RESPONSE_STATUS:
-            return pystring(response);
+            return pybytes(response);
         case RESPONSE_INTEGER:
             return pylong(response);
         case RESPONSE_ERROR: {
-            PyObject* args = pystring_tuple(response);
+            PyObject* args = pybytes_tuple(response);
             return PyObject_CallObject(this->replyError, args);
         }
         case RESPONSE_STRING: {
@@ -186,21 +200,6 @@ inline PyObject* RedisParser::get() {
     }
 }
 
-inline PyObject* RedisParser::get_from_stack() {
-    if (this->stack.size()) {
-        TaskPtr task(this->stack.front());
-        this->stack.pop_front();
-        PyObject* result = task->decode(*this);
-        if (!result) {
-            this->stack.push_front(task);
-        }
-        return result;
-    } else {
-        return this->get();
-    }
-}
-
-
 inline PyObject* RedisParser::task(TaskPtr& task) {
     PyObject* result = task->decode(*this);
     if (!result) {
@@ -210,30 +209,18 @@ inline PyObject* RedisParser::task(TaskPtr& task) {
 }
 
 inline PyObject* StringTask::decode(RedisParser& parser) {
-    str_type str;
-    if(read_buffer(parser.buffer, str)) {
-        // Handle 99% of cases - to avoid a string copy!
-        if(!this->str.size()) {
-            if (this->length == str.size()) {
-                return pystring(str);
-            }
-        } else {
-            this->str += str;
-            if (this->length == this->str.size()) {
-                return pystring(this->str);
-            }
-        }
-        // Not done yet, put the CRLF at the end of the string.
-        // This only happen when the final string as a \r\n in the middle of it.
-        this->str += CRLF;
+    string str;
+    if(read_buffer(parser.buffer, str, this->length)) {
+        return pybytes(str);
+    } else {
+        return NULL;
     }
-    return NULL;
 }
 
 inline PyObject* ArrayTask::decode(RedisParser& parser) {
     PyObject* response;
     while (this->length > 0) {
-        response = parser.get_from_stack();
+        response = parser._get_new();
         if (!response) {
             break;
         }

@@ -17,4 +17,12 @@ cdef class RedisParser:
         
     def get(self):
         return self._parser.get()
+    
+    def buffer(self):
+        return self._parser.get_buffer()
         
+    def on_connect(self, connection):
+        pass
+
+    def on_disconnect(self):
+        pass

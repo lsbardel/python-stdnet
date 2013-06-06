@@ -55,7 +55,7 @@ class Connection(redis.Connection):
         "Read the response from a previously sent command"
         try:
             response = self._read_response()
-        except:
+        except Exception:
             self.disconnect()
             raise
         if isinstance(response, ResponseError):
@@ -65,8 +65,8 @@ class Connection(redis.Connection):
     def _read_response(self):
         if not self._parser:
             raise ConnectionError("Socket closed on remote end")
-        response = self._parser.gets()
-        while response is False:
+        response = self._parser.get()
+        while response is None:
             try:
                 buffer = self._sock.recv(4096)
             except (socket.error, socket.timeout):
@@ -76,7 +76,7 @@ class Connection(redis.Connection):
             if not buffer:
                 raise ConnectionError("Socket closed on remote end")
             self._parser.feed(buffer)
-            response = self._parser.gets()
+            response = self._parser.get()
         return response
      
 

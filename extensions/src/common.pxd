@@ -6,3 +6,4 @@ cdef extern from "parser.h":
         void feed(const char*)
         object get()
         object get_buffer()
+        void set_encoding(const char*)

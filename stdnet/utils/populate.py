@@ -8,6 +8,7 @@ if ispy3k:  # pragma nocover
     characters = string.ascii_letters + string.digits
 else:   # pragma nocover
     characters = string.letters + string.digits
+    range = xrange
     
 def_converter = lambda x : x
 
@@ -82,9 +83,8 @@ Supported data-types
     return data
 
 def random_string(min_len=3, max_len=20, **kwargs):
-    len = randint(min_len, max_len)
-    s   = [choice(characters) for s in range(len)]
-    return ''.join(s)
+    len = randint(min_len, max_len) if max_len > min_len else min_len
+    return ''.join((choice(characters) for s in range(len)))
 
 def random_date(date_start, delta):
     return date_start + timedelta(days = randint(0,delta))

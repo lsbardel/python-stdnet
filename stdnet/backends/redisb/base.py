@@ -20,11 +20,13 @@ except ImportError:
     
 def ResponseError(response):
     "Parse an error response"
-    error_code = response.split(' ')[0]
+    response = response.split(' ')
+    error_code = response[0]
     if error_code not in EXCEPTION_CLASSES:
         error_code = 'ERR'
-    response = response[len(error_code) + 1:]
+    response = ' '.join(response[1:])
     return EXCEPTION_CLASSES[error_code](response)
+
 
 PythonRedisParser = lambda : parser.RedisParser(InvalidResponse, ResponseError)
 CppRedisParser = lambda : cparser.RedisParser(InvalidResponse, ResponseError)

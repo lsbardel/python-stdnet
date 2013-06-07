@@ -55,12 +55,12 @@ class tolerant_build_ext(build_ext):
 ##    EXTENSIONS
 lib_path = os.path.dirname(__file__)
 extra_compile_args = []
-if sys.platform == 'darwin':
-    #extra_compile_args.extend(('-std=c++11', '-stdlib=libc++'))
-    extra_compile_args.extend(('-std=c++11', '-stdlib=libc++'))
-    #extra_compile_args.extend(('-std=c++11',))
-elif os.name != 'nt':
-    extra_compile_args.append('-std=gnu++0x')
+#if sys.platform == 'darwin':
+#    #extra_compile_args.extend(('-std=c++11', '-stdlib=libc++'))
+#    extra_compile_args.extend(('-std=c++11', '-stdlib=libc++'))
+#    #extra_compile_args.extend(('-std=c++11',))
+#elif os.name != 'nt':
+#    extra_compile_args.append('-std=gnu++0x')
     
     
 

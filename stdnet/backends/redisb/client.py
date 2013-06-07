@@ -66,7 +66,7 @@ class Connection(redis.Connection):
         if not self._parser:
             raise ConnectionError("Socket closed on remote end")
         response = self._parser.get()
-        while response is None:
+        while response is False:
             try:
                 buffer = self._sock.recv(4096)
             except (socket.error, socket.timeout):

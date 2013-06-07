@@ -79,10 +79,9 @@ If ``size`` is not given, the :attr:`size` is used.'''
         size = size or self.size
         return populate(datatype, size, **kwargs)
     
-    def random_string(self, min_length=5, max_length=30):
+    def random_string(self, min_len=5, max_len=30):
         '''Return a random string'''
-        return populate('string', 1, min_length=min_length,
-                        max_length=max_length)[0]
+        return populate('string', 1, min_len=min_len, max_len=max_len)[0]
     
     
 def create_backend(self):
@@ -126,6 +125,10 @@ several class methods for testing in a parallel test suite.
 
     A :class:`DataGenerator` class for creating data. The data is created
     during the :meth:`setUpClass` class method.
+    
+.. attribute:: data
+
+    The :class:`DataGenerator` instance created from :attr:`data_cls`.
     
 .. attribute:: model
 

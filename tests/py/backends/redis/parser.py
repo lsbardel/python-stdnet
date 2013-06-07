@@ -1,14 +1,19 @@
 from stdnet.utils import test
-from stdnet.backends import redisb
+from stdnet.backends.redisb import RedisParser
 
 
 lua_nested_table = '''
+local s = ''
+for i=1,100 do
+    s = s .. '1234567890'
+end
 local nesting = ARGV[1]
-local pres = {100, 'first string'}
+local pres = {100, s}
 local result = pres
 for i=1,nesting do
-    local res = {-8, 'a string'}
+    local res = {-8, s}
     pres[3] = res
+    pres[4] = res
     pres = res
 end
 return result
@@ -17,38 +22,31 @@ return result
 
 class TestParser(test.TestCase):
     
-    def parser(self):
-        return redisb.PythonRedisParser()
-    
-    def test_status(self):
-        parser = self.parser()
-        parser.feed(b'+OK\r\n')
-        response = parser.get()
-        self.assertEqual(response, b'OK')
-        self.assertEqual(parser.buffer(), b'')
-        
-    def test_string(self):
-        parser = self.parser()
-        parser.feed(b'$10\r\nciao\r\nluca\r\n+OK\r\n')
-        response = parser.get()
-        self.assertEqual(response, b'ciao\r\nluca')
-        self.assertEqual(parser.buffer(), b'+OK\r\n')
-        response = parser.get()
-        self.assertEqual(response, b'OK')
-        self.assertEqual(parser.buffer(), b'')
-        
-    def test_nested20(self):
-        r = self.get_client()
-        result = r.eval(lua_nested_table, 0, 20)
-        self.assertTrue(result)
-        
-    def test_nested2(self):
-        r = self.get_client()
-        result = r.eval(lua_nested_table, 0, 2)
-        
+    @classmethod
+    def after_setup(cls):
+        cls.client = cls.backend.client
 
-@test.skipUnless(redisb.HAS_C_EXTENSIONS, 'Requires C extensions')
-class TestCParser(TestParser):
-    
-    def parser(self):
-        return redisb.CppRedisParser()
+    def test_null(self):
+        test = b'$-1\r\n'
+        p = RedisParser()
+        p.feed(test)
+        self.assertEqual(p.get(), None)
+        
+    def __test_multi(self):
+        test = b'+OK\r\n+QUEUED\r\n+QUEUED\r\n+QUEUED\r\n*3\r\n$-1\r\n:1\r\n:39\r\n'
+        p = RedisParser()
+        p.feed(test)
+        self.assertEqual(p.get(), b'OK')
+        self.assertEqual(p.get(), b'QUEUED')
+        self.assertEqual(p.get(), b'QUEUED')
+        self.assertEqual(p.get(), b'QUEUED')
+        self.assertEqual(p.get(), [None, 1, 39])
+        
+    def __test_nested10(self):
+        result = self.client.eval(lua_nested_table, 0, 10)
+        self.assertEqual(len(result), 4)
+        
+    def __test_nested2(self):
+        result = self.client.eval(lua_nested_table, 0, 2)
+        self.assertEqual(len(result), 4)
+        

@@ -38,7 +38,6 @@
 #include <deque>
 
 #define CRLF "\r\n"
-#define PROTOCOL_ERROR  ''
 #define RESPONSE_INTEGER  ':'
 #define RESPONSE_STRING  '$'
 #define RESPONSE_ARRAY  '*'

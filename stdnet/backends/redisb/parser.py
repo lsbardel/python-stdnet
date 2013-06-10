@@ -105,7 +105,7 @@ class RedisParser(object):
             else:
                 # Clear the buffer and raise
                 self._inbuffer = bytearray()
-                raise self.protocolError()
+                raise self.protocolError('Protocol Error')
         else:
             return False
                 

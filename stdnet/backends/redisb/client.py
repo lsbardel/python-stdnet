@@ -69,8 +69,7 @@ class Connection(redis.Connection):
         while response is False:
             try:
                 buffer = self._sock.recv(4096)
-            except (socket.error, socket.timeout):
-                e = sys.exc_info()[1]
+            except (socket.error, socket.timeout) as e:
                 raise ConnectionError("Error while reading from socket: %s" %
                                       (e.args,))
             if not buffer:

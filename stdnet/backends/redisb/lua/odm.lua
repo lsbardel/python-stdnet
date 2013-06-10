@@ -405,8 +405,8 @@ odm.Model = {
                 -- remove indices
                 self:_update_indices(false, prev_id)
                 -- when overriding, remove all data from previous hash table
-                -- only if the previous id is the same as the current one
-                if action == 'override' and prev_id == id then
+                -- only if the previous id is the same as the current one.
+                if action == 'override' and prev_id .. '' == id .. '' then
                     odm.redis.call('del', idkey)
                 end
             end
@@ -572,11 +572,13 @@ odm.Model = {
                                     end
                                     table.insert(field_items, {rid, val})
                                 end
-                            elseif # fields == 0 then
-                            	-- There are no fields for this related model. A corner case for which there is a test.
-                            	val = {}
-                            	table.insert(field_items, {rid, val})
                             end
+                            --elseif # fields == 0 then
+                            --	-- There are no fields for this related model.
+                            --	-- A corner case for which there few tests.
+                            --	val = {}
+                            --	table.insert(field_items, {rid, val})
+                            --end
                             processed[rid] = val
                         end
                     end

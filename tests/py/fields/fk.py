@@ -37,7 +37,7 @@ class TestForeignKey(test.TestCase):
         self.assertEqual(g.id, p.group_id)
         p.group = None
         self.assertEqual(p.group_id, None)
-        self.assertRaises(stdnet.FieldValueError, p.session.add, p)
+        yield self.async.assertRaises(stdnet.FieldValueError, p.session.add, p)
         
     def testCoverage(self):
         self.assertRaises(FieldError, odm.ForeignKey, None)

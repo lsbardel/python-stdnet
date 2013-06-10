@@ -51,6 +51,7 @@ def redis_client(address, connection_pool=None, timeout=None, reader=None,
                                   'bindings installed.')
             connection_pool = AsyncConnectionPool
         else:
+            kwargs['socket_timeout'] = timeout
             connection_pool = ConnectionPool
         kwargs['parser'] = lambda: RedisParser(reader)
         connection_pool = connection_pool(address, **kwargs)

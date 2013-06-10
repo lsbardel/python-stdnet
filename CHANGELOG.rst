@@ -2,10 +2,11 @@
 
 Ver. 0.8.1 - Development
 ===============================
-* C++ redis parser.
+* C++ :ref:`redis parser <redis-parser>`. Requires cython_ during installation.
 * Improved ``setup.py`` so that it does not log a python 2 module syntax error
   when installing for python 3.
 * :ref:`Custom manager <custom-manager>` documentation.
+* **578 regression tests** with **93%** coverage.
 
 Ver. 0.8.0 - 2013 May 24
 ===============================
@@ -79,8 +80,6 @@ Ver. 0.7.0 - 2012 Oct 25
 * Added a *prefixed* redis client in :class:`stdnet.lib.redis.PrefixedRedis`.
 * Added :class:`stdnet.odm.CompositeIdField` to handle situations where each
   combination of given set of :class:`stdnet.odm.Field` must be unique.
-* If you have cython_ installed in your python path, the setup.py script will
-  build ``C`` extension for a new :ref:`redis parser <redis-parser>`.
 * Added ability to filter and search on :class:`stdnet.odm.ForeignKey` fields.
 * Added :class:`stdnet.odm.Session` for managing transactions in the object
   data mapper.

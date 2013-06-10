@@ -57,7 +57,7 @@ public:
 
     ~RedisParser(){}
     //
-    void feed(const char* data);
+    void feed(const char* data, size_t size);
     void set_encoding(const char*);
     PyObject* get();
     PyObject* get_buffer() const;
@@ -115,8 +115,8 @@ inline PyObject* pybytes(const string& value) {
     return Py_BuildValue("y#", value.c_str(), value.size());
 }
 //
-inline PyObject* pybytes_tuple(const string& value) {
-    return Py_BuildValue("(y#)", value.c_str(), value.size());
+inline PyObject* pystring_tuple(const string& value) {
+    return Py_BuildValue("(s#)", value.c_str(), value.size());
 }
 //
 inline PyObject* pylong(const string& value) {
@@ -134,8 +134,8 @@ inline bool read_buffer(string& buffer, string& str, integer size) {
     }
 }
 
-inline void RedisParser::feed(const char* data) {
-    this->buffer.append(data);
+inline void RedisParser::feed(const char* data, size_t size) {
+    this->buffer.append(data, size);
 }
 
 inline void RedisParser::set_encoding(const char* encoding) {
@@ -169,8 +169,7 @@ inline PyObject* RedisParser::_get(Task* next) {
         case RESPONSE_INTEGER:
             return pylong(response);
         case RESPONSE_ERROR: {
-            PyObject* args = pybytes_tuple(response);
-            return PyObject_CallObject(this->replyError, args);
+            return PyObject_CallObject(this->replyError, pystring_tuple(response));
         }
         case RESPONSE_STRING: {
             return this->decode(new StringTask(atoi(response.c_str()), next));
@@ -180,8 +179,8 @@ inline PyObject* RedisParser::_get(Task* next) {
         }
         default:
             this->buffer.clear();
-            PyErr_SetString(this->protocolError, "protocol error");
-            return NULL;
+            return PyObject_CallObject(this->protocolError,
+                    pystring_tuple("Protocol Error"));
         }
     } else {
         return NULL;

@@ -121,11 +121,14 @@ class NonRequiredForeignKey(test.TestCase):
         self.assertTrue(feed.live)
         self.assertEqual(feed.live.id, feed.live_id)
         # Now we delete the feed
-        yield session.delete(feed.live)
-        # we still have a reference to it
+        deleted = yield session.delete(feed.live)
+        yield self.async.assertEqual(models.crossdata.filter(
+                                                id=feed.live.id).count(), 0)
+        # we still have a reference to it!
         self.assertTrue(feed.live_id)
         self.assertTrue(feed.live)
         #
+        # Now reload the feed
         feed = yield models.feed1.get(name='ccc1')
         live = yield feed.live
         self.assertFalse(live)

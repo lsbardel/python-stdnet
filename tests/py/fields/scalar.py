@@ -10,7 +10,7 @@ from stdnet import FieldValueError
 from stdnet.utils import test, populate, zip, is_string, to_string, unichr, ispy3k
 
 from examples.models import TestDateModel, DateData,\
-                             Page, SimpleModel, Environment, NumericData
+                             Page, SimpleModel, NumericData
 
 NUM_DATES = 100
 names = populate('string',NUM_DATES, min_len = 5, max_len = 20)
@@ -203,7 +203,7 @@ class TestBoolField(test.TestCase):
         d = yield models.numericdata.get(id=d.id)
         self.assertEqual(d.ok, False)
         d.ok = 'jasxbhjaxsbjxsb'
-        self.assertRaises(FieldValueError, session.add, d)
+        yield self.async.assertRaises(FieldValueError, session.add, d)
         d.ok = True
         yield session.add(d)
         d = yield models.numericdata.get(id=d.id)
@@ -240,38 +240,6 @@ class TestByteField(test.TestCase):
         v = yield models.simplemodel.get(id=v.id)
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes, b)
-
-
-class TestPickleObjectField(test.TestCase):
-    model = Environment
-    
-    def testMetaData(self):
-        field = self.model._meta.dfields['data']
-        self.assertEqual(field.type,'object')
-        self.assertEqual(field.internal_type,'bytes')
-        self.assertEqual(field.index,False)
-        self.assertEqual(field.name,field.attname)
-        return field
-    
-    def testOkObject(self):
-        session = self.session()
-        v = self.model(data=['ciao','pippo'])
-        self.assertEqual(v.data, ['ciao','pippo'])
-        yield session.add(v)
-        self.assertEqual(v.data, ['ciao','pippo'])
-        v = yield session.query(self.model).get(id=v.id)
-        self.assertEqual(v.data, ['ciao','pippo'])
-        
-    def testRecursive(self):
-        '''Silly test to test both pickle field and pickable instance'''
-        session = self.session()
-        v = yield session.add(self.model(data=('ciao','pippo', 4, {})))
-        v2 = self.model(data=v)
-        self.assertEqual(v2.data, v)
-        yield session.add(v2)
-        self.assertEqual(v2.data, v)
-        v2 = yield session.query(self.model).get(id=v2.id)
-        self.assertEqual(v2.data, v)
     
 
 class TestErrorAtomFields(test.TestCase):

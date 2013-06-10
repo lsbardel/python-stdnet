@@ -2,6 +2,7 @@
 *.egg
 *.so
 *.prof
+*.pyd
 dist
 __pycache__
 extensions/src/cparser.cpp

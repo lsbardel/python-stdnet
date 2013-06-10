@@ -66,31 +66,37 @@ class TestFinanceApplication(test.TestWrite):
     def testForeignKey(self):
         '''Test filtering with foreignkeys'''
         session = yield self.data.makePositions(self)
-        query = session.query(Position)
+        query = session.query(Position).load_related('instrument').load_related('fund')
         #
         positions = yield query.all()
         self.assertTrue(positions)
+        #
+        multi = []
         for p in positions:
-            self.assertTrue(isinstance(p.instrument,Instrument))
-            self.assertTrue(isinstance(p.fund,Fund))
-            pos = query.filter(instrument = p.instrument, fund = p.fund)
-            found = 0
-            for po in pos:
-                if po == p:
-                    found += 1
-            self.assertEqual(found,1)
-                
+            self.assertTrue(isinstance(p.instrument, Instrument))
+            self.assertTrue(isinstance(p.fund, Fund))
+            multi.append(query.filter(instrument=p.instrument, fund=p.fund).all())
+        multi = yield self.multi_async(multi)
+        for p, pos in zip(positions, multi):
+            self.assertTrue(p in pos)
+        #
         # Testing 
         total_positions = len(positions)
         totp = 0
-        for instrument in session.query(Instrument):
-            pos  = list(instrument.positions.query())
+        multi = []
+        instruments = yield session.query(Instrument).all()
+        #
+        for instrument in instruments:
+            multi.append(instrument.positions.query().load_related('instrument').all())
+        multi = yield self.multi_async(multi)
+        #
+        for instrument, pos in zip(instruments, multi):
             for p in pos:
-                self.assertTrue(isinstance(p,Position))
-                self.assertEqual(p.instrument,instrument)
+                self.assertTrue(isinstance(p, Position))
+                self.assertEqual(p.instrument, instrument)
             totp += len(pos)
-        
-        self.assertEqual(total_positions,totp)
+        #
+        self.assertEqual(total_positions, totp)
         
     def testRelatedManagerFilter(self):
         session = yield self.data.makePositions(self)

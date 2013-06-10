@@ -151,9 +151,9 @@ class test_load_related_empty(test.TestCase):
     @classmethod
     def after_setup(cls):
         with cls.session().begin() as t:
-            p1 = t.add(Profile())
-            p2 = t.add(Profile())
-            p3 = t.add(Profile())
+            p1 = t.add(Profile(name='k1'))
+            p2 = t.add(Profile(name='k2'))
+            p3 = t.add(Profile(name='k3'))
         yield t.on_result
         with cls.session().begin() as t:
             t.add(Role(profile=p1))

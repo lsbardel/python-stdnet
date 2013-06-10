@@ -97,7 +97,7 @@ class TestJsonField(test.TestCase):
     def testValueError(self):
         models = self.mapper
         a = models.statistics(dt=date.today(), data={'mean': self})
-        self.assertRaises(stdnet.FieldValueError, models.session().add, a)
+        yield self.async.assertRaises(stdnet.FieldValueError, models.session().add, a)
         self.assertTrue('data' in a._dbdata['errors'])
         
 
@@ -161,7 +161,7 @@ The `as_string` atttribute is set to ``False``.'''
         session = models.session()
         m = self.make(self.def_baddata)
         self.assertFalse(m.is_valid())
-        self.assertRaises(stdnet.FieldValueError, session.add, m)
+        yield self.async.assertRaises(stdnet.FieldValueError, session.add, m)
         
     def testmakeEmpty(self):
         models = self.mapper

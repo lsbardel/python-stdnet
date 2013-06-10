@@ -76,11 +76,12 @@ class UpdatesField(odm.StructureField):
     
     
 class Observable(odm.StdModel):
-    pass
+    name = odm.CharField()
 
 
 class Observer(odm.StdModel):
     # Underlyings are the Obsarvable this Observer is tracking for updates
+    name = odm.CharField()
     underlyings = odm.ManyToManyField(Observable, related_name='observers')
     
     # field with a 5 seconds penalty

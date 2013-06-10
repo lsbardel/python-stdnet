@@ -12,9 +12,9 @@ class TestManyToManyBase(object):
         models = self.mapper
         session = models.session()
         with session.begin() as t:
-            profile = t.add(models.profile())
-            profile2 = t.add(models.profile())
-            profile3 = t.add(models.profile())
+            profile = t.add(models.profile(name='p1'))
+            profile2 = t.add(models.profile(name='p2'))
+            profile3 = t.add(models.profile(name='p3'))
             role1 = t.add(models.role(name=role1))
             role2 = t.add(models.role(name=role2))
         yield t.on_result
@@ -144,8 +144,8 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
     def test_remove(self):
         session = self.session()
         with session.begin() as t:
-            p1 = t.add(Profile())
-            p2 = t.add(Profile())
+            p1 = t.add(Profile(name='l1'))
+            p2 = t.add(Profile(name='l2'))
         yield t.on_result
         role, created = yield session.get_or_create(Role, name='gino')
         self.assertTrue(created)
@@ -196,9 +196,9 @@ class TestRegisteredThroughModel(TestManyToManyBase, test.TestCase):
     
     def test_through_query(self):
         m = self.mapper
-        p1, p2, p3 = yield self.multi_async((m.profile.new(),
-                                             m.profile.new(),
-                                             m.profile.new()))
+        p1, p2, p3 = yield self.multi_async((m.profile.new(name='g1'),
+                                             m.profile.new(name='g2'),
+                                             m.profile.new(name='g3')))
         r1, r2 = yield self.multi_async((m.role.new(name='bla'),
                                          m.role.new(name='foo')))
         # Add a role to a profile

@@ -209,6 +209,7 @@ class Role(odm.StdModel):
 
 
 class Profile(odm.StdModel):
+    name = odm.SymbolField()
     roles = odm.ManyToManyField(model=Role, related_name="profiles")
 
 

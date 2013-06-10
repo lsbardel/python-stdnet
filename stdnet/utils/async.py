@@ -84,8 +84,10 @@ def on_result(result, callback, errback=None):
     elif is_failure(result):
         if errback:
             return on_result(errback(result), pass_through)
-        else:
+        elif not settings.ASYNC_BINDINGS:
             result.raise_all()
+        else:
+            return result
     else:
         return callback(result)
     

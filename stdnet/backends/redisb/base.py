@@ -1,11 +1,14 @@
 from redis.connection import PythonParser as _p, InvalidResponse
-EXCEPTION_CLASSES = _p.EXCEPTION_CLASSES
-HAS_C_EXTENSIONS = False
+
+from stdnet.utils.conf import settings
 
 from .extensions import *
 from .client import *
 from .info import *
 from . import parser
+
+EXCEPTION_CLASSES = _p.EXCEPTION_CLASSES
+HAS_C_EXTENSIONS = False
 
 try:
     from . import cparser
@@ -30,7 +33,12 @@ def ResponseError(response):
 
 PythonRedisParser = lambda : parser.RedisParser(InvalidResponse, ResponseError)
 CppRedisParser = lambda : cparser.RedisParser(InvalidResponse, ResponseError)
-RedisParser = CppRedisParser
+
+def RedisParser(type=None):
+    if settings.REDIS_PY_PARSER or type=='py':
+        return PythonRedisParser()
+    else:
+        return CppRedisParser()
 
 
 def redis_client(address, connection_pool=None, timeout=None, reader=None,
@@ -44,6 +52,6 @@ def redis_client(address, connection_pool=None, timeout=None, reader=None,
             connection_pool = AsyncConnectionPool
         else:
             connection_pool = ConnectionPool
-        kwargs['parser'] = PythonRedisParser if reader == 'py' else RedisParser
+        kwargs['parser'] = lambda: RedisParser(reader)
         connection_pool = connection_pool(address, **kwargs)
     return Redis(connection_pool=connection_pool)

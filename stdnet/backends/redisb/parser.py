@@ -15,12 +15,12 @@ class String(object):
         self._length = length
         self.next = next
         
-    def decode(self, parser):
+    def decode(self, parser, result):
+        parser._current = None
         length = self._length
         if length >= 0:
             b = parser._inbuffer
             if len(b) >= length+2:
-                parser._current = None
                 parser._inbuffer, chunk = b[length+2:], bytes(b[:length])
                 if parser.encoding:
                     return chunk.decode(parser.encoding)
@@ -29,43 +29,31 @@ class String(object):
             else:
                 parser._current = self
                 return False
-    
-    def resume(self, parser):
-        result = self.decode(parser)
-        if result is not False and self.next:
-            return self.next.resume(parser, result)
-        return result
             
 
 class ArrayTask(object):
-    __slots__ = ('_left', '_response', 'next')
+    __slots__ = ('_length', '_response', 'next')
     
     def __init__(self, length, next):
-        self._left = length
+        self._length = length
         self._response = []
         self.next = next
         
-    def decode(self, parser):
-        while self._left:
+    def decode(self, parser, result):
+        response = self._response
+        if result is not False:
+            response.append(result)
+        while len(response) < self._length:
             result = parser._get(self)
             if result is False:
                 break
-            self._left -= 1
-            self._response.append(result)
-        if not self._left:
-            return self._response
-        else:
-            return False
-        
-    def resume(self, parser, result=None):
-        if result is not None:
-            self._left -= 1
-            self._response.append(result)
-        result = self.decode(parser)
-        if result is not False and self.next:
-            return self.next.resume(parser, result)
-        else:
-            return result
+            response.append(result)
+        if len(response) == self._length:
+            parser._current = None
+            return response
+        elif not parser._current:
+            parser._current = self
+        return False
     
     
 class RedisParser(object):
@@ -92,7 +80,7 @@ class RedisParser(object):
     def get(self):
         '''Called by the Parser'''
         if self._current:
-            return self._current.resume(self)
+            return self._resume(self._current, False)
         else:
             return self._get(None)
     
@@ -110,19 +98,24 @@ class RedisParser(object):
                 return response
             elif rtype == b'$':
                 task = String(int(response), next)
-                return task.decode(self)
+                return task.decode(self, False)
             elif rtype == b'*':
                 task = ArrayTask(int(response), next)
-                return task.decode(self)
+                return task.decode(self, False)
             else:
                 # Clear the buffer and raise
                 self._inbuffer = bytearray()
                 raise self.protocolError()
         else:
-            self._current = next
             return False
                 
     def buffer(self):
         '''Current buffer'''
         return bytes(self._inbuffer)
     
+    def _resume(self, task, result):
+        result = task.decode(self, result)
+        if result is not False and task.next:
+            return self._resume(task.next, result)
+        else:
+            return result

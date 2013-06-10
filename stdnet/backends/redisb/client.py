@@ -344,9 +344,9 @@ class Pipeline(BasePipeline, RedisProxy):
                                                 raise_on_error=raise_on_error)
     
     def send_commands(self, all_cmds, commands, raise_on_error):
-        conn = self.connection
-        conn.send_packed_command(all_cmds)
-        response = [self.parse_response(conn, args[0], **options)
+        connection = self.connection
+        connection.send_packed_command(all_cmds)
+        response = [self.parse_response(connection, args[0], **options)
                         for args, options in commands]
         return self.on_response(response, raise_on_error)
     

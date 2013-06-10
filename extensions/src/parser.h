@@ -184,7 +184,6 @@ inline PyObject* RedisParser::_get(Task* next) {
             return NULL;
         }
     } else {
-        this->_current = next;
         return NULL;
     }
 }
@@ -201,7 +200,7 @@ inline PyObject* RedisParser::resume(Task* task, PyObject* result) {
     result = task->_decode(*this, result);
     if (result) {
         if (task->next) {
-            result = this->resume(task, result);
+            result = this->resume(task->next, result);
         }
         delete task;
     }
@@ -213,10 +212,10 @@ inline PyObject* RedisParser::get_buffer() const {
 }
 
 inline PyObject* StringTask::_decode(RedisParser& parser, PyObject* result) {
+	parser._current = NULL;
     if (this->length == -1) {
         return Py_BuildValue("");
     } else if (parser.buffer.size() >= this->length+2) {
-        parser._current = NULL;
         PyObject* result;
         if (parser.encoding.size()) {
             result = PyUnicode_Decode(
@@ -228,7 +227,7 @@ inline PyObject* StringTask::_decode(RedisParser& parser, PyObject* result) {
         parser.buffer.erase(0, this->length+2);
         return result;
     } else {
-        parser._current = this;
+    	parser._current = this;
         return NULL;
     }
 }
@@ -246,7 +245,13 @@ inline PyObject* ArrayTask::_decode(RedisParser& parser, PyObject* result) {
         this->length--;
         PyList_Append(this->array, result);
     }
-    return this->length == 0 ? this->array : NULL;
+    if (!this->length) {
+    	parser._current = NULL;
+    	return this->array;
+    } else if (!parser._current) {
+    	parser._current = this;
+    }
+    return NULL;
 }
 
 #endif	//	__READIS_PARSER_H__

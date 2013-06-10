@@ -32,7 +32,20 @@ class TestParser(test.TestCase):
         p.feed(test)
         self.assertEqual(p.get(), None)
         
-    def __test_multi(self):
+    def test_null(self):
+        test = b'$0\r\n\r\n'
+        p = RedisParser()
+        p.feed(test)
+        self.assertEqual(p.get(), b'')
+        self.assertEqual(p.buffer(), b'')
+        
+    def test_parseError(self):
+        test = b'pxxxx'
+        p = RedisParser()
+        p.feed(test)
+        self.assertRaises(p.get)
+        
+    def test_multi(self):
         test = b'+OK\r\n+QUEUED\r\n+QUEUED\r\n+QUEUED\r\n*3\r\n$-1\r\n:1\r\n:39\r\n'
         p = RedisParser()
         p.feed(test)
@@ -42,11 +55,11 @@ class TestParser(test.TestCase):
         self.assertEqual(p.get(), b'QUEUED')
         self.assertEqual(p.get(), [None, 1, 39])
         
-    def __test_nested10(self):
+    def test_nested10(self):
         result = self.client.eval(lua_nested_table, 0, 10)
         self.assertEqual(len(result), 4)
         
-    def __test_nested2(self):
+    def test_nested2(self):
         result = self.client.eval(lua_nested_table, 0, 2)
         self.assertEqual(len(result), 4)
         

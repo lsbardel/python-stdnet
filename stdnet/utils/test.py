@@ -262,9 +262,9 @@ class StdnetPlugin(TestPlugin):
     validator = pulsar.validate_list
     
     py_redis_parser = pulsar.Setting(
-                        flags=['--py-redis-server'],
-                        desc='Set the redis parser to be the pure '\
-                              'Python implementation.',
+                        flags=['--py-redis-parser'],
+                        desc='Run tests using the python redis parser rather '
+                             'the C implementation.',
                         action="store_true",
                         default=False)
     

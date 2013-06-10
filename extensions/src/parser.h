@@ -232,7 +232,9 @@ inline PyObject* StringTask::_decode(RedisParser& parser, PyObject* result) {
 }
 
 inline PyObject* ArrayTask::_decode(RedisParser& parser, PyObject* result) {
-    if (result) {
+	if (this->length == -1) {
+		return Py_BuildValue("");
+	} else if (result) {
         this->length--;
         PyList_Append(this->array, result);
     }

@@ -40,20 +40,22 @@ class ArrayTask(object):
         self.next = next
         
     def decode(self, parser, result):
-        response = self._response
-        if result is not False:
-            response.append(result)
-        while len(response) < self._length:
-            result = parser._get(self)
-            if result is False:
-                break
-            response.append(result)
-        if len(response) == self._length:
-            parser._current = None
-            return response
-        elif not parser._current:
-            parser._current = self
-        return False
+        length = self._length
+        if length >= 0:
+            response = self._response
+            if result is not False:
+                response.append(result)
+            while len(response) < length:
+                result = parser._get(self)
+                if result is False:
+                    break
+                response.append(result)
+            if len(response) == length:
+                parser._current = None
+                return response
+            elif not parser._current:
+                parser._current = self
+            return False
     
     
 class RedisParser(object):

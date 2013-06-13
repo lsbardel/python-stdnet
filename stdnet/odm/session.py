@@ -2,7 +2,7 @@ from itertools import chain
 
 from stdnet import session_result, session_data
 from stdnet.utils.async import on_result, async, multi_async
-from stdnet.utils import itervalues
+from stdnet.utils import itervalues, iteritems
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *
 
@@ -618,7 +618,7 @@ construct."""
         return EmptyQuery(self.manager(model)._meta, self)
 
     @async()
-    def get_or_create(self, model, **kwargs):
+    def update_or_create(self, model, **kwargs):
         '''Get an instance of *model* from the internal cache (only if the
 dictionary *kwargs* is of length 1 and has key given by ``id``) or from the
 server. If it the instance is not available, it tries to create one
@@ -626,15 +626,43 @@ from the **kwargs** parameters.
 
 :parameter model: a :class:`StdModel`
 :parameter kwargs: dictionary of parameters.
-:rtype: an instance of  two elements tuple containing the instance and a boolean
+:rtype: two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
+        pkname = model._meta.pkname()
+        pk = kwargs.pop(pkname, None)
         query = self.query(model)
-        model = query.model
-        items = yield query.filter(**kwargs).all()
-        try:
-            yield model.get_unique_instance(items), False
-        except model.DoesNotExist:
+        item = None
+        #
+        if pk:
+            # primary key available
+            items = yield query.filter(pkname=pk).all()
+            if items:
+                item = items[0]
+            else:
+                kwargs[pkname] = pk
+        else:
+            params = {}
+            rest = {}
+            fields = model._meta.dfields
+            for field, value in iteritems(kwargs):
+                if field in fields and fields[field].index:
+                    params[field] = value
+                else:
+                    rest[field] = value
+            if params:
+                items = yield query.filter(**params).all()
+                if len(items) == 1:
+                    item = items[0]
+                    kwargs = rest
+        if item:
+            if kwargs:
+                for field, value in iteritems(kwargs):
+                    setattr(item, field, value)
+                item = yield self.add(item)
+            yield item, False
+        #
+        else:
             item = yield self.add(model(**kwargs))
             yield item, True
 
@@ -912,6 +940,10 @@ server. This a shortcut method for the more verbose::
     instance = manager.session().add(MyModel(**kwargs))
 '''
         return self.session().add(self.model(*args, **kwargs))
+    
+    def update_or_create(self, **kwargs):
+        '''Invokes the :class:`Session.update_or_create` method.'''
+        return self.session().update_or_create(self.model, **kwargs)
 
     def all(self):
         '''Return all instances for this manager.
@@ -963,9 +995,6 @@ a full text search value.'''
 
     def keys(self):
         return self.session().keys(self.model)
-
-    def get_or_create(self, **kwargs):
-        return self.session().get_or_create(self.model, **kwargs)
 
     def pkvalue(self, instance):
         '''Return the primary key value for ``instance``.'''

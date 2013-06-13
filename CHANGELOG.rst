@@ -3,6 +3,7 @@
 Ver. 0.8.1 - Development
 ===============================
 * C++ :ref:`redis parser <redis-parser>`. Requires cython_ during installation.
+* Better implementation for :meth:`stdnet.odm.Session.update_or_create`.
 * Improved ``setup.py`` so that it does not log a python 2 module syntax error
   when installing for python 3.
 * :ref:`Custom manager <custom-manager>` documentation.

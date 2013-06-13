@@ -147,9 +147,9 @@ class TestManyToManyAddDelete(TestManyToManyBase, test.TestWrite):
             p1 = t.add(Profile(name='l1'))
             p2 = t.add(Profile(name='l2'))
         yield t.on_result
-        role, created = yield session.get_or_create(Role, name='gino')
+        role, created = yield session.update_or_create(Role, name='gino')
         self.assertTrue(created)
-        role, created = yield session.get_or_create(Role, name='gino')
+        role, created = yield session.update_or_create(Role, name='gino')
         self.assertFalse(created)
         self.assertTrue(role.id)
         with p1.session.begin() as t:

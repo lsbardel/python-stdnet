@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Registration &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Registration &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Query your Data" href="query.html" />
     <link rel="prev" title="Using Models" href="tutorial.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="tutorial.html" title="Using Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -134,6 +136,25 @@ the following way:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="custom-managers">
+<span id="custom-manager"></span><h2>Custom Managers<a class="headerlink" href="#custom-managers" title="Permalink to this headline">¶</a></h2>
+<p>When a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> registers a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>, it creates a new
+instance of a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> and add it to the dictionary of managers.
+It is possible to supply a custom manager class by specifying the
+<tt class="docutils literal"><span class="pre">manager_class</span></tt> attribute on the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">CustomManager</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">special_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="n">manager_class</span> <span class="o">=</span> <span class="n">CustomManager</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="model-iterator">
 <h2>Model Iterator<a class="headerlink" href="#model-iterator" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -144,7 +165,7 @@ the following way:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; A python dotted path or an iterable over python
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>application</strong> &#8211; A python dotted path or an iterable over python
 dotted-paths where models are defined.</td>
 </tr>
 </tbody>
@@ -184,6 +205,7 @@ dotted-paths where models are defined.</td>
 </ul>
 </li>
 <li><a class="reference internal" href="#multiple-backends">Multiple backends</a></li>
+<li><a class="reference internal" href="#custom-managers">Custom Managers</a></li>
 <li><a class="reference internal" href="#model-iterator">Model Iterator</a></li>
 </ul>
 </li>
@@ -203,7 +225,7 @@ dotted-paths where models are defined.</td>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -220,7 +242,7 @@ dotted-paths where models are defined.</td>
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

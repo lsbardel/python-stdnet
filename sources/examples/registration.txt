@@ -68,6 +68,7 @@ and, importantly, it reduces to zero the imports one has to write on python
 modules using your application, in other words it makes your application
 less dependent on the actual implementation of :class:`StdModel`.
 
+
 Multiple backends
 =========================
 
@@ -82,6 +83,27 @@ the following way::
     models.register(Position, 'redis://1270.0.0.1:6379?db=8&password=bla',
                     'redis://1270.0.0.1:6380?db=1')
 
+
+.. _custom-manager:
+
+Custom Managers
+============================
+
+When a :class:`Router` registers a :class:`StdModel`, it creates a new
+instance of a :class:`Manager` and add it to the dictionary of managers.
+It is possible to supply a custom manager class by specifying the
+``manager_class`` attribute on the :class:`StdModel`::
+
+    class CustomManager(odm.Manager):
+    
+        def special_query(self, ...):
+            return self.query().filter(...)
+            
+            
+    class MyModel(odm.StdModel):
+        ...
+        
+        manager_class = CustomManager 
 
 Model Iterator
 ============================

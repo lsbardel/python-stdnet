@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Servers &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Backend Servers &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +23,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="next" title="API" href="api.html" />
-    <link rel="prev" title="Internals and Utilities" href="../api/utility.html" /> 
+    <link rel="prev" title="Local Models" href="../examples/local.html" /> 
   </head>
   <body>
 
@@ -40,9 +42,9 @@
           <a href="api.html" title="API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../api/utility.html" title="Internals and Utilities"
+          <a href="../examples/local.html" title="Local Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
@@ -79,8 +81,8 @@ Currently stdnet supports <a class="reference external" href="http://redis.io/">
 passing a valid connection string:</p>
 <div class="highlight-python"><pre>from pulsar import getdb
 
-b1 = getdb('redis://127.0.0.1:9739?db=7&amp;namespace=test.')
-b2 = getdb('mongo://127.0.0.1:9739?db=test)</pre>
+b1 = getdb(&#x27;redis://127.0.0.1:9739?db=7&amp;namespace=test.&#x27;)
+b2 = getdb(&#x27;mongo://127.0.0.1:9739?db=test)</pre>
 </div>
 <p>Check <a class="reference internal" href="redis.html#redis-connection-string"><em>redis connection strings</em></a> for a
 full list of valid parameters.</p>
@@ -108,8 +110,8 @@ full list of valid parameters.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../api/utility.html"
-                        title="previous chapter">Internals and Utilities</a></p>
+  <p class="topless"><a href="../examples/local.html"
+                        title="previous chapter">Local Models</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="api.html"
                         title="next chapter">API</a></p>
@@ -121,7 +123,7 @@ full list of valid parameters.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -138,7 +140,7 @@ full list of valid parameters.</p>
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

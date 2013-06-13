@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Full text search &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Full text search &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sessions" href="sessions.html" />
     <link rel="prev" title="Sorting and Ordering" href="sorting.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="sorting.html" title="Sorting and Ordering"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -93,7 +95,7 @@ method to install it in the router. Here, we use the
 or a valid <a class="reference internal" href="../backends/index.html#connection-string"><em>connection string</em></a> such as:</p>
 <div class="highlight-python"><pre>redis://127.0.0.1:6379?db=4</pre>
 </div>
-<p>or <tt class="xref docutils literal"><span class="pre">None</span></tt>, to use the default <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Router.backend</span></tt>.
+<p>or <tt class="docutils literal"><span class="pre">None</span></tt>, to use the default <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Router.backend</span></tt>.
 This is the back-end server where the text indices <a class="reference internal" href="#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a>
 are stored, and not the back-end server of your models to index.
 They can be the same. To use the same backend as the default
@@ -133,7 +135,7 @@ driver.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>min_word_length</strong> &#8211; <p>minimum number of words required by the engine
 to work.</p>
 <p>Default <tt class="docutils literal"><span class="pre">3</span></tt>.</p>
@@ -141,10 +143,10 @@ to work.</p>
 <li><strong>stop_words</strong> &#8211; <p>list of words not included in the search engine.</p>
 <p>Default <tt class="docutils literal"><span class="pre">stdnet.apps.searchengine.ignore.STOP_WORDS</span></tt></p>
 </li>
-<li><strong>metaphone</strong> &#8211; <p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the double <a class="reference external" href="http://en.wikipedia.org/wiki/Metaphone">metaphone</a> algorithm will be
+<li><strong>metaphone</strong> &#8211; <p>If <tt class="docutils literal"><span class="pre">True</span></tt> the double <a class="reference external" href="http://en.wikipedia.org/wiki/Metaphone">metaphone</a> algorithm will be
 used to store and search for words. The metaphone should be the last
 world middleware to be added.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 <li><strong>splitters</strong> &#8211; <p>string whose characters are used to split text
 into words. If this parameter is set to <cite>&#8220;_-&#8220;</cite>,
@@ -232,7 +234,7 @@ the input <tt class="xref py py-class docutils literal"><span class="pre">Query<
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -249,7 +251,7 @@ the input <tt class="xref py py-class docutils literal"><span class="pre">Query<
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

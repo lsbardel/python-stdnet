@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +23,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="API" href="index.html" />
-    <link rel="next" title="Backend Servers" href="../backends/index.html" />
+    <link rel="next" title="Stdnet Redis branch (Discontinued)" href="../stdnetredis.html" />
     <link rel="prev" title="Fields API" href="fields.html" /> 
   </head>
   <body>
@@ -38,12 +40,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../backends/index.html" title="Backend Servers"
+          <a href="../stdnetredis.html" title="Stdnet Redis branch (Discontinued)"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="fields.html" title="Fields API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>
@@ -87,10 +89,10 @@ the <a class="reference internal" href="models.html#register-model"><em>register
 <dt id="stdnet.utils.conf.settings.REDIS_PY_PARSER">
 <tt class="descclassname">settings.</tt><tt class="descname">REDIS_PY_PARSER</tt><a class="headerlink" href="#stdnet.utils.conf.settings.REDIS_PY_PARSER" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set stdnet to use the internal python parser for redis.
-By default it is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> which causes
+By default it is set to <tt class="docutils literal"><span class="pre">False</span></tt> which causes
 the library to choose the best possible available. More information
 is contained in the <a class="reference internal" href="../backends/redis.html#redis-parser"><em>redis parser</em></a> documentation.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -105,7 +107,7 @@ is contained in the <a class="reference internal" href="../backends/redis.html#r
 <tt class="descclassname">settings.</tt><tt class="descname">RedisConnectionClass</tt><a class="headerlink" href="#stdnet.utils.conf.settings.RedisConnectionClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Redis Connection class. If not set the
 <tt class="xref py py-class docutils literal"><span class="pre">stdnet.lib.connection.Connection</span></tt> will be used.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt></p>
+<p>Default <tt class="docutils literal"><span class="pre">None</span></tt></p>
 </dd></dl>
 
 <p>To change settings:</p>
@@ -145,7 +147,7 @@ A common usage pattern:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; serializer name (it can override existing serializers).</li>
 <li><strong>serializer</strong> &#8211; an instance or a derived class of a
 <a class="reference internal" href="#stdnet.odm.Serializer" title="stdnet.odm.Serializer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Serializer</span></tt></a> class or a callable.</li>
@@ -200,7 +202,7 @@ provided, a python <tt class="docutils literal"><span class="pre">StringIO</span
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the stream object.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the stream object.</td>
 </tr>
 </tbody>
 </table>
@@ -214,7 +216,7 @@ provided, a python <tt class="docutils literal"><span class="pre">StringIO</span
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>models</strong> &#8211; the <a class="reference internal" href="models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> which must contains all the model this
 method will load.</li>
 <li><strong>stream</strong> &#8211; bytes or an object with a <tt class="docutils literal"><span class="pre">read</span></tt> method returning bytes.</li>
@@ -259,7 +261,7 @@ model, the model will get loaded otherwise it will skip the loading.</p>
 <h3>JSON utilities<a class="headerlink" href="#json-utilities" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="stdnet.utils.JSONDateDecimalEncoder">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON encoder used by stdnet. It provides
 JSON serialization for four additional classes:</p>
 <ul class="simple">
@@ -267,7 +269,7 @@ JSON serialization for four additional classes:</p>
 <li><cite>datetime.datetime</cite> as a <tt class="docutils literal"><span class="pre">{'__datetime__':</span> <span class="pre">timestamp}</span></tt> dictionary</li>
 <li><cite>decimal.Decimal</cite> as a <tt class="docutils literal"><span class="pre">{'__decimal__':</span> <span class="pre">number}</span></tt> dictionary</li>
 </ul>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">It is the default encoder for <a class="reference internal" href="fields.html#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.JSONField</span></tt></a></p>
 </div>
@@ -312,7 +314,7 @@ for encoding and decoding data to and from the data server.</p>
 <dl class="method">
 <dt id="stdnet.utils.encoders.Encoder.require_session">
 <tt class="descname">require_session</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Encoder.require_session" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="xref docutils literal"><span class="pre">True</span></tt> if this <a class="reference internal" href="#stdnet.utils.encoders.Encoder" title="stdnet.utils.encoders.Encoder"><tt class="xref py py-class docutils literal"><span class="pre">Encoder</span></tt></a> requires a
+<dd><p><tt class="docutils literal"><span class="pre">True</span></tt> if this <a class="reference internal" href="#stdnet.utils.encoders.Encoder" title="stdnet.utils.encoders.Encoder"><tt class="xref py py-class docutils literal"><span class="pre">Encoder</span></tt></a> requires a
 <a class="reference internal" href="models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a>.</p>
 </dd></dl>
 
@@ -325,13 +327,13 @@ data loaded via the <a class="reference internal" href="#stdnet.utils.encoders.E
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>iterable</strong> &#8211; an iterable over data to load.</li>
 <li><strong>session</strong> &#8211; Optional <a class="reference internal" href="models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">an iterable over decoded data.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">an iterable over decoded data.</p>
 </td>
 </tr>
 </tbody>
@@ -563,6 +565,12 @@ during the <a class="reference internal" href="#stdnet.utils.test.TestCase.setUp
 </dd></dl>
 
 <dl class="attribute">
+<dt id="stdnet.utils.test.TestCase.data">
+<tt class="descname">data</tt><a class="headerlink" href="#stdnet.utils.test.TestCase.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#stdnet.utils.test.DataGenerator" title="stdnet.utils.test.DataGenerator"><tt class="xref py py-class docutils literal"><span class="pre">DataGenerator</span></tt></a> instance created from <a class="reference internal" href="#stdnet.utils.test.TestCase.data_cls" title="stdnet.utils.test.TestCase.data_cls"><tt class="xref py py-attr docutils literal"><span class="pre">data_cls</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="stdnet.utils.test.TestCase.model">
 <tt class="descname">model</tt><a class="headerlink" href="#stdnet.utils.test.TestCase.model" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default <tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt> for this test. A class attribute.</p>
@@ -640,10 +648,10 @@ after the <a class="reference internal" href="#stdnet.utils.test.TestCase.setUpC
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>instance</strong> &#8211; the <tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt> to check the primary key <tt class="docutils literal"><span class="pre">value</span></tt>.</li>
 <li><strong>value</strong> &#8211; the value of the id to check against.</li>
-<li><strong>exact</strong> &#8211; if <tt class="xref docutils literal"><span class="pre">True</span></tt> the exact value must be matched. For redis backend
+<li><strong>exact</strong> &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt> the exact value must be matched. For redis backend
 this parameter is not used.</li>
 </ul>
 </td>
@@ -695,7 +703,7 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
 
 <dl class="method">
 <dt id="stdnet.utils.test.DataGenerator.random_string">
-<tt class="descname">random_string</tt><big>(</big><em>min_length=5</em>, <em>max_length=30</em><big>)</big><a class="headerlink" href="#stdnet.utils.test.DataGenerator.random_string" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">random_string</tt><big>(</big><em>min_len=5</em>, <em>max_len=30</em><big>)</big><a class="headerlink" href="#stdnet.utils.test.DataGenerator.random_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a random string</p>
 </dd></dl>
 
@@ -747,8 +755,8 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
   <p class="topless"><a href="fields.html"
                         title="previous chapter">Fields API</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../backends/index.html"
-                        title="next chapter">Backend Servers</a></p>
+  <p class="topless"><a href="../stdnetredis.html"
+                        title="next chapter">Stdnet Redis branch (Discontinued)</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/api/utility.txt"
@@ -757,7 +765,7 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -774,7 +782,7 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

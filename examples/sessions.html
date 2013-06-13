@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sessions &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Sessions &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="A twitter clone" href="twitter.html" />
     <link rel="prev" title="Full text search" href="search.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="search.html" title="Full text search"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -97,7 +99,7 @@ method directly:</p>
 <div class="section" id="transactional-state">
 <span id="id1"></span><h2>Transactional State<a class="headerlink" href="#transactional-state" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is said to be in a <strong>transactional state</strong> when its
-<a class="reference internal" href="../api/models.html#stdnet.odm.Session.transaction" title="stdnet.odm.Session.transaction"><tt class="xref py py-class docutils literal"><span class="pre">Session.transaction</span></tt></a> attribute is not <tt class="xref docutils literal"><span class="pre">None</span></tt>. A transactional state is
+<a class="reference internal" href="../api/models.html#stdnet.odm.Session.transaction" title="stdnet.odm.Session.transaction"><tt class="xref py py-class docutils literal"><span class="pre">Session.transaction</span></tt></a> attribute is not <tt class="docutils literal"><span class="pre">None</span></tt>. A transactional state is
 obtained via the <a class="reference internal" href="../api/models.html#stdnet.odm.Session.begin" title="stdnet.odm.Session.begin"><tt class="xref py py-meth docutils literal"><span class="pre">Session.begin()</span></tt></a> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">transaction</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
 </pre></div>
@@ -143,7 +145,7 @@ exception will occur.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -160,7 +162,7 @@ exception will occur.</p>
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

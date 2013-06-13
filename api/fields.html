@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Fields API &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Fields API &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="API" href="index.html" />
     <link rel="next" title="Internals and Utilities" href="utility.html" />
     <link rel="prev" title="Model and Query API" href="models.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="models.html" title="Model and Query API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>
@@ -95,53 +97,53 @@ Each field is specified as a <a class="reference internal" href="models.html#std
 <dd><p>Probably the most important field attribute, it establish if
 the field creates indexes for queries.
 If you don&#8217;t need to query the field you should set this value to
-<tt class="xref docutils literal"><span class="pre">False</span></tt>, it will save you memory.</p>
+<tt class="docutils literal"><span class="pre">False</span></tt>, it will save you memory.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">if <tt class="docutils literal"><span class="pre">index</span></tt> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> executing queries
+<p class="last">if <tt class="docutils literal"><span class="pre">index</span></tt> is set to <tt class="docutils literal"><span class="pre">False</span></tt> executing queries
 against the field will
 throw a <a class="reference internal" href="utility.html#stdnet.QuerySetError" title="stdnet.QuerySetError"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.QuerySetError</span></tt></a> exception.
 No database queries are allowed for non indexed fields
 as a design decision (explicit better than implicit).</p>
 </div>
-<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.Field.unique">
 <tt class="descname">unique</tt><a class="headerlink" href="#stdnet.odm.Field.unique" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
-In this case <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.
+<dd><p>If <tt class="docutils literal"><span class="pre">True</span></tt>, the field must be unique throughout the model.
+In this case <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is also <tt class="docutils literal"><span class="pre">True</span></tt>.
 Enforced at <a class="reference internal" href="../backends/api.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> level.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.Field.primary_key">
 <tt class="descname">primary_key</tt><a class="headerlink" href="#stdnet.odm.Field.primary_key" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, this field is the primary key for the model.
+<dd><p>If <tt class="docutils literal"><span class="pre">True</span></tt>, this field is the primary key for the model.
 A primary key field has the following properties:</p>
 <ul class="simple">
-<li><a class="reference internal" href="#stdnet.odm.Field.unique" title="stdnet.odm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">Field.unique</span></tt></a> is also <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
+<li><a class="reference internal" href="#stdnet.odm.Field.unique" title="stdnet.odm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">Field.unique</span></tt></a> is also <tt class="docutils literal"><span class="pre">True</span></tt>.</li>
 <li>There can be only one in a model.</li>
 <li>It&#8217;s attribute name in the model must be <strong>id</strong>.</li>
 <li>If not specified a <a class="reference internal" href="#stdnet.odm.AutoIdField" title="stdnet.odm.AutoIdField"><tt class="xref py py-class docutils literal"><span class="pre">AutoIdField</span></tt></a> will be added.</li>
 </ul>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.Field.required">
 <tt class="descname">required</tt><a class="headerlink" href="#stdnet.odm.Field.required" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">False</span></tt>, the field is allowed to be null.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<dd><p>If <tt class="docutils literal"><span class="pre">False</span></tt>, the field is allowed to be null.</p>
+<p>Default <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.Field.default">
 <tt class="descname">default</tt><a class="headerlink" href="#stdnet.odm.Field.default" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default value for this field. It can be a callable attribute with arity 0.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -174,8 +176,8 @@ Created by the <tt class="docutils literal"><span class="pre">odm</span></tt> at
 <dl class="attribute">
 <dt id="stdnet.odm.Field.hidden">
 <tt class="descname">hidden</tt><a class="headerlink" href="#stdnet.odm.Field.hidden" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the field will be hidden from search algorithms.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<dd><p>If <tt class="docutils literal"><span class="pre">True</span></tt> the field will be hidden from search algorithms.</p>
+<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -187,12 +189,12 @@ Created by the <tt class="docutils literal"><span class="pre">odm</span></tt> at
 <dl class="attribute">
 <dt id="stdnet.odm.Field.as_cache">
 <tt class="descname">as_cache</tt><a class="headerlink" href="#stdnet.odm.Field.as_cache" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the field contains data which is considered cache and
+<dd><p>If <tt class="docutils literal"><span class="pre">True</span></tt> the field contains data which is considered cache and
 therefore always reproducible. Field marked as cache, have <a class="reference internal" href="#stdnet.odm.Field.required" title="stdnet.odm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">required</span></tt></a>
-always <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+always <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 <p>This attribute is used by the <a class="reference internal" href="models.html#stdnet.odm.StdModel.fieldvalue_pairs" title="stdnet.odm.StdModel.fieldvalue_pairs"><tt class="xref py py-class docutils literal"><span class="pre">StdModel.fieldvalue_pairs</span></tt></a> method
 which returns a dictionary of field names and values.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -202,6 +204,12 @@ which returns a dictionary of field names and values.</p>
 class when <tt class="xref py py-class docutils literal"><span class="pre">Metaclass</span></tt> is initialised. It fills
 <a class="reference internal" href="#stdnet.odm.Field.name" title="stdnet.odm.Field.name"><tt class="xref py py-attr docutils literal"><span class="pre">Field.name</span></tt></a> and <a class="reference internal" href="#stdnet.odm.Field.model" title="stdnet.odm.Field.model"><tt class="xref py py-attr docutils literal"><span class="pre">Field.model</span></tt></a>. This is an internal
 function users should never call.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Field.add_to_fields">
+<tt class="descname">add_to_fields</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.odm.Field.add_to_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add this <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> to the fields of <a class="reference internal" href="#stdnet.odm.Field.model" title="stdnet.odm.Field.model"><tt class="xref py py-attr docutils literal"><span class="pre">model</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -220,7 +228,7 @@ for this field. Used only by realted fields.</p>
 <dl class="method">
 <dt id="stdnet.odm.Field.id">
 <tt class="descname">id</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Field id for object <em>obj</em>, if applicable. Default is <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<dd><p>Field id for object <em>obj</em>, if applicable. Default is <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -231,7 +239,7 @@ for this field. Used only by realted fields.</p>
 
 <dl class="method">
 <dt id="stdnet.odm.Field.get_lookup">
-<tt class="descname">get_lookup</tt><big>(</big><em>remaining</em>, <em>errorClass=&lt;type 'exceptions.ValueError'&gt;</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.get_lookup" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_lookup</tt><big>(</big><em>remaining</em>, <em>errorClass=&lt;class 'ValueError'&gt;</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.get_lookup" title="Permalink to this definition">¶</a></dt>
 <dd><p>called by the <a class="reference internal" href="models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt></a> method when it needs to build
 lookup on fields with additional nested fields. This is the case of
 <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> and <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a>.</p>
@@ -239,7 +247,7 @@ lookup on fields with additional nested fields. This is the case of
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>remaining</strong> &#8211; the <em class="xref std std-ref">double underscored</em> fields if this <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a></li>
 <li><strong>errorClass</strong> &#8211; Optional exception class to use if the <em>remaining</em> field
 is not valid.</li>
@@ -253,20 +261,20 @@ is not valid.</li>
 <dl class="method">
 <dt id="stdnet.odm.Field.get_value">
 <tt class="descname">get_value</tt><big>(</big><em>instance</em>, <em>*bits</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.get_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieve the value <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> from a
-<a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> <tt class="docutils literal"><span class="pre">instance</span></tt>.</p>
+<dd><p>Retrieve the value <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> from a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>
+<tt class="docutils literal"><span class="pre">instance</span></tt>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>instance</strong> &#8211; The <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> <tt class="docutils literal"><span class="pre">instance</span></tt> invoking this function.</li>
 <li><strong>bits</strong> &#8211; Additional information for nested fields which derives from
 the <a class="reference internal" href="../examples/underscore.html#tutorial-underscore"><em>double underscore</em></a> notation.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the value of this <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> in the <tt class="docutils literal"><span class="pre">instance</span></tt>. can raise
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the value of this <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> in the <tt class="docutils literal"><span class="pre">instance</span></tt>. can raise
 <tt class="xref py py-class docutils literal"><span class="pre">AttributeError</span></tt>.</p>
 </td>
 </tr>
@@ -274,6 +282,13 @@ the <a class="reference internal" href="../examples/underscore.html#tutorial-und
 </table>
 <p>This method is used by the <a class="reference internal" href="models.html#stdnet.odm.StdModel.get_attr_value" title="stdnet.odm.StdModel.get_attr_value"><tt class="xref py py-meth docutils literal"><span class="pre">StdModel.get_attr_value()</span></tt></a> method when
 retrieving values form a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.odm.Field.set_value">
+<tt class="descname">set_value</tt><big>(</big><em>instance</em>, <em>value</em><big>)</big><a class="headerlink" href="#stdnet.odm.Field.set_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the <tt class="docutils literal"><span class="pre">value</span></tt> for this <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> in a <tt class="docutils literal"><span class="pre">instance</span></tt>
+of a <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -358,7 +373,7 @@ a stand alone structure in the back-end server with very little effort:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> &#8211; an optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class. If
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> &#8211; an optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> class. If
 specified, the structured will contains ids of instances of the model and
 it can be accessed via the <a class="reference internal" href="#stdnet.odm.StructureField.relmodel" title="stdnet.odm.StructureField.relmodel"><tt class="xref py py-attr docutils literal"><span class="pre">relmodel</span></tt></a> attribute.
 It can also be specified as a string if class specification is not possible.</td>
@@ -387,13 +402,13 @@ values.</p>
 to keys, rather than values, in <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a>
 of <a class="reference internal" href="models.html#stdnet.odm.PairMixin" title="stdnet.odm.PairMixin"><tt class="xref py py-class docutils literal"><span class="pre">PairMixin</span></tt></a> type (these include <a class="reference internal" href="#stdnet.odm.HashField" title="stdnet.odm.HashField"><tt class="xref py py-class docutils literal"><span class="pre">HashField</span></tt></a>,
 <a class="reference internal" href="#stdnet.odm.TimeSeriesField" title="stdnet.odm.TimeSeriesField"><tt class="xref py py-class docutils literal"><span class="pre">TimeSeriesField</span></tt></a> and ordered <a class="reference internal" href="#stdnet.odm.SetField" title="stdnet.odm.SetField"><tt class="xref py py-class docutils literal"><span class="pre">SetField</span></tt></a>)</p>
-<p>Default: <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p>Default: <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.StructureField.class_field">
 <tt class="descname">class_field</tt><a class="headerlink" href="#stdnet.odm.StructureField.class_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> this <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a> is a class field (it belongs to
+<dd><p>If <tt class="docutils literal"><span class="pre">True</span></tt> this <a class="reference internal" href="#stdnet.odm.StructureField" title="stdnet.odm.StructureField"><tt class="xref py py-class docutils literal"><span class="pre">StructureField</span></tt></a> is a class field (it belongs to
 the model class rather than model instances). For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="o">...</span>
@@ -402,7 +417,7 @@ the model class rather than model instances). For example:</p>
 <span class="n">MyModel</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Default: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default: <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -471,7 +486,7 @@ further information on primary keys.</p>
 <dt id="stdnet.odm.FloatField">
 <em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">FloatField</tt><big>(</big><em>unique=False</em>, <em>primary_key=False</em>, <em>required=True</em>, <em>index=None</em>, <em>hidden=None</em>, <em>as_cache=False</em>, <em>**extras</em><big>)</big><a class="headerlink" href="#stdnet.odm.FloatField" title="Permalink to this definition">¶</a></dt>
 <dd><p>An floating point <a class="reference internal" href="#stdnet.odm.AtomField" title="stdnet.odm.AtomField"><tt class="xref py py-class docutils literal"><span class="pre">AtomField</span></tt></a>. By default
-its <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+its <a class="reference internal" href="#stdnet.odm.Field.index" title="stdnet.odm.Field.index"><tt class="xref py py-attr docutils literal"><span class="pre">Field.index</span></tt></a> is set to <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 <dl class="attribute">
 <dt id="stdnet.odm.FloatField.python_type">
 <tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.FloatField.python_type" title="Permalink to this definition">¶</a></dt>
@@ -493,7 +508,7 @@ or other entities. They are indexes by default.</p>
 <dl class="attribute">
 <dt id="stdnet.odm.SymbolField.python_type">
 <tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.SymbolField.python_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">unicode</span></tt></p>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
 </dd></dl>
 
 </dd></dl>
@@ -506,7 +521,7 @@ or other entities. They are indexes by default.</p>
 <em class="property">class </em><tt class="descclassname">stdnet.odm.</tt><tt class="descname">CharField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.odm.CharField" title="Permalink to this definition">¶</a></dt>
 <dd><p>A text <a class="reference internal" href="#stdnet.odm.SymbolField" title="stdnet.odm.SymbolField"><tt class="xref py py-class docutils literal"><span class="pre">SymbolField</span></tt></a> which is never an index.
 It contains unicode and by default and <a class="reference internal" href="#stdnet.odm.Field.required" title="stdnet.odm.Field.required"><tt class="xref py py-attr docutils literal"><span class="pre">Field.required</span></tt></a>
-is set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+is set to <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 </div>
@@ -520,7 +535,7 @@ In python this is converted to <cite>bytes</cite>.</p>
 <dl class="attribute">
 <dt id="stdnet.odm.ByteField.python_type">
 <tt class="descname">python_type</tt><a class="headerlink" href="#stdnet.odm.ByteField.python_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt></p>
 </dd></dl>
 
 </dd></dl>
@@ -597,7 +612,7 @@ behaviour and how the field is stored in the back-end server.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>encoder_class</strong> &#8211; <p>The JSON class used for encoding.</p>
 <p>Default: <tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt>.</p>
 </li>
@@ -605,7 +620,7 @@ behaviour and how the field is stored in the back-end server.</p>
 <p>Default: <tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.date_decimal_hook</span></tt>.</p>
 </li>
 <li><strong>as_string</strong> &#8211; <p>Set the <a class="reference internal" href="#stdnet.odm.JSONField.as_string" title="stdnet.odm.JSONField.as_string"><tt class="xref py py-attr docutils literal"><span class="pre">as_string</span></tt></a> attribute.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 </ul>
 </td>
@@ -618,9 +633,9 @@ behaviour and how the field is stored in the back-end server.</p>
 <dd><p>A boolean indicating if data should be serialized
 into a single JSON string or it should be used to create several
 fields prefixed with the field name and the double underscore <tt class="docutils literal"><span class="pre">__</span></tt>.</p>
-<p>Default <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>Default <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 <p>Effectively, a <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> with <tt class="docutils literal"><span class="pre">as_string</span></tt> attribute set to
-<tt class="xref docutils literal"><span class="pre">False</span></tt> is a multifield, in the sense that it generates several
+<tt class="docutils literal"><span class="pre">False</span></tt> is a multifield, in the sense that it generates several
 field-value pairs. For example, lets consider the following:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">SymbolField</span><span class="p">()</span>
@@ -634,7 +649,7 @@ field-value pairs. For example, lets consider the following:</p>
 <span class="go">&gt;&gt;&gt;</span>
 </pre></div>
 </div>
-<p>The reason for setting <tt class="docutils literal"><span class="pre">as_string</span></tt> to <tt class="xref docutils literal"><span class="pre">False</span></tt> is to allow
+<p>The reason for setting <tt class="docutils literal"><span class="pre">as_string</span></tt> to <tt class="docutils literal"><span class="pre">False</span></tt> is to allow
 the <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.JSONField"><tt class="xref py py-class docutils literal"><span class="pre">JSONField</span></tt></a> to define several fields at runtime,
 without introducing new <a class="reference internal" href="#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> in your model class.
 These fields behave exactly like standard fields and therefore you
@@ -662,7 +677,7 @@ or <a class="reference internal" href="#stdnet.odm.JSONField" title="stdnet.odm.
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The best way to use this field is when its <a class="reference internal" href="#stdnet.odm.Field.as_cache" title="stdnet.odm.Field.as_cache"><tt class="xref py py-class docutils literal"><span class="pre">Field.as_cache</span></tt></a>
-attribute is <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+attribute is <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
 </div>
 </dd></dl>
 
@@ -721,17 +736,13 @@ back to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
 <dl class="attribute">
 <dt id="stdnet.odm.ForeignKey.proxy_class">
 <tt class="descname">proxy_class</tt><a class="headerlink" href="#stdnet.odm.ForeignKey.proxy_class" title="Permalink to this definition">¶</a></dt>
-<dd><p>Descriptor for a <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field.</p>
+<dd><p>alias of <a class="reference internal" href="#stdnet.odm.LazyForeignKey" title="stdnet.odm.LazyForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">LazyForeignKey</span></tt></a></p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="stdnet.odm.ForeignKey.related_manager_class">
 <tt class="descname">related_manager_class</tt><a class="headerlink" href="#stdnet.odm.ForeignKey.related_manager_class" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
-relationships under the hood.
-If a model has a <a class="reference internal" href="#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> field, instances of
-that model will have access to the related (foreign) objects
-via a simple attribute of the model.</p>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">One2ManyRelatedManager</span></tt></p>
 </dd></dl>
 
 </dd></dl>
@@ -809,8 +820,8 @@ it returns a of <a class="reference internal" href="models.html#stdnet.odm.List"
 </pre></div>
 </div>
 <p>Lets register it with redis:</p>
-<div class="highlight-python"><pre>&gt;&gt;&gt; odm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
-'redis db 7 on 127.0.0.1:6379'</pre>
+<div class="highlight-python"><pre>&gt;&gt;&gt; odm.register(UserMessage,&#x27;&#x27;redis://127.0.0.1:6379/?db=11&#x27;)
+&#x27;redis db 7 on 127.0.0.1:6379&#x27;</pre>
 </div>
 <p>Can be used as:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">UserMessage</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="s">&#39;pippo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -853,7 +864,7 @@ It is initiated without any argument other than an optional model class:</p>
 <dd><p>A flag indicating if the elements in this set are ordered with respect
 a score. If ordered, the <a class="reference internal" href="#stdnet.odm.StructureField.structure_class" title="stdnet.odm.StructureField.structure_class"><tt class="xref py py-meth docutils literal"><span class="pre">StructureField.structure_class()</span></tt></a> method
 returns a <a class="reference internal" href="models.html#stdnet.odm.Zset" title="stdnet.odm.Zset"><tt class="xref py py-class docutils literal"><span class="pre">Zset</span></tt></a> otherwise a <a class="reference internal" href="models.html#stdnet.odm.Set" title="stdnet.odm.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a>.
-Default <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -966,7 +977,7 @@ it returns an instance of <a class="reference internal" href="models.html#stdnet
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -983,7 +994,7 @@ it returns an instance of <a class="reference internal" href="models.html#stdnet
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

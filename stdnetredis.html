@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Stdnet Redis branch (Discontinued) &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Stdnet Redis branch (Discontinued) &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.8.1b1',
+        URL_ROOT:    './',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +23,8 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="index.html" />
-    <link rel="prev" title="Changelog" href="changelog.html" /> 
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="index.html" />
+    <link rel="prev" title="Internals and Utilities" href="api/utility.html" /> 
   </head>
   <body>
 
@@ -36,9 +38,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="changelog.html" title="Changelog"
+          <a href="api/utility.html" title="Internals and Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
@@ -88,7 +90,7 @@ It is mandatory to provide the number of input keys (numkeys)
 before passing the input keys and the other (optional) arguments:</p>
 <div class="highlight-python"><pre>ZDIFFSTORE destination numkeys key [key ...] [withscore]</pre>
 </div>
-<p>If the optional argument <tt class="docutils literal"><span class="pre">withscore</span></tt> is <tt class="xref docutils literal"><span class="pre">True</span></tt> (default is <tt class="xref docutils literal"><span class="pre">False</span></tt>), elements are
+<p>If the optional argument <tt class="docutils literal"><span class="pre">withscore</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt> (default is <tt class="docutils literal"><span class="pre">False</span></tt>), elements are
 removed from the first sorted sets only if the score is matched.</p>
 </div>
 </div>
@@ -190,7 +192,7 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 <h3>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h3>
 <p>Added 1 file in <tt class="docutils literal"><span class="pre">tests/unit/type</span></tt>: <tt class="docutils literal"><span class="pre">ts.tcl</span></tt>.</p>
 <p>To run the timeseries tests:</p>
-<div class="highlight-python"><pre>make test TAGS="ts"</pre>
+<div class="highlight-python"><pre>make test TAGS=&quot;ts&quot;</pre>
 </div>
 </div>
 </div>
@@ -234,8 +236,8 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="changelog.html"
-                        title="previous chapter">Changelog</a></p>
+  <p class="topless"><a href="api/utility.html"
+                        title="previous chapter">Internals and Utilities</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/stdnetredis.txt"
@@ -244,7 +246,7 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -261,7 +263,7 @@ is the same as in <tt class="docutils literal"><span class="pre">TSRANGE</span><
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

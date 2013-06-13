@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Role based access control &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Role based access control &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Multivariate Time Series" href="columnts.html" />
     <link rel="prev" title="A twitter clone" href="twitter.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="twitter.html" title="A twitter clone"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -99,7 +101,7 @@ a <tt class="docutils literal"><span class="pre">owner</span></tt>.</p>
 <a class="reference internal" href="#examples.permissions.Role.owner" title="examples.permissions.Role.owner"><tt class="xref py py-attr docutils literal"><span class="pre">owner</span></tt></a>.</p>
 <dl class="attribute">
 <dt id="examples.permissions.Role.name">
-<tt class="descname">name</tt><a class="headerlink" href="#examples.permissions.Role.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#examples.permissions.Role.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of this role.</p>
 </dd></dl>
 
@@ -143,7 +145,7 @@ are implemented via the <a class="reference internal" href="#examples.permission
 <em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">Group</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.Group" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="examples.permissions.Group.name">
-<tt class="descname">name</tt><a class="headerlink" href="#examples.permissions.Group.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#examples.permissions.Group.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Group name. If the group is for a signle user, it can be the
 user username</p>
 </dd></dl>
@@ -162,16 +164,6 @@ group for a website is owned by the <tt class="docutils literal"><span class="pr
 and <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>.</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="examples.permissions.Group.role_owner_set">
-<tt class="descname">role_owner_set</tt><a class="headerlink" href="#examples.permissions.Group.role_owner_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
-relationships under the hood.
-If a model has a <tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt> field, instances of
-that model will have access to the related (foreign) objects
-via a simple attribute of the model.</p>
-</dd></dl>
-
 </dd></dl>
 
 <p>The system user is implemented via the <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>. Since roles are always assigned
@@ -182,16 +174,6 @@ to.</p>
 <em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">User</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.User" title="Permalink to this definition">¶</a></dt>
 <dd><p>The user of a system. The only field required is the <tt class="xref py py-attr docutils literal"><span class="pre">username</span></tt>.
 which is also unique across all users.</p>
-<dl class="attribute">
-<dt id="examples.permissions.User.group_user_set">
-<tt class="descname">group_user_set</tt><a class="headerlink" href="#examples.permissions.User.group_user_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>A specialised <tt class="xref py py-class docutils literal"><span class="pre">RelatedManager</span></tt> for handling one-to-many
-relationships under the hood.
-If a model has a <tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt> field, instances of
-that model will have access to the related (foreign) objects
-via a simple attribute of the model.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -287,7 +269,7 @@ for <tt class="docutils literal"><span class="pre">user</span></tt> with permiss
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -304,7 +286,7 @@ for <tt class="docutils literal"><span class="pre">user</span></tt> with permiss
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

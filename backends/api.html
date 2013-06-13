@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>API &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>API &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1b1',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="../index.html" />
     <link rel="up" title="Backend Servers" href="index.html" />
     <link rel="next" title="Redis" href="redis.html" />
     <link rel="prev" title="Backend Servers" href="index.html" /> 
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Backend Servers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Servers</a> &raquo;</li> 
       </ul>
     </div>
@@ -100,7 +102,7 @@ directly, instead, the <a class="reference internal" href="#stdnet.getdb" title=
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; name of database, such as <strong>redis</strong>, <strong>mongo</strong>, etc..</li>
 <li><strong>address</strong> &#8211; network address of database server.</li>
 <li><strong>namespace</strong> &#8211; optional namespace for keys.</li>
@@ -142,7 +144,7 @@ same database as this instance.</p>
 <tt class="descname">default_manager</tt><a class="headerlink" href="#stdnet.BackendDataServer.default_manager" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default model Manager for this backend. If not
 provided, the <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Manager</span></tt></a> is used.
-Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+Default <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -153,13 +155,13 @@ Default <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>meta</strong> &#8211; a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt>.</li>
 <li><strong>args</strong> &#8211; optional list of strings to prepend to the basekey.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a native string</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a native string</p>
 </td>
 </tr>
 </tbody>
@@ -181,7 +183,7 @@ from database.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>meta</strong> &#8211; instance of model <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Metaclass</span></tt>.</li>
 <li><strong>data</strong> &#8211; iterator over instances data.</li>
 </ul>
@@ -199,7 +201,7 @@ from database.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>instance</strong> &#8211; a <a class="reference internal" href="../api/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a></li>
 <li><strong>client</strong> &#8211; Optional client handler</li>
 </ul>
@@ -437,7 +439,7 @@ way you can slice a list or iterate over the query.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -454,7 +456,7 @@ way you can slice a list or iterate over the query.</p>
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

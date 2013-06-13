@@ -1,18 +1,20 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; python stdnet v0.8.1b1 documentation</title>
+    <title>Changelog &mdash; python stdnet 0.8.1b2 documentation</title>
+    
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.8.1b1',
+        URL_ROOT:    './',
+        VERSION:     '0.8.1b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,8 +23,8 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet v0.8.1b1 documentation" href="index.html" />
-    <link rel="next" title="Stdnet Redis branch (Discontinued)" href="stdnetredis.html" />
+    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="index.html" />
+    <link rel="next" title="FAQ" href="faq.html" />
     <link rel="prev" title="Mongo DB" href="backends/mongo.html" /> 
   </head>
   <body>
@@ -37,12 +39,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="stdnetredis.html" title="Stdnet Redis branch (Discontinued)"
+          <a href="faq.html" title="FAQ"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="backends/mongo.html" title="Mongo DB"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet v0.8.1b1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
@@ -64,8 +66,19 @@
             
   <div class="section" id="changelog">
 <span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ver-0-8-1-development">
+<span id="vers08"></span><h2>Ver. 0.8.1 - Development<a class="headerlink" href="#ver-0-8-1-development" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>C++ <a class="reference internal" href="backends/redis.html#redis-parser"><em>redis parser</em></a>. Requires <a class="reference external" href="http://cython.org/">cython</a> during installation.</li>
+<li>Better implementation for <a class="reference internal" href="api/models.html#stdnet.odm.Session.update_or_create" title="stdnet.odm.Session.update_or_create"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Session.update_or_create()</span></tt></a>.</li>
+<li>Improved <tt class="docutils literal"><span class="pre">setup.py</span></tt> so that it does not log a python 2 module syntax error
+when installing for python 3.</li>
+<li><a class="reference internal" href="examples/registration.html#custom-manager"><em>Custom manager</em></a> documentation.</li>
+<li><strong>587 regression tests</strong> with <strong>93%</strong> coverage.</li>
+</ul>
+</div>
 <div class="section" id="ver-0-8-0-2013-may-24">
-<span id="vers08"></span><h2>Ver. 0.8.0 - 2013 May 24<a class="headerlink" href="#ver-0-8-0-2013-may-24" title="Permalink to this headline">¶</a></h2>
+<h2>Ver. 0.8.0 - 2013 May 24<a class="headerlink" href="#ver-0-8-0-2013-may-24" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>This version brings several new functionalities, bug fixes, asynchronous
 connections and a departure from the global registration of models.</li>
@@ -100,7 +113,7 @@ the <tt class="docutils literal"><span class="pre">primary</span> <span class="p
 to accommodate for multiple foreign keys with same related model in the same
 model.</li>
 <li>Fixed critical bug in <a class="reference internal" href="api/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.ForeignKey</span></tt></a> with attribute <tt class="docutils literal"><span class="pre">required</span></tt>
-set to <tt class="xref docutils literal"><span class="pre">False</span></tt>. Previously the deletion of instances of the related
+set to <tt class="docutils literal"><span class="pre">False</span></tt>. Previously the deletion of instances of the related
 model caused the deletion of the instances pointing to those deleted objects.</li>
 <li>Minor bug fix in lua <tt class="docutils literal"><span class="pre">odm</span></tt> script when sorting with respect related model
 fields which are missing.</li>
@@ -136,8 +149,6 @@ for building many to many relationships.
 <li>Added a <em>prefixed</em> redis client in <tt class="xref py py-class docutils literal"><span class="pre">stdnet.lib.redis.PrefixedRedis</span></tt>.</li>
 <li>Added <a class="reference internal" href="api/fields.html#stdnet.odm.CompositeIdField" title="stdnet.odm.CompositeIdField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.CompositeIdField</span></tt></a> to handle situations where each
 combination of given set of <a class="reference internal" href="api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Field</span></tt></a> must be unique.</li>
-<li>If you have <a class="reference external" href="http://cython.org/">cython</a> installed in your python path, the setup.py script will
-build <tt class="docutils literal"><span class="pre">C</span></tt> extension for a new <a class="reference internal" href="backends/redis.html#redis-parser"><em>redis parser</em></a>.</li>
 <li>Added ability to filter and search on <a class="reference internal" href="api/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ForeignKey</span></tt></a> fields.</li>
 <li>Added <a class="reference internal" href="api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> for managing transactions in the object
 data mapper.</li>
@@ -222,7 +233,7 @@ fashion, therefore no overhead is required for the sorting step.
 <em>Explicit</em> by using the <tt class="docutils literal"><span class="pre">sort_by</span></tt> method in
 a <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.query.QuerySet</span></tt> object.
 Check the <a class="reference internal" href="examples/sorting.html#sorting"><em>sorting</em></a> documentation for more information.</li>
-<li>Unique fields (fields with <a class="reference internal" href="api/fields.html#stdnet.odm.Field.unique" title="stdnet.odm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Field.unique</span></tt></a> set to <tt class="xref docutils literal"><span class="pre">True</span></tt>)
+<li>Unique fields (fields with <a class="reference internal" href="api/fields.html#stdnet.odm.Field.unique" title="stdnet.odm.Field.unique"><tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Field.unique</span></tt></a> set to <tt class="docutils literal"><span class="pre">True</span></tt>)
 are now indexed via <a class="reference external" href="http://redis.io/">redis</a> hash tables which maps the field value to the
 object id. Previously they were stored in keys. This solution
 reduces the memory footprint and the number of keys used.</li>
@@ -423,7 +434,7 @@ structures in a <a class="reference internal" href="backends/api.html#stdnet.Bac
 <h2>Ver. 0.3.2 - 2010 Aug 24<a class="headerlink" href="#ver-0-3-2-2010-aug-24" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Bug fixes</li>
-<li>Fixed a bug on <tt class="docutils literal"><span class="pre">odm.DateField</span></tt> when <tt class="docutils literal"><span class="pre">required</span></tt> is set to <tt class="xref docutils literal"><span class="pre">False</span></tt></li>
+<li>Fixed a bug on <tt class="docutils literal"><span class="pre">odm.DateField</span></tt> when <tt class="docutils literal"><span class="pre">required</span></tt> is set to <tt class="docutils literal"><span class="pre">False</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">Changelog</span></tt> included in documentation</li>
 <li><strong>27 tests</strong></li>
 </ul>
@@ -441,7 +452,7 @@ structures in a <a class="reference internal" href="backends/api.html#stdnet.Bac
 <li>Overall code refactoring.</li>
 <li>Added ListField and OrderedSetField with Redis implementation</li>
 <li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">AttributError</span></tt> when method/attribute not available.
-Previously it returned <tt class="xref docutils literal"><span class="pre">None</span></tt></li>
+Previously it returned <tt class="docutils literal"><span class="pre">None</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">StdModel</span></tt> raise <tt class="docutils literal"><span class="pre">ModelNotRegistered</span></tt> when trying to save an instance
 of a non-registered model</li>
 <li><strong>24 tests</strong></li>
@@ -478,6 +489,7 @@ of a non-registered model</li>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
+<li><a class="reference internal" href="#ver-0-8-1-development">Ver. 0.8.1 - Development</a></li>
 <li><a class="reference internal" href="#ver-0-8-0-2013-may-24">Ver. 0.8.0 - 2013 May 24</a></li>
 <li><a class="reference internal" href="#ver-0-7-0-2012-oct-25">Ver. 0.7.0 - 2012 Oct 25</a></li>
 <li><a class="reference internal" href="#ver-0-6-2-2011-nov-14">Ver. 0.6.2 - 2011 Nov 14</a></li>
@@ -506,8 +518,8 @@ of a non-registered model</li>
   <p class="topless"><a href="backends/mongo.html"
                         title="previous chapter">Mongo DB</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="stdnetredis.html"
-                        title="next chapter">Stdnet Redis branch (Discontinued)</a></p>
+  <p class="topless"><a href="faq.html"
+                        title="next chapter">FAQ</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/changelog.txt"
@@ -516,7 +528,7 @@ of a non-registered model</li>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -533,7 +545,7 @@ of a non-registered model</li>
 
     <div class="footer">
         &copy; Copyright 2010-2013, Luca Sbardella.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">
 

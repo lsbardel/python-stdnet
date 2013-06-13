@@ -97,19 +97,19 @@ class SessionModel(object):
 
     @property
     def new(self):
-        ''''The set of all new instances within this ``SessionModel``. This
+        '''The set of all new instances within this ``SessionModel``. This
 instances will be inserted in the database.'''
         return tuple(itervalues(self._new))
 
     @property
     def modified(self):
         '''The set of all modified instances within this ``Session``. This
-instances will'''
+instances will.'''
         return tuple(itervalues(self._modified))
 
     @property
     def deleted(self):
-        '''The set of all instances marked as 'deleted' within this
+        '''The set of all instances marked as `deleted` within this
 :class:`Session`.'''
         return tuple(itervalues(self._deleted))
 
@@ -619,14 +619,13 @@ construct."""
 
     @async()
     def update_or_create(self, model, **kwargs):
-        '''Get an instance of *model* from the internal cache (only if the
-dictionary *kwargs* is of length 1 and has key given by ``id``) or from the
-server. If it the instance is not available, it tries to create one
-from the **kwargs** parameters.
+        '''Update or create a new instance of ``model``. This method can raise
+an exception if the ``kwargs`` dictionary contains field data that does not
+validate.
 
 :parameter model: a :class:`StdModel`
 :parameter kwargs: dictionary of parameters.
-:rtype: two elements tuple containing the instance and a boolean
+:returns: A two elements tuple containing the instance and a boolean
     indicating if the instance was created or not.
 '''
         pkname = model._meta.pkname()

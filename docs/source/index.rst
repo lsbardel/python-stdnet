@@ -33,12 +33,11 @@ Contents
    :maxdepth: 1
    
    overview
-   faq
    examples/index
-   api/index
    backends/index
    changelog
-   
+   faq
+   api/index   
 
 Indices and tables
 ==================

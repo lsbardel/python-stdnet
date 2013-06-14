@@ -824,7 +824,7 @@ subclasses.'''
     
 
 class Manager(object):
-    '''before a :class:`StdModel` can be used in conjunction
+    '''Before a :class:`StdModel` can be used in conjunction
 with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
 with it via a :class:`Router`. Check the
 :ref:`registration tutorial <tutorial-registration>` for further info::
@@ -839,13 +839,13 @@ with it via a :class:`Router`. Check the
     manager = models[MyModel]
 
 Managers are used as :class:`Session` and :class:`Query` factories
-for a given :class:`StdModel`, but they can be customised::
+for a given :class:`StdModel`::
 
     session = router[MyModel].session()
     query = router[MyModel].query()
     
-To customize a manager for a given model, one creates a subclass and add
-additional method::
+A model can specify a :ref:`custom manager <custom-manager>` by
+creating a :class:`Manager` subclass with additional methods::
 
     class MyModelManager(odm.Manager):
     

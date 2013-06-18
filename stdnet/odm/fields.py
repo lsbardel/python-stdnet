@@ -390,8 +390,8 @@ class BooleanField(AtomField):
     python_type = bool
     _default = False
 
-    def __init__(self, required = False, **kwargs):
-        super(BooleanField,self).__init__(required = required,**kwargs)
+    def __init__(self, required=False, **kwargs):
+        super(BooleanField,self).__init__(required=required,**kwargs)
 
     @field_value_error
     def to_python(self, value, backend=None):

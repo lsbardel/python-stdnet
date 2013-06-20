@@ -908,10 +908,13 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
         return self._read_backend or self._backend
     
     def __getattr__(self, attrname):
-        result = getattr(self.model, attrname)
-        if isinstance(result, LazyProxy):
-            return result.load_from_manager(self)
-        return result
+        if attrname.startswith('__'): #required for copy
+            raise AttributeError
+        else:
+            result = getattr(self.model, attrname)
+            if isinstance(result, LazyProxy):
+                return result.load_from_manager(self)
+            return result
     
     def __str__(self):
         if self.backend:
@@ -921,16 +924,16 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
         else:
             return '{0}({1})'.format(self.__class__.__name__, self._meta)
     __repr__ = __str__
-
-    def session(self, session=None):
-        '''Returns a new :class:`Session`. This is a shortcut for the
-:meth:`Router.session` method.'''
-        return self._router.session()
     
     def __call__(self, *args, **kwargs):
         # The callable method is equivalent of doing self.model() it is just
         # a shurtcut for a better API
         return self.model(*args, **kwargs)
+    
+    def session(self, session=None):
+        '''Returns a new :class:`Session`. This is a shortcut for the
+:meth:`Router.session` method.'''
+        return self._router.session()
     
     def new(self, *args, **kwargs):
         '''Create a new instance of :attr:`model` and commit it to the backend

@@ -43,6 +43,12 @@
 #define RESPONSE_STATUS  '+'
 #define RESPONSE_ERROR  '-'
 
+#if PY_MAJOR_VERSION == 2
+    #define BYTES_FORMAT "s#"
+#else
+    #define BYTES_FORMAT "y#"
+#endif
+
 
 class Task;
 class StringTask;
@@ -62,9 +68,9 @@ public:
     PyObject* get();
     PyObject* get_buffer() const;
 private:
-    Task* _current;
     PyObject *protocolError;
     PyObject *replyError;
+    Task* _current;
     string encoding;
     string buffer;
     //
@@ -81,7 +87,7 @@ private:
 
 class Task {
 public:
-    Task(integer length, Task* next):length(length), next(next){}
+    Task(integer length, Task* next):next(next), length(length) {}
     virtual ~Task() {}
     virtual PyObject* _decode(RedisParser& parser, PyObject*) = 0;
     Task* next;
@@ -112,26 +118,16 @@ private:
 //
 // Obatin a python string from a c++ stringstream buffer
 inline PyObject* pybytes(const string& value) {
-    return Py_BuildValue("y#", value.c_str(), value.size());
+    return Py_BuildValue(BYTES_FORMAT, value.c_str(), value.size());
 }
-//
+
 inline PyObject* pystring_tuple(const string& value) {
     return Py_BuildValue("(s#)", value.c_str(), value.size());
 }
-//
+
 inline PyObject* pylong(const string& value) {
     long long resp = atoi(value.c_str());
     return PyLong_FromLongLong(resp);
-}
-//
-inline bool read_buffer(string& buffer, string& str, integer size) {
-    if (buffer.size() >= size+2) {
-        str.append(buffer.substr(0, size));
-        buffer.erase(0, size+2);
-        return true;
-    } else {
-        return false;
-    }
 }
 
 inline void RedisParser::feed(const char* data, size_t size) {
@@ -158,7 +154,7 @@ inline PyObject* RedisParser::get() {
 
 inline PyObject* RedisParser::_get(Task* next) {
     integer size = this->buffer.find(CRLF);
-    if (size >= 0) {
+    if (size != string::npos) {
         string response(buffer.substr(0, size));
         buffer.erase(0, size+2);
         char rtype(response.at(0));

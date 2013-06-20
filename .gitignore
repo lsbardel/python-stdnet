@@ -3,6 +3,8 @@
 *.so
 *.prof
 *.pyd
+*.o
+*.def
 dist
 __pycache__
 extensions/src/cparser.cpp

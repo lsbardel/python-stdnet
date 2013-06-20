@@ -62,15 +62,12 @@ extra_compile_args = []
 #elif os.name != 'nt':
 #    extra_compile_args.append('-std=gnu++0x')
     
-    
 
-def full_path(sources):    
-    return [os.path.join(lib_path, path) for path in sources]
-
-extension  = Extension('stdnet.backends.redisb.cparser',
-                       full_path(['src/cparser.pyx']),
-                       language='c++',
-                       extra_compile_args=extra_compile_args)
+extension = Extension('stdnet.backends.redisb.cparser',
+                      [os.path.join(lib_path, 'src', 'cparser.pyx')],
+                      language='c++',
+                      #extra_compile_args=extra_compile_args,
+                      include_dirs=include_dirs)
 
 include_dirs.append(os.path.join(lib_path, 'src'))
 

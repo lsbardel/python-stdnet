@@ -1,6 +1,7 @@
 from copy import copy
 from inspect import isgenerator
 from functools import partial
+from collections import Mapping
 
 from stdnet import range_lookups
 from stdnet.utils import JSPLITTER, iteritems, unique_tuple
@@ -12,11 +13,9 @@ from .globals import lookup_value
 __all__ = ['Q', 'QueryBase', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
 
+iterables = (tuple, list, set, frozenset, Mapping)
 def iterable(value):
-    if isgenerator(value) or isinstance(value,(tuple,list,set,frozenset)):
-        return True
-    else:
-        return False
+    return isgenerator(value) or isinstance(value, iterables)
 
 
 def update_dictionary(result, extra):

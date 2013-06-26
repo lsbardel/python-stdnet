@@ -14,6 +14,7 @@ __all__ = ['Session',
            'Manager',
            'LazyProxy',
            'Transaction',
+           'ModelDictionary',
            'withsession']
 
 def is_query(query):

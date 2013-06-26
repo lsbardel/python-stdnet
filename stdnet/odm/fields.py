@@ -147,6 +147,7 @@ Each field is specified as a :class:`StdModel` class attribute.
     charset = None
     hidden = False
     internal_type = None
+    creation_counter = 0
 
     def __init__(self, unique=False, primary_key=False, required=True,
                  index=None, hidden=None, as_cache=False, **extras):
@@ -175,6 +176,8 @@ Each field is specified as a :class:`StdModel` class attribute.
         self._default = extras.pop('default', self._default)
         self.encoder = self.get_encoder(extras)
         self._handle_extras(**extras)
+        self.creation_counter = Field.creation_counter
+        Field.creation_counter += 1
 
     @property
     def default(self):

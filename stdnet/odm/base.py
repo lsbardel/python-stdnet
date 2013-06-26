@@ -5,6 +5,7 @@ from inspect import isclass
 
 from stdnet.utils.exceptions import *
 from stdnet.utils import UnicodeMixin, unique_tuple
+from stdnet.utils.structures import OrderedDict
 
 from .globals import hashmodel, JSPLITTER, orderinginfo
 from .fields import Field, AutoIdField
@@ -16,16 +17,20 @@ __all__ = ['ModelMeta', 'Model', 'ModelBase', 'ModelState',
 
 
 def get_fields(bases, attrs):
-    fields = {}
-    for base in bases:
-        if hasattr(base, '_meta'):
-            fields.update(deepcopy(base._meta.dfields))
     #
+    fields = []
     for name, field in list(attrs.items()):
         if isinstance(field, Field):
-            fields[name] = attrs.pop(name)
+            fields.append((name, attrs.pop(name)))
     #
-    return fields
+    fields = sorted(fields, key=lambda x: x[1].creation_counter)
+    #
+    for base in bases:
+        if hasattr(base, '_meta'):
+            fields = list((name, deepcopy(field)) for name, field\
+                           in base._meta.dfields.items()) + fields
+    #
+    return OrderedDict(fields)
 
 
 def make_app_label(new_class, app_label=None):
@@ -105,13 +110,18 @@ mapper.
 
 .. attribute:: dfields
 
-    dictionary of :class:`Field` instances. It does not include
-    :class:`StructureField`.
+    dictionary of :class:`Field` instances.
 
 .. attribute:: fields
 
     list of all :class:`Field` instances.
 
+.. attribute:: scalarfields
+
+    Ordered list of all :class:`Field` which are not :class:`StructureField`.
+    The order is the same as in the :class:`Model` definition. The :attr:`pk`
+    field is not included.
+    
 .. attribute:: indices
 
     List of :class:`Field` which are indices (:attr:`Field.index` attribute

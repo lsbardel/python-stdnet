@@ -723,7 +723,7 @@ an exception is raised.
                 if isinstance(v, Q):
                     v = lookup_value('set', v.construct())
                 else:
-                    v = lookup_value('value', field.dumps(v, lookup))
+                    v = lookup_value('value', field.serialise(v, lookup))
                 lookups.append(v)
         #
         return [queryset(self, name=name, underlying=field_lookups[name])\

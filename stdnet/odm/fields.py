@@ -303,10 +303,15 @@ retrieving values form a :class:`StdModel` instance.
     def set_value(self, instance, value):
         '''Set the ``value`` for this :class:`Field` in a ``instance``
 of a :class:`StdModel`.'''
+        setattr(instance, self.attname, self.to_python(value))
+    
+    def set_get_value(self, instance, value):
+        '''Set the ``value`` for this :class:`Field` in a ``instance``
+of a :class:`StdModel` and return the database representation. This method
+is invoked by the validation lagorithm before saving instances.'''
         value = self.to_python(value)
         setattr(instance, self.attname, value)
         return value
-        
     
     def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
@@ -315,12 +320,13 @@ can't be converted.
 Returns the converted value. Subclasses should override this."""
         return value
 
-    def serialize(self, value):
-        '''It returns a representation of *value* to store in the database.
-If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
+    def serialise(self, value, lookup=None):
+        '''Convert ``value`` to a valid database representation for this field.
+        
+This method is invoked by the Query algorithm.'''
         return self.to_python(value)
-
-    def json_serialize(self, value):
+    
+    def json_serialise(self, value):
         '''Return a representation of this field which is compatible with
  JSON.'''
         return None
@@ -329,9 +335,6 @@ If an error occurs it raises :class:`stdnet.exceptions.FieldValueError`'''
         '''Function which evaluate a score from the field value. Used by
 the ordering alorithm'''
         return self.to_python(value)
-    
-    def dumps(self, value, lookup=None):
-        return self.serialize(value)
 
     ############################################################################
     ##    TOOLS
@@ -359,7 +362,7 @@ value with a specific data type. it can be of four different types:
             return value.pkvalue()
         else:
             return value
-    json_serialize = to_python
+    json_serialise = to_python
 
 
 class AutoIdField(AtomField):
@@ -376,7 +379,6 @@ further information on primary keys.'''
         kwargs['primary_key'] = True
         super(AutoIdField, self).__init__(*args, **kwargs)
     
-    @field_value_error
     def to_python(self, value, backend=None):
         if hasattr(value, '_meta'):
             return value.pkvalue()
@@ -396,16 +398,20 @@ class BooleanField(AtomField):
     def __init__(self, required=False, **kwargs):
         super(BooleanField,self).__init__(required=required,**kwargs)
 
-    @field_value_error
     def to_python(self, value, backend=None):
         if value in NONE_EMPTY:
             return self.get_default()
         else:
             return self.python_type(int(value))
 
-    def serialize(self, value):
+    def set_get_value(self, instance, value):
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
         return 1 if value else 0
-    scorefun = serialize
+    
+    def serialise(self, value, lookup=None):
+        return 1 if value else 0
+    scorefun = serialise
 
 
 class IntegerField(AtomField):
@@ -414,9 +420,7 @@ class IntegerField(AtomField):
     internal_type = 'numeric'
     python_type = int
 
-    @field_value_error
     def to_python(self, value, backend=None):
-        value = super(IntegerField, self).to_python(value, backend)
         if value in NONE_EMPTY:
             return self.get_default()
         else:
@@ -440,8 +444,12 @@ a :class:`datetime.date` instance.'''
     internal_type = 'numeric'
     python_type = date
     _default = None
+    
+    def set_get_value(self, instance, value):
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
+        return self.serialise(value)
 
-    @field_value_error
     def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
             if isinstance(value,date):
@@ -453,16 +461,15 @@ a :class:`datetime.date` instance.'''
         else:
             return self.get_default()
 
-    @field_value_error
-    def serialize(self, value):
+    def serialise(self, value, lookup=None):
         if value not in NONE_EMPTY:
             if isinstance(value, date):
                 value = date2timestamp(value)
             else:
                 raise FieldValueError('Field %s is not a valid date' % self)
         return value
-    scorefun = serialize
-    json_serialize = serialize
+    scorefun = serialise
+    json_serialise = serialise
 
 
 class DateTimeField(DateField):
@@ -472,7 +479,6 @@ a :class:`datetime.datetime` instance.'''
     python_type = datetime
     index = False
 
-    @field_value_error
     def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
             if isinstance(value,date):
@@ -499,14 +505,12 @@ or other entities. They are indexes by default.'''
     def get_encoder(self, params):
         return encoders.Default(self.charset)
 
-    @field_value_error
     def to_python(self, value, backend=None):
-        value = super(SymbolField,self).to_python(value)
         if value is not None:
             return self.encoder.loads(value)
         else:
             return self.get_default()
-
+    
     def scorefun(self, value):
         raise FieldValueError('Could not obtain score')
 
@@ -534,17 +538,9 @@ In python this is converted to `bytes`.'''
     python_type = bytes
     _default = b''
 
-    @field_value_error
-    def to_python(self, value, backend=None):
+    def json_serialise(self, value):
         if value is not None:
-            return self.encoder.loads(value)
-        else:
-            return self.get_default()
-
-    @field_value_error
-    def json_serialize(self, value):
-        if value is not None:
-            return b64encode(self.serialize(value)).decode(self.charset)
+            return b64encode(self.to_python(value)).decode(self.charset)
 
     def get_encoder(self, params):
         return encoders.Bytes(self.charset)
@@ -563,10 +559,17 @@ or :class:`JSONField` fields as more general alternatives.
     type = 'object'
     _default = None
 
-    def serialize(self, value):
+    def set_get_value(self, instance, value):
+        # Optimisation, avoid to call serialise since it is the same
+        # as to_python
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
+        return self.serialise(value)
+        
+    def serialise(self, value, lookup=None):
         if value is not None:
             return self.encoder.dumps(value)
-
+    
     def get_encoder(self, params):
         return encoders.PythonPickle(protocol = 2)
 
@@ -660,7 +663,6 @@ the database field for the ``File`` model will have a ``folder_id`` field.
         else:
             raise FieldValueError('cannot evaluate score of {0}'.format(value))
 
-    @field_value_error
     def to_python(self, value, backend=None):
         if isinstance(value, self.relmodel):
             return value.pkvalue()
@@ -668,7 +670,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
             return self.relmodel._meta.pk.to_python(value, backend)
         else:
             return value
-    json_serialize = to_python
+    json_serialise = to_python
 
     def filter(self, session, name, value):
         fname = name.split(JSPLITTER)[0]
@@ -765,7 +767,6 @@ behaviour and how the field is stored in the back-end server.
                 json_encoder = params.pop('encoder_class', DefaultJSONEncoder),
                 object_hook = params.pop('decoder_hook', DefaultJSONHook))
 
-    @field_value_error
     def to_python(self, value, backend=None):
         if value is None:
             return self.get_default()
@@ -773,36 +774,36 @@ behaviour and how the field is stored in the back-end server.
             return self.encoder.loads(value)
         except TypeError:
             return value
-
-    @field_value_error
-    def serialize(self, value):
+        
+    def set_get_value(self, instance, value):
+        # Optimisation, avoid to call serialise since it is the same
+        # as to_python
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
         if self.as_string:
             # dump as a string
-            return self.dumps(value)
+            return self.serialise(value)
         else:
             # unwind as a dictionary
             value = dict(dict_flat_generator(value,
                                              attname=self.attname,
-                                             dumps=self.dumps,
+                                             dumps=self.serialise,
                                              error=FieldValueError))
             # If the dictionary is empty we modify so that
             # an update is possible.
             if not value:
-                value = {self.attname: self.dumps(None)}
+                value = {self.attname: self.serialise(None)}
             elif value.get(self.attname, None) is None:
                 # TODO Better implementation of this is a ack!
                 # set the root value to an empty string to distinguish
                 # from None.
-                value[self.attname] = self.dumps('')
+                value[self.attname] = self.serialise('')
             return value
 
-    def dumps(self, value, lookup=None):
+    def serialise(self, value, lookup=None):
         if lookup:
             value = range_lookups[lookup](value)
-        try:
-            return self.encoder.dumps(value)
-        except TypeError as e:
-            raise FieldValueError(str(e))
+        return self.encoder.dumps(value)
 
     def value_from_data(self, instance, data):
         if self.as_string:
@@ -844,10 +845,6 @@ registered in the model hash table, it can be used.'''
     type = 'model'
     internal_type = 'text'
 
-    def json_serialize(self, value):
-        return self.index_value(value)
-
-    @field_value_error
     def to_python(self, value, backend=None):
         if value and not hasattr(value,'_meta'):
             value = self.encoder.loads(value)
@@ -855,8 +852,7 @@ registered in the model hash table, it can be used.'''
         else:
             return value
 
-    @field_value_error
-    def index_value(self, value):
+    def serialise(self, value, lookup=None):
         if value is not None:
             v = get_hash_from_model(value)
             if v is None:
@@ -864,11 +860,14 @@ registered in the model hash table, it can be used.'''
                 return get_hash_from_model(value)
             else:
                 return v
+    json_serialise = serialise
 
-    def serialize(self, value):
-        value = self.index_value(value)
-        if value is not None:
-            return self.encoder.dumps(value)
+    def set_get_value(self, instance, value):
+        # Optimisation, avoid to call serialise since it is the same
+        # as to_python
+        value = self.to_python(value)
+        setattr(instance, self.attname, value)
+        return self.serialise(value)
 
 
 class ManyToManyField(Field):

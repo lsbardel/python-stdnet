@@ -285,7 +285,7 @@ class Feed2(FeedBase):
 ####################################################
 # Custom ID
 class Task(odm.StdModel):
-    id = odm.SymbolField(primary_key = True)
+    id = odm.SymbolField(primary_key=True)
     name = odm.CharField()
     timestamp = odm.DateTimeField(default=datetime.now)
 
@@ -296,6 +296,16 @@ class Task(odm.StdModel):
         instance = super(Task,self).clone(**kwargs)
         instance.timestamp = None
         return instance
+    
+
+class Parent(odm.StdModel):
+    name = odm.SymbolField(primary_key=True)
+    timestamp = odm.DateTimeField(default=datetime.now)
+    
+class Child(odm.StdModel):
+    name = odm.SymbolField()
+    parent = odm.ForeignKey(Parent)
+
 
 ####################################################
 # Composite ID

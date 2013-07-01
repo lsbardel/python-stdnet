@@ -41,12 +41,16 @@ from redis.exceptions import NoScriptError, ConnectionError, ResponseError,\
 from redis.client import pairs_to_dict, BasePipeline, list_or_args, PubSub
 from redis.connection import PythonParser
 
-from .extensions import get_script, RedisManager, RedisScript,\
+from .extensions import get_script, RedisManager, CppRedisManager, RedisScript,\
                         script_callback, redis_connection, redis_after_receive
 from .prefixed import *
 from .info import parse_info
 
-__all__ = ['pairs_to_dict', 'Redis', 'ConnectionPool', 'RedisError']
+__all__ = ['pairs_to_dict',
+           'Redis',
+           'ConnectionPool',
+           'RedisError',
+           'CppConnectionPool']
 
 
 class Connection(redis.Connection):
@@ -79,7 +83,7 @@ class Connection(redis.Connection):
         return response
      
 
-class ConnectionPool(redis.ConnectionPool, RedisManager):
+class ConnectionPoolBase(redis.ConnectionPool):
     '''Synchronous Redis connection pool compatible with the Asynchronous One'''
     def __init__(self, address, db=0, parser=None, **kwargs):
         if isinstance(address, tuple):
@@ -93,7 +97,7 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
         self._setup(address, db, parser)
         kwargs['connection_class'] = Connection
         kwargs['parser_class'] = parser
-        super(ConnectionPool, self).__init__(db=self.db, **kwargs)
+        super(ConnectionPoolBase, self).__init__(db=self.db, **kwargs)
     
     def _checkpid(self):
         if self.pid != os.getpid():
@@ -166,6 +170,14 @@ class ConnectionPool(redis.ConnectionPool, RedisManager):
         except:
             pipeline.reset()
             raise
+        
+        
+class ConnectionPool(ConnectionPoolBase, RedisManager):
+    pass
+
+
+class CppConnectionPool(ConnectionPoolBase, CppRedisManager):
+    pass
         
 
 def dict_update(original, data):

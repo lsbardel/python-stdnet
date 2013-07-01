@@ -110,9 +110,9 @@ instances will.'''
 
     @property
     def deleted(self):
-        '''The set of all instances marked as `deleted` within this
+        '''The set of all instance pks marked as `deleted` within this
 :class:`Session`.'''
-        return tuple(itervalues(self._deleted))
+        return tuple((p.pkvalue() for p in itervalues(self._deleted)))
 
     @property
     def dirty(self):

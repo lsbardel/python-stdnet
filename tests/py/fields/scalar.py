@@ -1,6 +1,5 @@
 '''Scalar fields such as Char, Integer, Float and Date, DateTime, Byte fields'''
 import os
-import json
 import time
 from datetime import date, datetime
 from decimal import Decimal
@@ -141,7 +140,7 @@ class TestIntegerField(test.TestCase):
     def testNotValidated(self):
         models = self.mapper
         p = yield models.page.new()
-        self.assertRaises(FieldValueError, Page, in_navigation='bla')
+        self.assertRaises(ValueError, Page, in_navigation='bla')
         
     def testZeroValue(self):
         models = self.mapper
@@ -186,7 +185,7 @@ class TestBoolField(test.TestCase):
         
     def testSerializeAndScoreFun(self):
         index = self.testMeta()
-        for fname in ('scorefun','serialize'):
+        for fname in ('scorefun', 'serialise'):
             func = getattr(index,fname)
             self.assertEqual(func(True),1)
             self.assertEqual(func(False),0)
@@ -240,6 +239,15 @@ class TestByteField(test.TestCase):
         v = yield models.simplemodel.get(id=v.id)
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes, b)
+        
+    def testToJson(self):
+        models = self.mapper
+        b = os.urandom(8)
+        v = yield models.simplemodel.new(code='xxsdcscdsc', somebytes=b)
+        data = v.tojson()
+        value = data['somebytes']
+        self.assertTrue(is_string(value))
+        
     
 
 class TestErrorAtomFields(test.TestCase):

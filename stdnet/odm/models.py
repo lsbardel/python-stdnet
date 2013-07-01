@@ -18,10 +18,11 @@ the main class of :mod:`stdnet.odm` module.'''
     _loadedfields = None
 
     def __init__(self, *args, **kwargs):
-        kwargs.pop(self._meta.pkname(), None)
-        for field in self._meta.scalarfields:
+        meta = self._meta
+        kwargs.pop(meta.pk.name, None)
+        for field in meta.scalarfields:
             field.set_value(self, kwargs.pop(field.name, None))
-        attributes = self._meta.attributes
+        attributes = meta.attributes
         if args:
             N = len(args)
             if N > len(attributes):
@@ -31,7 +32,8 @@ the main class of :mod:`stdnet.odm` module.'''
                 setattr(self, name, value)
         for name in attributes:
             setattr(self, name, kwargs.pop(name, None))
-        raise_kwargs(self, kwargs)
+        if kwargs:
+            raise_kwargs(self, kwargs)
 
     @property
     def has_all_data(self):
@@ -135,7 +137,7 @@ If the *exclude_cache* flag is ``True``, fields with :attr:`Field.as_cache`
 attribute set to ``True`` will be excluded.'''
         odict = {}
         for field,value in self.fieldvalue_pairs(exclude_cache=exclude_cache):
-            value = field.serialize(value)
+            value = field.serialise(value)
             if value:
                 odict[field.name] = value
         if 'id' in self._dbdata:
@@ -148,7 +150,7 @@ attribute set to ``True`` will be excluded.'''
             yield self._meta.pkname(),pk
             for field,value in self.fieldvalue_pairs(exclude_cache=\
                                                      exclude_cache):
-                value = field.json_serialize(value)
+                value = field.json_serialise(value)
                 if value not in EMPTYJSON:
                     yield field.name,value
 

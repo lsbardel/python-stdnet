@@ -12,7 +12,16 @@ __all__ = ['RedisScript',
            'registered_scripts',
            'read_lua_file',
            'redis_before_send',
-           'redis_after_receive']
+           'redis_after_receive',
+           'HAS_C_EXTENSIONS']
+
+HAS_C_EXTENSIONS = False
+
+try:
+    from . import cparser
+    HAS_C_EXTENSIONS = True
+except ImportError:
+    from . import parser as cparser
 
 
 p = os.path
@@ -37,7 +46,7 @@ def get_script(script):
     return _scripts.get(script)
 ###########################################################
 
-class RedisManager(object):
+class RedisManagerBase(object):
     all_loaded_scripts = {}
     
     @property
@@ -68,6 +77,21 @@ class RedisManager(object):
         return self.connection.db
     
     if ispy3k:
+        def decode_key(self, value):
+            if isinstance(value, bytes):
+                return value.decode(self.encoding, self.encoding_errors)
+            else:
+                return value
+            
+    else:   #pragma    nocover
+        
+        def decode_key(self, value):
+            return value
+    
+    
+class RedisManager(RedisManagerBase):
+    
+    if ispy3k:
         def encode(self, value):
             if isinstance(value, bytes):
                 return value
@@ -76,12 +100,6 @@ class RedisManager(object):
             else:
                 value = str(value)
             return value.encode(self.encoding, self.encoding_errors)
-        
-        def decode_key(self, value):
-            if isinstance(value, bytes):
-                return value.decode(self.encoding, self.encoding_errors)
-            else:
-                return value
             
     else:   #pragma    nocover
         def encode(self, value):
@@ -91,9 +109,6 @@ class RedisManager(object):
                 return repr(value)
             else:
                 return str(value)
-        
-        def decode_key(self, value):
-            return value
             
     def __pack_gen(self, args):
         e = self.encode
@@ -117,6 +132,26 @@ command byte to be send to redis.'''
         data = b''.join(starmap(pack, (args for args, _ in commands)))
         redis_before_send.send_robust(RedisManager, data=data, args=commands)
         return data
+    
+    
+if HAS_C_EXTENSIONS:
+    class CppRedisManager(RedisManagerBase, cparser.RedisManager):
+        
+        def pack_command(self, *args):
+            "Pack a series of arguments into a value Redis command"
+            data = self._pack_command(*args)
+            redis_before_send.send_robust(RedisManager, data=data, args=args)
+            return data
+        
+        def pack_pipeline(self, commands):
+            '''Internal function for packing pipeline commands into a
+    command byte to be send to redis.'''
+            pack = self._pack_command
+            data = b''.join(starmap(pack, (args for args, _ in commands)))
+            redis_before_send.send_robust(RedisManager, data=data, args=commands)
+            return data
+else:
+    CppRedisManager = RedisManager
     
 
 def script_callback(response, script=None, **options):

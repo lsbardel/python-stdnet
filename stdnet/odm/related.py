@@ -37,7 +37,7 @@ class ModelFieldPickler(encoders.Encoder):
         return on_result(result, partial(self._sort, ids))
     
     def _sort(self, ids, results):
-        results = dict(((r.id, r) for r in results))
+        results = dict(((r.pkvalue(), r) for r in results))
         return [results.get(id) for id in ids]
 
 
@@ -142,7 +142,7 @@ class LazyForeignKey(LazyProxy):
                     pass
             setattr(instance, self.field.attname, None)
         else:
-            setattr(instance, self.field.attname, value.id)
+            setattr(instance, self.field.attname, value.pkvalue())
             setattr(instance, cache_name, value)
 
 

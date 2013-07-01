@@ -27,7 +27,7 @@ import pulsar
 from pulsar import Deferred, NOT_DONE
 from pulsar.utils.pep import ispy3k, map
 
-from .extensions import get_script, RedisManager
+from .extensions import get_script, RedisManager, CppRedisManager
 
 
 class AsyncRedisRequest(object):
@@ -142,7 +142,7 @@ class RedisProtocol(pulsar.ProtocolConsumer):
         return self.new_request(request)
 
     
-class AsyncConnectionPool(pulsar.Client, RedisManager):
+class AsyncConnectionPoolBase(pulsar.Client):
     '''A :class:`pulsar.Client` for managing a connection pool with redis
 data-structure server.'''
     connection_pools = {}
@@ -197,6 +197,14 @@ data-structure server.'''
         else:
             return callback()
         
+
+class AsyncConnectionPool(AsyncConnectionPoolBase, RedisManager):
+    pass
+
+
+class CppAsyncConnectionPool(AsyncConnectionPoolBase, CppRedisManager):
+    pass
+
         
 class PubSub(pulsar.EventHandler):
     '''Implements :class:`PubSub` using a redis backend. To listen for

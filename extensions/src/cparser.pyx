@@ -33,4 +33,11 @@ cdef class RedisParser:
 
     def on_disconnect(self):
         pass
-    
+
+
+cdef class RedisManager:
+
+    def _pack_command(self, *args):
+        return common.pack_command(args)
+
+        

@@ -815,7 +815,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 processed = []
                 for instance in sm.dirty:
                     state = instance.get_state()
-                    if not instance.is_valid():
+                    if not meta.is_valid(instance):
                         raise FieldValueError(
                                     json.dumps(instance._dbdata['errors']))
                     score = MIN_FLOAT

@@ -43,18 +43,39 @@
 #define RESPONSE_STATUS  '+'
 #define RESPONSE_ERROR  '-'
 
-#if PY_MAJOR_VERSION == 2
-    #define BYTES_FORMAT "s#"
-#else
-    #define BYTES_FORMAT "y#"
-#endif
-
-
 class Task;
 class StringTask;
 class ArrayTask;
 typedef std::string string;
 typedef long long integer;
+
+
+#if PY_MAJOR_VERSION == 2
+    #define BYTES_FORMAT "s#"
+
+    inline string to_bytes(PyObject* value) {
+        if (PyFloat_Check(value)) {
+            value = PyObject_Repr(value);
+        } else if (PyUnicode_Check(value)) {
+            value = PyUnicode_AsUTF8String(value);
+        } else if (!PyString_Check(value)) {
+            value = PyObject_Str(value);
+        }
+        return string(PyString_AS_STRING(value), PyString_GET_SIZE(value));
+    }
+#else
+    #define BYTES_FORMAT "y#"
+
+    inline string to_bytes(PyObject* value) {
+        if (PyFloat_Check(value)) {
+            value = PyUnicode_AsUTF8String(PyObject_Repr(value));
+        } else if (!PyBytes_Check(value)) {
+            value = PyUnicode_AsUTF8String(PyObject_Str(value));
+        }
+        return string(PyBytes_AS_STRING(value), PyBytes_GET_SIZE(value));
+    }
+#endif
+
 
 class RedisParser {
 public:
@@ -250,5 +271,18 @@ inline PyObject* ArrayTask::_decode(RedisParser& parser, PyObject* result) {
     }
     return NULL;
 }
+
+inline  PyObject* pack_command(PyObject* args) {
+    size_t size = PyTuple_Size(args);
+    std::stringstream str;
+    str << "*" << size << CRLF;
+    for (size_t index=0; index<size; ++index) {
+        string value(to_bytes(PyTuple_GET_ITEM(args, index)));
+        str << '$' << value.size() << CRLF << value << CRLF;
+    }
+    string result(str.str());
+    return PyBytes_FromStringAndSize(result.c_str(), result.size());
+}
+
 
 #endif	//	__READIS_PARSER_H__

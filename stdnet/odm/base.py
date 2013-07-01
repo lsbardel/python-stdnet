@@ -245,21 +245,19 @@ Return ``True`` if the instance is ready to be saved to database.'''
         #Loop over scalar fields first
         for field, value in instance.fieldvalue_pairs():
             name = field.attname
-            value = field.set_value(instance, value)
             try:
-                svalue = field.serialize(value)
-            except FieldValueError as e:
+                svalue = field.set_get_value(instance, value)
+            except Exception as e:
                 errors[name] = str(e)
             else:
                 if (svalue is None or svalue is '') and field.required:
                     errors[name] = "Field '{0}' is required for '{1}'."\
-                                    .format(name,self)
+                                    .format(name, self)
                 else:
                     if isinstance(svalue, dict):
                         data.update(svalue)
-                    else:
-                        if svalue is not None:
-                            data[name] = svalue
+                    elif svalue is not None:
+                        data[name] = svalue
         return len(errors) == 0
 
     def get_sorting(self, sortby, errorClass=None):
@@ -459,14 +457,14 @@ raised when trying to save an invalid instance.'''
 
     def __new__(cls, *args, **kwargs):
         o = super(Model, cls).__new__(cls)
-        pkname = cls._meta.pkname()
-        setattr(o, pkname, kwargs.pop(pkname, None))
+        pkname = cls._meta.pk.name
+        setattr(o, pkname, kwargs.get(pkname))
         o._dbdata = {}
         return o
 
     def __eq__(self, other):
         if other.__class__ == self.__class__:
-            return self.id == other.id
+            return self.pkvalue() == other.pkvalue()
         else:
             return False
 
@@ -495,10 +493,11 @@ otherwise it returns the cached value.'''
     @property
     def uuid(self):
         '''Universally unique identifier for an instance of a :class:`Model`.'''
-        if not self.id:
+        pk = self.pkvalue()
+        if pk:
             raise self.DoesNotExist(\
                     'Object not saved. Cannot obtain universally unique id')
-        return self.get_uuid(self.id)
+        return self.get_uuid(pk)
 
     def __get_session(self):
         return self._dbdata.get('session')

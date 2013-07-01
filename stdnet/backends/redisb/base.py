@@ -5,21 +5,16 @@ from stdnet.utils.conf import settings
 from .extensions import *
 from .client import *
 from .info import *
+from .extensions import cparser
 from . import parser
 
 EXCEPTION_CLASSES = _p.EXCEPTION_CLASSES
-HAS_C_EXTENSIONS = False
 
 try:
-    from . import cparser
-    HAS_C_EXTENSIONS = True
-except ImportError:
-    cparser = parser
-
-try:
-    from .async import AsyncConnectionPool
+    from .async import AsyncConnectionPool, CppAsyncConnectionPool
 except ImportError:
     AsyncConnectionPool = None
+    CppAsyncConnectionPool = None
     
 def ResponseError(response):
     "Parse an error response"
@@ -49,10 +44,14 @@ def redis_client(address, connection_pool=None, timeout=None, reader=None,
             if not AsyncConnectionPool:
                 raise ImportError('Asynchronous connection requires async '
                                   'bindings installed.')
-            connection_pool = AsyncConnectionPool
+            connection_pool = CppAsyncConnectionPool
+            if settings.REDIS_PY_PARSER or reader=='py':
+                connection_pool = AsyncConnectionPool
         else:
             kwargs['socket_timeout'] = timeout
-            connection_pool = ConnectionPool
+            connection_pool = CppConnectionPool
+            if settings.REDIS_PY_PARSER or reader=='py':
+                connection_pool = ConnectionPool
         kwargs['parser'] = lambda: RedisParser(reader)
         connection_pool = connection_pool(address, **kwargs)
     return Redis(connection_pool=connection_pool)

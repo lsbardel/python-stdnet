@@ -7,3 +7,5 @@ cdef extern from "parser.h":
         object get()
         object get_buffer()
         void set_encoding(const char*)
+        
+    object pack_command(object)

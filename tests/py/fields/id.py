@@ -63,11 +63,13 @@ Use the manager for convenience.'''
     def test_delete_and_clone(self):
         t1 = yield self.make()
         session = t1.session
-        yield session.delete(t1)
+        res = yield session.delete(t1)
+        tasks = yield self.query().filter(id=t1.id).all()
+        self.assertEqual(len(tasks), 0)
         t2 = yield session.add(t1.clone(id=genid()))
         self.assertNotEqual(t1.id, t2.id)
         self.assertEqual(t1.name, t2.name)
-        tasks = yield self.query().filter(id=(t1.id,t2.id)).all()
+        tasks = yield self.query().filter(id=(t1.id, t2.id)).all()
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0].id, t2.id)
         

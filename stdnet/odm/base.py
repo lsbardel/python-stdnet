@@ -487,14 +487,14 @@ otherwise it returns the cached value.'''
         return self._meta.pk.get_value(self)
 
     @classmethod
-    def get_uuid(cls, id):
-        return '%s.%s' % (cls._meta.hash, id)
+    def get_uuid(cls, pk):
+        return '%s.%s' % (cls._meta.hash, pk)
 
     @property
     def uuid(self):
         '''Universally unique identifier for an instance of a :class:`Model`.'''
         pk = self.pkvalue()
-        if pk:
+        if not pk:
             raise self.DoesNotExist(\
                     'Object not saved. Cannot obtain universally unique id')
         return self.get_uuid(pk)

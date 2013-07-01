@@ -29,7 +29,7 @@ class TestTS(StructMixin, test.TestCase):
         
     def test_range(self):
         ts = yield self.not_empty()
-        yield self.async.assertEqual(ts.size(), len(self.data.dates))
+        yield self.async.assertEqual(ts.size(), len(set(self.data.dates)))
         front = yield ts.front()
         back = yield ts.back()
         self.assertTrue(back[0] > front[0])
@@ -37,7 +37,7 @@ class TestTS(StructMixin, test.TestCase):
         N = len(all_dates)
         start = N // 4
         end = 3 * N // 4
-        range = yield ts.range(all_dates[start],all_dates[end])
+        range = yield ts.range(all_dates[start], all_dates[end])
         self.assertTrue(range)
         for time, val in range:
             self.assertTrue(time>=front[0])

@@ -150,7 +150,7 @@ data-structure server.'''
     
     def __init__(self, address, db=0, password=None, encoding=None, parser=None,
                  encoding_errors='strict', **kwargs):
-        super(AsyncConnectionPool, self).__init__(**kwargs)
+        super(AsyncConnectionPoolBase, self).__init__(**kwargs)
         self.encoding = encoding or 'utf-8'
         self.encoding_errors = encoding_errors or 'strict'
         self.password = password

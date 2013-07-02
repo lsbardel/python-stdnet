@@ -1,5 +1,8 @@
 .. _vers08:
 
+Ver. 0.8.2 - Development
+===============================
+
 Ver. 0.8.1 - 2013 July 2
 ===============================
 * C++ :ref:`redis parser <redis-parser>`. Requires cython_ during installation.

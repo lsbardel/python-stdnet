@@ -206,20 +206,19 @@ mapper.
         
     def load_state(self, obj, state=None, backend=None):
         if state:
-            id, loadedfields, data = state
-            field = self.pk
-            pkvalue = field.to_python(id, backend)
-            setattr(obj, field.attname, pkvalue)
+            pkvalue, loadedfields, data = state
+            pk = self.pk
+            pkvalue = pk.to_python(pkvalue, backend)
+            setattr(obj, pk.attname, pkvalue)
             if loadedfields is not None:
                 loadedfields = tuple(loadedfields)
             obj._loadedfields = loadedfields
             for field in obj.loadedfields():
                 value = field.value_from_data(obj, data)
                 setattr(obj, field.attname, field.to_python(value, backend))
-            pkname = self.pkname()
             if backend or ('__dbdata__' in data and\
-                            data['__dbdata__'][pkname] == pkvalue):
-                obj._dbdata[self.pkname()] = pkvalue
+                            data['__dbdata__'][pk.name] == pkvalue):
+                obj._dbdata[pk.name] = pkvalue
 
     def __repr__(self):
         return self.modelkey

@@ -247,6 +247,8 @@ class TestByteField(test.TestCase):
         data = v.tojson()
         value = data['somebytes']
         self.assertTrue(is_string(value))
+        v2 = models.simplemodel.from_base64_data(**data)
+        self.assertEqual(v.somebytes, b)
         
     
 

@@ -148,14 +148,14 @@ attribute set to ``True`` will be excluded.'''
         pk = self.pkvalue()
         if pk:
             yield self._meta.pkname(),pk
-            for field,value in self.fieldvalue_pairs(exclude_cache=\
-                                                     exclude_cache):
+            for field, value in self.fieldvalue_pairs(exclude_cache=\
+                                                      exclude_cache):
                 value = field.json_serialise(value)
                 if value not in EMPTYJSON:
-                    yield field.name,value
+                    yield field.name, value
 
     def tojson(self, exclude_cache=True):
-        '''return a JSON serializable dictionary representation.'''
+        '''Return a JSON serialisable dictionary representation.'''
         return dict(self._to_json(exclude_cache))
 
     def load_fields(self, *fields):
@@ -200,6 +200,10 @@ otherwise it returns ``None``.'''
     
     @classmethod
     def from_base64_data(cls, **kwargs):
+        '''Load a :class:`StdModel` from possibly base64encoded data.
+        
+This method is used to load models from data obtained from the :meth:`tojson`
+method.'''
         o = cls()
         meta = cls._meta
         pkname = meta.pkname()

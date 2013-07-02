@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; python stdnet 0.8.1b2 documentation</title>
+    <title>Changelog &mdash; python stdnet 0.8.2b1 documentation</title>
     
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.8.1b2',
+        VERSION:     '0.8.2b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.1b2 documentation" href="index.html" />
+    <link rel="top" title="python stdnet 0.8.2b1 documentation" href="index.html" />
     <link rel="next" title="FAQ" href="faq.html" />
     <link rel="prev" title="Mongo DB" href="backends/mongo.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="backends/mongo.html" title="Mongo DB"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet 0.8.1b2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet 0.8.2b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
@@ -66,15 +66,19 @@
             
   <div class="section" id="changelog">
 <span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="ver-0-8-1-development">
-<span id="vers08"></span><h2>Ver. 0.8.1 - Development<a class="headerlink" href="#ver-0-8-1-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ver-0-8-2-development">
+<span id="vers08"></span><h2>Ver. 0.8.2 - Development<a class="headerlink" href="#ver-0-8-2-development" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="ver-0-8-1-2013-july-2">
+<h2>Ver. 0.8.1 - 2013 July 2<a class="headerlink" href="#ver-0-8-1-2013-july-2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>C++ <a class="reference internal" href="backends/redis.html#redis-parser"><em>redis parser</em></a>. Requires <a class="reference external" href="http://cython.org/">cython</a> during installation.</li>
+<li>Primary key can have any name (previously only <tt class="docutils literal"><span class="pre">id</span></tt> was allowed).</li>
 <li>Better implementation for <a class="reference internal" href="api/models.html#stdnet.odm.Session.update_or_create" title="stdnet.odm.Session.update_or_create"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Session.update_or_create()</span></tt></a>.</li>
 <li>Improved <tt class="docutils literal"><span class="pre">setup.py</span></tt> so that it does not log a python 2 module syntax error
 when installing for python 3.</li>
 <li><a class="reference internal" href="examples/registration.html#custom-manager"><em>Custom manager</em></a> documentation.</li>
-<li><strong>587 regression tests</strong> with <strong>93%</strong> coverage.</li>
+<li><strong>590 regression tests</strong> with <strong>93%</strong> coverage.</li>
 </ul>
 </div>
 <div class="section" id="ver-0-8-0-2013-may-24">
@@ -489,7 +493,8 @@ of a non-registered model</li>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#ver-0-8-1-development">Ver. 0.8.1 - Development</a></li>
+<li><a class="reference internal" href="#ver-0-8-2-development">Ver. 0.8.2 - Development</a></li>
+<li><a class="reference internal" href="#ver-0-8-1-2013-july-2">Ver. 0.8.1 - 2013 July 2</a></li>
 <li><a class="reference internal" href="#ver-0-8-0-2013-may-24">Ver. 0.8.0 - 2013 May 24</a></li>
 <li><a class="reference internal" href="#ver-0-7-0-2012-oct-25">Ver. 0.7.0 - 2012 Oct 25</a></li>
 <li><a class="reference internal" href="#ver-0-6-2-2011-nov-14">Ver. 0.6.2 - 2011 Nov 14</a></li>

@@ -51,5 +51,28 @@ class TestRedisPrefixed(test.TestCase):
     
     def test_publish(self):
         pubsub = self.backend.client.pubsub()
+        pubsub.subscribe('bla')
         result = yield pubsub.publish('bla', 'Hello')
         self.assertTrue(result>=0)
+        
+    def test_count_messages(self):
+        import pulsar
+        pubsub = self.backend.client.pubsub()
+        pubsub.subscribe('counting')
+        
+        class Listener(pulsar.Deferred):
+            count = 0
+            def on_message(self, channel_message):
+                self.count += 1
+                _, message = channel_message
+                if message == 'done':
+                    self.callback('done')
+                
+        listener = Listener()
+        pubsub.bind_event('on_message', listener.on_message)
+        result = yield pubsub.publish('counting', 'Hello')
+        self.assertTrue(result>=0)
+        pubsub.publish('counting', 'done')
+        yield listener
+        self.assertEqual(listener.count, 2)
+        

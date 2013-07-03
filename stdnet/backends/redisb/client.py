@@ -185,6 +185,7 @@ def dict_update(original, data):
     target.update(data)
     return target
     
+    
 class Redis(redis.StrictRedis):
     # Overridden callbacks
     RESPONSE_CALLBACKS = dict_update(
@@ -205,7 +206,7 @@ class Redis(redis.StrictRedis):
         return Pipeline(self, transaction, shard_hint)
     
     def parse_response(self, connection, command_name, **options):
-        "Parses a response from the Redis server"
+        "Override redis-py_ parse_response method to deal with scripts."
         response = connection.read_response()
         if command_name == 'SCRIPT' and options['parse'] == 'FLUSH':
             self.connection_pool.clear_scripts()
@@ -238,12 +239,6 @@ class Redis(redis.StrictRedis):
     @property
     def is_pipeline(self):
         return False
-        
-    def on_response(self, result, raise_on_error):
-        result = result[0]
-        if isinstance(result, Exception) and raise_on_error:
-            raise result
-        return result
     
     def clone(self, **kwargs):
         c = copy(self)

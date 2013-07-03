@@ -18,15 +18,15 @@ In other words, you can look at redis as a data structure server, the networked
 equivalent of the `standard template library in C++
 <http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html>`_.
 
-.. note::
-
-    ``stdnet` is a made up word from ``std`` for Standard Template Library
-    and ``net`` for networked.
-
 Redis_ loads and maintains the whole data-set into memory, but the data-set
 is persistent,
 since at the same time it is saved on disk, so that when the server is restarted
 data can be loaded back in memory. If you need speed, Redis_ is great solution.
+
+.. note::
+
+    ``stdnet`` is a made up word from ``std`` for Standard Template Library
+    and ``net`` for networked.
 
 
 Requirements
@@ -34,7 +34,7 @@ Requirements
 
 * redis-py_, provides the standard redis client.
 * pulsar_ optional. It is required by the :ref:`asynchronous connection <redis-async>`
-  and the :ref:`publish/subscribe redis <redis-pubsub>` application.
+  and the :ref:`publish/subscribe redis <redis_pubsub>` application.
 
 .. _redis-connection-string:
 

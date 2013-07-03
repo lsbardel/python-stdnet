@@ -1,3 +1,4 @@
+'''Test additional commands for redis client.'''
 import json
 from hashlib import sha1
 
@@ -130,21 +131,21 @@ class TestExtraClientCommands(TestCase):
         
     # ZSET SCRIPTING COMMANDS
     def test_zdiffstore(self):
-        yield self.multi_async((self.make_zset('a', {'a1': 1, 'a2': 1, 'a3': 1}),
-                                self.make_zset('b', {'a1': 2, 'a3': 2, 'a4': 2}),
-                                self.make_zset('c', {'a1': 6, 'a3': 5, 'a4': 4})))
-        n = yield self.client.zdiffstore('z', ['a', 'b', 'c'])
+        yield self.multi_async((self.make_zset('aa', {'a1': 1, 'a2': 1, 'a3': 1}),
+                                self.make_zset('ba', {'a1': 2, 'a3': 2, 'a4': 2}),
+                                self.make_zset('ca', {'a1': 6, 'a3': 5, 'a4': 4})))
+        n = yield self.client.zdiffstore('za', ['aa', 'ba', 'ca'])
         self.assertEqual(n, 1)
-        r = yield self.client.zrange('z', 0, -1, withscores=True)
+        r = yield self.client.zrange('za', 0, -1, withscores=True)
         self.assertEquals(list(r), [(b'a2', 1)])
         
     def test_zdiffstore_withscores(self):
-        yield self.multi_async((self.make_zset('a', {'a1': 6, 'a2': 1, 'a3': 2}),
-                                self.make_zset('b', {'a1': 1, 'a3': 1, 'a4': 2}),
-                                self.make_zset('c', {'a1': 3, 'a3': 1, 'a4': 4})))
-        n = yield self.client.zdiffstore('z', ['a', 'b', 'c'], withscores=True)
+        yield self.multi_async((self.make_zset('ab', {'a1': 6, 'a2': 1, 'a3': 2}),
+                                self.make_zset('bb', {'a1': 1, 'a3': 1, 'a4': 2}),
+                                self.make_zset('cb', {'a1': 3, 'a3': 1, 'a4': 4})))
+        n = yield self.client.zdiffstore('zb', ['ab', 'bb', 'cb'], withscores=True)
         self.assertEqual(n, 2)
-        r = yield self.client.zrange('z', 0, -1, withscores=True)
+        r = yield self.client.zrange('zb', 0, -1, withscores=True)
         self.assertEquals(list(r), [(b'a2', 1), (b'a1', 2)])
         
     def test_zdiffstore2(self):

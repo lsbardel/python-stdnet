@@ -16,6 +16,7 @@ if ispy3k:      # pragma: no cover
     int_type = int
     zip = zip
     map = map
+    long = int
     range = range
     
     from urllib import parse as urlparse
@@ -48,6 +49,7 @@ else:   # pragma: no cover
     int_type = (types.IntType, types.LongType)
     from itertools import izip as zip, imap as map, izip_longest as zip_longest
     range = xrange
+    long = long
     
     import urlparse
     from urllib import urlencode

@@ -91,11 +91,11 @@ class TestParser(test.TestCase):
         self.assertEqual(p.get(), [None, 1, 39])
         
     def test_nested10(self):
-        result = self.client.eval(lua_nested_table, 0, 10)
+        result = yield self.client.eval(lua_nested_table, 0, 10)
         self.assertEqual(len(result), 4)
         
     def test_nested2(self):
-        result = self.client.eval(lua_nested_table, 0, 2)
+        result = yield self.client.eval(lua_nested_table, 0, 2)
         self.assertEqual(len(result), 4)
         
     def test_empty_string(self):

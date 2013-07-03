@@ -1,5 +1,6 @@
 __all__ = ['RedisParser']
 
+from stdnet.utils import long
 
 REPLAY_TYPE = frozenset((b'$',  # REDIS_REPLY_STRING,
                          b'*',  # REDIS_REPLY_ARRAY,
@@ -95,14 +96,14 @@ class RedisParser(object):
             if rtype == b'-':
                 return self.responseError(response.decode('utf-8'))
             elif rtype == b':':
-                return int(response)
+                return long(response)
             elif rtype == b'+':
                 return response
             elif rtype == b'$':
-                task = String(int(response), next)
+                task = String(long(response), next)
                 return task.decode(self, False)
             elif rtype == b'*':
-                task = ArrayTask(int(response), next)
+                task = ArrayTask(long(response), next)
                 return task.decode(self, False)
             else:
                 # Clear the buffer and raise

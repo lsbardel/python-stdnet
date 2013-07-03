@@ -42,20 +42,18 @@ We can import them by using::
 
 	from stdnet.tests.examples.models import Post, User
 	
-Before using the models, we need to register them to a back-end.
-If your redis server is running locally
-just type::
+Before using the models, :ref:`we need to register <tutorial-registration>` 
+them to a back-end. If your redis server is running locally type::
 
 	>>> from stdnet import odm
-	>>> odm.register(User)
-	'redis db 7 on 127.0.0.1:6379'
-	>>> odm.register(Post)
-	'redis db 7 on 127.0.0.1:6379'
+	>>> models = odm.Router('redis://')
+	>>> models.register(User)
+	>>> models.register(Post)
 	
 Now lets try it out::
 
-	>>> u = User(username='pluto', password='bla')
-	>>> u.save()
+	>>> u = models.user.new(username='pluto', password='bla')
+	>>> u
 	User: pluto
 	
 Ok we have a user. Lets add few updates::

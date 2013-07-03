@@ -43,8 +43,6 @@ from .extensions import get_script, RedisManager, CppRedisManager
 
 class AsyncRedisRequest(object):
     '''Asynchronous Request for redis.'''
-    pubsub_commands = frozenset(('SUBSCRIBE', 'UNSUBSCRIBE',
-                                 'PSUBSCRIBE', 'PUNSUBSCRIBE'))
     def __init__(self, client, connection, timeout, encoding,
                   encoding_errors, command_name, args, parser,
                   raise_on_error=True, on_finished=None,
@@ -59,16 +57,16 @@ class AsyncRedisRequest(object):
         self.raise_on_error = raise_on_error
         self.on_finished = on_finished
         self.release_connection = release_connection
-        self.response = []
-        self.last_response = False
         self.args = args
+        self.last_response = False
         pool = client.connection_pool
-        if client.is_pipeline:
+        if client.is_pipeline:            
+            self.response = []
             self.command = pool.pack_pipeline(args)
-        elif self.command_name:
+            self.args_options = deque(args)
+        else:
             self.command = pool.pack_command(self.command_name, *args)
-            args =(((command_name,), options),)
-        self.args_options = deque(args)
+            self.options = options
         
     @property
     def key(self):
@@ -97,21 +95,30 @@ class AsyncRedisRequest(object):
         self.parser.feed(data)
         response = self.parser.get()
         c = self.client
-        while response is not False:
-            self.last_response = response
-            if self.args_options:
+        parse = c.parse_response
+        if c.is_pipeline:
+            while response is not False:
+                self.last_response = response
                 args, opts = self.args_options.popleft()
                 if not isinstance(response, Exception):
-                    response = c.parse_response(self, args[0], **opts)
-            elif not isinstance(response, Exception):
-                response = c.parse_response(self, self.command_name)
-            self.response.append(response)
-            response = self.parser.get()
-        if not self.args_options:
-            return c.on_response(self.response, self.raise_on_error)
+                    response = parse(self, args[0], **opts)
+                self.response.append(response)
+                response = self.parser.get()
+            if not self.args_options:
+                return c.on_response(self.response, self.raise_on_error)
+            else:
+                return NOT_DONE
         else:
-            return NOT_DONE
-    
+            result = NOT_DONE
+            while response is not False:
+                self.last_response = result = response
+                if not isinstance(response, Exception):
+                    result = parse(self, self.command_name, **self.options)
+                elif self.raise_on_error:
+                    raise response
+                response = self.parser.get()
+            return result
+        
     
 class RedisProtocol(pulsar.ProtocolConsumer):
     '''An asynchronous pulsar protocol for redis.'''
@@ -234,6 +241,8 @@ To listen for messages you can bind to the ``on_message`` event::
     pubsub.subscribe('mychannel')
 '''
     MANY_TIMES_EVENTS = ('on_message',)
+    subscribe_commands = frozenset((b'unsubscribe', b'punsubscribe',
+                                    b'subscribe', b'psubscribe'))
     
     def __init__(self, connection_pool, shard_hint):
         super(PubSub, self).__init__()
@@ -258,8 +267,11 @@ To listen for messages you can bind to the ``on_message`` event::
         return False
     
     def publish(self, channel, message):
-        '''Publish a new ``message`` to a ``channel``.'''
-        return self.execute_command('PUBLISH', channel, message)
+        '''Publish a new ``message`` to a ``channel``.
+        
+This method return a pulsar Deferred which results in the number of Subscribers
+that will receive the message.'''
+        return self.connection_pool.request(self, 'PUBLISH', channel, message)
     
     @async()
     def subscribe(self, *channels):
@@ -269,17 +281,25 @@ It returns an asynchronous component which results in the number of channels
 this handler is subscribed to. If this is the first time the method is called by
 this handler, than the :class:`PubSub` starts listening for messages which
 are fired via the ``on_message`` event.'''
-        channels, patterns = self._channel_patterns(channels)        
+        channels, patterns = self._channel_patterns(channels)
         if channels:
-            yield self._execute('subscribe', *channels)
-            self._channels.update(channels)
+            channels = tuple(set(channels) - self._channels)
+            if channels:
+                yield self._execute('subscribe', *channels)
+                self._channels.update(channels)
         if patterns:
-            yield self._execute('psubscribe', *patterns)
-            self._patterns.update(patterns)
+            patterns = tuple(set(patterns) - self._patterns)
+            if patterns:
+                yield self._execute('psubscribe', *patterns)
+                self._patterns.update(patterns)
         yield self._count_channels() 
     
     @async()
     def unsubscribe(self, *channels):
+        '''Un-subscribe from a list of ``channels`` or ``channel patterns``.
+        
+It returns an asynchronous component which results in the number of channels
+this handler is subscribed to.'''
         channels, patterns = self._channel_patterns(channels)
         if not channels and not patterns:
             if self._channels:
@@ -311,36 +331,24 @@ and close the subscriber connection with redis.'''
             self.consumer = None
         yield result
     
-    def parse_response(self, connection, command_name):
-        return connection.read_response()
-        
-    def on_response(self, results, raise_on_error):
+    def parse_response(self, connection, command_name, **params):
         '''Callback from the :class:`AsyncRedisRequest`.
         
 This method is invoked multiple times when new ``results`` are available.'''
-        while results:
-            response = results.pop(0)
-            if isinstance(response, Exception) and raise_on_error:
-                raise response
-            elif isinstance(response, list):
-                command = response[0]
-                if command == b'message':
-                    response = response[1:3]
-                    self.fire_event('on_message', response)
-                elif command == b'pmessage':
-                    response = response[2:4]
-                    self.fire_event('on_message', response)
-                elif command == b'unsubscribe' or command == b'punsubscribe':
-                    response = response[2]
+        response = connection.read_response()
+        if isinstance(response, list):
+            command = response[0]
+            if command == b'message':
+                response = response[1:3]
+                self.fire_event('on_message', response)
+            elif command == b'pmessage':
+                response = response[2:4]
+                self.fire_event('on_message', response)
+            elif command in self.subscribe_commands:
+                response = response[2]
         return response
     
-    def execute_command(self, *args, **options):
-        "Execute a command and return a parsed response"
-        try:
-            return self.connection_pool.request(self, *args, **options)
-        except NoScriptError:
-            self.connection_pool.clear_scripts()
-            raise
+    # INTERNALS
         
     def _channel_patterns(self, channels):
         patterns = []
@@ -365,7 +373,7 @@ This method is invoked multiple times when new ``results`` are available.'''
             # The consumer does not release the connection
             self.consumer.release_connection = False
         on_finished = Deferred()
-        self.execute_command(command, *args, consumer=self.consumer,
-                             on_finished=on_finished)
+        self.connection_pool.request(self, command, *args, consumer\
+                                     =self.consumer, on_finished=on_finished)
         return on_finished
         

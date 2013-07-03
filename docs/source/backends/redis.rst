@@ -5,7 +5,7 @@ Redis
 ==============
 
 Redis_ is an advanced key-value store where each key is associated with a value.
-What makes Redis different from many other key-value databases, is that values can
+What makes Redis_ different from many other key-value databases, is that values can
 be of different types:
 
     * Strings
@@ -20,20 +20,21 @@ equivalent of the `standard template library in C++
 
 .. note::
 
-    stdnet get its name from, **std** from as Standard Template Library
-    and **net** from networked.
+    ``stdnet` is a made up word from ``std`` for Standard Template Library
+    and ``net`` for networked.
 
-Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
+Redis_ loads and maintains the whole data-set into memory, but the data-set
+is persistent,
 since at the same time it is saved on disk, so that when the server is restarted
-data can be loaded back in memory. If you need speed, Redis is great solution.
+data can be loaded back in memory. If you need speed, Redis_ is great solution.
 
 
 Requirements
 ==================
 
 * redis-py_, provides the standard redis client.
-* pulsar_ optional, only required if the :ref:`asynchronous connection <redis-async>`
-  is used.
+* pulsar_ optional. It is required by the :ref:`asynchronous connection <redis-async>`
+  and the :ref:`publish/subscribe redis <redis-pubsub>` application.
 
 .. _redis-connection-string:
 

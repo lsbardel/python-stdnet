@@ -1,5 +1,6 @@
-'''The :mod:`stdnet.backends.redisb.async` implements an asynchronous connector
-for redis-py_. It uses pulsar_ asynchronous framework. To use this connector,
+'''The :mod:`stdnet.backends.redisb.async` module implements an asynchronous
+connector for redis-py_. It uses pulsar_ asynchronous framework.
+To use this connector,
 add ``timeout=0`` to redis :ref:`connection string <connection-string>`::
 
     'redis://127.0.0.1:6378?password=bla&timeout=0'
@@ -9,6 +10,16 @@ Usage::
     from stdnet import getdb
     
     db = getdb('redis://127.0.0.1:6378?password=bla&timeout=0')
+    
+    
+.. _redis_pubsub:
+
+Asynchronous Publish/Subscribe
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: PubSub
+   :members:
+   :member-order: bysource
     
 '''
 from collections import deque
@@ -85,18 +96,19 @@ class AsyncRedisRequest(object):
     def feed(self, data):
         self.parser.feed(data)
         response = self.parser.get()
+        c = self.client
         while response is not False:
             self.last_response = response
             if self.args_options:
-                args, options = self.args_options.popleft()
-            else:
-                args, options = (self.command_name,), {}
-            if not isinstance(response, Exception):
-                response = self.client.parse_response(self, args[0], **options)
+                args, opts = self.args_options.popleft()
+                if not isinstance(response, Exception):
+                    response = c.parse_response(self, args[0], **opts)
+            elif not isinstance(response, Exception):
+                response = c.parse_response(self, self.command_name)
             self.response.append(response)
             response = self.parser.get()
         if not self.args_options:
-            return self.client.on_response(self.response, self.raise_on_error)
+            return c.on_response(self.response, self.raise_on_error)
         else:
             return NOT_DONE
     
@@ -207,8 +219,9 @@ class CppAsyncConnectionPool(AsyncConnectionPoolBase, CppRedisManager):
 
         
 class PubSub(pulsar.EventHandler):
-    '''Implements :class:`PubSub` using a redis backend. To listen for
-messages you can bind to the ``on_message`` event::
+    '''Asynchronous Publish/Subscriber handler for redis.
+    
+To listen for messages you can bind to the ``on_message`` event::
 
     from stdnet import getdb
     
@@ -218,6 +231,7 @@ messages you can bind to the ``on_message`` event::
     redis = getdb('redis://122.0.0.1:6379?timeout=0').client
     pubsub = redis.pubsub()
     pubsub.bind_event('on_message', handle_messages)
+    pubsub.subscribe('mychannel')
 '''
     MANY_TIMES_EVENTS = ('on_message',)
     
@@ -230,14 +244,31 @@ messages you can bind to the ``on_message`` event::
         self._patterns = set()
     
     @property
+    def channels(self):
+        '''The set of channels this handler is subscribed to.'''
+        return frozenset(self._channels)
+    
+    @property
+    def patterns(self):
+        '''The set of patterns this handler is subscribed to.'''
+        return frozenset(self._patterns)
+    
+    @property
     def is_pipeline(self):
         return False
     
     def publish(self, channel, message):
+        '''Publish a new ``message`` to a ``channel``.'''
         return self.execute_command('PUBLISH', channel, message)
     
     @async()
     def subscribe(self, *channels):
+        '''Subscribe to a list of ``channels`` or ``channel patterns``.
+        
+It returns an asynchronous component which results in the number of channels
+this handler is subscribed to. If this is the first time the method is called by
+this handler, than the :class:`PubSub` starts listening for messages which
+are fired via the ``on_message`` event.'''
         channels, patterns = self._channel_patterns(channels)        
         if channels:
             yield self._execute('subscribe', *channels)
@@ -270,6 +301,10 @@ messages you can bind to the ``on_message`` event::
             
     @async()
     def close(self):
+        '''Stop listening for messages.
+        
+:meth:`unsubscribe` from all :attr:`channels` and :attr:`patterns`
+and close the subscriber connection with redis.'''
         result = yield self.unsubscribe()
         if self.consumer:
             self.consumer.connection.close()
@@ -279,8 +314,12 @@ messages you can bind to the ``on_message`` event::
     def parse_response(self, connection, command_name):
         return connection.read_response()
         
-    def on_response(self, result, raise_on_error):
-        for response in result:
+    def on_response(self, results, raise_on_error):
+        '''Callback from the :class:`AsyncRedisRequest`.
+        
+This method is invoked multiple times when new ``results`` are available.'''
+        while results:
+            response = results.pop(0)
             if isinstance(response, Exception) and raise_on_error:
                 raise response
             elif isinstance(response, list):
@@ -323,6 +362,7 @@ messages you can bind to the ``on_message`` event::
             req = self.connection_pool._new_request(self, '', ())
             connection = self.connection_pool.get_connection(req)
             self.consumer = self.connection_pool.consumer_factory(connection)
+            # The consumer does not release the connection
             self.consumer.release_connection = False
         on_finished = Deferred()
         self.execute_command(command, *args, consumer=self.consumer,

@@ -2,6 +2,9 @@
 
 Ver. 0.8.2 - Development
 ===============================
+* Critical bug fix in the :ref:`asynchronous redis publish/subscribe <redis_pubsub>`
+  handler. Added some documentation.
+* **591 regression tests** with **93%** coverage.
 
 Ver. 0.8.1 - 2013 July 2
 ===============================
@@ -173,7 +176,6 @@ Ver. 0.6.0 - 2011 Aug 9
   This way model instances are always consistent even when redis
   shuts down during an update. Transactions are also useful when updating several
   instances at once.
-* Added support for hiredis_. If installed it will be used as default redis parser.
 * Added :ref:`serialization utilities <serialize-models>` for saving model
   data in JSON or CSV format. Custom serialization algorithms
   can be added to the library.
@@ -234,8 +236,7 @@ Ver. 0.5.3 - 2011 Apr 30
 
 Ver. 0.5.2 - 2011 Mar 31
 ==========================
-* This version brings some important bug fixes with tests and preliminary work on C extensions
-  based on ``hiredis``.
+* This version brings some important bug fixes with tests.
 * Bug fix in :meth:`stdnet.odm.IntegerField.to_python`.
 * Added registration utilities in :mod:`stdnet.odm`.
 * Bug fix in :class:`stdnet.odm.StdModel` class caused by the lack of a ``__ne__`` operator.
@@ -361,7 +362,6 @@ Ver. 0.2.0  - 2010 Jun 21
 .. _redis: http://redis.io/
 .. _djpcms: http://djpcms.com
 .. _django: http://www.djangoproject.com/
-.. _hiredis: https://github.com/pietern/hiredis-py
 .. _pulsar: http://packages.python.org/pulsar/
 .. _nose: http://readthedocs.org/docs/nose/en/latest/
 .. _unittest2: http://pypi.python.org/pypi/unittest2

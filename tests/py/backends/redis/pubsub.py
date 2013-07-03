@@ -65,7 +65,7 @@ class TestRedisPrefixed(test.TestCase):
             def on_message(self, channel_message):
                 self.count += 1
                 _, message = channel_message
-                if message == 'done':
+                if message == b'done':
                     self.callback('done')
                 
         listener = Listener()

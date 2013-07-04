@@ -84,9 +84,9 @@ If ``size`` is not given, the :attr:`size` is used.'''
         return populate('string', 1, min_len=min_len, max_len=max_len)[0]
     
     
-def create_backend(self):
+def create_backend(self, prefix):
     from stdnet import odm
-    self.namespace = 'stdnet-test-%s:' % gen_unique_id()
+    self.namespace = '%s%s-' % (prefix, gen_unique_id())
     if self.connection_string:
         server = getdb(self.connection_string, namespace=self.namespace,
                        **self.backend_params())
@@ -149,6 +149,7 @@ several class methods for testing in a parallel test suite.
     connection_string = None
     backend = None
     sizes = None
+    prefix = 'stdtest'
     data_cls = DataGenerator
 
     @classmethod
@@ -174,7 +175,7 @@ a :class:`stdnet.odm.Router` with all :attr:`models` registered.
 There shouldn't be any reason to override this method, use :meth:`after_setup`
 class method instead.'''
         cls.setup_models()
-        yield create_backend(cls)
+        yield create_backend(cls, cls.prefix)
         yield cls.after_setup()
         
     @classmethod
@@ -239,7 +240,7 @@ test function. Useful when testing write operations.'''
         pass
     
     def _pre_setup(self):
-        return create_backend(self)
+        return create_backend(self, self.prefix)
     
     def _post_teardown(self):
         if self.backend is not None:

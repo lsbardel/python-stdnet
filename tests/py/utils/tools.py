@@ -13,6 +13,7 @@ from examples.models import Statistics3
 
 
 class TestUtils(test.TestCase):
+    multipledb = False
     model = Statistics3
     
     def __testNestedJasonValue(self):
@@ -47,23 +48,45 @@ class TestUtils(test.TestCase):
     def test_addmul_number_dicts(self):
         d1 = {'bla': 2.5, 'foo': 1.1}
         d2 = {'bla': -2, 'foo': -0.3}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
-        self.assertEqual(r['bla'],7)
-        self.assertEqual(r['foo'],2.5)
+        self.assertAlmostEqual(r['bla'],7)
+        self.assertAlmostEqual(r['foo'],2.5)
         
     def test_addmul_number_dicts2(self):
         d1 = {'bla': 2.5, 'foo': 1.1}
         d2 = {'bla': -2, 'foo': -0.3, 'moon': 8.5}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla'],7)
         self.assertEqual(r['foo'],2.5)
         
+    def test_addmul_number_dicts3(self):
+        series = [(1.0, {'carry1w': 0.08903324115987132,
+                         'pv': '17.7',
+                         'carry3m': 1.02,
+                         'carry6m': 1.9645094151419826,
+                         'carry1y': 3.7291316215073422,
+                         'irdelta': '#Err'}),
+                  (1.0, {'carry1w': 0.025649796255470036,
+                         'pv': 12.1,
+                         'carry3m': '-0.61',
+                         'carry6m': 1.77763873433023,
+                         'carry1y': 5.566080890214712,
+                         'irdelta': '#Err'}),
+                  (-1.0, {'carry1w': '#Err',
+                          'pv': 18.1,
+                          'carry3m': -0.04,
+                          'irdelta': 1})]
+        r = addmul_number_dicts(series)
+        self.assertEqual(len(r), 2)
+        self.assertAlmostEqual(r['pv'], 11.7)
+        self.assertAlmostEqual(r['carry3m'], 0.45)
+        
     def test_addmul_nested_dicts(self):
         d1 = {'bla': {'bla1': 2.5}, 'foo': 1.1}
         d2 = {'bla': {'bla1': -2}, 'foo': -0.3, 'moon': 8.5}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla']['bla1'],7)
         self.assertEqual(r['foo'],2.5)
@@ -109,3 +132,5 @@ class testFunctions(test.TestCase):
     def test_git_version(self):
         g = get_git_changeset()
         self.assertTrue(g)
+
+        

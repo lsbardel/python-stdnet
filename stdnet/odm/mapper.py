@@ -174,16 +174,26 @@ model was already registered it does nothing.
             return session.query(model).get(id=elems[1])
         raise Model.DoesNotExist('uuid "{0}" not recognized'.format(uuid))
 
-    def flush(self, exclude=None):
-        '''Flush all :attr:`registered_models` excluding the ones
-in ``exclude`` (if provided).'''
+    def flush(self, exclude=None, include=None, dryrun=False):
+        '''Flush :attr:`registered_models`.
+        
+:param exclude: optional list of model names to exclude.
+:param include: optional list of model names to include.
+:param dryrun: Doesn't remove anything, simply collect managers to flush.
+'''
         exclude = exclude or []
         results = []
         for manager in self._registered_models.values():
             m = manager._meta
-            if not (m.name in exclude or m.modelkey in exclude):
-                results.append(manager.flush())
-        return multi_async(results)
+            if include is not None and not (m.modelkey in include or
+                                            m.app_label in include):
+                continue
+            if not (m.modelkey in exclude or m.app_label in exclude):
+                if dryrun:
+                    results.append(manager)
+                else:
+                    results.append(manager.flush())
+        return results if dryrun else multi_async(results)
         
     def unregister(self, model=None):
         '''Unregister a ``model`` if provided, otherwise it unregister all

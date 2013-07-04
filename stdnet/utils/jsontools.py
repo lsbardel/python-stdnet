@@ -1,4 +1,5 @@
 import time
+from collections import Mapping
 from datetime import date, datetime
 from decimal import Decimal
 import json
@@ -158,44 +159,49 @@ def dict_flat_generator(value, attname=None, splitter=JSPLITTER,
 def value_type(data):
     v = None
     for d in data:
-        typ = 0
-        if isinstance(d,(tuple,list)):
-            typ = 1
-        elif isinstance(d,dict):
+        typ = 1
+        if isinstance(d, (tuple, list)):
             typ = 2
+        elif isinstance(d, Mapping):
+            typ = 3
+        else:
+            try:
+                d = float(d)
+            except Exception:
+                return 0
         if v is None:
             v = typ
         elif v != typ:
-            raise ValueError('Inconsistent types')
+            return 0
     return v
 
-  
-def addmul_number_dicts(*series):
-    '''Utility function for multiplying dictionary by a numeric value and
-add the results.
 
-:parameter series: a tuple of two elements tuples.
-    Each serie is of the form::
+def addmul_number_dicts(series, skip=None):
+    '''Multiply dictionaries by a numeric values and add them together.
+
+:parameter series: a tuple of two elements tuples. Each serie is of the form::
     
         (weight,dictionary)
         
     where ``weight`` is a number and ``dictionary`` is a dictionary with
     numeric values.
-    
-Only common fields are aggregated.
-'''
+:parameter skip: optional list of field names to skip.
+ 
+Only common fields are aggregated. If a field has a non-numeric value it is
+not included either.'''
     if not series:
         return
     vtype = value_type((s[1] for s in series))
-    if vtype == 0:
-        return sum((weight*d for weight,d in series))
-    elif vtype == 2:
+    if vtype == 1:
+        return sum((weight*float(d) for weight, d in series))
+    elif vtype == 3:
         keys = set(series[0][1])
         for serie in series[1:]:
             keys.intersection_update(serie[1])
-        result = {}
+        results = {}
         for key in keys:
             key_series = tuple((weight, d[key]) for weight, d in series)
-            result[key] = addmul_number_dicts(*key_series)
-        return result
-    
+            result = addmul_number_dicts(key_series)
+            if result is not None:
+                results[key] = result
+        return results

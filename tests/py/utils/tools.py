@@ -47,7 +47,7 @@ class TestUtils(test.TestCase):
     def test_addmul_number_dicts(self):
         d1 = {'bla': 2.5, 'foo': 1.1}
         d2 = {'bla': -2, 'foo': -0.3}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla'],7)
         self.assertEqual(r['foo'],2.5)
@@ -55,7 +55,7 @@ class TestUtils(test.TestCase):
     def test_addmul_number_dicts2(self):
         d1 = {'bla': 2.5, 'foo': 1.1}
         d2 = {'bla': -2, 'foo': -0.3, 'moon': 8.5}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla'],7)
         self.assertEqual(r['foo'],2.5)
@@ -63,7 +63,7 @@ class TestUtils(test.TestCase):
     def test_addmul_nested_dicts(self):
         d1 = {'bla': {'bla1': 2.5}, 'foo': 1.1}
         d2 = {'bla': {'bla1': -2}, 'foo': -0.3, 'moon': 8.5}
-        r = addmul_number_dicts((2,d1),(-1,d2))
+        r = addmul_number_dicts(((2,d1),(-1,d2)))
         self.assertEqual(len(r),2)
         self.assertEqual(r['bla']['bla1'],7)
         self.assertEqual(r['foo'],2.5)

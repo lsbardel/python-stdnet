@@ -16,7 +16,7 @@ Registration is straightforward and as shown in the
 
     from stdnet import odm
     
-    models = odm.Router('redis://1270.0.0.1:6379?db=7&password=bla')
+    models = odm.Router('redis://127.0.0.1:6379?db=7&password=bla')
     
     models.register(Instrument)
     models.register(Fund)
@@ -27,7 +27,7 @@ initialising a :class:`Router`, is the default back-end of that :class:`Router`.
 It is possible to register models to a different back-end by passing a connection
 string to the :meth:`Router.register` method::
 
-    models.register(MyModel, 'redis://1270.0.0.1:6379?db=8&password=bla')
+    models.register(MyModel, 'redis://127.0.0.1:6379?db=8&password=bla')
     
 
 Accessing managers
@@ -80,8 +80,8 @@ operations.
 To specify a different back-end for read operations one registers a model in
 the following way::
 
-    models.register(Position, 'redis://1270.0.0.1:6379?db=8&password=bla',
-                    'redis://1270.0.0.1:6380?db=1')
+    models.register(Position, 'redis://127.0.0.1:6379?db=8&password=bla',
+                    'redis://127.0.0.1:6380?db=1')
 
 
 .. _custom-manager:

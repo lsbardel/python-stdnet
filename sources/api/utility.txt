@@ -54,17 +54,9 @@ JsonSerializer
 .. module:: stdnet.utils
    
 JSON utilities
-~~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-.. autoclass:: JSONDateDecimalEncoder
-   :members:
-   :member-order: bysource
-
-
-.. autoclass:: date_decimal_hook
-   :members:
-   :member-order: bysource
-      
+.. automodule:: stdnet.utils.jsontools
 
 .. _encoders:
 

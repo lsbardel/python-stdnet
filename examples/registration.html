@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Registration &mdash; python stdnet 0.8.2b1 documentation</title>
+    <title>Registration &mdash; python stdnet 0.8.3b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.2b1',
+        VERSION:     '0.8.3b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.2b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.3b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Query your Data" href="query.html" />
     <link rel="prev" title="Using Models" href="tutorial.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="tutorial.html" title="Using Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.2b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.3b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -75,7 +75,7 @@ Registration is straightforward and as shown in the
 <a class="reference internal" href="tutorial.html#tutorial"><em>tutorial application</em></a> it is achieved by:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
-<span class="n">models</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">Router</span><span class="p">(</span><span class="s">&#39;redis://1270.0.0.1:6379?db=7&amp;password=bla&#39;</span><span class="p">)</span>
+<span class="n">models</span> <span class="o">=</span> <span class="n">odm</span><span class="o">.</span><span class="n">Router</span><span class="p">(</span><span class="s">&#39;redis://127.0.0.1:6379?db=7&amp;password=bla&#39;</span><span class="p">)</span>
 
 <span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Instrument</span><span class="p">)</span>
 <span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fund</span><span class="p">)</span>
@@ -86,7 +86,7 @@ Registration is straightforward and as shown in the
 initialising a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>, is the default back-end of that <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>.
 It is possible to register models to a different back-end by passing a connection
 string to the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.register" title="stdnet.odm.Router.register"><tt class="xref py py-meth docutils literal"><span class="pre">Router.register()</span></tt></a> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">,</span> <span class="s">&#39;redis://1270.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">,</span> <span class="s">&#39;redis://127.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="accessing-managers">
@@ -131,8 +131,8 @@ specify different back-ends for <tt class="docutils literal"><span class="pre">w
 operations.</p>
 <p>To specify a different back-end for read operations one registers a model in
 the following way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://1270.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">,</span>
-                <span class="s">&#39;redis://1270.0.0.1:6380?db=1&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Position</span><span class="p">,</span> <span class="s">&#39;redis://127.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">,</span>
+                <span class="s">&#39;redis://127.0.0.1:6380?db=1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

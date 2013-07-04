@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet 0.8.2b1 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet 0.8.3b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.2b1',
+        VERSION:     '0.8.3b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.2b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.3b1 documentation" href="../index.html" />
     <link rel="up" title="API" href="index.html" />
     <link rel="next" title="Stdnet Redis branch (Discontinued)" href="../stdnetredis.html" />
     <link rel="prev" title="Fields API" href="fields.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="fields.html" title="Fields API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.2b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.3b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>
@@ -257,11 +257,14 @@ model, the model will get loaded otherwise it will skip the loading.</p>
 </dd></dl>
 
 <span class="target" id="module-stdnet.utils"></span></div>
-<div class="section" id="json-utilities">
-<h3>JSON utilities<a class="headerlink" href="#json-utilities" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="module-stdnet.utils.jsontools">
+<span id="json-utilities"></span><h2>JSON utilities<a class="headerlink" href="#module-stdnet.utils.jsontools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="jsondatedecimalencoder">
+<h3>JSONDateDecimalEncoder<a class="headerlink" href="#jsondatedecimalencoder" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="stdnet.utils.JSONDateDecimalEncoder">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
+<dt id="stdnet.utils.jsontools.JSONDateDecimalEncoder">
+<em class="property">class </em><tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">JSONDateDecimalEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON encoder used by stdnet. It provides
 JSON serialization for four additional classes:</p>
 <ul class="simple">
@@ -275,11 +278,72 @@ JSON serialization for four additional classes:</p>
 </div>
 </dd></dl>
 
-<dl class="class">
-<dt id="stdnet.utils.date_decimal_hook">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.</tt><tt class="descname">date_decimal_hook</tt><a class="headerlink" href="#stdnet.utils.date_decimal_hook" title="Permalink to this definition">¶</a></dt>
+</div>
+<div class="section" id="date-decimal-hook">
+<h3>date_decimal_hook<a class="headerlink" href="#date-decimal-hook" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.utils.jsontools.date_decimal_hook">
+<tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">date_decimal_hook</tt><big>(</big><em>dct</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.date_decimal_hook" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default JSON decoder hook. It is the inverse of
-<tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt>.</p>
+<a class="reference internal" href="#stdnet.utils.jsontools.JSONDateDecimalEncoder" title="stdnet.utils.jsontools.JSONDateDecimalEncoder"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.utils.jsontools.JSONDateDecimalEncoder</span></tt></a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="flat-to-nested">
+<h3>flat_to_nested<a class="headerlink" href="#flat-to-nested" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.utils.jsontools.flat_to_nested">
+<tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">flat_to_nested</tt><big>(</big><em>data</em>, <em>instance=None</em>, <em>attname=None</em>, <em>separator=None</em>, <em>loads=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.flat_to_nested" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a flat representation of a dictionary to
+a nested representation. Fields in the flat representation are separated
+by the <em>splitter</em> parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> &#8211; a flat dictionary of key value pairs.</li>
+<li><strong>instance</strong> &#8211; optional instance of a model.</li>
+<li><strong>attribute</strong> &#8211; optional attribute of a model.</li>
+<li><strong>separator</strong> &#8211; optional separator. Default <tt class="docutils literal"><span class="pre">&quot;__&quot;</span></tt>.</li>
+<li><strong>loads</strong> &#8211; optional data unserializer.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a nested dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="addmul-number-dicts">
+<h3>addmul_number_dicts<a class="headerlink" href="#addmul-number-dicts" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="stdnet.utils.jsontools.addmul_number_dicts">
+<tt class="descclassname">stdnet.utils.jsontools.</tt><tt class="descname">addmul_number_dicts</tt><big>(</big><em>series</em><big>)</big><a class="headerlink" href="#stdnet.utils.jsontools.addmul_number_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply dictionaries by a numeric values and add them together.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>series</strong> &#8211; <p>a tuple of two elements tuples. Each serie is of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">weight</span><span class="p">,</span><span class="n">dictionary</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">weight</span></tt> is a number and <tt class="docutils literal"><span class="pre">dictionary</span></tt> is a dictionary with
+numeric values.</p>
+</li>
+<li><strong>skip</strong> &#8211; optional list of field names to skip.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Only common fields are aggregated. If a field has a non-numeric value it is
+not included either.</p>
 </dd></dl>
 
 </div>
@@ -732,7 +796,13 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
 <li><a class="reference internal" href="#register-serializer">Register serializer</a></li>
 <li><a class="reference internal" href="#serializer">Serializer</a></li>
 <li><a class="reference internal" href="#jsonserializer">JsonSerializer</a></li>
-<li><a class="reference internal" href="#json-utilities">JSON utilities</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-stdnet.utils.jsontools">JSON utilities</a><ul>
+<li><a class="reference internal" href="#jsondatedecimalencoder">JSONDateDecimalEncoder</a></li>
+<li><a class="reference internal" href="#date-decimal-hook">date_decimal_hook</a></li>
+<li><a class="reference internal" href="#flat-to-nested">flat_to_nested</a></li>
+<li><a class="reference internal" href="#addmul-number-dicts">addmul_number_dicts</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#encoders">Encoders</a></li>

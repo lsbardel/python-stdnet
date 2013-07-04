@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Redis &mdash; python stdnet 0.8.2b1 documentation</title>
+    <title>Redis &mdash; python stdnet 0.8.3b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.2b1',
+        VERSION:     '0.8.3b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.2b1 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.8.3b1 documentation" href="../index.html" />
     <link rel="up" title="Backend Servers" href="index.html" />
     <link rel="next" title="Mongo DB" href="mongo.html" />
     <link rel="prev" title="API" href="api.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="api.html" title="API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.2b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.8.3b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Servers</a> &raquo;</li> 
       </ul>
     </div>
@@ -69,7 +69,7 @@
   <div class="section" id="redis">
 <span id="redis-server"></span><h1>Redis<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="http://redis.io/">Redis</a> is an advanced key-value store where each key is associated with a value.
-What makes Redis different from many other key-value databases, is that values can
+What makes <a class="reference external" href="http://redis.io/">Redis</a> different from many other key-value databases, is that values can
 be of different types:</p>
 <blockquote>
 <div><ul class="simple">
@@ -82,20 +82,21 @@ be of different types:</p>
 </div></blockquote>
 <p>In other words, you can look at redis as a data structure server, the networked
 equivalent of the <a class="reference external" href="http://www2.roguewave.com/support/docs/hppdocs/stdref/index.html">standard template library in C++</a>.</p>
+<p><a class="reference external" href="http://redis.io/">Redis</a> loads and maintains the whole data-set into memory, but the data-set
+is persistent,
+since at the same time it is saved on disk, so that when the server is restarted
+data can be loaded back in memory. If you need speed, <a class="reference external" href="http://redis.io/">Redis</a> is great solution.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">stdnet get its name from, <strong>std</strong> from as Standard Template Library
-and <strong>net</strong> from networked.</p>
+<p class="last"><tt class="docutils literal"><span class="pre">stdnet</span></tt> is a made up word from <tt class="docutils literal"><span class="pre">std</span></tt> for Standard Template Library
+and <tt class="docutils literal"><span class="pre">net</span></tt> for networked.</p>
 </div>
-<p>Redis loads and mantains the whole dataset into memory, but the dataset is persistent,
-since at the same time it is saved on disk, so that when the server is restarted
-data can be loaded back in memory. If you need speed, Redis is great solution.</p>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>, provides the standard redis client.</li>
-<li><a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> optional, only required if the <a class="reference internal" href="#redis-async"><em>asynchronous connection</em></a>
-is used.</li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> optional. It is required by the <a class="reference internal" href="#redis-async"><em>asynchronous connection</em></a>
+and the <a class="reference internal" href="#redis-pubsub"><em>publish/subscribe redis</em></a> application.</li>
 </ul>
 </div>
 <div class="section" id="connection-string">
@@ -200,8 +201,9 @@ is <tt class="docutils literal"><span class="pre">0</span></tt>, all model field
 </div>
 <div class="section" id="module-stdnet.backends.redisb.async">
 <span id="asynchronous-connection"></span><span id="redis-async"></span><h2>Asynchronous Connection<a class="headerlink" href="#module-stdnet.backends.redisb.async" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="#module-stdnet.backends.redisb.async" title="stdnet.backends.redisb.async"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends.redisb.async</span></tt></a> implements an asynchronous connector
-for <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>. It uses <a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> asynchronous framework. To use this connector,
+<p>The <a class="reference internal" href="#module-stdnet.backends.redisb.async" title="stdnet.backends.redisb.async"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends.redisb.async</span></tt></a> module implements an asynchronous
+connector for <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a>. It uses <a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> asynchronous framework.
+To use this connector,
 add <tt class="docutils literal"><span class="pre">timeout=0</span></tt> to redis <a class="reference internal" href="index.html#connection-string"><em>connection string</em></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;redis://127.0.0.1:6378?password=bla&amp;timeout=0&#39;</span>
 </pre></div>
@@ -211,6 +213,80 @@ add <tt class="docutils literal"><span class="pre">timeout=0</span></tt> to redi
 
 <span class="n">db</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://127.0.0.1:6378?password=bla&amp;timeout=0&#39;</span><span class="p">)</span>
 </pre></div>
+</div>
+<div class="section" id="asynchronous-publish-subscribe">
+<span id="redis-pubsub"></span><h3>Asynchronous Publish/Subscribe<a class="headerlink" href="#asynchronous-publish-subscribe" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="stdnet.backends.redisb.async.PubSub">
+<em class="property">class </em><tt class="descclassname">stdnet.backends.redisb.async.</tt><tt class="descname">PubSub</tt><big>(</big><em>connection_pool</em>, <em>shard_hint</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronous Publish/Subscriber handler for redis.</p>
+<p>To listen for messages you can bind to the <tt class="docutils literal"><span class="pre">on_message</span></tt> event:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">getdb</span>
+
+<span class="k">def</span> <span class="nf">handle_messages</span><span class="p">(</span><span class="n">channel_message</span><span class="p">):</span>
+    <span class="o">...</span>
+    
+<span class="n">redis</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://122.0.0.1:6379?timeout=0&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">client</span>
+<span class="n">pubsub</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">pubsub</span><span class="p">()</span>
+<span class="n">pubsub</span><span class="o">.</span><span class="n">bind_event</span><span class="p">(</span><span class="s">&#39;on_message&#39;</span><span class="p">,</span> <span class="n">handle_messages</span><span class="p">)</span>
+<span class="n">pubsub</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="s">&#39;mychannel&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.async.PubSub.channels">
+<tt class="descname">channels</tt><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of channels this handler is subscribed to.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stdnet.backends.redisb.async.PubSub.patterns">
+<tt class="descname">patterns</tt><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of patterns this handler is subscribed to.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.async.PubSub.publish">
+<tt class="descname">publish</tt><big>(</big><em>channel</em>, <em>message</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publish a new <tt class="docutils literal"><span class="pre">message</span></tt> to a <tt class="docutils literal"><span class="pre">channel</span></tt>.</p>
+<p>This method return a pulsar Deferred which results in the number of Subscribers
+that will receive the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.async.PubSub.subscribe">
+<tt class="descname">subscribe</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe to a list of <tt class="docutils literal"><span class="pre">channels</span></tt> or <tt class="docutils literal"><span class="pre">channel</span> <span class="pre">patterns</span></tt>.</p>
+<p>It returns an asynchronous component which results in the number of channels
+this handler is subscribed to. If this is the first time the method is called by
+this handler, than the <a class="reference internal" href="#stdnet.backends.redisb.async.PubSub" title="stdnet.backends.redisb.async.PubSub"><tt class="xref py py-class docutils literal"><span class="pre">PubSub</span></tt></a> starts listening for messages which
+are fired via the <tt class="docutils literal"><span class="pre">on_message</span></tt> event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.async.PubSub.unsubscribe">
+<tt class="descname">unsubscribe</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.unsubscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Un-subscribe from a list of <tt class="docutils literal"><span class="pre">channels</span></tt> or <tt class="docutils literal"><span class="pre">channel</span> <span class="pre">patterns</span></tt>.</p>
+<p>It returns an asynchronous component which results in the number of channels
+this handler is subscribed to.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.async.PubSub.close">
+<tt class="descname">close</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop listening for messages.</p>
+<p><a class="reference internal" href="#stdnet.backends.redisb.async.PubSub.unsubscribe" title="stdnet.backends.redisb.async.PubSub.unsubscribe"><tt class="xref py py-meth docutils literal"><span class="pre">unsubscribe()</span></tt></a> from all <a class="reference internal" href="#stdnet.backends.redisb.async.PubSub.channels" title="stdnet.backends.redisb.async.PubSub.channels"><tt class="xref py py-attr docutils literal"><span class="pre">channels</span></tt></a> and <a class="reference internal" href="#stdnet.backends.redisb.async.PubSub.patterns" title="stdnet.backends.redisb.async.PubSub.patterns"><tt class="xref py py-attr docutils literal"><span class="pre">patterns</span></tt></a>
+and close the subscriber connection with redis.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stdnet.backends.redisb.async.PubSub.parse_response">
+<tt class="descname">parse_response</tt><big>(</big><em>connection</em>, <em>command_name</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.async.PubSub.parse_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback from the <tt class="xref py py-class docutils literal"><span class="pre">AsyncRedisRequest</span></tt>.</p>
+<p>This method is invoked multiple times when new <tt class="docutils literal"><span class="pre">results</span></tt> are available.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 <div class="section" id="module-stdnet.backends.redisb.client">
@@ -231,7 +307,7 @@ to the standard redis client in <a class="reference external" href="https://gith
 <dl class="method">
 <dt id="stdnet.backends.redisb.client.Redis.parse_response">
 <tt class="descname">parse_response</tt><big>(</big><em>connection</em>, <em>command_name</em>, <em>**options</em><big>)</big><a class="headerlink" href="#stdnet.backends.redisb.client.Redis.parse_response" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses a response from the Redis server</p>
+<dd><p>Override <a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> parse_response method to deal with scripts.</p>
 </dd></dl>
 
 <dl class="method">
@@ -397,7 +473,10 @@ it is not set by the user.</p>
 <li><a class="reference internal" href="#loading">Loading</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-stdnet.backends.redisb.async">Asynchronous Connection</a></li>
+<li><a class="reference internal" href="#module-stdnet.backends.redisb.async">Asynchronous Connection</a><ul>
+<li><a class="reference internal" href="#asynchronous-publish-subscribe">Asynchronous Publish/Subscribe</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-stdnet.backends.redisb.client">Client Extensions</a><ul>
 <li><a class="reference internal" href="#client">Client</a></li>
 <li><a class="reference internal" href="#prefixed-client">Prefixed Client</a></li>

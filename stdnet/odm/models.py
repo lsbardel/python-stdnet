@@ -43,6 +43,15 @@ committing changes. If all data is available, the commit will replace the
 previous object data entirely, otherwise it will only update it.'''
         return self.get_state().persistent and self._loadedfields is None
     
+    def set(self, name, value):
+        meta = self._meta
+        if name in meta.dfields:
+            meta.dfields[name].set_value(self, value)
+        elif name in meta.attributes:
+            setattr(self, name, value)
+        else:
+            raise AttributeError('Model has no field/attribute %s' % name)
+        
     def loadedfields(self):
         '''Generator of fields loaded from database'''
         if self._loadedfields is None:
@@ -147,7 +156,7 @@ attribute set to ``True`` will be excluded.'''
     def _to_json(self, exclude_cache):
         pk = self.pkvalue()
         if pk:
-            yield self._meta.pkname(),pk
+            yield self._meta.pkname(), pk
             for field, value in self.fieldvalue_pairs(exclude_cache=\
                                                       exclude_cache):
                 value = field.json_serialise(value)

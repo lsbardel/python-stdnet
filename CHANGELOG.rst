@@ -1,6 +1,12 @@
 .. _vers08:
 
-Ver. 0.8.2 - Development
+Ver. 0.8.3 - Development
+===============================
+* :ref:`C extensions <c-extensions>` documentation.
+* **591 regression tests** with **93%** coverage.
+
+
+Ver. 0.8.2 - 2013 July 4
 ===============================
 * Critical bug fix in the :ref:`asynchronous redis publish/subscribe <redis_pubsub>`
   handler. Added some documentation.

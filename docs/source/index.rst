@@ -21,7 +21,7 @@ Requirements
 ================
 
 * redis-py_ for :ref:`redis backend <redis-server>`. Redis 2.6 or above.
-* Optional Cython_ for :ref:`ultra-fast C-extensions <c-extensions>`. Recommended.
+* Optional cython_ for :ref:`ultra-fast C-extensions <c-extensions>`. Recommended.
 * Optional pymongo_ for :ref:`mongo db backend <mongo-server>` (pre-alpha).
 * Optional pulsar_ for :ref:`asynchronous database connection <tutorial-asynchronous>`.
 

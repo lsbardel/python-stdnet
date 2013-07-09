@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python Stdnet &mdash; python stdnet 0.8.3b1 documentation</title>
+    <title>Python Stdnet &mdash; python stdnet 0.8.3b2 documentation</title>
     
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.8.3b1',
+        VERSION:     '0.8.3b2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b1 documentation" href="#" />
+    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="#" />
     <link rel="next" title="Overview and Installation" href="overview.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="overview.html" title="Overview and Installation"
              accesskey="N">next</a> |</li>
-        <li><a href="#">python stdnet 0.8.3b1 documentation</a> &raquo;</li> 
+        <li><a href="#">python stdnet 0.8.3b2 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
@@ -73,6 +73,7 @@ There are over 600 tests with a coverage of about 90%.</p>
 <span id="id1"></span><h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> for <a class="reference internal" href="backends/redis.html#redis-server"><em>redis backend</em></a>. Redis 2.6 or above.</li>
+<li>Optional <a class="reference external" href="http://cython.org/">Cython</a> for <a class="reference internal" href="examples/extensions.html#c-extensions"><em>ultra-fast C-extensions</em></a>. Recommended.</li>
 <li>Optional <a class="reference external" href="http://api.mongodb.org/python/current/index.html">pymongo</a> for <a class="reference internal" href="backends/mongo.html#mongo-server"><em>mongo db backend</em></a> (pre-alpha).</li>
 <li>Optional <a class="reference external" href="https://pypi.python.org/pypi/pulsar">pulsar</a> for <a class="reference internal" href="examples/asynchronous.html#tutorial-asynchronous"><em>asynchronous database connection</em></a>.</li>
 </ul>
@@ -130,8 +131,12 @@ There are over 600 tests with a coverage of about 90%.</p>
 <h3>Python Stdnet</h3>
 <p>
   Stdnet is an object data mapper and advanced query manager for non relational databases.
-  It is Python 3 compatible and designed to be fast, memory efficient
-  and highly customizable.
+  Designed to be fast, memory efficient and highly customisable.
+</p>
+<p class="logo">
+<a href='http://pypi.python.org/pypi/python-stdnet' target='_blank'>
+<img src="https://pypi.python.org/python-3.png" alt='Pulsar @ PyPi' border='0'>
+</a>
 </p>
 <h3>Useful Links</h3>
 <ul>
@@ -140,6 +145,7 @@ There are over 600 tests with a coverage of about 90%.</p>
   <li><a href="http://twitter.com/lsbardel">lsbardel @ twitter</a></li>
   <li><a href="https://groups.google.com/group/python-stdnet">email list @ google</a></li>
   <li><a href="http://redis.io/">Redis</a></li>
+  <li><a href="http://couchdb.apache.org/">CouchDB</a></li>
   <li><a href="http://www.mongodb.org/">MongoDB</a></li>
 </ul>
   <h3>This Page</h3>

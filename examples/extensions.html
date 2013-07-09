@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Asynchronous usage &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>C/C++ Extensions &mdash; python stdnet 0.8.3b2 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -25,8 +25,8 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
-    <link rel="next" title="Local Models" href="local.html" />
-    <link rel="prev" title="Export &amp; Load data" href="serialise.html" /> 
+    <link rel="next" title="Backend Servers" href="../backends/index.html" />
+    <link rel="prev" title="Local Models" href="local.html" /> 
   </head>
   <body>
 
@@ -40,10 +40,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="local.html" title="Local Models"
+          <a href="../backends/index.html" title="Backend Servers"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="serialise.html" title="Export &amp; Load data"
+          <a href="local.html" title="Local Models"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
@@ -66,24 +66,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="asynchronous-usage">
-<span id="tutorial-asynchronous"></span><h1>Asynchronous usage<a class="headerlink" href="#asynchronous-usage" title="Permalink to this headline">¶</a></h1>
-<p>Stdnet has been designed so that it can operate in fully asynchronous mode
-if the backend connection class is asynchronous.
-The <a class="reference internal" href="../backends/redis.html#redis-server"><em>redis backend</em></a> is shipped with an asychronous client
-written using <a class="reference external" href="http://quantmind.github.com/pulsar/">pulsar</a>.</p>
-<p>When using stdnet in asynchronous mode, a user writes generator method
-which <a class="reference external" href="http://quantmind.github.com/pulsar/">pulsar</a> treats as asynchronous coroutines. In this way adding instances
-of Found model in <a class="reference internal" href="tutorial.html#tutorial-application"><em>our tutorial application</em></a>
-becomes:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">fund</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Markowitz&#39;</span><span class="p">,</span> <span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-</pre></div>
+  <div class="section" id="c-c-extensions">
+<span id="c-extensions"></span><h1>C/C++ Extensions<a class="headerlink" href="#c-c-extensions" title="Permalink to this headline">¶</a></h1>
+<p>If <a class="reference external" href="http://cython.org/">cython</a> is available during installation, stdnet will compile and install
+a set of extensions which greatly speed-up the library when large amount of data
+is retrieved or saved.</p>
+<div class="section" id="installing-cython">
+<h2>Installing Cython<a class="headerlink" href="#installing-cython" title="Permalink to this headline">¶</a></h2>
+<p>In linux or Mac OS it is as simple as:</p>
+<div class="highlight-python"><pre>pip install cython</pre>
 </div>
-<p>or using a <a class="reference internal" href="sessions.html#model-session"><em>session</em></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">Fund</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">session</span><span class="p">()</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
-    <span class="n">t</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Fund</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Markowitz&#39;</span><span class="p">,</span> <span class="n">ccy</span><span class="o">=</span><span class="s">&#39;EUR&#39;</span><span class="p">))</span>
-<span class="k">yield</span> <span class="n">t</span><span class="o">.</span><span class="n">on_result</span>
-</pre></div>
+<p>for windows, you are better off to download and install a binary distribution
+from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/#cython">this site</a>.</p>
 </div>
 </div>
 
@@ -97,15 +91,23 @@ becomes:</p>
   <img class="logo" width="200" src="../static/net.jpg" alt="Logo"/>
 </a>
 </p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">C/C++ Extensions</a><ul>
+<li><a class="reference internal" href="#installing-cython">Installing Cython</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="serialise.html"
-                        title="previous chapter">Export &amp; Load data</a></p>
-  <h4>Next topic</h4>
   <p class="topless"><a href="local.html"
-                        title="next chapter">Local Models</a></p>
+                        title="previous chapter">Local Models</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../backends/index.html"
+                        title="next chapter">Backend Servers</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/examples/asynchronous.txt"
+    <li><a href="../sources/examples/extensions.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">

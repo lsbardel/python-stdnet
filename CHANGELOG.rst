@@ -2,6 +2,7 @@
 
 Ver. 0.8.3 - Development
 ===============================
+* Bug fix in model registration.
 * :ref:`C extensions <c-extensions>` documentation.
 * **591 regression tests** with **93%** coverage.
 

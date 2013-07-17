@@ -203,6 +203,7 @@ class User(odm.StdModel):
 ##############################################
 class Role(odm.StdModel):
     name = odm.SymbolField(unique=True)
+    permissions = odm.JSONField(default=list)
 
     def __unicode__(self):
         return self.name

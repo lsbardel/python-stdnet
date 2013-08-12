@@ -944,6 +944,14 @@ server. This a shortcut method for the more verbose::
 '''
         return self.session().add(self.model(*args, **kwargs))
     
+    def save(self, instance):
+        '''Save an existing instance of :attr:`model`. This a shortcut
+method for the more verbose::
+    
+    instance = manager.session().add(instance)
+'''
+        return self.session().add(instance)
+    
     def update_or_create(self, **kwargs):
         '''Invokes the :class:`Session.update_or_create` method.'''
         return self.session().update_or_create(self.model, **kwargs)

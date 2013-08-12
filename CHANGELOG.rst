@@ -2,6 +2,8 @@
 
 Ver. 0.8.3 - Development
 ===============================
+* Added the :meth:`odm.Manager.save` as shortcut for immediately committing changes
+  to a model.
 * Bug fix in model registration.
 * :ref:`C extensions <c-extensions>` documentation.
 * **594 regression tests** with **93%** coverage.

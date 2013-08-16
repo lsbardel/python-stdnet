@@ -85,7 +85,7 @@ def on_result(result, callback, errback=None):
         if errback:
             return on_result(errback(result), pass_through)
         elif not settings.ASYNC_BINDINGS:
-            result.raise_all()
+            result.throw()
         else:
             return result
     else:

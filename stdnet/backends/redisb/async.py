@@ -29,24 +29,24 @@ from functools import partial
 import redis
 from redis.exceptions import NoScriptError
 
-from stdnet.utils.async import async_binding, multi_async, async
+from stdnet.utils.async import async_binding
 
 if not async_binding:   #pragma    nocover
     raise ImportError
 
 import pulsar
-from pulsar import Deferred, NOT_DONE
+from pulsar import Deferred, NOT_DONE, multi_async, async, Request
 from pulsar.utils.pep import ispy3k, map
 
 from .extensions import get_script, RedisManager, CppRedisManager
 
 
-class AsyncRedisRequest(object):
+class AsyncRedisRequest(Request):
     '''Asynchronous Request for redis.'''
     def __init__(self, client, connection, timeout, encoding,
-                  encoding_errors, command_name, args, parser,
-                  raise_on_error=True, on_finished=None,
-                  release_connection=True, **options):
+                 encoding_errors, command_name, args, parser,
+                 raise_on_error=True, on_finished=None,
+                 release_connection=True, **options):
         self.client = client
         self.connection = connection
         self.timeout = timeout

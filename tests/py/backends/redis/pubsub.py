@@ -53,7 +53,7 @@ class TestRedisPrefixed(test.TestCase):
         self.assertEqual(channels, 2)
         channels = yield pubsub.unsubscribe()
         self.assertEqual(channels, 0)
-        
+       
     def test_unsubscribe(self):
         p = self.backend.client.pubsub()
         channels = yield p.subscribe('blaaa.*', 'fooo', 'hhhhhh')

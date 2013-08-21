@@ -199,9 +199,9 @@ and to check out the coverage report::
     coverage html
     
     
-.. _kudos:
+.. _kudo:
 
-Kudos
+Kudo
 =============
 * Redis_ simply because this library uses its awesome features.
 * SQLAlchemy_ and Django_ for ideas and API design.

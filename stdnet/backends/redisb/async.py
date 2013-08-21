@@ -239,6 +239,10 @@ To listen for messages you can bind to the ``on_message`` event::
     pubsub = redis.pubsub()
     pubsub.bind_event('on_message', handle_messages)
     pubsub.subscribe('mychannel')
+    
+You can bind as many handlers to the ``on_message`` event as you like.
+The handlers receive one parameter only, a two-elements tuple
+containing the ``channel`` and the ``message``.
 '''
     MANY_TIMES_EVENTS = ('on_message',)
     subscribe_commands = frozenset((b'unsubscribe', b'punsubscribe',
@@ -270,7 +274,7 @@ To listen for messages you can bind to the ``on_message`` event::
         '''Publish a new ``message`` to a ``channel``.
         
 This method return a pulsar Deferred which results in the number of Subscribers
-that will receive the message.'''
+that will receive the message (the same behaviour as redis publish command).'''
         return self.connection_pool.request(self, 'PUBLISH', channel, message)
     
     @async()
@@ -365,15 +369,23 @@ This method is invoked multiple times when new ``results`` are available.'''
         return len(self._channels) + len(self._patterns)
         
     def _execute(self, command, *args):
+        c = self.connection_pool
         if not self.consumer:
             # dummy request so we can obtain a connection
-            req = self.connection_pool._new_request(self, '', ())
-            connection = self.connection_pool.get_connection(req)
-            self.consumer = self.connection_pool.consumer_factory(connection)
+            connection = c.get_connection(c._new_request(self, '', ()))
+            self.consumer = c.consumer_factory(connection)
             # The consumer does not release the connection
             self.consumer.release_connection = False
         on_finished = Deferred()
-        self.connection_pool.request(self, command, *args, consumer\
-                                     =self.consumer, on_finished=on_finished)
+        response = c.request(self, command, *args, consumer=self.consumer,
+                             full_response=True, on_finished=on_finished)
+        # This is required if the response_on_finished event is called back
+        # before the on_finished deferred
+        def _fire_executed(result):
+            if not on_finished.done():
+                on_finished.callback(result)
+            return result
+        #
+        response.on_finished.add_both(_fire_executed)
         return on_finished
         

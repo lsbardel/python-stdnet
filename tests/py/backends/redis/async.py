@@ -34,5 +34,12 @@ class TestRedisAsyncClient(test.TestWrite):
         ping = redis.execute_command('PING', full_response=True)
         result = yield ping.on_finished
         self.assertTrue(result)
+        self.assertEqual(ping.request_processed, 1)
+        self.assertFalse(ping.connection)
+        echo = redis.execute_command('ECHO', 'Hello!', full_response=True)
+        result = yield echo.on_finished
+        self.assertEqual(result, b'Hello!')
+        self.assertEqual(echo.request_processed, 1)
+        self.assertFalse(echo.connection)
         
         

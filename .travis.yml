@@ -26,4 +26,5 @@ script: python -m runtests --verbosity 2 --log-level debug
 branches:
   only:
     - master
+    - travis
     - dev

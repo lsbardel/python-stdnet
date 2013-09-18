@@ -126,9 +126,9 @@ class RedisProtocol(pulsar.ProtocolConsumer):
     release_connection = True
     
     def data_received(self, data):
-        response = self.current_request.feed(data)
+        response = self._request.feed(data)
         if response is not NOT_DONE:
-            on_finished = self.current_request.on_finished
+            on_finished = self._request.on_finished
             if on_finished and not on_finished.done():
                 on_finished.callback(response)
             elif self.release_connection:
@@ -138,7 +138,7 @@ class RedisProtocol(pulsar.ProtocolConsumer):
         # If this is the first request and the connection is new do
         # the login/database switch
         if self.connection.processed <= 1 and self.request_processed == 1:
-            request = self.current_request
+            request = self._request
             reqs = []
             client = request.client
             if client.is_pipeline:
@@ -154,8 +154,8 @@ class RedisProtocol(pulsar.ProtocolConsumer):
             reqs.append(request)
             for req, next in zip(reqs, reqs[1:]):
                 req.on_finished.add_callback(partial(self._next, next))
-            self._current_request = reqs[0]
-        self.transport.write(self.current_request.command)
+            self._request = reqs[0]
+        self.transport.write(self._request.command)
         
     def _next(self, request, r):
         return self.new_request(request)
@@ -373,7 +373,8 @@ This method is invoked multiple times when new ``results`` are available.'''
         if not self.consumer:
             # dummy request so we can obtain a connection
             connection = c.get_connection(c._new_request(self, '', ()))
-            self.consumer = c.consumer_factory(connection)
+            self.consumer = c.consumer_factory()
+            connection.set_consumer(self.consumer)
             # The consumer does not release the connection
             self.consumer.release_connection = False
         on_finished = Deferred()

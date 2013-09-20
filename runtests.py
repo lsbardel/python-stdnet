@@ -39,6 +39,7 @@ def start():
                          bench.BenchMark(),
                          profile.Profile())
               )
+    suite.bind_event('tests', test.create_tests)
     suite.start()
     
     

@@ -6,7 +6,7 @@ from itertools import chain
 from functools import partial
 from collections import namedtuple
 
-from .base import *
+from .client import *
 
 import stdnet
 from stdnet import FieldValueError, CommitException, QuerySetError

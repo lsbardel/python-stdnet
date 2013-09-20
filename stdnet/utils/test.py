@@ -24,7 +24,6 @@ import sys
 import logging
 
 import pulsar
-from pulsar.utils import events
 from pulsar.apps.test import unittest, mock, TestSuite, TestPlugin, sequential
 
 from stdnet import getdb, settings
@@ -312,9 +311,9 @@ class testmaker(object):
         return new_test
         
     
-def create_tests(sender=None, tests=None, **kwargs):
+def create_tests(suite, tests=None):
     servers = getattr(settings, 'servers', None)
-    if isinstance(sender, TestSuite) and servers:
+    if isinstance(suite, TestSuite) and servers:
         for tag, test in list(tests):
             tests.pop(0)
             multipledb = getattr(test, 'multipledb', True)
@@ -331,5 +330,3 @@ def create_tests(sender=None, tests=None, **kwargs):
                         tests.append((tag, testmaker(test, name, server)))
             if toadd:
                 tests.append((tag, test))
-
-events.bind('tests', create_tests)

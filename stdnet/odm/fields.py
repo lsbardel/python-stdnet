@@ -547,7 +547,7 @@ In python this is converted to `bytes`.'''
 
 
 class PickleObjectField(ByteField):
-    '''A field which implements automatic conversion to and form a pickable
+    '''A field which implements automatic conversion to and form a picklable
 python object.
 This field is python specific and therefore not of much use
 if accessed from external programs. Consider the :class:`ForeignKey`

@@ -19,7 +19,8 @@ async_binding = True
 
 if settings.ASYNC_BINDINGS:
     try:
-        from pulsar import is_async, async, multi_async, maybe_async, is_failure
+        from pulsar import Deferred, async, multi_async, maybe_async, is_failure
+        is_async = lambda o: isinstance(o, Deferred)
     except ImportError:
         settings.ASYNC_BINDINGS = False
         

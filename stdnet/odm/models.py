@@ -19,6 +19,8 @@ the main class of :mod:`stdnet.odm` module.'''
 
     def __init__(self, *args, **kwargs):
         meta = self._meta
+        pkname = meta.pk.name
+        setattr(self, pkname, kwargs.pop(pkname, None))
         kwargs.pop(meta.pk.name, None)
         for field in meta.scalarfields:
             field.set_value(self, kwargs.pop(field.name, None))

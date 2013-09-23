@@ -21,10 +21,10 @@ def get_module():
 mod = get_module()
 
 # Try to import lib build
-try:
-    from extensions.setup import libparams, BuildFailed
-except ImportError:
-    libparams = None
+#try:
+#    from extensions.setup import libparams, BuildFailed
+#except ImportError:
+#    libparams = None
 libparams = False
 
 def read(fname):

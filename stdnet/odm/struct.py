@@ -222,7 +222,7 @@ can also be used as stand alone objects. For example::
         self.session = session
         if not self.id and not self._field:
             self.id = self.makeid()
-            self._dbdata['id'] = self.id
+            self.dbdata['id'] = self.id
         
     def makeid(self):
         return str(uuid4())[:8]

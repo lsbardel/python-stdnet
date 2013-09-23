@@ -11,7 +11,7 @@ from stdnet.utils import test, zip, to_string, unichr, ispy3k, range
 from stdnet.utils import date2timestamp
 from stdnet.utils.populate import populate
 
-from examples.models import Statistics, Statistics3
+from examples.models import Statistics, Statistics3, Role
 
 
 class make_random(object):
@@ -43,7 +43,7 @@ class make_random(object):
     
     
 class TestJsonField(test.TestCase):
-    model = Statistics
+    models = [Statistics, Role]
         
     def testMetaData(self):
         field = Statistics._meta.dfields['data']
@@ -100,6 +100,16 @@ class TestJsonField(test.TestCase):
         yield self.async.assertRaises(stdnet.FieldValueError, models.session().add, a)
         self.assertTrue('data' in a._dbdata['errors'])
         
+    def testDefaultValue(self):
+        models = self.mapper
+        role = models.role(name='test')
+        self.assertEqual(role.permissions, [])
+        role.permissions.append('ciao')
+        role.permissions.append(4)
+        yield models.session().add(role)
+        self.assertTrue(role.id)
+        role = yield models.role.get(id=role.id)
+        self.assertEqual(role.permissions, ['ciao', 4])
 
 class TestJsonFieldAsData(test.TestCase):
     '''Test a model with a JSONField which expand as instance fields.

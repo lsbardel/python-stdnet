@@ -25,7 +25,7 @@ class TestPickleObjectField(test.TestCase):
         self.assertEqual(v.data, ['ciao','pippo'])
         
     def testRecursive(self):
-        '''Silly test to test both pickle field and pickable instance'''
+        '''Silly test to test both pickle field and picklable instance'''
         session = self.session()
         v = yield session.add(self.model(data=('ciao','pippo', 4, {})))
         v2 = self.model(data=v)

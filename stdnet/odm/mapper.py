@@ -277,19 +277,20 @@ method for::
 
 def models_from_model(model, include_related=False, exclude=None):
     '''Generator of all model in model.'''
-    exclude = exclude or set()
+    if exclude is None:
+        exclude = set()
     if model and model not in exclude:
         exclude.add(model)
         if isinstance(model, ModelType) and not model._meta.abstract:
             yield model
             if include_related:
-                exclude = set(exclude or ())
                 exclude.add(model)
                 for field in model._meta.fields:
-                    if hasattr(field, 'relmodel'):
-                        for m in (field.relmodel, field.model):
+                   if hasattr(field, 'relmodel'):
+                        through = getattr(field, 'through', None)
+                        for rmodel in (field.relmodel, field.model, through):
                             for m in models_from_model(
-                                            field.relmodel,
+                                            rmodel,
                                             include_related=include_related,
                                             exclude=exclude):
                                 yield m
@@ -304,7 +305,7 @@ def models_from_model(model, include_related=False, exclude=None):
             yield model
 
                         
-def model_iterator(application, include_related=True):
+def model_iterator(application, include_related=True, exclude=None):
     '''A generator of :class:`StdModel` classes found in *application*.
 
 :parameter application: A python dotted path or an iterable over python
@@ -323,6 +324,8 @@ For example::
         ...
 
 '''
+    if exclude is None:
+        exclude = set()
     application = native_str(application)
     if ismodule(application) or isinstance(application, str):
         if ismodule(application):
@@ -346,7 +349,8 @@ For example::
                 meta = getattr(value, '_meta', None)
                 if isinstance(value, ModelType) and meta:
                     for model in models_from_model(value, 
-                                            include_related=include_related):
+                                            include_related=include_related,
+                                            exclude=exclude):
                         if model._meta.app_label == label\
                             and model not in models:
                             models.add(model)

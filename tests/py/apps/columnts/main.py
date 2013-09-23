@@ -520,7 +520,7 @@ class TestOperations(ColumnMixin, test.TestCase):
         length = yield ts.size()
         self.assertTrue(length >= max(data.data1.length, data.data2.length))
         yield self.async.assertEqual(ts.numfields(), 3)
-        yield self.async.self.assertEqual(ts.fields(), ('a','b','c'))
+        yield self.async.assertEqual(ts.fields(), ('a','b','c'))
         times, fields = yield ts.irange()
         for i,dt in enumerate(times):
             dt = dt.date()

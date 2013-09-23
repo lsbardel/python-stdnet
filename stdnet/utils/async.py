@@ -19,10 +19,13 @@ async_binding = True
 
 if settings.ASYNC_BINDINGS:
     try:
-        from pulsar import is_async, async, multi_async, maybe_async, is_failure
+        from pulsar import (Deferred, async as _async, multi_async,
+                            maybe_async, is_failure)
+        is_async = lambda o: isinstance(o, Deferred)
+        async = lambda : _async(get_result=True)
     except ImportError:
         settings.ASYNC_BINDINGS = False
-        
+    
 if not settings.ASYNC_BINDINGS:
     # Simulate asynchronous bindings
     async_binding = False
@@ -85,7 +88,7 @@ def on_result(result, callback, errback=None):
         if errback:
             return on_result(errback(result), pass_through)
         elif not settings.ASYNC_BINDINGS:
-            result.raise_all()
+            result.throw()
         else:
             return result
     else:

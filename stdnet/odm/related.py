@@ -88,7 +88,9 @@ CompositeFieldId depending on the two foreign keys.'''
     # Create the through model
     if through is None:
         name = '{0}_{1}'.format(name_model, name_relmodel)
-        through = ModelType(name, (StdModel,), {})
+        class Meta:
+            app_label = field.model._meta.app_label
+        through = ModelType(name, (StdModel,), {'Meta': Meta})
         field.through = through
     # The first field
     field1 = ForeignKey(field.model,

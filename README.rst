@@ -45,7 +45,8 @@ Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
 * redis-py_ for redis backend.
-* Optional pymongo_ for the mongo backend.
+* Cython_ for ultra-fast C-extensions.
+* Optional pymongo_ for the mongo back-end.
 * Optional pulsar_ when using the asynchronous connections or the test suite.
 * You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.
 
@@ -198,9 +199,9 @@ and to check out the coverage report::
     coverage html
     
     
-.. _kudos:
+.. _kudo:
 
-Kudos
+Kudo
 =============
 * Redis_ simply because this library uses its awesome features.
 * SQLAlchemy_ and Django_ for ideas and API design.

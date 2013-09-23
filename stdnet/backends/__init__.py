@@ -119,41 +119,43 @@ class CacheServer(object):
     
     
 class BackendDataServer(object):
-    '''Generic interface for a backend database. It should not be initialised
-directly, instead, the :func:`getdb` function should be used.
+    '''Generic interface for a backend databases.
     
-:parameter name: name of database, such as **redis**, **mongo**, etc..
-:parameter address: network address of database server.
-:parameter namespace: optional namespace for keys.
-:parameter params: dictionary of configuration parameters.
-
-**ATTRIBUTES**
-
-.. attribute:: name
-
-    name of database
+    It should not be initialised directly, the :func:`getdb` function should
+    be used instead.
     
-.. attribute:: connection_string
-
-    The connection string for this backend. By calling :func:`getdb` with this
-    value, one obtain a :class:`BackendDataServer` connected to the
-    same database as this instance.
+    :parameter name: name of database, such as **redis**, **mongo**, etc..
+    :parameter address: network address of database server.
+    :parameter charset: optional charset encoding. Default ``utf-8``.
+    :parameter namespace: optional namespace for keys.
+    :parameter params: dictionary of configuration parameters.
     
-.. attribute:: client
-
-    The client handler for the backend database.
+    **ATTRIBUTES**
     
-.. attribute:: Query
-
-    The :class:`BackendQuery` class for this backend.
+    .. attribute:: name
     
-.. attribute:: default_manager
-
-    The default model Manager for this backend. If not
-    provided, the :class:`stdnet.odm.Manager` is used.
-    Default ``None``.
+        name of database
+        
+    .. attribute:: connection_string
     
-'''
+        The connection string for this backend. By calling :func:`getdb` with this
+        value, one obtain a :class:`BackendDataServer` connected to the
+        same database as this instance.
+        
+    .. attribute:: client
+    
+        The client handler for the backend database.
+        
+    .. attribute:: Query
+    
+        The :class:`BackendQuery` class for this backend.
+        
+    .. attribute:: default_manager
+    
+        The default model Manager for this backend. If not
+        provided, the :class:`stdnet.odm.Manager` is used.
+        Default ``None``. 
+    '''
     Query = None
     structure_module = None
     default_manager = None

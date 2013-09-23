@@ -14,12 +14,12 @@ install:
   - git checkout -b travis origin/travis
   - python setup.py install
   - cd ..
-  - sudo rm -rf pulsar  
+  - sudo rm -rf pulsar
   - python setup.py install
   - sudo rm -rf stdnet
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - ls -la
-script: python -m runtests
+script: python -m runtests -w 2
 
 # Only test master and dev
 branches:

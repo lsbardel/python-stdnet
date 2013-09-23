@@ -369,7 +369,7 @@ def _getdb(scheme, host, params):
     try:
         module = import_module('stdnet.backends.%sb' % scheme)
     except ImportError:
-        module = import_module('stdnet.backends.sql')
+        raise NotImplementedError
     return getattr(module, 'BackendDataServer')(scheme, host, **params)
     
     

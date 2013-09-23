@@ -1,12 +1,12 @@
 .. _vers08:
 
-Ver. 0.8.3 - Development
+Ver. 0.9.0 - Development
 ===============================
-* Added the :meth:`odm.Manager.save` as shortcut for immediately committing changes
-  to a model.
+* Asynchronous redis connection moved to pulsar.
+* Added the :meth:`odm.Manager.save` as shortcut for immediately committing
+  changes to a model.
 * Bug fix in model registration.
-* :ref:`C extensions <c-extensions>` documentation.
-* **594 regression tests** with **93%** coverage.
+* **504 regression tests** with **93%** coverage.
 
 
 Ver. 0.8.2 - 2013 July 4

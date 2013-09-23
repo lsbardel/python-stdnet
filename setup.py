@@ -21,11 +21,11 @@ def get_module():
 mod = get_module()
 
 # Try to import lib build
-try:
-    from extensions.setup import libparams, BuildFailed
-except ImportError:
-    libparams = None
-    
+#try:
+#    from extensions.setup import libparams, BuildFailed
+#except ImportError:
+#    libparams = None
+libparams = False
 
 def read(fname):
     return open(os.path.join(root_dir, fname)).read()
@@ -127,8 +127,10 @@ def status_msgs(*msgs):
     for msg in msgs:
         print(msg)
     print('*' * 75)
-    
-if libparams is None:
+
+if libparams is False:
+    run_setup()
+elif libparams is None:
     status_msgs('WARNING: C extensions could not be compiled, '
                 'Cython is not installed.')
     run_setup()

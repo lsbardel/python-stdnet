@@ -6,15 +6,15 @@ from itertools import chain
 from functools import partial
 from collections import namedtuple
 
-from .base import *
+from .client import *
 
 import stdnet
 from stdnet import FieldValueError, CommitException, QuerySetError
 from stdnet.utils import async
-from stdnet.utils import to_string, map, gen_unique_id, zip,\
-                             native_str, flat_mapping, unique_tuple
-from stdnet.backends import BackendStructure, query_result, session_result,\
-                            instance_session_result, range_lookups
+from stdnet.utils import (to_string, map, gen_unique_id, zip, ispy3k,
+                          native_str, flat_mapping, unique_tuple)
+from stdnet.backends import (BackendStructure, query_result, session_result,
+                             instance_session_result, range_lookups)
 
 MIN_FLOAT =-1.e99
 
@@ -25,6 +25,18 @@ TMP = 'tmp'     # temorary key
 ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
 ################################################################################
 
+if ispy3k:
+    def decode(value, encoding):
+        if isinstance(value, bytes):
+            return value.decode(encoding)
+        else:
+            return value
+        
+else:   #pragma    nocover
+    
+    def decode(value, encoding):
+        return value
+    
 def pairs_to_dict(response, encoding):
     "Create a dict given a list of key/value pairs"
     it = iter(response)
@@ -913,8 +925,8 @@ class BackendDataServer(stdnet.BackendDataServer):
         return Subscriber(self.client, **kwargs)
     
     def _decode_keys(self, value):
-        decode = self.client.connection_pool.decode_key
+        encoding = self.client.encoding
         if isinstance(value, (list, tuple)):
-            return [decode(v) for v in value]
+            return [decode(v, encoding) for v in value]
         else:
-            return decode(value)
+            return decode(value, encoding)

@@ -10,7 +10,7 @@ from stdnet.utils.async import async
 from stdnet.utils import iteritems, format_int
 from stdnet import odm
 
-from .extensions import RedisScript, read_lua_file
+from .extensions import RedisScript, read_lua_file, script_callback, redis
 
 init_data = {'set': {'count': 0, 'size': 0},
              'zset': {'count': 0, 'size': 0},
@@ -38,7 +38,7 @@ class keyinfo(RedisScript):
         client = redis_client
         if client.is_pipeline:
             client = client.client
-        encoding = client.connection_pool.encoding
+        encoding = 'utf-8'
         all_keys = []
         for key, typ, length, ttl, enc, idle in response:
             key = key.decode(encoding)[len(client.prefix):]
@@ -50,7 +50,6 @@ class keyinfo(RedisScript):
                            idle=idle)
             all_keys.append(key)
         return all_keys
-
 
 def parse_info(response):
     '''Parse the response of Redis's INFO command into a Python dict.
@@ -82,6 +81,17 @@ In doing so, convert byte data into unicode.'''
             info[line[2:]] = data
     return info
 
+def dict_update(original, data):
+    target = original.copy()
+    target.update(data)
+    return target
+
+
+RESPONSE_CALLBACKS = dict_update(
+        redis.StrictRedis.RESPONSE_CALLBACKS,
+        {'EVALSHA': script_callback,
+         'INFO': parse_info}
+    )
 
 class RedisDbQuery(odm.QueryBase):
     

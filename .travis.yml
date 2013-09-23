@@ -9,18 +9,17 @@ python:
 
 install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install --use-mirrors argparse unittest2; fi
-  - pip install cython
-  - pip install pulsar
   - git clone https://github.com/quantmind/pulsar.git
   - cd pulsar
+  - git checkout -b travis origin/travis
   - python setup.py install
   - cd ..
-  - sudo rm -rf pulsar  
+  - sudo rm -rf pulsar
   - python setup.py install
   - sudo rm -rf stdnet
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - ls -la
-script: python -m runtests --verbosity 2 --log-level debug
+script: python -m runtests
 
 # Only test master and dev
 branches:

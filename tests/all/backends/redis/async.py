@@ -1,4 +1,6 @@
 '''Test the asynchronous redis client'''
+from copy import copy
+
 import pulsar
 
 from stdnet.utils import test
@@ -31,15 +33,14 @@ class TestRedisAsyncClient(test.TestWrite):
         
     def test_client(self):
         redis = self.mapper.default_backend.client
-        ping = redis.execute_command('PING', full_response=True)
-        result = yield ping.on_finished
-        self.assertTrue(result)
-        self.assertEqual(ping.request_processed, 1)
-        self.assertFalse(ping.connection)
-        echo = redis.execute_command('ECHO', 'Hello!', full_response=True)
-        result = yield echo.on_finished
-        self.assertEqual(result, b'Hello!')
-        self.assertEqual(echo.request_processed, 1)
-        self.assertFalse(echo.connection)
+        self.assertFalse(redis.full_response)
+        redis = copy(redis)
+        redis.full_response = True
+        ping = yield redis.execute_command('PING').on_finished
+        self.assertTrue(ping.result)
+        self.assertTrue(ping.connection)
+        echo = yield redis.echo('Hello!').on_finished
+        self.assertEqual(echo.result, b'Hello!')
+        self.assertTrue(echo.connection)
         
         

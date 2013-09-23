@@ -218,7 +218,7 @@ mapper.
                 setattr(obj, field.attname, field.to_python(value, backend))
             if backend or ('__dbdata__' in data and\
                             data['__dbdata__'][pk.name] == pkvalue):
-                obj._dbdata[pk.name] = pkvalue
+                obj.dbdata[pk.name] = pkvalue
 
     def __repr__(self):
         return self.modelkey
@@ -238,7 +238,7 @@ mapper.
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
 Return ``True`` if the instance is ready to be saved to database.'''
-        dbdata = instance._dbdata
+        dbdata = instance.dbdata
         data = dbdata['cleaned_data'] = {}
         errors = dbdata['errors'] = {}
         #Loop over scalar fields first
@@ -399,7 +399,7 @@ class ModelState(object):
         self._action = action or 'add'
         self.deleted = False
         self.score = 0
-        dbdata = instance._dbdata
+        dbdata = instance.dbdata
         pkname = instance._meta.pkname()
         pkvalue = iid or getattr(instance, pkname, None)
         if pkvalue and pkname in dbdata:
@@ -447,19 +447,13 @@ unique identifier for an instance of a model.
     when the instance has been loaded from a :class:`stdnet.BackendDataServer`
     via a :ref:`query operation <tutorial-query>`.
 '''
+    _dbdata = None
     _model_type = None
     DoesNotExist = ObjectNotFound
     '''Exception raised when an instance of a model does not exist.'''
     DoesNotValidate = ObjectNotValidated
     '''Exception raised when an instance of a model does not validate. Usually
 raised when trying to save an invalid instance.'''
-
-    def __new__(cls, *args, **kwargs):
-        o = super(Model, cls).__new__(cls)
-        pkname = cls._meta.pk.name
-        setattr(o, pkname, kwargs.get(pkname))
-        o._dbdata = {}
-        return o
 
     def __eq__(self, other):
         if other.__class__ == self.__class__:
@@ -477,9 +471,10 @@ raised when trying to save an invalid instance.'''
         '''Return the current :class:`ModelState` for this :class:`Model`.
 If ``kwargs`` parameters are passed a new :class:`ModelState` is created,
 otherwise it returns the cached value.'''
-        if 'state' not in self._dbdata or kwargs:
-            self._dbdata['state'] = ModelState(self, **kwargs)
-        return self._dbdata['state']
+        dbdata = self.dbdata
+        if 'state' not in dbdata or kwargs:
+            dbdata['state'] = ModelState(self, **kwargs)
+        return dbdata['state']
 
     def pkvalue(self):
         '''Value of primary key'''
@@ -498,10 +493,16 @@ otherwise it returns the cached value.'''
                     'Object not saved. Cannot obtain universally unique id')
         return self.get_uuid(pk)
 
+    @property
+    def dbdata(self):
+        if self._dbdata is None:
+            self._dbdata = {}
+        return self._dbdata
+    
     def __get_session(self):
-        return self._dbdata.get('session')
+        return self.dbdata.get('session')
     def __set_session(self, session):
-        self._dbdata['session'] = session
+        self.dbdata['session'] = session
     session = property(__get_session, __set_session)
     
     def get_attr_value(self, name):

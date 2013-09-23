@@ -212,9 +212,10 @@ can also be used as stand alone objects. For example::
     pickler = None
     value_pickler = None
     def __init__(self, value_pickler=None, name='', field=False, session=None,
-                 pkvalue=None, **kwargs):
+                 pkvalue=None, id=None, **kwargs):
         self._field = field
         self._pkvalue = pkvalue
+        self.id = id
         self.name = name
         self.value_pickler = value_pickler or self.value_pickler or\
                                 encoders.NumericDefault()

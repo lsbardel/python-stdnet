@@ -19,7 +19,7 @@ install:
   - sudo rm -rf stdnet
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - ls -la
-script: python -m runtests -w 2
+script: python -m runtests
 
 # Only test master and dev
 branches:

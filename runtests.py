@@ -34,7 +34,7 @@ def start():
     os.environ['stdnet_test_suite'] = 'pulsar'
     suite = TestSuite(
             description='Stdnet Asynchronous test suite',
-                modules=('tests.py',),
+                modules=('tests.all',),
                 plugins=(test.StdnetPlugin(),
                          bench.BenchMark(),
                          profile.Profile())

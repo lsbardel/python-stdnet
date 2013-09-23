@@ -13,6 +13,7 @@ install:
   - pip install pulsar
   - git clone https://github.com/quantmind/pulsar.git
   - cd pulsar
+  - git checkout -b travis origin/travis
   - python setup.py install
   - cd ..
   - sudo rm -rf pulsar  

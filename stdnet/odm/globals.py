@@ -12,7 +12,7 @@ __all__ = ['get_model_from_hash',
 lookup_value = namedtuple('lookup_value', 'lookup value')
 
 # Utilities for sorting and range lookups
-orderinginfo = namedtuple('orderinginfo','name field desc model nested auto')
+orderinginfo = namedtuple('orderinginfo', 'name field desc model nested auto')
 
 # attribute name, field, model where to do lookup, nested lookup_info
 range_lookup_info = namedtuple('range_lookup_info', 'name field model nested')
@@ -32,8 +32,10 @@ _model_dict = ModelDict()
 def get_model_from_hash(hash):
     return _model_dict.from_hash(hash)
 
+
 def get_hash_from_model(model):
     return _model_dict.to_hash(model)
+
 
 def hashmodel(model, library=None):
     '''Calculate the Hash id of metaclass ``meta``'''

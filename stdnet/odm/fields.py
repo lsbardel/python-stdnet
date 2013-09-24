@@ -4,9 +4,9 @@ from datetime import date, datetime
 from base64 import b64encode
 
 from stdnet import range_lookups
-from stdnet.utils import DefaultJSONEncoder, DefaultJSONHook, timestamp2date,\
-                         date2timestamp, UnicodeMixin, to_string, string_type,\
-                         encoders, flat_to_nested, dict_flat_generator
+from stdnet.utils import (DefaultJSONEncoder, DefaultJSONHook, timestamp2date,
+                          date2timestamp, UnicodeMixin, to_string, string_type,
+                          encoders, flat_to_nested, dict_flat_generator)
 from stdnet.utils.exceptions import *
 
 from . import related
@@ -33,7 +33,7 @@ __all__ = ['Field',
            'CompositeIdField',
            'JSPLITTER']
 
-NONE_EMPTY = (None,'')
+NONE_EMPTY = (None, '')
 
 
 def field_value_error(f):
@@ -106,9 +106,9 @@ Each field is specified as a :class:`StdModel` class attribute.
 
 .. attribute:: attname
 
-    The attribute name for the field, created by the :meth:`get_attname` method
-    at runtime. For most field, its value is the same as the :attr:`name`.
-    It is the field sorted in the backend database.
+    The attribute name for the field, created by the :meth:`get_attname`
+    method at runtime. For most field, its value is the same as the
+    :attr:`name`. It is the field sorted in the backend database.
 
 .. attribute:: model
 
@@ -168,7 +168,7 @@ Each field is specified as a :class:`StdModel` class attribute.
             self.required = False
             self.unique = False
             self.index = False
-        self.charset = extras.pop('charset',self.charset)
+        self.charset = extras.pop('charset', self.charset)
         self.hidden = hidden if hidden is not None else self.hidden
         self.meta = None
         self.name = None
@@ -182,11 +182,11 @@ Each field is specified as a :class:`StdModel` class attribute.
     @property
     def default(self):
         return self._default
-    
+
     @property
     def class_field(self):
         return False
-    
+
     def get_encoder(self, params):
         return None
 
@@ -197,7 +197,7 @@ Each field is specified as a :class:`StdModel` class attribute.
  argument '{0}'".format(keys[0]))
 
     def __unicode__(self):
-        return to_string('%s.%s' % (self.meta,self.name))
+        return to_string('%s.%s' % (self.meta, self.name))
 
     def value_from_data(self, instance, data):
         return data.pop(self.attname, None)
@@ -210,11 +210,11 @@ function users should never call.'''
         if self.name:
             raise FieldError('Field %s is already registered\
  with a model' % self)
-        self.name  = name
+        self.name = name
         self.attname = self.get_attname()
         self.model = model
         meta = model._meta
-        self.meta  = meta
+        self.meta = meta
         meta.dfields[name] = self
         meta.fields.append(self)
         if not self.primary_key:
@@ -263,7 +263,7 @@ for this field. Used only by realted fields.'''
 
     def get_sorting(self, name, errorClass):
         raise errorClass('Cannot use nested sorting on field {0}'.format(self))
-    
+
     def get_lookup(self, remaining, errorClass=ValueError):
         '''called by the :class:`Query` method when it needs to build
 lookup on fields with additional nested fields. This is the case of
@@ -278,10 +278,10 @@ lookup on fields with additional nested fields. This is the case of
 
     def todelete(self):
         return False
-    
-    ############################################################################
+
+    ########################################################################
     ##    FIELD VALUES
-    ############################################################################
+    ########################################################################
     def get_value(self, instance, *bits):
         '''Retrieve the value :class:`Field` from a :class:`StdModel`
 ``instance``.
@@ -291,7 +291,7 @@ lookup on fields with additional nested fields. This is the case of
     the :ref:`double underscore <tutorial-underscore>` notation.
 :return: the value of this :class:`Field` in the ``instance``. can raise
     :class:`AttributeError`.
-    
+
 This method is used by the :meth:`StdModel.get_attr_value` method when
 retrieving values form a :class:`StdModel` instance.
 '''
@@ -299,12 +299,12 @@ retrieving values form a :class:`StdModel` instance.
             raise AttributeError
         else:
             return getattr(instance, self.attname)
-        
+
     def set_value(self, instance, value):
         '''Set the ``value`` for this :class:`Field` in a ``instance``
 of a :class:`StdModel`.'''
         setattr(instance, self.attname, self.to_python(value))
-    
+
     def set_get_value(self, instance, value):
         '''Set the ``value`` for this :class:`Field` in a ``instance``
 of a :class:`StdModel` and return the database representation. This method
@@ -312,7 +312,7 @@ is invoked by the validation lagorithm before saving instances.'''
         value = self.to_python(value)
         setattr(instance, self.attname, value)
         return value
-    
+
     def to_python(self, value, backend=None):
         """Converts the input value into the expected Python
 data type, raising :class:`stdnet.FieldValueError` if the data
@@ -322,10 +322,10 @@ Returns the converted value. Subclasses should override this."""
 
     def serialise(self, value, lookup=None):
         '''Convert ``value`` to a valid database representation for this field.
-        
+
 This method is invoked by the Query algorithm.'''
         return self.to_python(value)
-    
+
     def json_serialise(self, value):
         '''Return a representation of this field which is compatible with
  JSON.'''
@@ -336,9 +336,9 @@ This method is invoked by the Query algorithm.'''
 the ordering alorithm'''
         return self.to_python(value)
 
-    ############################################################################
+    ########################################################################
     ##    TOOLS
-    ############################################################################
+    ########################################################################
 
     def _handle_extras(self, **extras):
         '''Callback to hadle extra arguments during initialization.'''
@@ -374,11 +374,11 @@ if you don't specify otherwise.
 Check the :ref:`primary key tutorial <tutorial-primary-unique>` for
 further information on primary keys.'''
     type = 'auto'
-    
+
     def __init__(self, *args, **kwargs):
         kwargs['primary_key'] = True
         super(AutoIdField, self).__init__(*args, **kwargs)
-    
+
     def to_python(self, value, backend=None):
         if hasattr(value, '_meta'):
             return value.pkvalue()
@@ -386,7 +386,7 @@ further information on primary keys.'''
             return backend.auto_id_to_python(value)
         else:
             return value
-        
+
 
 class BooleanField(AtomField):
     '''A boolean :class:`AtomField`'''
@@ -396,7 +396,7 @@ class BooleanField(AtomField):
     _default = False
 
     def __init__(self, required=False, **kwargs):
-        super(BooleanField,self).__init__(required=required,**kwargs)
+        super(BooleanField, self).__init__(required=required, **kwargs)
 
     def to_python(self, value, backend=None):
         if value in NONE_EMPTY:
@@ -408,7 +408,7 @@ class BooleanField(AtomField):
         value = self.to_python(value)
         setattr(instance, self.attname, value)
         return 1 if value else 0
-    
+
     def serialise(self, value, lookup=None):
         return 1 if value else 0
     scorefun = serialise
@@ -444,7 +444,7 @@ a :class:`datetime.date` instance.'''
     internal_type = 'numeric'
     python_type = date
     _default = None
-    
+
     def set_get_value(self, instance, value):
         value = self.to_python(value)
         setattr(instance, self.attname, value)
@@ -452,8 +452,8 @@ a :class:`datetime.date` instance.'''
 
     def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
-            if isinstance(value,date):
-                if isinstance(value,datetime):
+            if isinstance(value, date):
+                if isinstance(value, datetime):
                     value = value.date()
             else:
                 value = timestamp2date(float(value)).date()
@@ -481,9 +481,9 @@ a :class:`datetime.datetime` instance.'''
 
     def to_python(self, value, backend=None):
         if value not in NONE_EMPTY:
-            if isinstance(value,date):
-                if not isinstance(value,datetime):
-                    value = datetime(value.year,value.month,value.day)
+            if isinstance(value, date):
+                if not isinstance(value, datetime):
+                    value = datetime(value.year, value.month, value.day)
             else:
                 value = timestamp2date(float(value))
             return value
@@ -510,7 +510,7 @@ or other entities. They are indexes by default.'''
             return self.encoder.loads(value)
         else:
             return self.get_default()
-    
+
     def scorefun(self, value):
         raise FieldValueError('Could not obtain score')
 
@@ -523,11 +523,11 @@ is set to ``False``.'''
         kwargs['index'] = False
         kwargs['unique'] = False
         kwargs['primary_key'] = False
-        self.max_length = kwargs.pop('max_length',None) # not used for now
-        required = kwargs.get('required',None)
+        self.max_length = kwargs.pop('max_length', None)  # not used for now
+        required = kwargs.get('required', None)
         if required is None:
             kwargs['required'] = False
-        super(CharField,self).__init__(*args, **kwargs)
+        super(CharField, self).__init__(*args, **kwargs)
 
 
 class ByteField(CharField):
@@ -565,17 +565,18 @@ or :class:`JSONField` fields as more general alternatives.
         value = self.to_python(value)
         setattr(instance, self.attname, value)
         return self.serialise(value)
-        
+
     def serialise(self, value, lookup=None):
         if value is not None:
             return self.encoder.dumps(value)
-    
+
     def get_encoder(self, params):
-        return encoders.PythonPickle(protocol = 2)
+        return encoders.PythonPickle(protocol=2)
 
 
 class ForeignKey(Field):
-    '''A field defining a :ref:`one-to-many <one-to-many>` objects relationship.
+    '''A field defining a :ref:`one-to-many <one-to-many>` objects
+    relationship.
 Requires a positional argument: the class to which the model is related.
 For example::
 
@@ -609,7 +610,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
                  **kwargs):
         if related_manager_class:
             self.related_manager_class = related_manager_class
-        super(ForeignKey,self).__init__(**kwargs)
+        super(ForeignKey, self).__init__(**kwargs)
         if not model:
             raise FieldError('Model not specified')
         self.relmodel = model
@@ -622,15 +623,17 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
     def _set_relmodel(self, relmodel):
         self.relmodel = relmodel
-        meta  = self.relmodel._meta
+        meta = self.relmodel._meta
         if not self.related_name:
-            self.related_name = '%s_%s_set' % (self.model._meta.name, self.name)
-        if self.related_name not in meta.related and self.related_name\
-                                                 not in meta.dfields:
+            self.related_name = '%s_%s_set' % (self.model._meta.name,
+                                               self.name)
+        if (self.related_name not in meta.related and
+                self.related_name not in meta.dfields):
             self._register_with_related_model()
         else:
-            raise FieldError('Duplicated related name "{0}"\
- in model "{1}" and field {2}'.format(self.related_name, meta, self))
+            raise FieldError('Duplicated related name "{0} in model "{1}" '
+                             'and field {2}'.format(self.related_name,
+                                                    meta, self))
 
     def _register_with_related_model(self):
         manager = self.related_manager_class(self)
@@ -640,11 +643,12 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
     def get_attname(self):
         return '%s_id' % self.name
-        
+
     def get_value(self, instance, *bits):
         related = getattr(instance, self.name)
-        return related.get_attr_value(JSPLITTER.join(bits)) if bits else related
-    
+        return related.get_attr_value(JSPLITTER.join(bits)
+                                      ) if bits else related
+
     def set_value(self, instance, value):
         if isinstance(value, self.relmodel):
             setattr(instance, self.name, value)
@@ -653,7 +657,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
             return super(ForeignKey, self).set_value(instance, value)
 
     def register_with_model(self, name, model):
-        super(ForeignKey,self).register_with_model(name, model)
+        super(ForeignKey, self).register_with_model(name, model)
         if not model._meta.abstract:
             self.register_with_related_model()
 
@@ -679,14 +683,14 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
     def get_sorting(self, name, errorClass):
         return self.relmodel._meta.get_sorting(name, errorClass)
-    
+
     def get_lookup(self, name, errorClass=ValueError):
         if name:
             bits = name.split(JSPLITTER)
             fname = bits.pop(0)
             field = self.relmodel._meta.dfields.get(fname)
             meta = self.relmodel._meta
-            if field: # it is a field
+            if field:   # it is a field
                 nested = [(self.attname, meta)]
                 remaining = JSPLITTER.join(bits)
                 name, _nested = field.get_lookup(remaining, errorClass)
@@ -737,10 +741,11 @@ behaviour and how the field is stored in the back-end server.
 
     And::
 
-        >>> m = MyModel(name='bla', data={'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
+        >>> m = MyModel(name='bla', data={'pv': {'': 0.5, 'mean': 1,
+                                                 'std': 3.5}})
         >>> m.cleaned_data
-        {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',\
- 'data__pv__std': '3.5', 'data': '""'}
+        {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',
+         'data__pv__std': '3.5', 'data': '""'}
         >>>
 
     The reason for setting ``as_string`` to ``False`` is to allow
@@ -759,13 +764,13 @@ behaviour and how the field is stored in the back-end server.
     _default = {}
 
     def get_encoder(self, params):
-        self.as_string = params.pop('as_string',True)
+        self.as_string = params.pop('as_string', True)
         if not self.as_string and not isinstance(self._default, dict):
             self._default = {}
         return encoders.Json(
-                charset = self.charset,
-                json_encoder = params.pop('encoder_class', DefaultJSONEncoder),
-                object_hook = params.pop('decoder_hook', DefaultJSONHook))
+            charset=self.charset,
+            json_encoder=params.pop('encoder_class', DefaultJSONEncoder),
+            object_hook=params.pop('decoder_hook', DefaultJSONHook))
 
     def to_python(self, value, backend=None):
         if value is None:
@@ -774,7 +779,7 @@ behaviour and how the field is stored in the back-end server.
             return self.encoder.loads(value)
         except TypeError:
             return value
-        
+
     def set_get_value(self, instance, value):
         # Optimisation, avoid to call serialise since it is the same
         # as to_python
@@ -815,7 +820,7 @@ behaviour and how the field is stored in the back-end server.
 
     def get_sorting(self, name, errorClass):
         pass
-    
+
     def get_lookup(self, name, errorClass):
         if self.as_string:
             return super(JSONField, self).get_lookup(name, errorClass)
@@ -823,7 +828,7 @@ behaviour and how the field is stored in the back-end server.
             if name:
                 name = JSPLITTER.join((self.attname, name))
             return (name, None)
-    
+
     def get_value(self, instance, *bits):
         value = getattr(instance, self.name)
         try:
@@ -834,7 +839,6 @@ behaviour and how the field is stored in the back-end server.
             return value
         except Exception:
             raise AttributeError
-            
 
 
 class ModelField(SymbolField):
@@ -846,7 +850,7 @@ registered in the model hash table, it can be used.'''
     internal_type = 'text'
 
     def to_python(self, value, backend=None):
-        if value and not hasattr(value,'_meta'):
+        if value and not hasattr(value, '_meta'):
             value = self.encoder.loads(value)
             return get_model_from_hash(value)
         else:
@@ -883,19 +887,19 @@ argument.
 
         class Group(odm.StdModel):
             name = odm.SymbolField(unique=True)
-    
+
         class User(odm.StdModel):
             name = odm.SymbolField(unique=True)
             groups = odm.ManyToManyField(Group, related_name='users')
-    
+
     To use it::
 
         >>> g = Group(name='developers').save()
         >>> g.users.add(User(name='john').save())
         >>> u.users.add(User(name='mark').save())
-    
+
     and to remove::
-    
+
         >>> u.following.remove(User.objects.get(name='john'))
 
 .. attribute:: through
@@ -908,16 +912,16 @@ argument.
     *group_user*.
     This model contains two :class:`ForeignKeys`, one to model holding the
     :class:`ManyToManyField` and the other to the *related_model*.
-    
+
 '''
     def __init__(self, model, through=None, related_name=None, **kwargs):
         self.through = through
         self.relmodel = model
         self.related_name = related_name
-        super(ManyToManyField,self).__init__(model,**kwargs)
+        super(ManyToManyField, self).__init__(model, **kwargs)
 
     def register_with_model(self, name, model):
-        super(ManyToManyField,self).register_with_model(name, model)
+        super(ManyToManyField, self).register_with_model(name, model)
         if not model._meta.abstract:
             related.load_relmodel(self, self._set_relmodel)
 
@@ -952,16 +956,17 @@ These arguments must be fields names in the model where the
 
     list of :class:`Field` names which are used to uniquely identify a
     model instance
-    
+
 Check the :ref:`composite id tutorial <tutorial-compositeid>` for more
 information and tips on how to use it.
 '''
     type = 'composite'
+
     def __init__(self, *fields, **kwargs):
         super(CompositeIdField, self).__init__(**kwargs)
         self.fields = fields
         if len(self.fields) < 2:
-            raise FieldError('At least tow fields are required by composite '\
+            raise FieldError('At least tow fields are required by composite '
                              'CompositeIdField')
 
     def get_value(self, instance, *bits):
@@ -969,16 +974,16 @@ information and tips on how to use it.
             raise AttributeError
         values = tuple((getattr(instance, f.attname) for f in self.fields))
         return hash(values)
-    
+
     def register_with_model(self, name, model):
         fields = []
         for field in self.fields:
             if field not in model._meta.dfields:
-                raise FieldError('Composite id field "%s" in in "%s" model.' %\
+                raise FieldError('Composite id field "%s" in in "%s" model.' %
                                  (field, model._meta))
             field = model._meta.dfields[field]
             if field.internal_type not in ('text', 'numeric'):
-                raise FieldError('Composite id field "%s" not valid type.' %\
+                raise FieldError('Composite id field "%s" not valid type.' %
                                  field)
             fields.append(field)
         self.fields = tuple(fields)

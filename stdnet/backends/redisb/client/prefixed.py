@@ -2,12 +2,13 @@ def raise_error(exception=NotImplementedError):
     raise exception()
 
 prefix_all = lambda pfix, args: ['%s%s' % (pfix, a) for a in args]
-prefix_alternate = lambda pfix, args: [a if n//2*2==n else '%s%s' % (pfix, a)\
-                                       for n, a in enumerate(args,1)]
-prefix_not_last = lambda pfix, args: ['%s%s' % (pfix, a) for a in args[:-1]]\
-                                        + [args[-1]]
+prefix_alternate = lambda pfix, args: [a if n//2*2 == n else '%s%s' % (pfix, a)
+                                       for n, a in enumerate(args, 1)]
+prefix_not_last = lambda pfix, args: ['%s%s' % (pfix, a)
+                                      for a in args[:-1]] + [args[-1]]
 prefix_not_first = lambda pfix, args: [args[0]] +\
                                       ['%s%s' % (pfix, a) for a in args[1:]]
+
 
 def prefix_zinter(pfix, args):
     dest, numkeys, params = args[0], args[1], args[2:]
@@ -20,6 +21,7 @@ def prefix_zinter(pfix, args):
         args.append(p)
     return args
 
+
 def prefix_sort(pfix, args):
     prefix = True
     nargs = []
@@ -31,10 +33,12 @@ def prefix_sort(pfix, args):
             prefix = True
         nargs.append(a)
     return nargs
-    
+
+
 def pop_list_result(pfix, result):
     if result:
         return (result[0][len(pfix):], result[1])
+
 
 def prefix_eval_keys(pfix, args):
     n = args[1]
@@ -43,7 +47,7 @@ def prefix_eval_keys(pfix, args):
         return args[:2] + keys + args[n+2:]
     else:
         return args
-        
+
 
 class PrefixedRedisMixin(object):
     '''A class for a prefixed redis client. It append a prefix to all keys.
@@ -51,14 +55,14 @@ class PrefixedRedisMixin(object):
 .. attribute:: prefix
 
     The prefix to append to all keys
-    
-'''    
+
+'''
     EXCLUDE_COMMANDS = frozenset(('BGREWRITEOF', 'BGSAVE', 'CLIENT', 'CONFIG',
                                   'DBSIZE', 'DEBUG', 'DISCARD', 'ECHO', 'EXEC',
                                   'INFO', 'LASTSAVE', 'PING',
                                   'PSUBSCRIBE', 'PUBLISH', 'PUNSUBSCRIBE',
                                   'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT',
-                                  'SELECT', 'SHUTDOWN', 'SLAVEOF', 
+                                  'SELECT', 'SHUTDOWN', 'SLAVEOF',
                                   'SLOWLOG', 'SUBSCRIBE', 'SYNC',
                                   'TIME', 'UNSUBSCRIBE', 'UNWATCH'))
     SPECIAL_COMMANDS = {
@@ -95,6 +99,7 @@ class PrefixedRedisMixin(object):
         'BLPOP': pop_list_result,
         'BRPOP': pop_list_result
     }
+
     def __init__(self, client, prefix):
         self._client = client
         self._prefix = prefix
@@ -113,30 +118,30 @@ class PrefixedRedisMixin(object):
 
     def address(self):
         return self._client.address()
-    
+
     def execute_command(self, cmnd, *args, **options):
         "Execute a command and return a parsed response"
         args, options = self.preprocess_command(cmnd, *args, **options)
         return self.client.execute_command(cmnd, *args, **options)
-    
+
     def preprocess_command(self, cmnd, *args, **options):
         if cmnd not in self.EXCLUDE_COMMANDS:
             handle = self.SPECIAL_COMMANDS.get(cmnd, self.handle)
             args = handle(self.prefix, args)
         return args, options
-    
+
     def handle(self, prefix, args):
         if args:
             args = list(args)
             args[0] = '%s%s' % (prefix, args[0])
         return args
-        
+
     def dbsize(self):
         return self.client.countpattern('%s*' % self.prefix)
-    
+
     def flushdb(self):
         return self.client.delpattern('%s*' % self.prefix)
-    
+
     def _parse_response(self, request, response, command_name, args, options):
         if command_name in self.RESPONSE_CALLBACKS:
             if not isinstance(response, Exception):
@@ -144,4 +149,3 @@ class PrefixedRedisMixin(object):
                                                                  response)
         return self.client._parse_response(request, response, command_name,
                                            args, options)
-    

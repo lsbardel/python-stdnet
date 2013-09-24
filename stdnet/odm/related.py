@@ -24,10 +24,10 @@ class ModelFieldPickler(encoders.Encoder):
 
     def dumps(self, obj):
         return obj.pkvalue()
-    
+
     def require_session(self):
         return True
-    
+
     def load_iterable(self, iterable, session):
         ids = []
         backend = session.model(self.model).read_backend
@@ -35,7 +35,7 @@ class ModelFieldPickler(encoders.Encoder):
         ids = [tpy(id, backend) for id in iterable]
         result = session.query(self.model).filter(id=ids).all()
         return on_result(result, partial(self._sort, ids))
-    
+
     def _sort(self, ids, results):
         results = dict(((r.pkvalue(), r) for r in results))
         return [results.get(id) for id in ids]
@@ -88,6 +88,7 @@ CompositeFieldId depending on the two foreign keys.'''
     # Create the through model
     if through is None:
         name = '{0}_{1}'.format(name_model, name_relmodel)
+
         class Meta:
             app_label = field.model._meta.app_label
         through = ModelType(name, (StdModel,), {'Meta': Meta})
@@ -96,36 +97,38 @@ CompositeFieldId depending on the two foreign keys.'''
     field1 = ForeignKey(field.model,
                         related_name=field.name,
                         related_manager_class=makeMany2ManyRelatedManager(
-                                                    field.relmodel,
-                                                    name_model,
-                                                    name_relmodel))
+                            field.relmodel,
+                            name_model,
+                            name_relmodel)
+                        )
     field1.register_with_model(name_model, through)
     # The second field
     field2 = ForeignKey(field.relmodel,
                         related_name=field.related_name,
                         related_manager_class=makeMany2ManyRelatedManager(
-                                                    field.model,
-                                                    name_relmodel,
-                                                    name_model))
+                            field.model,
+                            name_relmodel,
+                            name_model)
+                        )
     field2.register_with_model(name_relmodel, through)
     pk = CompositeIdField(name_model, name_relmodel)
     pk.register_with_model('id', through)
-    
-    
+
+
 class LazyForeignKey(LazyProxy):
     '''Descriptor for a :class:`ForeignKey` field.'''
     def load(self, instance, session=None, backend=None):
         return instance._load_related_model(self.field)
-    
+
     def __set__(self, instance, value):
         if instance is None:
-            raise AttributeError("%s must be accessed via instance"\
-                                  % self._field.name)
+            raise AttributeError("%s must be accessed via instance" %
+                                 self._field.name)
         field = self.field
         if value is not None and not isinstance(value, field.relmodel):
             raise ValueError(
-                        'Cannot assign "%r": "%s" must be a "%s" instance.' %
-                                (value, field, field.relmodel._meta.name))
+                'Cannot assign "%r": "%s" must be a "%s" instance.' %
+                (value, field, field.relmodel._meta.name))
 
         cache_name = self.field.get_cache_name()
         # If we're setting the value of a OneToOneField to None,
@@ -157,7 +160,7 @@ of a related model.
 .. attribute:: relmodel
 
     The :class:`StdModel` this related manager relates to.
-    
+
 .. attribute:: related_instance
 
     An instance of the :attr:`relmodel`.
@@ -167,13 +170,15 @@ of a related model.
         model = model or field.model
         super(RelatedManager, self).__init__(model)
         self.related_instance = instance
-            
+
     def __get__(self, instance, instance_type=None):
         return self.__class__(self.field, self.model, instance)
 
     def session(self, session=None):
-        '''Override :meth:`Manager.session` so that this :class:`RelatedManager`
-can retrieve the session from the :attr:`related_instance` if available.'''
+        '''Override :meth:`Manager.session` so that this
+        :class:`RelatedManager` can retrieve the session from the
+        :attr:`related_instance` if available.
+        '''
         if self.related_instance:
             session = self.related_instance.session
         # we have a session, we either create a new one return the same session
@@ -222,9 +227,9 @@ attribute of the model.'''
                                   'instance.' % name)
         elif not isinstance(value, self.formodel):
             raise ManyToManyError(
-               '%s is not an instance of %s' % (value, self.formodel._meta))
+                '%s is not an instance of %s' % (value, self.formodel._meta))
         elif not value.pkvalue():
-            raise ManyToManyError('Cannot use "%s" a non persistent instance.'\
+            raise ManyToManyError('Cannot use "%s" a non persistent instance.'
                                   % name)
         kwargs.update({self.name_formodel: value,
                        self.name_relmodel: self.related_instance})
@@ -254,15 +259,15 @@ used to hold the :ref:`many-to-many relationship <many-to-many>`.'''
         # Return a query for the related model
         ids = self.throughquery(session).get_field(self.name_formodel)
         return self.session(session).query(self.formodel).filter(id=ids)
-    
-        
+
+
 def makeMany2ManyRelatedManager(formodel, name_relmodel, name_formodel):
     '''formodel is the model which the manager .'''
+
     class _Many2ManyRelatedManager(Many2ManyRelatedManager):
         pass
-    
+
     _Many2ManyRelatedManager.formodel = formodel
     _Many2ManyRelatedManager.name_relmodel = name_relmodel
     _Many2ManyRelatedManager.name_formodel = name_formodel
-        
     return _Many2ManyRelatedManager

@@ -14,6 +14,8 @@ __all__ = ['Q', 'QueryBase', 'Query', 'QueryElement', 'EmptyQuery',
            'intersect', 'union', 'difference']
 
 iterables = (tuple, list, set, frozenset, Mapping)
+
+
 def iterable(value):
     return isgenerator(value) or isinstance(value, iterables)
 
@@ -30,6 +32,7 @@ def update_dictionary(result, extra):
                 k = k + JSPLITTER + 'in'
         result[k] = v
     return result
+
 
 def get_lookups(attname, field_lookups):
     lookups = field_lookups.get(attname)
@@ -49,13 +52,14 @@ class Q(object):
 .. attribute:: model
 
     the :class:`StdModel` class for this query.
-    
+
 .. attribute:: backend
 
     the :class:`stdnet.BackendDataServer` class for this query.
 '''
     keyword = ''
     name = ''
+
     def __init__(self, meta, session, select_related=None,
                  ordering=None, fields=None,
                  get_field=None, name=None, keyword=None):
@@ -114,8 +118,8 @@ fields.
 '''
         if field != self._get_field:
             if field not in self._meta.dfields:
-                raise QuerySetError('Model "{0}" has no field "{1}".'\
-                                    .format(self._meta,field))
+                raise QuerySetError('Model "{0}" has no field "{1}".'
+                                    .format(self._meta, field))
             q = self._clone()
             q.data['get_field'] = field
             return q
@@ -123,7 +127,7 @@ fields.
             return self
 
     def __contains__(self, val):
-        if isinstance(val,self.model):
+        if isinstance(val, self.model):
             val = val.id
         return val in self.backend_query()
 
@@ -134,7 +138,8 @@ fields.
         pass
 
     def backend_query(self, **kwargs):
-        '''Build the :class:`stdnet.utils.async.BackendQuery` for this instance.
+        '''Build the :class:`stdnet.utils.async.BackendQuery` for this
+        instance.
 This is a virtual method with different implementation in :class:`Query`
 and :class:`QueryElement`.'''
         raise NotImplementedError
@@ -171,7 +176,7 @@ class QueryElement(Q):
     def __init__(self, *args, **kwargs):
         self.__backend_query = None
         underlying = kwargs.pop('underlying', None)
-        super(QueryElement,self).__init__(*args, **kwargs)
+        super(QueryElement, self).__init__(*args, **kwargs)
         self.underlying = underlying if underlying is not None else ()
 
     def __repr__(self):
@@ -224,20 +229,24 @@ class Select(QueryElement):
     pass
 
 
-def make_select(keyword,queries):
+def make_select(keyword, queries):
     first = queries[0]
     queries = [q.construct() for q in queries]
     return Select(first.meta, first.session, keyword=keyword,
                   underlying=queries)
 
+
 def intersect(queries):
-    return make_select('intersect',queries)
+    return make_select('intersect', queries)
+
 
 def union(queries):
-    return make_select('union',queries)
+    return make_select('union', queries)
+
 
 def difference(queries):
-    return make_select('diff',queries)
+    return make_select('diff', queries)
+
 
 def queryset(qs, **kwargs):
     return QuerySet(qs._meta, qs.session, **kwargs)
@@ -259,6 +268,7 @@ class QueryBase(Q):
 class EmptyQuery(QueryBase):
     '''Degenerate :class:`QueryBase` simulating and empty set.'''
     keyword = 'empty'
+
     def items(self, slic=None):
         return []
 
@@ -358,14 +368,14 @@ criteria and options associated with it.
     def __init__(self, *args, **kwargs):
         '''A :class:`Query` is not initialized directly but via the
 :meth:`Session.query` or :meth:`Manager.query` methods.'''
-        self.fargs  = kwargs.pop('fargs', None)
-        self.eargs  = kwargs.pop('eargs', None)
+        self.fargs = kwargs.pop('fargs', None)
+        self.eargs = kwargs.pop('eargs', None)
         self.unions = kwargs.pop('unions', ())
         self.searchengine = kwargs.pop('searchengine', None)
         self.intersections = kwargs.pop('intersections', ())
-        self.text  = kwargs.pop('text', None)
+        self.text = kwargs.pop('text', None)
         self.exclude_fields = kwargs.pop('exclude_fields', None)
-        super(Query,self).__init__(*args, **kwargs)
+        super(Query, self).__init__(*args, **kwargs)
         self.clear()
 
     @property
@@ -473,7 +483,7 @@ for this function to be available.
 
 :parameter text: a string to search.
 :return type: a new :class:`Query` instance.
-''' 
+'''
         q = self._clone()
         q.text = (text, lookup)
         return q
@@ -497,8 +507,8 @@ each element in the query. The *coe* should reference an instance of
             q.data['where'] = (code, load_only)
             return q
         else:
-            return self            
-        
+            return self
+
     def search_queries(self, q):
         '''Return a new :class:`QueryElem` for *q* applying a text search.'''
         if self.text:
@@ -530,8 +540,8 @@ in a generative way::
 :rtype: a new :class:`Query`.'''
         field = self._get_related_field(related)
         if not field:
-            raise FieldError('"%s" is not a related field for "%s"' %\
-                              (related, self._meta))
+            raise FieldError('"%s" is not a related field for "%s"' %
+                             (related, self._meta))
         q = self._clone()
         return q._add_to_load_related(field, *related_fields)
 
@@ -555,7 +565,8 @@ data intensive fields you don't need.
             new_fields.append(field)
         if fields and not new_fields:
             # if we added a field to the load_related list and not fields are
-            # are left we add the primary key so that other firls are not loaded.
+            # are left we add the primary key so that other firls are not
+            # loaded.
             new_fields.append(self._meta.pkname())
         fs = unique_tuple(q.fields, new_fields)
         q.data['fields'] = fs if fs else None
@@ -572,21 +583,21 @@ to load all fields except a subset specified by *fields*.
         return q
 
     ##        METHODS FOR RETRIEVING DATA
-    
+
     def __getitem__(self, slic):
         return self.backend_query()[slic]
-    
+
     def items(self, callback=None):
         '''Retrieve all items for this :class:`Query`.'''
         return self.backend_query().items(callback=callback)
-    
+
     def get(self, **kwargs):
         '''Return an instance of a model matching the query. A special case is
 the query on ``id`` which provides a direct access to the :attr:`session`
 instances. If the given primary key is present in the session, the object
 is returned directly without performing any query.'''
         return self.filter(**kwargs).items(
-                                    callback=self.model.get_unique_instance)
+            callback=self.model.get_unique_instance)
 
     def count(self):
         '''Return the number of objects in ``self``.
@@ -627,7 +638,7 @@ an exception is raised.
     Default: :attr:`ModelMixin.DoesNotValidate`.
 :return: *value*
 '''
-        qs = self.filter(**{fieldname:value})
+        qs = self.filter(**{fieldname: value})
         callback = partial(self._test_unique, fieldname, value,
                            instance, exception)
         return qs.backend_query().items(callback=callback)
@@ -635,10 +646,10 @@ an exception is raised.
     def map_reduce(self, map_script, reduce_script, **kwargs):
         '''Perform a map/reduce operation on this query.'''
         pass
-        
-    ############################################################################
+
+    ########################################################################
     # PRIVATE METHODS
-    ############################################################################
+    ########################################################################
     def clear(self):
         self.__construct = None
 
@@ -706,7 +717,8 @@ an exception is raised.
                     lookup = bits.pop()
                 remaining = JSPLITTER.join(bits)
                 if lookup:  # this is a range lookup
-                    attname, nested = field.get_lookup(remaining, QuerySetError)
+                    attname, nested = field.get_lookup(remaining,
+                                                       QuerySetError)
                     lookups = get_lookups(attname, field_lookups)
                     lookups.append(lookup_value(lookup, (value, nested)))
                     continue
@@ -715,7 +727,7 @@ an exception is raised.
             lookups = get_lookups(attname, field_lookups)
             # If we are here the field must be an index
             if not field.index:
-                raise QuerySetError("%s %s is not an index. Cannot query." %\
+                raise QuerySetError("%s %s is not an index. Cannot query." %
                                     (field.__class__.__name__, field_name))
             if not iterable(value):
                 value = (value,)
@@ -726,9 +738,9 @@ an exception is raised.
                     v = lookup_value('value', field.serialise(v, lookup))
                 lookups.append(v)
         #
-        return [queryset(self, name=name, underlying=field_lookups[name])\
+        return [queryset(self, name=name, underlying=field_lookups[name])
                 for name in sorted(field_lookups)]
-        
+
     def _test_unique(self, fieldname, value, instance, exception, items):
         if items:
             r = self.model.get_unique_instance(items)
@@ -736,7 +748,7 @@ an exception is raised.
                 return value
             else:
                 exception = exception or self.model.DoesNotValidate
-                raise exception('An instance with %s %s is already available'\
+                raise exception('An instance with %s %s is already available'
                                 % (fieldname, value))
         else:
             return value
@@ -747,7 +759,7 @@ an exception is raised.
             field = meta.dfields[related]
             if hasattr(field, 'relmodel'):
                 return field
-            
+
     def _add_to_load_related(self, field, *related_fields):
         rf = unique_tuple((v for v in related_fields))
         # we need to copy the related dictionary including its values

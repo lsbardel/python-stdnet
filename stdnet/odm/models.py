@@ -44,7 +44,7 @@ loaded. This applies to persistent instances only. This property is used when
 committing changes. If all data is available, the commit will replace the
 previous object data entirely, otherwise it will only update it.'''
         return self.get_state().persistent and self._loadedfields is None
-    
+
     def set(self, name, value):
         meta = self._meta
         if name in meta.dfields:
@@ -53,7 +53,7 @@ previous object data entirely, otherwise it will only update it.'''
             setattr(self, name, value)
         else:
             raise AttributeError('Model has no field/attribute %s' % name)
-        
+
     def loadedfields(self):
         '''Generator of fields loaded from database'''
         if self._loadedfields is None:
@@ -92,14 +92,14 @@ attribute set to ``True`` won't be included.
                 continue
             name = field.attname
             if hasattr(self, name):
-                yield field, getattr(self,name)
+                yield field, getattr(self, name)
 
     def clear_cache_fields(self):
         '''Set cache fields to ``None``. Check :attr:`Field.as_cache`
 for information regarding fields which are considered cache.'''
         for field in self._meta.scalarfields:
             if field.as_cache:
-                setattr(self,field.name,None)
+                setattr(self, field.name, None)
 
     def get_attr_value(self, name):
         '''Retrieve the ``value`` for the attribute ``name``. The ``name``
@@ -147,7 +147,7 @@ raises :class:`AttributeError`.'''
 If the *exclude_cache* flag is ``True``, fields with :attr:`Field.as_cache`
 attribute set to ``True`` will be excluded.'''
         odict = {}
-        for field,value in self.fieldvalue_pairs(exclude_cache=exclude_cache):
+        for field, value in self.fieldvalue_pairs(exclude_cache=exclude_cache):
             value = field.serialise(value)
             if value:
                 odict[field.name] = value
@@ -159,7 +159,7 @@ attribute set to ``True`` will be excluded.'''
         pk = self.pkvalue()
         if pk:
             yield self._meta.pkname(), pk
-            for field, value in self.fieldvalue_pairs(exclude_cache=\
+            for field, value in self.fieldvalue_pairs(exclude_cache=
                                                       exclude_cache):
                 value = field.json_serialise(value)
                 if value not in EMPTYJSON:
@@ -180,11 +180,12 @@ attribute set to ``True`` will be excluded.'''
             for name in fields:
                 field = meta.dfields.get(name)
                 if field is not None:
-                    setattr(self,field.attname,getattr(obj,field.attname,None))
-    
+                    setattr(self, field.attname,
+                            getattr(obj, field.attname, None))
+
     def get_state_action(self):
         return 'override' if self._loadedfields is None else 'update'
-                
+
     def load_related_model(self, name, load_only=None, dont_load=None):
         '''Load a the :class:`ForeignKey` field ``name`` if this is part of the
 fields of this model and if the related object is not already loaded.
@@ -202,23 +203,23 @@ relationships.
         elif not field.type == 'related object':
             raise ValueError('Field "%s" not a foreign key' % name)
         return self._load_related_model(field, load_only, dont_load)
-        
+
     @classmethod
     def get_field(cls, name):
         '''Returns the :class:`Field` instance at ``name`` if available,
 otherwise it returns ``None``.'''
         return cls._meta.dfields.get(name)
-    
+
     @classmethod
     def from_base64_data(cls, **kwargs):
         '''Load a :class:`StdModel` from possibly base64encoded data.
-        
+
 This method is used to load models from data obtained from the :meth:`tojson`
 method.'''
         o = cls()
         meta = cls._meta
         pkname = meta.pkname()
-        for name,value in iteritems(kwargs):
+        for name, value in iteritems(kwargs):
             if name == pkname:
                 field = meta.pk
             elif name in meta.dfields:
@@ -226,15 +227,15 @@ method.'''
             else:
                 continue
             value = field.to_python(value)
-            setattr(o,field.attname,value)
+            setattr(o, field.attname, value)
         return o
-    
+
     @classmethod
     def pk(cls):
         '''Returns the primary key :class:`Field` for this model. This is a
 proxy for the :attr:`Metaclass.pk` attribute.'''
         return cls._meta.pk
-    
+
     @classmethod
     def get_unique_instance(cls, items):
         if items:
@@ -244,7 +245,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
                 raise QuerySetError('Non unique results')
         else:
             raise cls.DoesNotExist()
-    
+
     # PICKLING SUPPORT
 
     def __getstate__(self):
@@ -252,9 +253,9 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
 
     def __setstate__(self, state):
         self._meta.load_state(self, state)
-        
+
     # INTERNALS
-    
+
     def _load_related_model(self, field, load_only=None, dont_load=None):
         cache_name = field.get_cache_name()
         if hasattr(self, cache_name):
@@ -272,7 +273,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
                     qs = qs.dont_load(*dont_load)
                 callback = partial(self.__set_related_value, field)
                 return qs.filter(**{pkname: val}).items(callback=callback)
-            
+
     def __set_related_value(self, field, items=None):
         try:
             rel_obj = self.get_unique_instance(items)
@@ -284,7 +285,7 @@ proxy for the :attr:`Metaclass.pk` attribute.'''
             setattr(self, field.attname, None)
         setattr(self, field.get_cache_name(), rel_obj)
         return rel_obj
-    
+
 
 def create_model(name, *attributes, **params):
     '''Create a :class:`Model` class for objects requiring
@@ -316,4 +317,3 @@ def model_to_dict(instance, fields=None, exclude=None):
             if default:
                 d[field.name] = default
         return d
-

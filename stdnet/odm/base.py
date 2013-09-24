@@ -27,8 +27,8 @@ def get_fields(bases, attrs):
     #
     for base in bases:
         if hasattr(base, '_meta'):
-            fields = list((name, deepcopy(field)) for name, field\
-                           in base._meta.dfields.items()) + fields
+            fields = list((name, deepcopy(field)) for name, field
+                          in base._meta.dfields.items()) + fields
     #
     return OrderedDict(fields)
 
@@ -83,7 +83,7 @@ mapper.
 .. attribute:: model
 
     :class:`Model` for which this class is the database metadata container.
-    
+
 .. attribute:: name
 
     Usually it is the :class:`Model` class name in lower-case, but it
@@ -94,11 +94,11 @@ mapper.
     Unless specified it is the name of the directory or file
     (if at top level) containing the :class:`Model` definition. It can be
     customised.
-    
+
 .. attribute:: modelkey
 
     The modelkey which is by default given by ``app_label.name``.
-    
+
 .. attribute:: ordering
 
     Optional name of a :class:`Field` in the :attr:`model`.
@@ -121,7 +121,7 @@ mapper.
     Ordered list of all :class:`Field` which are not :class:`StructureField`.
     The order is the same as in the :class:`Model` definition. The :attr:`pk`
     field is not included.
-    
+
 .. attribute:: indices
 
     List of :class:`Field` which are indices (:attr:`Field.index` attribute
@@ -130,17 +130,17 @@ mapper.
 .. attribute:: pk
 
     The :class:`Field` representing the primary key.
-    
+
 .. attribute:: related
 
     Dictionary of :class:`related.RelatedManager` for the :attr:`model`. It is
     created at runtime by the object data mapper.
-    
+
 .. attribute:: manytomany
 
     List of :class:`ManyToManyField` names for the :attr:`model`. This
     information is useful during registration.
-    
+
 .. attribute:: attributes
 
     Additional attributes for :attr:`model`.
@@ -177,7 +177,8 @@ mapper.
             field = fields[name]
             if field.primary_key:
                 if pk is not None:
-                    raise FieldError("Primary key already available %s." % name)
+                    raise FieldError("Primary key already available %s."
+                                     % name)
                 pk = field
                 pkname = name
         if pk is None and not self.abstract:
@@ -196,14 +197,14 @@ mapper.
     def type(self):
         '''Model type, either ``structure`` or ``object``.'''
         return self.model._model_type
-    
+
     def make_object(self, state=None, backend=None):
         '''Create a new instance of :attr:`model` from a *state* tuple.'''
         model = self.model
         obj = model.__new__(model)
         self.load_state(obj, state, backend)
         return obj
-        
+
     def load_state(self, obj, state=None, backend=None):
         if state:
             pkvalue, loadedfields, data = state
@@ -216,8 +217,8 @@ mapper.
             for field in obj.loadedfields():
                 value = field.value_from_data(obj, data)
                 setattr(obj, field.attname, field.to_python(value, backend))
-            if backend or ('__dbdata__' in data and\
-                            data['__dbdata__'][pk.name] == pkvalue):
+            if backend or ('__dbdata__' in data and
+                           data['__dbdata__'][pk.name] == pkvalue):
                 obj.dbdata[pk.name] = pkvalue
 
     def __repr__(self):
@@ -225,15 +226,16 @@ mapper.
 
     def __str__(self):
         return self.__repr__()
-    
+
     def pkname(self):
         '''Primary key name. A shortcut for ``self.pk.name``.'''
         return self.pk.name
 
     def pk_to_python(self, value, backend):
-        '''Convert the primary key ``value`` to a valid python representation.'''
+        '''Convert the primary key ``value`` to a valid python representation.
+        '''
         return self.pk.to_python(value, backend)
-    
+
     def is_valid(self, instance):
         '''Perform validation for *instance* and stores serialized data,
 indexes and errors into local cache.
@@ -250,8 +252,8 @@ Return ``True`` if the instance is ready to be saved to database.'''
                 errors[name] = str(e)
             else:
                 if (svalue is None or svalue is '') and field.required:
-                    errors[name] = "Field '{0}' is required for '{1}'."\
-                                    .format(name, self)
+                    errors[name] = ("Field '{0}' is required for '{1}'."
+                                    .format(name, self))
                 else:
                     if isinstance(svalue, dict):
                         data.update(svalue)
@@ -273,12 +275,13 @@ Return ``True`` if the instance is ready to be saved to database.'''
         else:
             if sortby in self.dfields:
                 f = self.dfields[sortby]
-                return orderinginfo(f.attname, f, desc, self.model, None, False)
+                return orderinginfo(f.attname, f, desc, self.model,
+                                    None, False)
             sortbys = sortby.split(JSPLITTER)
             s0 = sortbys[0]
             if len(sortbys) > 1 and s0 in self.dfields:
                 f = self.dfields[s0]
-                nested = f.get_sorting(JSPLITTER.join(sortbys[1:]),errorClass)
+                nested = f.get_sorting(JSPLITTER.join(sortbys[1:]), errorClass)
                 if nested:
                     sortby = f.attname
                 return orderinginfo(sortby, f, desc, self.model, nested, False)
@@ -323,8 +326,9 @@ of fields names and a list of field attribute names.'''
                 'sorted': bool(self.ordering),
                 'autoincr': self.ordering and self.ordering.auto,
                 'multi_fields': [field.name for field in self.multifields],
-                'indices': dict(((idx.attname, idx.unique)\
-                                for idx in self.indices))}
+                'indices': dict(((idx.attname, idx.unique)
+                                 for idx in self.indices))}
+
 
 class autoincrement(object):
     '''An :class:`autoincrement` is used in a :class:`StdModel` Meta
@@ -363,8 +367,8 @@ an id already available, the score of that word is incremented by the
         return True if self._asce == -1 else False
 
     def __repr__(self):
-        return ('' if self._asce == 1 else '-') + '{0}({1})'\
-            .format(self.__class__.__name__,self.incrby)
+        return ('' if self._asce == 1 else '-'
+                ) + '{0}({1})'.format(self.__class__.__name__, self.incrby)
 
     def __str__(self):
         return self.__repr__()
@@ -375,8 +379,8 @@ class ModelType(type):
     def __new__(cls, name, bases, attrs):
         meta = attrs.pop('Meta', None)
         if isclass(meta):
-            meta = dict(((k, v) for k, v in meta.__dict__.items()\
-                          if not k.startswith('__')))
+            meta = dict(((k, v) for k, v in meta.__dict__.items()
+                         if not k.startswith('__')))
         else:
             meta = meta or {}
         cls.extend_meta(meta, attrs)
@@ -385,7 +389,7 @@ class ModelType(type):
         ModelMeta(new_class, fields, **meta)
         class_prepared.send(sender=new_class)
         return new_class
-    
+
     @classmethod
     def extend_meta(cls, meta, attrs):
         for name in ('register', 'abstract', 'attributes'):
@@ -415,7 +419,7 @@ class ModelState(object):
         '''Action to be performed by the backend server when committing
 changes to the instance of :class:`Model` for which this is a state.'''
         return self._action
-    
+
     @property
     def persistent(self):
         '''``True`` if the instance is persistent in the backend server.'''
@@ -439,8 +443,9 @@ unique identifier for an instance of a model.
 .. attribute:: _meta
 
     A class attribute which is an instance of :class:`ModelMeta`, it
-    containes all the information needed by a :class:`stdnet.BackendDataServer`.
-    
+    containes all the information needed by a
+    :class:`stdnet.BackendDataServer`.
+
 .. attribute:: session
 
     The :class:`Session` which loaded the instance. Only available,
@@ -486,11 +491,12 @@ otherwise it returns the cached value.'''
 
     @property
     def uuid(self):
-        '''Universally unique identifier for an instance of a :class:`Model`.'''
+        '''Universally unique identifier for an instance of a :class:`Model`.
+        '''
         pk = self.pkvalue()
         if not pk:
-            raise self.DoesNotExist(\
-                    'Object not saved. Cannot obtain universally unique id')
+            raise self.DoesNotExist(
+                'Object not saved. Cannot obtain universally unique id')
         return self.get_uuid(pk)
 
     @property
@@ -498,30 +504,31 @@ otherwise it returns the cached value.'''
         if self._dbdata is None:
             self._dbdata = {}
         return self._dbdata
-    
+
     def __get_session(self):
         return self.dbdata.get('session')
+
     def __set_session(self, session):
         self.dbdata['session'] = session
     session = property(__get_session, __set_session)
-    
+
     def get_attr_value(self, name):
         '''Provided for compatibility with :meth:`StdModel.get_attr_value`.
 For this class it simply get the attribute at name::
-    
+
     return getattr(self, name)
 '''
         return getattr(self, name)
-    
+
     def get_state_action(self):
         return 'update'
-    
+
     def save(self):
         '''Save the model by adding it to the :attr:`session`. If the
 :attr:`session` is not available, it raises a :class:`SessionNotAvailable`
 exception.'''
         return self.session.add(self)
-    
+
     def delete(self):
         '''Delete the model. If the :attr:`session` is not available,
 it raises a :class:`SessionNotAvailable` exception.'''
@@ -539,4 +546,3 @@ def raise_kwargs(model, kwargs):
         else:
             keys += ' is an'
         raise ValueError("%s invalid keyword for %s." % (keys, model._meta))
-

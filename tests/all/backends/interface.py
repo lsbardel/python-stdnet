@@ -24,7 +24,6 @@ class TestBackend(test.TestCase):
         self.assertFalse(b.clean(None))
         self.assertRaises(NotImplementedError, b.execute_session, None, None)
         self.assertRaises(NotImplementedError, b.model_keys, None)
-        self.assertRaises(NotImplementedError, b.as_cache)
         self.assertRaises(NotImplementedError, b.flush)
 
     def testMissingStructure(self):

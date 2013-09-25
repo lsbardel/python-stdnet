@@ -7,7 +7,7 @@ from examples.models import SimpleModel, Instrument
 
 class TestSession(test.TestWrite):
     models = (SimpleModel, Instrument)
-    
+
     def test_simple_create(self):
         models = self.mapper
         session = models.session()
@@ -26,7 +26,7 @@ class TestSession(test.TestWrite):
         self.assertTrue(t)
         self.assertEqualId(m, 1)
         self.assertFalse(session.dirty)
-        
+
     def test_create_objects(self):
         # Tests a session with two models. This was for a bug
         models = self.mapper
@@ -37,7 +37,7 @@ class TestSession(test.TestWrite):
         yield t.on_result
         yield self.async.assertEqual(models.simplemodel.query().count(), 1)
         yield self.async.assertEqual(models.instrument.query().count(), 1)
-        
+
     def test_simple_filter(self):
         models = self.mapper
         session = models.session()
@@ -58,7 +58,7 @@ class TestSession(test.TestWrite):
         yield self.async.assertEqual(qs.count(), 1)
         qs = query.filter(group='bla')
         yield self.async.assertEqual(qs.count(), 0)
-        
+
     def test_modify_index_field(self):
         session = self.session()
         with session.begin() as t:
@@ -73,7 +73,7 @@ class TestSession(test.TestWrite):
         el.group = 'smallplanet'
         with session.begin() as t:
             t.add(el)
-        yield t.on_result    
+        yield t.on_result
         yield self.async.assertEqual(session.query(self.model).count(), 1)
         self.assertEqualId(el, id, True)
         # lets get it from the server
@@ -90,5 +90,3 @@ class TestSession(test.TestWrite):
         # now filter on old group
         qs = session.query(self.model).filter(group='planet')
         yield self.async.assertEqual(qs.count(), 0)
-    
-    

@@ -36,19 +36,6 @@ __all__ = ['Field',
 NONE_EMPTY = (None, '')
 
 
-def field_value_error(f):
-    def _(self, value, *args, **kwargs):
-        try:
-            return f(self, value, *args, **kwargs)
-        except FieldValueError:
-            raise
-        except:
-            raise FieldValueError('%s not valid for "%s"' % (value, self.name))
-    _.__name__ = f.__name__
-    _.__doc__ = f.__doc__
-    return _
-
-
 class Field(UnicodeMixin):
     '''This is the base class of all StdNet Fields.
 Each field is specified as a :class:`StdModel` class attribute.

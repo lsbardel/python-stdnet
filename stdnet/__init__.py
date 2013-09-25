@@ -1,10 +1,9 @@
 '''Object data mapper and advanced query manager for non relational databases.'''
 from .utils.exceptions import *
-from .utils.conf import settings
 from .utils.version import get_version, stdnet_version
 from .backends import *
 
-VERSION = stdnet_version(0, 8, 3, 'alpha', 3)
+VERSION = stdnet_version(0, 9, 0, 'alpha', 3)
 
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"

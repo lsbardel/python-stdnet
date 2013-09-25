@@ -1,7 +1,16 @@
+import sys
 from collections import namedtuple
+from inspect import isgenerator
+
+try:
+    from pulsar import maybe_async as async
+except ImportError:     # pragma    noproxy
+
+    def async(gen):
+        raise NotImplementedError
 
 from stdnet.utils.exceptions import *
-from stdnet.utils.conf import settings
+from stdnet.utils import raise_error_trace
 from stdnet.utils.importer import import_module
 from stdnet.utils import (iteritems, int_or_float, to_string, urlencode,
                           urlparse)
@@ -9,14 +18,14 @@ from stdnet.utils import (iteritems, int_or_float, to_string, urlencode,
 
 __all__ = ['BackendStructure',
            'BackendDataServer',
-           'CacheServer',
+           'BackendQuery',
            'session_result',
            'session_data',
            'instance_session_result',
            'query_result',
            'range_lookups',
            'getdb',
-           'getcache']
+           'settings']
 
 
 query_result = namedtuple('query_result', 'key count')
@@ -54,6 +63,18 @@ def get_connection_string(scheme, address, params):
     if params:
         address += '?' + urlencode(params)
     return scheme + '://' + address
+
+
+class Settings(object):
+
+    def __init__(self):
+        self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
+        self.CHARSET = 'utf-8'
+        self.REDIS_PY_PARSER = False
+        self.ASYNC_BINDINGS = False
+
+
+settings = Settings()
 
 
 class BackendStructure(object):
@@ -94,30 +115,6 @@ class BackendStructure(object):
         raise NotImplementedError
 
     def size(self):
-        raise NotImplementedError
-
-
-class CacheServer(object):
-    '''A key-value store server for storing and retrieving values at keys.'''
-    def set(self, key, value, timeout=None):
-        '''Set ``value`` at ``key`` with ``timeout``.'''
-        raise NotImplementedError
-
-    def get(self, key, default=None):
-        '''Fetch the value at ``key``.'''
-        raise NotImplementedError
-
-    def __getitem__(self):
-        v = self.get(key)
-        if v is None:
-            raise KeyError(key)
-        else:
-            return v
-
-    def __setitem__(self, key, value):
-        self.set(key, value)
-
-    def __contains__(self, key):
         raise NotImplementedError
 
 
@@ -164,7 +161,6 @@ class BackendDataServer(object):
     default_manager = None
     default_port = 8000
     struct_map = {}
-    async_handlers = {}
 
     def __init__(self, name=None, address=None, charset=None, namespace='',
                  **params):
@@ -265,27 +261,33 @@ from database.
     def structure(self, instance, client=None):
         '''Create a backend :class:`stdnet.odm.Structure` handler.
 
-:parameter instance: a :class:`stdnet.odm.Structure`
-:parameter client: Optional client handler'''
+        :param instance: a :class:`stdnet.odm.Structure`
+        :param client: Optional client handler.
+        '''
         struct = self.struct_map.get(instance._meta.name)
         if struct is None:
-            raise ModelNotAvailable('structure "{0}" is not available for\
- backend "{1}"'.format(instance._meta.name, self))
+            raise ModelNotAvailable('"%s" is not available for backend '
+                                    '"%s"' % (instance._meta.name, self))
         client = client if client is not None else self.client
         return struct(instance, self, client)
 
-    def async(self):
-        '''Returns an asynchronous :class:`BackendDataServer` with same
-:attr:`connection_string`. Asynchronous hadlers must be implemented
-by users.'''
-        handler = self.async_handlers.get(self.name)
-        if handler:
-            return handler(self)
+    def execute(self, result, callback=None):
+        if self.is_async():
+            result = async(result)
+            if callback:
+                return result.add_callback(callback)
+            else:
+                return result
         else:
-            raise NotImplementedError('Asynchronous handler for %s not '
-                                      'available.' % self)
+            if isinstance(result, generator):
+                result = execute_generator(result)
+            return callback(result) if callback else result
 
     # VIRTUAL METHODS
+    def is_async(self):
+        '''Check if the backend handler is asynchronous.'''
+        return False
+
     def setup_model(self, meta):
         '''Invoked when registering a model with a backend. This is a chance to
 perform model specific operation in the server. For example, mongo db ensure
@@ -308,9 +310,6 @@ indices are created.'''
         '''Return a proper python value for the auto id.'''
         return value
 
-    def bind_before_send(self, callback):
-        pass
-
     # PURE VIRTUAL METHODS
 
     def setup_connection(self, address):
@@ -327,13 +326,152 @@ must return a instance of the backend handler.'''
         '''Return a list of database keys used by model *model*'''
         raise NotImplementedError()
 
-    def as_cache(self):
-        '''Return a :class:`CacheServer` handle for this backend.'''
-        raise NotImplementedError('This backend cannot be used as cache')
-
     def flush(self, meta=None):
         '''Flush the database or drop all instances of a model/collection'''
         raise NotImplementedError()
+
+
+class BackendQuery(object):
+    '''Asynchronous query interface class.
+
+    Implements the database queries specified by :class:`stdnet.odm.Query`.
+
+    .. attribute:: queryelem
+
+        The :class:`stdnet.odm.QueryElement` to process.
+
+    .. attribute:: executed
+
+        flag indicating if the query has been executed in the backend server
+
+    '''
+    def __init__(self, queryelem, timeout=0, **kwargs):
+        '''Initialize the query for the backend database.'''
+        self.queryelem = queryelem
+        self.expire = max(timeout, 10)
+        self.timeout = timeout
+        self.__count = None
+        self.__slice_cache = {}
+        # build the queryset without performing any database communication
+        self._build(**kwargs)
+
+    def __repr__(self):
+        return self.queryelem.__repr__()
+
+    def __str__(self):
+        return str(self.queryelem)
+
+    @property
+    def session(self):
+        return self.queryelem.session
+
+    @property
+    def backend(self):
+        return self.queryelem.backend
+
+    @property
+    def meta(self):
+        return self.queryelem.meta
+
+    @property
+    def model(self):
+        return self.queryelem.model
+
+    @property
+    def executed(self):
+        return self.__count is not None
+
+    @property
+    def cache(self):
+        '''Cached results.'''
+        return self.__slice_cache
+
+    def __len__(self):
+        return self.execute_query()
+
+    def count(self):
+        return self.execute_query()
+
+    def __contains__(self, val):
+        self.execute_query()
+        return self._has(val)
+
+    def execute_query(self):
+        if not self.executed:
+            return self.backend.execute(self._execute_query(), self._got_count)
+        return self.__count
+
+    def __getitem__(self, slic):
+        if isinstance(slic, slice):
+            return self.items(slic)
+        return on_result(self.items(), lambda r: r[slic])
+
+    def items(self, slic=None, callback=None):
+        '''This function does the actual fetching of data from the backend
+server matching this :class:`Query`. This method is usually not called directly,
+instead use the :meth:`all` method or alternatively slice the query in the same
+way you can slice a list or iterate over the query.'''
+        key = None
+        seq = self.__slice_cache.get(None)
+        if slic:
+            if seq is not None: # we have the whole query cached already
+                yield seq[slic]
+            else:
+                key = (slic.start, slic.step, slic.stop)
+        if seq is not None:
+            yield seq
+        else:
+            result = yield self.execute_query()
+            items = None
+            if result:
+                items = yield self._items(slic)
+            yield self._store_items(key, callback, items or ())
+
+    def delete(self, qs):
+        with self.session.begin() as t:
+            t.delete(qs)
+        return on_result(t.on_result, lambda _: t.deleted.get(self.meta))
+
+    # VIRTUAL METHODS - MUST BE IMPLEMENTED BY BACKENDS
+
+    def _has(self, val):    # pragma: no cover
+        raise NotImplementedError
+
+    def _items(self, slic):     # pragma: no cover
+        raise NotImplementedError
+
+    def _build(self, **kwargs):     # pragma: no cover
+        raise NotImplementedError
+
+    def _execute_query(self):       # pragma: no cover
+        '''Execute the query without fetching data from server.
+
+        Must be implemented by data-server backends and return a generator.
+        '''
+        raise NotImplementedError
+
+    # PRIVATE METHODS
+
+    def _got_count(self, c):
+        self.__count = c
+        return c
+
+    def _get_items(self, slic, result):
+        if result:
+            return self._items(slic)
+        else:
+            return ()
+
+    def _store_items(self, key, callback, items):
+        session = self.session
+        seq = []
+        model = self.model
+        for el in items:
+            if isinstance(el, model):
+                session.add(el, modified=False)
+            seq.append(el)
+        self.__slice_cache[key] = seq
+        return callback(seq) if callback else seq
 
 
 def parse_backend(backend):
@@ -379,7 +517,29 @@ def getdb(backend=None, **kwargs):
     return _getdb(scheme, address, params)
 
 
-def getcache(backend=None, **kwargs):
-    '''Similar to :func:`getdb`, it creates a :class:`CacheServer`.'''
-    db = getdb(backend=backend, **kwargs)
-    return db.as_cache()
+def execute_generator(gen):
+    exc_info = None
+    result = None
+    while True:
+        try:
+            if exc_info:
+                result = failure.throw(*exc_info)
+                exc_info = None
+            else:
+                result = gen.send(result)
+        except StopIteration:
+            break
+        except Exception:
+            if not exc_info:
+                exc_info = sys.exc_info()
+            else:
+                break
+        else:
+            if isgenerator(result):
+                result = execute_generator(result)
+    #
+    if exc_info:
+        raise_error_trace(exc_info[1], exc_info[2])
+    else:
+        return result
+

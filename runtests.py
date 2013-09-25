@@ -2,6 +2,7 @@
 '''Stdnet asynchronous test suite. Requires pulsar.'''
 import sys
 import os
+
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run
 p = os.path
@@ -32,17 +33,16 @@ from stdnet.utils import test
 
 def start():
     os.environ['stdnet_test_suite'] = 'pulsar'
-    suite = TestSuite(
-            description='Stdnet Asynchronous test suite',
-                modules=('tests.all',),
-                plugins=(test.StdnetPlugin(),
-                         bench.BenchMark(),
-                         profile.Profile())
-              )
+    suite = TestSuite(description='Stdnet Asynchronous test suite',
+                      modules=('tests.all',),
+                      plugins=(test.StdnetPlugin(),
+                               bench.BenchMark(),
+                               profile.Profile())
+                      )
     suite.bind_event('tests', test.create_tests)
     suite.start()
-    
-    
+
+
 if __name__ == '__main__':
     print(sys.version)
     print('testing with pulsar %s' % pulsar.__version__)

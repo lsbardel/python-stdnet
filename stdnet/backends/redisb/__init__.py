@@ -6,7 +6,6 @@ from .client import *
 
 import stdnet
 from stdnet import FieldValueError, CommitException, QuerySetError
-from stdnet.utils import async
 from stdnet.utils import (gen_unique_id, zip, ispy3k,
                           native_str, flat_mapping, unique_tuple)
 from stdnet.backends import (BackendStructure, session_result,
@@ -129,7 +128,7 @@ class check_structures(RedisScript):
 ############################################################################
 ##    REDIS QUERY CLASS
 ############################################################################
-class RedisQuery(async.BackendQuery):
+class RedisQuery(stdnet.BackendQuery):
     card = None
     _meta_info = None
     script_dep = {'script_dependency': ('build_query', 'move2set')}
@@ -236,7 +235,8 @@ elements in the query.'''
         else:
             self.ismember = None
         self.card(self.query_key)
-        return async.on_result(pipe.execute(), lambda r: r[-1])
+        result = yield pipe.execute()
+        yield result[-1]
 
     def order(self, last):
         '''Perform ordering with respect model fields.'''
@@ -509,13 +509,11 @@ class List(RedisStructure):
     def pop_back(self):
         return self.client.rpop(self.id)
 
-    @async.async()
     def block_pop_front(self, timeout):
         value = yield self.client.blpop(self.id, timeout)
         if value:
             yield value[1]
 
-    @async.async()
     def block_pop_back(self, timeout):
         value = yield self.client.brpop(self.id, timeout)
         if value:
@@ -558,7 +556,6 @@ class Hash(RedisStructure):
     def get(self, key):
         return self.client.hget(self.id, key)
 
-    @async.async()
     def pop(self, key):
         pi = self.is_pipeline
         p = self.client if pi else self.client.pipeline()
@@ -717,31 +714,6 @@ end''')
 
 
 ############################################################################
-##    REDIS CACHE
-############################################################################
-class CacheServer(stdnet.CacheServer):
-
-    def __init__(self, client):
-        self.client = client
-
-    def set(self, key, value, timeout=None):
-        return self.client.set(id, value, timeout or 0)
-
-    def get(self, key, default=None):
-        v = self.client.get(key)
-        if v:
-            return v
-        else:
-            return default
-
-    def expire(self, key, timeout):
-        return self.client.expire(key, timeout)
-
-    def __contains__(self, key):
-        return self.client.exists(key)
-
-
-############################################################################
 ##    REDIS BACKEND
 ############################################################################
 class BackendDataServer(stdnet.BackendDataServer):
@@ -771,28 +743,14 @@ class BackendDataServer(stdnet.BackendDataServer):
     def auto_id_to_python(self, value):
         return int(value)
 
+    def is_async(self):
+        return not isinstance(self.client, Redis)
+
     def ping(self):
         return self.client.ping()
 
-    def as_cache(self):
-        if self.namespace:
-            c = PrefixedRedis(self.client, self.namespace)
-        else:
-            c = self.client
-        return CacheServer(c)
-
     def disconnect(self):
         self.client.connection_pool.disconnect()
-
-    def load_scripts(self, *names):
-        if not names:
-            names = registered_scripts()
-        pipe = self.client.pipeline()
-        for name in names:
-            script = get_script(name)
-            if script:
-                pipe.script_load(script.script)
-        return pipe.execute()
 
     def meta(self, meta):
         '''Extract model metadata for lua script stdnet/lib/lua/odm.lua'''
@@ -919,12 +877,6 @@ class BackendDataServer(stdnet.BackendDataServer):
             else:
                 be.delete()
             instance.cache.clear()
-
-    def bind_before_send(self, callback):
-        pass
-
-    def publish(self, channel, message):
-        return self.client.execute_command('PUBLISH', channel, message)
 
     def _decode_keys(self, value):
         encoding = self.client.encoding

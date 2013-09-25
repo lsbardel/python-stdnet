@@ -4,7 +4,6 @@ from itertools import chain
 from inspect import isgenerator, isclass
 
 from stdnet.utils import grouper
-from stdnet.utils.async import async
 
 
 LOGGER = logging.getLogger('stdnet.search')
@@ -43,7 +42,7 @@ The main methods to be implemented are :meth:`add_item`,
                         yield word
 
         se.add_word_middleware(stopwords('and','or','this','that',...))
-        
+
 .. attribute:: max_in_session
 
     Maximum number of instances to be reindexed in one session.
@@ -64,7 +63,7 @@ The main methods to be implemented are :meth:`add_item`,
     def backend(self):
         '''Backend for this search engine.'''
         return self._backend
-    
+
     def register(self, model, related=None):
         '''Register a :class:`StdModel` with this search :class:`SearchEngine`.
 When registering a model, every time an instance is created, it will be
@@ -77,7 +76,7 @@ indexed by the search engine.
         self.REGISTERED_MODELS[model] = update_model
         self.router.post_commit.connect(update_model, sender=model)
         self.router.post_delete.connect(update_model, sender=model)
-        
+
     def get_related_fields(self, item):
         if not isclass(item):
             item = item.__class__
@@ -139,8 +138,7 @@ It extracts content from the given *item* and add it to the index.
 :parameter item: an instance of a :class:`stdnet.odm.StdModel`.
 """
         self.index_items_from_model((item,), item.__class__)
-            
-    @async()
+
     def index_items_from_model(self, items, model):
         """This is the main function for indexing items.
 It extracts content from a list of *items* belonging to *model* and
@@ -178,8 +176,7 @@ add it to the index.
         for related in self.get_related_fields(model):
             qs = qs.load_related(related)
         return qs
-        
-    @async()
+
     def reindex(self):
         '''Re-index models by removing indexes and rebuilding them by iterating
 through all the instances of :attr:`REGISTERED_MODELS`.'''
@@ -196,12 +193,12 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
     def session(self):
         '''Create a session for the search engine'''
         return self.router.session()
-    
+
     # INTERNALS
     #################################################################
     def set_router(self, router):
         self.router = router
-        
+
     def item_field_iterator(self, item):
         if item:
             for processor in self.ITEM_PROCESSORS:
@@ -209,7 +206,7 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
                 if result is not None:
                     return result
         raise ValueError('Cound not iterate through "%s" fields' % item)
-        
+
     def _item_data(self, items):
         fi = self.item_field_iterator
         for item in items:
@@ -218,7 +215,7 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
             data = fi(item)
             if data:
                 yield item, data
-        
+
     # ABSTRACT FUNCTIONS
     ################################################################
     def remove_item(self, item_or_model, session, ids=None):
@@ -298,7 +295,7 @@ An engine processor is a callable
 which return an iterable over text.'''
     def __init__(self, se):
         self.se = se
-        
+
     def __call__(self, item):
         related = self.se.get_related_fields(item)
         data = []

@@ -19,7 +19,10 @@ install:
   - python setup.py install
   - sudo rm -rf stdnet
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
-script: python -m runtests
+script:
+    coverage run runtests.py --concurrency thread
+after_success:
+    coveralls
 
 # Only test master and dev
 branches:

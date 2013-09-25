@@ -13,10 +13,10 @@ class DummyBackendDataServer(BackendDataServer):
 
 class TestBackend(test.TestCase):
     multipledb = False
-    
+
     def get_backend(self, **kwargs):
         return DummyBackendDataServer(**kwargs)
-    
+
     def testVirtuals(self):
         self.assertRaises(NotImplementedError, BackendDataServer, '', '')
         b = self.get_backend()
@@ -26,17 +26,16 @@ class TestBackend(test.TestCase):
         self.assertRaises(NotImplementedError, b.model_keys, None)
         self.assertRaises(NotImplementedError, b.as_cache)
         self.assertRaises(NotImplementedError, b.flush)
-        self.assertRaises(NotImplementedError, b.publish, '', '')
-        
+
     def testMissingStructure(self):
         l = odm.List()
         self.assertRaises(AttributeError, l.backend_structure)
 
-    def testRedis(self): 
+    def testRedis(self):
         b = getdb('redis://')
         self.assertEqual(b.name, 'redis')
         self.assertEqual(b.connection_string, 'redis://127.0.0.1:6379?db=0')
-        
+
     def testBackendStructure_error(self):
         s = BackendStructure(None, None, None)
         self.assertRaises(NotImplementedError, s.flush)

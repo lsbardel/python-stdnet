@@ -1,3 +1,4 @@
 redis
 cython
 pulsar
+coveralls

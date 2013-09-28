@@ -232,27 +232,28 @@ It can be used in the following way::
 
 class ListField(StructureField):
     '''A field maintaining a list of values.
-When accessed from the model instance,
-it returns a of :class:`List` structure. For example::
 
-    class UserMessage(odm.StdModel):
-        user = odm.SymbolField()
-        messages = odm.ListField()
-    
-Lets register it with redis::
+    When accessed from the model instance,
+    it returns a of :class:`List` structure. For example::
 
-    >>> odm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
-    'redis db 7 on 127.0.0.1:6379'
-    
-Can be used as::
+        class UserMessage(odm.StdModel):
+            user = odm.SymbolField()
+            messages = odm.ListField()
 
-    >>> m = UserMessage(user='pippo').save()
-    >>> m.messages.push_back("adding my first message to the list")
-    >>> m.messages.push_back("ciao")
-    >>> type(u.messages)
-    <class 'stdnet.odm.struct.List'>
-    >>> u.messages.size()
-    2
+    Lets register it with redis::
+
+        >>> odm.register(UserMessage, "redis://127.0.0.1:6379?db=11")
+        'redis db 7 on 127.0.0.1:6379'
+
+    Can be used as::
+
+        >>> m = UserMessage(user='pippo').save()
+        >>> m.messages.push_back("adding my first message to the list")
+        >>> m.messages.push_back("ciao")
+        >>> type(u.messages)
+        <class 'stdnet.odm.struct.List'>
+        >>> u.messages.size()
+        2
     '''
     type = 'list'
     def structure_class(self):

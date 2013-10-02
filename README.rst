@@ -7,8 +7,9 @@ and instances of those classes with **items** in their corresponding collections
 Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
-:Master CI: |master-build|_ 
-:Dev CI: |dev-build|_ 
+:Master CI: |master-build|_
+:Dev CI: |dev-build|_
+:Coverage: |coverage|
 :Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
@@ -20,13 +21,17 @@ are treated in the same way in the python language domain.
 .. _master-build: http://travis-ci.org/lsbardel/python-stdnet
 .. |dev-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=dev
 .. _dev-build: http://travis-ci.org/lsbardel/python-stdnet
+.. |coverage| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=master
+  :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=master
+
+
 
 Contents
 ~~~~~~~~~~~~~~~
 
 .. contents::
     :local:
-    
+
 
 Features
 =================
@@ -67,30 +72,30 @@ Bandwidth and server round-trips can be reduced to the bare minimum
 so that your application is fast and memory efficient.
 
 
-Installing 
+Installing
 ================================
 To install, download, uncompress and type::
 
-	python setup.py install
+    python setup.py install
 
 otherwise use ``easy_install``::
 
-	easy_install python-stdnet
-	
+    easy_install python-stdnet
+
 or ``pip``::
 
-	pip install python-stdnet
-	
+    pip install python-stdnet
+
 
 Version Check
 ======================
 To know which version you have installed::
 
-	>>> import stdnet
-	>>> stdnet.__version__
-	'0.8.0'
-	>>> stdnet.VERSION
-	stdnet_version(major=0, minor=8, micro=0, releaselevel='final', serial=1)
+    >>> import stdnet
+    >>> stdnet.__version__
+    '0.8.0'
+    >>> stdnet.VERSION
+    stdnet_version(major=0, minor=8, micro=0, releaselevel='final', serial=1)
 
 
 Backends
@@ -100,52 +105,52 @@ Currently the list is limited to
 
 * Redis_ 2.6 or above.
 * Mongodb_ (alpha).
- 
- 
+
+
 Object Data Mapper
 ================================
 The ``stdnet.odm`` module is the ODM, it maps python objects into database data
 and vice-versa. It is design to be fast and safe to use::
- 
-	from stdnet import odm
- 		
-	class Base(odm.StdModel):
-	    '''An abstract model. This won't have any data in the database.'''
-	    name = odm.SymbolField(unique = True)
-	    ccy  = odm.SymbolField()
-	    
-	    def __unicode__(self):
-	        return self.name
-	    
-	    class Meta:
-	        abstract = True
-	
-	
-	class Instrument(Base):
-	    itype = odm.SymbolField()
-	
-	    
-	class Fund(Base):
-	    description = odm.CharField()
-	
-	
-	class PositionDescriptor(odm.StdModel):
-	    dt    = odm.DateField()
-	    size  = odm.FloatField()
-	    price = odm.FloatField()
-	    position = odm.ForeignKey("Position", index=False)
-	
-	
-	class Position(odm.StdModel):
-	    instrument = odm.ForeignKey(Instrument, related_name='positions')
-	    fund       = odm.ForeignKey(Fund)
-	    history    = odm.ListField(model=PositionDescriptor)
-	    
-	    def __unicode__(self):
-	        return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
-	
-	
-	    
+
+    from stdnet import odm
+
+    class Base(odm.StdModel):
+        '''An abstract model. This won't have any data in the database.'''
+        name = odm.SymbolField(unique = True)
+        ccy  = odm.SymbolField()
+
+        def __unicode__(self):
+            return self.name
+
+        class Meta:
+            abstract = True
+
+
+    class Instrument(Base):
+        itype = odm.SymbolField()
+
+
+    class Fund(Base):
+        description = odm.CharField()
+
+
+    class PositionDescriptor(odm.StdModel):
+        dt    = odm.DateField()
+        size  = odm.FloatField()
+        price = odm.FloatField()
+        position = odm.ForeignKey("Position", index=False)
+
+
+    class Position(odm.StdModel):
+        instrument = odm.ForeignKey(Instrument, related_name='positions')
+        fund       = odm.ForeignKey(Fund)
+        history    = odm.ListField(model=PositionDescriptor)
+
+        def __unicode__(self):
+            return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
+
+
+
 Register models with backend::
 
     models = orm.Router('redis://localhost?db=1')
@@ -156,9 +161,9 @@ Register models with backend::
 
 And play with the API::
 
-	>>> f = models.fund.new(name="pluto, description="The pluto fund", ccy="EUR")
-	>>> f
-	Fund: pluto
+    >>> f = models.fund.new(name="pluto, description="The pluto fund", ccy="EUR")
+    >>> f
+    Fund: pluto
 
 
 .. _runningtests:
@@ -179,7 +184,7 @@ To run tests open a shell and launch Redis. On another shell,
 from within the ``python-stdnet`` package directory, type::
 
     python runtests.py
-    
+
 Tests are run against a local redis server on port ``6379`` and database 7 by default.
 To change the server and database where to run tests pass the ``--server``
 option as follow::
@@ -188,17 +193,17 @@ option as follow::
 
 For more information type::
 
-    python runtests.py -h 
+    python runtests.py -h
 
 To access coverage of tests you need to install the coverage_ package and run the tests using::
 
     coverage run runtests.py
-    
+
 and to check out the coverage report::
 
     coverage html
-    
-    
+
+
 .. _kudo:
 
 Kudo

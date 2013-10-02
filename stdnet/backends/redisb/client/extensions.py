@@ -5,13 +5,12 @@ from datetime import datetime
 from copy import copy
 
 from stdnet.utils.structures import OrderedDict
-from stdnet.utils.async import async
 from stdnet.utils import iteritems, format_int
 from stdnet import odm
 
 try:
     import redis
-except ImportError:
+except ImportError:     # pragma    nocover
     from stdnet import ImproperlyConfigured
     raise ImproperlyConfigured('Redis backend requires redis python client')
 
@@ -342,7 +341,6 @@ class RedisDbQuery(odm.QueryBase):
     def client(self):
         return self.session.router[self.model].backend.client
 
-    @async()
     def items(self):
         client = self.client
         info = yield client.info()
@@ -393,7 +391,6 @@ class RedisDbManager(odm.Manager):
     def client(self):
         return self.backend.client
 
-    @async()
     def panels(self):
         info = yield self.client.info()
         panels = {}

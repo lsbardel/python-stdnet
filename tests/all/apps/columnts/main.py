@@ -8,30 +8,31 @@ from stdnet.utils import test, encoders, populate, ispy3k, iteritems
 from stdnet.apps.columnts import ColumnTS, as_dict
 from stdnet.backends import redisb
 
-from tests.py.structures.base import StructMixin
+from tests.all.structures.base import StructMixin
+
 
 nan = float('nan')
 this_path = os.path.split(os.path.abspath(__file__))[0]
 
 bin_to_float = lambda f : unpack('>d', f)[0]
-if ispy3k:  #pragma nocover
+if ispy3k:  # pragma nocover
     bitflag = lambda value: value
-else:   #pragma nocover
+else:   # pragma nocover
     bitflag = ord
-    
+
 class timeseries_test1(redisb.RedisScript):
     script = (redisb.read_lua_file('tabletools'),
               redisb.read_lua_file('columnts.columnts'),
               redisb.read_lua_file('test1',this_path))
-    
-    
+
+
 class ColumnData(test.DataGenerator):
     sizes = {'tiny': 100,
              'small': 300,
              'normal': 2000,
              'big': 10000,
              'huge': 1000000}
-    
+
     def generate(self):
         size = self.size
         self.data1 = tsdata(self, ('a','b','c','d','f','g'))
@@ -40,10 +41,10 @@ class ColumnData(test.DataGenerator):
         self.missing = tsdata(self, ('a','b','c','d','f','g'), missing=True)
         self.data_mul1 = tsdata(self, ('eurusd',))
         self.data_mul2 = tsdata(self, ('gbpusd',))
-        
-        
+
+
 class tsdata(object):
-    
+
     def __init__(self, g, fields, start=None, end=None, missing=False):
         end = end or date.today()
         if not start:
@@ -76,7 +77,7 @@ class tsdata(object):
                 self.sorted_fields[field].append(fields[field])
         self.sorted_values = (sdates,self.sorted_fields)
         self.length = len(sdates)
-        
+
     def create(self, test, id=None):
         '''Create one ColumnTS with six fields and cls.size dates'''
         models = test.mapper
@@ -94,7 +95,7 @@ class ColumnMixin(object):
     structure = ColumnTS
     name = 'columnts'
     data_cls = ColumnData
-    
+
     def create_one(self):
         ts = self.structure()
         d1 = date(2012,1,23)
@@ -113,7 +114,7 @@ class ColumnMixin(object):
         # test bad add
         self.assertRaises(TypeError, ts.add, date(2012,1,20), 1, 2, 3)
         return ts
-    
+
     def empty(self):
         models = self.mapper
         l = models.register(self.structure())
@@ -121,7 +122,7 @@ class ColumnMixin(object):
         models.session().add(l)
         self.assertTrue(l.session is not None)
         return l
-    
+
     def check_stats(self, stat_field, data):
         N = len(data)
         cdata = list((d for d in data if d==d))
@@ -136,11 +137,11 @@ class ColumnMixin(object):
         self.assertAlmostEqual(stat_field['sum2'], sum(cdata2)/NC)
         self.assertAlmostEqual(stat_field['dsum'], sum(dd)/(NC-1))
         self.assertAlmostEqual(stat_field['dsum2'], sum(dd2)/(NC-1))
-    
+
     def as_dict(self, serie):
         times, fields = yield serie.irange()
         yield as_dict(times, fields)
-    
+
     def makeGoogle(self):
         ts = self.mapper.register(self.create_one())
         self.assertTrue(len(ts.cache.fields['open']), 2)
@@ -157,10 +158,10 @@ class ColumnMixin(object):
                 v2 = self.data[dt.date()][field]
                 self.assertAlmostEqual(v, v2)
         yield ts
-        
-        
+
+
 class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
-    
+
     def testLuaClass(self):
         ts = self.empty()
         backend = ts.backend_structure()
@@ -168,13 +169,13 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         c = backend.client
         r = yield c.execute_script('timeseries_test1', (backend.id,))
         self.assertEqual(r, b'OK')
-        
+
     def testEmpty2(self):
         '''Check an empty timeseries'''
         ts = self.empty()
         yield self.async.assertEqual(ts.numfields(), 0)
         yield self.async.assertEqual(ts.fields(), ())
-        
+
     def testFrontBack(self):
         models = self.mapper
         ts = models.register(ColumnTS(pickler=encoders.DateConverter()))
@@ -190,7 +191,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         yield self.async.assertEqual(ts.size(),2)
         yield self.async.assertEqual(ts.front(), (d1, {'foo':789.3}))
         yield self.async.assertEqual(ts.back(), (d2, {'foo':-5.2}))
-        
+
     def test_ddd_simple(self):
         ts = self.empty()
         with ts.session.begin() as t:
@@ -229,7 +230,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertTrue('pv' in fields)
         for v, t in zip(fields['pv'],[53.8, 56]):
             self.assertAlmostEqual(v, t)
-        
+
     def test_add_nil(self):
         ts = self.empty()
         with ts.session.begin() as t:
@@ -242,13 +243,13 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertTrue('pv' in fields)
         n = fields['pv'][0]
         self.assertNotEqual(n, n)
-        
+
     def testGoogleDrop(self):
         ts = yield self.makeGoogle()
         yield self.async.assertEqual(ts.fields(), ('close','high','low','open'))
         yield self.async.assertEqual(ts.numfields(), 4)
         yield self.async.assertEqual(ts.size(), 3)
-        
+
     def testRange(self):
         ts = yield self.makeGoogle()
         data = ts.irange()
@@ -259,7 +260,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertEqual(high[0],(datetime(2012,1,19),640.99))
         self.assertEqual(high[1],(datetime(2012,1,20),591))
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
-        
+
     def testRangeField(self):
         ts = yield self.makeGoogle()
         data = ts.irange(fields=('low','high','badone'))
@@ -271,14 +272,14 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertEqual(high[0],(datetime(2012,1,19),640.99))
         self.assertEqual(high[1],(datetime(2012,1,20),591))
         self.assertEqual(high[2],(datetime(2012,1,23),588.66))
-        
+
     def testRaises(self):
         ts = yield self.makeGoogle()
         self.assertRaises(TypeError, ts.merge, 5)
         self.assertRaises(ValueError, ts.merge, (5,))
         ts.session = None
         self.assertRaises(SessionNotAvailable, ts.merge, (5, ts))
-        
+
     def testUpdateDict(self):
         '''Test updating via a dictionary.'''
         ts = yield self.makeGoogle()
@@ -299,7 +300,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
             for d, v1 in zip(dates, fields[field]):
                 v2 = data[d.date()][field]
                 self.assertAlmostEqual(v1, v2)
-        
+
     def __testBadQuery(self):
         ts = yield self.makeGoogle()
         # get the backend id and override it
@@ -313,7 +314,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
                           date(2012,1,23), {'open':586})
         self.assertRaises(redisb.ScriptError, ts.irange)
         self.assertRaises(redisb.RedisInvalidResponse, ts.size)
-        
+
     def test_get(self):
         ts = yield self.makeGoogle()
         v = yield ts.get(date(2012,1,23))
@@ -323,7 +324,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertEqual(v,v2)
         self.assertEqual(ts.get(date(2014,1,1)),None)
         self.assertRaises(KeyError, lambda: ts[date(2014,1,1)])
-        
+
     def testSet(self):
         ts = yield self.makeGoogle()
         ts[date(2012,1,27)] = {'open': 600}
@@ -334,7 +335,7 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertNotEqual(res['close'],res['close'])
         self.assertNotEqual(res['high'],res['high'])
         self.assertNotEqual(res['low'],res['low'])
-        
+
     def test_times(self):
         ts = yield self.makeGoogle()
         dates = yield ts.itimes()
@@ -342,10 +343,10 @@ class TestTimeSeries(ColumnMixin, StructMixin, test.TestCase):
         self.assertEqual(len(dates), 3)
         for dt in dates:
             self.assertIsInstance(dt, datetime)
-        
+
 
 class TestOperations(ColumnMixin, test.TestCase):
-    
+
     @classmethod
     def after_setup(cls):
         cls.ts1 = yield cls.data.data1.create(cls)
@@ -353,7 +354,7 @@ class TestOperations(ColumnMixin, test.TestCase):
         cls.ts3 = yield cls.data.data3.create(cls)
         cls.mul1 = yield cls.data.data_mul1.create(cls)
         cls.mul2 = yield cls.data.data_mul2.create(cls)
-            
+
     def test_merge2series(self):
         data = self.data
         ts1, ts2 = self.ts1, self.ts2
@@ -384,7 +385,7 @@ class TestOperations(ColumnMixin, test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-                 
+
     def test_merge3series(self):
         data = self.data
         ts1, ts2, ts3 = self.ts1, self.ts2, self.ts3
@@ -455,7 +456,7 @@ class TestOperations(ColumnMixin, test.TestCase):
             else:
                 for v in result.values():
                     self.assertNotEqual(v,v)
-    
+
     def test_add_multiply2(self):
         data = self.data
         ts1, ts2, mul1, mul2 = self.ts1, self.ts2, self.mul1, self.mul2
@@ -487,7 +488,7 @@ class TestOperations(ColumnMixin, test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-                    
+
     def test_multiply_no_store(self):
         data = self.data
         ts1, ts2 = self.ts1, self.ts2
@@ -539,19 +540,19 @@ class TestOperations(ColumnMixin, test.TestCase):
                 for values in fields.values():
                     v = values[i]
                     self.assertNotEqual(v,v)
-    
 
-class a:    
+
+class a:
 #class TestMissingValues(TestOperations):
-    
+
     @classmethod
     def after_setup(cls):
         cls.ts1 = yield cls.data.missing.create(cls)
-    
+
     def test_missing(self):
         result = self.ts1.istats(0, -1)
         stats = result['stats']
         self.assertEqual(len(stats), 6)
         for stat in stats:
             self.check_stats(stats[stat],self.fields[stat])
-    
+

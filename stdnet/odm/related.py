@@ -1,7 +1,6 @@
 from functools import partial
 
 from stdnet.utils import encoders
-from stdnet.utils.async import on_result
 from stdnet.utils.dispatch import Signal
 from stdnet import QuerySetError, ManyToManyError
 
@@ -34,7 +33,7 @@ class ModelFieldPickler(encoders.Encoder):
         tpy = self.model.pk().to_python
         ids = [tpy(id, backend) for id in iterable]
         result = session.query(self.model).filter(id=ids).all()
-        return on_result(result, partial(self._sort, ids))
+        return session.backend.on_result(result, partial(self._sort, ids))
 
     def _sort(self, ids, results):
         results = dict(((r.pkvalue(), r) for r in results))

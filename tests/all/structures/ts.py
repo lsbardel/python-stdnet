@@ -4,7 +4,7 @@ from datetime import date
 from stdnet import odm
 from stdnet.utils import test, encoders, zip
 
-from tests.py.multifields.timeseries import TsData
+from tests.all.multifields.timeseries import TsData
 
 from .base import StructMixin
 
@@ -13,7 +13,7 @@ class TestTS(StructMixin, test.TestCase):
     structure = odm.TS
     data_cls = TsData
     name = 'ts'
-    
+
     def create_one(self):
         ts = self.structure()
         ts.update(zip(self.data.dates, self.data.values))
@@ -21,12 +21,12 @@ class TestTS(StructMixin, test.TestCase):
         self.assertTrue(ts.cache.toadd)
         self.assertFalse(ts.cache.toremove)
         return ts
-        
+
     def test_empty2(self):
         ts = self.empty()
         yield self.async.assertEqual(ts.front(), None)
         yield self.async.assertEqual(ts.back(), None)
-        
+
     def test_range(self):
         ts = yield self.not_empty()
         yield self.async.assertEqual(ts.size(), len(set(self.data.dates)))
@@ -42,7 +42,7 @@ class TestTS(StructMixin, test.TestCase):
         for time, val in range:
             self.assertTrue(time>=front[0])
             self.assertTrue(time<=back[0])
-            
+
     def test_get(self):
         ts = yield self.not_empty()
         dt1 = self.data.dates[0]
@@ -52,7 +52,7 @@ class TestTS(StructMixin, test.TestCase):
         yield self.async.assertEqual(ts.get(date(1990,1,1)),None)
         yield self.async.assertEqual(ts.get(date(1990,1,1),1),1)
         yield self.async.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
-        
+
     def test_pop(self):
         ts = yield self.not_empty()
         dt = self.data.dates[5]
@@ -62,7 +62,7 @@ class TestTS(StructMixin, test.TestCase):
         yield self.async.assertFalse(dt in ts)
         yield self.async.assertRaises(KeyError, ts.pop, dt)
         yield self.async.assertEqual(ts.pop(dt,'bla'), 'bla')
-        
+
     def test_rank_ipop(self):
         ts = yield self.not_empty()
         dt = self.data.dates[5]
@@ -73,7 +73,7 @@ class TestTS(StructMixin, test.TestCase):
         value2 = yield ts.ipop(r)
         self.assertEqual(value, value2)
         yield self.async.assertFalse(dt in ts)
-        
+
     def test_pop_range(self):
         ts = yield self.not_empty()
         all_dates = yield ts.itimes()
@@ -88,4 +88,4 @@ class TestTS(StructMixin, test.TestCase):
         all_dates = set(all_dates)
         self.assertTrue(all_dates)
         for dt,_ in range:
-            self.assertFalse(dt in all_dates) 
+            self.assertFalse(dt in all_dates)

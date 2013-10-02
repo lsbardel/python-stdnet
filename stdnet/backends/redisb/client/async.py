@@ -12,17 +12,13 @@ Usage::
     db = getdb('redis://127.0.0.1:6378?password=bla&timeout=0')
 
 '''
+from pulsar import async
 from pulsar.apps import redis
 from pulsar.apps.redis.client import BasePipeline
 
 from .extensions import (RedisExtensionsMixin, get_script, RedisError,
                          all_loaded_scripts)
 from .prefixed import PrefixedRedisMixin
-
-from stdnet.utils.async import async_binding, async
-
-if not async_binding:   # pragma    nocover
-    raise ImportError
 
 
 class Redis(RedisExtensionsMixin, redis.Redis):

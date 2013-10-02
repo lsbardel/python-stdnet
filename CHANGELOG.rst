@@ -2,7 +2,7 @@
 
 Ver. 0.9.0 - Development
 ===============================
-* Asynchronous redis connection moved to pulsar.
+* Asynchronous redis connection moved to pulsar_.
 * Added the :meth:`odm.Manager.save` as shortcut for immediately committing
   changes to a model.
 * Bug fix in model registration.
@@ -52,7 +52,7 @@ Ver. 0.8.0 - 2013 May 24
   :ref:`many-to-many relationship <many-to-many>`.
   To do so, the manager must be accessed via the class rather than an instance.
   Also the `through` attribute has been removed as it was equivalent to
-  the `model` attribute. 
+  the `model` attribute.
 * The :ref:`load_only <performance-loadonly>` query method can be applied to
   field of related models.
 * The :ref:`load_related <performance-loadrelated>` query method can now load only
@@ -77,7 +77,7 @@ Ver. 0.8.0 - 2013 May 24
 * Refactored test suite to handle asynchronous and synchronous connections.
 * Redis ``odm`` script is able to fix unique-keys/ids conflicts.
 * **578 regression tests** with **93%** coverage.
-  
+
 .. _vers07:
 
 Ver. 0.7.0 - 2012 Oct 25
@@ -287,7 +287,7 @@ Ver. 0.4.2 - 2010 Nov 17
 ============================
 * Added ``tags`` in tests. You can now run specific tags::
 
-	python runtests.py hash
+    python runtests.py hash
 
   will run tests specific to hashtables.
 * Removed ``ts`` tests since the timeseries structure is not in redis yet.
@@ -312,7 +312,7 @@ Ver. 0.4.0 - 2010 Nov 11
 * Added :class:`stdnet.CacheClass` which can be used as django_ cache backend.
   For example, using redis database 11 as cache is obtained by::
 
-	CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
+    CACHE_BACKEND = 'stdnet://127.0.0.1:6379/?type=redis&db=11&timeout=300'
 
 * Overall refactoring of :mod:`stdnet.odm` and :mod:`stdnet.backends` modules.
 * Lazy loading of models via the :mod:`stdnet.dispatch` module.

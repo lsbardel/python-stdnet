@@ -1,7 +1,6 @@
 from inspect import ismodule, isclass
 
 from stdnet.utils import native_str
-from stdnet.utils.async import multi_async
 from stdnet.utils.importer import import_module
 from stdnet.utils.dispatch import Signal
 from stdnet import getdb
@@ -179,10 +178,12 @@ model was already registered it does nothing.
     def flush(self, exclude=None, include=None, dryrun=False):
         '''Flush :attr:`registered_models`.
 
-:param exclude: optional list of model names to exclude.
-:param include: optional list of model names to include.
-:param dryrun: Doesn't remove anything, simply collect managers to flush.
-'''
+        :param exclude: optional list of model names to exclude.
+        :param include: optional list of model names to include.
+        :param dryrun: Doesn't remove anything, simply collect managers
+            to flush.
+        :return:
+        '''
         exclude = exclude or []
         results = []
         for manager in self._registered_models.values():
@@ -195,7 +196,7 @@ model was already registered it does nothing.
                     results.append(manager)
                 else:
                     results.append(manager.flush())
-        return results if dryrun else multi_async(results)
+        return results
 
     def unregister(self, model=None):
         '''Unregister a ``model`` if provided, otherwise it unregister all

@@ -2,14 +2,13 @@ import time
 from datetime import datetime, date
 
 from stdnet import odm
-from stdnet.utils.async import async
 
 
 class CustomManager(odm.Manager):
 
     def small_query(self, **kwargs):
         return self.query(**kwargs).load_only('code', 'group')
-    
+
     def something(self):
         return "I'm a custom manager"
 
@@ -187,11 +186,10 @@ class User(odm.StdModel):
     password = odm.SymbolField(index=False)
     updates = odm.ListField(model=Post)
     following = odm.ManyToManyField(model='self', related_name='followers')
-    
+
     def __unicode__(self):
         return self.username
-    
-    @async()
+
     def newupdate(self, message):
         session = self.session
         p  = yield session.router.post.new(data=message, user=self)
@@ -265,17 +263,17 @@ class CrossData(odm.StdModel):
     name = odm.SymbolField()
     data = odm.JSONField(as_string=False)
     extra = odm.ForeignKey('self', required=False)
-    
-    
+
+
 class FeedBase(odm.StdModel):
     name = odm.SymbolField()
     live = odm.ForeignKey(CrossData, required=False)
     prev = odm.ForeignKey(CrossData, required=False)
-    
+
     class Meta:
         abstract = True
-        
-    
+
+
 class Feed1(FeedBase):
     pass
 
@@ -297,12 +295,12 @@ class Task(odm.StdModel):
         instance = super(Task,self).clone(**kwargs)
         instance.timestamp = None
         return instance
-    
+
 
 class Parent(odm.StdModel):
     name = odm.SymbolField(primary_key=True)
     timestamp = odm.DateTimeField(default=datetime.now)
-    
+
 class Child(odm.StdModel):
     name = odm.SymbolField()
     parent = odm.ForeignKey(Parent)

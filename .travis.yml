@@ -20,7 +20,7 @@ install:
 script:
   - pep8 stdnet --exclude stdnet/apps/searchengine/processors
   - sudo rm -rf stdnet
-  - python -m covrun -w 2
+  - python -m covrun
 
 notifications:
   email: false

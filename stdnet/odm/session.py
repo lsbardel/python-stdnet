@@ -501,8 +501,7 @@ class Transaction(object):
         try:
             for response in responses:
                 r = yield response
-                done.append(r)
-            yield self._post_commit(session, done)
+                yield self._post_commit(session, r)
             yield callback() if callback else True
         finally:
             session.transaction = None

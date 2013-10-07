@@ -105,6 +105,10 @@ class RedisExtensionsMixin(object):
     )
 
     @property
+    def is_async(self):
+        return False
+
+    @property
     def is_pipeline(self):
         return False
 

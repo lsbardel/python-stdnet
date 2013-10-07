@@ -18,6 +18,7 @@ def _make_id(target):
 
 class one_time_callback:
     all = {}
+
     def __init__(self, callback):
         self.callback = callback
         self.all[id(self)] = self
@@ -42,7 +43,8 @@ class Signal(object):
         Create a new signal.
 
         providing_args
-            A list of the arguments this signal can pass along in a send() call.
+            A list of the arguments this signal can pass along in a send()
+            call.
         """
         self.receivers = []
         if providing_args is None:
@@ -77,12 +79,12 @@ class Signal(object):
             weak
                 Whether to use weak references to the receiver By default, the
                 module will attempt to use weak references to the receiver
-                objects. If this parameter is false, then strong references will
-                be used.
+                objects. If this parameter is false, then strong references
+                will be used.
 
             dispatch_uid
-                An identifier used to uniquely identify a particular instance of
-                a receiver. This will usually be a string, though it may be
+                An identifier used to uniquely identify a particular instance
+                of a receiver. This will usually be a string, though it may be
                 anything hashable.
         """
         if dispatch_uid:
@@ -91,7 +93,8 @@ class Signal(object):
             lookup_key = (_make_id(receiver), _make_id(sender))
 
         if weak:
-            receiver = saferef.safeRef(receiver, onDelete=self._remove_receiver)
+            receiver = saferef.safeRef(receiver,
+                                       onDelete=self._remove_receiver)
 
         self.lock.acquire()
         try:
@@ -108,8 +111,8 @@ class Signal(object):
         """
         Disconnect receiver from sender for signal.
 
-        If weak references are used, disconnect need not be called. The receiver
-        will be remove from dispatch automatically.
+        If weak references are used, disconnect need not be called.
+        The receiver will be remove from dispatch automatically.
 
         Arguments:
 
@@ -149,9 +152,9 @@ class Signal(object):
         """
         Send signal from sender to all connected receivers.
 
-        If any receiver raises an error, the error propagates back through send,
-        terminating the dispatch loop, so it is quite possible to not have all
-        receivers called if a raises an error.
+        If any receiver raises an error, the error propagates back through
+        send, terminating the dispatch loop, so it is quite possible to not
+        have all receivers called if a raises an error.
 
         Arguments:
 

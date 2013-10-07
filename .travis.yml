@@ -17,12 +17,14 @@ install:
   - sudo rm -rf pulsar
   - pip install -r requirements_dev.txt --use-mirrors
   - python setup.py install
-  - sudo rm -rf stdnet
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
 script:
-    coverage run runtests.py --concurrency thread
-after_success:
-    coveralls
+  - pep8 stdnet --exclude stdnet/apps/searchengine/processors
+  - sudo rm -rf stdnet
+  - python -m covrun -w 2
+
+notifications:
+  email: false
 
 # Only test master and dev
 branches:

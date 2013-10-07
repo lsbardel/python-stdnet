@@ -9,7 +9,7 @@ JSONDateDecimalEncoder
 date_decimal_hook
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: date_decimal_hook
-   
+
 flat_to_nested
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: flat_to_nested
@@ -23,21 +23,21 @@ from datetime import date, datetime
 from decimal import Decimal
 from collections import Mapping
 import json
-    
+
 from stdnet.utils import iteritems
 
 
-__ALL__ = ['JSPLITTER','EMPTYJSON',
-           'date2timestamp','totimestamp',
-           'totimestamp2','todatetime',
-           'JSONDateDecimalEncoder','date_decimal_hook',
-           'DefaultJSONEncoder','DefaultJSONHook',
-           'flat_to_nested','dict_flat_generator',
+__ALL__ = ['JSPLITTER', 'EMPTYJSON',
+           'date2timestamp', 'totimestamp',
+           'totimestamp2', 'todatetime',
+           'JSONDateDecimalEncoder', 'date_decimal_hook',
+           'DefaultJSONEncoder', 'DefaultJSONHook',
+           'flat_to_nested', 'dict_flat_generator',
            'addmul_number_dicts']
 
 JSPLITTER = '__'
 EMPTYJSON = (b'', '', None)
-date2timestamp = lambda dte : int(time.mktime(dte.timetuple()))
+date2timestamp = lambda dte: int(time.mktime(dte.timetuple()))
 
 
 def totimestamp(dte):
@@ -49,9 +49,9 @@ def totimestamp2(dte):
 
 
 def todatetime(tstamp):
-    return datetime.fromtimestamp(tstamp)    
-    
-    
+    return datetime.fromtimestamp(tstamp)
+
+
 class JSONDateDecimalEncoder(json.JSONEncoder):
     """The default JSON encoder used by stdnet. It provides
 JSON serialization for four additional classes:
@@ -75,7 +75,7 @@ JSON serialization for four additional classes:
         elif ndarray and isinstance(obj, ndarray):
             return obj.tolist()
         else:
-            return super(JSONDateDecimalEncoder,self).default(obj)
+            return super(JSONDateDecimalEncoder, self).default(obj)
 
 
 def date_decimal_hook(dct):
@@ -95,8 +95,8 @@ DefaultJSONEncoder = JSONDateDecimalEncoder
 DefaultJSONHook = date_decimal_hook
 
 
-def flat_to_nested(data, instance = None, attname = None,
-                   separator = None, loads = None):
+def flat_to_nested(data, instance=None, attname=None,
+                   separator=None, loads=None):
     '''Convert a flat representation of a dictionary to
 a nested representation. Fields in the flat representation are separated
 by the *splitter* parameters.
@@ -110,7 +110,7 @@ by the *splitter* parameters.
     separator = separator or JSPLITTER
     val = {}
     flat_vals = {}
-    for key,value in iteritems(data):
+    for key, value in iteritems(data):
         if value is None:
             continue
         keys = key.split(separator)
@@ -129,7 +129,7 @@ by the *splitter* parameters.
                 continue
         else:
             flat_vals[key] = value
-        
+
         d = val
         lk = keys[-1]
         for k in keys[:-1]:
@@ -138,19 +138,19 @@ by the *splitter* parameters.
                 d[k] = nd
             else:
                 nd = d[k]
-                if not isinstance(nd,dict):
-                    nd = {'':nd}
+                if not isinstance(nd, dict):
+                    nd = {'': nd}
                     d[k] = nd
             d = nd
         if lk not in d:
             d[lk] = value
         else:
             d[lk][''] = value
-            
+
     if instance and flat_vals:
         for attr, value in iteritems(flat_vals):
             setattr(instance, attr, value)
-            
+
     return val
 
 
@@ -162,7 +162,8 @@ def dict_flat_generator(value, attname=None, splitter=JSPLITTER,
         if not prefix:
             raise error('Cannot assign a non dictionary to a JSON field')
         else:
-            name = '%s%s%s' % (attname,splitter,prefix) if attname else prefix
+            name = '%s%s%s' % (attname, splitter,
+                               prefix) if attname else prefix
             yield name, dumps(value) if dumps else value
     else:
         # loop over dictionary
@@ -170,10 +171,11 @@ def dict_flat_generator(value, attname=None, splitter=JSPLITTER,
             val = value[field]
             key = prefix
             if field:
-                key = '%s%s%s' % (prefix,splitter,field) if prefix else field
-            for k, v2 in dict_flat_generator(val,attname,splitter,dumps,
-                                             key,error, field):
-                yield k,v2
+                key = '%s%s%s' % (prefix, splitter,
+                                  field) if prefix else field
+            for k, v2 in dict_flat_generator(val, attname, splitter, dumps,
+                                             key, error, field):
+                yield k, v2
 
 
 def value_type(data):
@@ -200,13 +202,13 @@ def addmul_number_dicts(series):
     '''Multiply dictionaries by a numeric values and add them together.
 
 :parameter series: a tuple of two elements tuples. Each serie is of the form::
-    
+
         (weight,dictionary)
-        
+
     where ``weight`` is a number and ``dictionary`` is a dictionary with
     numeric values.
 :parameter skip: optional list of field names to skip.
- 
+
 Only common fields are aggregated. If a field has a non-numeric value it is
 not included either.'''
     if not series:
@@ -225,4 +227,3 @@ not included either.'''
             if result is not None:
                 results[key] = result
         return results
-    

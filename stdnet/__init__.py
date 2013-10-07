@@ -1,17 +1,19 @@
-'''Object data mapper and advanced query manager for non relational databases.'''
+'''Object data mapper and advanced query manager for non relational
+databases.
+'''
 from .utils.exceptions import *
 from .utils.version import get_version, stdnet_version
 from .backends import *
 
 VERSION = stdnet_version(0, 9, 0, 'alpha', 3)
 
+
 __version__ = version = get_version(VERSION)
 __license__ = "BSD"
 __author__ = "Luca Sbardella"
 __contact__ = "luca.sbardella@gmail.com"
 __homepage__ = "https://github.com/lsbardel/python-stdnet"
-CLASSIFIERS = [
-               'Development Status :: 4 - Beta',
+CLASSIFIERS = ['Development Status :: 4 - Beta',
                'Environment :: Plugins',
                'Environment :: Console',
                'Environment :: Web Environment',

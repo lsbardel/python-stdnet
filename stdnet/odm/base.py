@@ -510,7 +510,28 @@ otherwise it returns the cached value.'''
 
     def __set_session(self, session):
         self.dbdata['session'] = session
-    session = property(__get_session, __set_session)
+    session = property(__get_session, __set_session,
+                       doc='The current :class:`Session` for this model.')
+
+    @property
+    def backend(self, client=None):
+        '''The :class:`stdnet.BackendDatServer` for this instance.
+
+        It can be ``None``.
+        '''
+        session = self.session
+        if session:
+            return session.model(self).backend
+
+    @property
+    def read_backend(self, client=None):
+        '''The read :class:`stdnet.BackendDatServer` for this instance.
+
+        It can be ``None``.
+        '''
+        session = self.session
+        if session:
+            return session.model(self).read_backend
 
     def get_attr_value(self, name):
         '''Provided for compatibility with :meth:`StdModel.get_attr_value`.

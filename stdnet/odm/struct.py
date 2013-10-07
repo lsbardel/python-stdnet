@@ -36,9 +36,10 @@ not in a transaction.'''
     _.__doc__ = f.__doc__
     return _
 
-################################################################################
+
+###########################################################################
 ##    CACHE CLASSES FOR STRUCTURES
-################################################################################
+###########################################################################
 class StructureCache(object):
     '''Interface for all :attr:`Structure.cache` classes.'''
     def __init__(self):
@@ -103,7 +104,7 @@ class setcache(StructureCache):
         self.toadd.update(values)
         self.toremove.difference_update(self.toadd)
 
-    def remove(self, values, add_to_remove = True):
+    def remove(self, values, add_to_remove=True):
         self.toadd.difference_update(values)
         if add_to_remove:
             self.toremove.update(values)
@@ -149,8 +150,8 @@ class hashcache(zsetcache):
     def items(self):
         return self.cache.items()
 
-    def remove(self, keys, add_to_remove = True):
-        d = lambda x : self.toadd.pop(x,None)
+    def remove(self, keys, add_to_remove=True):
+        d = lambda x: self.toadd.pop(x, None)
         for key in keys:
             d(key)
         if add_to_remove:
@@ -172,52 +173,54 @@ class tscache(hashcache):
         self.cache.update(data)
 
 
-################################################################################
+############################################################################
 ##    STRUCTURE CLASSES
-################################################################################
+############################################################################
 class Structure(ModelBase):
-    '''A :class:`Model` which is used a base class for remote data-structures.
-Remote structures are the backend of
-:ref:`structured fields <model-field-structure>` but they
-can also be used as stand alone objects. For example::
+    '''A :class:`Model` for remote data-structures.
 
-    import stdnet
-    db = stdnet.getdb(...)
-    mylist = db.list('bla')
+    Remote structures are the backend of
+    :ref:`structured fields <model-field-structure>` but they
+    can also be used as stand alone objects. For example::
 
-.. attribute:: cache
+        import stdnet
+        db = stdnet.getdb(...)
+        mylist = db.list('bla')
 
-    A python :class:`StructureCache` for this :class:`Structure`.
-    The :attr:`cache` is used when adding or removing data via
-    :class:`Transaction` as well as
-    for storing the results obtained form a call to :meth:`items`.
+    .. attribute:: cache
 
-.. attribute:: value_pickler
+        A python :class:`StructureCache` for this :class:`Structure`.
+        The :attr:`cache` is used when adding or removing data via
+        :class:`Transaction` as well as
+        for storing the results obtained form a call to :meth:`items`.
 
-    Class used for serialize and unserialize values.
-    If ``None`` the :attr:`stdnet.utils.encoders.NumericDefault`
-    will be used.
+    .. attribute:: value_pickler
 
-    Default ``None``.
+        Class used for serialize and unserialize values.
+        If ``None`` the :attr:`stdnet.utils.encoders.NumericDefault`
+        will be used.
 
-.. attribute:: field
+        Default ``None``.
 
-    The :class:`StructureField` which this owns this :class:`Structure`.
-    Default ``None``.
+    .. attribute:: field
 
-'''
+        The :class:`StructureField` which this owns this :class:`Structure`.
+        Default ``None``.
+
+    '''
     _model_type = 'structure'
     abstract = True
     pickler = None
     value_pickler = None
-    def __init__(self, value_pickler=None, name='', field=False, session=None,
-                 pkvalue=None, id=None, **kwargs):
+
+    def __init__(self, value_pickler=None, name='', field=False,
+                 session=None, pkvalue=None, id=None, **kwargs):
         self._field = field
         self._pkvalue = pkvalue
         self.id = id
         self.name = name
-        self.value_pickler = value_pickler or self.value_pickler or\
-                                encoders.NumericDefault()
+        self.value_pickler = (value_pickler or self.value_pickler or
+                              encoders.NumericDefault())
         self.setup(**kwargs)
         self.session = session
         if not self.id and not self._field:
@@ -246,6 +249,28 @@ can also be used as stand alone objects. For example::
         if 'cache' not in self._dbdata:
             self._dbdata['cache'] = self.cache_class()
         return self._dbdata['cache']
+
+    @property
+    def backend(self):
+        '''Returns the :class:`stdnet.BackendStructure`.
+        '''
+        session = self.session
+        if session is not None:
+            if self._field:
+                return session.model(self._field.model).backend
+            else:
+                return session.model(self).backend
+
+    @property
+    def read_backend(self):
+        '''Returns the :class:`stdnet.BackendStructure`.
+        '''
+        session = self.session
+        if session is not None:
+            if self._field:
+                return session.model(self._field.model).read_backend
+            else:
+                return session.model(self).read_backend
 
     def __repr__(self):
         return '%s %s' % (self.__class__.__name__, self.cache)
@@ -285,25 +310,19 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         return self.value_pickler.load_iterable(data, self.session)
 
     def backend_structure(self, client=None):
-        '''Returns a valid :class:`stdnet.BackendStructure` for this
-:class:`Structure`.'''
-        if self._field:
-            backend = self.session.model(self._field.model).backend
-        else:
-            backend = self.session.model(self).backend
-        return backend.structure(self, client)
+        '''Returns the :class:`stdnet.BackendStructure`.
+        '''
+        return self.backend.structure(self, client)
 
     def read_backend_structure(self, client=None):
-        if self._field:
-            backend = self.session.model(self._field.model).read_backend
-        else:
-            backend = self.session.model(self).read_backend
-        return backend.structure(self, client)
+        '''Returns the :class:`stdnet.BackendStructure` for reading.
+        '''
+        return self.read_backend.structure(self, client)
 
 
-################################################################################
+############################################################################
 ##    Mixins Structures
-################################################################################
+############################################################################
 class PairMixin(object):
     '''A mixin for structures with which holds pairs. It is the parent class
 of :class:`KeyValueMixin` and it is used as base class for the ordered set
@@ -345,10 +364,11 @@ structure :class:`Zset`.
         if len(pair) == 1:
             # if only one value is passed, the value must implement a
             # score function which retrieve the first value of the pair
-            # (score in zset, timevalue in timeseries, field value in hashtable)
+            # (score in zset, timevalue in timeseries, field value in
+            # hashtable)
             return (pair[0].score(), pair[0])
         elif len(pair) != 2:
-            raise TypeError('add expected 2 arguments, got {0}'\
+            raise TypeError('add expected 2 arguments, got {0}'
                             .format(len(pair)))
         else:
             return pair
@@ -382,12 +402,13 @@ Equivalent to python dictionary update method.
         loads = self.pickler.loads
         if self.value_pickler.require_session():
             data1 = []
+
             def _iterable():
                 for k, v in iterpair(mapping):
                     data1.append(loads(k))
                     yield v
             res = self.value_pickler.load_iterable(_iterable(), self.session)
-            return on_result(res, lambda data2: zip(data1, data2))
+            return self.backend.execute(res, lambda data2: zip(data1, data2))
         else:
             vloads = self.value_pickler.loads
             return [(loads(k), vloads(v)) for k, v in iterpair(mapping)]
@@ -422,8 +443,9 @@ methods, while its iterator is over keys.'''
     def __getitem__(self, key):
         dkey = self.pickler.dumps(key)
         if self.cache.cache is None:
-            res = self.read_backend_structure().get(dkey)
-            return on_result(res, lambda r: self._load_get_data(r, key))
+            backend = self.read_backend
+            res = backend.structure(self).get(dkey)
+            return backend.execute(res, lambda r: self._load_get_data(r, key))
         else:
             return self.cache.cache[key]
 
@@ -435,18 +457,22 @@ If the element is not available return the default value.
 :parameter default: default value when the field is not available'''
         if self.cache.cache is None:
             dkey = self.pickler.dumps(key)
-            res = self.read_backend_structure().get(dkey)
-            return on_result(res, lambda r: self._load_get_data(r, key, default))
+            backend = self.read_backend
+            res = backend.structure(self).get(dkey)
+            return backend.execute(
+                res, lambda r: self._load_get_data(r, key, default))
         else:
             return self.cache.cache.get(key, default)
 
     def pop(self, key, *args):
         if len(args) <= 1:
             dkey = self.pickler.dumps(key)
-            res = self.read_backend_structure().pop(dkey)
-            return on_result(res, lambda r: self._load_get_data(r, key, *args))
+            backend = self.backend
+            res = backend.structure(self).pop(dkey)
+            return backend.execute(
+                res, lambda r: self._load_get_data(r, key, *args))
         else:
-            raise TypeError('pop expected at most 2 arguments, got {0}'\
+            raise TypeError('pop expected at most 2 arguments, got {0}'
                             .format(len(args)+1))
 
     @commit_when_no_transaction
@@ -494,36 +520,42 @@ a numeric value, the score.'''
         '''Return a range with scores between start and end.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().range(s1, s2, withscores=withscores,
+        backend = self.read_backend
+        res = backend.structure(self).range(s1, s2, withscores=withscores,
+                                            **options)
+        if not callback:
+            callback = self.load_data if withscores else self.load_values
+        return backend.execute(res, callback)
+
+    def irange(self, start=0, end=-1, callback=None, withscores=True,
+               **options):
+        '''Return the range by rank between start and end.'''
+        backend = self.read_backend
+        res = backend.structure(self).irange(start, end,
+                                             withscores=withscores,
                                              **options)
         if not callback:
             callback = self.load_data if withscores else self.load_values
-        return on_result(res, callback)
-
-    def irange(self, start=0, end=-1, callback=None, withscores=True, **options):
-        '''Return the range by rank between start and end.'''
-        res = self.backend_structure().irange(start, end, withscores=withscores,
-                                              **options)
-        if not callback:
-            callback = self.load_data if withscores else self.load_values
-        return on_result(res, callback)
+        return backend.execute(res, callback)
 
     def pop_range(self, start, stop, callback=None, withscores=True):
         '''pop a range by score from the :class:`OrderedMixin`'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().pop_range(s1, s2, withscores=withscores)
+        backend = self.backend
+        res = backend.structure(self).pop_range(s1, s2, withscores=withscores)
         if not callback:
             callback = self.load_data if withscores else self.load_values
-        return on_result(res, callback)
+        return backend.execute(res, callback)
 
     def ipop_range(self, start=0, stop=-1, callback=None, withscores=True):
         '''pop a range from the :class:`OrderedMixin`'''
-        res = self.backend_structure().ipop_range(start, stop,
-                                                  withscores=withscores)
+        backend = self.backend
+        res = backend.structure(self).ipop_range(start, stop,
+                                                 withscores=withscores)
         if not callback:
             callback = self.load_data if withscores else self.load_values
-        return on_result(res, callback)
+        return backend.execute(res, callback)
 
 
 class Sequence(object):
@@ -551,17 +583,18 @@ sequence.'''
             yield self.value_pickler.loads(value)
 
     def __getitem__(self, index):
-        value = self.read_backend_structure().get(index)
-        return on_result(value, self.value_pickler.loads)
+        backend = self.read_backend
+        value = backend.structure(self).get(index)
+        return backend.execute(value, self.value_pickler.loads)
 
     def __setitem__(self, index, value):
         value = self.value_pickler.dumps(value)
         self.backend_structure().set(index, value)
 
 
-################################################################################
+############################################################################
 ##    STRUCTURES
-################################################################################
+############################################################################
 
 class Set(Structure):
     '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
@@ -671,20 +704,24 @@ and values are objects.'''
     def ipop(self, index):
         '''Pop a value at *index* from the :class:`TS`. Return ``None`` if
 index is not out of bound.'''
-        res = self.backend_structure().ipop(index)
-        return on_result(res, lambda r: self._load_get_data(r, index, None))
+        backend = self.backend
+        res = backend.structure(self).ipop(index)
+        return backend.execute(res,
+                               lambda r: self._load_get_data(r, index, None))
 
     def times(self, start, stop, callback=None, **kwargs):
         '''The times between times *start* and *stop*.'''
         s1 = self.pickler.dumps(start)
         s2 = self.pickler.dumps(stop)
-        res = self.backend_structure().times(s1, s2, **kwargs)
-        return on_result(res, callback or self.load_keys)
+        backend = self.read_backend
+        res = backend.structure(self).times(s1, s2, **kwargs)
+        return backend.execute(res, callback or self.load_keys)
 
     def itimes(self, start=0, stop=-1, callback=None, **kwargs):
         '''The times between rank *start* and *stop*.'''
-        res = self.backend_structure().itimes(start, stop, **kwargs)
-        return on_result(res, callback or self.load_keys)
+        backend = self.read_backend
+        res = backend.structure(self).itimes(start, stop, **kwargs)
+        return backend.execute(res, callback or self.load_keys)
 
 
 class String(Sequence, Structure):
@@ -693,7 +730,7 @@ class String(Sequence, Structure):
     cache_class = stringcache
     value_pickler = encoders.Bytes()
 
-    def incr(self, v = 1):
+    def incr(self, v=1):
         return self.backend_structure().incr(v)
 
 

@@ -4,17 +4,17 @@ from .porter import PorterStemmer
 
 
 class stopwords:
-    
-    def __init__(self, stp = None):
+
+    def __init__(self, stp=None):
         self.stp = stp if stp is not None else STOP_WORDS
-        
+
     def __call__(self, words):
         stp = self.stp
         for word in words:
             if word not in stp:
                 yield word
-                
-                
+
+
 def metaphone_processor(words):
     '''Double metaphone word processor.'''
     for word in words:
@@ -23,7 +23,7 @@ def metaphone_processor(words):
                 w = w.strip()
                 if w:
                     yield w
-                    
+
 
 def tolerant_metaphone_processor(words):
     '''Double metaphone word processor slightly modified so that when no
@@ -38,8 +38,8 @@ words are returned by the algorithm, the original word is returned.'''
                     yield w
         if not r:
             yield word
-                
-                
+
+
 def stemming_processor(words):
     '''Porter Stemmer word processor'''
     stem = PorterStemmer().stem

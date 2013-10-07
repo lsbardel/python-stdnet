@@ -1,2 +1,4 @@
 redis
-coveralls
+pep8
+cython
+coverage

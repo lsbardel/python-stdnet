@@ -7,6 +7,7 @@ from stdnet import odm
 from stdnet.odm import struct
 from stdnet.backends import redisb
 
+
 class update_observer(redisb.RedisScript):
     '''Script for adding/updating an observer. The ARGV contains, the member
 value, the initial score (usually a timestamp) and the increment for
@@ -27,7 +28,8 @@ while index < # ARGV do
     end
 end
 return n
-'''     
+'''
+
 
 class RedisUpdateZset(redisb.Zset):
     '''Redis backend structure override Zset'''
@@ -43,7 +45,7 @@ class RedisUpdateZset(redisb.Zset):
             self.client.zrem(self.id, *flat)
             result = True
         return result
-    
+
     def flat(self, zs):
         for s, el in zs:
             yield s
@@ -52,12 +54,12 @@ class RedisUpdateZset(redisb.Zset):
 
 
 class UpdateZset(odm.Zset):
-    penalty = 0 # penalty in seconds
-    
+    penalty = 0  # penalty in seconds
+
     def __init__(self, *args, **kwargs):
-        self.penalty = kwargs.pop('penalty',self.penalty)
-        super(UpdateZset,self).__init__(*args, **kwargs)
-        
+        self.penalty = kwargs.pop('penalty', self.penalty)
+        super(UpdateZset, self).__init__(*args, **kwargs)
+
     def dump_data(self, instances):
         dt = time()
         for n, instance in enumerate(instances):
@@ -69,12 +71,13 @@ class UpdateZset(odm.Zset):
 # Register the new structure with redis backend
 redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
 
+
 class UpdatesField(odm.StructureField):
-    
+
     def structure_class(self):
         return UpdateZset
-    
-    
+
+
 class Observable(odm.StdModel):
     name = odm.CharField()
 
@@ -83,25 +86,20 @@ class Observer(odm.StdModel):
     # Underlyings are the Obsarvable this Observer is tracking for updates
     name = odm.CharField()
     underlyings = odm.ManyToManyField(Observable, related_name='observers')
-    
+
     # field with a 5 seconds penalty
     updates = UpdatesField(class_field=True, penalty=5)
-    
-    
-def update_observers(sender, instances, session=None, **kwargs):
+
+
+def update_observers(signal, sender, instances=None, session=None, **kwargs):
     # This callback must be registered with the router
     # post_commit method
-    # Instances of observable got an update. Loop through the updated observables
-    # and push to the observer class updates all the observers of the observable.
+    # Instances of observable got an update. Loop through the updated
+    # observables and push to the observer class updates all the observers
+    # of the observable.
     models = session.router
     observers = models.observer
     through = models[observers.underlyings.model]
-    all = yield through.filter(observable=instances).get_field('observer').all()
-    if all:
-        yield observers.updates.update(all)
-
-            
-    
-    
-
-    
+    return through.backend.execute(
+        through.filter(observable=instances).get_field('observer').all(),
+        observers.updates.update)

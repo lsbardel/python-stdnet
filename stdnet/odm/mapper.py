@@ -2,13 +2,12 @@ from inspect import ismodule, isclass
 
 from stdnet.utils import native_str
 from stdnet.utils.importer import import_module
-from stdnet.utils.dispatch import Signal
 from stdnet import getdb
 
 from .base import ModelType, Model
 from .session import Manager, Session, ModelDictionary, StructureManager
 from .struct import Structure
-from .globals import get_model_from_hash
+from .globals import Event, get_model_from_hash
 
 
 __all__ = ['Router', 'model_iterator']
@@ -37,28 +36,28 @@ one wishes to do so.
     A signal which can be used to register ``callbacks`` before instances are
     committed::
 
-        models.pre_commit.connect(callback, sender=MyModel)
+        models.pre_commit.bind(callback, sender=MyModel)
 
 .. attribute:: pre_delete
 
     A signal which can be used to register ``callbacks`` before instances are
     deleted::
 
-        models.pre_delete.connect(callback, sender=MyModel)
+        models.pre_delete.bind(callback, sender=MyModel)
 
 .. attribute:: post_commit
 
     A signal which can be used to register ``callbacks`` after instances are
     committed::
 
-        models.post_commit.connect(callback, sender=MyModel)
+        models.post_commit.bind(callback, sender=MyModel)
 
 .. attribute:: post_delete
 
     A signal which can be used to register ``callbacks`` after instances are
     deleted::
 
-        models.post_delete.connect(callback, sender=MyModel)
+        models.post_delete.bind(callback, sender=MyModel)
 '''
     def __init__(self, default_backend=None, install_global=False):
         self._registered_models = ModelDictionary()
@@ -67,10 +66,10 @@ one wishes to do so.
         self._install_global = install_global
         self._structures = {}
         self._search_engine = None
-        self.pre_commit = Signal(providing_args=["instances", "session"])
-        self.pre_delete = Signal(providing_args=["instances", "session"])
-        self.post_commit = Signal(providing_args=["instances", "session"])
-        self.post_delete = Signal(providing_args=["instances", "session"])
+        self.pre_commit = Event()
+        self.pre_delete = Event()
+        self.post_commit = Event()
+        self.post_delete = Event()
 
     @property
     def default_backend(self):

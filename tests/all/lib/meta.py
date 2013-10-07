@@ -11,38 +11,38 @@ from examples.data import FinanceTest, Instrument, Fund, Position
 
 
 class TestInspectionAndComparison(FinanceTest):
-            
+
     def test_simple(self):
         d = odm.model_to_dict(Instrument)
         self.assertFalse(d)
         inst = yield self.session().add(
-                        Instrument(name='erz12', type='future', ccy='EUR'))
+            Instrument(name='erz12', type='future', ccy='EUR'))
         d = odm.model_to_dict(inst)
         self.assertTrue(len(d),3)
-        
+
     def testEqual(self):
         session = self.session()
         inst = yield session.add(
-                            Instrument(name='erm12', type='future', ccy='EUR'))
+            Instrument(name='erm12', type='future', ccy='EUR'))
         id = inst.id
-        b = self.query().get(id=id)
+        b = yield self.query().get(id=id)
         self.assertEqual(b.id, id)
         self.assertTrue(inst == b)
         self.assertFalse(inst != b)
         f = yield session.add(Fund(name='bla', ccy='EUR'))
         self.assertFalse(inst == f)
         self.assertTrue(inst != f)
-        
+
     def testNotEqual(self):
         session = self.session()
         inst = yield session.add(Instrument(name='erz22', type='future', ccy='EUR'))
         inst2 = yield session.add(Instrument(name='edz24', type='future', ccy='USD'))
         id = inst.id
-        b = self.query().get(id=id)
-        self.assertEqual(b.id,id)
+        b = yield self.query().get(id=id)
+        self.assertEqual(b.id, id)
         self.assertFalse(inst2 == b)
         self.assertTrue(inst2 != b)
-        
+
     def testHash(self):
         '''Test model instance hash'''
         inst = Instrument(name='erh12', type='future', ccy='EUR')
@@ -52,11 +52,11 @@ class TestInspectionAndComparison(FinanceTest):
         h = hash(inst)
         self.assertTrue(h)
         self.assertNotEqual(h, h0)
-        
+
     def testmodelFromHash(self):
         m = odm.get_model_from_hash(Instrument._meta.hash)
         self.assertEqual(m, Instrument)
-        
+
     def testUniqueId(self):
         '''Test model instance unique id across different model'''
         inst = Instrument(name='erk12', type='future', ccy='EUR')
@@ -66,7 +66,7 @@ class TestInspectionAndComparison(FinanceTest):
         self.assertEqual(len(v),2)
         self.assertEqual(v[0],inst._meta.hash)
         self.assertEqual(v[1],str(inst.id))
-        
+
     def testModelValueError(self):
         self.assertRaises(ValueError, Instrument, bla='foo')
         self.assertRaises(ValueError, Instrument, name='bee', bla='foo')
@@ -76,7 +76,7 @@ class TestInspectionAndComparison(FinanceTest):
 
 class PickleSupport(test.TestCase):
     model = Instrument
-        
+
     def testSimple(self):
         inst = yield self.session().add(
                         Instrument(name='erz12', type='future', ccy='EUR'))
@@ -86,7 +86,7 @@ class PickleSupport(test.TestCase):
         self.assertEqual(inst.name, inst2.name)
         self.assertEqual(inst.type, inst2.type)
         self.assertEqual(inst.ccy, inst2.ccy)
-        
+
     def testTempDictionary(self):
         session = self.session()
         inst = yield session.add(
@@ -97,10 +97,10 @@ class PickleSupport(test.TestCase):
         self.assertFalse('cleaned_data' in inst2._dbdata)
         yield session.add(inst2)
         self.assertTrue('cleaned_data' in inst._dbdata)
-        
+
 
 class TestRegistration(test.TestCase):
-    
+
     def testModelIterator(self):
         g = model_iterator('examples')
         self.assertTrue(inspect.isgenerator(g))
@@ -113,7 +113,7 @@ class TestRegistration(test.TestCase):
 
 class TestStdModelMethods(test.TestCase):
     model = SimpleModel
-    
+
     def testClone(self):
         session = self.session()
         s = yield session.add(SimpleModel(code='pluto', group='planet',
@@ -123,7 +123,7 @@ class TestStdModelMethods(test.TestCase):
         c = s.clone()
         self.assertEqual(c.id, None)
         self.assertFalse(c.cached_data)
-        
+
     def test_clear_cache_fields(self):
         fields = self.model._meta.dfields
         self.assertTrue(fields['timestamp'].as_cache)
@@ -138,11 +138,11 @@ class TestStdModelMethods(test.TestCase):
         self.assertEqual(m.id, m2.id)
         m = yield self.query().get(id=m.id)
         self.assertEqual(m.timestamp, None)
-        
+
 
 class TestComplexModel(test.TestCase):
     model = ComplexModel
-    
+
     def testJsonClear(self):
         session = self.session()
         m = yield session.add(self.model(name ='bla',

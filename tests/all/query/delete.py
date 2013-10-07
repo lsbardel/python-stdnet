@@ -10,7 +10,7 @@ from examples.data import finance_data, FinanceTest
 
 
 class DictData(test.DataGenerator):
-    
+
     def generate(self):
         self.keys   = self.populate(min_len=5, max_len=20)
         self.values = self.populate(min_len=20, max_len=300)
@@ -20,7 +20,7 @@ class DictData(test.DataGenerator):
 class TestDeleteSimpleModel(test.TestCase):
     model = SimpleModel
     data_cls = DictData
-    
+
     def test_session_delete(self):
         session = self.session()
         query = session.query(self.model)
@@ -33,7 +33,7 @@ class TestDeleteSimpleModel(test.TestCase):
         yield t.on_result
         all = yield query.filter(id=m.id).all()
         self.assertEqual(all, [])
-        
+
     def testSimpleQuery(self):
         session = self.session()
         with session.begin() as t:
@@ -46,7 +46,7 @@ class TestDeleteSimpleModel(test.TestCase):
         query = session.query(self.model).filter(code=('hello','hello2'))
         all = yield query.all()
         self.assertEqual(all, [])
-        
+
     def test_simple_filter(self):
         session = self.session()
         query = session.query(self.model)
@@ -64,33 +64,33 @@ class TestDeleteSimpleModel(test.TestCase):
         self.assertTrue(rest)
         qs = query.filter(group='planet')
         yield self.async.assertEqual(qs.count(), 1)
-    
-    
+
+
 class update_model(object):
-    
+
     def __init__(self, test):
         self.test = test
         self.session = None
-        
-    def __call__(self, sender, instances = None, session = None,
-                 transaction = None, **kwargs):
+
+    def __call__(self, signal, sender, instances=None, session=None,
+                 transaction=None, **kwargs):
         self.session = session
         self.instances = instances
         self.transaction = transaction
-        
-        
+
+
 class TestPostDeleteSignal(test.TestWrite):
     model = SimpleModel
-            
+
     def setUp(self):
         models = self.mapper
         self.update_model = update_model(self)
-        models.post_delete.connect(self.update_model, sender=self.model)
-        
+        models.post_delete.bind(self.update_model, sender=self.model)
+
     def tearDown(self):
         models = self.mapper
-        models.post_delete.disconnect(self.update_model, sender=self.model)
-        
+        models.post_delete.unbind(self.update_model, sender=self.model)
+
     def testSignal(self):
         session = self.session()
         with session.begin() as t:
@@ -101,13 +101,13 @@ class TestPostDeleteSignal(test.TestWrite):
         u = self.update_model
         self.assertEqual(u.session, session)
         self.assertEqual(len(u.instances), 2)
-        
+
 
 class TestDeleteMethod(test.TestWrite):
     '''Test the delete method in models and in queries.'''
     data_cls = finance_data
     models = (Instrument, Fund, Position)
-        
+
     def test_delete_all(self):
         session = yield self.data.create(self)
         instruments = self.query()
@@ -116,7 +116,7 @@ class TestDeleteMethod(test.TestWrite):
         ids = yield instruments.delete()
         self.assertTrue(ids)
         self.assertEqual(len(ids), count)
-        
+
     def testDeleteMultiQueries(self):
         session = yield self.data.create(self)
         query = session.query(Instrument)
@@ -128,12 +128,12 @@ class TestDeleteMethod(test.TestWrite):
         for inst in all:
             self.assertFalse(inst.type in ('future','bond'))
             self.assertNotEqual(inst.ccy,'EUR')
-        
-        
+
+
 class TestDeleteScalarFields(test.TestWrite):
     data_cls = finance_data
     models = (Instrument, Fund, Position)
-        
+
     def test_flush_simple_model(self):
         '''Use the class method flush to remove all instances of a
  Model including filters.'''
@@ -144,7 +144,7 @@ class TestDeleteScalarFields(test.TestWrite):
         keys = yield session.keys(Instrument)
         if self.backend == 'redis':
             self.assertTrue(len(keys) > 0)
-        
+
     def testFlushRelatedModel(self):
         session = yield self.data.makePositions(self)
         self.assertTrue(self.data.num_pos > 0)
@@ -154,7 +154,7 @@ class TestDeleteScalarFields(test.TestWrite):
         keys = yield session.keys(Instrument)
         if self.backend == 'redis':
             self.assertTrue(len(keys) > 0)
-        
+
     def testDeleteSimple(self):
         '''Test delete on models without related models'''
         session = yield self.data.create(self)
@@ -183,7 +183,7 @@ test as it involves lots of operations and consistency checks.'''
         yield t.on_result
         yield self.async.assertEqual(session.query(Instrument).all(), [])
         yield self.async.assertEqual(session.query(Position).all(), [])
-                
+
     def testDeleteRelated(self):
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
@@ -192,7 +192,7 @@ test as it involves lots of operations and consistency checks.'''
         yield session.query(Instrument).delete()
         yield self.async.assertEqual(session.query(Instrument).all(), [])
         yield self.async.assertEqual(session.query(Position).all(), [])
-        
+
     def __testDeleteRelatedCounting(self):
         '''Test delete on models with related models. This is a crucial
 test as it involves lots of operations and consistency checks.'''
@@ -203,12 +203,12 @@ test as it involves lots of operations and consistency checks.'''
         Instrument.objects.all().delete()
         self.assertEqual(Instrument.objects.all().count(),0)
         self.assertEqual(Position.objects.all().count(),0)
-        
-        
+
+
 class TestDeleteStructuredFields(test.TestWrite):
     model = Dictionary
     data_cls = DictData
-    
+
     def setUp(self):
         session = self.session()
         with session.begin() as t:
@@ -216,7 +216,7 @@ class TestDeleteStructuredFields(test.TestWrite):
             t.add(Dictionary(name='test2'))
         yield t.on_result
         yield self.async.assertEqual(session.query(Dictionary).count(), 2)
-    
+
     def fill(self, name):
         session = self.session()
         d = yield session.query(Dictionary).get(name=name)
@@ -228,7 +228,7 @@ class TestDeleteStructuredFields(test.TestWrite):
         yield d.data.update(self.data.data)
         self.async.assertEqual(data.size(), len(self.data.data))
         yield d
-    
+
     def testSimpleFlush(self):
         session = self.session()
         yield session.flush(Dictionary)
@@ -236,7 +236,7 @@ class TestDeleteStructuredFields(test.TestWrite):
         # Now we check the database if it is empty as it should
         keys = yield session.keys(Dictionary)
         self.assertEqual(len(keys), 0)
-        
+
     def test_flush_with_data(self):
         yield self.fill('test')
         yield self.fill('test2')

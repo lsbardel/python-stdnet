@@ -468,27 +468,27 @@ class Zset(RedisStructure):
         return self.client.zcount(self.id, start, stop)
 
     def range(self, start, end, withscores=True, **options):
-        return async.on_result(
+        return self.backend.execute(
             self.client.zrangebyscore(self.id, start, end,
                                       withscores=withscores, **options),
             partial(self._range, withscores))
 
     def irange(self, start=0, stop=-1, desc=False, withscores=True, **options):
-        return async.on_result(
+        return self.backend.execute(
             self.client.zrange(self.id, start, stop, desc=desc,
                                withscores=withscores, **options),
             partial(self._range, withscores))
 
     def ipop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by rank (index).'''
-        return async.on_result(
+        return self.backend.execute(
             self.client.zpopbyrank(self.id, start, stop,
                                    withscores=withscores, **options),
             partial(self._range, withscores))
 
     def pop_range(self, start, stop=None, withscores=True, **options):
         '''Remove and return a range from the ordered set by score.'''
-        return async.on_result(
+        return self.backend.execute(
             self.client.zpopbyscore(self.id, start, stop,
                                     withscores=withscores, **options),
             partial(self._range, withscores))
@@ -744,7 +744,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         return int(value)
 
     def is_async(self):
-        return not isinstance(self.client, Redis)
+        return self.client.is_async
 
     def ping(self):
         return self.client.ping()
@@ -857,7 +857,7 @@ class BackendDataServer(stdnet.BackendDataServer):
 
     def model_keys(self, meta):
         pattern = '%s*' % self.basekey(meta)
-        return async.on_result(self.client.keys(pattern), self._decode_keys)
+        return self.execute(self.client.keys(pattern), self._decode_keys)
 
     def instance_keys(self, obj):
         meta = obj._meta

@@ -6,11 +6,11 @@ from examples.models import SimpleList
 
 from .struct import MultiFieldMixin, StringData
 
-        
+
 class TestListField(MultiFieldMixin, test.TestCase):
     model = SimpleList
     attrname = 'names'
-        
+
     def adddata(self, li):
         '''Add elements to a list without using transactions.'''
         with li.session.begin():
@@ -18,7 +18,7 @@ class TestListField(MultiFieldMixin, test.TestCase):
             for elem in self.data.names:
                 names.push_back(elem)
         self.assertEqual(li.names.size(), len(self.data.names))
-        
+
     def test_push_back_pop_back(self):
         li = SimpleList()
         self.assertEqual(li.id, None)
@@ -32,7 +32,7 @@ class TestListField(MultiFieldMixin, test.TestCase):
         yield self.multi_async(results)
         self.assertEqual(results, names)
         yield self.async.assertEqual(li.names.size(), 0)
-        
+
     def test_push_back(self):
         models = self.mapper
         li = yield models.simplelist.new()
@@ -45,7 +45,7 @@ class TestListField(MultiFieldMixin, test.TestCase):
         self.assertEqual(len(all), len(self.data.names))
         for el, ne in zip(self.data.names, all):
             self.assertEqual(el, ne)
-        
+
     def testPushNoSave(self):
         '''Push a new value to a list field should rise an error if the object
 is not saved on databse.'''
@@ -54,9 +54,9 @@ is not saved on databse.'''
         push_front = lambda : obj.names.push_front('this should also fail')
         self.assertRaises(StructureFieldError, push_back)
         self.assertRaises(StructureFieldError, push_front)
-        
+
     def test_items(self):
-        session = self.session()        
+        session = self.session()
         li = yield session.add(SimpleList())
         yield self.adddata(li)
         size = yield li.names.size()
@@ -64,15 +64,15 @@ is not saved on databse.'''
         all = yield li.names.items()
         self.assertEqual(all, self.data.names)
         self.assertEqual(all, li.names.cache.cache)
-            
+
 
 class TestRedisListField(test.TestCase):
     multipledb = ['redis']
     model = SimpleList
     data_cls = StringData
-    
+
     def testPushFront(self):
-        session = self.session()        
+        session = self.session()
         li = yield session.add(SimpleList())
         names = li.names
         self.assertEqual(li.session, session)
@@ -83,8 +83,8 @@ class TestRedisListField(test.TestCase):
         all = yield names.items()
         for el, ne in zip(self.data.names, all):
             self.assertEqual(el, ne)
-        
-    def testPushFrontPopFront(self):
+
+    def test_push_front_pop_front(self):
         session = self.session()
         li = yield session.add(SimpleList())
         names = li.names

@@ -7,14 +7,14 @@ and instances of those classes with **items** in their corresponding collections
 Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
-:Master CI: |master-build|_
-:Dev CI: |dev-build|_
-:Coverage: |coverage|
+:Master CI: |master-build|_ |coverage|
+:Dev CI: |dev-build|_ |coverage-dev|
 :Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
+:Platforms: Linux, OS X, Windows. Python 2.6, 2.7, 3.2, 3.3, pypy_
 :Mailing List: https://groups.google.com/group/python-stdnet
-:Keywords: server, database, cache, redis, mongo, odm
+:Keywords: server, database, redis, odm
 
 
 .. |master-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
@@ -23,6 +23,8 @@ are treated in the same way in the python language domain.
 .. _dev-build: http://travis-ci.org/lsbardel/python-stdnet
 .. |coverage| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=master
   :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=master
+.. |coverage-dev| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=dev
+  :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=dev
 
 
 
@@ -50,10 +52,8 @@ Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
 * redis-py_ for redis backend.
-* Cython_ for ultra-fast C-extensions.
-* Optional pymongo_ for the mongo back-end.
 * Optional pulsar_ when using the asynchronous connections or the test suite.
-* You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.
+* You need access to a Redis_ server version 2.6 or above.
 
 
 Philosophy
@@ -104,7 +104,6 @@ Backend data-stores are the backbone of the library.
 Currently the list is limited to
 
 * Redis_ 2.6 or above.
-* Mongodb_ (alpha).
 
 
 Object Data Mapper
@@ -195,18 +194,10 @@ For more information type::
 
     python runtests.py -h
 
-To access coverage of tests you need to install the coverage_ package and run the tests using::
 
-    coverage run runtests.py
+.. _kudos:
 
-and to check out the coverage report::
-
-    coverage html
-
-
-.. _kudo:
-
-Kudo
+Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
 * SQLAlchemy_ and Django_ for ideas and API design.

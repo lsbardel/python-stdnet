@@ -46,7 +46,6 @@ class PorterStemmer(object):
         Note that only lower case sequences are stemmed. Forcing to lower case
         should be done before stem(...) is called.
         """
-
         self.b = ""  # buffer for word to be stemmed
         self.k = 0
         self.k0 = 0
@@ -54,7 +53,8 @@ class PorterStemmer(object):
 
     def cons(self, i):
         """cons(i) is TRUE <=> b[i] is a consonant."""
-        if self.b[i] == 'a' or self.b[i] == 'e' or self.b[i] == 'i' or self.b[i] == 'o' or self.b[i] == 'u':
+        if (self.b[i] == 'a' or self.b[i] == 'e' or self.b[i] == 'i' or
+            self.b[i] == 'o' or self.b[i] == 'u'):
             return 0
         if self.b[i] == 'y':
             if i == self.k0:
@@ -116,14 +116,15 @@ class PorterStemmer(object):
         return self.cons(j)
 
     def cvc(self, i):
-        """cvc(i) is TRUE <=> i-2,i-1,i has the form consonant - vowel - consonant
-        and also if the second c is not w,x or y. this is used when trying to
-        restore an e at the end of a short  e.g.
+        """cvc(i) is TRUE <=> i-2,i-1,i has the form consonant - vowel -
+        consonant and also if the second c is not w, x or y.
+        This is used when trying to restore an e at the end of a short  e.g.
 
            cav(e), lov(e), hop(e), crim(e), but
            snow, box, tray.
         """
-        if i < (self.k0 + 2) or not self.cons(i) or self.cons(i-1) or not self.cons(i-2):
+        if (i < (self.k0 + 2) or not self.cons(i) or self.cons(i-1) or
+            not self.cons(i-2)):
             return 0
         ch = self.b[i]
         if ch == 'w' or ch == 'x' or ch == 'y':
@@ -143,7 +144,8 @@ class PorterStemmer(object):
         return 1
 
     def setto(self, s):
-        """setto(s) sets (j+1),...k to the characters in the string s, readjusting k."""
+        """setto(s) sets (j+1),...k to the characters in the string s,
+        readjusting k."""
         length = len(s)
         self.b = self.b[:self.j+1] + s + self.b[self.j+length+1:]
         self.k = self.j + length
@@ -198,7 +200,8 @@ class PorterStemmer(object):
                 self.setto("e")
 
     def step1c(self):
-        """step1c() turns terminal y to i when there is another vowel in the stem."""
+        """step1c() turns terminal y to i when there is another vowel in
+        the stem."""
         if (self.ends("y") and self.vowelinstem()):
             self.b = self.b[:self.k] + 'i' + self.b[self.k+1:]
 
@@ -241,7 +244,8 @@ class PorterStemmer(object):
         # To match the published algorithm, delete this phrase
 
     def step3(self):
-        """step3() dels with -ic-, -full, -ness etc. similar strategy to step2."""
+        """step3() dels with -ic-, -full, -ness etc. similar strategy
+        to step2."""
         if self.b[self.k] == 'e':
             if self.ends("icate"):     self.r("ic")
             elif self.ends("ative"):   self.r("")
@@ -280,10 +284,14 @@ class PorterStemmer(object):
             elif self.ends("ent"): pass
             else: return
         elif self.b[self.k - 1] == 'o':
-            if self.ends("ion") and (self.b[self.j] == 's' or self.b[self.j] == 't'): pass
-            elif self.ends("ou"): pass
+            if (self.ends("ion") and
+                (self.b[self.j] == 's' or self.b[self.j] == 't')):
+                pass
+            elif self.ends("ou"):
+                pass
             # takes care of -ous
-            else: return
+            else:
+                return
         elif self.b[self.k - 1] == 's':
             if self.ends("ism"): pass
             else: return
@@ -332,12 +340,10 @@ class PorterStemmer(object):
         self.k0 = i
         if self.k <= self.k0 + 1:
             return self.b # --DEPARTURE--
-
         # With this line, strings of length 1 or 2 don't go through the
         # stemming process, although no mention is made of this in the
         # published algorithm. Remove the line to match the published
         # algorithm.
-
         self.step1ab()
         self.step1c()
         self.step2()
@@ -345,26 +351,3 @@ class PorterStemmer(object):
         self.step4()
         self.step5()
         return self.b[self.k0:self.k+1]
-
-
-if __name__ == '__main__':
-    p = PorterStemmer()
-    if len(sys.argv) > 1:
-        for f in sys.argv[1:]:
-            infile = open(f, 'r')
-            while 1:
-                output = ''
-                word = ''
-                line = infile.readline()
-                if line == '':
-                    break
-                for c in line:
-                    if c.isalpha():
-                        word += c.lower()
-                    else:
-                        if word:
-                            output += p.stem(word, 0,len(word)-1)
-                            word = ''
-                        output += c.lower()
-                print(output)
-            infile.close()

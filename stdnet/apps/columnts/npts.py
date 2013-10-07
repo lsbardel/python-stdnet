@@ -18,15 +18,15 @@ class ColumnTS(columnts.ColumnTS):
 
     def front(self, *fields):
         '''Return the front pair of the structure'''
-        ts = self.irange(0, 0, fields = fields)
+        ts = self.irange(0, 0, fields=fields)
         if ts:
-            return ts.start(),ts[0]
+            return ts.start(), ts[0]
 
     def back(self, *fields):
         '''Return the back pair of the structure'''
-        ts = self.irange(-1, -1, fields = fields)
+        ts = self.irange(-1, -1, fields=fields)
         if ts:
-            return ts.end(),ts[0]
+            return ts.end(), ts[0]
 
     def load_data(self, result):
         loads = self.pickler.loads

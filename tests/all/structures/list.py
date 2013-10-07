@@ -7,13 +7,13 @@ from .base import StructMixin
 class TestList(StructMixin, test.TestCase):
     structure = odm.List
     name = 'list'
-    
+
     def create_one(self):
         l = odm.List()
         l.push_back(3)
         l.push_back(5.6)
         return l
-    
+
     def test_items(self):
         l = yield self.test_meta()
         self.assertFalse(l.session.transaction)
@@ -22,8 +22,8 @@ class TestList(StructMixin, test.TestCase):
         yield self.async.assertEqual(l.size(), 4)
         result = [3,5.6,'save',"{'test': 1}"]
         yield self.async.assertEqual(l.items(), result)
-        
-    def testJsonList(self):
+
+    def test_json_list(self):
         models = self.mapper
         l = models.register(self.structure(value_pickler=encoders.Json()))
         self.assertIsInstance(l.value_pickler, encoders.Json)
@@ -51,7 +51,7 @@ class TestList(StructMixin, test.TestCase):
         self.assertEqual(elem, 5.6)
         elem = yield list.pop_front()
         self.assertEqual(elem, None)
-        
+
     def test_pop_back(self):
         list = yield self.not_empty()
         elem = yield list.pop_back()
@@ -60,7 +60,7 @@ class TestList(StructMixin, test.TestCase):
         self.assertEqual(elem, 3)
         elem = yield list.pop_back()
         self.assertEqual(elem, None)
-        
+
     def test_block_pop_front(self):
         list = yield self.not_empty()
         elem = yield list.block_pop_front(1)
@@ -69,7 +69,7 @@ class TestList(StructMixin, test.TestCase):
         self.assertEqual(elem, 5.6)
         elem = yield list.block_pop_front(1)
         self.assertEqual(elem, None)
-        
+
     def test_block_pop_back(self):
         list = yield self.not_empty()
         elem = yield list.block_pop_back(1)
@@ -78,4 +78,3 @@ class TestList(StructMixin, test.TestCase):
         self.assertEqual(elem, 3)
         elem = yield list.block_pop_back(1)
         self.assertEqual(elem, None)
-        

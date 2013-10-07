@@ -1,5 +1,6 @@
 # Modified version of skiplist
-# http://code.activestate.com/recipes/576930-efficient-running-median-using-an-indexable-skipli/
+# http://code.activestate.com/recipes/
+#    576930-efficient-running-median-using-an-indexable-skipli/
 #
 import sys
 from random import random
@@ -13,11 +14,13 @@ if not ispy3k:
 
 __all__ = ['skiplist']
 
+
 class Node(object):
     __slots__ = ('score', 'value', 'next', 'width')
+
     def __init__(self, score, value, next, width):
-        self.score, self.value, self.next, self.width =\
-                         score, value, next, width
+        self.score, self.value, self.next, self.width = (score, value,
+                                                         next, width)
 
 
 SKIPLIST_MAXLEVEL = 32     # Should be enough for 2^32 elements
@@ -32,7 +35,7 @@ removal, and lookup by rank.'''
         self.clear()
         if data is not None:
             self.extend(data)
-    
+
     def clear(self):
         self.__size = 0
         self.__level = 1
@@ -43,10 +46,10 @@ removal, and lookup by rank.'''
 
     def __repr__(self):
         return list(self).__repr__()
-    
+
     def __str__(self):
         return self.__repr__()
-    
+
     def __len__(self):
         return self.__size
 
@@ -54,20 +57,20 @@ removal, and lookup by rank.'''
         node = self.__head
         traversed = 0
         index += 1
-        for i in range(self.__level-1,-1,-1):
+        for i in range(self.__level-1, -1, -1):
             while node.next[i] and (traversed + node.width[i]) <= index:
                 traversed += node.width[i]
                 node = node.next[i]
             if traversed == index:
                 return node.value
         raise IndexError('skiplist index out of range')
-    
+
     def extend(self, iterable):
         i = self.insert
         for score_values in iterable:
             i(*score_values)
     update = extend
-            
+
     def rank(self, score):
         '''Return the 0-based index (rank) of ``score``. If the score is not
 available it returns a negative integer which absolute score is the
@@ -82,7 +85,7 @@ left most closest index with score less than *score*.'''
             return rank - 1
         else:
             return -1 - rank
-        
+
     def insert(self, score, value):
         # find first node on each level where node.next[levels].score > score
         if score != score:
@@ -90,7 +93,7 @@ left most closest index with score less than *score*.'''
         chain = [None] * SKIPLIST_MAXLEVEL
         rank = [0] * SKIPLIST_MAXLEVEL
         node = self.__head
-        for i in range(self.__level-1,-1,-1):
+        for i in range(self.__level-1, -1, -1):
             #store rank that is crossed to reach the insert position
             rank[i] = 0 if i == self.__level-1 else rank[i+1]
             while node.next[i] and node.next[i].score <= score:
@@ -103,12 +106,12 @@ left most closest index with score less than *score*.'''
         # insert a link to the newnode at each level
         level = min(SKIPLIST_MAXLEVEL, 1 - int(log(random(), 2.0)))
         if level > self.__level:
-            for i in range(self.__level,level):
+            for i in range(self.__level, level):
                 rank[i] = 0
                 chain[i] = self.__head
                 chain[i].width[i] = self.__size
             self.__level = level
-        
+
         # create the new node
         node = Node(score, value, [None]*level, [None]*level)
         for i in range(level):
@@ -120,9 +123,9 @@ left most closest index with score less than *score*.'''
             prevnode.width[i] = steps + 1
 
         # increment width for untouched levels
-        for i in range(level,self.__level):
+        for i in range(level, self.__level):
             chain[i].width[i] += 1
-            
+
         self.__size += 1
         return node
 
@@ -130,11 +133,11 @@ left most closest index with score less than *score*.'''
         # find first node on each level where node.next[levels].score >= score
         chain = [None] * SKIPLIST_MAXLEVEL
         node = self.__head
-        for i in range(self.__level-1,-1,-1):
+        for i in range(self.__level-1, -1, -1):
             while node.next[i] and node.next[i].score < score:
                 node = node.next[i]
             chain[i] = node
-            
+
         node = node.next[0]
         if score != node.score:
             raise KeyError('Not Found')
@@ -145,7 +148,7 @@ left most closest index with score less than *score*.'''
                 chain[i].next[i] = node.next[i]
             else:
                 chain[i].width[i] -= 1
-        
+
         self.__size -= 1
 
     def __iter__(self):
@@ -157,7 +160,7 @@ left most closest index with score less than *score*.'''
 
     def flat(self):
         return tuple(self._flat())
-    
+
     def _flat(self):
         node = self.__head.next[0]
         while node:

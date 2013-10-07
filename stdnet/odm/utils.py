@@ -21,10 +21,11 @@ LOGGER = logging.getLogger('stdnet.odm')
 _serializers = {}
 
 
-if sys.version_info < (2,7):    # pragma: no cover
+if sys.version_info < (2, 7):    # pragma: no cover
+
     def writeheader(dw):
         # hack to handle writeheader in python 2.6
-        dw.writerow(dict(((k,k) for k in dw.fieldnames)))
+        dw.writerow(dict(((k, k) for k in dw.fieldnames)))
 else:
     def writeheader(dw):
         dw.writeheader()
@@ -34,7 +35,7 @@ def get_serializer(name, **options):
     '''Retrieve a serializer register as *name*. If the serializer is not
 available a ``ValueError`` exception will raise.
 A common usage pattern::
-    
+
     qs = MyModel.objects.query().sort_by('id')
     s = odm.get_serializer('json')
     s.dump(qs)
@@ -44,6 +45,7 @@ A common usage pattern::
         return serializer(**options)
     else:
         raise ValueError('Unknown serializer {0}.'.format(name))
+
 
 def register_serializer(name, serializer):
     '''\
@@ -57,8 +59,10 @@ Register a new serializer to the library.
         serializer = serializer.__class__
     _serializers[name] = serializer
 
+
 def unregister_serializer(name):
-    return _serializers.pop(name,None)
+    return _serializers.pop(name, None)
+
 
 def all_serializers():
     return sorted(_serializers)
@@ -68,12 +72,12 @@ class Serializer(object):
     '''The stdnet serializer base class. During initialization, the *options*
 dictionary is used to override the :attr:`default_options`. These are specific
 to each :class:`Serializer` implementation.
-    
+
 .. attribute:: default_options
 
     Dictionary of default options which are overwritten during initialisation.
     By default it is an empty dictionary.
-    
+
 .. attribute:: options
 
     Dictionary of options.
@@ -83,7 +87,7 @@ to each :class:`Serializer` implementation.
 
     def __init__(self, **options):
         opts = self.default_options.copy()
-        opts.update(((v,options[v]) for v in options if v in self.arguments))
+        opts.update(((v, options[v]) for v in options if v in self.arguments))
         self.options = opts
 
     @property
@@ -101,7 +105,7 @@ to dump into a stream. No writing is done until the :meth:`write` method.'''
     def write(self, stream=None):
         '''Write the serialized data into a stream. If *stream* is not
 provided, a python ``StringIO`` is used.
-        
+
 :return: the stream object.'''
         raise NotImplementedError
 
@@ -113,7 +117,7 @@ provided, a python ``StringIO`` is used.
 :param stream: bytes or an object with a ``read`` method returning bytes.
 :param model: Optional :class:`StdModel` we need to load. If not provided all
     models in ``stream`` are loaded.
-    
+
 This method must be implemented by subclasses.
 '''
         raise NotImplementedError
@@ -162,18 +166,19 @@ by the *indent* of the ``json`` string for pretty serialisation.'''
                         for item_data in model_data['data']:
                             t.add(model.from_base64_data(**item_data))
             else:
-                LOGGER.error('Could not load model %s', model_data.get('model'))
+                LOGGER.error('Could not load model %s',
+                             model_data.get('model'))
         self.on_finished_load()
 
     def on_load_model(self, model, model_data):
         '''Callback when a *model* is about to be loaded. If it returns the
 model, the model will get loaded otherwise it will skip the loading.'''
         return model
-    
+
     def on_finished_load(self):
         '''Callback when loading of data is finished'''
         pass
-    
+
 
 class CsvSerializer(Serializer):
     '''A csv serializer for single model. It serialize/unserialize a model
@@ -194,8 +199,8 @@ query into a csv file.'''
             data.append(js)
             meta = obj._meta
         ordered_fields = [meta.pkname()]
-        ordered_fields.extend((f.name for f in meta.scalarfields\
-                                if f.name in fields))
+        ordered_fields.extend((f.name for f in meta.scalarfields
+                               if f.name in fields))
         data = {'fieldnames': ordered_fields,
                 'hash': meta.hash,
                 'data': data}

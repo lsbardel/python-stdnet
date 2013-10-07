@@ -23,6 +23,10 @@ from .prefixed import PrefixedRedisMixin
 
 class Redis(RedisExtensionsMixin, redis.Redis):
 
+    @property
+    def is_async(self):
+        return True
+
     def address(self):
         return self.connection_info[0]
 

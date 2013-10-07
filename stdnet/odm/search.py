@@ -1,9 +1,9 @@
 import logging
 
-from itertools import chain
 from inspect import isgenerator, isclass
 
-from stdnet.utils import grouper
+
+__all__ = ['SearchEngine']
 
 
 LOGGER = logging.getLogger('stdnet.search')
@@ -69,13 +69,13 @@ The main methods to be implemented are :meth:`add_item`,
 When registering a model, every time an instance is created, it will be
 indexed by the search engine.
 
-:parameter model: a :class:`StdModel` class.
-:parameter related: a list of related fields to include in the index.
+:param model: a :class:`StdModel` class.
+:param related: a list of related fields to include in the index.
 '''
         update_model = UpdateSE(self, related)
         self.REGISTERED_MODELS[model] = update_model
-        self.router.post_commit.connect(update_model, sender=model)
-        self.router.post_delete.connect(update_model, sender=model)
+        self.router.post_commit.bind(update_model, model)
+        self.router.post_delete.bind(update_model, model)
 
     def get_related_fields(self, item):
         if not isclass(item):
@@ -88,8 +88,8 @@ indexed by the search engine.
 This functions loop through the :attr:`word_middleware` attribute
 to process the text.
 
-:parameter text: string from which to extract words.
-:parameter for_search: flag indicating if the the words will be used for search
+:param text: string from which to extract words.
+:param for_search: flag indicating if the the words will be used for search
     or to index the database. This flug is used in conjunction with the
     middleware flag *for_search*. If this flag is ``True`` (i.e. we need to
     search the database for the words in *text*), only the
@@ -103,7 +103,7 @@ return a *list* of cleaned words.
         if not text:
             return []
         word_gen = self.split_text(text)
-        for middleware,fors in self.word_middleware:
+        for middleware, fors in self.word_middleware:
             if for_search and not fors:
                 continue
             word_gen = middleware(word_gen)
@@ -124,71 +124,31 @@ Can and should be reimplemented by subclasses.'''
         '''Add a *middleware* function to the list of :attr:`word_middleware`,
 for preprocessing words to be indexed.
 
-:parameter middleware: a callable receving an iterable over words.
-:parameter for_search: flag indicating if the *middleware* can be used for the
+:param middleware: a callable receving an iterable over words.
+:param for_search: flag indicating if the *middleware* can be used for the
     text to search. Default: ``True``.
 '''
-        if hasattr(middleware,'__call__'):
-            self.word_middleware.append((middleware,for_search))
+        if hasattr(middleware, '__call__'):
+            self.word_middleware.append((middleware, for_search))
 
     def index_item(self, item):
         """This is the main function for indexing items.
 It extracts content from the given *item* and add it to the index.
 
-:parameter item: an instance of a :class:`stdnet.odm.StdModel`.
+:param item: an instance of a :class:`stdnet.odm.StdModel`.
 """
         self.index_items_from_model((item,), item.__class__)
 
-    def index_items_from_model(self, items, model):
-        """This is the main function for indexing items.
-It extracts content from a list of *items* belonging to *model* and
-add it to the index.
-
-:parameter items: an iterable over instances of of a :class:`stdnet.odm.StdModel`.
-:parameter model: The *model* of all *items*.
-:parameter transaction: A transaction for updating indexes.
-"""
-        self.logger.debug('Indexing %s objects of %s model.',
-                          len(items), model._meta)
-        session = self.session()
-        wft = self.words_from_text
-        add = self.add_item
-        total = 0
-        for group in grouper(self.max_in_session, items):
-            with session.begin() as transaction:
-                ids = []
-                for item, data in self._item_data(group):
-                    ids.append(item.id)
-                    words = chain(*[wft(value) for value in data])
-                    add(item, words, transaction)
-                if ids:
-                    total += len(ids)
-                    self.remove_item(model, transaction, ids)
-            yield transaction.on_result
-        yield total
-
     def query(self, model):
-        '''Return a query for ``model`` when it needs to be indexed.'''
+        '''Return a query for ``model`` when it needs to be indexed.
+        '''
         session = self.router.session()
-        fields = tuple((f.name for f in model._meta.scalarfields\
-                         if f.type=='text'))
+        fields = tuple((f.name for f in model._meta.scalarfields
+                        if f.type == 'text'))
         qs = session.query(model).load_only(*fields)
         for related in self.get_related_fields(model):
             qs = qs.load_related(related)
         return qs
-
-    def reindex(self):
-        '''Re-index models by removing indexes and rebuilding them by iterating
-through all the instances of :attr:`REGISTERED_MODELS`.'''
-        yield self.flush()
-        total = 0
-        # Loop over models
-        for model in self.REGISTERED_MODELS:
-            all = yield self.query(model).all()
-            if all:
-                n = yield self.index_items_from_model(all, model)
-                total += n
-        yield total
 
     def session(self):
         '''Create a session for the search engine'''
@@ -218,6 +178,17 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
 
     # ABSTRACT FUNCTIONS
     ################################################################
+    def index_items_from_model(self, items, model):
+        """Main method for indexing items.
+
+        It extracts content from a list of ``items`` belonging to
+        ``model`` and add it to the index.
+
+        :param items: an iterable over instances of ``model``.
+        :param model: The ``model`` of all ``items``.
+        """
+        raise NotImplementedError
+
     def remove_item(self, item_or_model, session, ids=None):
         '''Remove an item from the search indices'''
         raise NotImplementedError
@@ -226,9 +197,9 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
         '''Create indices for *item* and each word in *words*. Must be
 implemented by subclasses.
 
-:parameter item: a *model* instance to be indexed. It does not need to be
+:param item: a *model* instance to be indexed. It does not need to be
     a :class:`stdnet.odm.StdModel`.
-:parameter words: iterable over words. It has been obtained from the
+:param words: iterable over words. It has been obtained from the
     text in *item* via the :attr:`word_middleware`.
 :param transaction: The :class:`Transaction` used.
 '''
@@ -245,17 +216,27 @@ implemented by subclasses.
         raise NotImplementedError
 
     def search_model(self, query, text, lookup=None):
-        '''Search *text* in *model* instances. This is the functions
-needing implementation by custom serach engines.
+        '''Search *text* in *model* instances.
 
-:parameter query: a :class:`Query` on a :class:`StdModel`.
-:parameter text: text to search
-:parameter lookup: Optional lookup, one of ``contains`` or ``in``.
-:rtype: An updated :class:`Query`.'''
+        This is the functions needing implementation by custom search engines.
+
+        :param query: a :class:`Query` on a :class:`StdModel`.
+        :param text: text to search
+        :param lookup: Optional lookup, one of ``contains`` or ``in``.
+        :return: An updated :class:`Query`.
+        '''
         raise NotImplementedError
 
     def flush(self, full=False):
         '''Clean the search engine'''
+        raise NotImplementedError
+
+    def reindex(self):
+        '''Re-index models.
+
+        Remove existing indices indexes and rebuilding them by iterating
+        through all the instances of :attr:`REGISTERED_MODELS`.
+        '''
         raise NotImplementedError
 
 
@@ -265,9 +246,11 @@ class UpdateSE(object):
         self.se = se
         self.related = related or ()
 
-    def __call__(self, instances, signal, sender, **kwargs):
-        '''An update on instances has occurred. Propagate it to the search
-engine index models.'''
+    def __call__(self, signal, sender, instances=None, **kwargs):
+        '''An update on ``instances`` has occurred.
+
+        Propagate it to the search engine index models.
+        '''
         if sender:
             # get a new session
             models = self.se.router

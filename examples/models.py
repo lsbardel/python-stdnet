@@ -33,7 +33,7 @@ class SimpleModel(odm.StdModel):
 #    FINANCE APPLICATION
 class Base(odm.StdModel):
     name = odm.SymbolField(unique=True)
-    ccy  = odm.SymbolField()
+    ccy = odm.SymbolField()
 
     def __unicode__(self):
         return self.name
@@ -64,14 +64,14 @@ class Position(odm.StdModel):
     instrument = odm.ForeignKey(Instrument, related_name='positions')
     fund = odm.ForeignKey(Fund, related_name='positions')
     dt = odm.DateField()
-    size = odm.FloatField(default = 1)
+    size = odm.FloatField(default=1)
 
     def __unicode__(self):
-        return '%s: %s @ %s' % (self.fund,self.instrument,self.dt)
+        return '%s: %s @ %s' % (self.fund, self.instrument, self.dt)
 
 
 class PortfolioView(odm.StdModel):
-    name      = odm.SymbolField()
+    name = odm.SymbolField()
     portfolio = odm.ForeignKey(Fund)
 
 
@@ -92,7 +92,7 @@ class UserDefaultView(odm.StdModel):
 
 class DateValue(odm.StdModel):
     "An helper class for adding calendar events"
-    dt = odm.DateField(index = False)
+    dt = odm.DateField(index=False)
     value = odm.CharField()
 
     def score(self):
@@ -101,11 +101,11 @@ class DateValue(odm.StdModel):
 
 
 class Calendar(odm.StdModel):
-    name   = odm.SymbolField(unique=True)
-    data   = odm.SetField(DateValue, ordered=True)
+    name = odm.SymbolField(unique=True)
+    data = odm.SetField(DateValue, ordered=True)
 
     def add(self, dt, value):
-        event = DateValue(dt = dt,value = value).save()
+        event = DateValue(dt=dt, value=value).save()
         self.data.add(event)
 
 
@@ -152,7 +152,7 @@ class Person(odm.StdModel):
 
 # A model for testing a recursive foreign key
 class Node(odm.StdModel):
-    parent = odm.ForeignKey('self', required = False, related_name = 'children')
+    parent = odm.ForeignKey('self', required=False, related_name='children')
     weight = odm.FloatField()
 
     def __unicode__(self):
@@ -160,19 +160,18 @@ class Node(odm.StdModel):
 
 
 class Page(odm.StdModel):
-    in_navigation = odm.IntegerField(default = 1)
+    in_navigation = odm.IntegerField(default=1)
 
 
 class Collection(odm.StdModel):
     numbers = odm.SetField()
-    groups = odm.SetField(model = Group)
-
+    groups = odm.SetField(model=Group)
 
 
 #############################################################
 ## TWITTER CLONE MODELS
 class Post(odm.StdModel):
-    dt   = odm.DateTimeField(index=False, default=datetime.now)
+    dt = odm.DateTimeField(index=False, default=datetime.now)
     data = odm.CharField(required=True)
     user = odm.ForeignKey('examples.user', index=False)
 
@@ -192,10 +191,9 @@ class User(odm.StdModel):
 
     def newupdate(self, message):
         session = self.session
-        p  = yield session.router.post.new(data=message, user=self)
+        p = yield session.router.post.new(data=message, user=self)
         yield self.updates.push_front(p)
         yield p
-
 
 
 ##############################################
@@ -214,7 +212,6 @@ class Profile(odm.StdModel):
 
 ##############################################
 # JSON FIELD
-
 class Statistics(odm.StdModel):
     dt = odm.DateField()
     data = odm.JSONField()
@@ -231,10 +228,8 @@ class ComplexModel(odm.StdModel):
     data = odm.JSONField(as_string=False, as_cache=True)
 
 
-
 ##############################################
 # PickleObjectField FIELD
-
 class Environment(odm.StdModel):
     data = odm.PickleObjectField()
 
@@ -252,7 +247,7 @@ class NumericData(odm.StdModel):
 
 
 class DateData(odm.StdModel):
-    dt1 = odm.DateField(required = False)
+    dt1 = odm.DateField(required=False)
     dt2 = odm.DateTimeField(default=datetime.now)
 
 
@@ -281,6 +276,7 @@ class Feed1(FeedBase):
 class Feed2(FeedBase):
     pass
 
+
 ####################################################
 # Custom ID
 class Task(odm.StdModel):
@@ -292,7 +288,7 @@ class Task(odm.StdModel):
         ordering = '-timestamp'
 
     def clone(self, **kwargs):
-        instance = super(Task,self).clone(**kwargs)
+        instance = super(Task, self).clone(**kwargs)
         instance.timestamp = None
         return instance
 
@@ -300,6 +296,7 @@ class Task(odm.StdModel):
 class Parent(odm.StdModel):
     name = odm.SymbolField(primary_key=True)
     timestamp = odm.DateTimeField(default=datetime.now)
+
 
 class Child(odm.StdModel):
     name = odm.SymbolField()
@@ -309,7 +306,7 @@ class Child(odm.StdModel):
 ####################################################
 # Composite ID
 class WordBook(odm.StdModel):
-    id = odm.CompositeIdField('word','book')
+    id = odm.CompositeIdField('word', 'book')
     word = odm.SymbolField()
     book = odm.SymbolField()
 
@@ -317,7 +314,7 @@ class WordBook(odm.StdModel):
         return '%s:%s' % (self.word, self.book)
 
 
-################################################################################
+############################################################################
 #   Object Analytics
 class ObjectAnalytics(odm.StdModel):
     model_type = odm.ModelField()
@@ -325,7 +322,7 @@ class ObjectAnalytics(odm.StdModel):
 
     @property
     def object(self):
-        if not hasattr(self,'_object'):
+        if not hasattr(self, '_object'):
             self._object = self.model_type.objects.get(id=self.object_id)
         return self._object
 

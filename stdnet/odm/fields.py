@@ -728,8 +728,8 @@ behaviour and how the field is stored in the back-end server.
 
     And::
 
-        >>> m = MyModel(name='bla', data={'pv': {'': 0.5, 'mean': 1,
-                                                 'std': 3.5}})
+        >>> m = MyModel(name='bla',
+        ...             data={'pv': {'': 0.5, 'mean': 1, 'std': 3.5}})
         >>> m.cleaned_data
         {'name': 'bla', 'data__pv': 0.5, 'data__pv__mean': '1',
          'data__pv__std': '3.5', 'data': '""'}

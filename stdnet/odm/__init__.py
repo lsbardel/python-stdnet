@@ -9,4 +9,4 @@ from .struct import *
 from .structfields import *
 from .globals import *
 from .utils import *
-from .search import SearchEngine
+from .search import *

@@ -1,6 +1,6 @@
 from itertools import chain
 
-from stdnet import session_result, session_data
+from stdnet import session_result, session_data, async
 from stdnet.utils import itervalues, iteritems
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *
@@ -14,6 +14,7 @@ __all__ = ['Session',
            'LazyProxy',
            'Transaction',
            'ModelDictionary']
+
 
 def is_query(query):
     return isinstance(query, Q)
@@ -53,8 +54,8 @@ class SessionModel(object):
         self._structures = set()
 
     def __len__(self):
-        return len(self._new) + len(self._modified) + len(self._deleted) +\
-               len(self.commit_structures) + len(self.delete_structures)
+        return (len(self._new) + len(self._modified) + len(self._deleted) +
+                len(self.commit_structures) + len(self.delete_structures))
 
     def __repr__(self):
         return self._meta.__repr__()
@@ -110,12 +111,13 @@ within this :class:`SessionModel`.'''
 
     def __contains__(self, instance):
         iid = instance.get_state().iid
-        return iid in self._new or\
-               iid in self._modified or\
-               iid in self._deleted or\
-               instance in self._structures
+        return (iid in self._new or
+                iid in self._modified or
+                iid in self._deleted or
+                instance in self._structures)
 
-    def add(self, instance, modified=True, persistent=None, force_update=False):
+    def add(self, instance, modified=True, persistent=None,
+            force_update=False):
         '''Add a new instance to this :class:`SessionModel`.
 
 :param modified: Optional flag indicating if the ``instance`` has been
@@ -215,8 +217,8 @@ Process results after a commit.
         # all committed instances
         for result in results:
             if isinstance(result, Exception):
-                errors.append(result.__class__(
-                'Exception while committing %s. %s' % (self._meta, result)))
+                errors.append(result.__class__('Exception while committing %s.'
+                                               ' %s' % (self._meta, result)))
                 continue
             instance = self.pop(result.iid)
             id = tpy(result.id, self.backend)
@@ -270,7 +272,7 @@ empty keys associated with the model will exists after this operation.'''
         models = session.router
         be = self.backend
         rbe = self.read_backend
-        model= self.model
+        model = self.model
         meta = model._meta
         dirty = self.dirty
         deletes = self.get_delete_query(session)
@@ -279,17 +281,18 @@ empty keys associated with the model will exists after this operation.'''
         queries = self._queries
         if dirty or has_delete or queries is not None or structures:
             if transaction.signal_delete and has_delete:
-                models.pre_delete.send(model, instances=deletes,
+                models.pre_delete.fire(model, instances=deletes,
                                        session=session)
             if dirty and transaction.signal_commit:
-                models.pre_commit.send(model, instances=dirty,
+                models.pre_commit.fire(model, instances=dirty,
                                        session=session)
             if be == rbe:
                 yield be, session_data(meta, dirty, deletes, queries,
                                        structures)
             else:
                 if dirty or has_delete or structures:
-                    yield be, session_data(meta, dirty, deletes, (), structures)
+                    yield be, session_data(meta, dirty, deletes, (),
+                                           structures)
                 if queries:
                     yield rbe, session_data(meta, (), (), queries, ())
 
@@ -351,9 +354,9 @@ class Transaction(object):
 
     .. attribute:: deleted
 
-        Dictionary of list of ids deleted from the backend server after a commit
-        operation. This dictionary is only available once the transaction has
-        :attr:`finished`.
+        Dictionary of list of ids deleted from the backend server after a
+        commit operation. This dictionary is only available once the
+        transaction has :attr:`finished`.
 
     .. attribute:: saved
 
@@ -361,11 +364,12 @@ class Transaction(object):
         operation. This dictionary is only available once the transaction has
         :attr:`finished`.
     '''
+    on_result = None
+
     def __init__(self, session, name=None, signal_commit=True,
                  signal_delete=True):
         self.name = name or 'transaction'
         self.session = session
-        self.on_result = None
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
         self.deleted = ModelDictionary()
@@ -423,30 +427,37 @@ class Transaction(object):
     def commit(self, callback=None):
         '''Close the transaction and commit session to the backend.'''
         if self.executed:
-            raise InvalidTransaction('Invalid operation. '\
+            raise InvalidTransaction('Invalid operation. '
                                      'Transaction already executed.')
         session = self.session
         self.session = None
-        gen = self._commit(session, callback)
-        self.on_result = self.session.backend.execute_generator(gen)
+        self.on_result = self._commit(session, callback)
         return self.on_result
+
+    def add_callback(self, callback):
+        assert self.on_result is not None, "Transaction not committed"
+        if self.on_result is not True:
+            return t.on_result.add_callback(callback)
+        else:
+            return callback(True)
 
     # INTERNAL FUNCTIONS
     def _commit(self, session, callback):
+        asy = False
         try:
-            async = False
+            asy = False
             responses = []
             for backend, data in session.backends_data():
                 responses.append(backend.execute_session(data))
-                async = async or backend.is_async()
-            if async:
-                return self._async_commit(responses)
-            responses = yield multi_async(responses)
+                asy = asy or backend.is_async()
+            if asy:
+                return async(self._async_commit(session, responses, callback))
             for response in responses:
-                yield self._post_commit(session, response)
+                tuple(self._post_commit(session, response))
             return callback() if callback else True
         finally:
-            session.transaction = None
+            if not asy:
+                session.transaction = None
 
     def _post_commit(self, session, response):
         signals = []
@@ -466,26 +477,34 @@ class Transaction(object):
             if deleted:
                 self.deleted[meta] = deleted
                 if self.signal_delete:
-                    signals.append((models.post_delete.send, sm, deleted))
+                    signals.append((models.post_delete.fire, sm, deleted))
             if saved:
                 self.saved[meta] = saved
                 if self.signal_commit:
-                    signals.append((models.post_commit.send_robust, sm, saved))
+                    signals.append((models.post_commit.fire, sm, saved))
         # Once finished we send signals
-        results = []
-        for send, sm, instances in signals:
-            for _, result in send(sm.model, instances=instances,
-                                  session=session, transaction=self):
+        for fire, sm, instances in signals:
+            for result in fire(sm.model, instances=instances,
+                               session=session, transaction=self):
                 yield result
         if exceptions:
-            failures = len(exceptions)
-            if failures > 1:
-                error = 'There were {0} exceptions during commit.\n\n'\
-                            .format(failures)
+            nf = len(exceptions)
+            if nf > 1:
+                error = 'There were %s exceptions during commit.\n\n' % nf
                 error += '\n\n'.join((str(e) for e in exceptions))
             else:
                 error = str(exceptions[0])
-            raise CommitException(error, failures=failures)
+            raise CommitException(error, failures=nf)
+
+    def _async_commit(self, session, responses, callback):
+        done = []
+        try:
+            for response in responses:
+                r = yield response
+                yield self._post_commit(session, r)
+            yield callback() if callback else True
+        finally:
+            session.transaction = None
 
 
 class Session(object):
@@ -528,8 +547,8 @@ class Session(object):
     def dirty(self):
         '''The set of instances in this :class:`Session` which have
 been modified.'''
-        return frozenset(chain(*tuple((sm.dirty for sm\
-                                        in itervalues(self._models)))))
+        return frozenset(chain(*tuple((sm.dirty for sm
+                                       in itervalues(self._models)))))
 
     def begin(self, **options):
         '''Begin a new :class:`Transaction`. If this :class:`Session`
@@ -558,10 +577,12 @@ which is equivalent to::
         return self.transaction
 
     def commit(self):
-        """Commit the current :attr:`transaction`. If no transaction is in
-progress, this method open one. Rarely used directly, see the :meth:`begin`
-method for details on how to start and close a transaction using the `with`
-construct."""
+        """Commit the current :attr:`transaction`.
+
+        If no transaction is in progress, this method open one.
+        Rarely used directly, see the :meth:`begin` method for details on
+        how to start and close a transaction using the `with` construct.
+        """
         if self.transaction is None:
             self.begin()
         return self.transaction.commit()
@@ -587,41 +608,46 @@ construct."""
         :returns: A two elements tuple containing the instance and a boolean
             indicating if the instance was created or not.
         '''
-        return self.backend.execute_generator(
-            self._update_or_create(model, **kwargs))
+        backend = self.model(model).backend
+        return backend.execute(self._update_or_create(model, **kwargs))
 
     def add(self, instance, modified=True, **params):
-        '''Add an ``instance`` to the session. If the session is not in
-a :ref:`transactional state <transactional-state>`, this operation
-commits changes to the back-end server immediately and return
-what is return by :meth:`Transaction.commit`. Otherwise it return the
-input ``instance``.
+        '''Add an ``instance`` to the session.
 
-:parameter instance: a :class:`Model` instance. It must be registered with the
-    :attr:`router` which created this :class:`Session`.
-:parameter modified: a boolean flag indicating if the instance was modified.
-:return: the instance.
+        If the session is not in a
+        :ref:`transactional state <transactional-state>`, this operation
+        commits changes to the back-end server immediately.
 
-If the instance is persistent (it is already stored in the database), an updated
-will be performed, otherwise a new entry will be created once the :meth:`commit`
-method is invoked.
-'''
+        :parameter instance: a :class:`Model` instance. It must be registered
+            with the :attr:`router` which created this :class:`Session`.
+        :parameter modified: a boolean flag indicating if the instance was
+            modified.
+        :return: the ``instance``.
+
+        If the instance is persistent (it is already stored in the database),
+        an updated will be performed, otherwise a new entry will be created
+        once the :meth:`commit` method is invoked.
+        '''
         sm = self.model(instance)
         instance.session = self
         o = sm.add(instance, modified=modified, **params)
         if modified and not self.transaction:
-            return self.backend(self.commit, lambda: o)
+            transaction = self.begin()
+            return transaction.commit(lambda: o)
         else:
             return o
 
     def delete(self, instance_or_query):
-        '''Include an ``instance`` or a ``query`` to this :class:`Session` list
-of data to be deleted. If the session is not in a
-:ref:`transactional state <transactional-state>`, this operation commits
-changes to the backend server immediately.
+        '''Delete an ``instance`` or a ``query``.
 
-:parameter instance_or_query: a :class:`Model` instance or a :class:`Query`.
-'''
+        Adds ``instance_or_query`` to this :class:`Session` list
+        of data to be deleted. If the session is not in a
+        :ref:`transactional state <transactional-state>`, this operation
+        commits changes to the backend server immediately.
+
+        :parameter instance_or_query: a :class:`Model` instance or
+            a :class:`Query`.
+        '''
         sm = self.model(instance_or_query)
         # not an instance of a Model. Assume it is a query.
         if is_query(instance_or_query):
@@ -632,7 +658,8 @@ changes to the backend server immediately.
             instance_or_query = sm.delete(instance_or_query, self)
         if not self.transaction:
             transaction = self.begin()
-            return self.commit(lambda: transaction.deleted.get(sm._meta))
+            return transaction.commit(
+                lambda: transaction.deleted.get(sm._meta))
         else:
             return instance_or_query
 
@@ -743,6 +770,7 @@ values valid for the :meth:`model` method.'''
         else:
             item = yield self.add(model(**kwargs))
             yield item, True
+
 
 class LazyProxy(object):
     '''Base class for descriptors used by :class:`ForeignKey` and
@@ -866,7 +894,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
         return self._read_backend or self._backend
 
     def __getattr__(self, attrname):
-        if attrname.startswith('__'): #required for copy
+        if attrname.startswith('__'):  # required for copy
             raise AttributeError
         else:
             result = getattr(self.model, attrname)

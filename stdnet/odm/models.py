@@ -151,7 +151,7 @@ attribute set to ``True`` will be excluded.'''
             value = field.serialise(value)
             if value:
                 odict[field.name] = value
-        if 'id' in self._dbdata:
+        if self._dbdata and 'id' in self._dbdata:
             odict['__dbdata__'] = {'id': self._dbdata['id']}
         return odict
 

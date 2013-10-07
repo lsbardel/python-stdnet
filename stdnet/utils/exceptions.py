@@ -25,14 +25,14 @@ with models registered with different backends.'''
 class ResponseError(StdNetException):
     '''Raised when an invalid response is returned from the backend server.'''
     pass
-    
-    
+
+
 class CommitException(ResponseError):
     '''A :class:`StdNetException` raised when trying to create a transaction
 with models registered with different backends.'''
-    def __init__(self, msg, failures = 1):
+    def __init__(self, msg, failures=1):
         self.failures = failures
-        super(CommitException,self).__init__(msg)
+        super(CommitException, self).__init__(msg)
 
 
 class AlreadyRegistered(StdNetException):
@@ -40,13 +40,17 @@ class AlreadyRegistered(StdNetException):
 
 
 class ObjectNotValidated(StdNetException):
-    '''A :class:`StdNetException` raised when an instance of a :class:`stdnet.odm.StdModel` fails to validate
-(probably required :class:`stdnet.odm.Field` are missing from the instance).'''
+    '''A :class:`StdNetException` raised when an instance of a
+    :class:`stdnet.odm.StdModel` fails to validate
+    (probably required :class:`stdnet.odm.Field` are missing from the
+    instance).
+    '''
     pass
 
 
 class ImproperlyConfigured(StdNetException):
-    "A :class:`stdnet.StdNetException` raised when stdnet is somehow improperly configured"
+    ''''A :class:`stdnet.StdNetException` raised when stdnet is somehow
+    improperly configured'''
     pass
 
 
@@ -80,7 +84,7 @@ class QuerySetError(StdNetException):
 class ManyToManyError(QuerySetError):
     pass
 
+
 class ObjectNotFound(QuerySetError):
     '''A :class:`QuerySetError` raised when an object is not found.'''
     pass
-

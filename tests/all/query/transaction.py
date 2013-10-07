@@ -9,22 +9,23 @@ names = populate('string',LEN, min_len = 5, max_len = 20)
 
 
 class TransactionReceiver(object):
-    
+
     def __init__(self):
         self.transactions = []
-        
-    def __call__(self, sender, instances, session, **kwargs):
+
+    def __call__(self, signal, sender, instances=None, session=None,
+                 **kwargs):
         self.transactions.append((sender, instances))
-        
+
 
 class TestTransactions(test.TestWrite):
     model = SimpleModel
-    
+
     def setUp(self):
         models = self.mapper
         self.receiver = TransactionReceiver()
-        models.post_commit.connect(self.receiver, self.model)
-        
+        models.post_commit.bind(self.receiver, self.model)
+
     def testCreate(self):
         session = self.session()
         query = session.query(self.model)
@@ -43,7 +44,7 @@ class TestTransactions(test.TestWrite):
         self.assertEqual(sender, self.model)
         self.assertTrue(instances)
         self.assertEqual(instances, all)
-        
+
     def testDelete(self):
         session = self.session()
         query = session.query(self.model)
@@ -55,7 +56,7 @@ class TestTransactions(test.TestWrite):
         yield session.delete(s)
         yield self.async.assertRaises(self.model.DoesNotExist,
                                       query.get, id=s.id)
-        
+
     def test_force_update(self):
         session = self.session()
         with session.begin() as t:
@@ -68,18 +69,18 @@ class TestTransactions(test.TestWrite):
             self.assertEqual(state.action, 'update')
             self.assertTrue(state.persistent)
         yield t.on_result
-        
-        
+
+
 class TestMultiFieldTransaction(test.TestCase):
     model = Dictionary
-    
+
     def make(self):
         with self.session().begin(name='create models') as t:
             self.assertEqual(t.name, 'create models')
             for name in names:
                 t.add(self.model(name=name))
         return t.on_result
-        
+
     def testHashField(self):
         yield self.make()
         session = self.session()
@@ -98,5 +99,4 @@ class TestMultiFieldTransaction(test.TestCase):
         d1, d2 = yield query.filter(id__in=(1,2)).sort_by('id').load_related('data').all()
         self.assertEqual(d1.data['ciao'], 'hello in Italian')
         self.assertEqual(d2.data['wine'], 'drink to enjoy with or without food')
-    
-    
+

@@ -13,17 +13,19 @@ class TwitterData(test.DataGenerator):
              'normal': (100, 30),
              'big': (1000, 100),
              'huge': (100000, 1000)}
-    
+
     def generate(self):
         size, _ = self.size
-        self.usernames = self.populate('string', size=size, min_len=5, max_len=20)
-        self.passwords = self.populate('string', size=size, min_len=8, max_len=20)
-        
+        self.usernames = self.populate('string', size=size, min_len=5,
+                                       max_len=20)
+        self.passwords = self.populate('string', size=size, min_len=8,
+                                       max_len=20)
+
     def followers(self):
         _, max_size = self.size
         min_size = max_size // 2
         return randint(min_size, max_size)
-        
+
 
 class TestTwitter(test.TestWrite):
     models = (User, Post)
@@ -31,10 +33,11 @@ class TestTwitter(test.TestWrite):
 
     def setUp(self):
         with self.mapper.session().begin() as t:
-            for username, password in zip(self.data.usernames, self.data.passwords):
+            for username, password in zip(self.data.usernames,
+                                          self.data.passwords):
                 t.add(User(username=username, password=password))
         return t.on_result
-        
+
     def testMeta(self):
         following = User.following
         followers = User.followers
@@ -48,7 +51,7 @@ class TestTwitter(test.TestWrite):
         self.assertEqual(following.name_formodel, 'user2')
         self.assertEqual(followers.name_relmodel, 'user2')
         self.assertEqual(followers.name_formodel, 'user')
-        
+
     def testRelated(self):
         models = self.mapper
         users = models.user.query()
@@ -64,7 +67,7 @@ class TestTwitter(test.TestWrite):
         user2.following.add(user3)
         followers = list(user3.followers.query())
         self.assertEqual(len(followers),2)
-    
+
     def testFollowers(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
@@ -87,7 +90,7 @@ class TestTwitter(test.TestWrite):
             self.assertEqual(all_following.count(), N)
             for following in all_following:
                 self.assertTrue(user in following.followers.query())
-                
+
     def testFollowersTransaction(self):
         '''Add followers to a user'''
         # unwind queryset here since we are going to use it in a double loop
@@ -109,7 +112,7 @@ class TestTwitter(test.TestWrite):
             for user2 in following:
                 group = yield user2.followers.query()
                 self.assertTrue(user in group)
-            
+
     def testMessages(self):
         models = self.mapper
         users = yield models.user.query().all()
@@ -119,4 +122,4 @@ class TestTwitter(test.TestWrite):
         yield user.newupdate('this is my first message')
         yield user.newupdate('and this is another one')
         yield self.async.assertEqual(user.updates.size(), 2)
-            
+

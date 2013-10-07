@@ -1,6 +1,6 @@
 from itertools import chain
 
-from stdnet import session_result, session_data, multi_async
+from stdnet import session_result, session_data
 from stdnet.utils import itervalues, iteritems
 from stdnet.utils.structures import OrderedDict
 from stdnet.utils.exceptions import *

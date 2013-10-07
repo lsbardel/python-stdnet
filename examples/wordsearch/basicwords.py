@@ -1,4 +1,3 @@
-__test__ = False
 basic_english_words = 'a,able,about,account,acid,across,act,addition,\
 adjustment,advertisement,after,again,against,agreement,air,all,almost,\
 among,amount,amusement,and,angle,angry,animal,answer,ant,any,apparatus,\
@@ -14,7 +13,8 @@ change,cheap,cheese,chemical,chest,chief,chin,church,circle,clean,clear,\
 clock,cloth,cloud,coal,coat,cold,collar,colour,comb,come,comfort,committee,\
 common,company,comparison,competition,complete,complex,condition,connection,\
 conscious,control,cook,copper,copy,cord,cork,cotton,cough,country,cover,cow,\
-crack,credit,crime,cruel,crush,cry,cup,cup,current,curtain,curve,cushion,damage,\
+crack,credit,crime,cruel,crush,cry,cup,cup,current,curtain,curve,cushion,\
+damage,\
 danger,dark,daughter,day,dead,dear,death,debt,decision,deep,degree,delicate,\
 dependent,design,desire,destruction,detail,development,different,digestion,\
 direction,dirty,discovery,discussion,disease,disgust,distance,distribution,\
@@ -23,13 +23,16 @@ dust,ear,early,earth,east,edge,education,effect,egg,elastic,electric,end,\
 engine,enough,equal,error,even,event,ever,every,example,exchange,existence,\
 expansion,experience,expert,eye,face,fact,fall,false,family,far,farm,fat,\
 father,fear,feather,feeble,feeling,female,fertile,fiction,field,fight,finger,\
-fire,first,fish,fixed,flag,flame,flat,flight,floor,flower,fly,fold,food,foolish,\
-foot,for,force,fork,form,forward,fowl,frame,free,frequent,friend,from,front,fruit,\
+fire,first,fish,fixed,flag,flame,flat,flight,floor,flower,fly,fold,food,\
+foolish,\
+foot,for,force,fork,form,forward,fowl,frame,free,frequent,friend,from,front,\
+fruit,\
 full,future,garden,general,get,girl,give,glass,glove,go,goat,gold,good,\
 government,grain,grass,great,green,grey,grip,group,growth,guide,gun,hair,\
 hammer,hand,hanging,happy,harbour,hard,harmony,hat,hate,have,he,head,healthy,\
 hear,hearing,heart,heat,help,high,history,hole,hollow,hook,hope,horn,horse,\
-hospital,hour,house,how,humour,I,ice,idea,if,ill,important,impulse,in,increase,\
+hospital,hour,house,how,humour,I,ice,idea,if,ill,important,impulse,in,\
+increase,\
 industry,ink,insect,instrument,insurance,interest,invention,iron,island,jelly,\
 jewel,join,journey,judge,jump,keep,kettle,key,kick,kind,kiss,knee,knife,knot,\
 knowledge,land,language,last,late,laugh,law,lead,leaf,learning,leather,left,\
@@ -71,4 +74,3 @@ wall,war,warm,wash,waste,watch,water,wave,wax,way,weather,week,weight,well,\
 west,wet,wheel,when,where,while,whip,whistle,white,who,why,wide,will,wind,\
 window,wine,wing,winter,wire,wise,with,woman,wood,wool,word,work,worm,wound,\
 writing,wrong,year,yellow,yes,yesterday,you,young'.split(',')
-

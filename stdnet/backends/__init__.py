@@ -409,25 +409,7 @@ class BackendQuery(object):
         return self.backend.execute(self.items(), lambda r: r[slic])
 
     def items(self, slic=None, callback=None):
-        '''This function does the actual fetching of data from the backend
-server matching this :class:`Query`. This method is usually not called
-directly, instead use the :meth:`all` method or alternatively slice the query
-in the same way you can slice a list or iterate over the query.'''
-        key = None
-        seq = self.__slice_cache.get(None)
-        if slic:
-            if seq is not None:  # we have the whole query cached already
-                yield seq[slic]
-            else:
-                key = (slic.start, slic.step, slic.stop)
-        if seq is not None:
-            yield seq
-        else:
-            result = yield self.execute_query()
-            items = None
-            if result:
-                items = yield self._items(slic)
-            yield self._store_items(key, callback, items or ())
+        return self.backend.execute(self._slice_items(slic), callback)
 
     def delete(self, qs):
         with self.session.begin() as t:
@@ -459,22 +441,30 @@ in the same way you can slice a list or iterate over the query.'''
         self.__count = c
         return c
 
-    def _get_items(self, slic, result):
-        if result:
-            return self._items(slic)
+    def _slice_items(self, slic):
+        key = None
+        seq = self.__slice_cache.get(None)
+        if slic:
+            if seq is not None:  # we have the whole query cached already
+                yield seq[slic]
+            else:
+                key = (slic.start, slic.step, slic.stop)
+        if seq is not None:
+            yield seq
         else:
-            return ()
-
-    def _store_items(self, key, callback, items):
-        session = self.session
-        seq = []
-        model = self.model
-        for el in items:
-            if isinstance(el, model):
-                session.add(el, modified=False)
-            seq.append(el)
-        self.__slice_cache[key] = seq
-        return callback(seq) if callback else seq
+            result = yield self.execute_query()
+            items = ()
+            if result:
+                items = yield self._items(slic)
+            session = self.session
+            seq = []
+            model = self.model
+            for el in items:
+                if isinstance(el, model):
+                    session.add(el, modified=False)
+                seq.append(el)
+            self.__slice_cache[key] = seq
+            yield seq
 
 
 def parse_backend(backend):

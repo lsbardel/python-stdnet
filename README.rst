@@ -194,18 +194,10 @@ For more information type::
 
     python runtests.py -h
 
-To access coverage of tests you need to install the coverage_ package and run the tests using::
 
-    coverage run runtests.py
+.. _kudos:
 
-and to check out the coverage report::
-
-    coverage html
-
-
-.. _kudo:
-
-Kudo
+Kudos
 =============
 * Redis_ simply because this library uses its awesome features.
 * SQLAlchemy_ and Django_ for ideas and API design.

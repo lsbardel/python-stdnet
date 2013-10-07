@@ -41,7 +41,8 @@ class StructureFieldProxy(LazyProxy):
             structure = self.get_structure(instance, session)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
-                structure.cache.set_cache(cache_val)
+                structure.load_data(cache_val,
+                                    structure.cache.set_cache)
         if session:  # override session only if a new session is given
             structure.session = session
         return structure

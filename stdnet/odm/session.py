@@ -364,11 +364,12 @@ class Transaction(object):
         operation. This dictionary is only available once the transaction has
         :attr:`finished`.
     '''
+    on_result = None
+
     def __init__(self, session, name=None, signal_commit=True,
                  signal_delete=True):
         self.name = name or 'transaction'
         self.session = session
-        self.on_result = None
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
         self.deleted = ModelDictionary()
@@ -432,6 +433,13 @@ class Transaction(object):
         self.session = None
         self.on_result = self._commit(session, callback)
         return self.on_result
+
+    def add_callback(self, callback):
+        assert self.on_result is not None, "Transaction not committed"
+        if self.on_result is not True:
+            return t.on_result.add_callback(callback)
+        else:
+            return callback(True)
 
     # INTERNAL FUNCTIONS
     def _commit(self, session, callback):

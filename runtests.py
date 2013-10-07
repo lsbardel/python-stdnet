@@ -41,7 +41,7 @@ def run(**params):
     runtests(**params)
 
 
-def runtests():
+def runtests(**params):
     import stdnet
     from stdnet.utils import test
     #
@@ -51,8 +51,8 @@ def runtests():
                       modules=('tests.all',),
                       plugins=(test.StdnetPlugin(),
                                bench.BenchMark(),
-                               profile.Profile())
-                      )
+                               profile.Profile()),
+                      **params)
     suite.bind_event('tests', test.create_tests)
     suite.start()
     #

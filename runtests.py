@@ -2,6 +2,7 @@
 '''Stdnet asynchronous test suite. Requires pulsar.'''
 import sys
 import os
+from multiprocessing import current_process
 
 ## This is for dev environment with pulsar and dynts.
 ## If not available, some tests won't run

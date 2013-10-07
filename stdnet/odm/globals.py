@@ -48,3 +48,36 @@ def hashmodel(model, library=None):
         raise KeyError('Model "{0}" already in hash table.\
  Rename your model or the module containing the model.'.format(meta))
     _model_dict[hash] = model
+
+
+def _make_id(target):
+    if hasattr(target, '__func__'):
+        return (id(target.__self__), id(target.__func__))
+    return id(target)
+
+
+class Event:
+
+    def __init__(self):
+        self.callbacks = []
+
+    def bind(self, callback, sender=None):
+        '''Bind a ``callback`` for a given ``sender``.'''
+        key = (_make_id(callback), _make_id(sender))
+        self.callbacks.append((key, callback))
+
+    def fire(self, sender=None, **params):
+        '''Fire callbacks from a ``sender``.'''
+        keys = (_make_id(None), _make_id(sender))
+        results = []
+        for (_, key), callback in self.callbacks:
+            if key in keys:
+                results.append(callback(self, sender, **params))
+        return results
+
+    def unbind(self, callback, sender=None):
+        key = (_make_id(callback), _make_id(sender))
+        for index, key_cbk in enumerate(self.callbacks):
+            if key == key_cbk[0]:
+                del self.callbacks[index]
+                break

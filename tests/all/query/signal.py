@@ -9,9 +9,10 @@ class TestSignals(test.TestWrite):
 
     def setUp(self):
         models = self.mapper
-        models.post_commit.connect(self.addPerson, sender=Group)
-        
-    def addPerson(self, signal, instances, session, **kwargs):
+        models.post_commit.bind(self.addPerson, sender=Group)
+
+    def addPerson(self, signal, sender, instances=None, session=None,
+                  **kwargs):
         models = session.router
         self.assertEqual(models, self.mapper)
         session = models.session()

@@ -12,7 +12,7 @@ class ObserverData(test.DataGenerator):
              'normal': (10, 80),
              'big': (50, 500),
              'huge': (100, 10000)}
-    
+
     def generate(self):
         self.observables, self.observers = self.size
 
@@ -21,12 +21,12 @@ class ObserverTest(test.TestWrite):
     multipledb = 'redis'
     models = (Observer, Observable)
     data_cls = ObserverData
-        
+
     def setUp(self):
         models = self.mapper
         #
         # Register post commit callback
-        models.post_commit.connect(update_observers, sender=Observable)
+        models.post_commit.bind(update_observers, sender=Observable)
         #
         # Create the observables and the observers
         session = models.session()
@@ -57,7 +57,7 @@ class ObserverTest(test.TestWrite):
         self.assertEqual(len(t.saved), 1)
         self.observables = observables
         self.observers = observers
-        
+
     def test_meta(self):
         models = self.mapper
         zset = models.observer.updates
@@ -68,7 +68,7 @@ class ObserverTest(test.TestWrite):
         #
         backend = zset.backend_structure()
         self.assertEqual(backend.instance, zset)
-        
+
     def test_created(self):
         models = self.mapper
         observers = yield models.observer.all()
@@ -77,7 +77,7 @@ class ObserverTest(test.TestWrite):
             created = self.created[o.id]
             observables = yield o.underlyings.all()
             self.assertEqual(created, set(observables))
-            
+
     def test_simple_save(self):
         '''Save the first observable and check for updates.'''
         models = self.mapper
@@ -95,7 +95,7 @@ class ObserverTest(test.TestWrite):
         for n, sv in enumerate(data, 1):
             score, id = sv
             self.assertTrue(score > now)
-            
+
     def test_save_all(self):
         models = self.mapper
         with models.session().begin() as t:
@@ -122,4 +122,3 @@ class ObserverTest(test.TestWrite):
             if prev:
                 self.assertTrue(N <= prev)
             prev = N
-        

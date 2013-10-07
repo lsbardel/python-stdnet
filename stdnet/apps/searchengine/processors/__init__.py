@@ -5,7 +5,7 @@ from .porter import PorterStemmer
 
 class stopwords:
 
-    def __init__(self, stp = None):
+    def __init__(self, stp=None):
         self.stp = stp if stp is not None else STOP_WORDS
 
     def __call__(self, words):

@@ -12,8 +12,9 @@ are treated in the same way in the python language domain.
 :Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
+:Platforms: Linux, OS X, Windows. Python 2.6, 2.7, 3.2, 3.3, pypy_
 :Mailing List: https://groups.google.com/group/python-stdnet
-:Keywords: server, database, cache, redis, mongo, odm
+:Keywords: server, database, redis, odm
 
 
 .. |master-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
@@ -51,10 +52,8 @@ Requirements
 =================
 * Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
 * redis-py_ for redis backend.
-* Cython_ for ultra-fast C-extensions.
-* Optional pymongo_ for the mongo back-end.
 * Optional pulsar_ when using the asynchronous connections or the test suite.
-* You need access to a Redis_ server version 2.6 or above and/or a Mongo_ server.
+* You need access to a Redis_ server version 2.6 or above.
 
 
 Philosophy
@@ -105,7 +104,6 @@ Backend data-stores are the backbone of the library.
 Currently the list is limited to
 
 * Redis_ 2.6 or above.
-* Mongodb_ (alpha).
 
 
 Object Data Mapper

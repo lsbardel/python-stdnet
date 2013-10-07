@@ -4,22 +4,22 @@ from .meta import Item, RelatedItem, SearchMixin, SearchEngine, processors
 
 
 class SearchWriteMixin(SearchMixin):
-    
+
     @classmethod
     def after_setup(cls):
         pass
-    
+
     def setUp(self):
         self.mapper.set_search_engine(self.make_engine())
         self.mapper.search_engine.register(Item, ('related',))
         self.mapper.search_engine.register(RelatedItem)
-        
+
 
 class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
-    
+
     def testSimpleAdd(self):
         return self.simpleadd()
-    
+
     def testDoubleEntries(self):
         '''Test an item indexed twice.'''
         models = self.mapper
@@ -30,15 +30,15 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         yield session.add(item)
         items = yield engine.worditems(item).all()
         wi2 = set((w.word for w in items))
-        self.assertEqual(wi, wi2)    
-        
+        self.assertEqual(wi, wi2)
+
     def testSearchWords(self):
         models = self.mapper
         engine = models.search_engine
         yield self.simpleadd()
         words = list(engine.words_from_text('python gains'))
         self.assertTrue(len(words) >= 2)
-        
+
     def testSearchModelSimple(self):
         item, _ = yield self.simpleadd()
         qs = self.query(Item).search('python gains')
@@ -49,7 +49,7 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         qs = yield qs.all()
         self.assertEqual(len(qs), 1)
         self.assertEqual(item, qs[0])
-        
+
     def testSearchModel(self):
         yield self.simpleadd()
         yield self.simpleadd('pink', content='the dark side of the moon')
@@ -63,7 +63,7 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         qs = yield self.query(Item).search('python learn').all()
         self.assertEqual(len(qs), 1)
         self.assertEqual(qs[0].name, 'python')
-        
+
     def testRelatedModel(self):
         session = self.session()
         with session.begin() as t:
@@ -76,14 +76,14 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         self.assertEqual(len(qc), 2)
         self.assertEqual(qc.keyword, 'intersect')
         yield self.async.assertEqual(qs.count(), 1)
-        
+
     def testFlush(self):
         models = self.mapper
         engine = models.search_engine
         yield self.data.make_items(self)
         yield engine.flush()
         yield self.async.assertFalse(engine.worditems().count())
-        
+
     def testDelete(self):
         models = self.mapper
         session = models.session()
@@ -94,7 +94,7 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         yield session.delete(item)
         wis = engine.worditems(Item)
         yield self.async.assertFalse(wis.count(), 0)
-        
+
     def testReindex(self):
         models = self.mapper
         engine = models.search_engine
@@ -105,7 +105,7 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         wis2 = yield engine.worditems().all()
         self.assertTrue(wis1)
         self.assertEqual(set(wis1), set(wis2))
-        
+
     def test_skip_indexing_when_missing_fields(self):
         models = self.mapper
         engine = models.search_engine
@@ -115,7 +115,7 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
         yield session.add(obj)
         wis2 = yield engine.worditems(obj).all()
         self.assertEqual(wis, wis2)
-        
+
     def testAddWithNumbers(self):
         item, wi = yield self.simpleadd(name='20y', content='')
         wi = list(wi)
@@ -125,13 +125,13 @@ class TestSearchAddToEngine(SearchWriteMixin, test.TestWrite):
 
 
 class TestCoverage(SearchWriteMixin, test.TestWrite):
-    
+
     @classmethod
     def make_engine(cls):
         eg = SearchEngine(metaphone=False)
         eg.add_word_middleware(processors.metaphone_processor)
         return eg
-    
+
     def testAdd(self):
         item, wi = yield self.simpleadd('pink',
                                   content='the dark side of the moon 10y')

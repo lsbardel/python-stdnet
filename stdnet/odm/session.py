@@ -281,10 +281,10 @@ empty keys associated with the model will exists after this operation.'''
         queries = self._queries
         if dirty or has_delete or queries is not None or structures:
             if transaction.signal_delete and has_delete:
-                models.pre_delete.send(model, instances=deletes,
+                models.pre_delete.fire(model, instances=deletes,
                                        session=session)
             if dirty and transaction.signal_commit:
-                models.pre_commit.send(model, instances=dirty,
+                models.pre_commit.fire(model, instances=dirty,
                                        session=session)
             if be == rbe:
                 yield be, session_data(meta, dirty, deletes, queries,
@@ -469,16 +469,15 @@ class Transaction(object):
             if deleted:
                 self.deleted[meta] = deleted
                 if self.signal_delete:
-                    signals.append((models.post_delete.send, sm, deleted))
+                    signals.append((models.post_delete.fire, sm, deleted))
             if saved:
                 self.saved[meta] = saved
                 if self.signal_commit:
-                    signals.append((models.post_commit.send_robust, sm, saved))
+                    signals.append((models.post_commit.fire, sm, saved))
         # Once finished we send signals
-        results = []
-        for send, sm, instances in signals:
-            for _, result in send(sm.model, instances=instances,
-                                  session=session, transaction=self):
+        for fire, sm, instances in signals:
+            for result in fire(sm.model, instances=instances,
+                               session=session, transaction=self):
                 yield result
         if exceptions:
             nf = len(exceptions)

@@ -26,6 +26,9 @@ __all__ = ['Structure',
            'commit_when_no_transaction']
 
 
+passthrough = lambda r: r
+
+
 def commit_when_no_transaction(f):
     '''Decorator for committing changes when the instance session is
 not in a transaction.'''
@@ -59,7 +62,7 @@ class StructureCache(object):
         return self.cache
 
     def set_cache(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class stringcache(StructureCache):
@@ -299,15 +302,10 @@ class Structure(ModelBase):
         '''All items of this :class:`Structure`. Implemented by subclasses.'''
         raise NotImplementedError
 
-    def set_cache(self, data):
-        '''Set the cache for the :class:`Structure`.
-Do not override this function. Use :meth:`load_data` method instead.'''
-        self.cache.clear()
-        self.cache.set_cache(self.load_data(data))
-
-    def load_data(self, data):
+    def load_data(self, data, callback=None):
         '''Load ``data`` from the :class:`stdnet.BackendDataServer`.'''
-        return self.value_pickler.load_iterable(data, self.session)
+        return self.backend.execute(
+            self.value_pickler.load_iterable(data, self.session), callback)
 
     def backend_structure(self, client=None):
         '''Returns the :class:`stdnet.BackendStructure`.
@@ -318,6 +316,11 @@ Do not override this function. Use :meth:`load_data` method instead.'''
         '''Returns the :class:`stdnet.BackendStructure` for reading.
         '''
         return self.read_backend.structure(self, client)
+
+    def _items(self, data):
+        self.cache.set_cache(data)
+        return self.cache.items()
+
 
 
 ############################################################################
@@ -346,18 +349,19 @@ structure :class:`Zset`.
     def items(self):
         '''Iterator over items (pairs) of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            data = yield self.read_backend_structure().items()
-            data = yield self.load_data(data)
-            self.cache.set_cache(data)
-        yield self.cache.items()
+            backend = self.read_backend
+            backend.execute(backend.structure(self).items(),
+                            lambda data: self.load_data(data, self._items))
+        return self.cache.items()
 
     def values(self):
         '''Iteratir over values of :class:`PairMixin`.'''
         if self.cache.cache is None:
-            data = yield self.read_backend_structure().values()
-            yield self.load_values(data)
+            backend = self.read_backend
+            return backend.execute(backend.structure(self).values(),
+                                   self.load_values)
         else:
-            yield self.cache.cache.values()
+            return self.cache.cache.values()
 
     def pair(self, pair):
         '''Add a *pair* to the structure.'''
@@ -398,7 +402,7 @@ Equivalent to python dictionary update method.
             data.append((tokey(k), dumps(v)))
         return data
 
-    def load_data(self, mapping):
+    def load_data(self, mapping, callback=None):
         loads = self.pickler.loads
         if self.value_pickler.require_session():
             data1 = []
@@ -408,10 +412,13 @@ Equivalent to python dictionary update method.
                     data1.append(loads(k))
                     yield v
             res = self.value_pickler.load_iterable(_iterable(), self.session)
-            return self.backend.execute(res, lambda data2: zip(data1, data2))
+            callback = callback or passthrough
+            return self.backend.execute(
+                res, lambda data2: callback(zip(data1, data2)))
         else:
             vloads = self.value_pickler.loads
-            return [(loads(k), vloads(v)) for k, v in iterpair(mapping)]
+            data = [(loads(k), vloads(v)) for k, v in iterpair(mapping)]
+            return callback(data) if callback else data
 
     def load_keys(self, iterable):
         loads = self.pickler.loads
@@ -431,10 +438,11 @@ methods, while its iterator is over keys.'''
 
     def keys(self):
         if self.cache.cache is None:
-            keys = yield self.read_backend_structure().keys()
-            yield self.load_keys(keys)
+            backend = self.read_backend
+            return backend.execute(backend.structure(self).keys(),
+                                   self.load_keys)
         else:
-            yield self.cache.cache
+            return self.cache.cache
 
     def __delitem__(self, key):
         '''Remove an element. Same as the :meth:`remove` method`.'''
@@ -566,9 +574,11 @@ sequence.'''
 
     def items(self):
         if self.cache.cache is None:
-            data = yield self.read_backend_structure().range()
-            self.cache.set_cache(self.load_data(data))
-        yield self.cache.cache
+            backend = self.read_backend
+            return backend.execute(
+                backend.structure(self).range(),
+                lambda data: self.load_data(data, self._items))
+        return self.cache.items()
 
     @commit_when_no_transaction
     def push_back(self, value):

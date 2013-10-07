@@ -1,9 +1,9 @@
 import logging
 
-from itertools import chain
 from inspect import isgenerator, isclass
 
-from stdnet.utils import grouper
+
+__all__ = ['SearchEngine']
 
 
 LOGGER = logging.getLogger('stdnet.search')
@@ -74,8 +74,8 @@ indexed by the search engine.
 '''
         update_model = UpdateSE(self, related)
         self.REGISTERED_MODELS[model] = update_model
-        self.router.post_commit.connect(update_model, sender=model)
-        self.router.post_delete.connect(update_model, sender=model)
+        self.router.post_commit.bind(update_model, model)
+        self.router.post_delete.bind(update_model, model)
 
     def get_related_fields(self, item):
         if not isclass(item):
@@ -139,37 +139,9 @@ It extracts content from the given *item* and add it to the index.
 """
         self.index_items_from_model((item,), item.__class__)
 
-    def index_items_from_model(self, items, model):
-        """This is the main function for indexing items.
-It extracts content from a list of *items* belonging to *model* and
-add it to the index.
-
-:param items: an iterable over instances of of a
-    :class:`stdnet.odm.StdModel`.
-:param model: The *model* of all *items*.
-:param transaction: A transaction for updating indexes.
-"""
-        self.logger.debug('Indexing %s objects of %s model.',
-                          len(items), model._meta)
-        session = self.session()
-        wft = self.words_from_text
-        add = self.add_item
-        total = 0
-        for group in grouper(self.max_in_session, items):
-            with session.begin() as transaction:
-                ids = []
-                for item, data in self._item_data(group):
-                    ids.append(item.id)
-                    words = chain(*[wft(value) for value in data])
-                    add(item, words, transaction)
-                if ids:
-                    total += len(ids)
-                    self.remove_item(model, transaction, ids)
-            yield transaction.on_result
-        yield total
-
     def query(self, model):
-        '''Return a query for ``model`` when it needs to be indexed.'''
+        '''Return a query for ``model`` when it needs to be indexed.
+        '''
         session = self.router.session()
         fields = tuple((f.name for f in model._meta.scalarfields
                         if f.type == 'text'))
@@ -177,19 +149,6 @@ add it to the index.
         for related in self.get_related_fields(model):
             qs = qs.load_related(related)
         return qs
-
-    def reindex(self):
-        '''Re-index models by removing indexes and rebuilding them by iterating
-through all the instances of :attr:`REGISTERED_MODELS`.'''
-        yield self.flush()
-        total = 0
-        # Loop over models
-        for model in self.REGISTERED_MODELS:
-            all = yield self.query(model).all()
-            if all:
-                n = yield self.index_items_from_model(all, model)
-                total += n
-        yield total
 
     def session(self):
         '''Create a session for the search engine'''
@@ -219,6 +178,17 @@ through all the instances of :attr:`REGISTERED_MODELS`.'''
 
     # ABSTRACT FUNCTIONS
     ################################################################
+    def index_items_from_model(self, items, model):
+        """Main method for indexing items.
+
+        It extracts content from a list of ``items`` belonging to
+        ``model`` and add it to the index.
+
+        :param items: an iterable over instances of ``model``.
+        :param model: The ``model`` of all ``items``.
+        """
+        raise NotImplementedError
+
     def remove_item(self, item_or_model, session, ids=None):
         '''Remove an item from the search indices'''
         raise NotImplementedError
@@ -261,6 +231,14 @@ implemented by subclasses.
         '''Clean the search engine'''
         raise NotImplementedError
 
+    def reindex(self):
+        '''Re-index models.
+
+        Remove existing indices indexes and rebuilding them by iterating
+        through all the instances of :attr:`REGISTERED_MODELS`.
+        '''
+        raise NotImplementedError
+
 
 class UpdateSE(object):
 
@@ -268,9 +246,11 @@ class UpdateSE(object):
         self.se = se
         self.related = related or ()
 
-    def __call__(self, instances, signal, sender, **kwargs):
-        '''An update on instances has occurred. Propagate it to the search
-engine index models.'''
+    def __call__(self, signal, sender, instances=None, **kwargs):
+        '''An update on ``instances`` has occurred.
+
+        Propagate it to the search engine index models.
+        '''
         if sender:
             # get a new session
             models = self.se.router

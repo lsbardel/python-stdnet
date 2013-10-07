@@ -41,7 +41,7 @@ class StructureFieldProxy(LazyProxy):
             structure = self.get_structure(instance, session)
             setattr(instance, cache_name, structure)
             if cache_val is not None:
-                structure.set_cache(cache_val)
+                structure.cache.set_cache(cache_val)
         if session:  # override session only if a new session is given
             structure.session = session
         return structure
@@ -244,7 +244,7 @@ it returns a of :class:`List` structure. For example::
 
 Lets register it with redis::
 
-    >>> odm.register(UserMessage,''redis://127.0.0.1:6379/?db=11')
+    >>> odm.register(UserMessage, 'redis://127.0.0.1:6379/?db=11')
     'redis db 7 on 127.0.0.1:6379'
 
 Can be used as::

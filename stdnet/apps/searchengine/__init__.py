@@ -64,8 +64,10 @@ WordItem
 '''
 import re
 from inspect import isclass
+from itertools import chain
 
 from stdnet import odm, getdb
+from stdnet.utils import grouper
 
 from .models import WordItem
 from . import processors
@@ -174,11 +176,33 @@ the input :class:`Query` and the *text* to search.'''
         q = self.router.worditem.query()
         if model:
             if not isclass(model):
-                return q.filter(model_type=model.__class__, object_id=model.id)
+                return q.filter(model_type=model.__class__,
+                                object_id=model.id)
             else:
                 return q.filter(model_type=model)
         else:
             return q
+
+    def index_items_from_model(self, items, model):
+        self.logger.debug('Indexing %s objects of %s model.',
+                          len(items), model._meta)
+        return self.router.worditem.backend.execute(
+            self._index_items_from_model(items, model))
+
+    def reindex(self):
+        backend = self.router.worditem.backend
+        return backend.execute(self._reindex)
+
+    def _reindex(self):
+        yield self.flush()
+        total = 0
+        # Loop over models
+        for model in self.REGISTERED_MODELS:
+            all = yield self.query(model).all()
+            if all:
+                n = yield self.index_items_from_model(all, model)
+                total += n
+        yield total
 
     def _search(self, words, include=None, exclude=None, lookup=None):
         '''Full text search. Return a list of queries to intersect.'''
@@ -201,3 +225,20 @@ the input :class:`Query` and the *text* to search.'''
         else:
             raise ValueError('Unknown lookup "{0}"'.format(lookup))
         return qs
+
+    def _index_items_from_model(self, items, model):
+        wft = self.words_from_text
+        add = self.add_item
+        total = 0
+        for group in grouper(self.max_in_session, items):
+            with self.session().begin() as transaction:
+                ids = []
+                for item, data in self._item_data(group):
+                    ids.append(item.id)
+                    words = chain(*[wft(value) for value in data])
+                    add(item, words, transaction)
+                if ids:
+                    total += len(ids)
+                    self.remove_item(model, transaction, ids)
+            yield transaction.on_result
+        yield total

@@ -1,9 +1,9 @@
 from functools import partial
 
 from stdnet.utils import encoders
-from stdnet.utils.dispatch import Signal
 from stdnet import QuerySetError, ManyToManyError
 
+from .globals import Event
 from .session import Manager, LazyProxy
 
 __all__ = ['LazyForeignKey', 'ModelFieldPickler']
@@ -13,7 +13,7 @@ RECURSIVE_RELATIONSHIP_CONSTANT = 'self'
 
 pending_lookups = {}
 
-class_prepared = Signal(providing_args=["class"])
+class_prepared = Event()
 
 
 class ModelFieldPickler(encoders.Encoder):
@@ -33,7 +33,7 @@ class ModelFieldPickler(encoders.Encoder):
         tpy = self.model.pk().to_python
         ids = [tpy(id, backend) for id in iterable]
         result = session.query(self.model).filter(id=ids).all()
-        return session.backend.execute(result, partial(self._sort, ids))
+        return backend.execute(result, partial(self._sort, ids))
 
     def _sort(self, ids, results):
         results = dict(((r.pkvalue(), r) for r in results))
@@ -63,7 +63,7 @@ def load_relmodel(field, callback):
         pending_lookups[key].append(callback)
 
 
-def do_pending_lookups(sender, **kwargs):
+def do_pending_lookups(event, sender, **kwargs):
     """Handle any pending relations to the sending model.
 Sent from class_prepared."""
     key = (sender._meta.app_label, sender._meta.name)
@@ -71,7 +71,7 @@ Sent from class_prepared."""
         callback(sender)
 
 
-class_prepared.connect(do_pending_lookups)
+class_prepared.bind(do_pending_lookups)
 
 
 def Many2ManyThroughModel(field):

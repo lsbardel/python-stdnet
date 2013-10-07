@@ -4,16 +4,7 @@
 Python Stdnet
 ======================
 
-.. rubric:: Object data mapper and advanced query manager for non
-  relational databases. Designed to work with Redis_ data-store, it now has an
-  experimental implementation for Mongodb_.
-  
-  
-The object-data mapper greatly facilitates the management and retrieval of
-large data-sets. It requires ``python 2.6`` up to ``python 3.3`` single code base.
-There are over 600 tests with a coverage of about 90%.
-
-**The library is stable, used in production and continuously maintained**.
+.. rubric:: Object data mapper and advanced query manager for redis.
 
 .. _requirements:
 
@@ -32,13 +23,13 @@ Contents
 
 .. toctree::
    :maxdepth: 1
-   
+
    overview
    examples/index
    backends/index
    changelog
    faq
-   api/index   
+   api/index
 
 Indices and tables
 ==================
@@ -52,7 +43,7 @@ Legacy
 
 .. toctree::
    :maxdepth: 1
-   
+
    stdnetredis
 
 .. _Redis: http://redis.io/

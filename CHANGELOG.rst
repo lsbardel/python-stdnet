@@ -2,11 +2,12 @@
 
 Ver. 0.9.0 - Development
 ===============================
+* Removed the dispatch module from ``utils``.
 * Asynchronous redis connection moved to pulsar_.
 * Added the :meth:`odm.Manager.save` as shortcut for immediately committing
   changes to a model.
 * Bug fix in model registration.
-* **566 regression tests** with **93%** coverage.
+* **554 regression tests** with **93%** coverage.
 
 Ver. 0.8.2 - 2013 July 4
 ===============================

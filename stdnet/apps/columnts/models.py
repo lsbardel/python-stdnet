@@ -96,8 +96,8 @@ fields, as well as the start and end date.'''
     def evaluate(self, script, *series, **params):
         backend = self.backend
         return backend.execute(
-            backend.structure(self).run_script(
-            'evaluate', series, script, **params), self._evaluate)
+            backend.structure(self).run_script('evaluate', series, script,
+                                               **params), self._evaluate)
 
     def istats(self, start=0, end=-1, fields=None):
         '''Perform a multivariate statistic calculation of this
@@ -198,7 +198,8 @@ in the backend server.'''
             target._merge(*series, **kwargs)
             backend = target.backend
             return backend.execute(
-                backend.structure(self).irange_and_delete(), target.load_data)
+                backend.structure(target).irange_and_delete(),
+                target.load_data)
 
     # INTERNALS
     @classmethod

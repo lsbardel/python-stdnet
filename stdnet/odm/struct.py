@@ -578,9 +578,9 @@ sequence.'''
 
     def pop_back(self):
         '''Remove the last element from the :class:`Sequence`.'''
-        value = yield self.backend_structure().pop_back()
-        if value is not None:
-            yield self.value_pickler.loads(value)
+        backend = self.backend
+        return backend.execute(backend.structure(self).pop_back(),
+                               self.value_pickler.loads)
 
     def __getitem__(self, index):
         backend = self.read_backend
@@ -630,9 +630,9 @@ class List(Sequence, Structure):
 the front of the list in an efficient manner.'''
     def pop_front(self):
         '''Remove the first element from of the list.'''
-        value = yield self.backend_structure().pop_front()
-        if value is not None:
-            yield self.value_pickler.loads(value)
+        backend = self.backend
+        return backend.execute(backend.structure(self).pop_front(),
+                               self.value_pickler.loads)
 
     def block_pop_back(self, timeout=10):
         '''Remove the last element from of the list. If no elements are

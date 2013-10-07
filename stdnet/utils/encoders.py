@@ -98,8 +98,9 @@ data from the server. Viceversa when sending data.'''
         def loads(self, x):
             if isinstance(x, bytes):
                 return x.decode(self.charset, self.encoding_errors)
-            else:
+            elif x is not None:
                 return str(x)
+
     else:  # pragma nocover
         def dumps(self, x):
             if not isinstance(x, unicode):
@@ -107,7 +108,7 @@ data from the server. Viceversa when sending data.'''
             return x.encode(self.charset, self.encoding_errors)
 
         def loads(self, x):
-            if not isinstance(x, unicode):
+            if not isinstance(x, unicode) and x is not None:
                 x = str(x)
                 return x.decode(self.charset, self.encoding_errors)
             else:
@@ -119,7 +120,7 @@ def safe_number(v):
         v = float(v)
         vi = int(v)
         return vi if vi == v else v
-    except:
+    except Exception:
         return v
 
 

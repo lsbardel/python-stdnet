@@ -602,8 +602,8 @@ which is equivalent to::
         :returns: A two elements tuple containing the instance and a boolean
             indicating if the instance was created or not.
         '''
-        return self.backend.execute_generator(
-            self._update_or_create(model, **kwargs))
+        backend = self.model(model).backend
+        return backend.execute(self._update_or_create(model, **kwargs))
 
     def add(self, instance, modified=True, **params):
         '''Add an ``instance`` to the session.

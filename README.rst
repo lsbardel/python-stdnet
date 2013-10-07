@@ -7,9 +7,8 @@ and instances of those classes with **items** in their corresponding collections
 Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
-:Master CI: |master-build|_
-:Dev CI: |dev-build|_
-:Coverage: |coverage|
+:Master CI: |master-build|_ |coverage|
+:Dev CI: |dev-build|_ |coverage-dev|
 :Documentation: http://pythonhosted.org/python-stdnet/
 :Dowloads: http://pypi.python.org/pypi/python-stdnet/
 :Source: https://github.com/lsbardel/python-stdnet
@@ -23,6 +22,8 @@ are treated in the same way in the python language domain.
 .. _dev-build: http://travis-ci.org/lsbardel/python-stdnet
 .. |coverage| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=master
   :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=master
+.. |coverage-dev| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=dev
+  :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=dev
 
 
 

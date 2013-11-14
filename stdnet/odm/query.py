@@ -69,7 +69,7 @@ class Q(object):
                      'ordering': ordering,
                      'fields': fields,
                      'get_field': get_field}
-        self.name = name if name is not None else self.name
+        self.name = name if name is not None else meta.pk.name
         self.keyword = keyword if keyword is not None else self.keyword
 
     @property

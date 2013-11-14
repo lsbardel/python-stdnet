@@ -24,3 +24,21 @@ class TestForeignKey(test.TestCase):
             t.add(parent)
             t.add(child)
         yield t.on_result
+
+
+class TestQuery(test.TestCase):
+    models = (Parent, Child)
+
+    def test_non_id_pk(self):
+        ''' Models with non-'id' primary keys should be queryable '''
+        models = self.mapper
+        with models.session().begin() as t:
+            parent = models.parent(name='test2')
+            child = models.child(parent=parent, name='foo')
+            t.add(parent)
+            t.add(child)
+        yield t.on_result
+        with models.session().begin() as t:
+            parents = t.query(Parent).all()
+            self.assertEqual(len(parents), 1)
+        yield t.on_result

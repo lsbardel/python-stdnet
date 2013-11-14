@@ -306,7 +306,7 @@ indices are created.'''
 
     def instance_keys(self, obj):
         '''Return a list of database keys used by instance *obj*'''
-        return [self.basekey(obj._meta, obj.id)]
+        return [self.basekey(obj._meta, obj.pkvalue())]
 
     def auto_id_to_python(self, value):
         '''Return a proper python value for the auto id.'''

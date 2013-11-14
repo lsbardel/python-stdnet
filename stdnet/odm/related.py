@@ -257,7 +257,9 @@ used to hold the :ref:`many-to-many relationship <many-to-many>`.'''
     def query(self, session=None):
         # Return a query for the related model
         ids = self.throughquery(session).get_field(self.name_formodel)
-        return self.session(session).query(self.formodel).filter(id=ids)
+        pkey = self.formodel.pk().name
+        fargs = {pkey: ids}
+        return self.session(session).query(self.formodel).filter(**fargs)
 
 
 def makeMany2ManyRelatedManager(formodel, name_relmodel, name_formodel):

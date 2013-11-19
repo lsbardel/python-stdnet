@@ -1,6 +1,5 @@
-import time
 from time import mktime
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from collections import namedtuple
 
 

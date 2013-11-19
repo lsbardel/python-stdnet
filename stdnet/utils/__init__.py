@@ -1,5 +1,3 @@
-import os
-import sys
 from inspect import istraceback
 from itertools import chain
 from collections import Mapping

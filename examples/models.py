@@ -301,6 +301,7 @@ class Parent(odm.StdModel):
 class Child(odm.StdModel):
     name = odm.SymbolField()
     parent = odm.ForeignKey(Parent)
+    uncles = odm.ManyToManyField(Parent, related_name='nephews')
 
 
 ####################################################

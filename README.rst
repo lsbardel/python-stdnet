@@ -27,7 +27,6 @@ are treated in the same way in the python language domain.
   :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=dev
 
 
-
 Contents
 ~~~~~~~~~~~~~~~
 

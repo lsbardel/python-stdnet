@@ -861,7 +861,7 @@ class BackendDataServer(stdnet.BackendDataServer):
 
     def instance_keys(self, obj):
         meta = obj._meta
-        keys = [self.basekey(meta, OBJ, obj.id)]
+        keys = [self.basekey(meta, OBJ, obj.pkvalue())]
         for field in meta.multifields:
             f = getattr(obj, field.attname)
             be = self.structure(f)

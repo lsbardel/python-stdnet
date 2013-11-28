@@ -12,7 +12,6 @@ Usage::
     db = getdb('redis://127.0.0.1:6378?password=bla&timeout=0')
 
 '''
-from pulsar import async
 from pulsar.apps import redis
 from pulsar.apps.redis.client import BasePipeline
 
@@ -38,7 +37,6 @@ class Redis(RedisExtensionsMixin, redis.Redis):
     def pipeline(self, transaction=True, shard_hint=None):
         return Pipeline(self, self.response_callbacks, transaction, shard_hint)
 
-    @async()
     def execute_script(self, name, keys, *args, **options):
         '''Execute a script.
 

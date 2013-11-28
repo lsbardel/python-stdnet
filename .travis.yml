@@ -17,6 +17,10 @@ install:
   - sudo rm -rf pulsar
   - python setup.py install
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
+
+services:
+  - redis-server
+
 script:
   - pep8 stdnet --exclude stdnet/apps/searchengine/processors
   - sudo rm -rf stdnet

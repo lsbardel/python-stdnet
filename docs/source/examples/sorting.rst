@@ -32,7 +32,7 @@ method with a field name as parameter. Lets consider the following model::
     models = odm.Router()
     models.register(SportActivity)
     
-To obtained a sorted query on dates for a given person::
+To obtain a sorted query on dates for a given person::
 
     qs = models.sportactivity.filter(person='pippo').sort_by('-dt')
 

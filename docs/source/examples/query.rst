@@ -78,16 +78,16 @@ Concatenating filters
 
 You can perform further selection by concatenating filters::
 
-    qs = models.instrument.filter(ccy=('EUR','USD')).filter(types=('equity',bond'))
+    qs = models.instrument.filter(ccy=('EUR','USD')).filter(types=('equity','bond'))
     
 or equivalently::
     
-    qs = models.instrument.filter(ccy=('EUR','USD'), types=('equity',bond'))
+    qs = models.instrument.filter(ccy=('EUR','USD'), types=('equity','bond'))
 
 Which is equivalent to an **intersection** of two filter statement::
 
     q1 = models.fund.filter(ccy=('EUR', 'USD'))
-    q2 = models.fund.filter(types=('equity',bond'))
+    q2 = models.fund.filter(types=('equity','bond'))
     qs = q1.intersect(q2)
 
 
@@ -105,7 +105,7 @@ You can exclude a list of fields::
 
 Concatenation is also supported::
 
-    qs = models.instrument.exclude(ccy=('EUR','USD'), types=('equity',bond'))
+    qs = models.instrument.exclude(ccy=('EUR','USD'), types=('equity','bond'))
 
 
 Union

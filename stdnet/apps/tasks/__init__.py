@@ -24,5 +24,4 @@ class TaskBackend(tasks.TaskBackend):
 tasks.task_backends['stdnet'] = TaskBackend
 
 
-data.register_store('stdnet',
-                    'stdnet.apps.tasks.Store')
+data.register_store('redis', 'stdnet.apps.tasks.Store')

@@ -13,7 +13,7 @@ Usage::
 
 '''
 from pulsar.apps import redis
-from pulsar.apps.redis.client import BasePipeline
+from pulsar.apps.data.stores.client import BasePipeline
 
 from .extensions import (RedisExtensionsMixin, get_script, RedisError,
                          all_loaded_scripts)

@@ -12,6 +12,7 @@ install:
   - pip install -r requirements_dev.txt --use-mirrors
   - git clone https://github.com/quantmind/pulsar.git
   - cd pulsar
+  - git checkout -b dev origin/dev
   - python setup.py install
   - cd ..
   - sudo rm -rf pulsar

@@ -10,55 +10,55 @@ from .struct import Structure
 from .globals import Event, get_model_from_hash
 
 
-__all__ = ['Router', 'model_iterator']
+__all__ = ['Mapper', 'model_iterator']
 
 
-class Router(object):
+class Mapper(object):
     '''A router is a mapping of :class:`Model` to the registered
-:class:`Manager` of that model::
+    :class:`Manager` of that model::
 
-    from stdnet import odm
+        from stdnet import odm
 
-    models = odm.Router()
-    models.register(MyModel, ...)
+        models = odm.Mapper()
+        models.register(MyModel, ...)
 
-    # dictionary Notation
-    query = models[MyModel].query()
+        # dictionary Notation
+        query = models[MyModel].query()
 
-    # or dotted notation (lowercase)
-    query = models.mymodel.query()
+        # or dotted notation (lowercase)
+        query = models.mymodel.query()
 
-The ``models`` instance in the above snipped can be set globally if
-one wishes to do so.
+    The ``models`` instance in the above snippet can be set globally if
+    one wishes to do so.
 
-.. attribute:: pre_commit
+    .. attribute:: pre_commit
 
-    A signal which can be used to register ``callbacks`` before instances are
-    committed::
+        A signal which can be used to register ``callbacks`` before instances
+        are committed::
 
-        models.pre_commit.bind(callback, sender=MyModel)
+            models.pre_commit.bind(callback, sender=MyModel)
 
-.. attribute:: pre_delete
+    .. attribute:: pre_delete
 
-    A signal which can be used to register ``callbacks`` before instances are
-    deleted::
+        A signal which can be used to register ``callbacks`` before instances
+        are deleted::
 
-        models.pre_delete.bind(callback, sender=MyModel)
+            models.pre_delete.bind(callback, sender=MyModel)
 
-.. attribute:: post_commit
+    .. attribute:: post_commit
 
-    A signal which can be used to register ``callbacks`` after instances are
-    committed::
+        A signal which can be used to register ``callbacks`` after instances
+        are committed::
 
-        models.post_commit.bind(callback, sender=MyModel)
+            models.post_commit.bind(callback, sender=MyModel)
 
-.. attribute:: post_delete
+    .. attribute:: post_delete
 
-    A signal which can be used to register ``callbacks`` after instances are
-    deleted::
+        A signal which can be used to register ``callbacks`` after instances
+        are deleted::
 
-        models.post_delete.bind(callback, sender=MyModel)
-'''
+            models.post_delete.bind(callback, sender=MyModel)
+    '''
     def __init__(self, default_backend=None, install_global=False):
         self._registered_models = ModelDictionary()
         self._registered_names = {}
@@ -73,7 +73,7 @@ one wishes to do so.
 
     @property
     def default_backend(self):
-        '''The default backend for this :class:`Router`. This is used when
+        '''The default backend for this :class:`Mapper`. This is used when
 calling the :meth:`register` method without explicitly passing a backend.'''
         return self._default_backend
 
@@ -84,7 +84,7 @@ calling the :meth:`register` method without explicitly passing a backend.'''
 
     @property
     def search_engine(self):
-        '''The :class:`SearchEngine` for this :class:`Router`. This
+        '''The :class:`SearchEngine` for this :class:`Mapper`. This
 must be created by users. Check :ref:`full text search <tutorial-search>`
 tutorial for information.'''
         return self._search_engine
@@ -110,13 +110,13 @@ tutorial for information.'''
         return self._structures.get(model)
 
     def set_search_engine(self, engine):
-        '''Set the search ``engine`` for this :class:`Router`.'''
+        '''Set the search ``engine`` for this :class:`Mapper`.'''
         self._search_engine = engine
         self._search_engine.set_router(self)
 
     def register(self, model, backend=None, read_backend=None,
                  include_related=True, **params):
-        '''Register a :class:`Model` with this :class:`Router`. If the
+        '''Register a :class:`Model` with this :class:`Mapper`. If the
 model was already registered it does nothing.
 
 :param model: a :class:`Model` class.
@@ -214,7 +214,7 @@ if no managers were removed.'''
             self._registered_models.clear()
             return managers
 
-    def register_applications(self, applications, models=None, backends=None):
+    def register_applications(self, applications, models=None, stores=None):
         '''A higher level registration functions for group of models located
 on application modules.
 It uses the :func:`model_iterator` function to iterate
@@ -225,7 +225,7 @@ and register them using the :func:`register` low level method.
     python dotted paths where models are implemented.
 :parameter models: Optional list of models to include. If not provided
     all models found in *applications* will be included.
-:parameter backends: optional dictionary which map a model or an
+:parameter stores: optional dictionary which map a model or an
     application to a backend :ref:`connection string <connection-string>`.
 :rtype: A list of registered :class:`Model`.
 
@@ -239,10 +239,10 @@ For example::
 
 '''
         return list(self._register_applications(applications, models,
-                                                backends))
+                                                stores))
 
     def session(self):
-        '''Obatain a new :class:`Session` for this ``Router``.'''
+        '''Obatain a new :class:`Session` for this :class:`Mapper`.'''
         return Session(self)
 
     def create_all(self):
@@ -261,15 +261,15 @@ method for::
 
     # PRIVATE METHODS
 
-    def _register_applications(self, applications, models, backends):
-        backends = backends or {}
+    def _register_applications(self, applications, models, stores):
+        stores = stores or {}
         for model in model_iterator(applications):
             name = str(model._meta)
             if models and name not in models:
                 continue
-            if name not in backends:
+            if name not in stores:
                 name = model._meta.app_label
-            kwargs = backends.get(name, self._default_backend)
+            kwargs = stores.get(name, self._default_backend)
             if not isinstance(kwargs, dict):
                 kwargs = {'backend': kwargs}
             else:

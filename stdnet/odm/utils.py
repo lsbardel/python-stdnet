@@ -112,7 +112,7 @@ provided, a python ``StringIO`` is used.
     def load(self, models, stream, model=None):
         '''Load a stream of data into the database.
 
-:param models: the :class:`Router` which must contains all the model this
+:param models: the :class:`Mapper` which must contains all the model this
     method will load.
 :param stream: bytes or an object with a ``read`` method returning bytes.
 :param model: Optional :class:`StdModel` we need to load. If not provided all

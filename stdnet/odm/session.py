@@ -510,7 +510,7 @@ class Transaction(object):
 class Session(object):
     '''The middleware for persistent operations on the back-end.
 
-        It is created via the :meth:`Router.session` method.
+        It is created via the :meth:`Mapper.session` method.
 
     .. attribute:: transaction
 
@@ -519,7 +519,7 @@ class Session(object):
 
     .. attribute:: router
 
-        Instance of the :class:`Router` which created this :class:`Session`.
+        Instance of the :class:`Mapper` which created this :class:`Session`.
     '''
     def __init__(self, router):
         self.transaction = None
@@ -812,14 +812,14 @@ subclasses.'''
 class Manager(object):
     '''Before a :class:`StdModel` can be used in conjunction
 with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
-with it via a :class:`Router`. Check the
+with it via a :class:`Mapper`. Check the
 :ref:`registration tutorial <tutorial-registration>` for further info::
 
     class MyModel(odm.StdModel):
         group = odm.SymbolField()
         flag = odm.BooleanField()
 
-    models = odm.Router()
+    models = odm.Mapper()
     models.register(MyModel)
 
     manager = models[MyModel]
@@ -854,7 +854,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
 .. attribute:: router
 
-    The :class:`Router` which contain this this :class:`Manager`.
+    The :class:`Mapper` which contain this this :class:`Manager`.
 
 .. attribute:: backend
 
@@ -918,7 +918,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
     def session(self, session=None):
         '''Returns a new :class:`Session`. This is a shortcut for the
-:meth:`Router.session` method.'''
+:meth:`Mapper.session` method.'''
         return self._router.session()
 
     def new(self, *args, **kwargs):

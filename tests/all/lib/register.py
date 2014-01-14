@@ -6,9 +6,9 @@ from examples.models import SimpleModel
 
 
 class TestRegistration(test.TestWrite):
-    
+
     def register(self):
-        router = odm.Router(self.backend)
+        router = odm.Mapper(self.backend)
         self.assertEqual(router.default_backend, self.backend)
         router.register_applications('examples')
         self.assertTrue(router)
@@ -36,7 +36,7 @@ class TestRegistration(test.TestWrite):
         N = len(router.registered_models)
         managers = router.unregister()
         self.assertEqual(N, len(managers))
-        self.assertFalse(router.registered_models)        
+        self.assertFalse(router.registered_models)
 
     def testFlushModel(self):
         router = self.register()

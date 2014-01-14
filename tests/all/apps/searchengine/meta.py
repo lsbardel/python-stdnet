@@ -50,14 +50,14 @@ NAMES = {'maurice':('MRS', None),
          'Nowhere':('NR', None),
          'Tux':('TKS', None)}
 
-    
+
 class SeearchData(test.DataGenerator):
     sizes = {'tiny': (10, 10),
              'small': (50, 20),
              'normal': (500, 30),
              'big': (10000, 40),
              'huge': (1000000, 50)}
-    
+
     def generate(self):
         size, num = self.size
         self.names = self.populate('choice', size=size,
@@ -68,7 +68,7 @@ class SeearchData(test.DataGenerator):
             text = ' '.join(self.populate('choice', num,\
                                           choice_from=basic_english_words))
             self.groups.append(text)
-    
+
     def make_items(self, test, content=False, related=None):
         '''Bulk creation of Item for testing search engine. Return a set
 of words which have been included in the Items.'''
@@ -86,7 +86,7 @@ of words which have been included in the Items.'''
         yield t.on_result
         test.words = words
         yield test.words
-        
+
 
 class SearchMixin(object):
     '''Mixin for testing the search engine. No tests implemented here,
@@ -97,22 +97,22 @@ below will derive from this class.'''
     stemming = True
     models = (Item, RelatedItem)
     data_cls = SeearchData
-    
+
     @classmethod
     def after_setup(cls):
         cls.mapper.set_search_engine(cls.make_engine())
         cls.mapper.search_engine.register(Item, ('related',))
         cls.mapper.search_engine.register(RelatedItem)
-    
+
     @classmethod
     def make_engine(cls):
         return SearchEngine(metaphone=cls.metaphone, stemming=cls.stemming)
-    
+
     def make_item(self, name='python', counter=10, content=None, related=None):
         content = content if content is not None else python_content
         return self.mapper.item.new(name=name, counter=counter, content=content,
                                     related=related)
-    
+
     def simpleadd(self, name='python', counter=10, content=None, related=None):
         models = self.mapper
         engine = models.search_engine
@@ -124,15 +124,15 @@ below will derive from this class.'''
         for object in objects:
             self.assertEqual(object, item)
         yield item, wis
-        
-    
+
+
 class TestMeta(SearchMixin, test.TestCase):
     '''Test internal functions, not the API.'''
     def test_mapper(self):
         models = self.mapper
         self.assertTrue(models.search_engine)
         self.assertEqual(models.search_engine.router, models)
-        
+
     def testSplitting(self):
         eg = SearchEngine(metaphone=False, stemming=False)
         self.assertEqual(list(eg.words_from_text('bla-ciao+pippo')),\
@@ -143,7 +143,7 @@ class TestMeta(SearchMixin, test.TestCase):
                          ['bla','ciao'])
         self.assertEqual(list(eg.words_from_text('bla bla____bla')),\
                          ['bla','bla','bla'])
-        
+
     def testSplitters(self):
         eg = SearchEngine(splitters=False)
         self.assertEqual(eg.punctuation_regex, None)
@@ -153,13 +153,13 @@ class TestMeta(SearchMixin, test.TestCase):
         words = list(eg.split_text('pippo: pluto'))
         self.assertEqual(len(words),2)
         self.assertEqual(words[0],'pippo:')
-        
+
     def testMetaphone(self):
         '''Test metaphone algorithm'''
         for name in NAMES:
             d = processors.double_metaphone(name)
             self.assertEqual(d,NAMES[name])
-    
+
     def testRegistered(self):
         models = self.mapper
         self.assertTrue(Item in models.search_engine.REGISTERED_MODELS)
@@ -169,18 +169,18 @@ class TestMeta(SearchMixin, test.TestCase):
                          ('related',))
         self.assertEqual(
                 models.search_engine.REGISTERED_MODELS[RelatedItem].related, ())
-        
+
     def testNoSearchEngine(self):
-        models = odm.Router(self.backend)
+        models = odm.Mapper(self.backend)
         models.register(SimpleModel)
         self.assertFalse(models.search_engine)
         query = models.simplemodel.query()
         qs = query.search('bla')
         self.assertRaises(QuerySetError, qs.all)
-        
+
 
 class TestCoverageBaseClass(test.TestCase):
-    
+
     def testAbstracts(self):
         e = odm.SearchEngine()
         self.assertRaises(NotImplementedError, e.search, 'bla')
@@ -190,7 +190,7 @@ class TestCoverageBaseClass(test.TestCase):
         self.assertRaises(NotImplementedError, e.remove_item, None, None, None)
         self.assertRaises(AttributeError, e.session)
         self.assertEqual(e.split_text('ciao luca'), ['ciao','luca'])
-    
+
     def testItemFieldIterator(self):
         e = odm.SearchEngine()
         self.assertRaises(ValueError, e.item_field_iterator, None)

@@ -2,9 +2,10 @@
 
 Ver. 0.9.0 - Development
 ===============================
+* Renamed ``Router`` as :class:`.Mapper`.
 * Removed the dispatch module from ``utils``.
 * Asynchronous redis connection moved to pulsar_.
-* Added the :meth:`odm.Manager.save` as shortcut for immediately committing
+* Added the :meth:`.Manager.save` as shortcut for immediately committing
   changes to a model.
 * Bug fix in model registration.
 * Bug fixes when primary key is not named ``id``.

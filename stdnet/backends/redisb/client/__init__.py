@@ -1,7 +1,4 @@
-try:
-    from . import async
-except ImportError:
-    async = None
+async = None
 
 from .extensions import (RedisScript, read_lua_file, redis, get_script,
                          RedisDb, RedisKey, RedisDataFormatter)

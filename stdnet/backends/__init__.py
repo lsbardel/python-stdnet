@@ -73,7 +73,6 @@ class Settings(object):
         self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
         self.CHARSET = 'utf-8'
         self.REDIS_PY_PARSER = False
-        self.ASYNC_BINDINGS = False
 
 
 settings = Settings()

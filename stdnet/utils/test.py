@@ -86,18 +86,17 @@ If ``size`` is not given, the :attr:`size` is used.'''
 def create_backend(self, prefix):
     from stdnet import odm
     self.namespace = '%s%s-' % (prefix, gen_unique_id())
-    if self.connection_string:
-        server = getdb(self.connection_string, namespace=self.namespace,
-                       **self.backend_params())
-        self.backend = server
-        yield server.flush()
-        self.mapper = odm.Router(self.backend)
-        for model in self.models:
-            self.mapper.register(model)
+    server = getdb(self.cfg.server, namespace=self.namespace,
+                   **self.backend_params())
+    self.backend = server
+    yield server.flush()
+    self.mapper = odm.Mapper(self.backend)
+    for model in self.models:
+        self.mapper.register(model)
 
 
 class TestCase(unittest.TestCase):
-    '''A :class:`unittest.TestCase` subclass for testing stdnet with
+    '''A :class:`unittest.TestCase` subclass for testing ``stdnet`` with
 synchronous and asynchronous connections. It contains
 several class methods for testing in a parallel test suite.
 
@@ -141,7 +140,7 @@ several class methods for testing in a parallel test suite.
 
 .. attribute:: mapper
 
-    A :class:`stdnet.odm.Router` with all :attr:`models` registered with
+    A :class:`.Mapper` with all :attr:`models` registered with
     :attr:`backend`.
 '''
     models = ()
@@ -154,8 +153,7 @@ several class methods for testing in a parallel test suite.
 
     @classmethod
     def backend_params(cls):
-        '''Optional :attr:`backend` parameters for tests in this
-:class:`TestCase` class.'''
+        '''Optional :attr:`backend` parameters for tests.'''
         return {}
 
     @classmethod
@@ -171,7 +169,7 @@ several class methods for testing in a parallel test suite.
         '''Set up this :class:`TestCase` before test methods are run. here
 is where a :attr:`backend` server instance is created and it is unique for this
 :class:`TestCase` class. It create the :attr:`mapper`,
-a :class:`stdnet.odm.Router` with all :attr:`models` registered.
+a :class:`.Mapper` with all :attr:`models` registered.
 There shouldn't be any reason to override this method, use :meth:`after_setup`
 class method instead.'''
         cls.setup_models()
@@ -256,77 +254,17 @@ test function. Useful when testing write operations.'''
 class StdnetPlugin(TestPlugin):
     name = "server"
     flags = ["-s", "--server"]
-    nargs = '*'
     desc = 'Back-end data server where to run tests.'
-    default = [settings.DEFAULT_BACKEND]
-    validator = pulsar.validate_list
-
-    py_redis_parser = pulsar.Setting(
-        flags=['--py-redis-parser'],
-        desc=('Run tests using the python redis parser rather '
-              'the C implementation.'),
-        action="store_true",
-        default=False)
-
-    sync = pulsar.Setting(flags=['--sync'],
-                          desc='Switch off asynchronous bindings',
-                          action="store_true",
-                          default=False)
+    default = settings.DEFAULT_BACKEND
+    meta = "CONNECTION STRING"
 
     def configure(self, cfg):
-        if cfg.sync:
-            settings.ASYNC_BINDINGS = False
-        if cfg.py_redis_parser:
+        if cfg.redis_py_parser:
             settings.REDIS_PY_PARSER = True
 
     def on_start(self):
-        servers = []
-        names = set()
-        for s in self.config.server:
-            try:
-                s = getdb(s)
-                s.ping()
-            except Exception:
-                LOGGER.error('Could not obtain server %s' % s,
-                             exc_info=True)
-            else:
-                if s.name not in names:
-                    names.add(s.name)
-                    servers.append(s.connection_string)
-        if not servers:
+        try:
+            s = getdb(self.config.server)
+            s.ping()
+        except Exception:
             raise pulsar.HaltServer('No server available. BAILING OUT')
-        settings.servers = servers
-
-
-class testmaker(object):
-
-    def __init__(self, test, name, server):
-        self.test = test
-        self.cls_name = '%s_%s' % (test.__name__, name)
-        self.server = server
-
-    def __call__(self):
-        new_test = type(self.cls_name, (self.test,), {})
-        new_test.connection_string = self.server
-        return new_test
-
-
-def create_tests(suite, tests=None):
-    servers = getattr(settings, 'servers', None)
-    if isinstance(suite, TestSuite) and servers:
-        for tag, test in list(tests):
-            tests.pop(0)
-            multipledb = getattr(test, 'multipledb', True)
-            toadd = True
-            if isinstance(multipledb, str):
-                multipledb = [multipledb]
-            if isinstance(multipledb, (list, tuple)):
-                toadd = False
-            if multipledb:
-                for server in servers:
-                    name = server.split('://')[0]
-                    if multipledb is True or name in multipledb:
-                        toadd = False
-                        tests.append((tag, testmaker(test, name, server)))
-            if toadd:
-                tests.append((tag, test))

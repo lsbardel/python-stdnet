@@ -53,7 +53,7 @@ def runtests(**params):
                                bench.BenchMark(),
                                profile.Profile()),
                       **params)
-    suite.bind_event('tests', test.create_tests)
+    #suite.bind_event('tests', test.create_tests)
     suite.start()
     #
     if suite.cfg.coveralls:

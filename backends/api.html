@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>API &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>API &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Backend Servers" href="index.html" />
     <link rel="next" title="Redis" href="redis.html" />
     <link rel="prev" title="Backend Servers" href="index.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Backend Servers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Backend Servers</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/backends/api.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -81,12 +81,6 @@
 </div>
 <div class="section" id="getcache">
 <h3>getcache<a class="headerlink" href="#getcache" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
-<dt id="stdnet.getcache">
-<tt class="descclassname">stdnet.</tt><tt class="descname">getcache</tt><big>(</big><em>backend=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.getcache" title="Permalink to this definition">¶</a></dt>
-<dd><p>Similar to <a class="reference internal" href="#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a>, it creates a <a class="reference internal" href="#stdnet.CacheServer" title="stdnet.CacheServer"><tt class="xref py py-class docutils literal"><span class="pre">CacheServer</span></tt></a>.</p>
-</dd></dl>
-
 </div>
 </div>
 <div class="section" id="interfaces">
@@ -96,8 +90,9 @@
 <dl class="class">
 <dt id="stdnet.BackendDataServer">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">BackendDataServer</tt><big>(</big><em>name=None</em>, <em>address=None</em>, <em>charset=None</em>, <em>namespace=''</em>, <em>**params</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic interface for a backend database. It should not be initialised
-directly, instead, the <a class="reference internal" href="#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a> function should be used.</p>
+<dd><p>Generic interface for a backend databases.</p>
+<p>It should not be initialised directly, the <a class="reference internal" href="#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a> function should
+be used instead.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -105,6 +100,7 @@ directly, instead, the <a class="reference internal" href="#stdnet.getdb" title=
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; name of database, such as <strong>redis</strong>, <strong>mongo</strong>, etc..</li>
 <li><strong>address</strong> &#8211; network address of database server.</li>
+<li><strong>charset</strong> &#8211; optional charset encoding. Default <tt class="docutils literal"><span class="pre">utf-8</span></tt>.</li>
 <li><strong>namespace</strong> &#8211; optional namespace for keys.</li>
 <li><strong>params</strong> &#8211; dictionary of configuration parameters.</li>
 </ul>
@@ -122,9 +118,9 @@ directly, instead, the <a class="reference internal" href="#stdnet.getdb" title=
 <dl class="attribute">
 <dt id="stdnet.BackendDataServer.connection_string">
 <tt class="descname">connection_string</tt><a class="headerlink" href="#stdnet.BackendDataServer.connection_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>The connection string for this backend. By calling <a class="reference internal" href="#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a> with this
-value, one obtain a <a class="reference internal" href="#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">BackendDataServer</span></tt></a> connected to the
-same database as this instance.</p>
+<dd><p>The connection string for this backend. By calling <a class="reference internal" href="#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a>
+with this value, one obtain a <a class="reference internal" href="#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">BackendDataServer</span></tt></a> connected to
+the same database as this instance.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -203,7 +199,7 @@ from database.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>instance</strong> &#8211; a <a class="reference internal" href="../api/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Structure</span></tt></a></li>
-<li><strong>client</strong> &#8211; Optional client handler</li>
+<li><strong>client</strong> &#8211; Optional client handler.</li>
 </ul>
 </td>
 </tr>
@@ -212,11 +208,9 @@ from database.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.async">
-<tt class="descname">async</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an asynchronous <a class="reference internal" href="#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">BackendDataServer</span></tt></a> with same
-<a class="reference internal" href="#stdnet.BackendDataServer.connection_string" title="stdnet.BackendDataServer.connection_string"><tt class="xref py py-attr docutils literal"><span class="pre">connection_string</span></tt></a>. Asynchronous hadlers must be implemented
-by users.</p>
+<dt id="stdnet.BackendDataServer.is_async">
+<tt class="descname">is_async</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.is_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the backend handler is asynchronous.</p>
 </dd></dl>
 
 <dl class="method">
@@ -272,30 +266,9 @@ must return a instance of the backend handler.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="stdnet.BackendDataServer.as_cache">
-<tt class="descname">as_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.as_cache" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a <a class="reference internal" href="#stdnet.CacheServer" title="stdnet.CacheServer"><tt class="xref py py-class docutils literal"><span class="pre">CacheServer</span></tt></a> handle for this backend.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="stdnet.BackendDataServer.flush">
 <tt class="descname">flush</tt><big>(</big><em>meta=None</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.flush" title="Permalink to this definition">¶</a></dt>
 <dd><p>Flush the database or drop all instances of a model/collection</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.publish">
-<tt class="descname">publish</tt><big>(</big><em>channel</em>, <em>message</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.publish" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish a <em>message</em> to a <em>channel</em>. The backend must support pub/sub
-paradigm. For information check the
-<em class="xref std std-ref">Publish/Subscribe application</em>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.BackendDataServer.subscriber">
-<tt class="descname">subscriber</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.BackendDataServer.subscriber" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a <tt class="docutils literal"><span class="pre">Subscriber</span></tt> able to subscribe to channels.
-For information check the <em class="xref std std-ref">Publish/Subscribe application</em>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -303,24 +276,6 @@ For information check the <em class="xref std std-ref">Publish/Subscribe applica
 </div>
 <div class="section" id="cache-server">
 <h3>Cache Server<a class="headerlink" href="#cache-server" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.CacheServer">
-<em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">CacheServer</tt><a class="headerlink" href="#stdnet.CacheServer" title="Permalink to this definition">¶</a></dt>
-<dd><p>A key-value store server for storing and retrieving values at keys.</p>
-<dl class="method">
-<dt id="stdnet.CacheServer.set">
-<tt class="descname">set</tt><big>(</big><em>key</em>, <em>value</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#stdnet.CacheServer.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set <tt class="docutils literal"><span class="pre">value</span></tt> at <tt class="docutils literal"><span class="pre">key</span></tt> with <tt class="docutils literal"><span class="pre">timeout</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.CacheServer.get">
-<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#stdnet.CacheServer.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fetch the value at <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="backend-structure">
 <h3>Backend Structure<a class="headerlink" href="#backend-structure" title="Permalink to this headline">¶</a></h3>
@@ -350,46 +305,8 @@ For information check the <em class="xref std std-ref">Publish/Subscribe applica
 
 </div>
 </div>
-<div class="section" id="module-stdnet.utils.async">
-<span id="asynchronous-components"></span><h2>Asynchronous Components<a class="headerlink" href="#module-stdnet.utils.async" title="Permalink to this headline">¶</a></h2>
-<p>Asynchronous binding for stdnet.</p>
-<div class="section" id="backend-query">
-<h3>Backend Query<a class="headerlink" href="#backend-query" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="stdnet.utils.async.BackendQuery">
-<em class="property">class </em><tt class="descclassname">stdnet.utils.async.</tt><tt class="descname">BackendQuery</tt><big>(</big><em>queryelem</em>, <em>timeout=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.utils.async.BackendQuery" title="Permalink to this definition">¶</a></dt>
-<dd><p>Asynchronous query interface class which implements the database
-queries specified by <a class="reference internal" href="../api/models.html#stdnet.odm.Query" title="stdnet.odm.Query"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Query</span></tt></a>.</p>
-<dl class="attribute">
-<dt id="stdnet.utils.async.BackendQuery.queryelem">
-<tt class="descname">queryelem</tt><a class="headerlink" href="#stdnet.utils.async.BackendQuery.queryelem" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="../api/models.html#stdnet.odm.QueryElement" title="stdnet.odm.QueryElement"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.QueryElement</span></tt></a> to process.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.utils.async.BackendQuery.executed">
-<tt class="descname">executed</tt><a class="headerlink" href="#stdnet.utils.async.BackendQuery.executed" title="Permalink to this definition">¶</a></dt>
-<dd><p>flag indicating if the query has been executed in the backend server</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.utils.async.BackendQuery.cache">
-<tt class="descname">cache</tt><a class="headerlink" href="#stdnet.utils.async.BackendQuery.cache" title="Permalink to this definition">¶</a></dt>
-<dd><p>Cached results.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="stdnet.utils.async.BackendQuery.items">
-<tt class="descname">items</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#stdnet.utils.async.BackendQuery.items" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function does the actual fetching of data from the backend
-server matching this <tt class="xref py py-class docutils literal"><span class="pre">Query</span></tt>. This method is usually not called directly,
-instead use the <tt class="xref py py-meth docutils literal"><span class="pre">all()</span></tt> method or alternatively slice the query in the same
-way you can slice a list or iterate over the query.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
+<div class="section" id="asynchronous-components">
+<h2>Asynchronous Components<a class="headerlink" href="#asynchronous-components" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -417,10 +334,7 @@ way you can slice a list or iterate over the query.</p>
 <li><a class="reference internal" href="#backend-structure">Backend Structure</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-stdnet.utils.async">Asynchronous Components</a><ul>
-<li><a class="reference internal" href="#backend-query">Backend Query</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#asynchronous-components">Asynchronous Components</a></li>
 </ul>
 </li>
 </ul>

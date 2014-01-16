@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Models &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Using Models &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Registration" href="registration.html" />
     <link rel="prev" title="Tutorials &amp; Examples" href="index.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Tutorials &amp; Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/tutorial.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -174,7 +174,7 @@ with back-end servers. <a class="reference internal" href="registration.html#tut
 topic and is covered in details in the next tutorial. For now,
 all we need to know is that it provides a placeholder for <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a>
 and their <a class="reference internal" href="../backends/index.html#db-index"><em>backend server</em></a>. The placeholder is given by
-the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> which is a mapping from a <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a>
+the <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> which is a mapping from a <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a>
 to a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">odm</span>
 
@@ -197,7 +197,7 @@ one can register models and how to organise your application.</p>
 </div>
 <div class="section" id="creating-objects">
 <h2>Creating objects<a class="headerlink" href="#creating-objects" title="Permalink to this headline">¶</a></h2>
-<p>Using the <cite>models</cite> <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> registered above, is equivalent to executing
+<p>Using the <cite>models</cite> <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> registered above, is equivalent to executing
 queries in the backend database.
 Once you&#8217;ve created your models, <tt class="docutils literal"><span class="pre">stdnet</span></tt> automatically gives you
 a data-server abstraction API that lets you create, retrieve,

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Query your Data &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Query your Data &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sorting and Ordering" href="sorting.html" />
     <link rel="prev" title="Registration" href="registration.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="registration.html" title="Registration"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/query.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -133,15 +133,18 @@ attribute is set to <cite>True</cite>.</p>
 <div class="section" id="concatenating-filters">
 <h2>Concatenating filters<a class="headerlink" href="#concatenating-filters" title="Permalink to this headline">¶</a></h2>
 <p>You can perform further selection by concatenating filters:</p>
-<div class="highlight-python"><pre>qs = models.instrument.filter(ccy=(&#x27;EUR&#x27;,&#x27;USD&#x27;)).filter(types=(&#x27;equity&#x27;,bond&#x27;))</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">types</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;equity&#39;</span><span class="p">,</span><span class="s">&#39;bond&#39;</span><span class="p">))</span>
+</pre></div>
 </div>
 <p>or equivalently:</p>
-<div class="highlight-python"><pre>qs = models.instrument.filter(ccy=(&#x27;EUR&#x27;,&#x27;USD&#x27;), types=(&#x27;equity&#x27;,bond&#x27;))</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">),</span> <span class="n">types</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;equity&#39;</span><span class="p">,</span><span class="s">&#39;bond&#39;</span><span class="p">))</span>
+</pre></div>
 </div>
 <p>Which is equivalent to an <strong>intersection</strong> of two filter statement:</p>
-<div class="highlight-python"><pre>q1 = models.fund.filter(ccy=(&#x27;EUR&#x27;, &#x27;USD&#x27;))
-q2 = models.fund.filter(types=(&#x27;equity&#x27;,bond&#x27;))
-qs = q1.intersect(q2)</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">q1</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span> <span class="s">&#39;USD&#39;</span><span class="p">))</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">fund</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">types</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;equity&#39;</span><span class="p">,</span><span class="s">&#39;bond&#39;</span><span class="p">))</span>
+<span class="n">qs</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">q2</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="exclude">
@@ -155,7 +158,8 @@ qs = q1.intersect(q2)</pre>
 </pre></div>
 </div>
 <p>Concatenation is also supported:</p>
-<div class="highlight-python"><pre>qs = models.instrument.exclude(ccy=(&#x27;EUR&#x27;,&#x27;USD&#x27;), types=(&#x27;equity&#x27;,bond&#x27;))</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">qs</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">ccy</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;EUR&#39;</span><span class="p">,</span><span class="s">&#39;USD&#39;</span><span class="p">),</span> <span class="n">types</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;equity&#39;</span><span class="p">,</span><span class="s">&#39;bond&#39;</span><span class="p">))</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="union">

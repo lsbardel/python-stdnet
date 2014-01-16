@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Overview and Installation &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Overview and Installation &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="index.html" />
     <link rel="next" title="Tutorials &amp; Examples" href="examples/index.html" />
     <link rel="prev" title="Python Stdnet" href="index.html" /> 
   </head>
@@ -44,17 +44,17 @@
         <li class="right" >
           <a href="index.html" title="Python Stdnet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet 0.9b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/overview.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -77,9 +77,9 @@ are treated in the same way in the python language domain.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Master CI:</th><td class="field-body"><a class="reference external" href="http://travis-ci.org/lsbardel/python-stdnet"><img alt="master-build" src="https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master" /></a></td>
+<tr class="field-odd field"><th class="field-name">Master CI:</th><td class="field-body"><a class="reference external" href="http://travis-ci.org/lsbardel/python-stdnet"><img alt="master-build" src="https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master" /></a> <a class="reference external" href="https://coveralls.io/r/lsbardel/python-stdnet?branch=master"><img alt="coverage" src="https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=master" /></a></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Dev CI:</th><td class="field-body"><a class="reference external" href="http://travis-ci.org/lsbardel/python-stdnet"><img alt="dev-build" src="https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=dev" /></a></td>
+<tr class="field-even field"><th class="field-name">Dev CI:</th><td class="field-body"><a class="reference external" href="http://travis-ci.org/lsbardel/python-stdnet"><img alt="dev-build" src="https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=dev" /></a> <a class="reference external" href="https://coveralls.io/r/lsbardel/python-stdnet?branch=dev"><img alt="coverage-dev" src="https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=dev" /></a></td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Documentation:</th><td class="field-body"><a class="reference external" href="http://pythonhosted.org/python-stdnet/">http://pythonhosted.org/python-stdnet/</a></td>
 </tr>
@@ -87,9 +87,11 @@ are treated in the same way in the python language domain.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="https://github.com/lsbardel/python-stdnet">https://github.com/lsbardel/python-stdnet</a></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Mailing List:</th><td class="field-body"><a class="reference external" href="https://groups.google.com/group/python-stdnet">https://groups.google.com/group/python-stdnet</a></td>
+<tr class="field-even field"><th class="field-name">Platforms:</th><td class="field-body">Linux, OS X, Windows. Python 2.6, 2.7, 3.2, 3.3, <a class="reference external" href="http://pypy.org/">pypy</a></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Keywords:</th><td class="field-body">server, database, cache, redis, mongo, odm</td>
+<tr class="field-odd field"><th class="field-name">Mailing List:</th><td class="field-body"><a class="reference external" href="https://groups.google.com/group/python-stdnet">https://groups.google.com/group/python-stdnet</a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords:</th><td class="field-body">server, database, redis, odm</td>
 </tr>
 </tbody>
 </table>
@@ -130,10 +132,8 @@ are treated in the same way in the python language domain.</p>
 <ul class="simple">
 <li>Python 2.6, 2.7, 3.2, 3.3 and <a class="reference external" href="http://pypy.org/">pypy</a>. Single code-base.</li>
 <li><a class="reference external" href="https://github.com/andymccurdy/redis-py">redis-py</a> for redis backend.</li>
-<li><a class="reference external" href="http://cython.org/">Cython</a> for ultra-fast C-extensions.</li>
-<li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pymongo/">pymongo</a> for the mongo backend.</li>
 <li>Optional <a class="reference external" href="http://pypi.python.org/pypi/pulsar">pulsar</a> when using the asynchronous connections or the test suite.</li>
-<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server version 2.6 or above and/or a <a class="reference external" href="http://www.mongodb.org/">Mongo</a> server.</li>
+<li>You need access to a <a class="reference external" href="http://redis.io/">Redis</a> server version 2.6 or above.</li>
 </ul>
 </div>
 <div class="section" id="philosophy">
@@ -179,7 +179,6 @@ so that your application is fast and memory efficient.</p>
 Currently the list is limited to</p>
 <ul class="simple">
 <li><a class="reference external" href="http://redis.io/">Redis</a> 2.6 or above.</li>
-<li><a class="reference external" href="http://www.mongodb.org/">Mongodb</a> (alpha).</li>
 </ul>
 </div>
 <div class="section" id="object-data-mapper">
@@ -261,12 +260,6 @@ option as follow:</p>
 </div>
 <p>For more information type:</p>
 <div class="highlight-python"><pre>python runtests.py -h</pre>
-</div>
-<p>To access coverage of tests you need to install the <a class="reference external" href="http://nedbatchelder.com/code/coverage/">coverage</a> package and run the tests using:</p>
-<div class="highlight-python"><pre>coverage run runtests.py</pre>
-</div>
-<p>and to check out the coverage report:</p>
-<div class="highlight-python"><pre>coverage html</pre>
 </div>
 </div>
 <div class="section" id="kudos">

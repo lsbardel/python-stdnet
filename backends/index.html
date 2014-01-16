@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend Servers &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Backend Servers &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="next" title="API" href="api.html" />
     <link rel="prev" title="C/C++ Extensions" href="../examples/extensions.html" /> 
   </head>
@@ -44,17 +44,17 @@
         <li class="right" >
           <a href="../examples/extensions.html" title="C/C++ Extensions"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/backends/index.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -67,22 +67,21 @@
   <span class="target" id="module-stdnet"><span id="db-index"></span></span><div class="section" id="backend-servers">
 <h1>Backend Servers<a class="headerlink" href="#backend-servers" title="Permalink to this headline">¶</a></h1>
 <p>Behind the scenes we have the database.
-Currently stdnet supports <a class="reference external" href="http://redis.io/">Redis</a> and <a class="reference external" href="http://docs.mongodb.org/">mongoDB</a>.</p>
+Currently stdnet supports <a class="reference external" href="http://redis.io/">Redis</a>.</p>
 <div class="section" id="backends">
 <h2>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="redis.html">Redis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mongo.html">Mongo DB</a></li>
 </ul>
 </div>
 <p id="connection-string">A backend instance is usually obtained via the <a class="reference internal" href="api.html#stdnet.getdb" title="stdnet.getdb"><tt class="xref py py-func docutils literal"><span class="pre">getdb()</span></tt></a> function by
 passing a valid connection string:</p>
-<div class="highlight-python"><pre>from pulsar import getdb
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pulsar</span> <span class="kn">import</span> <span class="n">getdb</span>
 
-b1 = getdb(&#x27;redis://127.0.0.1:9739?db=7&amp;namespace=test.&#x27;)
-b2 = getdb(&#x27;mongo://127.0.0.1:9739?db=test)</pre>
+<span class="n">b1</span> <span class="o">=</span> <span class="n">getdb</span><span class="p">(</span><span class="s">&#39;redis://127.0.0.1:9739?db=7&amp;namespace=test.&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
 <p>Check <a class="reference internal" href="redis.html#redis-connection-string"><em>redis connection strings</em></a> for a
 full list of valid parameters.</p>

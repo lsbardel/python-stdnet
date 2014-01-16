@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Full text search &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Full text search &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Sessions" href="sessions.html" />
     <link rel="prev" title="Sorting and Ordering" href="sorting.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="sorting.html" title="Sorting and Ordering"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/search.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -83,7 +83,7 @@ can be customized with third party applications.</p>
 and indexed in redis and if you like in the same redis instance.</p>
 <p>Installing the search engine is as easy as</p>
 <ul>
-<li><p class="first">Create a search engine and use the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.set_search_engine" title="stdnet.odm.Router.set_search_engine"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Router.set_search_engine()</span></tt></a>
+<li><p class="first">Create a search engine and use the <tt class="xref py py-meth docutils literal"><span class="pre">Mapper.set_search_engine()</span></tt>
 method to install it in the router. Here, we use the
 <a class="reference internal" href="tutorial.html#tutorial-models-router"><em>models router</em></a> of our first tutorial:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.apps.searchengine</span> <span class="kn">import</span> <span class="n">SearchEngine</span>
@@ -95,7 +95,7 @@ method to install it in the router. Here, we use the
 or a valid <a class="reference internal" href="../backends/index.html#connection-string"><em>connection string</em></a> such as:</p>
 <div class="highlight-python"><pre>redis://127.0.0.1:6379?db=4</pre>
 </div>
-<p>or <tt class="docutils literal"><span class="pre">None</span></tt>, to use the default <tt class="xref py py-attr docutils literal"><span class="pre">stdnet.odm.Router.backend</span></tt>.
+<p>or <tt class="docutils literal"><span class="pre">None</span></tt>, to use the default <tt class="xref py py-attr docutils literal"><span class="pre">Mapper.backend</span></tt>.
 This is the back-end server where the text indices <a class="reference internal" href="#stdnet.apps.searchengine.WordItem" title="stdnet.apps.searchengine.WordItem"><tt class="xref py py-class docutils literal"><span class="pre">WordItem</span></tt></a>
 are stored, and not the back-end server of your models to index.
 They can be the same. To use the same backend as the default

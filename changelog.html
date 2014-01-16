@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Changelog &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,9 +23,9 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="index.html" />
     <link rel="next" title="FAQ" href="faq.html" />
-    <link rel="prev" title="Mongo DB" href="backends/mongo.html" /> 
+    <link rel="prev" title="Redis" href="backends/redis.html" /> 
   </head>
   <body>
 
@@ -42,19 +42,19 @@
           <a href="faq.html" title="FAQ"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="backends/mongo.html" title="Mongo DB"
+          <a href="backends/redis.html" title="Redis"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python stdnet 0.9b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/changelog.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -66,17 +66,23 @@
             
   <div class="section" id="changelog">
 <span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="ver-0-8-3-development">
-<span id="vers08"></span><h2>Ver. 0.8.3 - Development<a class="headerlink" href="#ver-0-8-3-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ver-0-9-0-development">
+<span id="vers08"></span><h2>Ver. 0.9.0 - Development<a class="headerlink" href="#ver-0-9-0-development" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference internal" href="examples/extensions.html#c-extensions"><em>C extensions</em></a> documentation.</li>
-<li><strong>591 regression tests</strong> with <strong>93%</strong> coverage.</li>
+<li>Renamed <tt class="docutils literal"><span class="pre">Router</span></tt> as <tt class="xref py py-class docutils literal"><span class="pre">Mapper</span></tt>.</li>
+<li>Removed the dispatch module from <tt class="docutils literal"><span class="pre">utils</span></tt>.</li>
+<li>Asynchronous redis connection moved to <a class="reference external" href="http://packages.python.org/pulsar/">pulsar</a>.</li>
+<li>Added the <a class="reference internal" href="api/models.html#stdnet.odm.Manager.save" title="stdnet.odm.Manager.save"><tt class="xref py py-meth docutils literal"><span class="pre">Manager.save()</span></tt></a> as shortcut for immediately committing
+changes to a model.</li>
+<li>Bug fix in model registration.</li>
+<li>Bug fixes when primary key is not named <tt class="docutils literal"><span class="pre">id</span></tt>.</li>
+<li><strong>554 regression tests</strong> with <strong>93%</strong> coverage.</li>
 </ul>
 </div>
 <div class="section" id="ver-0-8-2-2013-july-4">
 <h2>Ver. 0.8.2 - 2013 July 4<a class="headerlink" href="#ver-0-8-2-2013-july-4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Critical bug fix in the <a class="reference internal" href="backends/redis.html#redis-pubsub"><em>asynchronous redis publish/subscribe</em></a>
+<li>Critical bug fix in the <em class="xref std std-ref">asynchronous redis publish/subscribe</em>
 handler. Added some documentation.</li>
 <li><strong>591 regression tests</strong> with <strong>93%</strong> coverage.</li>
 </ul>
@@ -99,10 +105,10 @@ when installing for python 3.</li>
 <li>This version brings several new functionalities, bug fixes, asynchronous
 connections and a departure from the global registration of models.</li>
 <li>The API for querying, committing and deleting instances has changed, and it
-it is now based on the <a class="reference internal" href="api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt></a> class.</li>
-<li>A <a class="reference internal" href="api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt></a> is a placeholder of registered models for
+it is now based on the <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt> class.</li>
+<li>A <tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt> is a placeholder of registered models for
 one&#8217;s application. Check the <a class="reference internal" href="examples/registration.html#tutorial-registration"><em>registration tutorial</em></a> for more details.</li>
-<li>Added preliminary support for <a class="reference internal" href="backends/mongo.html#mongo-server"><em>mongoDB backend</em></a>.
+<li>Added preliminary support for <em class="xref std std-ref">mongoDB backend</em>.
 Pre-alpha at this stage.</li>
 <li>Added preliminary support for <em class="xref std std-ref">Sql backend</em>.
 Pre-alpha at this stage.</li>
@@ -503,7 +509,7 @@ of a non-registered model</li>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#ver-0-8-3-development">Ver. 0.8.3 - Development</a></li>
+<li><a class="reference internal" href="#ver-0-9-0-development">Ver. 0.9.0 - Development</a></li>
 <li><a class="reference internal" href="#ver-0-8-2-2013-july-4">Ver. 0.8.2 - 2013 July 4</a></li>
 <li><a class="reference internal" href="#ver-0-8-1-2013-july-2">Ver. 0.8.1 - 2013 July 2</a></li>
 <li><a class="reference internal" href="#ver-0-8-0-2013-may-24">Ver. 0.8.0 - 2013 May 24</a></li>
@@ -531,8 +537,8 @@ of a non-registered model</li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="backends/mongo.html"
-                        title="previous chapter">Mongo DB</a></p>
+  <p class="topless"><a href="backends/redis.html"
+                        title="previous chapter">Redis</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="faq.html"
                         title="next chapter">FAQ</a></p>

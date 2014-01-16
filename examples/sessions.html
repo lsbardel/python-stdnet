@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sessions &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Sessions &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="A twitter clone" href="twitter.html" />
     <link rel="prev" title="Full text search" href="search.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="search.html" title="Full text search"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/sessions.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -70,12 +70,12 @@
 <h1>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h1>
 <p>A <a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is a lightweight component which establishes all
 conversations with backend databases. It is the middleware
-between <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> and <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> on one side and the
+between <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> on one side and the
 <a class="reference internal" href="../backends/api.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> on the other side.</p>
 <div class="section" id="obtaining-a-session">
 <h2>Obtaining a session<a class="headerlink" href="#obtaining-a-session" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="../api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt></a> is a regular Python class which is obtained from
-a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> via the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.session" title="stdnet.odm.Router.session"><tt class="xref py py-meth docutils literal"><span class="pre">Router.session()</span></tt></a> method. We continue to use the
+a <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> via the <tt class="xref py py-meth docutils literal"><span class="pre">Router.session()</span></tt> method. We continue to use the
 <a class="reference internal" href="tutorial.html#tutorial-models-router"><em>models router</em></a>
 created for our <a class="reference internal" href="tutorial.html#tutorial-application"><em>tutorial application</em></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">session</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">session</span><span class="p">()</span>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Registration &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Registration &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Query your Data" href="query.html" />
     <link rel="prev" title="Using Models" href="tutorial.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="tutorial.html" title="Using Models"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/registration.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -69,7 +69,7 @@
   <span class="target" id="module-stdnet.odm"><span id="tutorial-registration"></span></span><div class="section" id="registration">
 <h1>Registration<a class="headerlink" href="#registration" title="Permalink to this headline">¶</a></h1>
 <p>Registration consists in associating a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> to a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>
-via a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>. In this way one can have a group of models associated
+via a <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt>. In this way one can have a group of models associated
 with their managers pointing at their, possibly different, back-end servers.
 Registration is straightforward and as shown in the
 <a class="reference internal" href="tutorial.html#tutorial"><em>tutorial application</em></a> it is achieved by:</p>
@@ -83,21 +83,21 @@ Registration is straightforward and as shown in the
 </pre></div>
 </div>
 <p>The <a class="reference internal" href="../backends/index.html#connection-string"><em>connection string</em></a> passed as first argument when
-initialising a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>, is the default back-end of that <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>.
+initialising a <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt>, is the default back-end of that <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt>.
 It is possible to register models to a different back-end by passing a connection
-string to the <a class="reference internal" href="../api/models.html#stdnet.odm.Router.register" title="stdnet.odm.Router.register"><tt class="xref py py-meth docutils literal"><span class="pre">Router.register()</span></tt></a> method:</p>
+string to the <tt class="xref py py-meth docutils literal"><span class="pre">Router.register()</span></tt> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">models</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyModel</span><span class="p">,</span> <span class="s">&#39;redis://127.0.0.1:6379?db=8&amp;password=bla&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="accessing-managers">
 <h2>Accessing managers<a class="headerlink" href="#accessing-managers" title="Permalink to this headline">¶</a></h2>
-<p>Given a <tt class="docutils literal"><span class="pre">models</span></tt> <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> there are two ways one can access a
+<p>Given a <tt class="docutils literal"><span class="pre">models</span></tt> <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> there are two ways one can access a
 model <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> to perform database queries.</p>
 <div class="section" id="dictionary-interface">
 <span id="router-dict"></span><h3>Dictionary interface<a class="headerlink" href="#dictionary-interface" title="Permalink to this headline">¶</a></h3>
 <p>The most straightforward and intuitive way, for accessing managers, is to use
-the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> as a dictionary of <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Crate a Query for Instrument</span>
+the <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> as a dictionary of <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Create a Query for Instrument</span>
 <span class="n">query</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
 <span class="c">#</span>
 <span class="c"># Create a new Instrument and save it to the backend server</span>
@@ -108,7 +108,7 @@ the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" ti
 <div class="section" id="dotted-notation">
 <span id="router-dotted"></span><h3>Dotted notation<a class="headerlink" href="#dotted-notation" title="Permalink to this headline">¶</a></h3>
 <p>An alternative to the dictionary interface is the dotted notation, where
-a manager can be accessed as an attribute of the <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a>, the attribute
+a manager can be accessed as an attribute of the <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt>, the attribute
 name is given by the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> metaclass name. This is the
 <a class="reference internal" href="../api/models.html#stdnet.odm.ModelMeta.name" title="stdnet.odm.ModelMeta.name"><tt class="xref py py-attr docutils literal"><span class="pre">ModelMeta.name</span></tt></a> attribute of the <a class="reference internal" href="../api/models.html#stdnet.odm.Model._meta" title="stdnet.odm.Model._meta"><tt class="xref py py-attr docutils literal"><span class="pre">Model._meta</span></tt></a> object.
 It is, by default, the class name of the model in lower case:</p>
@@ -125,7 +125,7 @@ less dependent on the actual implementation of <a class="reference internal" hre
 </div>
 <div class="section" id="multiple-backends">
 <h2>Multiple backends<a class="headerlink" href="#multiple-backends" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> allows to use your models in several different back-ends
+<p>The <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> allows to use your models in several different back-ends
 without changing the way you query your data. In addition it allows to
 specify different back-ends for <tt class="docutils literal"><span class="pre">write</span></tt> operations and for <tt class="docutils literal"><span class="pre">read</span></tt> only
 operations.</p>
@@ -138,7 +138,7 @@ the following way:</p>
 </div>
 <div class="section" id="custom-managers">
 <span id="custom-manager"></span><h2>Custom Managers<a class="headerlink" href="#custom-managers" title="Permalink to this headline">¶</a></h2>
-<p>When a <a class="reference internal" href="../api/models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> registers a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>, it creates a new
+<p>When a <tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt> registers a <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>, it creates a new
 instance of a <a class="reference internal" href="../api/models.html#stdnet.odm.Manager" title="stdnet.odm.Manager"><tt class="xref py py-class docutils literal"><span class="pre">Manager</span></tt></a> and add it to the dictionary of managers.
 It is possible to supply a custom manager class by specifying the
 <tt class="docutils literal"><span class="pre">manager_class</span></tt> attribute on the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a>:</p>
@@ -159,7 +159,7 @@ It is possible to supply a custom manager class by specifying the
 <h2>Model Iterator<a class="headerlink" href="#model-iterator" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="stdnet.odm.model_iterator">
-<tt class="descclassname">stdnet.odm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em>, <em>include_related=True</em><big>)</big><a class="headerlink" href="#stdnet.odm.model_iterator" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">stdnet.odm.</tt><tt class="descname">model_iterator</tt><big>(</big><em>application</em>, <em>include_related=True</em>, <em>exclude=None</em><big>)</big><a class="headerlink" href="#stdnet.odm.model_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>A generator of <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> classes found in <em>application</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

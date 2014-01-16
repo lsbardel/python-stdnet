@@ -1,4 +1,3 @@
-
 .. _tutorial-registration:
 
 
@@ -43,7 +42,7 @@ The most straightforward and intuitive way, for accessing managers, is to use
 the :class:`Router` as a dictionary of :class:`Manager`::
 
 
-    # Crate a Query for Instrument
+    # Create a Query for Instrument
     query = models[Instrument].query()
     #
     # Create a new Instrument and save it to the backend server

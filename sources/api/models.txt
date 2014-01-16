@@ -6,9 +6,9 @@
 Model and Query API
 ============================
 
-The *object-data mapper* (ODM) is the core of the library. It defines an API for mapping
-data in the backend key-value store to objects in Python.
-It'is name is closely related to
+The *object-data mapper* (ODM) is the core of the library.
+It defines an API for mapping data in the backend key-value store to objects
+in Python. Its name is closely related to
 `object relational Mapping <http://en.wikipedia.org/wiki/Object-relational_mapping>`_ (ORM),
 a programming technique for converting data between incompatible
 type systems in traditional `relational databases <http://en.wikipedia.org/wiki/Relational_database>`_

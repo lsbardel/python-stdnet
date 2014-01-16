@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals and Utilities &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Internals and Utilities &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="API" href="index.html" />
     <link rel="next" title="Stdnet Redis branch (Discontinued)" href="../stdnetredis.html" />
     <link rel="prev" title="Fields API" href="fields.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="fields.html" title="Fields API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/api/utility.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -68,54 +68,8 @@
             
   <div class="section" id="internals-and-utilities">
 <span id="utility-index"></span><h1>Internals and Utilities<a class="headerlink" href="#internals-and-utilities" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-stdnet.utils.conf">
-<span id="default-settings"></span><span id="settings"></span><h2>Default Settings<a class="headerlink" href="#module-stdnet.utils.conf" title="Permalink to this headline">¶</a></h2>
-<p>Stdnet comes with a singleton setting instance which can be accessed by:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
-</pre></div>
-</div>
-<p>The setting instance contains few default parameters used in throughout
-the library. This parameters can be changed by the user by simply
-overriding them.</p>
-<dl class="attribute">
-<dt id="stdnet.utils.conf.settings.DEFAULT_BACKEND">
-<tt class="descclassname">settings.</tt><tt class="descname">DEFAULT_BACKEND</tt><a class="headerlink" href="#stdnet.utils.conf.settings.DEFAULT_BACKEND" title="Permalink to this definition">¶</a></dt>
-<dd><p>the default <a class="reference internal" href="../backends/api.html#stdnet.BackendDataServer" title="stdnet.BackendDataServer"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.BackendDataServer</span></tt></a> connection string. Check
-the <a class="reference internal" href="models.html#register-model"><em>registering models</em></a> documentation.</p>
-<p>Default <tt class="docutils literal"><span class="pre">&quot;redis://127.0.0.1:6379/?db=7&quot;</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.utils.conf.settings.REDIS_PY_PARSER">
-<tt class="descclassname">settings.</tt><tt class="descname">REDIS_PY_PARSER</tt><a class="headerlink" href="#stdnet.utils.conf.settings.REDIS_PY_PARSER" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set stdnet to use the internal python parser for redis.
-By default it is set to <tt class="docutils literal"><span class="pre">False</span></tt> which causes
-the library to choose the best possible available. More information
-is contained in the <a class="reference internal" href="../backends/redis.html#redis-parser"><em>redis parser</em></a> documentation.</p>
-<p>Default <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.utils.conf.settings.MAX_CONNECTIONS">
-<tt class="descclassname">settings.</tt><tt class="descname">MAX_CONNECTIONS</tt><a class="headerlink" href="#stdnet.utils.conf.settings.MAX_CONNECTIONS" title="Permalink to this definition">¶</a></dt>
-<dd><p>The maximim number of connections to have opened at the same time.</p>
-<p>Default <tt class="docutils literal"><span class="pre">unlimited</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="stdnet.utils.conf.settings.RedisConnectionClass">
-<tt class="descclassname">settings.</tt><tt class="descname">RedisConnectionClass</tt><a class="headerlink" href="#stdnet.utils.conf.settings.RedisConnectionClass" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Redis Connection class. If not set the
-<tt class="xref py py-class docutils literal"><span class="pre">stdnet.lib.connection.Connection</span></tt> will be used.</p>
-<p>Default <tt class="docutils literal"><span class="pre">None</span></tt></p>
-</dd></dl>
-
-<p>To change settings:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet.conf</span> <span class="kn">import</span> <span class="n">settings</span>
-
-<span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_BACKEND</span> <span class="o">=</span> <span class="s">&#39;redis://127.0.0.1:6379/?db=5&#39;</span>
-</pre></div>
-</div>
+<div class="section" id="default-settings">
+<span id="settings"></span><h2>Default Settings<a class="headerlink" href="#default-settings" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="module-stdnet.odm"></span></div>
 <div class="section" id="serialization">
 <span id="serialize-models"></span><h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
@@ -217,7 +171,7 @@ provided, a python <tt class="docutils literal"><span class="pre">StringIO</span
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>models</strong> &#8211; the <a class="reference internal" href="models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">Router</span></tt></a> which must contains all the model this
+<li><strong>models</strong> &#8211; the <tt class="xref py py-class docutils literal"><span class="pre">Mapper</span></tt> which must contains all the model this
 method will load.</li>
 <li><strong>stream</strong> &#8211; bytes or an object with a <tt class="docutils literal"><span class="pre">read</span></tt> method returning bytes.</li>
 <li><strong>model</strong> &#8211; Optional <a class="reference internal" href="models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> we need to load. If not provided all
@@ -385,8 +339,9 @@ for encoding and decoding data to and from the data server.</p>
 <dl class="method">
 <dt id="stdnet.utils.encoders.Encoder.load_iterable">
 <tt class="descname">load_iterable</tt><big>(</big><em>iterable</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#stdnet.utils.encoders.Encoder.load_iterable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load an <tt class="docutils literal"><span class="pre">iterable</span></tt>. By default it returns a generator of
-data loaded via the <a class="reference internal" href="#stdnet.utils.encoders.Encoder.loads" title="stdnet.utils.encoders.Encoder.loads"><tt class="xref py py-meth docutils literal"><span class="pre">loads()</span></tt></a> method.</p>
+<dd><p>Load an <tt class="docutils literal"><span class="pre">iterable</span></tt>.</p>
+<p>By default it returns a generator of data loaded via the
+<a class="reference internal" href="#stdnet.utils.encoders.Encoder.loads" title="stdnet.utils.encoders.Encoder.loads"><tt class="xref py py-meth docutils literal"><span class="pre">loads()</span></tt></a> method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -470,7 +425,8 @@ between python 2 and python 3.</p>
 <dl class="class">
 <dt id="stdnet.ImproperlyConfigured">
 <em class="property">class </em><tt class="descclassname">stdnet.</tt><tt class="descname">ImproperlyConfigured</tt><a class="headerlink" href="#stdnet.ImproperlyConfigured" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised when stdnet is somehow improperly configured</p>
+<dd><p>&#8216;A <a class="reference internal" href="#stdnet.StdNetException" title="stdnet.StdNetException"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.StdNetException</span></tt></a> raised when stdnet is somehow
+improperly configured</p>
 </dd></dl>
 
 <dl class="class">
@@ -594,7 +550,7 @@ between <em>start</em> and <em>end</em></p>
 <dl class="class">
 <dt id="stdnet.utils.test.TestCase">
 <em class="property">class </em><tt class="descclassname">stdnet.utils.test.</tt><tt class="descname">TestCase</tt><big>(</big><em>methodName='runTest'</em><big>)</big><a class="headerlink" href="#stdnet.utils.test.TestCase" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">unittest.TestCase</span></tt> subclass for testing stdnet with
+<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">unittest.TestCase</span></tt> subclass for testing <tt class="docutils literal"><span class="pre">stdnet</span></tt> with
 synchronous and asynchronous connections. It contains
 several class methods for testing in a parallel test suite.</p>
 <dl class="attribute">
@@ -606,8 +562,9 @@ several options:</p>
 <li><tt class="docutils literal"><span class="pre">multipledb</span> <span class="pre">=</span> <span class="pre">False</span></tt> The test case does not require a backend and
 only one <a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a> class is added to the test-suite regardless
 of which backend has been tested.</li>
-<li><tt class="docutils literal"><span class="pre">multipledb</span> <span class="pre">=</span> <span class="pre">True</span></tt>, the default falue. Create as many <a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a>
-classes as the number of backend tested, each backend will run the tests.</li>
+<li><tt class="docutils literal"><span class="pre">multipledb</span> <span class="pre">=</span> <span class="pre">True</span></tt>, the default falue. Create as many
+<a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a> classes as the number of backend tested, each backend
+will run the tests.</li>
 <li><tt class="docutils literal"><span class="pre">multipledb</span> <span class="pre">=</span> <span class="pre">string,</span> <span class="pre">list,</span> <span class="pre">tuple</span></tt>, Only those backend will run tests.</li>
 </ul>
 </dd></dl>
@@ -650,7 +607,7 @@ is always the model at index 0 in <a class="reference internal" href="#stdnet.ut
 <dl class="attribute">
 <dt id="stdnet.utils.test.TestCase.mapper">
 <tt class="descname">mapper</tt><a class="headerlink" href="#stdnet.utils.test.TestCase.mapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>A <a class="reference internal" href="models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt></a> with all <a class="reference internal" href="#stdnet.utils.test.TestCase.models" title="stdnet.utils.test.TestCase.models"><tt class="xref py py-attr docutils literal"><span class="pre">models</span></tt></a> registered with
+<dd><p>A <tt class="xref py py-class docutils literal"><span class="pre">Mapper</span></tt> with all <a class="reference internal" href="#stdnet.utils.test.TestCase.models" title="stdnet.utils.test.TestCase.models"><tt class="xref py py-attr docutils literal"><span class="pre">models</span></tt></a> registered with
 <a class="reference internal" href="#stdnet.utils.test.TestCase.backend" title="stdnet.utils.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt></a>.</p>
 </dd></dl>
 
@@ -663,8 +620,7 @@ is always the model at index 0 in <a class="reference internal" href="#stdnet.ut
 <dl class="classmethod">
 <dt id="stdnet.utils.test.TestCase.backend_params">
 <em class="property">classmethod </em><tt class="descname">backend_params</tt><big>(</big><big>)</big><a class="headerlink" href="#stdnet.utils.test.TestCase.backend_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Optional <a class="reference internal" href="#stdnet.utils.test.TestCase.backend" title="stdnet.utils.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt></a> parameters for tests in this
-<a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a> class.</p>
+<dd><p>Optional <a class="reference internal" href="#stdnet.utils.test.TestCase.backend" title="stdnet.utils.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt></a> parameters for tests.</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -673,7 +629,7 @@ is always the model at index 0 in <a class="reference internal" href="#stdnet.ut
 <dd><p>Set up this <a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a> before test methods are run. here
 is where a <a class="reference internal" href="#stdnet.utils.test.TestCase.backend" title="stdnet.utils.test.TestCase.backend"><tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt></a> server instance is created and it is unique for this
 <a class="reference internal" href="#stdnet.utils.test.TestCase" title="stdnet.utils.test.TestCase"><tt class="xref py py-class docutils literal"><span class="pre">TestCase</span></tt></a> class. It create the <a class="reference internal" href="#stdnet.utils.test.TestCase.mapper" title="stdnet.utils.test.TestCase.mapper"><tt class="xref py py-attr docutils literal"><span class="pre">mapper</span></tt></a>,
-a <a class="reference internal" href="models.html#stdnet.odm.Router" title="stdnet.odm.Router"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Router</span></tt></a> with all <a class="reference internal" href="#stdnet.utils.test.TestCase.models" title="stdnet.utils.test.TestCase.models"><tt class="xref py py-attr docutils literal"><span class="pre">models</span></tt></a> registered.
+a <tt class="xref py py-class docutils literal"><span class="pre">Mapper</span></tt> with all <a class="reference internal" href="#stdnet.utils.test.TestCase.models" title="stdnet.utils.test.TestCase.models"><tt class="xref py py-attr docutils literal"><span class="pre">models</span></tt></a> registered.
 There shouldn&#8217;t be any reason to override this method, use <a class="reference internal" href="#stdnet.utils.test.TestCase.after_setup" title="stdnet.utils.test.TestCase.after_setup"><tt class="xref py py-meth docutils literal"><span class="pre">after_setup()</span></tt></a>
 class method instead.</p>
 </dd></dl>
@@ -746,8 +702,8 @@ and <tt class="docutils literal"><span class="pre">huge</span></tt>.</p>
 <dl class="attribute">
 <dt id="stdnet.utils.test.DataGenerator.size">
 <tt class="descname">size</tt><a class="headerlink" href="#stdnet.utils.test.DataGenerator.size" title="Permalink to this definition">¶</a></dt>
-<dd><p>The actual size of the data to be generated. Obtained from the <a class="reference internal" href="#stdnet.utils.test.DataGenerator.sizes" title="stdnet.utils.test.DataGenerator.sizes"><tt class="xref py py-attr docutils literal"><span class="pre">sizes</span></tt></a>
-and the input <tt class="docutils literal"><span class="pre">size</span></tt> code during initialisation.</p>
+<dd><p>The actual size of the data to be generated. Obtained from the
+<a class="reference internal" href="#stdnet.utils.test.DataGenerator.sizes" title="stdnet.utils.test.DataGenerator.sizes"><tt class="xref py py-attr docutils literal"><span class="pre">sizes</span></tt></a> and the input <tt class="docutils literal"><span class="pre">size</span></tt> code during initialisation.</p>
 </dd></dl>
 
 <dl class="method">
@@ -790,7 +746,7 @@ If <tt class="docutils literal"><span class="pre">size</span></tt> is not given,
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Internals and Utilities</a><ul>
-<li><a class="reference internal" href="#module-stdnet.utils.conf">Default Settings</a></li>
+<li><a class="reference internal" href="#default-settings">Default Settings</a></li>
 <li><a class="reference internal" href="#serialization">Serialization</a><ul>
 <li><a class="reference internal" href="#get-serializer">Get serializer</a></li>
 <li><a class="reference internal" href="#register-serializer">Register serializer</a></li>

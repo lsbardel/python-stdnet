@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Role based access control &mdash; python stdnet 0.8.3b2 documentation</title>
+    <title>Role based access control &mdash; python stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="../static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.3b2',
+        VERSION:     '0.9b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.8.3b2 documentation" href="../index.html" />
+    <link rel="top" title="python stdnet 0.9b1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials &amp; Examples" href="index.html" />
     <link rel="next" title="Multivariate Time Series" href="columnts.html" />
     <link rel="prev" title="A twitter clone" href="twitter.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="twitter.html" title="A twitter clone"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">python stdnet 0.8.3b2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">python stdnet 0.9b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials &amp; Examples</a> &raquo;</li> 
       </ul>
     </div>
@@ -53,10 +53,10 @@
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for python stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python stdnet/examples/permissions.html">release docs here</a>.
         </p>
-    
+    %}
 </div>
 </div>
   
@@ -69,22 +69,25 @@
   <div class="section" id="module-examples.permissions">
 <span id="role-based-access-control"></span><span id="permissions-example"></span><h1>Role based access control<a class="headerlink" href="#module-examples.permissions" title="Permalink to this headline">¶</a></h1>
 <p>This section is a practical application of <tt class="docutils literal"><span class="pre">stdnet</span></tt> for solving
-role-based access control (RBAC). It is an approach for managing users permissions on
-your application which could be a web-site, an organisation and so forth.</p>
+role-based access control (RBAC). It is an approach for managing users
+permissions on your application which could be a web-site, an organisation
+and so forth.</p>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>There are five different elements to get familiar with this RBAC
 implementation:</p>
 <ul class="simple">
 <li><strong>System</strong>: this is your application/organization/web site.</li>
-<li><strong>Roles</strong>: within a <strong>system</strong>, <strong>roles</strong> are created for various <strong>operations</strong>.</li>
+<li><strong>Roles</strong>: within a <strong>system</strong>, <strong>roles</strong> are created for various
+<strong>operations</strong>.</li>
 <li><strong>Permissions</strong>: they represents the power to perform certain <strong>operations</strong>
 on a resource and are assigned to specific <strong>roles</strong> within a <strong>system</strong>.</li>
 <li><strong>Operations</strong>: what can a user do with that permission, usually, <tt class="docutils literal"><span class="pre">read</span></tt>
 <tt class="docutils literal"><span class="pre">write</span></tt>, <tt class="docutils literal"><span class="pre">delete</span></tt>.</li>
-<li><strong>Subjects</strong>: these are the system users which are assigned particulr <strong>roles</strong>.
-Permissions are not assigned directly to <strong>subjects</strong>, instead they are acquired
-through their roles.</li>
+<li><strong>Subjects</strong>: these are the system users which are assigned particular
+<strong>roles</strong>.
+Permissions are not assigned directly to <strong>subjects</strong>, instead they are
+acquired through their roles.</li>
 </ul>
 <p>The <tt class="xref py py-class docutils literal"><span class="pre">Permission</span></tt> to perform certain certain <strong>operations</strong> are assigned
 to specific <strong>roles</strong>.</p>
@@ -136,9 +139,9 @@ a <tt class="docutils literal"><span class="pre">owner</span></tt>.</p>
 <div class="section" id="subjects">
 <h2>Subjects<a class="headerlink" href="#subjects" title="Permalink to this headline">¶</a></h2>
 <p>The subject in this implementation is given by the <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>.
-Therefore <em class="xref std std-ref">roles</em> are assigned to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>. Since roles
-are implemented via the <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> model, the relationship between
-<a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> and <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> is obtained via a
+Therefore <em class="xref std std-ref">roles</em> are assigned to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>.
+Since roles are implemented via the <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> model, the relationship
+between <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> and <a class="reference internal" href="#examples.permissions.Role" title="examples.permissions.Role"><tt class="xref py py-class docutils literal"><span class="pre">Role</span></tt></a> is obtained via a
 <a class="reference internal" href="../api/fields.html#stdnet.odm.ManyToManyField" title="stdnet.odm.ManyToManyField"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ManyToManyField</span></tt></a>.</p>
 <dl class="class">
 <dt id="examples.permissions.Group">
@@ -166,9 +169,9 @@ and <a class="reference internal" href="#examples.permissions.Group" title="exam
 
 </dd></dl>
 
-<p>The system user is implemented via the <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>. Since roles are always assigned
-to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>, a <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a> obtains permissions via the groups he belongs
-to.</p>
+<p>The system user is implemented via the <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a>. Since roles are
+always assigned to <a class="reference internal" href="#examples.permissions.Group" title="examples.permissions.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>, a <a class="reference internal" href="#examples.permissions.User" title="examples.permissions.User"><tt class="xref py py-class docutils literal"><span class="pre">User</span></tt></a> obtains permissions via
+the groups he belongs to.</p>
 <dl class="class">
 <dt id="examples.permissions.User">
 <em class="property">class </em><tt class="descclassname">examples.permissions.</tt><tt class="descname">User</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#examples.permissions.User" title="Permalink to this definition">¶</a></dt>
@@ -183,8 +186,8 @@ which is also unique across all users.</p>
 part of that Group. Lets consider a web-site where we need to manage
 permissions and be able to query
 efficiently only on instances for which a Given user has enough permissions.</p>
-<p>The first step is to register a <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt>, lets assume one called <tt class="docutils literal"><span class="pre">MyModel</span></tt>,
-with the permission engine:</p>
+<p>The first step is to register a <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt>, lets assume one called
+<tt class="docutils literal"><span class="pre">MyModel</span></tt>, with the permission engine:</p>
 <blockquote>
 <div>register_for_permissions(MyModel)</div></blockquote>
 <p>from now on every time a new instance of <tt class="docutils literal"><span class="pre">MyModel</span></tt> is created, it must

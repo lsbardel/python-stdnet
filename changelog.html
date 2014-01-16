@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; python stdnet 0.9b1 documentation</title>
+    <title>Changelog &mdash; python-stdnet 0.9b1 documentation</title>
     
     <link rel="stylesheet" href="static/pulsar.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="python stdnet 0.9b1 documentation" href="index.html" />
+    <link rel="top" title="python-stdnet 0.9b1 documentation" href="index.html" />
     <link rel="next" title="FAQ" href="faq.html" />
     <link rel="prev" title="Redis" href="backends/redis.html" /> 
   </head>
@@ -44,15 +44,15 @@
         <li class="right" >
           <a href="backends/redis.html" title="Redis"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">python stdnet 0.9b1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">python-stdnet 0.9b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="deck">
 <div class="header">
     
         <p class="developmentversion">
-        Documentation for python stdnet's DEVELOPMENT version. Get the
-        <a href="http://pythonhosted.org/python stdnet/changelog.html">release docs here</a>.
+        Documentation for python-stdnet's DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/python-stdnet/changelog.html">release docs here</a>.
         </p>
     
 </div>
@@ -174,7 +174,7 @@ combination of given set of <a class="reference internal" href="api/fields.html#
 <li>Added ability to filter and search on <a class="reference internal" href="api/fields.html#stdnet.odm.ForeignKey" title="stdnet.odm.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.ForeignKey</span></tt></a> fields.</li>
 <li>Added <a class="reference internal" href="api/models.html#stdnet.odm.Session" title="stdnet.odm.Session"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.Session</span></tt></a> for managing transactions in the object
 data mapper.</li>
-<li>Moved structures from <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> to the <a class="reference internal" href="api/utility.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a> module.</li>
+<li>Moved structures from <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> to the <a class="reference internal" href="examples/underscore.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a> module.</li>
 <li>Added <a class="reference internal" href="api/models.html#stdnet.odm.Query.load_only" title="stdnet.odm.Query.load_only"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Query.load_only()</span></tt></a> and <a class="reference internal" href="api/models.html#stdnet.odm.Query.dont_load" title="stdnet.odm.Query.dont_load"><tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.Query.dont_load()</span></tt></a>
 methods for loading a subset of a model fields.
 This can improve performance by reducing the amount of
@@ -331,7 +331,7 @@ fixed a bug on the same field.</li>
 <ul class="simple">
 <li>This version brings some important bug fixes with tests.</li>
 <li>Bug fix in <tt class="xref py py-meth docutils literal"><span class="pre">stdnet.odm.IntegerField.to_python()</span></tt>.</li>
-<li>Added registration utilities in <a class="reference internal" href="api/utility.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a>.</li>
+<li>Added registration utilities in <a class="reference internal" href="examples/underscore.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a>.</li>
 <li>Bug fix in <a class="reference internal" href="api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">stdnet.odm.StdModel</span></tt></a> class caused by the lack of a <tt class="docutils literal"><span class="pre">__ne__</span></tt> operator.</li>
 <li>Added <tt class="docutils literal"><span class="pre">__hash__</span></tt> operator, unique across different models, not just instances.</li>
 <li>Added experimental <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.contrib.searchengine</span></tt> application. Very much alpha.</li>
@@ -420,7 +420,7 @@ For example, using redis database 11 as cache is obtained by:</p>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Overall refactoring of <a class="reference internal" href="api/utility.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a> and <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> modules.</p>
+<li><p class="first">Overall refactoring of <a class="reference internal" href="examples/underscore.html#module-stdnet.odm" title="stdnet.odm"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet.odm</span></tt></a> and <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.backends</span></tt> modules.</p>
 </li>
 <li><p class="first">Lazy loading of models via the <tt class="xref py py-mod docutils literal"><span class="pre">stdnet.dispatch</span></tt> module.</p>
 </li>
@@ -566,7 +566,7 @@ of a non-registered model</li>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2010-2013, Luca Sbardella.
+        &copy; Copyright 2009-2014, Luca Sbardella.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
 <script type="text/javascript">

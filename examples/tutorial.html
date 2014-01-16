@@ -56,7 +56,7 @@
         Documentation for python stdnet's DEVELOPMENT version. Get the
         <a href="http://pythonhosted.org/python stdnet/examples/tutorial.html">release docs here</a>.
         </p>
-    %}
+    
 </div>
 </div>
   
@@ -70,7 +70,7 @@
 <h1>Using Models<a class="headerlink" href="#using-models" title="Permalink to this headline">¶</a></h1>
 <p>Here we deal with model implementation and creating instances persistent
 in a backend database. A <a class="reference internal" href="../api/models.html#stdnet.odm.Model" title="stdnet.odm.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> is the single, definitive source of
-data about your data. There are two types of models in <a class="reference internal" href="../faq.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a>:
+data about your data. There are two types of models in <a class="reference internal" href="../backends/api.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a>:
 the <a class="reference internal" href="../api/models.html#stdnet.odm.StdModel" title="stdnet.odm.StdModel"><tt class="xref py py-class docutils literal"><span class="pre">StdModel</span></tt></a> which consists of <a class="reference internal" href="../api/fields.html#stdnet.odm.Field" title="stdnet.odm.Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> and behaviours of
 the data you are storing and the
 <a class="reference internal" href="../api/models.html#stdnet.odm.Structure" title="stdnet.odm.Structure"><tt class="xref py py-class docutils literal"><span class="pre">Structure</span></tt></a>, the networked equivalent of data-structures such as sets,
@@ -113,7 +113,7 @@ The application uses the following three models,</p>
 <li><tt class="docutils literal"><span class="pre">Instrument</span></tt> holds information about tradable financial intruments.</li>
 <li><tt class="docutils literal"><span class="pre">Position</span></tt> is an investment on a particular <tt class="docutils literal"><span class="pre">Instrument</span></tt> in a <tt class="docutils literal"><span class="pre">Fund</span></tt>.</li>
 </ul>
-<p>A minimal <a class="reference internal" href="../faq.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> implementation can look like this:</p>
+<p>A minimal <a class="reference internal" href="../backends/api.html#module-stdnet" title="stdnet"><tt class="xref py py-mod docutils literal"><span class="pre">stdnet</span></tt></a> implementation can look like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">stdnet</span> <span class="kn">import</span> <span class="n">odm</span>
 
 <span class="k">class</span> <span class="nc">Fund</span><span class="p">(</span><span class="n">odm</span><span class="o">.</span><span class="n">StdModel</span><span class="p">):</span>

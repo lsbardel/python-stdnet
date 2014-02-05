@@ -29,7 +29,9 @@ import io
 import socket
 from copy import copy
 
-from .extensions import RedisExtensionsMixin, redis, BasePipeline
+from redis.exceptions import NoScriptError
+
+from .extensions import RedisExtensionsMixin, redis, BasePipeline, all_loaded_scripts
 from .prefixed import PrefixedRedisMixin
 
 
@@ -77,3 +79,10 @@ class Pipeline(BasePipeline, Redis):
     @property
     def is_pipeline(self):
         return True
+
+    def execute(self, raise_on_error=True):
+        try:
+            return super(Pipeline, self).execute(raise_on_error)
+        except NoScriptError:
+            all_loaded_scripts.clear()
+            raise

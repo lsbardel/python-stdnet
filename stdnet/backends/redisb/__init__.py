@@ -220,8 +220,10 @@ class RedisQuery(stdnet.BackendQuery):
         self.query_key = key
 
     def _execute_query(self):
-        '''Execute the query without fetching data. Returns the number of
-elements in the query.'''
+        '''Execute the query without fetching data.
+
+        Returns the number of elements in the query.
+        '''
         pipe = self.pipe
         if not self.card:
             if self.meta.ordering:

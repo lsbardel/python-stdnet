@@ -3,7 +3,7 @@ import logging
 from inspect import isgenerator, isclass
 
 
-__all__ = ['SearchEngine']
+__all__ = ['SearchEngine', 'search_engine']
 
 
 LOGGER = logging.getLogger('stdnet.search')
@@ -11,50 +11,49 @@ LOGGER = logging.getLogger('stdnet.search')
 
 class SearchEngine(object):
     """Stdnet search engine driver. This is an abstract class which
-expose the base functionalities for full text-search on model instances.
-Stdnet also provides a :ref:`python implementation <tutorial-search>`
-of this interface.
+    expose the base functionalities for full text-search on model instances.
+    Stdnet also provides a :ref:`python implementation <tutorial-search>`
+    of this interface.
 
-The main methods to be implemented are :meth:`add_item`,
-:meth:`remove_index` and :meth:`search_model`.
+    The main methods to be implemented are :meth:`add_item`,
+    :meth:`remove_index` and :meth:`search_model`.
 
-.. attribute:: word_middleware
+    .. attribute:: word_middleware
 
-    A list of middleware functions for preprocessing text
-    to be indexed. A middleware function has arity 1 by
-    accepting an iterable of words and
-    returning an iterable of words. Word middleware functions
-    are added to the search engine via the
-    :meth:`add_word_middleware` method.
+        A list of middleware functions for preprocessing text
+        to be indexed. A middleware function has arity 1 by
+        accepting an iterable of words and
+        returning an iterable of words. Word middleware functions
+        are added to the search engine via the
+        :meth:`add_word_middleware` method.
 
-    For example this function remove a group of words from the index::
+        For example this function remove a group of words from the index::
 
-        se = SearchEngine()
+            se = SearchEngine()
 
-        class stopwords(object):
+            class stopwords(object):
 
-            def __init__(self, *swords):
-                self.swords = set(swords)
+                def __init__(self, *swords):
+                    self.swords = set(swords)
 
-            def __call__(self, words):
-                for word in words:
-                    if word not in self.swords:
-                        yield word
+                def __call__(self, words):
+                    for word in words:
+                        if word not in self.swords:
+                            yield word
 
-        se.add_word_middleware(stopwords('and','or','this','that',...))
+            se.add_word_middleware(stopwords('and','or','this','that',...))
 
-.. attribute:: max_in_session
+    .. attribute:: max_in_session
 
-    Maximum number of instances to be reindexed in one session.
-    Default ``1000``.
-"""
+        Maximum number of instances to be reindexed in one session.
+        Default ``1000``.
+    """
     def __init__(self, backend=None, logger=None, max_in_session=None):
         self._backend = backend
         self.REGISTERED_MODELS = {}
         self.ITEM_PROCESSORS = []
         self.last_indexed = 'last_indexed'
         self.word_middleware = []
-        self.add_processor(stdnet_processor(self))
         self.logger = logger or LOGGER
         self.max_in_session = max_in_session or 1000
         self.router = None
@@ -72,10 +71,11 @@ indexed by the search engine.
 :param model: a :class:`StdModel` class.
 :param related: a list of related fields to include in the index.
 '''
-        update_model = UpdateSE(self, related)
-        self.REGISTERED_MODELS[model] = update_model
-        self.router.post_commit.bind(update_model, model)
-        self.router.post_delete.bind(update_model, model)
+        if model._meta.search:
+            update_model = UpdateSE(self, related)
+            self.REGISTERED_MODELS[model] = update_model
+            self.router.post_commit.bind(update_model, model)
+            self.router.post_delete.bind(update_model, model)
 
     def get_related_fields(self, item):
         if not isclass(item):
@@ -159,20 +159,15 @@ It extracts content from the given *item* and add it to the index.
     def set_router(self, router):
         self.router = router
 
-    def item_field_iterator(self, item):
-        if item:
-            for processor in self.ITEM_PROCESSORS:
-                result = processor(item)
-                if result is not None:
-                    return result
-        raise ValueError('Cound not iterate through "%s" fields' % item)
-
     def _item_data(self, items):
-        fi = self.item_field_iterator
         for item in items:
-            if item is None:    # stop if we get a None
+            if item is None:    # stop if we get a None, TODO: docs!!!
                 break
-            data = fi(item)
+            data = []
+            for name in item._meta.search:
+                value = item.get_attr_value(name)
+                if value:
+                    data.append(value)
             if data:
                 yield item, data
 
@@ -208,11 +203,11 @@ implemented by subclasses.
     def search(self, text, include=None, exclude=None, lookup=None):
         '''Full text search. Must be implemented by subclasses.
 
-:param test: text to search
-:param include: optional list of models to include in the search. If not
-    provided all :attr:`REGISTERED_MODELS` will be used.
-:param exclude: optional list of models to exclude for the search.
-:param lookup: currently not used.'''
+        :param test: text to search
+        :param include: optional list of models to include in the search.
+            If not provided all :attr:`REGISTERED_MODELS` will be used.
+        :param exclude: optional list of models to exclude for the search.
+        :param lookup: currently not used.'''
         raise NotImplementedError
 
     def search_model(self, query, text, lookup=None):
@@ -272,26 +267,6 @@ class UpdateSE(object):
         return t.on_result
 
 
-class stdnet_processor(object):
-    '''A search engine processor for stdnet models.
-An engine processor is a callable
-which return an iterable over text.'''
-    def __init__(self, se):
-        self.se = se
-
-    def __call__(self, item):
-        related = self.se.get_related_fields(item)
-        data = []
-        for field in item._meta.fields:
-            if field.hidden:
-                continue
-            if field.type == 'text':
-                if hasattr(item, field.attname):
-                    data.append(getattr(item, field.attname))
-                else:
-                    return ()
-            elif field.name in related:
-                value = getattr(item, field.name, None)
-                if value:
-                    data.extend(self.se.item_field_iterator(value))
-        return data
+def search_engine(engine, **kwargs):
+    from stdnet.apps.searchengine import SearchEngine
+    return SearchEngine(engine, **kwargs)

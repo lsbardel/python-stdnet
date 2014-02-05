@@ -147,7 +147,7 @@ mapper.
 '''
     def __init__(self, model, fields, app_label=None, modelkey=None,
                  name=None, register=True, pkname=None, ordering=None,
-                 attributes=None, abstract=False, **kwargs):
+                 attributes=None, abstract=False, search=None, **kwargs):
         self.model = model
         self.abstract = abstract
         self.attributes = unique_tuple(attributes or ())
@@ -161,6 +161,7 @@ mapper.
         self.model._meta = self
         self.app_label = make_app_label(model, app_label)
         self.name = (name or model.__name__).lower()
+        self.search = search or ()
         if not modelkey:
             if self.app_label:
                 modelkey = '{0}.{1}'.format(self.app_label, self.name)

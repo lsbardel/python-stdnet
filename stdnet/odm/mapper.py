@@ -59,11 +59,10 @@ class Mapper(object):
 
             models.post_delete.bind(callback, sender=MyModel)
     '''
-    def __init__(self, default_backend=None, install_global=False):
+    def __init__(self, default_backend=None):
         self._registered_models = ModelDictionary()
         self._registered_names = {}
         self._default_backend = default_backend
-        self._install_global = install_global
         self._structures = {}
         self._search_engine = None
         self.pre_commit = Event()
@@ -154,8 +153,10 @@ model was already registered it does nothing.
                 attr_name = model.__name__.lower()
             if attr_name not in self._registered_names:
                 self._registered_names[attr_name] = manager
-            if self._install_global:
-                model.objects = manager
+            #
+            # Register search engine
+            if self.search_engine:
+                self.search_engine.register(model)
         if registered:
             return backend
 
@@ -216,28 +217,30 @@ if no managers were removed.'''
 
     def register_applications(self, applications, models=None, stores=None):
         '''A higher level registration functions for group of models located
-on application modules.
-It uses the :func:`model_iterator` function to iterate
-through all :class:`Model` models available in ``applications``
-and register them using the :func:`register` low level method.
+        on application modules.
 
-:parameter applications: A String or a list of strings representing
-    python dotted paths where models are implemented.
-:parameter models: Optional list of models to include. If not provided
-    all models found in *applications* will be included.
-:parameter stores: optional dictionary which map a model or an
-    application to a backend :ref:`connection string <connection-string>`.
-:rtype: A list of registered :class:`Model`.
+        It uses the :func:`model_iterator` function to iterate
+        through all :class:`Model` models available in ``applications``
+        and register them using the :func:`register` method.
 
-For example::
+        :parameter applications: A String or a list of strings representing
+            python dotted paths where models are implemented.
+        :parameter models: Optional list of models to include. If not provided
+            all models found in *applications* will be included.
+        :parameter stores: optional dictionary which map a model or an
+            application to a backend
+            :ref:`connection string <connection-string>`.
+        :rtype: A list of registered :class:`Model`.
+
+        For example::
 
 
-    mapper.register_application_models('mylib.myapp')
-    mapper.register_application_models(['mylib.myapp', 'another.path'])
-    mapper.register_application_models(pythonmodule)
-    mapper.register_application_models(['mylib.myapp',pythonmodule])
+            mapper.register_application_models('mylib.myapp')
+            mapper.register_application_models(['mylib.myapp', 'another.path'])
+            mapper.register_application_models(pythonmodule)
+            mapper.register_application_models(['mylib.myapp', pythonmodule])
 
-'''
+        '''
         return list(self._register_applications(applications, models,
                                                 stores))
 

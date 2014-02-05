@@ -5,7 +5,7 @@ from .utils.exceptions import *
 from .utils.version import get_version, stdnet_version
 from .backends import *
 
-VERSION = stdnet_version(0, 9, 0, 'alpha', 3)
+VERSION = stdnet_version(0, 9, 0, 'beta', 1)
 
 
 __version__ = version = get_version(VERSION)

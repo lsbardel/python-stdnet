@@ -6,13 +6,13 @@
 <div class="header">
     {% if release_version %}
         <p>
-        Documentation for stdnet {{ version }}. For development docs,
-        <a href="http://lsbardel.github.com/python-stdnet/{{ pagename }}{{ file_suffix }}">go here</a>.
+        Documentation for {{ project }} {{ version }}. For development docs
+        <a href="http://lsbardel.github.io/{{ project }}/{{ pagename }}{{ file_suffix }}">go here</a>.
         </p>
     {% else %}
         <p class="developmentversion">
-        Documentation for pulsar's DEVELOPMENT version. Get the 
-        <a href="http://packages.python.org/python-stdnet/">release docs here</a>.
+        Documentation for {{ project }}'s DEVELOPMENT version. Get the
+        <a href="http://pythonhosted.org/{{ project }}/{{ pagename }}{{ file_suffix }}">release docs here</a>.
         </p>
     {% endif %}
 </div>

@@ -1,8 +1,18 @@
 --[[
 Redis lua script for managing object-data mapping and queries. The script
-define the odm namespace, where the pseudo-class odm.Model is the main component. 
+define the odm namespace, where the pseudo-class odm.Model is the main component.
 --]]
 local AUTO_ID, COMPOSITE_ID, CUSTOM_ID = 1, 2, 3
+local BIG = 1e16
+
+local function is_valid_number(value)
+    local status, val = pcall(function() return value+0 end)
+    if status then
+        status = (val == val)
+    end
+    return status
+end
+
 -- odm namespace - object-data mapping
 local odm = {
     redis=nil,
@@ -37,7 +47,7 @@ local odm = {
             return string.sub(v, string.len(v) - string.len(v1) + 1) == v1
         end,
         contains = function (v, v1)
-            return string.find(v, v1) ~= nil 
+            return string.find(v, v1) ~= nil
         end
     }
 }
@@ -57,7 +67,7 @@ odm.Model = {
         num: number of instances to commit
         args: table containing instances data to save. The data is an array
             containing arrays of the form:
-                {action, id, score, N, d_1, ..., d_N] 
+                {action, id, score, N, d_1, ..., d_N]
         @return an array of id saved to the database
     --]]
     commit = function (self, num, args)
@@ -146,7 +156,7 @@ odm.Model = {
     --[[
         Load instances from ids stored in a query temporary key
         :param key: the key containing the set of ids
-        :param options: dictionary of options 
+        :param options: dictionary of options
     --]]
     load = function (self, key, options)
         local result, ids, related_items
@@ -277,7 +287,7 @@ odm.Model = {
             self:_add_to_dest(destkey, field, key, true)
         else
             error('Cannot query on field "' .. field .. '". Not an index.')
-        end 
+        end
     end,
     --
     _queryvalue = function(self, destkey, field, unique, value)
@@ -484,29 +494,39 @@ odm.Model = {
     --
     -- Perform explicit ordering via redis SORT command.
     _explicit_ordering = function (self, key, start, stop, order)
-        local okey, tkeys, sortargs, bykey, ids, status = key, {}, {}
+        local tkeys, sortargs, bykey, ids, status = {}, {}
         -- nested sorting for foreign key fields
         if order.nested and # order.nested > 0 then
             -- generate a temporary key where to store the hash table holding
             -- the values to sort with
-            local skey = self:temp_key()
+            local skey, check = self:temp_key(), order.method ~= 'ALPHA'
             for i, id in ipairs(redis_members(key)) do
-                local value, key = redis.call('hget', self:object_key(id), order.field)
+                local value, nkey = redis.call('hget', self:object_key(id), order.field)
                 for n, name in ipairs(order.nested) do
                     if 2*math.floor(n/2) == n then
-                        value = redis.call('hget', key, name)
+                        value = redis.call('hget', nkey, name)
                     else
                         -- Check test_sort_by_missing_fk_data test if fknotrequired tests
-                        status, key = pcall(function() return name .. ':obj:' .. value end)
+                        status, nkey = pcall(function() return name .. ':obj:' .. value end)
                         if status == false then
-                             key = okey
                              break
                         end
                     end
                 end
                 -- store value on temporary key
-                tkeys[i] = skey .. id
-                redis.call('set', tkeys[i], value)
+                nkey = skey .. id
+                table.insert(tkeys, nkey)
+                if status and check then
+                    status = is_valid_number(value)
+                end
+                if status == false and check then
+                    if order.desc then
+                        value = -BIG
+                    else
+                        value = BIG
+                    end
+                end
+                redis.call('set', nkey, value .. '')
             end
             bykey = skey .. '*'
         elseif order.field ~= '' then
@@ -514,7 +534,7 @@ odm.Model = {
         end
         -- sort by field
         if bykey then
-           sortargs = {'BY', bykey}
+            sortargs = {'BY', bykey}
         end
         if start > 0 or stop > 0 then
             table.insert(sortargs, 'LIMIT')
@@ -670,7 +690,7 @@ else
     if # ARGV < 2 then
         error('Wrong number of arguments.')
     end
-    local script, meta, arg, args = scripts[ARGV[1]], cjson.decode(ARGV[2]) 
+    local script, meta, arg, args = scripts[ARGV[1]], cjson.decode(ARGV[2])
     if not script then
         error('Script ' .. ARGV[1] .. ' not available')
     end

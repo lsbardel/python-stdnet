@@ -319,7 +319,7 @@ this function for customizing their handling of connection parameters. It
 must return a instance of the backend handler.'''
         raise NotImplementedError()
 
-    def execute_session(self, session, callback):
+    def execute_session(self, session_data):
         '''Execute a :class:`stdnet.odm.Session` in the backend server.'''
         raise NotImplementedError()
 

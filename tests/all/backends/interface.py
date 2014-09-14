@@ -22,7 +22,7 @@ class TestBackend(test.TestCase):
         b = self.get_backend()
         self.assertEqual(str(b), 'dummy://127.0.0.1:9090')
         self.assertFalse(b.clean(None))
-        self.assertRaises(NotImplementedError, b.execute_session, None, None)
+        self.assertRaises(NotImplementedError, b.execute_session, None)
         self.assertRaises(NotImplementedError, b.model_keys, None)
         self.assertRaises(NotImplementedError, b.flush)
 

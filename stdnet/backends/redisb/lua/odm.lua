@@ -271,7 +271,7 @@ odm.Model = {
         elseif unique then
             local mapkey, ids = self:map_key(field), self:setids(key)
             for _, v in ipairs(ids) do
-                add(odm.redis.call('hget', mapkey, v))
+                self:_add(destkey, field, odm.redis.call('hget', mapkey, v))
             end
         elseif unique == false then
             self:_add_to_dest(destkey, field, key, true)

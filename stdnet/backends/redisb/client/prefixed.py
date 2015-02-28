@@ -61,7 +61,7 @@ class PrefixedRedisMixin(object):
                                   'DBSIZE', 'DEBUG', 'DISCARD', 'ECHO', 'EXEC',
                                   'INFO', 'LASTSAVE', 'PING',
                                   'PSUBSCRIBE', 'PUBLISH', 'PUNSUBSCRIBE',
-                                  'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT',
+                                  'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT LOAD',
                                   'SELECT', 'SHUTDOWN', 'SLAVEOF',
                                   'SLOWLOG', 'SUBSCRIBE', 'SYNC',
                                   'TIME', 'UNSUBSCRIBE', 'UNWATCH'))

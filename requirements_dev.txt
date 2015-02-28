@@ -1,4 +1,4 @@
-redis
+-r requirements.txt
 pep8
 cython
 coverage

@@ -7,7 +7,6 @@ services:
   - redis-server
 
 script:
-  - pep8 stdnet --exclude stdnet/apps/searchengine/processors
   - tox
 
 notifications:

@@ -20,9 +20,9 @@ else:   # pragma: no cover
     unichr = unichr
     from .fallbacks.py2 import raise_error_trace
 
-from .jsontools import *
-from .populate import populate
-from .dates import *
+from .jsontools import *  # noqa
+from .populate import populate  # noqa
+from .dates import *  # noqa
 
 
 def gen_unique_id(short=True):
@@ -48,14 +48,14 @@ def int_or_float(v):
 def grouper(n, iterable, padvalue=None):
     '''grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'),
     ('g','x','x')'''
-    return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
+    return zip_longest(*[iter(iterable)] * n, fillvalue=padvalue)
 
 
 def _format_int(val):
     positive = val >= 0
     sval = ''.join(reversed(','.join((
         ''.join(g) for g in grouper(3, reversed(str(abs(val))), '')))))
-    return sval if positive else '-'+sval
+    return sval if positive else '-' + sval
 
 
 def format_int(val):

@@ -1,5 +1,5 @@
 -r requirements.txt
-pep8
+pep8==1.6.2
 cython
 coverage
 mock

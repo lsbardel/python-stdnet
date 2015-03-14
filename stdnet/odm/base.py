@@ -47,6 +47,7 @@ def make_app_label(new_class, app_label=None):
 
 
 class ModelMeta(object):
+
     '''A class for storing meta data for a :class:`Model` class.
 To override default behaviour you can specify the ``Meta`` class as an inner
 class of :class:`Model` in the following way::
@@ -145,6 +146,7 @@ mapper.
 
     Additional attributes for :attr:`model`.
 '''
+
     def __init__(self, model, fields, app_label=None, modelkey=None,
                  name=None, register=True, pkname=None, ordering=None,
                  attributes=None, abstract=False, **kwargs):
@@ -331,6 +333,7 @@ of fields names and a list of field attribute names.'''
 
 
 class autoincrement(object):
+
     '''An :class:`autoincrement` is used in a :class:`StdModel` Meta
 class to specify a model with :ref:`incremental sorting <incremental-sorting>`.
 
@@ -353,6 +356,7 @@ an id already available, the score of that word is incremented by the
 :attr:`incrby` attribute.
 
 '''
+
     def __init__(self, incrby=1, desc=False):
         self.incrby = incrby
         self._asce = -1 if desc else 1
@@ -375,6 +379,7 @@ an id already available, the score of that word is incremented by the
 
 
 class ModelType(type):
+
     '''Model metaclass'''
     def __new__(cls, name, bases, attrs):
         meta = attrs.pop('Meta', None)
@@ -398,7 +403,9 @@ class ModelType(type):
 
 
 class ModelState(object):
+
     '''The database state of a :class:`Model`.'''
+
     def __init__(self, instance, iid=None, action=None):
         self._action = action or 'add'
         self.deleted = False
@@ -436,6 +443,7 @@ changes to the instance of :class:`Model` for which this is a state.'''
 
 
 class Model(UnicodeMixin):
+
     '''This is the base class for both :class:`StdModel` and :class:`Structure`
 classes. It implements the :attr:`uuid` attribute which provides the universal
 unique identifier for an instance of a model.

@@ -17,7 +17,9 @@ class_prepared = Event()
 
 
 class ModelFieldPickler(encoders.Encoder):
+
     '''An encoder for :class:`StdModel` instances.'''
+
     def __init__(self, model):
         self.model = model
 
@@ -115,7 +117,9 @@ CompositeFieldId depending on the two foreign keys.'''
 
 
 class LazyForeignKey(LazyProxy):
+
     '''Descriptor for a :class:`ForeignKey` field.'''
+
     def load(self, instance, session=None, backend=None):
         return instance._load_related_model(self.field)
 
@@ -151,6 +155,7 @@ class LazyForeignKey(LazyProxy):
 
 
 class RelatedManager(Manager):
+
     '''Base class for managers handling relationships between models.
 While standard :class:`Manager` are class properties of a model,
 related managers are accessed by instances to easily retrieve instances
@@ -164,6 +169,7 @@ of a related model.
 
     An instance of the :attr:`relmodel`.
 '''
+
     def __init__(self, field, model=None, instance=None):
         self.field = field
         model = model or field.model
@@ -188,6 +194,7 @@ of a related model.
 
 
 class One2ManyRelatedManager(RelatedManager):
+
     '''A specialised :class:`RelatedManager` for handling one-to-many
 relationships under the hood.
 If a model has a :class:`ForeignKey` field, instances of
@@ -213,11 +220,13 @@ via a simple attribute of the model.'''
 
 
 class Many2ManyRelatedManager(One2ManyRelatedManager):
+
     '''A specialized :class:`Manager` for handling
 many-to-many relationships under the hood.
 When a model has a :class:`ManyToManyField`, instances
 of that model will have access to the related objects via a simple
 attribute of the model.'''
+
     def session_instance(self, name, value, session, **kwargs):
         if self.related_instance is None:
             raise ManyToManyError('Cannot use "%s" method from class' % name)

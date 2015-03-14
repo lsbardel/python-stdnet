@@ -41,6 +41,7 @@ def as_dict(times, fields):
 
 
 class ColumnTS(odm.TS):
+
     '''A specialised :class:`stdnet.odm.TS` structure for numeric
 multivariate timeseries.'''
     default_multi_stats = ['covariance']
@@ -148,7 +149,7 @@ to *end*.
             backend.structure(self).imulti_stats(start, end, fields, series,
                                                  stats), self._stats)
 
-    def multi_stats(self, start, end,  series=None, fields=None, stats=None):
+    def multi_stats(self, start, end, series=None, fields=None, stats=None):
         '''Perform cross multivariate statistics calculation of
 this :class:`ColumnTS` and other *series*.
 
@@ -268,6 +269,7 @@ in the backend server.'''
 
 
 class ColumnTSField(odm.StructureField):
+
     '''A multivariate timeseries field.'''
     type = 'columnts'
 

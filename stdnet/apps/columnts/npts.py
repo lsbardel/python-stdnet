@@ -14,6 +14,7 @@ from dynts import timeseries, tsname
 
 
 class ColumnTS(columnts.ColumnTS):
+
     '''Integrate stdnet timeseries with dynts_ TimeSeries'''
 
     def front(self, *fields):

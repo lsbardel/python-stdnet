@@ -41,6 +41,7 @@ LOGGER = logging.getLogger('stdnet.encoders')
 
 
 class Encoder(object):
+
     '''Virtaul class for encoding data in
 :ref:`data structures <model-structures>`. It exposes two methods
 for encoding and decoding data to and from the data server.
@@ -82,6 +83,7 @@ for encoding and decoding data to and from the data server.
 
 
 class Default(Encoder):
+
     '''The default unicode encoder. It converts bytes to unicode when loading
 data from the server. Viceversa when sending data.'''
     type = string_type
@@ -127,14 +129,17 @@ def safe_number(v):
 
 
 class NumericDefault(Default):
+
     '''It decodes values into unicode unless they are numeric, in which case
 they are decoded as such.'''
+
     def loads(self, x):
         x = super(NumericDefault, self).loads(x)
         return safe_number(x)
 
 
 class Double(Encoder):
+
     '''It decodes values into doubles. If the decoding fails it decodes the
 value into ``nan`` (not a number).'''
     type = float
@@ -148,6 +153,7 @@ value into ``nan`` (not a number).'''
 
 
 class Bytes(Encoder):
+
     '''The binary encoder'''
     type = bytes
 
@@ -164,7 +170,9 @@ class Bytes(Encoder):
 
 
 class NoEncoder(Encoder):
+
     '''A dummy encoder class'''
+
     def dumps(self, x):
         return x
 
@@ -173,6 +181,7 @@ class NoEncoder(Encoder):
 
 
 class PythonPickle(Encoder):
+
     '''A safe pickle serializer. By default we use protocol 2 for compatibility
 between python 2 and python 3.'''
     type = bytes
@@ -200,8 +209,10 @@ between python 2 and python 3.'''
 
 
 class Json(Default):
+
     '''A JSON encoder for maintaning python types when dealing with
 remote data structures.'''
+
     def __init__(self,
                  charset='utf-8',
                  encoding_errors='strict',
@@ -221,6 +232,7 @@ remote data structures.'''
 
 
 class DateTimeConverter(Encoder):
+
     '''Convert to and from python ``datetime`` objects and unix timestamps'''
     type = datetime
 
@@ -241,7 +253,7 @@ class DateConverter(DateTimeConverter):
 
 class CompactDouble(Encoder):
     type = float
-    nil = b'\x00'*8
+    nil = b'\x00' * 8
     nan = float('nan')
 
     def dumps(self, value):

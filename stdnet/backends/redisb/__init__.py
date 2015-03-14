@@ -182,11 +182,11 @@ class RedisQuery(stdnet.BackendQuery):
             p = 'z' if meta.ordering else 's'
             pipe.execute_script('move2set', keys, p)
             if qs.keyword == 'intersect':
-                command = getattr(pipe, p+'interstore')
+                command = getattr(pipe, p + 'interstore')
             elif qs.keyword == 'union':
-                command = getattr(pipe, p+'unionstore')
+                command = getattr(pipe, p + 'unionstore')
             elif qs.keyword == 'diff':
-                command = getattr(pipe, p+'diffstore')
+                command = getattr(pipe, p + 'diffstore')
             else:
                 raise ValueError('Could not perform %s operation' % qs.keyword)
             command(key, keys)
@@ -430,7 +430,9 @@ class Set(RedisStructure):
 
 
 class Zset(RedisStructure):
+
     '''Redis ordered set structure'''
+
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -581,7 +583,9 @@ class Hash(RedisStructure):
 
 
 class TS(RedisStructure):
+
     '''Redis timeseries implementation is based on the ts.lua script'''
+
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -658,11 +662,11 @@ class NumberArray(RedisStructure):
 
     def get(self, index):
         return self.client.execute_script('numberarray_getset', (self.id,),
-                                          'get', index+1)
+                                          'get', index + 1)
 
     def set(self, value):
         return self.client.execute_script('numberarray_getset', (self.id,),
-                                          'set', index+1, value)
+                                          'set', index + 1, value)
 
     def range(self):
         return self.client.execute_script('numberarray_all_raw', (self.id,),)
@@ -676,7 +680,7 @@ class NumberArray(RedisStructure):
                                           *argv)
 
     def size(self):
-        return self.client.strlen(self.id)//8
+        return self.client.strlen(self.id) // 8
 
 
 class ts_commands(RedisScript):

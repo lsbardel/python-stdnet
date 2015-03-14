@@ -74,6 +74,7 @@ from . import processors
 
 
 class SearchEngine(odm.SearchEngine):
+
     """A python implementation for the :class:`stdnet.odm.SearchEngine`
 driver.
 
@@ -170,7 +171,7 @@ the input :class:`Query` and the *text* to search.'''
             return q
         qs = self._search(words, include=(q.model,), lookup=lookup)
         qs = tuple((q.get_field('object_id') for q in qs))
-        return odm.intersect((q,)+qs)
+        return odm.intersect((q,) + qs)
 
     def worditems(self, model=None):
         q = self.router.worditem.query()

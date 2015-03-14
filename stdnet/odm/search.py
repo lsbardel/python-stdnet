@@ -10,6 +10,7 @@ LOGGER = logging.getLogger('stdnet.search')
 
 
 class SearchEngine(object):
+
     """Stdnet search engine driver. This is an abstract class which
 expose the base functionalities for full text-search on model instances.
 Stdnet also provides a :ref:`python implementation <tutorial-search>`
@@ -48,6 +49,7 @@ The main methods to be implemented are :meth:`add_item`,
     Maximum number of instances to be reindexed in one session.
     Default ``1000``.
 """
+
     def __init__(self, backend=None, logger=None, max_in_session=None):
         self._backend = backend
         self.REGISTERED_MODELS = {}
@@ -273,9 +275,11 @@ class UpdateSE(object):
 
 
 class stdnet_processor(object):
+
     '''A search engine processor for stdnet models.
 An engine processor is a callable
 which return an iterable over text.'''
+
     def __init__(self, se):
         self.se = se
 

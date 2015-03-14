@@ -42,8 +42,10 @@ class ModelDictionary(dict):
 
 
 class SessionModel(object):
+
     '''A :class:`SessionModel` is the container of all objects for a given
 :class:`Model` in a stdnet :class:`Session`.'''
+
     def __init__(self, manager):
         self.manager = manager
         self._new = OrderedDict()
@@ -308,6 +310,7 @@ empty keys associated with the model will exists after this operation.'''
 
 
 class Transaction(object):
+
     '''Transaction class for pipelining commands to the backend server.
     An instance of this class is usually obtained via the :meth:`Session.begin`
     or the :meth:`Manager.transaction` methods::
@@ -508,6 +511,7 @@ class Transaction(object):
 
 
 class Session(object):
+
     '''The middleware for persistent operations on the back-end.
 
         It is created via the :meth:`Router.session` method.
@@ -521,6 +525,7 @@ class Session(object):
 
         Instance of the :class:`Router` which created this :class:`Session`.
     '''
+
     def __init__(self, router):
         self.transaction = None
         self._models = OrderedDict()
@@ -773,6 +778,7 @@ values valid for the :meth:`model` method.'''
 
 
 class LazyProxy(object):
+
     '''Base class for descriptors used by :class:`ForeignKey` and
 :class:`StructureField`.
 
@@ -781,6 +787,7 @@ class LazyProxy(object):
     The :class:`Field` which create this descriptor. Either a
     :class:`ForeignKey` or a :class:`StructureField`.
 '''
+
     def __init__(self, field):
         self.field = field
 
@@ -810,6 +817,7 @@ subclasses.'''
 
 
 class Manager(object):
+
     '''Before a :class:`StdModel` can be used in conjunction
 with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
 with it via a :class:`Router`. Check the

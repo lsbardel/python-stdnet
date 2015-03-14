@@ -14,6 +14,7 @@ __all__ = ['Router', 'model_iterator']
 
 
 class Router(object):
+
     '''A router is a mapping of :class:`Model` to the registered
 :class:`Manager` of that model::
 
@@ -59,6 +60,7 @@ one wishes to do so.
 
         models.post_delete.bind(callback, sender=MyModel)
 '''
+
     def __init__(self, default_backend=None, install_global=False):
         self._registered_models = ModelDictionary()
         self._registered_names = {}
@@ -353,8 +355,7 @@ For example::
                     for model in models_from_model(
                             value, include_related=include_related,
                             exclude=exclude):
-                        if (model._meta.app_label == label
-                                and model not in models):
+                        if (model._meta.app_label == label and model not in models):
                             models.add(model)
                             yield model
     else:

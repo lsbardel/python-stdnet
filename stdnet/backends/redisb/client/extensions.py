@@ -95,6 +95,7 @@ def dict_update(original, data):
 
 
 class RedisExtensionsMixin(object):
+
     '''Extension for Redis clients.
     '''
     prefix = ''
@@ -195,6 +196,7 @@ class RedisScriptMeta(type):
 
 
 class RedisScript(RedisScriptMeta('_RS', (object,), {'abstract': True})):
+
     '''Class which helps the sending and receiving lua scripts.
 
     It uses the ``evalsha`` command.
@@ -377,6 +379,7 @@ class RedisDbQuery(odm.QueryBase):
 
 
 class RedisDbManager(odm.Manager):
+
     '''Handler for gathering information from redis.'''
     names = ('Server', 'Memory', 'Persistence',
              'Replication', 'Clients', 'Stats', 'CPU')
@@ -435,6 +438,7 @@ class RedisDbManager(odm.Manager):
 
 
 class KeyQuery(odm.QueryBase):
+
     '''A lazy query for keys in a redis database.'''
     db = None
 
@@ -460,7 +464,7 @@ class KeyQuery(odm.QueryBase):
             o.slice = slic
             return o.all()
         else:
-            return self[slic:slic+1][0]
+            return self[slic:slic + 1][0]
 
     def __iter__(self):
         db = self.db
@@ -486,7 +490,7 @@ class KeyQuery(odm.QueryBase):
             if N is None:
                 N = self.count()
             start += N
-        return start+1, stop-start
+        return start + 1, stop - start
 
 
 class RedisKeyManager(odm.Manager):

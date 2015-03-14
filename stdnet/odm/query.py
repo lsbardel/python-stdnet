@@ -43,6 +43,7 @@ def get_lookups(attname, field_lookups):
 
 
 class Q(object):
+
     '''Base class for :class:`Query` and :class:`QueryElement`.
 
 .. attribute:: meta
@@ -157,6 +158,7 @@ and :class:`QueryElement`.'''
 
 
 class QueryElement(Q):
+
     '''An element of a :class:`Query`.
 
 .. attribute:: qs
@@ -173,6 +175,7 @@ class QueryElement(Q):
     if ``False`` this :class:`QueryElement` has no underlying elements and
     won't produce any query.
 '''
+
     def __init__(self, *args, **kwargs):
         self.__backend_query = None
         underlying = kwargs.pop('underlying', None)
@@ -182,7 +185,7 @@ class QueryElement(Q):
     def __repr__(self):
         v = ''
         if self.underlying is not None:
-            v = '('+', '.join((str(v) for v in self))+')'
+            v = '(' + ', '.join((str(v) for v in self)) + ')'
         k = self.keyword
         if self.name:
             k += '-' + self.name
@@ -219,12 +222,14 @@ class QueryElement(Q):
 
 
 class QuerySet(QueryElement):
+
     '''A :class:`QueryElement` which represents a lookup on a field.'''
     keyword = 'set'
     name = 'id'
 
 
 class Select(QueryElement):
+
     """Forms the basis of select type set operations."""
     pass
 
@@ -266,6 +271,7 @@ class QueryBase(Q):
 
 
 class EmptyQuery(QueryBase):
+
     '''Degenerate :class:`QueryBase` simulating and empty set.'''
     keyword = 'empty'
 
@@ -290,6 +296,7 @@ class EmptyQuery(QueryBase):
 
 
 class Query(QueryBase):
+
     '''A :class:`Query` is produced in terms of a given :class:`Session`,
 using the :meth:`Session.query` method::
 
@@ -679,11 +686,11 @@ an exception is raised.
         else:
             eargs = None
         if eargs:
-            q = difference([q]+eargs)
+            q = difference([q] + eargs)
         if self.intersections:
-            q = intersect((q,)+self.intersections)
+            q = intersect((q,) + self.intersections)
         if self.unions:
-            q = union((q,)+self.unions)
+            q = union((q,) + self.unions)
         q = self.search_queries(q)
         data = self.data.copy()
         if self.exclude_fields:

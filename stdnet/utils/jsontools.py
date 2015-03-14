@@ -45,7 +45,7 @@ def totimestamp(dte):
 
 
 def totimestamp2(dte):
-    return totimestamp(dte) + 0.000001*dte.microsecond
+    return totimestamp(dte) + 0.000001 * dte.microsecond
 
 
 def todatetime(tstamp):
@@ -53,6 +53,7 @@ def todatetime(tstamp):
 
 
 class JSONDateDecimalEncoder(json.JSONEncoder):
+
     """The default JSON encoder used by stdnet. It provides
 JSON serialization for four additional classes:
 
@@ -62,6 +63,7 @@ JSON serialization for four additional classes:
 
 .. seealso:: It is the default encoder for :class:`stdnet.odm.JSONField`
 """
+
     def default(self, obj):
         if hasattr(obj, 'tojson'):
             # handle the Model instances
@@ -215,7 +217,7 @@ not included either.'''
         return
     vtype = value_type((s[1] for s in series))
     if vtype == 1:
-        return sum((weight*float(d) for weight, d in series))
+        return sum((weight * float(d) for weight, d in series))
     elif vtype == 3:
         keys = set(series[0][1])
         for serie in series[1:]:

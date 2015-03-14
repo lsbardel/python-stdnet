@@ -7,7 +7,9 @@ from stdnet.utils.encoders import safe_number
 
 
 class RedisColumnTS(redisb.RedisStructure):
+
     '''Redis backend for :class:`ColumnTS`'''
+
     def __contains__(self, timestamp):
         return self.client.execute_script('timeseries_run', (self.id,),
                                           'exists', timestamp)

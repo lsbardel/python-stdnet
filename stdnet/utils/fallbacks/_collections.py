@@ -4,6 +4,7 @@ __all__ = ['OrderedDict']
 
 
 class OrderedDict(dict, DictMixin):
+
     '''Drop-in substitute for Py2.7's new collections.OrderedDict.
 The recipe has big-oh performance that matches regular dictionaries
 (amortized O(1) insertion/deletion/lookup and O(n)

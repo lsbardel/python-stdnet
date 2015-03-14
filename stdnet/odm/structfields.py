@@ -17,7 +17,9 @@ __all__ = ['StructureField',
 
 
 class StructureFieldProxy(LazyProxy):
+
     '''A descriptor for a :class:`StructureField`.'''
+
     def __init__(self, field, factory):
         super(StructureFieldProxy, self).__init__(field)
         self.factory = factory
@@ -64,6 +66,7 @@ class StructureFieldProxy(LazyProxy):
 
 
 class StructureField(Field):
+
     '''Virtual base class for :class:`Field` which are proxies to
 :ref:`data structures <model-structures>` such as :class:`List`,
 :class:`Set`, :class:`Zset`, :class:`HashTable` and timeseries
@@ -200,6 +203,7 @@ Behind the scenes, this functionality is implemented by Python descriptors_.
 
 
 class SetField(StructureField):
+
     '''A field maintaining an unordered or ordered collection of values.
 It is initiated without any argument other than an optional model class::
 
@@ -235,6 +239,7 @@ It can be used in the following way::
 
 
 class ListField(StructureField):
+
     '''A field maintaining a list of values.
 
     When accessed from the model instance,
@@ -266,6 +271,7 @@ class ListField(StructureField):
 
 
 class HashField(StructureField):
+
     '''A Hash table field, the networked equivalent of a python dictionary.
 Keys are string while values are string/numeric.
 it returns an instance of :class:`HashTable` structure.
@@ -283,6 +289,7 @@ it returns an instance of :class:`HashTable` structure.
 
 
 class TimeSeriesField(HashField):
+
     '''A timeseries field based on :class:`TS` data structure.'''
     type = 'ts'
     default_pickler = None

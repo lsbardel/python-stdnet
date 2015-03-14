@@ -11,9 +11,3 @@ script:
 
 notifications:
   email: false
-
-# Only test master and dev
-branches:
-  only:
-    - master
-    - dev

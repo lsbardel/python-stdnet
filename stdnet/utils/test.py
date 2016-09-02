@@ -36,6 +36,7 @@ LOGGER = logging.getLogger('stdnet.test')
 
 
 class DataGenerator(object):
+
     '''A generator of data. It must be initialised with the :attr:`size`
 parameter obtained from the command line which is avaiable as a class
 attribute in :class:`TestCase`.
@@ -97,6 +98,7 @@ def create_backend(self, prefix):
 
 
 class TestCase(unittest.TestCase):
+
     '''A :class:`unittest.TestCase` subclass for testing stdnet with
 synchronous and asynchronous connections. It contains
 several class methods for testing in a parallel test suite.
@@ -227,6 +229,7 @@ after the :meth:`setUpClass` was called. By default it does nothing.'''
 
 
 class TestWrite(TestCase):
+
     '''A variant of :class:`TestCase` which clean the backend at each
 test function. Useful when testing write operations.'''
     @classmethod

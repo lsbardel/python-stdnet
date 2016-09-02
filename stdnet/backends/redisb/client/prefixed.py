@@ -2,7 +2,7 @@ def raise_error(exception=NotImplementedError):
     raise exception()
 
 prefix_all = lambda pfix, args: ['%s%s' % (pfix, a) for a in args]
-prefix_alternate = lambda pfix, args: [a if n//2*2 == n else '%s%s' % (pfix, a)
+prefix_alternate = lambda pfix, args: [a if n // 2 * 2 == n else '%s%s' % (pfix, a)
                                        for n, a in enumerate(args, 1)]
 prefix_not_last = lambda pfix, args: ['%s%s' % (pfix, a)
                                       for a in args[:-1]] + [args[-1]]
@@ -43,13 +43,14 @@ def pop_list_result(pfix, result):
 def prefix_eval_keys(pfix, args):
     n = args[1]
     if n:
-        keys = tuple(('%s%s' % (pfix, a) for a in args[2:n+2]))
-        return args[:2] + keys + args[n+2:]
+        keys = tuple(('%s%s' % (pfix, a) for a in args[2:n + 2]))
+        return args[:2] + keys + args[n + 2:]
     else:
         return args
 
 
 class PrefixedRedisMixin(object):
+
     '''A class for a prefixed redis client. It append a prefix to all keys.
 
 .. attribute:: prefix
@@ -61,7 +62,7 @@ class PrefixedRedisMixin(object):
                                   'DBSIZE', 'DEBUG', 'DISCARD', 'ECHO', 'EXEC',
                                   'INFO', 'LASTSAVE', 'PING',
                                   'PSUBSCRIBE', 'PUBLISH', 'PUNSUBSCRIBE',
-                                  'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT',
+                                  'QUIT', 'RANDOMKEY', 'SAVE', 'SCRIPT LOAD',
                                   'SELECT', 'SHUTDOWN', 'SLAVEOF',
                                   'SLOWLOG', 'SUBSCRIBE', 'SYNC',
                                   'TIME', 'UNSUBSCRIBE', 'UNWATCH'))

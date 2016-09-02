@@ -32,6 +32,7 @@ passthrough = lambda r: r
 def commit_when_no_transaction(f):
     '''Decorator for committing changes when the instance session is
 not in a transaction.'''
+
     def _(self, *args, **kwargs):
         r = f(self, *args, **kwargs)
         return self.session.add(self) if self.session is not None else r
@@ -44,7 +45,9 @@ not in a transaction.'''
 ##    CACHE CLASSES FOR STRUCTURES
 ###########################################################################
 class StructureCache(object):
+
     '''Interface for all :attr:`Structure.cache` classes.'''
+
     def __init__(self):
         self.clear()
 
@@ -180,6 +183,7 @@ class tscache(hashcache):
 ##    STRUCTURE CLASSES
 ############################################################################
 class Structure(ModelBase):
+
     '''A :class:`Model` for remote data-structures.
 
     Remote structures are the backend of
@@ -326,6 +330,7 @@ class Structure(ModelBase):
 ##    Mixins Structures
 ############################################################################
 class PairMixin(object):
+
     '''A mixin for structures with which holds pairs. It is the parent class
 of :class:`KeyValueMixin` and it is used as base class for the ordered set
 structure :class:`Zset`.
@@ -429,9 +434,11 @@ Equivalent to python dictionary update method.
 
 
 class KeyValueMixin(PairMixin):
+
     '''A mixin for ordered and unordered key-valued pair containers.
 A key-value pair container has the :meth:`values` and :meth:`items`
 methods, while its iterator is over keys.'''
+
     def __iter__(self):
         return iter(self.keys())
 
@@ -480,7 +487,7 @@ If the element is not available return the default value.
                 res, lambda r: self._load_get_data(r, key, *args))
         else:
             raise TypeError('pop expected at most 2 arguments, got {0}'
-                            .format(len(args)+1))
+                            .format(len(args) + 1))
 
     @commit_when_no_transaction
     def remove(self, *keys):
@@ -502,6 +509,7 @@ If the element is not available return the default value.
 
 
 class OrderedMixin(object):
+
     '''A mixin for a :class:`Structure` which maintains ordering with respect
 a numeric value, the score.'''
 
@@ -566,6 +574,7 @@ a numeric value, the score.'''
 
 
 class Sequence(object):
+
     '''Mixin for a :class:`Structure` which implements a kind of sequence
 container. The elements in a sequence container are ordered following a linear
 sequence.'''
@@ -606,6 +615,7 @@ sequence.'''
 ############################################################################
 
 class Set(Structure):
+
     '''An unordered set :class:`Structure`. Equivalent to a python ``set``.'''
     cache_class = setcache
 
@@ -634,9 +644,11 @@ class Set(Structure):
 
 
 class List(Sequence, Structure):
+
     '''A doubly-linked list :class:`Structure`. It expands the
 :class:`Sequence` mixin with functionalities to add and remove from
 the front of the list in an efficient manner.'''
+
     def pop_front(self):
         '''Remove the first element from of the list.'''
         backend = self.backend
@@ -664,6 +676,7 @@ available, blocks for at least ``timeout`` seconds.'''
 
 
 class Zset(OrderedMixin, PairMixin, Set):
+
     '''An ordered version of :class:`Set`. It derives from
 :class:`OrderedMixin` and :class:`PairMixin`.'''
     pickler = encoders.Double()
@@ -677,6 +690,7 @@ in the :class:`OrderedMixin` container.'''
 
 
 class HashTable(KeyValueMixin, Structure):
+
     '''A :class:`Structure` which is the networked equivalent to
 a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
     pickler = encoders.Default()
@@ -691,6 +705,7 @@ a Python ``dict``. Derives from :class:`KeyValueMixin`.'''
 
 
 class TS(OrderedMixin, KeyValueMixin, Structure):
+
     '''A timeseries is a :class:`Structure` which derives from
 :class:`OrderedMixin` and :class:`KeyValueMixin`.
 It represents an ordered associative container where keys are timestamps
@@ -734,6 +749,7 @@ index is not out of bound.'''
 
 
 class String(Sequence, Structure):
+
     '''A String :class:`Sequence` of bytes.
 '''
     cache_class = stringcache
@@ -753,5 +769,6 @@ class Array(Sequence, Structure):
 
 
 class NumberArray(Array):
+
     '''A compact :class:`Array` containing numbers.'''
     value_pickler = encoders.CompactDouble()

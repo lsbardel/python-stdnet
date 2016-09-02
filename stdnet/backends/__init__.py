@@ -80,6 +80,7 @@ settings = Settings()
 
 
 class BackendStructure(object):
+
     '''Interface for :class:`stdnet.odm.Structure` backends.
 
 .. attribute:: instance
@@ -95,6 +96,7 @@ class BackendStructure(object):
     The client of the :class:`BackendDataServer`
 
 '''
+
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.backend = backend
@@ -121,6 +123,7 @@ class BackendStructure(object):
 
 
 class BackendDataServer(object):
+
     '''Generic interface for a backend databases.
 
     It should not be initialised directly, the :func:`getdb` function should
@@ -334,6 +337,7 @@ must return a instance of the backend handler.'''
 
 
 class BackendQuery(object):
+
     '''Asynchronous query interface class.
 
     Implements the database queries specified by :class:`stdnet.odm.Query`.
@@ -347,6 +351,7 @@ class BackendQuery(object):
         flag indicating if the query has been executed in the backend server
 
     '''
+
     def __init__(self, queryelem, timeout=0, **kwargs):
         '''Initialize the query for the backend database.'''
         self.queryelem = queryelem

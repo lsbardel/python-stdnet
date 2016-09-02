@@ -70,14 +70,14 @@ class Intervals(list):
         while merged and len(self) > 1:
             merged = False
             for idx, interval in enumerate(self[:-1]):
-                other = self[idx+1]
+                other = self[idx + 1]
                 if interval < other:
                     continue
                 elif interval > other:
                     raise ValueError()
                 else:
                     self[idx] = interval.union(other)
-                    self.pop(idx+1)
+                    self.pop(idx + 1)
                     merged = True
                     break
 

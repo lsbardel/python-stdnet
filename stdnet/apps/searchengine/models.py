@@ -18,6 +18,7 @@ class WordItemManager(odm.Manager):
 
 
 class WordItem(odm.StdModel):
+
     '''A model for associating a word with general
 :class:`stdnet.odm.StdModel` instance.'''
     id = odm.CompositeIdField('word', 'model_type', 'object_id')

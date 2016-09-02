@@ -69,6 +69,7 @@ def all_serializers():
 
 
 class Serializer(object):
+
     '''The stdnet serializer base class. During initialization, the *options*
 dictionary is used to override the :attr:`default_options`. These are specific
 to each :class:`Serializer` implementation.
@@ -124,6 +125,7 @@ This method must be implemented by subclasses.
 
 
 class JsonSerializer(Serializer):
+
     '''The default :class:`Serializer` of :mod:`stdnet`. It
 serialise/unserialise models into json data. It has one option given
 by the *indent* of the ``json`` string for pretty serialisation.'''
@@ -181,6 +183,7 @@ model, the model will get loaded otherwise it will skip the loading.'''
 
 
 class CsvSerializer(Serializer):
+
     '''A csv serializer for single model. It serialize/unserialize a model
 query into a csv file.'''
     default_options = {'lineterminator': '\n'}

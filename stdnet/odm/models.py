@@ -11,6 +11,7 @@ __all__ = ['StdModel', 'create_model', 'model_to_dict']
 
 
 class StdModel(ModelBase):
+
     '''A :class:`Model` which contains data in :class:`Field`. This represents
 the main class of :mod:`stdnet.odm` module.'''
     _model_type = 'object'
@@ -159,8 +160,7 @@ attribute set to ``True`` will be excluded.'''
         pk = self.pkvalue()
         if pk:
             yield self._meta.pkname(), pk
-            for field, value in self.fieldvalue_pairs(exclude_cache=
-                                                      exclude_cache):
+            for field, value in self.fieldvalue_pairs(exclude_cache=exclude_cache):
                 value = field.json_serialise(value)
                 if value not in EMPTYJSON:
                     yield field.name, value

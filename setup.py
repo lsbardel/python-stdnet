@@ -5,9 +5,6 @@ from distutils.command.install_data import install_data
 
 from setuptools import setup
 
-if sys.version_info < (2, 6):
-    raise Exception("stdnet requires Python 2.6 or higher.")
-
 package_name = "stdnet"
 package_fullname = "python-%s" % package_name
 root_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -21,17 +18,6 @@ def get_module():
 
 
 mod = get_module()
-
-# Try to import lib build
-# try:
-#    from extensions.setup import libparams, BuildFailed
-# except ImportError:
-#    libparams = None
-libparams = False
-
-
-def read(fname):
-    return open(os.path.join(root_dir, fname)).read()
 
 
 def requirements():
@@ -141,24 +127,5 @@ def status_msgs(*msgs):
     print("*" * 75)
 
 
-if libparams is False:
+if __name__ == "__main__":
     run_setup()
-elif libparams is None:
-    status_msgs(
-        "WARNING: C extensions could not be compiled, " "Cython is not installed."
-    )
-    run_setup()
-    status_msgs("Plain-Python build succeeded.")
-else:
-    try:
-        run_setup(libparams)
-    except BuildFailed as exc:
-        status_msgs(
-            exc.msg,
-            "WARNING: C extensions could not be compiled, "
-            + "speedups are not enabled.",
-            "Failure information, if any, is above.",
-            "Retrying the build without C extensions now.",
-        )
-        run_setup()
-        status_msgs("Plain-Python build succeeded.")

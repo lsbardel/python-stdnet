@@ -17,12 +17,12 @@ jobs:
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
-    - name: run postgres
-      run: make postgresql
+    - name: run redis
+      run: make redis
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -30,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: make install
     - name: run lint
-      run: make test-lint
+      run: make lint-check
     - name: run tests
       run: make test
     - name: upload coverage

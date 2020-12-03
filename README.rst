@@ -7,25 +7,6 @@ and instances of those classes with **items** in their corresponding collections
 Collections and items are different for different backend databases but
 are treated in the same way in the python language domain.
 
-:Master CI: |master-build|_ |coverage|
-:Dev CI: |dev-build|_ |coverage-dev|
-:Documentation: http://pythonhosted.org/python-stdnet/
-:Dowloads: http://pypi.python.org/pypi/python-stdnet/
-:Source: https://github.com/lsbardel/python-stdnet
-:Platforms: Linux, OS X, Windows. Python 2.6, 2.7, 3.2, 3.3, pypy_
-:Mailing List: https://groups.google.com/group/python-stdnet
-:Keywords: server, database, redis, odm
-
-
-.. |master-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=master
-.. _master-build: http://travis-ci.org/lsbardel/python-stdnet
-.. |dev-build| image:: https://secure.travis-ci.org/lsbardel/python-stdnet.png?branch=dev
-.. _dev-build: http://travis-ci.org/lsbardel/python-stdnet
-.. |coverage| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=master
-  :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=master
-.. |coverage-dev| image:: https://coveralls.io/repos/lsbardel/python-stdnet/badge.png?branch=dev
-  :target: https://coveralls.io/r/lsbardel/python-stdnet?branch=dev
-
 
 Contents
 ~~~~~~~~~~~~~~~
@@ -49,10 +30,7 @@ Features
 
 Requirements
 =================
-* Python 2.6, 2.7, 3.2, 3.3 and pypy_. Single code-base.
-* redis-py_ for redis backend.
-* Optional pulsar_ when using the asynchronous connections or the test suite.
-* You need access to a Redis_ server version 2.6 or above.
+* Python 3.6 and up
 
 
 Philosophy

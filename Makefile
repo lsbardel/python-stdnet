@@ -21,7 +21,7 @@ clean:			## remove python cache files
 
 
 cloc:			## Count lines of code
-	cloc --exclude-dir=tools,venv,node-modules,build,.pytest_cache,.mypy_cache,target .
+	cloc --exclude-dir=build,venv,.venv,.pytest_cache,.mypy_cache .
 
 
 install:		## install python dependencies in venv
@@ -34,3 +34,12 @@ lint: 			## run linters
 	isort .
 	./dev/run-black.sh
 	flake8
+
+lint-check:		## run linters in check mode
+	flake8
+	isort . --check
+	./dev/run-black.sh --check
+
+
+redis:			## run redis for testing
+	docker run --rm --network=host --name=stdnet -d redis:6

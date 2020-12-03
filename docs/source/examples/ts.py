@@ -2,7 +2,7 @@ from datetime import date
 
 from stdnet import odm
 from stdnet.contrib.timeseries.models import TimeSeries
-    
+
 
 class FinanceTimeSeries(TimeSeries):
     ticker = odm.SymbolField(unique = True)

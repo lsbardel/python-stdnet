@@ -1,4 +1,4 @@
-'''The :mod:`stdnet.backends.redisb.client` implements several extensions
+"""The :mod:`stdnet.backends.redisb.client` implements several extensions
 to the standard redis client in redis-py_
 
 
@@ -23,36 +23,31 @@ RedisScript
    :members:
    :member-order: bysource
 
-'''
-import os
+"""
 import io
+import os
 import socket
 from copy import copy
 
-from .extensions import RedisExtensionsMixin, redis, BasePipeline
+from .extensions import BasePipeline, RedisExtensionsMixin, redis
 from .prefixed import PrefixedRedisMixin
 
 
 class Redis(RedisExtensionsMixin, redis.StrictRedis):
-
     @property
     def encoding(self):
-        return self.connection_pool.connection_kwargs.get('encoding', 'utf-8')
+        return self.connection_pool.connection_kwargs.get("encoding", "utf-8")
 
     def address(self):
         kw = self.connection_pool.connection_kwargs
-        return (kw['host'], kw['port'])
+        return (kw["host"], kw["port"])
 
     def prefixed(self, prefix):
-        '''Return a new :class:`PrefixedRedis` client.
-        '''
+        """Return a new :class:`PrefixedRedis` client."""
         return PrefixedRedis(self, prefix)
 
     def pipeline(self, transaction=True, shard_hint=None):
-        return Pipeline(
-            self,
-            transaction,
-            shard_hint)
+        return Pipeline(self, transaction, shard_hint)
 
 
 class PrefixedRedis(PrefixedRedisMixin, Redis):
@@ -60,7 +55,6 @@ class PrefixedRedis(PrefixedRedisMixin, Redis):
 
 
 class Pipeline(BasePipeline, Redis):
-
     def __init__(self, client, transaction, shard_hint):
         self.client = client
         self.response_callbacks = client.response_callbacks

@@ -1,4 +1,4 @@
-'''The :mod:`stdnet.backends.redisb.async` module implements an asynchronous
+"""The :mod:`stdnet.backends.redisb.async` module implements an asynchronous
 connector for redis-py_. It uses pulsar_ asynchronous framework.
 To use this connector,
 add ``timeout=0`` to redis :ref:`connection string <connection-string>`::
@@ -11,17 +11,15 @@ Usage::
 
     db = getdb('redis://127.0.0.1:6378?password=bla&timeout=0')
 
-'''
+"""
 from pulsar.apps import redis
 from pulsar.apps.redis.client import BasePipeline
 
-from .extensions import (RedisExtensionsMixin, get_script, RedisError,
-                         all_loaded_scripts)
+from .extensions import RedisError, RedisExtensionsMixin, all_loaded_scripts, get_script
 from .prefixed import PrefixedRedisMixin
 
 
 class Redis(RedisExtensionsMixin, redis.Redis):
-
     @property
     def is_async(self):
         return True
@@ -30,18 +28,17 @@ class Redis(RedisExtensionsMixin, redis.Redis):
         return self.connection_info[0]
 
     def prefixed(self, prefix):
-        '''Return a new :class:`PrefixedRedis` client.
-        '''
+        """Return a new :class:`PrefixedRedis` client."""
         return PrefixedRedis(self, prefix)
 
     def pipeline(self, transaction=True, shard_hint=None):
         return Pipeline(self, self.response_callbacks, transaction, shard_hint)
 
     def execute_script(self, name, keys, *args, **options):
-        '''Execute a script.
+        """Execute a script.
 
         makes sure all required scripts are loaded.
-        '''
+        """
         script = get_script(name)
         if not script:
             raise redis.RedisError('No such script "%s"' % name)
@@ -62,12 +59,11 @@ class PrefixedRedis(PrefixedRedisMixin, Redis):
 
 
 class Pipeline(BasePipeline, Redis):
-
     def execute_script(self, name, keys, *args, **options):
-        '''Execute a script.
+        """Execute a script.
 
         makes sure all required scripts are loaded.
-        '''
+        """
         script = get_script(name)
         if not script:
             raise redis.RedisError('No such script "%s"' % name)
@@ -84,7 +80,6 @@ class Pipeline(BasePipeline, Redis):
 
 
 class RedisPool(redis.RedisPool):
-
     def redis(self, address, db=0, password=None, timeout=None, **kw):
         timeout = int(timeout or self.timeout)
         info = redis.connection_info(address, db, password, timeout)

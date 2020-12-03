@@ -2,76 +2,78 @@ import sys
 from collections import namedtuple
 from inspect import isgenerator
 
-try:
-    from pulsar import maybe_async as async
-except ImportError:     # pragma    noproxy
-
-    def async(gen):
-        raise NotImplementedError
-
-
+from stdnet.utils import (
+    int_or_float,
+    iteritems,
+    raise_error_trace,
+    to_string,
+    urlencode,
+    urlparse,
+)
 from stdnet.utils.exceptions import *
-from stdnet.utils import raise_error_trace
 from stdnet.utils.importer import import_module
-from stdnet.utils import (iteritems, int_or_float, to_string, urlencode,
-                          urlparse)
+
+__all__ = [
+    "BackendStructure",
+    "BackendDataServer",
+    "BackendQuery",
+    "session_result",
+    "session_data",
+    "instance_session_result",
+    "query_result",
+    "range_lookups",
+    "getdb",
+    "settings",
+]
 
 
-__all__ = ['BackendStructure',
-           'BackendDataServer',
-           'BackendQuery',
-           'session_result',
-           'session_data',
-           'instance_session_result',
-           'query_result',
-           'range_lookups',
-           'getdb',
-           'settings',
-           'async']
-
-
-query_result = namedtuple('query_result', 'key count')
+query_result = namedtuple("query_result", "key count")
 # tuple containing information about a commit/delete operation on the backend
 # server. Id is the id in the session, persistent is a boolean indicating
 # if the instance is persistent on the backend, bid is the id in the backend.
-instance_session_result = namedtuple('instance_session_result',
-                                     'iid persistent id deleted score')
-session_data = namedtuple('session_data',
-                          'meta dirty deletes queries structures')
-session_result = namedtuple('session_result', 'meta results')
+instance_session_result = namedtuple(
+    "instance_session_result", "iid persistent id deleted score"
+)
+session_data = namedtuple("session_data", "meta dirty deletes queries structures")
+session_result = namedtuple("session_result", "meta results")
 
-pass_through = lambda x: x
-str_lower_case = lambda x: to_string(x).lower()
+
+def pass_through(x):
+    return x
+
+
+def str_lower_case(x: str):
+    return to_string(x).lower()
 
 
 range_lookups = {
-    'gt': int_or_float,
-    'ge': int_or_float,
-    'lt': int_or_float,
-    'le': int_or_float,
-    'contains': pass_through,
-    'startswith': pass_through,
-    'endswith': pass_through,
-    'icontains': str_lower_case,
-    'istartswith': str_lower_case,
-    'iendswith': str_lower_case}
+    "gt": int_or_float,
+    "ge": int_or_float,
+    "lt": int_or_float,
+    "le": int_or_float,
+    "contains": pass_through,
+    "startswith": pass_through,
+    "endswith": pass_through,
+    "icontains": str_lower_case,
+    "istartswith": str_lower_case,
+    "iendswith": str_lower_case,
+}
 
 
 def get_connection_string(scheme, address, params):
     if address:
-        address = ':'.join((str(b) for b in address))
+        address = ":".join((str(b) for b in address))
     else:
-        address = ''
+        address = ""
     if params:
-        address += '?' + urlencode(params)
-    return scheme + '://' + address
+        address += "?" + urlencode(params)
+    return scheme + "://" + address
 
 
 class Settings(object):
-
     def __init__(self):
-        self.DEFAULT_BACKEND = 'redis://127.0.0.1:6379?db=7'
-        self.CHARSET = 'utf-8'
+        self.DEFAULT_BACKEND = "redis://127.0.0.1:6379?db=7"
+        self.CHARSET = "utf-8"
         self.REDIS_PY_PARSER = False
         self.ASYNC_BINDINGS = False
 
@@ -80,21 +82,21 @@ settings = Settings()
 
 
 class BackendStructure(object):
-    '''Interface for :class:`stdnet.odm.Structure` backends.
+    """Interface for :class:`stdnet.odm.Structure` backends.
 
-.. attribute:: instance
+    .. attribute:: instance
 
-    The :class:`stdnet.odm.Structure` which this backend represents.
+        The :class:`stdnet.odm.Structure` which this backend represents.
 
-.. attribute:: backend
+    .. attribute:: backend
 
-    The :class:`BackendDataServer`
+        The :class:`BackendDataServer`
 
-.. attribute:: client
+    .. attribute:: client
 
-    The client of the :class:`BackendDataServer`
+        The client of the :class:`BackendDataServer`
+    """
 
-'''
     def __init__(self, instance, backend, client):
         self.instance = instance
         self.backend = backend
@@ -121,7 +123,7 @@ class BackendStructure(object):
 
 
 class BackendDataServer(object):
-    '''Generic interface for a backend databases.
+    """Generic interface for a backend databases.
 
     It should not be initialised directly, the :func:`getdb` function should
     be used instead.
@@ -157,34 +159,33 @@ class BackendDataServer(object):
         The default model Manager for this backend. If not
         provided, the :class:`stdnet.odm.Manager` is used.
         Default ``None``.
-    '''
+    """
+
     Query = None
     structure_module = None
     default_manager = None
     default_port = 8000
     struct_map = {}
 
-    def __init__(self, name=None, address=None, charset=None, namespace='',
-                 **params):
-        self.__name = name or 'dummy'
-        address = address or ':'
+    def __init__(self, name=None, address=None, charset=None, namespace="", **params):
+        self.__name = name or "dummy"
+        address = address or ":"
         if not isinstance(address, (list, tuple)):
-            address = address.split(':')
+            address = address.split(":")
         else:
             address = list(address)
         if not address[0]:
-            address[0] = '127.0.0.1'
+            address[0] = "127.0.0.1"
         if len(address) == 2:
             if not address[1]:
                 address[1] = self.default_port
             else:
                 address[1] = int(address[1])
-        self.charset = charset or 'utf-8'
+        self.charset = charset or "utf-8"
         self.params = params
         self.namespace = namespace
         self.client = self.setup_connection(address)
-        self.connection_string = get_connection_string(
-            self.name, address, self.params)
+        self.connection_string = get_connection_string(self.name, address, self.params)
 
     @property
     def name(self):
@@ -208,29 +209,28 @@ class BackendDataServer(object):
     def basekey(self, meta, *args):
         """Calculate the key to access model data.
 
-:parameter meta: a :class:`stdnet.odm.Metaclass`.
-:parameter args: optional list of strings to prepend to the basekey.
-:rtype: a native string
-"""
-        key = '%s%s' % (self.namespace, meta.modelkey)
-        postfix = ':'.join((str(p) for p in args if p is not None))
-        return '%s:%s' % (key, postfix) if postfix else key
+        :parameter meta: a :class:`stdnet.odm.Metaclass`.
+        :parameter args: optional list of strings to prepend to the basekey.
+        :rtype: a native string"""
+        key = "%s%s" % (self.namespace, meta.modelkey)
+        postfix = ":".join((str(p) for p in args if p is not None))
+        return "%s:%s" % (key, postfix) if postfix else key
 
     def disconnect(self):
-        '''Disconnect the connection.'''
+        """Disconnect the connection."""
         pass
 
     def __repr__(self):
         return self.connection_string
+
     __str__ = __repr__
 
     def make_objects(self, meta, data, related_fields=None):
-        '''Generator of :class:`stdnet.odm.StdModel` instances with data
-from database.
+        """Generator of :class:`stdnet.odm.StdModel` instances with data
+        from database.
 
-:parameter meta: instance of model :class:`stdnet.odm.Metaclass`.
-:parameter data: iterator over instances data.
-'''
+        :parameter meta: instance of model :class:`stdnet.odm.Metaclass`.
+        :parameter data: iterator over instances data."""
         make_object = meta.make_object
         related_data = []
         if related_fields:
@@ -242,8 +242,12 @@ from database.
                 else:
                     multi = False
                     relmodel = field.relmodel
-                    related = dict(((obj.id, obj) for obj in
-                                    self.make_objects(relmodel._meta, fdata)))
+                    related = dict(
+                        (
+                            (obj.id, obj)
+                            for obj in self.make_objects(relmodel._meta, fdata)
+                        )
+                    )
                 related_data.append((field, related, multi))
         for state in data:
             instance = make_object(state, self)
@@ -261,21 +265,23 @@ from database.
         return list(self.make_objects(meta, data, related_fields))
 
     def structure(self, instance, client=None):
-        '''Create a backend :class:`stdnet.odm.Structure` handler.
+        """Create a backend :class:`stdnet.odm.Structure` handler.
 
         :param instance: a :class:`stdnet.odm.Structure`
         :param client: Optional client handler.
-        '''
+        """
         struct = self.struct_map.get(instance._meta.name)
         if struct is None:
-            raise ModelNotAvailable('"%s" is not available for backend '
-                                    '"%s"' % (instance._meta.name, self))
+            raise ModelNotAvailable(
+                '"%s" is not available for backend '
+                '"%s"' % (instance._meta.name, self)
+            )
         client = client if client is not None else self.client
         return struct(instance, self, client)
 
     def execute(self, result, callback=None):
         if self.is_async():
-            result = async(result)
+            # result = async(result)
             if callback:
                 return result.add_callback(callback)
             else:
@@ -287,54 +293,54 @@ from database.
 
     # VIRTUAL METHODS
     def is_async(self):
-        '''Check if the backend handler is asynchronous.'''
+        """Check if the backend handler is asynchronous."""
         return False
 
     def setup_model(self, meta):
-        '''Invoked when registering a model with a backend. This is a chance to
-perform model specific operation in the server. For example, mongo db ensure
-indices are created.'''
+        """Invoked when registering a model with a backend. This is a chance to
+        perform model specific operation in the server. For example, mongo db ensure
+        indices are created."""
         pass
 
     def clean(self, meta):
-        '''Remove temporary keys for a model'''
+        """Remove temporary keys for a model"""
         pass
 
     def ping(self):
-        '''Ping the server'''
+        """Ping the server"""
         pass
 
     def instance_keys(self, obj):
-        '''Return a list of database keys used by instance *obj*'''
+        """Return a list of database keys used by instance *obj*"""
         return [self.basekey(obj._meta, obj.pkvalue())]
 
     def auto_id_to_python(self, value):
-        '''Return a proper python value for the auto id.'''
+        """Return a proper python value for the auto id."""
         return value
 
     # PURE VIRTUAL METHODS
 
     def setup_connection(self, address):
-        '''Callback during initialization. Implementation should override
-this function for customizing their handling of connection parameters. It
-must return a instance of the backend handler.'''
+        """Callback during initialization. Implementation should override
+        this function for customizing their handling of connection parameters. It
+        must return a instance of the backend handler."""
         raise NotImplementedError()
 
     def execute_session(self, session, callback):
-        '''Execute a :class:`stdnet.odm.Session` in the backend server.'''
+        """Execute a :class:`stdnet.odm.Session` in the backend server."""
         raise NotImplementedError()
 
     def model_keys(self, meta):
-        '''Return a list of database keys used by model *model*'''
+        """Return a list of database keys used by model *model*"""
         raise NotImplementedError()
 
     def flush(self, meta=None):
-        '''Flush the database or drop all instances of a model/collection'''
+        """Flush the database or drop all instances of a model/collection"""
         raise NotImplementedError()
 
 
 class BackendQuery(object):
-    '''Asynchronous query interface class.
+    """Asynchronous query interface class.
 
     Implements the database queries specified by :class:`stdnet.odm.Query`.
 
@@ -346,9 +352,10 @@ class BackendQuery(object):
 
         flag indicating if the query has been executed in the backend server
 
-    '''
+    """
+
     def __init__(self, queryelem, timeout=0, **kwargs):
-        '''Initialize the query for the backend database.'''
+        """Initialize the query for the backend database."""
         self.queryelem = queryelem
         self.expire = max(timeout, 10)
         self.timeout = timeout
@@ -385,7 +392,7 @@ class BackendQuery(object):
 
     @property
     def cache(self):
-        '''Cached results.'''
+        """Cached results."""
         return self.__slice_cache
 
     def __len__(self):
@@ -414,25 +421,24 @@ class BackendQuery(object):
     def delete(self, qs):
         with self.session.begin() as t:
             t.delete(qs)
-        return self.backend.execute(t.on_result,
-                                    lambda _: t.deleted.get(self.meta))
+        return self.backend.execute(t.on_result, lambda _: t.deleted.get(self.meta))
 
     # VIRTUAL METHODS - MUST BE IMPLEMENTED BY BACKENDS
 
-    def _has(self, val):    # pragma: no cover
+    def _has(self, val):  # pragma: no cover
         raise NotImplementedError
 
-    def _items(self, slic):     # pragma: no cover
+    def _items(self, slic):  # pragma: no cover
         raise NotImplementedError
 
-    def _build(self, **kwargs):     # pragma: no cover
+    def _build(self, **kwargs):  # pragma: no cover
         raise NotImplementedError
 
-    def _execute_query(self):       # pragma: no cover
-        '''Execute the query without fetching data from server.
+    def _execute_query(self):  # pragma: no cover
+        """Execute the query without fetching data from server.
 
         Must be implemented by data-server backends and return a generator.
-        '''
+        """
         raise NotImplementedError
 
     # PRIVATE METHODS
@@ -469,14 +475,14 @@ class BackendQuery(object):
 
 def parse_backend(backend):
     """Converts the "backend" into the database connection parameters.
-It returns a (scheme, host, params) tuple."""
+    It returns a (scheme, host, params) tuple."""
     r = urlparse.urlsplit(backend)
     scheme, host = r.scheme, r.netloc
     path, query = r.path, r.query
     if path and not query:
-        query, path = path, ''
+        query, path = path, ""
         if query:
-            if query.find('?'):
+            if query.find("?"):
                 path = query
             else:
                 query = query[1:]
@@ -490,14 +496,14 @@ It returns a (scheme, host, params) tuple."""
 
 def _getdb(scheme, host, params):
     try:
-        module = import_module('stdnet.backends.%sb' % scheme)
+        module = import_module("stdnet.backends.%sb" % scheme)
     except ImportError:
         raise NotImplementedError
-    return getattr(module, 'BackendDataServer')(scheme, host, **params)
+    return getattr(module, "BackendDataServer")(scheme, host, **params)
 
 
 def getdb(backend=None, **kwargs):
-    '''get a :class:`BackendDataServer`.'''
+    """get a :class:`BackendDataServer`."""
     if isinstance(backend, BackendDataServer):
         return backend
     backend = backend or settings.DEFAULT_BACKEND
@@ -505,8 +511,8 @@ def getdb(backend=None, **kwargs):
         return None
     scheme, address, params = parse_backend(backend)
     params.update(kwargs)
-    if 'timeout' in params:
-        params['timeout'] = int(params['timeout'])
+    if "timeout" in params:
+        params["timeout"] = int(params["timeout"])
     return _getdb(scheme, address, params)
 
 

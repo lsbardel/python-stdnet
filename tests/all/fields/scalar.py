@@ -1,19 +1,17 @@
-'''Scalar fields such as Char, Float and Date, DateTime, Byte fields.
-'''
+"""Scalar fields such as Char, Float and Date, DateTime, Byte fields.
+"""
 import os
 from datetime import date
 
+from examples.models import DateData, NumericData, SimpleModel, TestDateModel
+
 import stdnet
 from stdnet import FieldValueError
-from stdnet.utils import (test, populate, zip, is_string, to_string, unichr,
-                          ispy3k)
-
-from examples.models import TestDateModel, DateData, SimpleModel, NumericData
+from stdnet.utils import is_string, ispy3k, populate, test, to_string, unichr, zip
 
 NUM_DATES = 100
-names = populate('string', NUM_DATES, min_len=5, max_len=20)
-dates = populate('date', NUM_DATES, start=date(2010, 5, 1),
-                 end=date(2010, 6, 1))
+names = populate("string", NUM_DATES, min_len=5, max_len=20)
+dates = populate("date", NUM_DATES, start=date(2010, 5, 1), end=date(2010, 6, 1))
 
 
 class TestDateModel2(TestDateModel):
@@ -86,14 +84,14 @@ class TestCharFields(test.TestCase):
 
     def testUnicode(self):
         models = self.mapper
-        unicode_string = unichr(500) + to_string('ciao') + unichr(300)
+        unicode_string = unichr(500) + to_string("ciao") + unichr(300)
         m = yield models.simplemodel.new(code=unicode_string)
         m = yield models.simplemodel.get(id=m.id)
         self.assertEqual(m.code, unicode_string)
         if ispy3k:
             self.assertEqual(str(m), unicode_string)
         else:
-            code = unicode_string.encode('utf-8')
+            code = unicode_string.encode("utf-8")
             self.assertEqual(str(m), code)
 
 
@@ -102,24 +100,23 @@ class TestNumericData(test.TestCase):
 
     def testDefaultValue(self):
         models = self.mapper
-        d = yield models.numericdata.new(pv=1.)
-        self.assertAlmostEqual(d.pv, 1.)
-        self.assertAlmostEqual(d.vega, 0.)
-        self.assertAlmostEqual(d.delta, 1.)
+        d = yield models.numericdata.new(pv=1.0)
+        self.assertAlmostEqual(d.pv, 1.0)
+        self.assertAlmostEqual(d.vega, 0.0)
+        self.assertAlmostEqual(d.delta, 1.0)
         self.assertEqual(d.gamma, None)
 
     def testDefaultValue2(self):
         models = self.mapper
-        d = yield models.numericdata.new(pv=0., delta=0.)
-        self.assertAlmostEqual(d.pv, 0.)
-        self.assertAlmostEqual(d.vega, 0.)
-        self.assertAlmostEqual(d.delta, 0.)
+        d = yield models.numericdata.new(pv=0.0, delta=0.0)
+        self.assertAlmostEqual(d.pv, 0.0)
+        self.assertAlmostEqual(d.vega, 0.0)
+        self.assertAlmostEqual(d.delta, 0.0)
         self.assertEqual(d.gamma, None)
 
     def testFieldError(self):
         models = self.mapper
-        yield self.async.assertRaises(stdnet.FieldValueError,
-                                      models.numericdata.new)
+        yield self.async.assertRaises(stdnet.FieldValueError, models.numericdata.new)
 
 
 class TestDateData(test.TestCase):
@@ -148,30 +145,30 @@ class TestBoolField(test.TestCase):
     def testMeta(self):
         self.assertEqual(len(self.model._meta.indices), 1)
         index = self.model._meta.indices[0]
-        self.assertEqual(index.type, 'bool')
+        self.assertEqual(index.type, "bool")
         self.assertEqual(index.index, True)
         self.assertEqual(index.name, index.attname)
         return index
 
     def testSerializeAndScoreFun(self):
         index = self.testMeta()
-        for fname in ('scorefun', 'serialise'):
+        for fname in ("scorefun", "serialise"):
             func = getattr(index, fname)
             self.assertEqual(func(True), 1)
             self.assertEqual(func(False), 0)
             self.assertEqual(func(4), 1)
             self.assertEqual(func(0), 0)
-            self.assertEqual(func('bla'), 1)
-            self.assertEqual(func(''), 0)
+            self.assertEqual(func("bla"), 1)
+            self.assertEqual(func(""), 0)
             self.assertEqual(func(None), 0)
 
     def test_bool_value(self):
         models = self.mapper
         session = models.session()
-        d = yield session.add(models.numericdata(pv=1.))
+        d = yield session.add(models.numericdata(pv=1.0))
         d = yield models.numericdata.get(id=d.id)
         self.assertEqual(d.ok, False)
-        d.ok = 'jasxbhjaxsbjxsb'
+        d.ok = "jasxbhjaxsbjxsb"
         yield self.async.assertRaises(FieldValueError, session.add, d)
         d.ok = True
         yield session.add(d)
@@ -183,26 +180,26 @@ class TestByteField(test.TestCase):
     model = SimpleModel
 
     def testMetaData(self):
-        field = SimpleModel._meta.dfields['somebytes']
-        self.assertEqual(field.type, 'bytes')
-        self.assertEqual(field.internal_type, 'bytes')
+        field = SimpleModel._meta.dfields["somebytes"]
+        self.assertEqual(field.type, "bytes")
+        self.assertEqual(field.internal_type, "bytes")
         self.assertEqual(field.index, False)
         self.assertEqual(field.name, field.attname)
         return field
 
     def testValue(self):
         models = self.mapper
-        v = models.simplemodel(code='cgfgcgf', somebytes=to_string('hello'))
-        self.assertEqual(v.somebytes, b'hello')
+        v = models.simplemodel(code="cgfgcgf", somebytes=to_string("hello"))
+        self.assertEqual(v.somebytes, b"hello")
         self.assertFalse(v.id)
         yield models.session().add(v)
         v = yield models.simplemodel.get(id=v.id)
-        self.assertEqual(v.somebytes, b'hello')
+        self.assertEqual(v.somebytes, b"hello")
 
     def testValueByte(self):
         models = self.mapper
         b = os.urandom(8)
-        v = SimpleModel(code='sdcscdsc', somebytes=b)
+        v = SimpleModel(code="sdcscdsc", somebytes=b)
         self.assertFalse(is_string(v.somebytes))
         self.assertEqual(v.somebytes, b)
         yield models.session().add(v)
@@ -213,9 +210,9 @@ class TestByteField(test.TestCase):
     def testToJson(self):
         models = self.mapper
         b = os.urandom(8)
-        v = yield models.simplemodel.new(code='xxsdcscdsc', somebytes=b)
+        v = yield models.simplemodel.new(code="xxsdcscdsc", somebytes=b)
         data = v.tojson()
-        value = data['somebytes']
+        value = data["somebytes"]
         self.assertTrue(is_string(value))
         v2 = models.simplemodel.from_base64_data(**data)
         self.assertTrue(v2)
@@ -223,10 +220,9 @@ class TestByteField(test.TestCase):
 
 
 class TestErrorAtomFields(test.TestCase):
-
     def testSessionNotAvailable(self):
         session = self.session()
-        m = TestDateModel2(name=names[1], dt=dates[0], person='sdcbsc')
+        m = TestDateModel2(name=names[1], dt=dates[0], person="sdcbsc")
         self.assertRaises(stdnet.InvalidTransaction, session.add, m)
 
     def testNotSaved(self):

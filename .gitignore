@@ -6,6 +6,9 @@
 *.o
 *.def
 dist
+venv
+.venv
+.vscode
 __pycache__
 extensions/src/cparser.cpp
 build

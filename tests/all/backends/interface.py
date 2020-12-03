@@ -1,12 +1,19 @@
-from stdnet import odm, getdb, BackendDataServer, ModelNotAvailable,\
-                    SessionNotAvailable, BackendStructure
-from stdnet.utils import test
-
 from examples.models import SimpleModel
+
+from stdnet import (
+    BackendDataServer,
+    BackendStructure,
+    ModelNotAvailable,
+    SessionNotAvailable,
+    getdb,
+    odm,
+)
+from stdnet.utils import test
 
 
 class DummyBackendDataServer(BackendDataServer):
     default_port = 9090
+
     def setup_connection(self, address):
         pass
 
@@ -18,9 +25,9 @@ class TestBackend(test.TestCase):
         return DummyBackendDataServer(**kwargs)
 
     def testVirtuals(self):
-        self.assertRaises(NotImplementedError, BackendDataServer, '', '')
+        self.assertRaises(NotImplementedError, BackendDataServer, "", "")
         b = self.get_backend()
-        self.assertEqual(str(b), 'dummy://127.0.0.1:9090')
+        self.assertEqual(str(b), "dummy://127.0.0.1:9090")
         self.assertFalse(b.clean(None))
         self.assertRaises(NotImplementedError, b.execute_session, None, None)
         self.assertRaises(NotImplementedError, b.model_keys, None)
@@ -31,9 +38,9 @@ class TestBackend(test.TestCase):
         self.assertRaises(AttributeError, l.backend_structure)
 
     def testRedis(self):
-        b = getdb('redis://')
-        self.assertEqual(b.name, 'redis')
-        self.assertEqual(b.connection_string, 'redis://127.0.0.1:6379?db=0')
+        b = getdb("redis://")
+        self.assertEqual(b.name, "redis")
+        self.assertEqual(b.connection_string, "redis://127.0.0.1:6379?db=0")
 
     def testBackendStructure_error(self):
         s = BackendStructure(None, None, None)

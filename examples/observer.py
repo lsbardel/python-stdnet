@@ -1,18 +1,20 @@
-'''This example is an implementation of the Observer design-pattern
+"""This example is an implementation of the Observer design-pattern
 when Observers receives multiple updates from several instances they are
 observing.
-'''
+"""
 from time import time
+
 from stdnet import odm
-from stdnet.odm import struct
 from stdnet.backends import redisb
+from stdnet.odm import struct
 
 
 class update_observer(redisb.RedisScript):
-    '''Script for adding/updating an observer. The ARGV contains, the member
-value, the initial score (usually a timestamp) and the increment for
-subsequent additions.'''
-    script = '''\
+    """Script for adding/updating an observer. The ARGV contains, the member
+    value, the initial score (usually a timestamp) and the increment for
+    subsequent additions."""
+
+    script = """\
 local key = KEYS[1]
 local index = 0
 local n = 0
@@ -28,17 +30,18 @@ while index < # ARGV do
     end
 end
 return n
-'''
+"""
 
 
 class RedisUpdateZset(redisb.Zset):
-    '''Redis backend structure override Zset'''
+    """Redis backend structure override Zset"""
+
     def flush(self):
         cache = self.instance.cache
         result = None
         if cache.toadd:
             flat = tuple(self.flat(cache.toadd.items()))
-            self.client.execute_script('update_observer', (self.id,), *flat)
+            self.client.execute_script("update_observer", (self.id,), *flat)
             result = True
         if cache.toremove:
             flat = tuple((el[1] for el in cache.toremove))
@@ -57,23 +60,23 @@ class UpdateZset(odm.Zset):
     penalty = 0  # penalty in seconds
 
     def __init__(self, *args, **kwargs):
-        self.penalty = kwargs.pop('penalty', self.penalty)
+        self.penalty = kwargs.pop("penalty", self.penalty)
         super(UpdateZset, self).__init__(*args, **kwargs)
 
     def dump_data(self, instances):
         dt = time()
         for n, instance in enumerate(instances):
-            if hasattr(instance, 'pkvalue'):
+            if hasattr(instance, "pkvalue"):
                 instance = instance.pkvalue()
             # put n so that it allows for repeated values
             yield dt, (n, self.penalty, instance)
 
+
 # Register the new structure with redis backend
-redisb.BackendDataServer.struct_map['updatezset'] = RedisUpdateZset
+redisb.BackendDataServer.struct_map["updatezset"] = RedisUpdateZset
 
 
 class UpdatesField(odm.StructureField):
-
     def structure_class(self):
         return UpdateZset
 
@@ -85,7 +88,7 @@ class Observable(odm.StdModel):
 class Observer(odm.StdModel):
     # Underlyings are the Obsarvable this Observer is tracking for updates
     name = odm.CharField()
-    underlyings = odm.ManyToManyField(Observable, related_name='observers')
+    underlyings = odm.ManyToManyField(Observable, related_name="observers")
 
     # field with a 5 seconds penalty
     updates = UpdatesField(class_field=True, penalty=5)
@@ -101,5 +104,6 @@ def update_observers(signal, sender, instances=None, session=None, **kwargs):
     observers = models.observer
     through = models[observers.underlyings.model]
     return through.backend.execute(
-        through.filter(observable=instances).get_field('observer').all(),
-        observers.updates.update)
+        through.filter(observable=instances).get_field("observer").all(),
+        observers.updates.update,
+    )

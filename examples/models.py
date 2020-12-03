@@ -1,13 +1,12 @@
 import time
-from datetime import datetime, date
+from datetime import date, datetime
 
 from stdnet import odm
 
 
 class CustomManager(odm.Manager):
-
     def small_query(self, **kwargs):
-        return self.query(**kwargs).load_only('code', 'group')
+        return self.query(**kwargs).load_only("code", "group")
 
     def something(self):
         return "I'm a custom manager"
@@ -51,9 +50,9 @@ class Instrument2(Base):
     type = odm.SymbolField()
 
     class Meta:
-        ordering = 'id'
-        app_label = 'examples2'
-        name = 'instrument'
+        ordering = "id"
+        app_label = "examples2"
+        name = "instrument"
 
 
 class Fund(Base):
@@ -61,13 +60,13 @@ class Fund(Base):
 
 
 class Position(odm.StdModel):
-    instrument = odm.ForeignKey(Instrument, related_name='positions')
-    fund = odm.ForeignKey(Fund, related_name='positions')
+    instrument = odm.ForeignKey(Instrument, related_name="positions")
+    fund = odm.ForeignKey(Fund, related_name="positions")
     dt = odm.DateField()
     size = odm.FloatField(default=1)
 
     def __unicode__(self):
-        return '%s: %s @ %s' % (self.fund, self.instrument, self.dt)
+        return "%s: %s @ %s" % (self.fund, self.instrument, self.dt)
 
 
 class PortfolioView(odm.StdModel):
@@ -77,9 +76,9 @@ class PortfolioView(odm.StdModel):
 
 class Folder(odm.StdModel):
     name = odm.SymbolField()
-    view = odm.ForeignKey(PortfolioView, related_name='folders')
-    positions = odm.ManyToManyField(Position, related_name='folders')
-    parent = odm.ForeignKey('self', related_name='children', required=False)
+    view = odm.ForeignKey(PortfolioView, related_name="folders")
+    positions = odm.ManyToManyField(Position, related_name="folders")
+    parent = odm.ForeignKey("self", related_name="children", required=False)
 
     def __unicode__(self):
         return self.name
@@ -97,7 +96,7 @@ class DateValue(odm.StdModel):
 
     def score(self):
         "implement the score function for sorting in the ordered set"
-        return int(1000*time.mktime(self.dt.timetuple()))
+        return int(1000 * time.mktime(self.dt.timetuple()))
 
 
 class Calendar(odm.StdModel):
@@ -129,15 +128,13 @@ class TestDateModel(odm.StdModel):
 
 
 class SportAtDate(TestDateModel):
-
     class Meta:
-        ordering = 'dt'
+        ordering = "dt"
 
 
 class SportAtDate2(TestDateModel):
-
     class Meta:
-        ordering = '-dt'
+        ordering = "-dt"
 
 
 class Group(odm.StdModel):
@@ -152,11 +149,11 @@ class Person(odm.StdModel):
 
 # A model for testing a recursive foreign key
 class Node(odm.StdModel):
-    parent = odm.ForeignKey('self', required=False, related_name='children')
+    parent = odm.ForeignKey("self", required=False, related_name="children")
     weight = odm.FloatField()
 
     def __unicode__(self):
-        return '%s' % self.weight
+        return "%s" % self.weight
 
 
 class Page(odm.StdModel):
@@ -173,18 +170,19 @@ class Collection(odm.StdModel):
 class Post(odm.StdModel):
     dt = odm.DateTimeField(index=False, default=datetime.now)
     data = odm.CharField(required=True)
-    user = odm.ForeignKey('examples.user', index=False)
+    user = odm.ForeignKey("examples.user", index=False)
 
     def __unicode__(self):
         return self.data
 
 
 class User(odm.StdModel):
-    '''A model for holding information about users'''
+    """A model for holding information about users"""
+
     username = odm.SymbolField(unique=True)
     password = odm.SymbolField(index=False)
     updates = odm.ListField(model=Post)
-    following = odm.ManyToManyField(model='self', related_name='followers')
+    following = odm.ManyToManyField(model="self", related_name="followers")
 
     def __unicode__(self):
         return self.username
@@ -237,6 +235,7 @@ class Environment(odm.StdModel):
 ##############################################
 # Numeric Data
 
+
 class NumericData(odm.StdModel):
     pv = odm.FloatField()
     vega = odm.FloatField(default=0.0)
@@ -257,7 +256,7 @@ class DateData(odm.StdModel):
 class CrossData(odm.StdModel):
     name = odm.SymbolField()
     data = odm.JSONField(as_string=False)
-    extra = odm.ForeignKey('self', required=False)
+    extra = odm.ForeignKey("self", required=False)
 
 
 class FeedBase(odm.StdModel):
@@ -285,7 +284,7 @@ class Task(odm.StdModel):
     timestamp = odm.DateTimeField(default=datetime.now)
 
     class Meta:
-        ordering = '-timestamp'
+        ordering = "-timestamp"
 
     def clone(self, **kwargs):
         instance = super(Task, self).clone(**kwargs)
@@ -301,18 +300,18 @@ class Parent(odm.StdModel):
 class Child(odm.StdModel):
     name = odm.SymbolField()
     parent = odm.ForeignKey(Parent)
-    uncles = odm.ManyToManyField(Parent, related_name='nephews')
+    uncles = odm.ManyToManyField(Parent, related_name="nephews")
 
 
 ####################################################
 # Composite ID
 class WordBook(odm.StdModel):
-    id = odm.CompositeIdField('word', 'book')
+    id = odm.CompositeIdField("word", "book")
     word = odm.SymbolField()
     book = odm.SymbolField()
 
     def __unicode__(self):
-        return '%s:%s' % (self.word, self.book)
+        return "%s:%s" % (self.word, self.book)
 
 
 ############################################################################
@@ -323,12 +322,12 @@ class ObjectAnalytics(odm.StdModel):
 
     @property
     def object(self):
-        if not hasattr(self, '_object'):
+        if not hasattr(self, "_object"):
             self._object = self.model_type.objects.get(id=self.object_id)
         return self._object
 
 
 class AnalyticData(odm.StdModel):
     group = odm.ForeignKey(Group)
-    object = odm.ForeignKey(ObjectAnalytics, related_name='analytics')
+    object = odm.ForeignKey(ObjectAnalytics, related_name="analytics")
     data = odm.JSONField()

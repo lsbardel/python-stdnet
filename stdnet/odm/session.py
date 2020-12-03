@@ -1,19 +1,20 @@
 from itertools import chain
 
-from stdnet import session_result, session_data, async
-from stdnet.utils import itervalues, iteritems
-from stdnet.utils.structures import OrderedDict
+from stdnet import async, session_data, session_result
+from stdnet.utils import iteritems, itervalues
 from stdnet.utils.exceptions import *
+from stdnet.utils.structures import OrderedDict
 
-from .query import Q, Query, EmptyQuery
+from .query import EmptyQuery, Q, Query
 
-
-__all__ = ['Session',
-           'SessionModel',
-           'Manager',
-           'LazyProxy',
-           'Transaction',
-           'ModelDictionary']
+__all__ = [
+    "Session",
+    "SessionModel",
+    "Manager",
+    "LazyProxy",
+    "Transaction",
+    "ModelDictionary",
+]
 
 
 def is_query(query):
@@ -21,7 +22,6 @@ def is_query(query):
 
 
 class ModelDictionary(dict):
-
     def __contains__(self, model):
         return super(ModelDictionary, self).__contains__(self.meta(model))
 
@@ -38,12 +38,13 @@ class ModelDictionary(dict):
         return super(ModelDictionary, self).pop(self.meta(model), *args)
 
     def meta(self, model):
-        return getattr(model, '_meta', model)
+        return getattr(model, "_meta", model)
 
 
 class SessionModel(object):
-    '''A :class:`SessionModel` is the container of all objects for a given
-:class:`Model` in a stdnet :class:`Session`.'''
+    """A :class:`SessionModel` is the container of all objects for a given
+    :class:`Model` in a stdnet :class:`Session`."""
+
     def __init__(self, manager):
         self.manager = manager
         self._new = OrderedDict()
@@ -54,83 +55,90 @@ class SessionModel(object):
         self._structures = set()
 
     def __len__(self):
-        return (len(self._new) + len(self._modified) + len(self._deleted) +
-                len(self.commit_structures) + len(self.delete_structures))
+        return (
+            len(self._new)
+            + len(self._modified)
+            + len(self._deleted)
+            + len(self.commit_structures)
+            + len(self.delete_structures)
+        )
 
     def __repr__(self):
         return self._meta.__repr__()
+
     __str__ = __repr__
 
     @property
     def backend(self):
-        '''The backend for this :class:`SessionModel`.'''
+        """The backend for this :class:`SessionModel`."""
         return self.manager.backend
 
     @property
     def read_backend(self):
-        '''The read-only backend for this :class:`SessionModel`.'''
+        """The read-only backend for this :class:`SessionModel`."""
         return self.manager.read_backend
 
     @property
     def model(self):
-        '''The :class:`Model` for this :class:`SessionModel`.'''
+        """The :class:`Model` for this :class:`SessionModel`."""
         return self.manager.model
 
     @property
     def _meta(self):
-        '''The :class:`Metaclass` for this :class:`SessionModel`.'''
+        """The :class:`Metaclass` for this :class:`SessionModel`."""
         return self.manager._meta
 
     @property
     def new(self):
-        '''The set of all new instances within this ``SessionModel``. This
-instances will be inserted in the database.'''
+        """The set of all new instances within this ``SessionModel``. This
+        instances will be inserted in the database."""
         return tuple(itervalues(self._new))
 
     @property
     def modified(self):
-        '''The set of all modified instances within this ``Session``. This
-instances will.'''
+        """The set of all modified instances within this ``Session``. This
+        instances will."""
         return tuple(itervalues(self._modified))
 
     @property
     def deleted(self):
-        '''The set of all instance pks marked as `deleted` within this
-:class:`Session`.'''
+        """The set of all instance pks marked as `deleted` within this
+        :class:`Session`."""
         return tuple((p.pkvalue() for p in itervalues(self._deleted)))
 
     @property
     def dirty(self):
-        '''The set of all instances which have changed, but not deleted,
-within this :class:`SessionModel`.'''
+        """The set of all instances which have changed, but not deleted,
+        within this :class:`SessionModel`."""
         return tuple(self.iterdirty())
 
     def iterdirty(self):
-        '''Ordered iterator over dirty elements.'''
+        """Ordered iterator over dirty elements."""
         return iter(chain(itervalues(self._new), itervalues(self._modified)))
 
     def __contains__(self, instance):
         iid = instance.get_state().iid
-        return (iid in self._new or
-                iid in self._modified or
-                iid in self._deleted or
-                instance in self._structures)
+        return (
+            iid in self._new
+            or iid in self._modified
+            or iid in self._deleted
+            or instance in self._structures
+        )
 
-    def add(self, instance, modified=True, persistent=None,
-            force_update=False):
-        '''Add a new instance to this :class:`SessionModel`.
+    def add(self, instance, modified=True, persistent=None, force_update=False):
+        """Add a new instance to this :class:`SessionModel`.
 
-:param modified: Optional flag indicating if the ``instance`` has been
-    modified. By default its value is ``True``.
-:param force_update: if ``instance`` is persistent, it forces an update of the
-    data rather than a full replacement. This is used by the
-    :meth:`insert_update_replace` method.
-:rtype: The instance added to the session'''
-        if instance._meta.type == 'structure':
+        :param modified: Optional flag indicating if the ``instance`` has been
+            modified. By default its value is ``True``.
+        :param force_update: if ``instance`` is persistent, it forces an update of the
+            data rather than a full replacement. This is used by the
+            :meth:`insert_update_replace` method.
+        :rtype: The instance added to the session"""
+        if instance._meta.type == "structure":
             return self._add_structure(instance)
         state = instance.get_state()
         if state.deleted:
-            raise ValueError('State is deleted. Cannot add.')
+            raise ValueError("State is deleted. Cannot add.")
         self.pop(state.iid)
         pers = persistent if persistent is not None else state.persistent
         pkname = instance._meta.pkname()
@@ -141,7 +149,7 @@ within this :class:`SessionModel`.'''
             instance._dbdata[pkname] = instance.pkvalue()
             state = instance.get_state(iid=instance.pkvalue())
         else:
-            action = 'update' if force_update else None
+            action = "update" if force_update else None
             state = instance.get_state(action=action, iid=state.iid)
         iid = state.iid
         if state.persistent:
@@ -152,8 +160,8 @@ within this :class:`SessionModel`.'''
         return instance
 
     def delete(self, instance, session):
-        '''delete an *instance*'''
-        if instance._meta.type == 'structure':
+        """delete an *instance*"""
+        if instance._meta.type == "structure":
             return self._delete_structure(instance)
         inst = self.pop(instance)
         instance = inst if inst is not None else instance
@@ -168,13 +176,12 @@ within this :class:`SessionModel`.'''
             return instance
 
     def pop(self, instance):
-        '''Remove ``instance`` from the :class:`SessionModel`. Instance
-could be a :class:`Model` or an id.
+        """Remove ``instance`` from the :class:`SessionModel`. Instance
+        could be a :class:`Model` or an id.
 
-:parameter instance: a :class:`Model` or an ``id``.
-:rtype: the :class:`Model` removed from session or ``None`` if
-    it was not in the session.
-'''
+        :parameter instance: a :class:`Model` or an ``id``.
+        :rtype: the :class:`Model` removed from session or ``None`` if
+            it was not in the session."""
         if isinstance(instance, self.model):
             iid = instance.get_state().iid
         else:
@@ -186,29 +193,28 @@ could be a :class:`Model` or an id.
                 if instance is None:
                     instance = inst
                 elif inst is not instance:
-                    raise ValueError('Critical error: %s is duplicated' % iid)
+                    raise ValueError("Critical error: %s is duplicated" % iid)
         return instance
 
     def expunge(self, instance):
-        '''Remove *instance* from the :class:`Session`. Instance could be a
-:class:`Model` or an id.
+        """Remove *instance* from the :class:`Session`. Instance could be a
+        :class:`Model` or an id.
 
-:parameter instance: a :class:`Model` or an *id*
-:rtype: the :class:`Model` removed from session or ``None`` if
-    it was not in the session.
-'''
+        :parameter instance: a :class:`Model` or an *id*
+        :rtype: the :class:`Model` removed from session or ``None`` if
+            it was not in the session."""
         instance = self.pop(instance)
         instance.session = None
         return instance
 
     def post_commit(self, results):
-        '''\
+        """\
 Process results after a commit.
 
 :parameter results: iterator over :class:`stdnet.instance_session_result`
     items.
 :rtype: a two elements tuple containing a list of instances saved and
-    a list of ids of instances deleted.'''
+    a list of ids of instances deleted."""
         tpy = self._meta.pk_to_python
         instances = []
         deleted = []
@@ -217,8 +223,11 @@ Process results after a commit.
         # all committed instances
         for result in results:
             if isinstance(result, Exception):
-                errors.append(result.__class__('Exception while committing %s.'
-                                               ' %s' % (self._meta, result)))
+                errors.append(
+                    result.__class__(
+                        "Exception while committing %s." " %s" % (self._meta, result)
+                    )
+                )
                 continue
             instance = self.pop(result.iid)
             id = tpy(result.id, self.backend)
@@ -226,30 +235,34 @@ Process results after a commit.
                 deleted.append(id)
             else:
                 if instance is None:
-                    raise InvalidTransaction('{0} session received id "{1}"\
- which is not in the session.'.format(self, result.iid))
+                    raise InvalidTransaction(
+                        '{0} session received id "{1}"\
+ which is not in the session.'.format(
+                            self, result.iid
+                        )
+                    )
                 setattr(instance, instance._meta.pkname(), id)
-                instance = self.add(instance,
-                                    modified=False,
-                                    persistent=result.persistent)
+                instance = self.add(
+                    instance, modified=False, persistent=result.persistent
+                )
                 instance.get_state().score = result.score
                 if instance.get_state().persistent:
                     instances.append(instance)
         return instances, deleted, errors
 
     def flush(self):
-        '''Completely flush :attr:`model` from the database. No keys
-associated with the model will exists after this operation.'''
+        """Completely flush :attr:`model` from the database. No keys
+        associated with the model will exists after this operation."""
         return self.backend.flush(self._meta)
 
     def clean(self):
-        '''Remove empty keys for a :attr:`model` from the database. No
-empty keys associated with the model will exists after this operation.'''
+        """Remove empty keys for a :attr:`model` from the database. No
+        empty keys associated with the model will exists after this operation."""
         return self.backend.clean(self._meta)
 
     def keys(self):
-        '''Retrieve all keys for a :attr:`model`. Uses the
-:attr:`Manager.read_backend`.'''
+        """Retrieve all keys for a :attr:`model`. Uses the
+        :attr:`Manager.read_backend`."""
         return self.read_backend.model_keys(self._meta)
 
     ## INTERNALS
@@ -281,34 +294,30 @@ empty keys associated with the model will exists after this operation.'''
         queries = self._queries
         if dirty or has_delete or queries is not None or structures:
             if transaction.signal_delete and has_delete:
-                models.pre_delete.fire(model, instances=deletes,
-                                       session=session)
+                models.pre_delete.fire(model, instances=deletes, session=session)
             if dirty and transaction.signal_commit:
-                models.pre_commit.fire(model, instances=dirty,
-                                       session=session)
+                models.pre_commit.fire(model, instances=dirty, session=session)
             if be == rbe:
-                yield be, session_data(meta, dirty, deletes, queries,
-                                       structures)
+                yield be, session_data(meta, dirty, deletes, queries, structures)
             else:
                 if dirty or has_delete or structures:
-                    yield be, session_data(meta, dirty, deletes, (),
-                                           structures)
+                    yield be, session_data(meta, dirty, deletes, (), structures)
                 if queries:
                     yield rbe, session_data(meta, (), (), queries, ())
 
     def _add_structure(self, instance):
-        instance.action = 'update'
+        instance.action = "update"
         self._structures.add(instance)
         return instance
 
     def _delete_structure(self, instance):
-        instance.action = 'delete'
+        instance.action = "delete"
         self._structures.add(instance)
         return instance
 
 
 class Transaction(object):
-    '''Transaction class for pipelining commands to the backend server.
+    """Transaction class for pipelining commands to the backend server.
     An instance of this class is usually obtained via the :meth:`Session.begin`
     or the :meth:`Manager.transaction` methods::
 
@@ -363,12 +372,12 @@ class Transaction(object):
         Dictionary of list of ids saved in the backend server after a commit
         operation. This dictionary is only available once the transaction has
         :attr:`finished`.
-    '''
+    """
+
     on_result = None
 
-    def __init__(self, session, name=None, signal_commit=True,
-                 signal_delete=True):
-        self.name = name or 'transaction'
+    def __init__(self, session, name=None, signal_commit=True, signal_delete=True):
+        self.name = name or "transaction"
         self.session = session
         self.signal_commit = signal_commit
         self.signal_delete = signal_delete
@@ -377,32 +386,32 @@ class Transaction(object):
 
     @property
     def executed(self):
-        '''``True`` when this transaction has been executed.
+        """``True`` when this transaction has been executed.
 
         A transaction can be executed once only via the :meth:`commit` method.
         An executed transaction if :attr:`finished` once a response from the
         backend server has been processed.
-        '''
+        """
         return self.session is None
 
     def add(self, instance, **kwargs):
-        '''A convenience proxy for :meth:`Session.add` method.'''
+        """A convenience proxy for :meth:`Session.add` method."""
         return self.session.add(instance, **kwargs)
 
     def delete(self, instance):
-        '''A convenience proxy for :meth:`Session.delete` method.'''
+        """A convenience proxy for :meth:`Session.delete` method."""
         return self.session.delete(instance)
 
     def expunge(self, instance=None):
-        '''A convenience proxy for :meth:`Session.expunge` method.'''
+        """A convenience proxy for :meth:`Session.expunge` method."""
         return self.session.expunge(instance)
 
     def query(self, model, **kwargs):
-        '''A convenience proxy for :meth:`Session.query` method.'''
+        """A convenience proxy for :meth:`Session.query` method."""
         return self.session.query(model, **kwargs)
 
     def model(self, model):
-        '''A convenience proxy for :meth:`Session.model` method.'''
+        """A convenience proxy for :meth:`Session.model` method."""
         return self.session.model(model)
 
     def __enter__(self):
@@ -425,10 +434,11 @@ class Transaction(object):
             self.session = None
 
     def commit(self, callback=None):
-        '''Close the transaction and commit session to the backend.'''
+        """Close the transaction and commit session to the backend."""
         if self.executed:
-            raise InvalidTransaction('Invalid operation. '
-                                     'Transaction already executed.')
+            raise InvalidTransaction(
+                "Invalid operation. " "Transaction already executed."
+            )
         session = self.session
         self.session = None
         self.on_result = self._commit(session, callback)
@@ -484,14 +494,15 @@ class Transaction(object):
                     signals.append((models.post_commit.fire, sm, saved))
         # Once finished we send signals
         for fire, sm, instances in signals:
-            for result in fire(sm.model, instances=instances,
-                               session=session, transaction=self):
+            for result in fire(
+                sm.model, instances=instances, session=session, transaction=self
+            ):
                 yield result
         if exceptions:
             nf = len(exceptions)
             if nf > 1:
-                error = 'There were %s exceptions during commit.\n\n' % nf
-                error += '\n\n'.join((str(e) for e in exceptions))
+                error = "There were %s exceptions during commit.\n\n" % nf
+                error += "\n\n".join((str(e) for e in exceptions))
             else:
                 error = str(exceptions[0])
             raise CommitException(error, failures=nf)
@@ -508,7 +519,7 @@ class Transaction(object):
 
 
 class Session(object):
-    '''The middleware for persistent operations on the back-end.
+    """The middleware for persistent operations on the back-end.
 
         It is created via the :meth:`Router.session` method.
 
@@ -520,7 +531,8 @@ class Session(object):
     .. attribute:: router
 
         Instance of the :class:`Router` which created this :class:`Session`.
-    '''
+    """
+
     def __init__(self, router):
         self.transaction = None
         self._models = OrderedDict()
@@ -530,7 +542,7 @@ class Session(object):
         return str(self._router)
 
     def __repr__(self):
-        return '%s: %s' % (self.__class__.__name__, self._router)
+        return "%s: %s" % (self.__class__.__name__, self._router)
 
     def __iter__(self):
         for sm in self._models.values():
@@ -545,31 +557,29 @@ class Session(object):
 
     @property
     def dirty(self):
-        '''The set of instances in this :class:`Session` which have
-been modified.'''
-        return frozenset(chain(*tuple((sm.dirty for sm
-                                       in itervalues(self._models)))))
+        """The set of instances in this :class:`Session` which have
+        been modified."""
+        return frozenset(chain(*tuple((sm.dirty for sm in itervalues(self._models)))))
 
     def begin(self, **options):
-        '''Begin a new :class:`Transaction`. If this :class:`Session`
-is already in a :ref:`transactional state <transactional-state>`,
-an error will occur. It returns the :attr:`transaction` attribute.
+        """Begin a new :class:`Transaction`. If this :class:`Session`
+        is already in a :ref:`transactional state <transactional-state>`,
+        an error will occur. It returns the :attr:`transaction` attribute.
 
-This method is mostly used within a ``with`` statement block::
+        This method is mostly used within a ``with`` statement block::
 
-    with session.begin() as t:
-        t.add(...)
-        ...
+            with session.begin() as t:
+                t.add(...)
+                ...
 
-which is equivalent to::
+        which is equivalent to::
 
-    t = session.begin()
-    t.add(...)
-    ...
-    session.commit()
+            t = session.begin()
+            t.add(...)
+            ...
+            session.commit()
 
-``options`` parameters are passed to the :class:`Transaction` constructor.
-'''
+        ``options`` parameters are passed to the :class:`Transaction` constructor."""
         if self.transaction is not None:
             raise InvalidTransaction("A transaction is already begun.")
         else:
@@ -588,17 +598,17 @@ which is equivalent to::
         return self.transaction.commit()
 
     def query(self, model, **kwargs):
-        '''Create a new :class:`Query` for *model*.'''
+        """Create a new :class:`Query` for *model*."""
         sm = self.model(model)
         query_class = sm.manager.query_class or Query
         return query_class(sm._meta, self, **kwargs)
 
     def empty(self, model):
-        '''Returns an empty :class:`Query` for ``model``.'''
+        """Returns an empty :class:`Query` for ``model``."""
         return EmptyQuery(self.manager(model)._meta, self)
 
     def update_or_create(self, model, **kwargs):
-        '''Update or create a new instance of ``model``.
+        """Update or create a new instance of ``model``.
 
         This method can raise an exception if the ``kwargs`` dictionary
         contains field data that does not validate.
@@ -607,12 +617,12 @@ which is equivalent to::
         :param kwargs: dictionary of parameters.
         :returns: A two elements tuple containing the instance and a boolean
             indicating if the instance was created or not.
-        '''
+        """
         backend = self.model(model).backend
         return backend.execute(self._update_or_create(model, **kwargs))
 
     def add(self, instance, modified=True, **params):
-        '''Add an ``instance`` to the session.
+        """Add an ``instance`` to the session.
 
         If the session is not in a
         :ref:`transactional state <transactional-state>`, this operation
@@ -627,7 +637,7 @@ which is equivalent to::
         If the instance is persistent (it is already stored in the database),
         an updated will be performed, otherwise a new entry will be created
         once the :meth:`commit` method is invoked.
-        '''
+        """
         sm = self.model(instance)
         instance.session = self
         o = sm.add(instance, modified=modified, **params)
@@ -638,7 +648,7 @@ which is equivalent to::
             return o
 
     def delete(self, instance_or_query):
-        '''Delete an ``instance`` or a ``query``.
+        """Delete an ``instance`` or a ``query``.
 
         Adds ``instance_or_query`` to this :class:`Session` list
         of data to be deleted. If the session is not in a
@@ -647,34 +657,33 @@ which is equivalent to::
 
         :parameter instance_or_query: a :class:`Model` instance or
             a :class:`Query`.
-        '''
+        """
         sm = self.model(instance_or_query)
         # not an instance of a Model. Assume it is a query.
         if is_query(instance_or_query):
             if instance_or_query.session is not self:
-                raise ValueError('Adding a query generated by another session')
+                raise ValueError("Adding a query generated by another session")
             sm._delete_query.append(instance_or_query)
         else:
             instance_or_query = sm.delete(instance_or_query, self)
         if not self.transaction:
             transaction = self.begin()
-            return transaction.commit(
-                lambda: transaction.deleted.get(sm._meta))
+            return transaction.commit(lambda: transaction.deleted.get(sm._meta))
         else:
             return instance_or_query
 
     def flush(self, model):
-        '''Completely flush a :class:`Model` from the database. No keys
-associated with the model will exists after this operation.'''
+        """Completely flush a :class:`Model` from the database. No keys
+        associated with the model will exists after this operation."""
         return self.model(model).flush()
 
     def clean(self, model):
-        '''Remove empty keys for a :class:`Model` from the database. No
-empty keys associated with the model will exists after this operation.'''
+        """Remove empty keys for a :class:`Model` from the database. No
+        empty keys associated with the model will exists after this operation."""
         return self.model(model).clean()
 
     def keys(self, model):
-        '''Retrieve all keys for a *model*.'''
+        """Retrieve all keys for a *model*."""
         return self.model(model).keys()
 
     def __contains__(self, instance):
@@ -682,9 +691,9 @@ empty keys associated with the model will exists after this operation.'''
         return instance in sm if sm is not None else False
 
     def model(self, model, create=True):
-        '''Returns the :class:`SessionModel` for ``model`` which
-can be :class:`Model`, or a :class:`MetaClass`, or an instance
-of :class:`Model`.'''
+        """Returns the :class:`SessionModel` for ``model`` which
+        can be :class:`Model`, or a :class:`MetaClass`, or an instance
+        of :class:`Model`."""
         manager = self.manager(model)
         sm = self._models.get(manager)
         if sm is None and create:
@@ -693,8 +702,8 @@ of :class:`Model`.'''
         return sm
 
     def expunge(self, instance=None):
-        '''Remove ``instance`` from this :class:`Session`. If ``instance``
-is not given, it removes all instances from this :class:`Session`.'''
+        """Remove ``instance`` from this :class:`Session`. If ``instance``
+        is not given, it removes all instances from this :class:`Session`."""
         if instance is not None:
             sm = self._models.get(instance._meta)
             if sm:
@@ -703,15 +712,15 @@ is not given, it removes all instances from this :class:`Session`.'''
             self._models.clear()
 
     def manager(self, model):
-        '''Retrieve the :class:`Manager` for ``model`` which can be any of the
-values valid for the :meth:`model` method.'''
+        """Retrieve the :class:`Manager` for ``model`` which can be any of the
+        values valid for the :meth:`model` method."""
         try:
             return self.router[model]
         except KeyError:
-            meta = getattr(model, '_meta', model)
-            if meta.type == 'structure':
+            meta = getattr(model, "_meta", model)
+            if meta.type == "structure":
                 # this is a structure
-                if hasattr(model, 'model'):
+                if hasattr(model, "model"):
                     structure_model = model.model
                     if structure_model:
                         return self.manager(structure_model)
@@ -773,19 +782,20 @@ values valid for the :meth:`model` method.'''
 
 
 class LazyProxy(object):
-    '''Base class for descriptors used by :class:`ForeignKey` and
-:class:`StructureField`.
+    """Base class for descriptors used by :class:`ForeignKey` and
+    :class:`StructureField`.
 
-.. attribute:: field
+    .. attribute:: field
 
-    The :class:`Field` which create this descriptor. Either a
-    :class:`ForeignKey` or a :class:`StructureField`.
-'''
+        The :class:`Field` which create this descriptor. Either a
+        :class:`ForeignKey` or a :class:`StructureField`."""
+
     def __init__(self, field):
         self.field = field
 
     def __repr__(self):
         return self.field.name
+
     __str__ = __repr__
 
     @property
@@ -793,12 +803,12 @@ class LazyProxy(object):
         return self.field.name
 
     def load(self, instance, session):
-        '''Load the lazy data for this descriptor. Implemented by
-subclasses.'''
+        """Load the lazy data for this descriptor. Implemented by
+        subclasses."""
         raise NotImplementedError
 
     def load_from_manager(self, manager):
-        raise NotImplementedError('cannot access %s from manager' % self)
+        raise NotImplementedError("cannot access %s from manager" % self)
 
     def __get__(self, instance, instance_type=None):
         if not self.field.class_field:
@@ -810,64 +820,64 @@ subclasses.'''
 
 
 class Manager(object):
-    '''Before a :class:`StdModel` can be used in conjunction
-with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
-with it via a :class:`Router`. Check the
-:ref:`registration tutorial <tutorial-registration>` for further info::
+    """Before a :class:`StdModel` can be used in conjunction
+    with a :ref:`backend server <db-index>`, a :class:`Manager` must be associated
+    with it via a :class:`Router`. Check the
+    :ref:`registration tutorial <tutorial-registration>` for further info::
 
-    class MyModel(odm.StdModel):
-        group = odm.SymbolField()
-        flag = odm.BooleanField()
+        class MyModel(odm.StdModel):
+            group = odm.SymbolField()
+            flag = odm.BooleanField()
 
-    models = odm.Router()
-    models.register(MyModel)
+        models = odm.Router()
+        models.register(MyModel)
 
-    manager = models[MyModel]
+        manager = models[MyModel]
 
-Managers are used as :class:`Session` and :class:`Query` factories
-for a given :class:`StdModel`::
+    Managers are used as :class:`Session` and :class:`Query` factories
+    for a given :class:`StdModel`::
 
-    session = router[MyModel].session()
-    query = router[MyModel].query()
+        session = router[MyModel].session()
+        query = router[MyModel].query()
 
-A model can specify a :ref:`custom manager <custom-manager>` by
-creating a :class:`Manager` subclass with additional methods::
+    A model can specify a :ref:`custom manager <custom-manager>` by
+    creating a :class:`Manager` subclass with additional methods::
 
-    class MyModelManager(odm.Manager):
+        class MyModelManager(odm.Manager):
 
-        def special_query(self, **kwargs):
+            def special_query(self, **kwargs):
+                ...
+
+    At this point we need to tell the model about the custom manager, and we do
+    so by setting the ``manager_class`` attribute in the :class:`StdModel`::
+
+        class MyModel(odm.StdModel):
             ...
 
-At this point we need to tell the model about the custom manager, and we do
-so by setting the ``manager_class`` attribute in the :class:`StdModel`::
-
-    class MyModel(odm.StdModel):
-        ...
-
-        manager_class = MyModelManager
+            manager_class = MyModelManager
 
 
-.. attribute:: model
+    .. attribute:: model
 
-    The :class:`StdModel` for this :class:`Manager`. This attribute is
-    assigned by the Object data mapper at runtime.
+        The :class:`StdModel` for this :class:`Manager`. This attribute is
+        assigned by the Object data mapper at runtime.
 
-.. attribute:: router
+    .. attribute:: router
 
-    The :class:`Router` which contain this this :class:`Manager`.
+        The :class:`Router` which contain this this :class:`Manager`.
 
-.. attribute:: backend
+    .. attribute:: backend
 
-    The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
+        The :class:`stdnet.BackendDataServer` for this :class:`Manager`.
 
-.. attribute:: read_backend
+    .. attribute:: read_backend
 
-    A :class:`stdnet.BackendDataServer` for read-only operations (Queries).
+        A :class:`stdnet.BackendDataServer` for read-only operations (Queries).
 
-.. attribute:: query_class
+    .. attribute:: query_class
 
-    Class for querying. Default is :class:`Query`.
-'''
+        Class for querying. Default is :class:`Query`."""
+
     session_factory = Session
     query_class = None
 
@@ -894,7 +904,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
         return self._read_backend or self._backend
 
     def __getattr__(self, attrname):
-        if attrname.startswith('__'):  # required for copy
+        if attrname.startswith("__"):  # required for copy
             raise AttributeError
         else:
             result = getattr(self.model, attrname)
@@ -904,11 +914,12 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
     def __str__(self):
         if self.backend:
-            return '{0}({1} - {2})'.format(self.__class__.__name__,
-                                           self._meta,
-                                           self.backend)
+            return "{0}({1} - {2})".format(
+                self.__class__.__name__, self._meta, self.backend
+            )
         else:
-            return '{0}({1})'.format(self.__class__.__name__, self._meta)
+            return "{0}({1})".format(self.__class__.__name__, self._meta)
+
     __repr__ = __str__
 
     def __call__(self, *args, **kwargs):
@@ -917,70 +928,68 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
         return self.model(*args, **kwargs)
 
     def session(self, session=None):
-        '''Returns a new :class:`Session`. This is a shortcut for the
-:meth:`Router.session` method.'''
+        """Returns a new :class:`Session`. This is a shortcut for the
+        :meth:`Router.session` method."""
         return self._router.session()
 
     def new(self, *args, **kwargs):
-        '''Create a new instance of :attr:`model` and commit it to the backend
-server. This a shortcut method for the more verbose::
+        """Create a new instance of :attr:`model` and commit it to the backend
+        server. This a shortcut method for the more verbose::
 
-    instance = manager.session().add(MyModel(**kwargs))
-'''
+            instance = manager.session().add(MyModel(**kwargs))"""
         return self.session().add(self.model(*args, **kwargs))
 
     def save(self, instance):
-        '''Save an existing instance of :attr:`model`. This a shortcut
-method for the more verbose::
+        """Save an existing instance of :attr:`model`. This a shortcut
+        method for the more verbose::
 
-    instance = manager.session().add(instance)
-'''
+            instance = manager.session().add(instance)"""
         return self.session().add(instance)
 
     def update_or_create(self, **kwargs):
-        '''Invokes the :class:`Session.update_or_create` method.'''
+        """Invokes the :class:`Session.update_or_create` method."""
         return self.session().update_or_create(self.model, **kwargs)
 
     def all(self):
-        '''Return all instances for this manager.
-Equivalent to::
+        """Return all instances for this manager.
+        Equivalent to::
 
-    self.query().all()
-    '''
+            self.query().all()
+        """
         return self.query().all()
 
     def create_all(self):
-        '''A method which can implement table creation. For sql models. Does
-nothing for redis or mongo.'''
+        """A method which can implement table creation. For sql models. Does
+        nothing for redis or mongo."""
         pass
 
     def query(self, session=None):
-        '''Returns a new :class:`Query` for :attr:`Manager.model`.'''
+        """Returns a new :class:`Query` for :attr:`Manager.model`."""
         if session is None or session.router is not self.router:
             session = self.session()
         return session.query(self.model)
 
     def empty(self):
-        '''Returns an empty :class:`Query` for :attr:`Manager.model`.'''
+        """Returns an empty :class:`Query` for :attr:`Manager.model`."""
         return self.session().empty(self.model)
 
     def filter(self, **kwargs):
-        '''Returns a new :class:`Query` for :attr:`Manager.model` with
-a filter.'''
+        """Returns a new :class:`Query` for :attr:`Manager.model` with
+        a filter."""
         return self.query().filter(**kwargs)
 
     def exclude(self, **kwargs):
-        '''Returns a new :class:`Query` for :attr:`Manager.model` with
-a exclude filter.'''
+        """Returns a new :class:`Query` for :attr:`Manager.model` with
+        a exclude filter."""
         return self.query().exclude(**kwargs)
 
     def search(self, text, lookup=None):
-        '''Returns a new :class:`Query` for :attr:`Manager.model` with
-a full text search value.'''
+        """Returns a new :class:`Query` for :attr:`Manager.model` with
+        a full text search value."""
         return self.query().search(text, lookup=lookup)
 
     def get(self, **kwargs):
-        '''Shortcut for ``self.query().get**kwargs)``.'''
+        """Shortcut for ``self.query().get**kwargs)``."""
         return self.query().get(**kwargs)
 
     def flush(self):
@@ -993,7 +1002,7 @@ a full text search value.'''
         return self.session().keys(self.model)
 
     def pkvalue(self, instance):
-        '''Return the primary key value for ``instance``.'''
+        """Return the primary key value for ``instance``."""
         return instance.pkvalue()
 
     def __hash__(self):
@@ -1001,6 +1010,5 @@ a full text search value.'''
 
 
 class StructureManager(Manager):
-
     def __hash__(self):
         return hash(self.model)

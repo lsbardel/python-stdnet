@@ -1,6 +1,0 @@
-redis
-pep8
-cython
-coverage
-mock
-pulsar==0.7.4

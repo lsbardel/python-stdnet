@@ -1,5 +1,4 @@
-from pulsar.apps import data
-from pulsar.apps import tasks
+from pulsar.apps import data, tasks
 
 from .models import TaskData
 
@@ -9,7 +8,6 @@ class Store(data.Store):
 
 
 class TaskBackend(tasks.TaskBackend):
-
     def get_task(self, task_id=None, timeout=1):
         task_manager = self.task_manager()
         #
@@ -21,7 +19,7 @@ class TaskBackend(tasks.TaskBackend):
                 yield task_data.as_task()
 
 
-tasks.task_backends['stdnet'] = TaskBackend
+tasks.task_backends["stdnet"] = TaskBackend
 
 
-data.register_store('redis', 'stdnet.apps.tasks.Store')
+data.register_store("redis", "stdnet.apps.tasks.Store")

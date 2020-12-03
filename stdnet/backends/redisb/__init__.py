@@ -1,33 +1,40 @@
-'''Redis backend implementation'''
+"""Redis backend implementation"""
 import json
 from functools import partial
 
+import stdnet
+from stdnet import CommitException, FieldValueError, QuerySetError
+from stdnet.backends import BackendStructure, instance_session_result, session_result
+from stdnet.utils import (
+    flat_mapping,
+    gen_unique_id,
+    ispy3k,
+    native_str,
+    unique_tuple,
+    zip,
+)
+
 from .client import *
 
-import stdnet
-from stdnet import FieldValueError, CommitException, QuerySetError
-from stdnet.utils import (gen_unique_id, zip, ispy3k,
-                          native_str, flat_mapping, unique_tuple)
-from stdnet.backends import (BackendStructure, session_result,
-                             instance_session_result)
-
-MIN_FLOAT = -1.e99
+MIN_FLOAT = -1.0e99
 
 ############################################################################
 #    prefixes for data
-OBJ = 'obj'     # the hash table for a instance
-TMP = 'tmp'     # temorary key
-ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
+OBJ = "obj"  # the hash table for a instance
+TMP = "tmp"  # temorary key
+ODM_SCRIPTS = ("odmrun", "move2set", "zdiffstore")
 ############################################################################
 
 if ispy3k:
+
     def decode(value, encoding):
         if isinstance(value, bytes):
             return value.decode(encoding)
         else:
             return value
 
-else:   # pragma    nocover
+
+else:  # pragma    nocover
 
     def decode(value, encoding):
         return value
@@ -40,25 +47,25 @@ def pairs_to_dict(response, encoding):
 
 
 class odmrun(RedisScript):
-    script = (read_lua_file('tabletools'),
-              # timeseries must be included before utils
-              read_lua_file('commands.timeseries'),
-              read_lua_file('commands.utils'),
-              read_lua_file('odm'))
+    script = (
+        read_lua_file("tabletools"),
+        # timeseries must be included before utils
+        read_lua_file("commands.timeseries"),
+        read_lua_file("commands.utils"),
+        read_lua_file("odm"),
+    )
     required_scripts = ODM_SCRIPTS
 
-    def callback(self, response, meta=None, backend=None, odm_command=None,
-                 **opts):
-        if odm_command == 'delete':
-            res = (instance_session_result(r, False, r, True, 0)
-                   for r in response)
+    def callback(self, response, meta=None, backend=None, odm_command=None, **opts):
+        if odm_command == "delete":
+            res = (instance_session_result(r, False, r, True, 0) for r in response)
             return session_result(meta, res)
-        elif odm_command == 'commit':
+        elif odm_command == "commit":
             res = self._wrap_commit(response, **opts)
             return session_result(meta, res)
-        elif odm_command == 'load':
+        elif odm_command == "load":
             return self.load_query(response, backend, meta, **opts)
-        elif odm_command == 'structure':
+        elif odm_command == "structure":
             return self.flush_structure(response, backend, meta, **opts)
         else:
             return response
@@ -67,14 +74,22 @@ class odmrun(RedisScript):
         for id, iid in zip(response, iids):
             id, flag, info = id
             if int(flag):
-                yield instance_session_result(iid, True, id, False,
-                                              float(info))
+                yield instance_session_result(iid, True, id, False, float(info))
             else:
                 msg = info.decode(redis_client.encoding)
                 yield CommitException(msg)
 
-    def load_query(self, response, backend, meta, get=None, fields=None,
-                   fields_attributes=None, redis_client=None, **options):
+    def load_query(
+        self,
+        response,
+        backend,
+        meta,
+        get=None,
+        fields=None,
+        fields_attributes=None,
+        redis_client=None,
+        **options
+    ):
         if get:
             tpy = meta.dfields.get(get).to_python
             return [tpy(v, backend) for v in response]
@@ -87,14 +102,15 @@ class odmrun(RedisScript):
                 for fname, rdata, fields in related:
                     fname = native_str(fname, encoding)
                     fields = tuple(native_str(f, encoding) for f in fields)
-                    related_fields[fname] =\
-                        self.load_related(meta, fname, rdata, fields, encoding)
+                    related_fields[fname] = self.load_related(
+                        meta, fname, rdata, fields, encoding
+                    )
             return backend.objects_from_db(meta, data, related_fields)
 
     def build(self, response, meta, fields, fields_attributes, encoding):
         fields = tuple(fields) if fields else None
         if fields:
-            if len(fields) == 1 and fields[0] in (meta.pkname(), ''):
+            if len(fields) == 1 and fields[0] in (meta.pkname(), ""):
                 for id in response:
                     yield id, (), {}
             else:
@@ -105,24 +121,24 @@ class odmrun(RedisScript):
                 yield id, None, pairs_to_dict(fdata, encoding)
 
     def load_related(self, meta, fname, data, fields, encoding):
-        '''Parse data for related objects.'''
+        """Parse data for related objects."""
         field = meta.dfields[fname]
         if field in meta.multifields:
             fmeta = field.structure_class()._meta
-            if fmeta.name in ('hashtable', 'zset'):
-                return ((native_str(id, encoding),
-                         pairs_to_dict(fdata, encoding)) for
-                        id, fdata in data)
+            if fmeta.name in ("hashtable", "zset"):
+                return (
+                    (native_str(id, encoding), pairs_to_dict(fdata, encoding))
+                    for id, fdata in data
+                )
             else:
-                return ((native_str(id, encoding), fdata) for
-                        id, fdata in data)
+                return ((native_str(id, encoding), fdata) for id, fdata in data)
         else:
             # this is data for stdmodel instances
             return self.build(data, meta, fields, fields, encoding)
 
 
 class check_structures(RedisScript):
-    script = read_lua_file('structures')
+    script = read_lua_file("structures")
 
 
 ############################################################################
@@ -131,7 +147,7 @@ class check_structures(RedisScript):
 class RedisQuery(stdnet.BackendQuery):
     card = None
     _meta_info = None
-    script_dep = {'script_dependency': ('build_query', 'move2set')}
+    script_dep = {"script_dependency": ("build_query", "move2set")}
 
     def zism(self, r):
         return r is not None
@@ -155,42 +171,43 @@ class RedisQuery(stdnet.BackendQuery):
         key, meta, keys, args = None, self.meta, [], []
         pkname = meta.pkname()
         for child in qs:
-            if getattr(child, 'backend', None) == backend:
-                lookup, value = 'set', child
+            if getattr(child, "backend", None) == backend:
+                lookup, value = "set", child
             else:
                 lookup, value = child
-            if lookup == 'set':
+            if lookup == "set":
                 be = value.backend_query(pipe=pipe)
                 keys.append(be.query_key)
-                args.extend(('set', be.query_key))
+                args.extend(("set", be.query_key))
             else:
                 if isinstance(value, tuple):
                     value = self.dump_nested(*value)
-                args.extend((lookup, '' if value is None else value))
+                args.extend((lookup, "" if value is None else value))
         temp_key = True
-        if qs.keyword == 'set':
+        if qs.keyword == "set":
             if qs.name == pkname and not args:
-                key = backend.basekey(meta, 'id')
+                key = backend.basekey(meta, "id")
                 temp_key = False
             else:
                 key = backend.tempkey(meta)
                 keys.insert(0, key)
-                backend.odmrun(pipe, 'query', meta, keys, self.meta_info,
-                               qs.name, *args)
+                backend.odmrun(
+                    pipe, "query", meta, keys, self.meta_info, qs.name, *args
+                )
         else:
             key = backend.tempkey(meta)
-            p = 'z' if meta.ordering else 's'
-            pipe.execute_script('move2set', keys, p)
-            if qs.keyword == 'intersect':
-                command = getattr(pipe, p+'interstore')
-            elif qs.keyword == 'union':
-                command = getattr(pipe, p+'unionstore')
-            elif qs.keyword == 'diff':
-                command = getattr(pipe, p+'diffstore')
+            p = "z" if meta.ordering else "s"
+            pipe.execute_script("move2set", keys, p)
+            if qs.keyword == "intersect":
+                command = getattr(pipe, p + "interstore")
+            elif qs.keyword == "union":
+                command = getattr(pipe, p + "unionstore")
+            elif qs.keyword == "diff":
+                command = getattr(pipe, p + "diffstore")
             else:
-                raise ValueError('Could not perform %s operation' % qs.keyword)
+                raise ValueError("Could not perform %s operation" % qs.keyword)
             command(key, keys)
-        where = self.queryelem.data.get('where')
+        where = self.queryelem.data.get("where")
         # where query
         if where:
             # First key is the current key
@@ -212,25 +229,25 @@ class RedisQuery(stdnet.BackendQuery):
             if not temp_key:
                 temp_key = True
                 key = backend.tempkey(meta)
-            okey = backend.basekey(meta, OBJ, '*->' + field_attribute)
-            pipe.sort(bkey, by='nosort', get=okey, store=key)
-            self.card = getattr(pipe, 'llen')
+            okey = backend.basekey(meta, OBJ, "*->" + field_attribute)
+            pipe.sort(bkey, by="nosort", get=okey, store=key)
+            self.card = getattr(pipe, "llen")
         if temp_key:
             pipe.expire(key, self.expire)
         self.query_key = key
 
     def _execute_query(self):
-        '''Execute the query without fetching data. Returns the number of
-elements in the query.'''
+        """Execute the query without fetching data. Returns the number of
+        elements in the query."""
         pipe = self.pipe
         if not self.card:
             if self.meta.ordering:
-                self.ismember = getattr(self.backend.client, 'zrank')
-                self.card = getattr(pipe, 'zcard')
+                self.ismember = getattr(self.backend.client, "zrank")
+                self.card = getattr(pipe, "zcard")
                 self._check_member = self.zism
             else:
-                self.ismember = getattr(self.backend.client, 'sismember')
-                self.card = getattr(pipe, 'scard')
+                self.ismember = getattr(self.backend.client, "sismember")
+                self.card = getattr(pipe, "scard")
                 self._check_member = self.sism
         else:
             self.ismember = None
@@ -239,7 +256,7 @@ elements in the query.'''
         yield result[-1]
 
     def order(self, last):
-        '''Perform ordering with respect model fields.'''
+        """Perform ordering with respect model fields."""
         desc = last.desc
         field = last.name
         nested = last.nested
@@ -249,13 +266,10 @@ elements in the query.'''
             nested_args.extend((self.backend.basekey(meta), nested.name))
             last = nested
             nested = nested.nested
-        method = 'ALPHA' if last.field.internal_type == 'text' else ''
+        method = "ALPHA" if last.field.internal_type == "text" else ""
         if field == last.model._meta.pkname():
-            field = ''
-        return {'field': field,
-                'method': method,
-                'desc': desc,
-                'nested': nested_args}
+            field = ""
+        return {"field": field, "method": method, "desc": desc, "nested": nested_args}
 
     def dump_nested(self, value, nested):
         nested_args = []
@@ -284,19 +298,19 @@ elements in the query.'''
         # the load_query lua script
         backend = self.backend
         meta = self.meta
-        name = ''
+        name = ""
         order = ()
         start, stop = self.get_redis_slice(slic)
         if self.queryelem.ordering:
             order = self.order(self.queryelem.ordering)
         elif meta.ordering:
-            name = 'DESC' if meta.ordering.desc else 'ASC'
+            name = "DESC" if meta.ordering.desc else "ASC"
         elif start or stop is not None:
             order = self.order(meta.get_sorting(meta.pkname()))
         # Wen using the sort algorithm redis requires the number of element
         # not the stop index
         if order:
-            name = 'explicit'
+            name = "explicit"
             N = self.execute_query()
             if stop is None:
                 stop = N
@@ -313,8 +327,10 @@ elements in the query.'''
         # if the get_field is available, we only load that field
         if get:
             if slic:
-                raise QuerySetError('Cannot slice a queryset in conjunction '
-                                    'with get_field. Use load_only instead.')
+                raise QuerySetError(
+                    "Cannot slice a queryset in conjunction "
+                    "with get_field. Use load_only instead."
+                )
             if get == meta.pk.name:
                 fields_attributes = fields = pkname_tuple
             else:
@@ -322,44 +338,55 @@ elements in the query.'''
         else:
             fields = self.queryelem.fields or None
             if fields:
-                fields = unique_tuple(fields,
-                                      self.queryelem.select_related or ())
+                fields = unique_tuple(fields, self.queryelem.select_related or ())
             if fields == pkname_tuple:
                 fields_attributes = fields
             elif fields:
                 fields, fields_attributes = meta.backend_fields(fields)
             else:
                 fields_attributes = ()
-        options = {'ordering': name,
-                   'order': order,
-                   'start': start,
-                   'stop': stop,
-                   'fields': fields_attributes,
-                   'related': dict(self.related_lua_args()),
-                   'get': get}
+        options = {
+            "ordering": name,
+            "order": order,
+            "start": start,
+            "stop": stop,
+            "fields": fields_attributes,
+            "related": dict(self.related_lua_args()),
+            "get": get,
+        }
         joptions = json.dumps(options)
-        options.update({'fields': fields,
-                        'fields_attributes': fields_attributes})
-        return backend.odmrun(backend.client, 'load', meta, (self.query_key,),
-                              self.meta_info, joptions, **options)
+        options.update({"fields": fields, "fields_attributes": fields_attributes})
+        return backend.odmrun(
+            backend.client,
+            "load",
+            meta,
+            (self.query_key,),
+            self.meta_info,
+            joptions,
+            **options
+        )
 
     def related_lua_args(self):
-        '''Generator of load_related arguments'''
+        """Generator of load_related arguments"""
         related = self.queryelem.select_related
         if related:
             meta = self.meta
             for rel in related:
                 field = meta.dfields[rel]
                 relmodel = field.relmodel
-                bk = self.backend.basekey(relmodel._meta) if relmodel else ''
+                bk = self.backend.basekey(relmodel._meta) if relmodel else ""
                 fields = list(related[rel])
                 if meta.pkname() in fields:
                     fields.remove(meta.pkname())
                     if not fields:
-                        fields.append('')
-                ftype = field.type if field in meta.multifields else ''
-                data = {'field': field.attname, 'type': ftype,
-                        'bk': bk, 'fields': fields}
+                        fields.append("")
+                ftype = field.type if field in meta.multifields else ""
+                data = {
+                    "field": field.attname,
+                    "type": ftype,
+                    "bk": bk,
+                    "fields": fields,
+                }
                 yield field.name, data
 
 
@@ -367,7 +394,6 @@ elements in the query.'''
 ##    STRUCTURES
 ############################################################################
 class RedisStructure(BackendStructure):
-
     def __init__(self, *args, **kwargs):
         super(RedisStructure, self).__init__(*args, **kwargs)
         instance = self.instance
@@ -375,12 +401,13 @@ class RedisStructure(BackendStructure):
         if field:
             model = field.model
             if instance._pkvalue:
-                id = self.backend.basekey(model._meta, 'obj',
-                                          instance._pkvalue, field.name)
+                id = self.backend.basekey(
+                    model._meta, "obj", instance._pkvalue, field.name
+                )
             else:
-                id = self.backend.basekey(model._meta, 'struct', field.name)
+                id = self.backend.basekey(model._meta, "struct", field.name)
         else:
-            id = '%s.%s' % (instance._meta.name, instance.id)
+            id = "%s.%s" % (instance._meta.name, instance.id)
         self.id = id
 
     @property
@@ -392,7 +419,6 @@ class RedisStructure(BackendStructure):
 
 
 class String(RedisStructure):
-
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -410,7 +436,6 @@ class String(RedisStructure):
 
 
 class Set(RedisStructure):
-
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -430,7 +455,8 @@ class Set(RedisStructure):
 
 
 class Zset(RedisStructure):
-    '''Redis ordered set structure'''
+    """Redis ordered set structure"""
+
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -469,29 +495,37 @@ class Zset(RedisStructure):
 
     def range(self, start, end, withscores=True, **options):
         return self.backend.execute(
-            self.client.zrangebyscore(self.id, start, end,
-                                      withscores=withscores, **options),
-            partial(self._range, withscores))
+            self.client.zrangebyscore(
+                self.id, start, end, withscores=withscores, **options
+            ),
+            partial(self._range, withscores),
+        )
 
     def irange(self, start=0, stop=-1, desc=False, withscores=True, **options):
         return self.backend.execute(
-            self.client.zrange(self.id, start, stop, desc=desc,
-                               withscores=withscores, **options),
-            partial(self._range, withscores))
+            self.client.zrange(
+                self.id, start, stop, desc=desc, withscores=withscores, **options
+            ),
+            partial(self._range, withscores),
+        )
 
     def ipop_range(self, start, stop=None, withscores=True, **options):
-        '''Remove and return a range from the ordered set by rank (index).'''
+        """Remove and return a range from the ordered set by rank (index)."""
         return self.backend.execute(
-            self.client.zpopbyrank(self.id, start, stop,
-                                   withscores=withscores, **options),
-            partial(self._range, withscores))
+            self.client.zpopbyrank(
+                self.id, start, stop, withscores=withscores, **options
+            ),
+            partial(self._range, withscores),
+        )
 
     def pop_range(self, start, stop=None, withscores=True, **options):
-        '''Remove and return a range from the ordered set by score.'''
+        """Remove and return a range from the ordered set by score."""
         return self.backend.execute(
-            self.client.zpopbyscore(self.id, start, stop,
-                                    withscores=withscores, **options),
-            partial(self._range, withscores))
+            self.client.zpopbyscore(
+                self.id, start, stop, withscores=withscores, **options
+            ),
+            partial(self._range, withscores),
+        )
 
     # PRIVATE
     def _range(self, withscores, result):
@@ -502,7 +536,6 @@ class Zset(RedisStructure):
 
 
 class List(RedisStructure):
-
     def pop_front(self):
         return self.client.lpop(self.id)
 
@@ -538,7 +571,6 @@ class List(RedisStructure):
 
 
 class Hash(RedisStructure):
-
     def flush(self):
         cache = self.instance.cache
         result = None
@@ -581,136 +613,150 @@ class Hash(RedisStructure):
 
 
 class TS(RedisStructure):
-    '''Redis timeseries implementation is based on the ts.lua script'''
+    """Redis timeseries implementation is based on the ts.lua script"""
+
     def flush(self):
         cache = self.instance.cache
         result = None
         if cache.toadd:
-            result = self.client.execute_script('ts_commands', (self.id,),
-                                                'add', *cache.toadd.flat())
+            result = self.client.execute_script(
+                "ts_commands", (self.id,), "add", *cache.toadd.flat()
+            )
         if cache.toremove:
-            raise NotImplementedError('Cannot remove. TSDEL not implemented')
+            raise NotImplementedError("Cannot remove. TSDEL not implemented")
         return result
 
     def __contains__(self, timestamp):
-        return self.client.execute_script('ts_commands', (self.id,), 'exists',
-                                          timestamp)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "exists", timestamp
+        )
 
     def size(self):
-        return self.client.execute_script('ts_commands', (self.id,), 'size')
+        return self.client.execute_script("ts_commands", (self.id,), "size")
 
     def count(self, start, stop):
-        return self.client.execute_script('ts_commands', (self.id,), 'count',
-                                          start, stop)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "count", start, stop
+        )
 
     def times(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,), 'times',
-                                          time_start, time_stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "times", time_start, time_stop, **kwargs
+        )
 
     def itimes(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,), 'itimes',
-                                          start, stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "itimes", start, stop, **kwargs
+        )
 
     def get(self, dte):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'get', dte)
+        return self.client.execute_script("ts_commands", (self.id,), "get", dte)
 
     def rank(self, dte):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'rank', dte)
+        return self.client.execute_script("ts_commands", (self.id,), "rank", dte)
 
     def pop(self, dte):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'pop', dte)
+        return self.client.execute_script("ts_commands", (self.id,), "pop", dte)
 
     def ipop(self, index):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'ipop', index)
+        return self.client.execute_script("ts_commands", (self.id,), "ipop", index)
 
     def range(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,), 'range',
-                                          time_start, time_stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "range", time_start, time_stop, **kwargs
+        )
 
     def irange(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,), 'irange',
-                                          start, stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "irange", start, stop, **kwargs
+        )
 
     def pop_range(self, time_start, time_stop, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'pop_range',
-                                          time_start, time_stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "pop_range", time_start, time_stop, **kwargs
+        )
 
     def ipop_range(self, start=0, stop=-1, **kwargs):
-        return self.client.execute_script('ts_commands', (self.id,),
-                                          'ipop_range', start, stop, **kwargs)
+        return self.client.execute_script(
+            "ts_commands", (self.id,), "ipop_range", start, stop, **kwargs
+        )
 
 
 class NumberArray(RedisStructure):
-
     def flush(self):
         cache = self.instance.cache
         result = None
         if cache.back:
-            self.client.execute_script('numberarray_pushback', (self.id,),
-                                       *cache.back)
+            self.client.execute_script("numberarray_pushback", (self.id,), *cache.back)
             result = True
         return result
 
     def get(self, index):
-        return self.client.execute_script('numberarray_getset', (self.id,),
-                                          'get', index+1)
+        return self.client.execute_script(
+            "numberarray_getset", (self.id,), "get", index + 1
+        )
 
     def set(self, value):
-        return self.client.execute_script('numberarray_getset', (self.id,),
-                                          'set', index+1, value)
+        return self.client.execute_script(
+            "numberarray_getset", (self.id,), "set", index + 1, value
+        )
 
     def range(self):
-        return self.client.execute_script('numberarray_all_raw', (self.id,),)
+        return self.client.execute_script(
+            "numberarray_all_raw",
+            (self.id,),
+        )
 
     def resize(self, size, value=None):
         if value is not None:
             argv = (size, value)
         else:
             argv = (size,)
-        return self.client.execute_script('numberarray_resize', (self.id,),
-                                          *argv)
+        return self.client.execute_script("numberarray_resize", (self.id,), *argv)
 
     def size(self):
-        return self.client.strlen(self.id)//8
+        return self.client.strlen(self.id) // 8
 
 
 class ts_commands(RedisScript):
-    script = (read_lua_file('commands.timeseries'),
-              read_lua_file('tabletools'),
-              read_lua_file('ts'))
+    script = (
+        read_lua_file("commands.timeseries"),
+        read_lua_file("tabletools"),
+        read_lua_file("ts"),
+    )
 
 
 class numberarray_resize(RedisScript):
-    script = (read_lua_file('numberarray'),
-              '''return array:new(KEYS[1]):resize(unpack(ARGV))''')
+    script = (
+        read_lua_file("numberarray"),
+        """return array:new(KEYS[1]):resize(unpack(ARGV))""",
+    )
 
 
 class numberarray_all_raw(RedisScript):
-    script = (read_lua_file('numberarray'),
-              '''return array:new(KEYS[1]):all_raw()''')
+    script = (read_lua_file("numberarray"), """return array:new(KEYS[1]):all_raw()""")
 
 
 class numberarray_getset(RedisScript):
-    script = (read_lua_file('numberarray'),
-              '''local a = array:new(KEYS[1])
+    script = (
+        read_lua_file("numberarray"),
+        """local a = array:new(KEYS[1])
 if ARGV[1] == 'get' then
     return a:get(ARGV[2],true)
 else
     a:set(ARGV[2],ARGV[3],true)
-end''')
+end""",
+    )
 
 
 class numberarray_pushback(RedisScript):
-    script = (read_lua_file('numberarray'),
-              '''local a = array:new(KEYS[1])
+    script = (
+        read_lua_file("numberarray"),
+        """local a = array:new(KEYS[1])
 for _,v in ipairs(ARGV) do
     a:push_back(v,true)
-end''')
+end""",
+    )
 
 
 ############################################################################
@@ -720,24 +766,26 @@ class BackendDataServer(stdnet.BackendDataServer):
     Query = RedisQuery
     _redis_clients = {}
     default_port = 6379
-    struct_map = {'set': Set,
-                  'list': List,
-                  'zset': Zset,
-                  'hashtable': Hash,
-                  'ts': TS,
-                  'numberarray': NumberArray,
-                  'string': String}
+    struct_map = {
+        "set": Set,
+        "list": List,
+        "zset": Zset,
+        "hashtable": Hash,
+        "ts": TS,
+        "numberarray": NumberArray,
+        "string": String,
+    }
 
     def setup_connection(self, address):
         if len(address) == 2:
             address = tuple(address)
         elif len(address) == 1:
             address = address[0]
-        if 'db' not in self.params:
-            self.params['db'] = 0
+        if "db" not in self.params:
+            self.params["db"] = 0
         rpy = redis_client(address=address, **self.params)
         if self.namespace:
-            self.params['namespace'] = self.namespace
+            self.params["namespace"] = self.namespace
         return rpy
 
     def auto_id_to_python(self, value):
@@ -753,20 +801,19 @@ class BackendDataServer(stdnet.BackendDataServer):
         self.client.connection_pool.disconnect()
 
     def meta(self, meta):
-        '''Extract model metadata for lua script stdnet/lib/lua/odm.lua'''
+        """Extract model metadata for lua script stdnet/lib/lua/odm.lua"""
         data = meta.as_dict()
-        data['namespace'] = self.basekey(meta)
+        data["namespace"] = self.basekey(meta)
         return data
 
-    def odmrun(self, client, odm_command, meta, keys, meta_info,
-               *args, **options):
-        options.update({'backend': self, 'meta': meta,
-                        'odm_command': odm_command})
-        return client.execute_script('odmrun', keys, odm_command, meta_info,
-                                     *args, **options)
+    def odmrun(self, client, odm_command, meta, keys, meta_info, *args, **options):
+        options.update({"backend": self, "meta": meta, "odm_command": odm_command})
+        return client.execute_script(
+            "odmrun", keys, odm_command, meta_info, *args, **options
+        )
 
     def where_run(self, client, meta_info, keys, where, load_only):
-        where = read_lua_file('where', context={'where_clause': where})
+        where = read_lua_file("where", context={"where_clause": where})
         numkeys = len(keys)
         keys.append(meta_info)
         if load_only:
@@ -774,7 +821,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         return client.eval(where, numkeys, *keys)
 
     def execute_session(self, session_data):
-        '''Execute a session in redis.'''
+        """Execute a session in redis."""
         pipe = self.client.pipeline()
         for sm in session_data:  # loop through model sessions
             meta = sm.meta
@@ -791,8 +838,7 @@ class BackendDataServer(stdnet.BackendDataServer):
                 for instance in sm.dirty:
                     state = instance.get_state()
                     if not meta.is_valid(instance):
-                        raise FieldValueError(
-                            json.dumps(instance._dbdata['errors']))
+                        raise FieldValueError(json.dumps(instance._dbdata["errors"]))
                     score = MIN_FLOAT
                     if meta.ordering:
                         if meta.ordering.auto:
@@ -801,16 +847,17 @@ class BackendDataServer(stdnet.BackendDataServer):
                             v = getattr(instance, meta.ordering.name, None)
                             if v is not None:
                                 score = meta.ordering.field.scorefun(v)
-                    data = instance._dbdata['cleaned_data']
+                    data = instance._dbdata["cleaned_data"]
                     action = state.action
-                    prev_id = state.iid if state.persistent else ''
-                    id = instance.pkvalue() or ''
+                    prev_id = state.iid if state.persistent else ""
+                    id = instance.pkvalue() or ""
                     data = flat_mapping(data)
                     lua_data.extend((action, prev_id, id, score, len(data)))
                     lua_data.extend(data)
                     processed.append(state.iid)
-                self.odmrun(pipe, 'commit', meta, (), meta_info,
-                            *lua_data, iids=processed)
+                self.odmrun(
+                    pipe, "commit", meta, (), meta_info, *lua_data, iids=processed
+                )
         return pipe.execute()
 
     def accumulate_delete(self, pipe, backend_query):
@@ -830,8 +877,9 @@ class BackendDataServer(stdnet.BackendDataServer):
             rmanager = getattr(meta.model, name)
             # the related manager model is the same as current model
             if rmanager.model == meta.model:
-                self.odmrun(pipe, 'aggregate', meta, keys, meta_info,
-                            rmanager.field.attname)
+                self.odmrun(
+                    pipe, "aggregate", meta, keys, meta_info, rmanager.field.attname
+                )
             # only consider models which are registered with the router
             elif rmanager.model in session.router:
                 rel_managers.append(rmanager)
@@ -841,22 +889,21 @@ class BackendDataServer(stdnet.BackendDataServer):
             if rmanager.field.required:
                 rq = rmanager.query_from_query(query).backend_query(pipe=pipe)
                 self.accumulate_delete(pipe, rq)
-        self.odmrun(pipe, 'delete', meta, keys, meta_info)
+        self.odmrun(pipe, "delete", meta, keys, meta_info)
 
     def tempkey(self, meta, name=None):
-        return self.basekey(meta, TMP, name if name is not None else
-                            gen_unique_id())
+        return self.basekey(meta, TMP, name if name is not None else gen_unique_id())
 
     def flush(self, meta=None):
-        '''Flush all model keys from the database'''
+        """Flush all model keys from the database"""
         pattern = self.basekey(meta) if meta else self.namespace
-        return self.client.delpattern('%s*' % pattern)
+        return self.client.delpattern("%s*" % pattern)
 
     def clean(self, meta):
-        return self.client.delpattern(self.tempkey(meta, '*'))
+        return self.client.delpattern(self.tempkey(meta, "*"))
 
     def model_keys(self, meta):
-        pattern = '%s*' % self.basekey(meta)
+        pattern = "%s*" % self.basekey(meta)
         return self.execute(self.client.keys(pattern), self._decode_keys)
 
     def instance_keys(self, obj):
@@ -872,7 +919,7 @@ class BackendDataServer(stdnet.BackendDataServer):
         for instance in sm.structures:
             be = self.structure(instance, pipe)
             be.action = instance.action
-            if be.action == 'update':
+            if be.action == "update":
                 be.flush()
             else:
                 be.delete()

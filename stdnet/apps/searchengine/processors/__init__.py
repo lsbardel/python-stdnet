@@ -1,10 +1,9 @@
-from .ignore import STOP_WORDS, PUNCTUATION_CHARS
+from .ignore import PUNCTUATION_CHARS, STOP_WORDS
 from .metaphone import dm as double_metaphone
 from .porter import PorterStemmer
 
 
 class stopwords:
-
     def __init__(self, stp=None):
         self.stp = stp if stp is not None else STOP_WORDS
 
@@ -16,7 +15,7 @@ class stopwords:
 
 
 def metaphone_processor(words):
-    '''Double metaphone word processor.'''
+    """Double metaphone word processor."""
     for word in words:
         for w in double_metaphone(word):
             if w:
@@ -26,8 +25,8 @@ def metaphone_processor(words):
 
 
 def tolerant_metaphone_processor(words):
-    '''Double metaphone word processor slightly modified so that when no
-words are returned by the algorithm, the original word is returned.'''
+    """Double metaphone word processor slightly modified so that when no
+    words are returned by the algorithm, the original word is returned."""
     for word in words:
         r = 0
         for w in double_metaphone(word):
@@ -41,8 +40,8 @@ words are returned by the algorithm, the original word is returned.'''
 
 
 def stemming_processor(words):
-    '''Porter Stemmer word processor'''
+    """Porter Stemmer word processor"""
     stem = PorterStemmer().stem
     for word in words:
-        word = stem(word, 0, len(word)-1)
+        word = stem(word, 0, len(word) - 1)
         yield word

@@ -2,27 +2,27 @@ __test__ = False
 from time import sleep
 
 from stdnet import StructureFieldError
-from stdnet.utils import test, populate, zip, to_string
+from stdnet.utils import populate, test, to_string, zip
 
 
 class StringData(test.DataGenerator):
-    
     def generate(self):
         self.names = self.populate()
-        
+
 
 class MultiFieldMixin(object):
-    '''Test class which add a couple of tests for multi fields.'''
-    attrname = 'data'
+    """Test class which add a couple of tests for multi fields."""
+
+    attrname = "data"
     data_cls = StringData
-        
+
     def setUp(self):
-        self.names = test.populate('string', size=10)
+        self.names = test.populate("string", size=10)
         self.name = self.names[0]
-        
+
     def defaults(self):
         return {}
-        
+
     def get_object_and_field(self, save=True, **kwargs):
         models = self.mapper
         params = self.defaults()
@@ -31,17 +31,18 @@ class MultiFieldMixin(object):
         if save:
             yield models.session().add(m)
         yield m, getattr(m, self.attrname)
-    
+
     def adddata(self, obj):
         raise NotImplementedError
-    
+
     def test_RaiseStructFieldError(self):
-        yield self.async.assertRaises(StructureFieldError,
-                                      self.get_object_and_field, False)
-    
+        yield self.async.assertRaises(
+            StructureFieldError, self.get_object_and_field, False
+        )
+
     def test_multi_field_meta(self):
-        '''Here we check for multifield specific stuff like the instance
-related keys (keys which are related to the instance rather than the model).'''
+        """Here we check for multifield specific stuff like the instance
+        related keys (keys which are related to the instance rather than the model)."""
         # get instance and field, the field has no data here
         models = self.mapper
         #
@@ -56,9 +57,9 @@ related keys (keys which are related to the instance rather than the model).'''
         self.assertEqual(be.backend, models[self.model].backend)
         self.assertEqual(be.instance, field)
         #
-        if be.backend.name == 'redis':
+        if be.backend.name == "redis":
             yield self.check_redis_structure(obj, be)
-        
+
     def check_redis_structure(self, obj, be):
         session = obj.session
         backend = be.backend
@@ -74,7 +75,7 @@ related keys (keys which are related to the instance rather than the model).'''
         # Lets add data
         yield self.adddata(obj)
         # The field id should be in the server keys
-        if backend.name == 'redis':
+        if backend.name == "redis":
             lkeys = yield backend.model_keys(self.model._meta)
             self.assertTrue(be.id in lkeys)
         #

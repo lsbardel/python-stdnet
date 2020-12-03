@@ -17,6 +17,7 @@
 #   excellent communication.
 #   The script was also updated to use utf-8 rather than latin-1.
 import sys
+
 try:
     NNNN = unicode('N')
     decode = lambda x: x.decode('utf-8', 'ignore')

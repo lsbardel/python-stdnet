@@ -6,15 +6,15 @@
 # To train you can use
 # http://norvig.com/big.txt
 #
+import collections
 import os
 import re
-import collections
 
 CURDIR = os.path.split(os.path.abspath(__file__))[0]
 
 
 def words(text):
-    return re.findall('[a-z]+', text.lower())
+    return re.findall("[a-z]+", text.lower())
 
 
 def train(features):
@@ -23,10 +23,11 @@ def train(features):
         model[f] += 1
     return model
 
-NWORDS = train(words(open(os.path.join(CURDIR, 'big.txt')).read()))
+
+NWORDS = train(words(open(os.path.join(CURDIR, "big.txt")).read()))
 
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 
 def edits1(word):
@@ -47,6 +48,5 @@ def known(words):
 
 
 def correct(word):
-    candidates = (known([word]) or known(edits1(word)) or known_edits2(word)
-                  or [word])
+    candidates = known([word]) or known(edits1(word)) or known_edits2(word) or [word]
     return max(candidates, key=NWORDS.get)

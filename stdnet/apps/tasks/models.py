@@ -1,4 +1,3 @@
-
 from stdnet import odm
 
 
@@ -23,7 +22,7 @@ class TaskData(odm.StdModel):
     executing = odm.SetField(class_field=True)
 
     class Meta:
-        app_label = 'tasks'
+        app_label = "tasks"
 
     def as_task(self):
         params = dict(self.meta or {})
@@ -32,4 +31,4 @@ class TaskData(odm.StdModel):
         return backends.Task(self.id, **params)
 
     def __unicode__(self):
-        return '%s (%s)' % (self.name, self.status)
+        return "%s (%s)" % (self.name, self.status)

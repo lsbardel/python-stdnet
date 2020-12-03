@@ -1,24 +1,26 @@
 from random import randint
 from time import time
 
-from stdnet.utils import test
+from examples.observer import Observable, Observer, update_observers
 
-from examples.observer import Observer, Observable, update_observers
+from stdnet.utils import test
 
 
 class ObserverData(test.DataGenerator):
-    sizes = {'tiny': (2, 5),   # observable, observers
-             'small': (5, 20),
-             'normal': (10, 80),
-             'big': (50, 500),
-             'huge': (100, 10000)}
+    sizes = {
+        "tiny": (2, 5),  # observable, observers
+        "small": (5, 20),
+        "normal": (10, 80),
+        "big": (50, 500),
+        "huge": (100, 10000),
+    }
 
     def generate(self):
         self.observables, self.observers = self.size
 
 
 class ObserverTest(test.TestWrite):
-    multipledb = 'redis'
+    multipledb = "redis"
     models = (Observer, Observable)
     data_cls = ObserverData
 
@@ -48,8 +50,8 @@ class ObserverTest(test.TestWrite):
                 # The first observervable is observed by all observers
                 created.add(observables[0])
                 observer.underlyings.add(observables[0])
-                for i in range(randint(1, N-1)):
-                    o = observables[randint(0, N-1)]
+                for i in range(randint(1, N - 1)):
+                    o = observables[randint(0, N - 1)]
                     created.add(o)
                     observer.underlyings.add(o)
         yield t.on_result
@@ -79,7 +81,7 @@ class ObserverTest(test.TestWrite):
             self.assertEqual(created, set(observables))
 
     def test_simple_save(self):
-        '''Save the first observable and check for updates.'''
+        """Save the first observable and check for updates."""
         models = self.mapper
         obs = self.observables[0]
         now = time()

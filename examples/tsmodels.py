@@ -1,6 +1,6 @@
 from stdnet import odm
-from stdnet.utils import encoders, todatetime, todate, missing_intervals
 from stdnet.apps.columnts import ColumnTSField
+from stdnet.utils import encoders, missing_intervals, todate, todatetime
 
 
 class TimeSeries(odm.StdModel):
@@ -20,26 +20,33 @@ class TimeSeries(odm.StdModel):
         r = self.data.front()
         if r:
             return r[0]
+
     data_start = property(__get_start)
 
     def __get_end(self):
         r = self.data.back()
         if r:
             return r[0]
+
     data_end = property(__get_end)
 
     def size(self):
-        '''number of dates in timeseries'''
+        """number of dates in timeseries"""
         return self.data.size()
 
     def intervals(self, startdate, enddate, parseinterval=None):
-        '''Given a ``startdate`` and an ``enddate`` dates, evaluate the
+        """Given a ``startdate`` and an ``enddate`` dates, evaluate the
         date intervals from which data is not available. It return a list
         of two-dimensional tuples containing start and end date for the
-        interval. The list could contain 0, 1 or 2 tuples.'''
-        return missing_intervals(startdate, enddate, self.data_start,
-                                 self.data_end, dateconverter=self.todate,
-                                 parseinterval=parseinterval)
+        interval. The list could contain 0, 1 or 2 tuples."""
+        return missing_intervals(
+            startdate,
+            enddate,
+            self.data_start,
+            self.data_end,
+            dateconverter=self.todate,
+            parseinterval=parseinterval,
+        )
 
 
 class DateTimeSeries(TimeSeries):
@@ -50,8 +57,9 @@ class DateTimeSeries(TimeSeries):
 
 
 class BigTimeSeries(DateTimeSeries):
-    data = odm.TimeSeriesField(pickler=encoders.DateConverter(),
-                               value_pickler=encoders.PythonPickle())
+    data = odm.TimeSeriesField(
+        pickler=encoders.DateConverter(), value_pickler=encoders.PythonPickle()
+    )
 
 
 class ColumnTimeSeries(odm.StdModel):

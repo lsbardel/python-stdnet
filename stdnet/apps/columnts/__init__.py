@@ -1,4 +1,4 @@
-'''\
+"""\
 **backends**: :ref:`Redis <redis-server>`.
 
 An application which implements a specialised remote
@@ -92,6 +92,6 @@ with the initial byte (``byte0``) indicating the type of data::
 
 
 .. _timeseries: http://en.wikipedia.org/wiki/Time_series
-'''
+"""
 from . import redis
 from .models import *

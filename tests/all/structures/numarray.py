@@ -1,20 +1,21 @@
 import os
 from datetime import date
 
-from stdnet import odm, InvalidTransaction
-from stdnet.utils import test, encoders, zip
+from stdnet import InvalidTransaction, odm
+from stdnet.utils import encoders, test, zip
 from stdnet.utils.populate import populate
 
 from .base import StructMixin
-    
+
+
 class TestNumberArray(StructMixin, test.TestCase):
     structure = odm.NumberArray
-    name = 'numberarray'
-    
+    name = "numberarray"
+
     def create_one(self):
         a = self.structure()
         return a.push_back(56).push_back(-78.6)
-    
+
     def testSizeResize(self):
         a = yield self.not_empty()
         yield self.async.assertEqual(a.size(), 2)
@@ -25,8 +26,8 @@ class TestNumberArray(StructMixin, test.TestCase):
         self.assertAlmostEqual(data[0], 56.0)
         self.assertAlmostEqual(data[1], -78.6)
         for v in data[2:]:
-            self.assertNotEqual(v,v)
-        
+            self.assertNotEqual(v, v)
+
     def testSetGet(self):
         a = yield self.not_empty()
         yield self.async.assertEqual(a.size(), 2)

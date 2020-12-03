@@ -1,13 +1,12 @@
-'''tests for odm.HashField'''
-from stdnet.utils import test, zip, iteritems, to_string
-
+"""tests for odm.HashField"""
 from examples.models import Dictionary
 
+from stdnet.utils import iteritems, test, to_string, zip
+
 from .struct import MultiFieldMixin
-        
+
 
 class HashData(test.DataGenerator):
-    
     def generate(self):
         self.keys = self.populate()
         self.values = self.populate(min_len=20, max_len=300)
@@ -15,18 +14,18 @@ class HashData(test.DataGenerator):
 
 
 class TestHashField(MultiFieldMixin, test.TestCase):
-    multipledb = 'redis'
+    multipledb = "redis"
     model = Dictionary
     data_cls = HashData
-    
+
     def defaults(self):
-        return {'name': self.name}
-    
+        return {"name": self.name}
+
     def adddata(self, d):
         yield d.data.update(self.data.data)
         size = yield d.data.size()
         self.assertEqual(len(self.data.data), size)
-    
+
     def create(self, fill=False):
         with self.session().begin() as t:
             d = t.add(self.model(name=self.name))
@@ -34,7 +33,7 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         if fill:
             yield d.data.update(self.data.data)
         yield d
-        
+
     def test_update(self):
         d = yield self.create(True)
         data = d.data
@@ -45,7 +44,7 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         self.assertTrue(data.cache.cache)
         self.assertNotEqual(data.cache.cache, items)
         self.assertEqual(data.cache.cache, dict(items))
-    
+
     def test_add(self):
         d = yield self.create()
         self.assertTrue(d.session)
@@ -64,7 +63,7 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         for k in d.data:
             data.pop(k)
         self.assertEqual(len(data), 0)
-    
+
     def testItems(self):
         d = yield self.create(True)
         data = self.data.data.copy()
@@ -72,12 +71,12 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         for k, v in items:
             self.assertEqual(v, data.pop(k))
         self.assertEqual(len(data), 0)
-        
+
     def testValues(self):
         d = yield self.create(True)
         values = yield d.data.values()
         self.assertEqual(len(self.data.data), len(values))
-        
+
     def createN(self):
         with self.session().begin() as t:
             for name in self.names:
@@ -89,27 +88,27 @@ class TestHashField(MultiFieldMixin, test.TestCase):
         with self.session().begin() as t:
             for m in qs:
                 t.add(m.data)
-                m.data['ciao'] = 'bla'
-                m.data['hello'] = 'foo'
-                m.data['hi'] = 'pippo'
-                m.data['salut'] = 'luna'
+                m.data["ciao"] = "bla"
+                m.data["hello"] = "foo"
+                m.data["hi"] = "pippo"
+                m.data["salut"] = "luna"
         yield t.on_result
-        
+
     def testloadNotSelected(self):
-        '''Get the model and check that no data-structure data
- has been loaded.'''
+        """Get the model and check that no data-structure data
+        has been loaded."""
         yield self.createN()
-        cache = self.model._meta.dfields['data'].get_cache_name()
+        cache = self.model._meta.dfields["data"].get_cache_name()
         qs = yield self.query().all()
         self.assertTrue(qs)
         for m in qs:
             data = getattr(m, cache, None)
             self.assertFalse(data)
-        
+
     def test_load_related(self):
-        '''Use load_selected to load stastructure data'''
+        """Use load_selected to load stastructure data"""
         yield self.createN()
-        cache = self.model._meta.dfields['data'].get_cache_name()
-        all = yield self.query().load_related('data').all()
+        cache = self.model._meta.dfields["data"].get_cache_name()
+        all = yield self.query().load_related("data").all()
         for m in all:
             self.assertTrue(m.data.cache.cache)

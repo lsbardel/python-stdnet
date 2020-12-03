@@ -1,7 +1,7 @@
+from examples.models import Page
+
 from stdnet import FieldValueError
 from stdnet.utils import test
-
-from examples.models import Page
 
 
 class TestIntegerField(test.TestCase):
@@ -11,9 +11,9 @@ class TestIntegerField(test.TestCase):
         models = self.mapper
         p = Page()
         self.assertEqual(p.in_navigation, 1)
-        p = Page(in_navigation='4')
+        p = Page(in_navigation="4")
         self.assertEqual(p.in_navigation, 4)
-        self.assertRaises(FieldValueError, p=Page, in_navigation='foo')
+        self.assertRaises(FieldValueError, p=Page, in_navigation="foo")
         yield self.session().add(p)
         self.assertEqual(p.in_navigation, 4)
         p = yield models.page.get(id=p.id)
@@ -23,7 +23,7 @@ class TestIntegerField(test.TestCase):
         models = self.mapper
         p = yield models.page.new()
         self.assertEqual(p.in_navigation, 1)
-        self.assertRaises(ValueError, Page, in_navigation='bla')
+        self.assertRaises(ValueError, Page, in_navigation="bla")
 
     def testZeroValue(self):
         models = self.mapper

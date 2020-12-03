@@ -1,4 +1,4 @@
-'''Test case classes and plugins for stdnet testing. Requires pulsar_.
+"""Test case classes and plugins for stdnet testing. Requires pulsar_.
 
 
 TestCase
@@ -18,13 +18,13 @@ DataGenerator
 
 
 .. _pulsar: https://pypi.python.org/pypi/pulsar
-'''
+"""
+import logging
 import os
 import sys
-import logging
 
 import pulsar
-from pulsar.apps.test import unittest, mock, TestSuite, TestPlugin, sequential
+from pulsar.apps.test import TestPlugin, TestSuite, mock, sequential, unittest
 
 from stdnet import getdb, settings
 from stdnet.utils import gen_unique_id
@@ -32,30 +32,26 @@ from stdnet.utils import gen_unique_id
 from .populate import populate
 
 skipUnless = unittest.skipUnless
-LOGGER = logging.getLogger('stdnet.test')
+LOGGER = logging.getLogger("stdnet.test")
 
 
 class DataGenerator(object):
-    '''A generator of data. It must be initialised with the :attr:`size`
-parameter obtained from the command line which is avaiable as a class
-attribute in :class:`TestCase`.
+    """A generator of data. It must be initialised with the :attr:`size`
+    parameter obtained from the command line which is avaiable as a class
+    attribute in :class:`TestCase`.
 
-.. attribute:: sizes
+    .. attribute:: sizes
 
-    A dictionary of sizes for this generator. It is a class attribute with
-    the following entries: ``tiny``, ``small``, ``normal``, ``big``
-    and ``huge``.
+        A dictionary of sizes for this generator. It is a class attribute with
+        the following entries: ``tiny``, ``small``, ``normal``, ``big``
+        and ``huge``.
 
-.. attribute:: size
+    .. attribute:: size
 
-    The actual size of the data to be generated. Obtained from the
-    :attr:`sizes` and the input ``size`` code during initialisation.
-'''
-    sizes = {'tiny': 10,
-             'small': 100,
-             'normal': 1000,
-             'big': 10000,
-             'huge': 1000000}
+        The actual size of the data to be generated. Obtained from the
+        :attr:`sizes` and the input ``size`` code during initialisation."""
+
+    sizes = {"tiny": 10, "small": 100, "normal": 1000, "big": 10000, "huge": 1000000}
 
     def __init__(self, size, sizes=None):
         self.sizes = sizes or self.sizes
@@ -64,31 +60,33 @@ attribute in :class:`TestCase`.
         self.generate()
 
     def generate(self):
-        '''Called during initialisation to generate the data. ``kwargs``
-are additional key-valued parameter passed during initialisation. Must
-be implemented by subclasses.'''
+        """Called during initialisation to generate the data. ``kwargs``
+        are additional key-valued parameter passed during initialisation. Must
+        be implemented by subclasses."""
         pass
 
     def create(self, test, use_transaction=True):
         pass
 
-    def populate(self, datatype='string', size=None, **kwargs):
-        '''A shortcut for the :func:`stdnet.utils.populate` function.
-If ``size`` is not given, the :attr:`size` is used.'''
+    def populate(self, datatype="string", size=None, **kwargs):
+        """A shortcut for the :func:`stdnet.utils.populate` function.
+        If ``size`` is not given, the :attr:`size` is used."""
         size = size or self.size
         return populate(datatype, size, **kwargs)
 
     def random_string(self, min_len=5, max_len=30):
-        '''Return a random string'''
-        return populate('string', 1, min_len=min_len, max_len=max_len)[0]
+        """Return a random string"""
+        return populate("string", 1, min_len=min_len, max_len=max_len)[0]
 
 
 def create_backend(self, prefix):
     from stdnet import odm
-    self.namespace = '%s%s-' % (prefix, gen_unique_id())
+
+    self.namespace = "%s%s-" % (prefix, gen_unique_id())
     if self.connection_string:
-        server = getdb(self.connection_string, namespace=self.namespace,
-                       **self.backend_params())
+        server = getdb(
+            self.connection_string, namespace=self.namespace, **self.backend_params()
+        )
         self.backend = server
         yield server.flush()
         self.mapper = odm.Router(self.backend)
@@ -97,65 +95,65 @@ def create_backend(self, prefix):
 
 
 class TestCase(unittest.TestCase):
-    '''A :class:`unittest.TestCase` subclass for testing stdnet with
-synchronous and asynchronous connections. It contains
-several class methods for testing in a parallel test suite.
+    """A :class:`unittest.TestCase` subclass for testing stdnet with
+    synchronous and asynchronous connections. It contains
+    several class methods for testing in a parallel test suite.
 
-.. attribute:: multipledb
+    .. attribute:: multipledb
 
-    class attribute which indicates which backend can run the test. There are
-    several options:
+        class attribute which indicates which backend can run the test. There are
+        several options:
 
-    * ``multipledb = False`` The test case does not require a backend and
-      only one :class:`TestCase` class is added to the test-suite regardless
-      of which backend has been tested.
-    * ``multipledb = True``, the default falue. Create as many
-      :class:`TestCase` classes as the number of backend tested, each backend
-      will run the tests.
-    * ``multipledb = string, list, tuple``, Only those backend will run tests.
+        * ``multipledb = False`` The test case does not require a backend and
+          only one :class:`TestCase` class is added to the test-suite regardless
+          of which backend has been tested.
+        * ``multipledb = True``, the default falue. Create as many
+          :class:`TestCase` classes as the number of backend tested, each backend
+          will run the tests.
+        * ``multipledb = string, list, tuple``, Only those backend will run tests.
 
-.. attribute:: backend
+    .. attribute:: backend
 
-    A :class:`stdnet.BackendDataServer` for this
-    :class:`TestCase` class. It is a class attribute which is different
-    for each :class:`TestCase` class and it is created by the
-    :meth:`setUpClass` method.
+        A :class:`stdnet.BackendDataServer` for this
+        :class:`TestCase` class. It is a class attribute which is different
+        for each :class:`TestCase` class and it is created by the
+        :meth:`setUpClass` method.
 
-.. attribute:: data_cls
+    .. attribute:: data_cls
 
-    A :class:`DataGenerator` class for creating data. The data is created
-    during the :meth:`setUpClass` class method.
+        A :class:`DataGenerator` class for creating data. The data is created
+        during the :meth:`setUpClass` class method.
 
-.. attribute:: data
+    .. attribute:: data
 
-    The :class:`DataGenerator` instance created from :attr:`data_cls`.
+        The :class:`DataGenerator` instance created from :attr:`data_cls`.
 
-.. attribute:: model
+    .. attribute:: model
 
-    The default :class:`StdModel` for this test. A class attribute.
+        The default :class:`StdModel` for this test. A class attribute.
 
-.. attribute:: models
+    .. attribute:: models
 
-    A tuple of models which can be registered by this test. The :attr:`model`
-    is always the model at index 0 in :attr:`models`.
+        A tuple of models which can be registered by this test. The :attr:`model`
+        is always the model at index 0 in :attr:`models`.
 
-.. attribute:: mapper
+    .. attribute:: mapper
 
-    A :class:`stdnet.odm.Router` with all :attr:`models` registered with
-    :attr:`backend`.
-'''
+        A :class:`stdnet.odm.Router` with all :attr:`models` registered with
+        :attr:`backend`."""
+
     models = ()
     model = None
     connection_string = None
     backend = None
     sizes = None
-    prefix = 'stdtest'
+    prefix = "stdtest"
     data_cls = DataGenerator
 
     @classmethod
     def backend_params(cls):
-        '''Optional :attr:`backend` parameters for tests in this
-:class:`TestCase` class.'''
+        """Optional :attr:`backend` parameters for tests in this
+        :class:`TestCase` class."""
         return {}
 
     @classmethod
@@ -168,20 +166,20 @@ several class methods for testing in a parallel test suite.
 
     @classmethod
     def setUpClass(cls):
-        '''Set up this :class:`TestCase` before test methods are run. here
-is where a :attr:`backend` server instance is created and it is unique for this
-:class:`TestCase` class. It create the :attr:`mapper`,
-a :class:`stdnet.odm.Router` with all :attr:`models` registered.
-There shouldn't be any reason to override this method, use :meth:`after_setup`
-class method instead.'''
+        """Set up this :class:`TestCase` before test methods are run. here
+        is where a :attr:`backend` server instance is created and it is unique for this
+        :class:`TestCase` class. It create the :attr:`mapper`,
+        a :class:`stdnet.odm.Router` with all :attr:`models` registered.
+        There shouldn't be any reason to override this method, use :meth:`after_setup`
+        class method instead."""
         cls.setup_models()
         yield create_backend(cls, cls.prefix)
         yield cls.after_setup()
 
     @classmethod
     def after_setup(cls):
-        '''This class method can be used to setup this :class:`TestCase` class
-after the :meth:`setUpClass` was called. By default it does nothing.'''
+        """This class method can be used to setup this :class:`TestCase` class
+        after the :meth:`setUpClass` was called. By default it does nothing."""
         pass
 
     @classmethod
@@ -191,33 +189,32 @@ after the :meth:`setUpClass` was called. By default it does nothing.'''
 
     @classmethod
     def session(cls, **kwargs):
-        '''Create a new :class:`stdnet.odm.Session` bind to the
-:attr:`TestCase.backend` attribute.'''
+        """Create a new :class:`stdnet.odm.Session` bind to the
+        :attr:`TestCase.backend` attribute."""
         return cls.mapper.session()
 
     @classmethod
     def query(cls, model=None):
-        '''Shortcut function to create a query for a model.'''
+        """Shortcut function to create a query for a model."""
         return cls.session().query(model or cls.model)
 
     @classmethod
     def multi_async(cls, iterable, **kwargs):
-        '''Treat ``iterable`` as a container of asynchronous results.'''
+        """Treat ``iterable`` as a container of asynchronous results."""
         return pulsar.multi_async(iterable, **kwargs)
 
     def assertEqualId(self, instance, value, exact=False):
-        '''Assert the value of a primary key in a backend agnostic way.
+        """Assert the value of a primary key in a backend agnostic way.
 
-:param instance: the :class:`StdModel` to check the primary key ``value``.
-:param value: the value of the id to check against.
-:param exact: if ``True`` the exact value must be matched. For redis backend
-    this parameter is not used.
-'''
+        :param instance: the :class:`StdModel` to check the primary key ``value``.
+        :param value: the value of the id to check against.
+        :param exact: if ``True`` the exact value must be matched. For redis backend
+            this parameter is not used."""
         pk = instance.pkvalue()
-        if exact or self.backend.name == 'redis':
+        if exact or self.backend.name == "redis":
             self.assertEqual(pk, value)
-        elif self.backend.name == 'mongo':
-            if instance._meta.pk.type == 'auto':
+        elif self.backend.name == "mongo":
+            if instance._meta.pk.type == "auto":
                 self.assertTrue(pk)
             else:
                 self.assertEqual(pk, value)
@@ -227,8 +224,9 @@ after the :meth:`setUpClass` was called. By default it does nothing.'''
 
 
 class TestWrite(TestCase):
-    '''A variant of :class:`TestCase` which clean the backend at each
-test function. Useful when testing write operations.'''
+    """A variant of :class:`TestCase` which clean the backend at each
+    test function. Useful when testing write operations."""
+
     @classmethod
     def setUpClass(cls):
         cls.setup_models()
@@ -249,29 +247,33 @@ test function. Useful when testing write operations.'''
         return self.mapper.session()
 
     def query(self, model=None):
-        '''Shortcut function to create a query for a model.'''
+        """Shortcut function to create a query for a model."""
         return self.session().query(model or self.model)
 
 
 class StdnetPlugin(TestPlugin):
     name = "server"
     flags = ["-s", "--server"]
-    nargs = '*'
-    desc = 'Back-end data server where to run tests.'
+    nargs = "*"
+    desc = "Back-end data server where to run tests."
     default = [settings.DEFAULT_BACKEND]
     validator = pulsar.validate_list
 
     py_redis_parser = pulsar.Setting(
-        flags=['--py-redis-parser'],
-        desc=('Run tests using the python redis parser rather '
-              'the C implementation.'),
+        flags=["--py-redis-parser"],
+        desc=(
+            "Run tests using the python redis parser rather " "the C implementation."
+        ),
         action="store_true",
-        default=False)
+        default=False,
+    )
 
-    sync = pulsar.Setting(flags=['--sync'],
-                          desc='Switch off asynchronous bindings',
-                          action="store_true",
-                          default=False)
+    sync = pulsar.Setting(
+        flags=["--sync"],
+        desc="Switch off asynchronous bindings",
+        action="store_true",
+        default=False,
+    )
 
     def configure(self, cfg):
         if cfg.sync:
@@ -287,22 +289,20 @@ class StdnetPlugin(TestPlugin):
                 s = getdb(s)
                 s.ping()
             except Exception:
-                LOGGER.error('Could not obtain server %s' % s,
-                             exc_info=True)
+                LOGGER.error("Could not obtain server %s" % s, exc_info=True)
             else:
                 if s.name not in names:
                     names.add(s.name)
                     servers.append(s.connection_string)
         if not servers:
-            raise pulsar.HaltServer('No server available. BAILING OUT')
+            raise pulsar.HaltServer("No server available. BAILING OUT")
         settings.servers = servers
 
 
 class testmaker(object):
-
     def __init__(self, test, name, server):
         self.test = test
-        self.cls_name = '%s_%s' % (test.__name__, name)
+        self.cls_name = "%s_%s" % (test.__name__, name)
         self.server = server
 
     def __call__(self):
@@ -312,11 +312,11 @@ class testmaker(object):
 
 
 def create_tests(suite, tests=None):
-    servers = getattr(settings, 'servers', None)
+    servers = getattr(settings, "servers", None)
     if isinstance(suite, TestSuite) and servers:
         for tag, test in list(tests):
             tests.pop(0)
-            multipledb = getattr(test, 'multipledb', True)
+            multipledb = getattr(test, "multipledb", True)
             toadd = True
             if isinstance(multipledb, str):
                 multipledb = [multipledb]
@@ -324,7 +324,7 @@ def create_tests(suite, tests=None):
                 toadd = False
             if multipledb:
                 for server in servers:
-                    name = server.split('://')[0]
+                    name = server.split("://")[0]
                     if multipledb is True or name in multipledb:
                         toadd = False
                         tests.append((tag, testmaker(test, name, server)))

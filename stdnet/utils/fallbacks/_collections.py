@@ -1,19 +1,19 @@
 from UserDict import DictMixin
 
-__all__ = ['OrderedDict']
+__all__ = ["OrderedDict"]
 
 
 class OrderedDict(dict, DictMixin):
-    '''Drop-in substitute for Py2.7's new collections.OrderedDict.
-The recipe has big-oh performance that matches regular dictionaries
-(amortized O(1) insertion/deletion/lookup and O(n)
-iteration/repr/copy/equality_testing).
+    """Drop-in substitute for Py2.7's new collections.OrderedDict.
+    The recipe has big-oh performance that matches regular dictionaries
+    (amortized O(1) insertion/deletion/lookup and O(n)
+    iteration/repr/copy/equality_testing).
 
-From http://code.activestate.com/recipes/576693/'''
+    From http://code.activestate.com/recipes/576693/"""
 
     def __init__(self, *args, **kwds):
         if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+            raise TypeError("expected at most 1 arguments, got %d" % len(args))
         try:
             self.__end
         except AttributeError:
@@ -22,8 +22,8 @@ From http://code.activestate.com/recipes/576693/'''
 
     def clear(self):
         self.__end = end = []
-        end += [None, end, end]         # sentinel node for doubly linked list
-        self.__map = {}                 # key --> [key, prev, next]
+        end += [None, end, end]  # sentinel node for doubly linked list
+        self.__map = {}  # key --> [key, prev, next]
         dict.clear(self)
 
     def __setitem__(self, key, value):
@@ -55,7 +55,7 @@ From http://code.activestate.com/recipes/576693/'''
 
     def popitem(self, last=True):
         if not self:
-            raise KeyError('dictionary is empty')
+            raise KeyError("dictionary is empty")
         if last:
             key = reversed(self).next()
         else:
@@ -87,8 +87,8 @@ From http://code.activestate.com/recipes/576693/'''
 
     def __repr__(self):
         if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, self.items())
+            return "%s()" % (self.__class__.__name__,)
+        return "%s(%r)" % (self.__class__.__name__, self.items())
 
     def copy(self):
         return self.__class__(self)

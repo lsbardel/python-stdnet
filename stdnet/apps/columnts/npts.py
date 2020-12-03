@@ -1,29 +1,28 @@
-'''Experimental!
+"""Experimental!
 This is an experimental module for converting ColumnTS into
 dynts.timeseries. It requires dynts_.
 
 .. _dynts: https://github.com/quantmind/dynts
-'''
+"""
 from collections import Mapping
+
+import numpy as ny
+from dynts import timeseries, tsname
 
 from . import models as columnts
 
-import numpy as ny
-
-from dynts import timeseries, tsname
-
 
 class ColumnTS(columnts.ColumnTS):
-    '''Integrate stdnet timeseries with dynts_ TimeSeries'''
+    """Integrate stdnet timeseries with dynts_ TimeSeries"""
 
     def front(self, *fields):
-        '''Return the front pair of the structure'''
+        """Return the front pair of the structure"""
         ts = self.irange(0, 0, fields=fields)
         if ts:
             return ts.start(), ts[0]
 
     def back(self, *fields):
-        '''Return the back pair of the structure'''
+        """Return the back pair of the structure"""
         ts = self.irange(-1, -1, fields=fields)
         if ts:
             return ts.end(), ts[0]
@@ -56,6 +55,5 @@ class ColumnTS(columnts.ColumnTS):
 
 
 class ColumnTSField(columnts.ColumnTSField):
-
     def structure_class(self):
         return ColumnTS

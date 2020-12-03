@@ -1,6 +1,6 @@
-'''\
+"""\
 Simple python script which helps writing python 2.6 \
-forward compatible code with python 3'''
+forward compatible code with python 3"""
 import os
 import sys
 import types
@@ -19,55 +19,59 @@ if ispy3k:
     long = int
     range = range
 
-    from urllib import parse as urlparse
-    from io import StringIO, BytesIO
+    from io import BytesIO, StringIO
     from itertools import zip_longest
+    from urllib import parse as urlparse
 
     urlencode = urlparse.urlencode
 
     class UnicodeMixin(object):
-
         def __unicode__(self):
-            return '{0} object'.format(self.__class__.__name__)
+            return "{0} object".format(self.__class__.__name__)
 
         def __str__(self):
             return self.__unicode__()
 
         def __repr__(self):
-            return '%s: %s' % (self.__class__.__name__, self)
+            return "%s: %s" % (self.__class__.__name__, self)
 
-    def native_str(s, encoding='utf-8'):
+    def native_str(s, encoding="utf-8"):
         if isinstance(s, bytes):
             return s.decode(encoding)
         return s
 
+
 # Python 2
-else:   # pragma: no cover
+else:  # pragma: no cover
     string_type = unicode
     itervalues = lambda d: d.itervalues()
     iteritems = lambda d: d.iteritems()
     int_type = (types.IntType, types.LongType)
-    from itertools import izip as zip, imap as map, izip_longest as zip_longest
+    from itertools import imap as map
+    from itertools import izip as zip
+    from itertools import izip_longest as zip_longest
+
     range = xrange
     long = long
 
-    import urlparse
     from urllib import urlencode
+
+    import urlparse
     from cStringIO import StringIO
+
     BytesIO = StringIO
 
     class UnicodeMixin(object):
-
         def __unicode__(self):
-            return unicode('{0} object'.format(self.__class__.__name__))
+            return unicode("{0} object".format(self.__class__.__name__))
 
         def __str__(self):
-            return self.__unicode__().encode('utf-8', 'ignore')
+            return self.__unicode__().encode("utf-8", "ignore")
 
         def __repr__(self):
-            return '%s: %s' % (self.__class__.__name__, self)
+            return "%s: %s" % (self.__class__.__name__, self)
 
-    def native_str(s, encoding='utf-8'):
+    def native_str(s, encoding="utf-8"):
         if isinstance(s, unicode):
             return s.encode(encoding)
         return s
@@ -77,13 +81,13 @@ is_string = lambda x: isinstance(x, string_type)
 is_int = lambda x: isinstance(x, int_type)
 
 
-def to_bytes(s, encoding=None, errors='strict'):
+def to_bytes(s, encoding=None, errors="strict"):
     """Returns a bytestring version of 's',
-encoded as specified in 'encoding'."""
-    encoding = encoding or 'utf-8'
+    encoded as specified in 'encoding'."""
+    encoding = encoding or "utf-8"
     if isinstance(s, bytes):
-        if encoding != 'utf-8':
-            return s.decode('utf-8', errors).encode(encoding, errors)
+        if encoding != "utf-8":
+            return s.decode("utf-8", errors).encode(encoding, errors)
         else:
             return s
     if not is_string(s):
@@ -91,9 +95,9 @@ encoded as specified in 'encoding'."""
     return s.encode(encoding, errors)
 
 
-def to_string(s, encoding=None, errors='strict'):
+def to_string(s, encoding=None, errors="strict"):
     """Inverse of to_bytes"""
-    encoding = encoding or 'utf-8'
+    encoding = encoding or "utf-8"
     if isinstance(s, bytes):
         return s.decode(encoding, errors)
     if not is_string(s):

@@ -1,4 +1,4 @@
-basic_english_words = 'a,able,about,account,acid,across,act,addition,\
+basic_english_words = "a,able,about,account,acid,across,act,addition,\
 adjustment,advertisement,after,again,against,agreement,air,all,almost,\
 among,amount,amusement,and,angle,angry,animal,answer,ant,any,apparatus,\
 apple,approval,arch,argument,arm,army,art,as,at,attack,attempt,attention,\
@@ -73,4 +73,6 @@ under,unit,up,use,value,verse,very,vessel,view,violent,voice,waiting,walk,\
 wall,war,warm,wash,waste,watch,water,wave,wax,way,weather,week,weight,well,\
 west,wet,wheel,when,where,while,whip,whistle,white,who,why,wide,will,wind,\
 window,wine,wing,winter,wire,wise,with,woman,wood,wool,word,work,worm,wound,\
-writing,wrong,year,yellow,yes,yesterday,you,young'.split(',')
+writing,wrong,year,yellow,yes,yesterday,you,young".split(
+    ","
+)

@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 # If your extensions are in another directory, add it here.
 source_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -20,9 +21,11 @@ base_dir   = os.path.split(docs_dir)[0]
 sys.path.append(os.path.join(source_dir, "_ext"))
 sys.path.append(base_dir)
 import stdnet
+
 version = stdnet.__version__
 release = version
-import runtests # so that it import pulsar if available
+import runtests  # so that it import pulsar if available
+
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions

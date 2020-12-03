@@ -1,12 +1,13 @@
+from collections import Mapping
 from inspect import istraceback
 from itertools import chain
-from collections import Mapping
 from uuid import uuid4
 
 from .py2py3 import *
 
 if ispy3k:  # pragma: no cover
     import pickle
+
     unichr = chr
 
     def raise_error_trace(err, traceback):
@@ -15,14 +16,16 @@ if ispy3k:  # pragma: no cover
         else:
             raise err
 
-else:   # pragma: no cover
+
+else:  # pragma: no cover
     import cPickle as pickle
+
     unichr = unichr
     from .fallbacks.py2 import raise_error_trace
 
+from .dates import *
 from .jsontools import *
 from .populate import populate
-from .dates import *
 
 
 def gen_unique_id(short=True):
@@ -46,21 +49,24 @@ def int_or_float(v):
 
 
 def grouper(n, iterable, padvalue=None):
-    '''grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'),
-    ('g','x','x')'''
-    return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
+    """grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'),
+    ('g','x','x')"""
+    return zip_longest(*[iter(iterable)] * n, fillvalue=padvalue)
 
 
 def _format_int(val):
     positive = val >= 0
-    sval = ''.join(reversed(','.join((
-        ''.join(g) for g in grouper(3, reversed(str(abs(val))), '')))))
-    return sval if positive else '-'+sval
+    sval = "".join(
+        reversed(
+            ",".join(("".join(g) for g in grouper(3, reversed(str(abs(val))), "")))
+        )
+    )
+    return sval if positive else "-" + sval
 
 
 def format_int(val):
     try:  # for python 2.7 and up
-        return '{:,}'.format(val)
+        return "{:,}".format(val)
     except ValueError:  # pragma nocover
         _format_int(val)
 
@@ -80,7 +86,7 @@ def _flat2d_gen(iterable):
 
 
 def flat2d(iterable):
-    if hasattr(iterable, '__len__'):
+    if hasattr(iterable, "__len__"):
         return chain(*iterable)
     else:
         return _flat2d_gen(iterable)

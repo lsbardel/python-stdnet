@@ -1,18 +1,18 @@
-'''tests for odm.ListField'''
-from stdnet import StructureFieldError
-from stdnet.utils import test, zip, to_string
-
+"""tests for odm.ListField"""
 from examples.models import SimpleList
+
+from stdnet import StructureFieldError
+from stdnet.utils import test, to_string, zip
 
 from .struct import MultiFieldMixin, StringData
 
 
 class TestListField(MultiFieldMixin, test.TestCase):
     model = SimpleList
-    attrname = 'names'
+    attrname = "names"
 
     def adddata(self, li):
-        '''Add elements to a list without using transactions.'''
+        """Add elements to a list without using transactions."""
         with li.session.begin():
             names = li.names
             for elem in self.data.names:
@@ -47,11 +47,11 @@ class TestListField(MultiFieldMixin, test.TestCase):
             self.assertEqual(el, ne)
 
     def testPushNoSave(self):
-        '''Push a new value to a list field should rise an error if the object
-is not saved on databse.'''
+        """Push a new value to a list field should rise an error if the object
+        is not saved on databse."""
         obj = self.model()
-        push_back  = lambda : obj.names.push_back('this should fail')
-        push_front = lambda : obj.names.push_front('this should also fail')
+        push_back = lambda: obj.names.push_back("this should fail")
+        push_front = lambda: obj.names.push_front("this should also fail")
         self.assertRaises(StructureFieldError, push_back)
         self.assertRaises(StructureFieldError, push_front)
 
@@ -67,7 +67,7 @@ is not saved on databse.'''
 
 
 class TestRedisListField(test.TestCase):
-    multipledb = ['redis']
+    multipledb = ["redis"]
     model = SimpleList
     data_cls = StringData
 

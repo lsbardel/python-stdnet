@@ -1,8 +1,7 @@
-from stdnet.utils import test
-
-from tests.all.multifields.struct import MultiFieldMixin
-
 from examples.tsmodels import ColumnTimeSeries
+
+from stdnet.utils import test
+from tests.all.multifields.struct import MultiFieldMixin
 
 from .npts import ColumnTimeSeriesNumpy, skipUnless
 
@@ -12,13 +11,13 @@ class TestColumnTSField(MultiFieldMixin, test.TestCase):
 
     def testModel(self):
         meta = self.model._meta
-        self.assertTrue(len(meta.multifields),1)
+        self.assertTrue(len(meta.multifields), 1)
         m = meta.multifields[0]
-        self.assertEqual(m.name,'data')
+        self.assertEqual(m.name, "data")
         self.assertTrue(isinstance(m.value_pickler, encoders.Double))
 
 
-@skipUnless(ColumnTimeSeriesNumpy, 'Requires stdnet-redis and dynts')
+@skipUnless(ColumnTimeSeriesNumpy, "Requires stdnet-redis and dynts")
 class TestColumnTSField(TestColumnTSField):
     model = ColumnTimeSeriesNumpy
 
@@ -27,7 +26,7 @@ class TestColumnTSField(TestColumnTSField):
 
     def testMeta(self):
         meta = self.model._meta
-        self.assertTrue(len(meta.multifields),1)
+        self.assertTrue(len(meta.multifields), 1)
         m = meta.multifields[0]
-        self.assertEqual(m.name, 'data')
+        self.assertEqual(m.name, "data")
         self.assertTrue(isinstance(m.value_pickler, encoders.Double))

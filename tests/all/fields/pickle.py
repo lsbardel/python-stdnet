@@ -1,33 +1,32 @@
-from stdnet.utils import test
-
 from examples.models import Environment
 
+from stdnet.utils import test
 
 
 class TestPickleObjectField(test.TestCase):
     model = Environment
-    
+
     def testMetaData(self):
-        field = self.model._meta.dfields['data']
-        self.assertEqual(field.type,'object')
-        self.assertEqual(field.internal_type,'bytes')
-        self.assertEqual(field.index,False)
-        self.assertEqual(field.name,field.attname)
+        field = self.model._meta.dfields["data"]
+        self.assertEqual(field.type, "object")
+        self.assertEqual(field.internal_type, "bytes")
+        self.assertEqual(field.index, False)
+        self.assertEqual(field.name, field.attname)
         return field
-    
+
     def testOkObject(self):
         session = self.session()
-        v = self.model(data=['ciao','pippo'])
-        self.assertEqual(v.data, ['ciao','pippo'])
+        v = self.model(data=["ciao", "pippo"])
+        self.assertEqual(v.data, ["ciao", "pippo"])
         yield session.add(v)
-        self.assertEqual(v.data, ['ciao','pippo'])
+        self.assertEqual(v.data, ["ciao", "pippo"])
         v = yield session.query(self.model).get(id=v.id)
-        self.assertEqual(v.data, ['ciao','pippo'])
-        
+        self.assertEqual(v.data, ["ciao", "pippo"])
+
     def testRecursive(self):
-        '''Silly test to test both pickle field and picklable instance'''
+        """Silly test to test both pickle field and picklable instance"""
         session = self.session()
-        v = yield session.add(self.model(data=('ciao','pippo', 4, {})))
+        v = yield session.add(self.model(data=("ciao", "pippo", 4, {})))
         v2 = self.model(data=v)
         self.assertEqual(v2.data, v)
         yield session.add(v2)

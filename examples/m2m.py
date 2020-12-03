@@ -11,5 +11,6 @@ class CompositeElement(odm.StdModel):
 
 class Composite(odm.StdModel):
     name = odm.SymbolField()
-    elements = odm.ManyToManyField(Element, through=CompositeElement,
-                                   related_name='composites')
+    elements = odm.ManyToManyField(
+        Element, through=CompositeElement, related_name="composites"
+    )

@@ -1,13 +1,12 @@
-from time import mktime
-from datetime import datetime, timedelta
 from collections import namedtuple
+from datetime import datetime, timedelta
+from time import mktime
 
 
-class Interval(namedtuple('IntervalBase', 'start end')):
-
+class Interval(namedtuple("IntervalBase", "start end")):
     def __init__(self, start, end):
         if start > end:
-            raise ValueError('Bad interval.')
+            raise ValueError("Bad interval.")
 
     def __reduce__(self):
         return tuple, (tuple(self),)
@@ -25,12 +24,10 @@ class Interval(namedtuple('IntervalBase', 'start end')):
         return self.start == other.start and self.end == other.end
 
     def union(self, other):
-        return Interval(min(self.start, other.start),
-                        max(self.end, other.end))
+        return Interval(min(self.start, other.start), max(self.end, other.end))
 
 
 class Intervals(list):
-
     def __init__(self, data=None):
         super(Intervals, self).__init__()
         if data:
@@ -70,20 +67,20 @@ class Intervals(list):
         while merged and len(self) > 1:
             merged = False
             for idx, interval in enumerate(self[:-1]):
-                other = self[idx+1]
+                other = self[idx + 1]
                 if interval < other:
                     continue
                 elif interval > other:
                     raise ValueError()
                 else:
                     self[idx] = interval.union(other)
-                    self.pop(idx+1)
+                    self.pop(idx + 1)
                     merged = True
                     break
 
 
 def date2timestamp(dte):
-    '''Convert a *dte* into a valid unix timestamp.'''
+    """Convert a *dte* into a valid unix timestamp."""
     seconds = mktime(dte.timetuple())
     if isinstance(dte, datetime):
         return seconds + dte.microsecond / 1000000.0
@@ -117,14 +114,19 @@ def default_parse_interval(dt, delta=0):
         return dt
 
 
-def missing_intervals(startdate, enddate, start, end,
-                      dateconverter=None,
-                      parseinterval=None,
-                      intervals=None):
-    '''Given a ``startdate`` and an ``enddate`` dates, evaluate the
-date intervals from which data is not available. It return a list of
-two-dimensional tuples containing start and end date for the interval.
-The list could countain 0,1 or 2 tuples.'''
+def missing_intervals(
+    startdate,
+    enddate,
+    start,
+    end,
+    dateconverter=None,
+    parseinterval=None,
+    intervals=None,
+):
+    """Given a ``startdate`` and an ``enddate`` dates, evaluate the
+    date intervals from which data is not available. It return a list of
+    two-dimensional tuples containing start and end date for the interval.
+    The list could countain 0,1 or 2 tuples."""
     parseinterval = parseinterval or default_parse_interval
     dateconverter = dateconverter or todate
     startdate = dateconverter(parseinterval(startdate, 0))
@@ -162,7 +164,7 @@ The list could countain 0,1 or 2 tuples.'''
 
 
 def dategenerator(start, end, step=1, desc=False):
-    '''Generates dates between *atrt* and *end*.'''
+    """Generates dates between *atrt* and *end*."""
     delta = timedelta(abs(step))
     end = max(start, end)
     if desc:

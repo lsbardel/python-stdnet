@@ -2,8 +2,7 @@ import os
 from datetime import date
 
 from stdnet import odm
-from stdnet.utils import test, encoders, zip
-
+from stdnet.utils import encoders, test, zip
 from tests.all.multifields.timeseries import TsData
 
 from .base import StructMixin
@@ -12,7 +11,7 @@ from .base import StructMixin
 class TestTS(StructMixin, test.TestCase):
     structure = odm.TS
     data_cls = TsData
-    name = 'ts'
+    name = "ts"
 
     def create_one(self):
         ts = self.structure()
@@ -40,8 +39,8 @@ class TestTS(StructMixin, test.TestCase):
         range = yield ts.range(all_dates[start], all_dates[end])
         self.assertTrue(range)
         for time, val in range:
-            self.assertTrue(time>=front[0])
-            self.assertTrue(time<=back[0])
+            self.assertTrue(time >= front[0])
+            self.assertTrue(time <= back[0])
 
     def test_get(self):
         ts = yield self.not_empty()
@@ -49,9 +48,9 @@ class TestTS(StructMixin, test.TestCase):
         val1 = yield ts[dt1]
         self.assertTrue(val1)
         yield self.async.assertEqual(ts.get(dt1), val1)
-        yield self.async.assertEqual(ts.get(date(1990,1,1)),None)
-        yield self.async.assertEqual(ts.get(date(1990,1,1),1),1)
-        yield self.async.assertRaises(KeyError, lambda : ts[date(1990,1,1)])
+        yield self.async.assertEqual(ts.get(date(1990, 1, 1)), None)
+        yield self.async.assertEqual(ts.get(date(1990, 1, 1), 1), 1)
+        yield self.async.assertRaises(KeyError, lambda: ts[date(1990, 1, 1)])
 
     def test_pop(self):
         ts = yield self.not_empty()
@@ -61,7 +60,7 @@ class TestTS(StructMixin, test.TestCase):
         self.assertTrue(v)
         yield self.async.assertFalse(dt in ts)
         yield self.async.assertRaises(KeyError, ts.pop, dt)
-        yield self.async.assertEqual(ts.pop(dt,'bla'), 'bla')
+        yield self.async.assertEqual(ts.pop(dt, "bla"), "bla")
 
     def test_rank_ipop(self):
         ts = yield self.not_empty()
@@ -80,12 +79,12 @@ class TestTS(StructMixin, test.TestCase):
         N = len(all_dates)
         start = N // 4
         end = 3 * N // 4
-        range = yield ts.range(all_dates[start],all_dates[end])
+        range = yield ts.range(all_dates[start], all_dates[end])
         self.assertTrue(range)
         range2 = yield ts.pop_range(all_dates[start], all_dates[end])
         self.assertEqual(range, range2)
         all_dates = yield ts.itimes()
         all_dates = set(all_dates)
         self.assertTrue(all_dates)
-        for dt,_ in range:
+        for dt, _ in range:
             self.assertFalse(dt in all_dates)

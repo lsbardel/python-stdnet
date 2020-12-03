@@ -1,31 +1,6 @@
 from collections import Mapping
-from inspect import istraceback
-from itertools import chain
+from itertools import chain, zip_longest
 from uuid import uuid4
-
-from .py2py3 import *
-
-if ispy3k:  # pragma: no cover
-    import pickle
-
-    unichr = chr
-
-    def raise_error_trace(err, traceback):
-        if istraceback(traceback):
-            raise err.with_traceback(traceback)
-        else:
-            raise err
-
-
-else:  # pragma: no cover
-    import cPickle as pickle
-
-    unichr = unichr
-    from .fallbacks.py2 import raise_error_trace
-
-from .dates import *
-from .jsontools import *
-from .populate import populate
 
 
 def gen_unique_id(short=True):
@@ -37,7 +12,7 @@ def gen_unique_id(short=True):
 
 def iterpair(iterable):
     if isinstance(iterable, Mapping):
-        return iteritems(iterable)
+        return iterable.items()
     else:
         return iterable
 
@@ -93,7 +68,7 @@ def flat2d(iterable):
 
 
 def _flatzsetdict(kwargs):
-    for k, v in iteritems(kwargs):
+    for k, v in kwargs.items():
         yield v
         yield k
 

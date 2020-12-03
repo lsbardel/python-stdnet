@@ -2,14 +2,6 @@ import sys
 from collections import namedtuple
 from inspect import isgenerator
 
-try:
-    from pulsar import maybe_async as async
-except ImportError:  # pragma    noproxy
-
-    def async(gen):
-        raise NotImplementedError
-
-
 from stdnet.utils import (
     int_or_float,
     iteritems,
@@ -32,7 +24,6 @@ __all__ = [
     "range_lookups",
     "getdb",
     "settings",
-    "async",
 ]
 
 
@@ -46,8 +37,13 @@ instance_session_result = namedtuple(
 session_data = namedtuple("session_data", "meta dirty deletes queries structures")
 session_result = namedtuple("session_result", "meta results")
 
-pass_through = lambda x: x
-str_lower_case = lambda x: to_string(x).lower()
+
+def pass_through(x):
+    return x
+
+
+def str_lower_case(x: str):
+    return to_string(x).lower()
 
 
 range_lookups = {
@@ -285,7 +281,7 @@ class BackendDataServer(object):
 
     def execute(self, result, callback=None):
         if self.is_async():
-            result = async(result)
+            # result = async(result)
             if callback:
                 return result.add_callback(callback)
             else:

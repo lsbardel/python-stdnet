@@ -1,9 +1,7 @@
-import time
 from datetime import date, datetime
 
 from examples.models import Statistics3
 
-import stdnet
 from stdnet import odm
 from stdnet.utils import (
     _format_int,

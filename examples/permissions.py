@@ -175,9 +175,9 @@ class GroupManager(odm.Manager):
             return query
         roles = group.roles.query()
         roles = group.roles.query()  # query on all roles for group
-        # The throgh model for Role/Permission relationship
-        throgh_model = models.role.permissions.model
-        models[throgh_model].filter(role=roles,
+        # The through model for Role/Permission relationship
+        through_model = models.role.permissions.model
+        models[through_model].filter(role=roles,
                                     permission__model_type=query.model,
                                     permission__operations=operations)
 

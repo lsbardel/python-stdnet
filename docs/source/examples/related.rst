@@ -6,7 +6,7 @@
 Related Models
 ============================
 
-There are two :class:`Fields` which represents relationaships between
+There are two :class:`Fields` which represents relationships between
 :class:`StdModel`. 
 
 

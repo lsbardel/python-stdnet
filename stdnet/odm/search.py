@@ -124,7 +124,7 @@ Can and should be reimplemented by subclasses.'''
         '''Add a *middleware* function to the list of :attr:`word_middleware`,
 for preprocessing words to be indexed.
 
-:param middleware: a callable receving an iterable over words.
+:param middleware: a callable receiving an iterable over words.
 :param for_search: flag indicating if the *middleware* can be used for the
     text to search. Default: ``True``.
 '''

@@ -692,7 +692,7 @@ the database field for the ``File`` model will have a ``folder_id`` field.
 
 class JSONField(CharField):
     '''A JSON field which implements automatic conversion to
-and from an object and a JSON string. It is the responsability of the
+and from an object and a JSON string. It is the responsibility of the
 user making sure the object is JSON serializable.
 
 There are few extra parameters which can be used to customize the

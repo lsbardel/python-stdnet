@@ -913,7 +913,7 @@ so by setting the ``manager_class`` attribute in the :class:`StdModel`::
 
     def __call__(self, *args, **kwargs):
         # The callable method is equivalent of doing self.model() it is just
-        # a shurtcut for a better API
+        # a shortcut for a better API
         return self.model(*args, **kwargs)
 
     def session(self, session=None):

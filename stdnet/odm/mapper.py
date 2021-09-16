@@ -252,7 +252,7 @@ For example::
             manager.create_all()
 
     def add(self, instance):
-        '''Add an ``instance`` to its backend database. This is a shurtcut
+        '''Add an ``instance`` to its backend database. This is a shortcut
 method for::
 
     self.session().add(instance)

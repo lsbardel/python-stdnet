@@ -16,7 +16,7 @@ MIN_FLOAT = -1.e99
 ############################################################################
 #    prefixes for data
 OBJ = 'obj'     # the hash table for a instance
-TMP = 'tmp'     # temorary key
+TMP = 'tmp'     # temporary key
 ODM_SCRIPTS = ('odmrun', 'move2set', 'zdiffstore')
 ############################################################################
 

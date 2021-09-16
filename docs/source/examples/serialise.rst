@@ -15,7 +15,7 @@ There are two serializers included in the standard distribution: **json** and **
 Exporting Data
 ====================
 
-To export data is quite strightforward, you create a :class:`Query` and
+To export data is quite straightforward, you create a :class:`Query` and
 pass it to a :meth:`Serializer.dump` method. Using the
 :ref:`models router <tutorial-models-router>` in the first tutorial::
 
